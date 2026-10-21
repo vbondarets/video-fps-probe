@@ -28,7 +28,7 @@
    - MP4 reader, parser and statistics: 5.5 KB gzip (U).
    - EBML analyzer: 4.9 KB gzip, minified (V).
    - For comparison, mp4box is about 41 KB and mediabunny with MKV about 51 KB. Both deviate from ffprobe in documented ways.
-5. **React 19.3.1 dominates the bundle at about 67.5 KB gzip.** Preact would be 5.5-7.1 KB, but the user asked for React. Preact is an option for the user to decide, not a default (V).
+5. **React 19.3.1 dominates the bundle at about 67.5 KB gzip.** Preact would be 5.5-7.1 KB, but the project uses React. Preact stays an option, not a default (V).
 6. **rVFC playback is only an approximate fallback.** It works in all current engines, but:
    - it needs a visible tab and a playable codec;
    - it costs 1.8-3.4 s per file;
@@ -455,7 +455,7 @@ interface FileResult {
 
 ## 5. Fixture matrix
 
-**The generator** (validated) is `generate-fixtures.sh [out] [--with-long] [--with-sparse]`. Its tools are `patch-mp4.mjs`, `patch-webm.mjs`, `make-corrupt.mjs`, `boxes.mjs`, `ebml.mjs` and `ref-extract.mjs`, plus `extract-reference.sh`. They live in `scripts/fixtures/`.
+**The generator** (validated) is `generate-fixtures.sh [out] [--with-long] [--with-sparse]`. Its tools are `patch-mp4.mjs`, `patch-webm.mjs`, `make-corrupt.mjs`, `boxes.mjs`, `ebml.mjs` and `ref-extract.mjs`, plus `extract-reference.sh`. They live in `scripts/fixtures/` (the tools in `scripts/fixtures/tools/`).
 
 **What it produces:**
 - 95 fixtures: about 8.5 MB without the optional files, 24.7 MB with the long ones.
@@ -624,7 +624,7 @@ Treat a missing JSON key as N/A.
 
 ## 7. Risks and open questions
 
-**Decisions needed from the user:**
+**Decisions (resolved: React, and the core corpus is committed):**
 1. **React vs Preact.** React adds about 67.5 KB gzip, against 5.5-7.1 KB for Preact.
 2. **Fixture binaries.** Either commit the 8.5 MB core corpus or regenerate it. Bytes are reproducible only on the same ffmpeg build, so committing keeps tests hermetic. The long and sparse files stay generated.
 
@@ -638,7 +638,7 @@ Treat a missing JSON key as N/A.
 
 6. **ffprobe under-reads fragmented files with a complete sidx.** The app shows the true full-file average and documents the deviation.
 7. **Version drift.** FFmpeg 9.0.x is out, and master changed edit-list handling on 2026-10-12. Store the ffprobe version in each ref and refuse mixed versions.
-8. **r_frame_rate** is reproduced only for CFR (stage 1). VFR values depend on probesize and bitrate. Nominal FPS for VFR is shown as "dominant rate" or none: confirm with the user.
+8. **r_frame_rate** is reproduced only for CFR (stage 1). VFR values depend on probesize and bitrate. Nominal FPS for VFR is shown as "dominant rate" or none (decided: dominant rate).
 9. **Frame count display.** The proposal shows presented frames as primary, with stored samples (`nb_frames`) as secondary.
 10. **Partially handled features.** Multi-segment edit lists, rate != 1, dwell edits, missing trex and cmov are only flagged. The exact stage-1 index cut at an early elst end needs a source check.
 
