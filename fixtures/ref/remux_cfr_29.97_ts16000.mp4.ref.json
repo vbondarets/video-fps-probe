@@ -1,0 +1,242 @@
+{
+  "schema": 1,
+  "file": "remux_cfr_29.97_ts16000.mp4",
+  "bytes": 74282,
+  "ffprobeVersion": "ffprobe version 8.1.1-full_build-www.gyan.dev Copyright (c) 2007-2026 the FFmpeg developers",
+  "countFrames": true,
+  "ok": true,
+  "exitCode": 0,
+  "stderr": [],
+  "probeExit": 0,
+  "probeErr": null,
+  "probe": {
+    "streams": [
+      {
+        "index": 0,
+        "codec_name": "vp9",
+        "codec_long_name": "Google VP9",
+        "profile": "Profile 0",
+        "codec_type": "video",
+        "codec_tag_string": "vp09",
+        "codec_tag": "0x39307076",
+        "mime_codec_string": "vp09.00.10.08",
+        "width": 160,
+        "height": 90,
+        "coded_width": 160,
+        "coded_height": 90,
+        "has_b_frames": 0,
+        "sample_aspect_ratio": "1:1",
+        "display_aspect_ratio": "16:9",
+        "pix_fmt": "yuv420p",
+        "level": -99,
+        "color_range": "tv",
+        "color_space": "unknown",
+        "color_transfer": "unknown",
+        "color_primaries": "unknown",
+        "chroma_location": "unspecified",
+        "field_order": "progressive",
+        "refs": 1,
+        "id": "0x1",
+        "r_frame_rate": "30000/1001",
+        "avg_frame_rate": "30000/1001",
+        "time_base": "1/16000",
+        "start_pts": 0,
+        "start_time": "0.000000",
+        "duration_ts": 48048,
+        "duration": "3.003000",
+        "bit_rate": "193286",
+        "max_bit_rate": "N/A",
+        "bits_per_raw_sample": "N/A",
+        "nb_frames": "90",
+        "nb_read_frames": "90",
+        "nb_read_packets": "90",
+        "disposition": {
+          "default": 1,
+          "dub": 0,
+          "original": 0,
+          "comment": 0,
+          "lyrics": 0,
+          "karaoke": 0,
+          "forced": 0,
+          "hearing_impaired": 0,
+          "visual_impaired": 0,
+          "clean_effects": 0,
+          "attached_pic": 0,
+          "timed_thumbnails": 0,
+          "non_diegetic": 0,
+          "captions": 0,
+          "descriptions": 0,
+          "metadata": 0,
+          "dependent": 0,
+          "still_image": 0,
+          "multilayer": 0
+        },
+        "tags": {
+          "language": "und",
+          "handler_name": "VideoHandler",
+          "encoder": "Lavc libvpx-vp9"
+        }
+      }
+    ],
+    "format": {
+      "filename": "remux_cfr_29.97_ts16000.mp4",
+      "nb_streams": 1,
+      "nb_programs": 0,
+      "nb_stream_groups": 0,
+      "format_name": "mov,mp4,m4a,3gp,3g2,mj2",
+      "format_long_name": "QuickTime / MOV",
+      "start_time": "0.000000",
+      "duration": "3.003000",
+      "size": "74282",
+      "bit_rate": "197887",
+      "probe_score": 100,
+      "tags": {
+        "major_brand": "isom",
+        "minor_version": "512",
+        "compatible_brands": "isomiso2mp41",
+        "encoder": "Lavf62.12.101"
+      }
+    }
+  },
+  "format": {
+    "format_name": "mov,mp4,m4a,3gp,3g2,mj2",
+    "duration": "3.003000",
+    "size": "74282",
+    "bit_rate": "197887",
+    "nb_streams": 1,
+    "start_time": "0.000000"
+  },
+  "streams": [
+    {
+      "index": 0,
+      "codec_type": "video",
+      "codec_name": "vp9",
+      "attachedPic": false
+    }
+  ],
+  "attachedPicStreams": [],
+  "videoStreams": [
+    {
+      "index": 0,
+      "codecName": "vp9",
+      "width": 160,
+      "height": 90,
+      "timeBase": "1/16000",
+      "packets": 90,
+      "presentedPackets": 90,
+      "discardedPackets": 0,
+      "keyframes": 3,
+      "ptsPresented": [0, 528, 1072, 1600, 2128, 2672, 3200, 3744, 4272, 4800, 5344, 5872, 6400, 6944, 7472, 8016, 8544, 9072, 9616, 10144, 10672, 11216, 11744, 12272, 12816, 13344, 13888, 14416, 14944, 15488, 16016, 16544, 17088, 17616, 18144, 18688, 19216, 19760, 20288, 20816, 21360, 21888, 22416, 22960, 23488, 24032, 24560, 25088, 25632, 26160, 26688, 27232, 27760, 28288, 28832, 29360, 29904, 30432, 30960, 31504, 32032, 32560, 33104, 33632, 34160, 34704, 35232, 35776, 36304, 36832, 37376, 37904, 38432, 38976, 39504, 40048, 40576, 41104, 41648, 42176, 42704, 43248, 43776, 44304, 44848, 45376, 45920, 46448, 46976, 47520],
+      "deltas": [528, 544, 528, 528, 544, 528, 544, 528, 528, 544, 528, 528, 544, 528, 544, 528, 528, 544, 528, 528, 544, 528, 528, 544, 528, 544, 528, 528, 544, 528, 528, 544, 528, 528, 544, 528, 544, 528, 528, 544, 528, 528, 544, 528, 544, 528, 528, 544, 528, 528, 544, 528, 528, 544, 528, 544, 528, 528, 544, 528, 528, 544, 528, 528, 544, 528, 544, 528, 528, 544, 528, 528, 544, 528, 544, 528, 528, 544, 528, 528, 544, 528, 528, 544, 528, 544, 528, 528, 544],
+      "deltasExcludingTail": [528, 544, 528, 528, 544, 528, 544, 528, 528, 544, 528, 528, 544, 528, 544, 528, 528, 544, 528, 528, 544, 528, 528, 544, 528, 544, 528, 528, 544, 528, 528, 544, 528, 528, 544, 528, 544, 528, 528, 544, 528, 528, 544, 528, 544, 528, 528, 544, 528, 528, 544, 528, 528, 544, 528, 544, 528, 528, 544, 528, 528, 544, 528, 528, 544, 528, 544, 528, 528, 544, 528, 528, 544, 528, 544, 528, 528, 544, 528, 528, 544, 528, 528, 544, 528, 544, 528, 528],
+      "arraysOmitted": false,
+      "duplicateTimestamps": 0,
+      "reorderDepth": 0,
+      "tailDropped": 1,
+      "deltaHistogramAll": {
+        "528": 56,
+        "544": 33
+      },
+      "deltaHistogramExcludingTail": {
+        "528": 56,
+        "544": 32
+      },
+      "instFpsAll": {
+        "count": 89,
+        "minDeltaTicks": 528,
+        "maxDeltaTicks": 544,
+        "distinctDeltas": 2,
+        "minFps": {
+          "num": 500,
+          "den": 17,
+          "value": 29.41176470588235
+        },
+        "maxFps": {
+          "num": 1000,
+          "den": 33,
+          "value": 30.303030303030305
+        }
+      },
+      "instFpsExcludingTail": {
+        "count": 88,
+        "minDeltaTicks": 528,
+        "maxDeltaTicks": 544,
+        "distinctDeltas": 2,
+        "minFps": {
+          "num": 500,
+          "den": 17,
+          "value": 29.41176470588235
+        },
+        "maxFps": {
+          "num": 1000,
+          "den": 33,
+          "value": 30.303030303030305
+        }
+      },
+      "vfr": {
+        "isVfr": false,
+        "medianDeltaTicks": 528,
+        "toleranceTicks": 16,
+        "vfrRatio": 1.0303030303030303
+      },
+      "avgFromPts": {
+        "frames": 90,
+        "firstPts": 0,
+        "lastPts": 47520,
+        "lastDurationTicks": 533,
+        "spanTicks": 48053,
+        "fps": {
+          "num": 1440000,
+          "den": 48053,
+          "value": 29.966911535179907
+        }
+      },
+      "lastPacketEnd": {
+        "ticks": 48053,
+        "seconds": 3.0033125
+      }
+    }
+  ],
+  "videos": [
+    {
+      "index": 0,
+      "codec_name": "vp9",
+      "profile": "Profile 0",
+      "codec_tag_string": "vp09",
+      "width": 160,
+      "height": 90,
+      "avg_frame_rate": "30000/1001",
+      "r_frame_rate": "30000/1001",
+      "avg_fps": 29.97002997002997,
+      "r_fps": 29.97002997002997,
+      "nb_frames": "90",
+      "nb_read_frames": "90",
+      "duration": "3.003000",
+      "start_time": "0.000000",
+      "time_base": "1/16000",
+      "has_b_frames": 0,
+      "packets": {
+        "packets": 90,
+        "keyframes": 3,
+        "discardedPackets": 0,
+        "ptsDeltaMinTicks": 528,
+        "ptsDeltaMaxTicks": 544,
+        "distinctDeltas": 2,
+        "minInstFps": 29.41176470588235,
+        "maxInstFps": 30.3030303030303,
+        "zeroDeltas": 0,
+        "ptsFirstSec": 0,
+        "ptsLastSec": 2.97,
+        "avgFpsFromPts": 29.966911535179907,
+        "avgFpsFromSpan": 29.966329966329965,
+        "durMinTicks": 533,
+        "durMaxTicks": 533,
+        "vfrByDeltaRatio": false,
+        "minInstFpsByDur": 30.018761726078797,
+        "maxInstFpsByDur": 30.018761726078797,
+        "minInstFpsByDts": 29.41176470588235,
+        "maxInstFpsByDts": 30.3030303030303
+      }
+    }
+  ]
+}
