@@ -103,6 +103,16 @@ h264_vfr_remux.mkv	matroska	vfr	ok	yes	VFR MP4 stream-copied to Matroska: Defaul
 vp9_pipe_t10.webm	webm	live	ok	yes	3 s source piped with -t 10: Info Duration says 10.000 but 90 frames end at 3.0 s	files/vp9_pipe_t10.webm
 vp9_opus_live_audiotail.webm	webm	live	ok	yes	3 s video + 6 s Opus, -live 1: last cluster holds no video, the tail scan must reach the last video PTS (2.967 s)	files/vp9_opus_live_audiotail.webm
 h264_25_cover.mkv	matroska	cover	ok	yes	Matroska with an attached cover.png: ffprobe lists an attached_pic stream (r 90000/1) that the app ignores	files/h264_25_cover.mkv
+remux_cfr_120_ts16000.mp4	mp4	cfr	ok	yes	cfr_vp9_120.webm stream-copied to MP4 (MKV-to-MP4 remux): timescale 16000, PTS on a 1 ms grid, so deltas differ by 16 ticks; CFR 120, 1 ms quantized	files/remux_cfr_120_ts16000.mp4
+remux_cfr_29.97_ts16000.mp4	mp4	cfr	ok	yes	cfr_vp9_29.97.webm stream-copied to MP4 (MKV-to-MP4 remux): timescale 16000, PTS on a 1 ms grid, so deltas differ by 16 ticks; CFR 30000/1001, 1 ms quantized	files/remux_cfr_29.97_ts16000.mp4
+start_freeze_bf.mp4	mp4	vfr	ok	yes	first frame held 2 s, then 30 fps, B-frames + elst: stts starts 60000, 1000, 60000; avg_frame_rate 1125/67 differs from presented frames / span 4500/209	files/start_freeze_bf.mp4
+fmp4_missing_fragment.mp4	mp4	fmp4	ok	yes	fragmented 30 fps with the 3rd moof+mdat removed: tfdt jumps 1 s, avg_frame_rate 30/1, presented frames / span 25/1	files/fmp4_missing_fragment.mp4
+elst_trim_vfr_copy.mp4	mp4	vfr	ok	yes	vfr_two_phase_5_200.mp4 trimmed with -ss 0.95 -c copy: elst skips 5 stored frames, avg_frame_rate counts them	files/elst_trim_vfr_copy.mp4
+cfr_240_ts600.mp4	mp4	cfr	ok	yes	240 fps at timescale 600 (QuickTime-like slow motion): deltas alternate 3 and 2 ticks, nominal 240/1	files/cfr_240_ts600.mp4
+fmp4_global_sidx_bframes.mp4	mp4	fmp4	ok	yes	plain ffmpeg DASH output with B-frames: global sidx with earliest_presentation_time 1024, ffprobe duration = ept + subsegment durations (4.08 s, format 4.16 s)	files/fmp4_global_sidx_bframes.mp4
 long_cfr_3h_60fps.mp4	mp4	long	ok	no	3 h x 60 fps = 648000 frames, 64x36, crf 51: 13 MB, moov 2.6 MB at the end (stsz 4 B/frame)	large/long_cfr_3h_60fps.mp4
 long_vfr_1h_screenrec.mp4	mp4	long	ok	no	1 h VFR screen-recording-like: 133920 frames, stts has 124761 entries (~1 MB)	large/long_vfr_1h_screenrec.mp4
+big_1080p_moov_end.mp4	mp4	big	ok	no	60 s of 1080p30 H.264 with film-grain noise, CRF 21 (604 MB), moov at the end: a phone-sized upload, measured in the browser	large/big_1080p_moov_end.mp4
+big_1080p_faststart.mp4	mp4	big	ok	no	the same file with -movflags +faststart (moov before mdat)	large/big_1080p_faststart.mp4
+big_1080p.mkv	matroska	big	ok	no	the same stream copied to Matroska: auto mode decides between probe and exact by the predicted scan cost	large/big_1080p.mkv
 sparse_4_5gb_co64.mp4	mp4	sparse	ok	no	SPARSE 4.5 GB logical: ftyp + mdat(64-bit, hole+payload) + moov(co64, offsets > 2^32) at 4.5 GB; ~87 KB real data. Do NOT copy with tools that expand sparse files	large/sparse_4_5gb_co64.mp4
