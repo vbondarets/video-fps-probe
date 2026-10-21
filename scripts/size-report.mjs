@@ -10,15 +10,59 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const KB = 1000;
 
 export const BUDGETS = {
-  main: { label: 'main (React + UI)', limit: 75 * KB },
-  worker: { label: 'parser worker', limit: 12 * KB },
-  rvfc: { label: 'lazy rVFC fallback', limit: 2 * KB },
-  initial: { label: 'initial total (main + worker + CSS)', limit: 85 * KB },
+  main: {
+    label: 'main (React + UI)',
+    limit: 75 * KB,
+    required: true,
+    why: 'User-facing goal, unchanged. React and ReactDOM are about 67.5 KB gzip of it. Measured 73.86 KB at gzip -9 when the limit was reviewed (the Vite build log prints 74.79 KB for the same chunk; both fit), so there is little room: new UI code has to be lazy.',
+  },
+  worker: {
+    label: 'worker entry (core + glue)',
+    limit: 7.5 * KB,
+    required: true,
+    why: 'Sniffing, reader, options, timeline statistics, message glue and the code the lazy parsers and comparison engines share. Both own parsers are lazy chunks. Measured 6.56 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB.',
+  },
+  isobmff: {
+    label: 'ISO BMFF parser chunk',
+    limit: 13.5 * KB,
+    required: true,
+    why: 'Own MP4 and MOV parser, fetched by the worker only when a file sniffs as ISO BMFF. Measured 11.94 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB.',
+  },
+  matroska: {
+    label: 'Matroska parser chunk',
+    limit: 12 * KB,
+    required: true,
+    why: 'Own Matroska and WebM parser, fetched by the worker only when a file sniffs as EBML. Measured 10.73 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB.',
+  },
+  rvfc: {
+    label: 'lazy rVFC fallback',
+    limit: 2.5 * KB,
+    required: false,
+    why: 'Loaded on demand from the main chunk. Measured 1.94 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB.',
+  },
+  initial: {
+    label: 'initial (main + CSS + worker entry)',
+    limit: 85 * KB,
+    required: true,
+    why: 'User-facing goal, unchanged: the page, its styles and the worker entry, before any file is analysed. Measured 82.05 KB when set.',
+  },
+  firstMp4: {
+    label: 'first MP4 analysis (initial + ISO BMFF chunk)',
+    limit: 100 * KB,
+    required: true,
+    why: 'User-facing promise: page plus first MP4 or MOV result stays under 100 KB gzip. Measured 93.99 KB when set. The component limits add up to 98.5 KB, so this only trips when something outside the budgeted chunks, such as a new shared chunk, joins the path.',
+  },
+  firstMkv: {
+    label: 'first Matroska analysis (initial + Matroska chunk)',
+    limit: 100 * KB,
+    required: true,
+    why: 'User-facing promise: page plus first MKV or WebM result stays under 100 KB gzip. Measured 92.78 KB when set. The component limits add up to 97 KB, so this only trips when something outside the budgeted chunks joins the path.',
+  },
 };
 
 const USAGE = `Usage: node scripts/size-report.mjs [distDir=dist] [--check] [--out <dir>] [--self-test]
 
-  --check       exit 1 when a budget is exceeded or the main or worker chunk is missing
+  --check       exit 1 when a budget is exceeded or a required chunk (main, worker entry, either parser) is missing
   --out <dir>   where size.md and size.json are written (default report)
   --self-test   check chunk discovery and budgets on synthetic builds and exit
 `;
@@ -176,7 +220,12 @@ const LAZY_BY_NAME = [
   ['rvfc', /rvfc/i],
   ['mp4box', /mp4box/i],
   ['mediabunny', /mediabunny/i],
+  ['isobmff', /^isobmff[-.]/i],
+  ['matroska', /^matroska[-.]/i],
 ];
+const ENGINE_KINDS = new Set(['mp4box', 'mediabunny', 'engine-shared']);
+const PARSER_KINDS = new Set(['isobmff', 'matroska', 'parser-shared']);
+const PARSER_ENTRIES = ['isobmff', 'matroska'];
 
 export function discover(distDir) {
   const files = walk(distDir);
@@ -260,43 +309,82 @@ export function discover(distDir) {
     else if (dynamic.includes(f)) kinds.set(f, 'lazy');
     else kinds.set(f, 'other');
   }
-  return { files, kinds, method, workerMethod, notes, main };
+  const importers = new Map();
+  for (const f of js) {
+    for (const dep of scanReferences(texts.get(f), f, fileSet).staticImports) {
+      if (!importers.has(dep)) importers.set(dep, new Set());
+      importers.get(dep).add(f);
+    }
+  }
+  const groups = [
+    [ENGINE_KINDS, 'engine-shared'],
+    [PARSER_KINDS, 'parser-shared'],
+  ];
+  for (let changed = true; changed; ) {
+    changed = false;
+    for (const f of js) {
+      if (kinds.get(f) !== 'other') continue;
+      const from = importers.get(f);
+      const group = from && groups.find(([members]) => [...from].every((i) => members.has(kinds.get(i))));
+      if (group) {
+        kinds.set(f, group[1]);
+        changed = true;
+      }
+    }
+  }
+  const parserDeps = new Map();
+  for (const f of js) if (PARSER_ENTRIES.includes(kinds.get(f))) parserDeps.set(f, closureOf(f, fileSet, texts));
+  return { files, kinds, method, workerMethod, notes, main, parserDeps };
 }
 
 export function buildReport(distDir) {
-  const { files, kinds, method, workerMethod, notes } = discover(distDir);
+  const { files, kinds, method, workerMethod, notes, parserDeps } = discover(distDir);
   const chunks = files.map((file) => ({ file, kind: kinds.get(file), ...measure(readFileSync(join(distDir, file))) }));
-  const sum = (kindsWanted, key) => chunks.filter((c) => kindsWanted.includes(c.kind)).reduce((n, c) => n + c[key], 0);
+  const byFile = new Map(chunks.map((c) => [c.file, c]));
+  const ofKind = (wanted) => chunks.filter((c) => wanted.includes(c.kind));
+  const totalOf = (list) => ({
+    files: list.map((c) => c.file),
+    raw: list.reduce((n, c) => n + c.raw, 0),
+    gzip: list.reduce((n, c) => n + c.gzip, 0),
+    brotli: list.reduce((n, c) => n + c.brotli, 0),
+  });
   const has = (kind) => chunks.some((c) => c.kind === kind);
-  const initialKinds = ['main', 'worker', 'shared', 'css'];
-  const initial = {
-    raw: sum(initialKinds, 'raw'),
-    gzip: sum(initialKinds, 'gzip'),
-    brotli: sum(initialKinds, 'brotli'),
+  const initialChunks = ofKind(['main', 'worker', 'shared', 'css']);
+  const initial = totalOf(initialChunks);
+  const afterParser = (kind) => {
+    const parsers = ofKind([kind]);
+    const extra = new Set(parsers.map((c) => c.file));
+    for (const p of parsers) for (const dep of parserDeps.get(p.file) ?? []) extra.add(dep);
+    for (const c of initialChunks) extra.delete(c.file);
+    const list = [...initialChunks, ...[...extra].map((f) => byFile.get(f)).filter(Boolean)];
+    return { present: has('main') && parsers.length > 0, total: totalOf(list) };
   };
-  const budget = (key, kinds, value, required, fileKinds = kinds) => {
-    const present = kinds.some(has);
-    const limit = BUDGETS[key].limit;
+  const firstMp4 = afterParser('isobmff');
+  const firstMkv = afterParser('matroska');
+  const evaluate = (key, present, value, fileList) => {
+    const { label, limit, required, why } = BUDGETS[key];
     let status = 'ok';
     if (!present) status = required ? 'missing' : 'not built';
     else if (value > limit) status = 'over';
-    return {
-      key,
-      label: BUDGETS[key].label,
-      limit,
-      gzip: present ? value : null,
-      status,
-      files: chunks.filter((c) => fileKinds.includes(c.kind)).map((c) => c.file),
-    };
+    return { key, label, limit, gzip: present ? value : null, headroom: present ? limit - value : null, status, files: fileList, why };
+  };
+  const ofKindBudget = (key, kind) => {
+    const list = ofKind([kind]);
+    return evaluate(key, list.length > 0, totalOf(list).gzip, list.map((c) => c.file));
   };
   const budgets = [
-    budget('main', ['main'], sum(['main'], 'gzip'), true),
-    budget('worker', ['worker'], sum(['worker'], 'gzip'), true),
-    budget('rvfc', ['rvfc'], sum(['rvfc'], 'gzip'), false),
-    budget('initial', ['main'], initial.gzip, true, initialKinds),
+    ofKindBudget('main', 'main'),
+    ofKindBudget('worker', 'worker'),
+    ofKindBudget('isobmff', 'isobmff'),
+    ofKindBudget('matroska', 'matroska'),
+    ofKindBudget('rvfc', 'rvfc'),
+    evaluate('initial', has('main'), initial.gzip, initial.files),
+    evaluate('firstMp4', firstMp4.present, firstMp4.total.gzip, firstMp4.total.files),
+    evaluate('firstMkv', firstMkv.present, firstMkv.total.gzip, firstMkv.total.files),
   ];
   const failures = budgets.filter((b) => b.status === 'over' || b.status === 'missing');
-  return { distDir, method, workerMethod, notes, chunks, initial, budgets, failures: failures.map((b) => `${b.label}: ${b.status}`) };
+  const composites = { initial, firstMp4: firstMp4.total, firstMatroska: firstMkv.total };
+  return { distDir, method, workerMethod, notes, chunks, initial, composites, budgets, failures: failures.map((b) => `${b.label}: ${b.status}`) };
 }
 
 export function renderMarkdown(report, label) {
@@ -304,33 +392,42 @@ export function renderMarkdown(report, label) {
   out.push('# Bundle size');
   out.push('');
   out.push(
-    `Production build in \`${label}\`, measured by \`scripts/size-report.mjs\`. KB means 1000 bytes. gzip is zlib level 9 and brotli is quality 11, per chunk. The initial total is the sum of the per-chunk gzip sizes of main, worker, shared chunks and CSS. Discovery: ${report.method}; worker: ${report.workerMethod}.`,
+    `Production build in \`${label}\`, measured by \`scripts/size-report.mjs\`. KB means 1000 bytes. gzip is zlib level 9 and brotli is quality 11, per chunk. Composite rows (initial, first analysis) are sums of the per-chunk sizes. Discovery: ${report.method}; worker: ${report.workerMethod}.`,
   );
   out.push('');
   for (const n of report.notes) out.push(`Note: ${n}.`, '');
   out.push('## Budgets (gzip)');
   out.push('');
-  out.push('| Budget | Limit | Actual | Status | Files |');
-  out.push('|---|---:|---:|---|---|');
+  out.push('| Budget | Limit | Actual | Headroom | Status | Files |');
+  out.push('|---|---:|---:|---:|---|---|');
   for (const b of report.budgets) {
-    out.push(`| ${b.label} | ${kb(b.limit)} | ${b.gzip === null ? '-' : kb(b.gzip)} | ${b.status} | ${b.files.join(', ') || '-'} |`);
+    out.push(`| ${b.label} | ${kb(b.limit)} | ${b.gzip === null ? '-' : kb(b.gzip)} | ${b.headroom === null ? '-' : kb(b.headroom)} | ${b.status} | ${b.files.join(', ') || '-'} |`);
   }
   out.push('');
-  out.push('The lazy mp4box and mediabunny comparison chunks are reported but not budgeted.');
+  out.push('The lazy mp4box and mediabunny comparison chunks (and the chunk they share) are reported but not budgeted.');
+  out.push('');
+  out.push('## Why these limits');
+  out.push('');
+  for (const b of report.budgets) out.push(`- **${b.label}** (${kb(b.limit)}): ${b.why}`);
   out.push('');
   out.push('## Chunks');
   out.push('');
   out.push('| File | Kind | Raw | gzip -9 | brotli q11 |');
   out.push('|---|---|---:|---:|---:|');
   for (const c of report.chunks) out.push(`| ${c.file} | ${c.kind} | ${kb(c.raw)} | ${kb(c.gzip)} | ${kb(c.brotli)} |`);
-  out.push(`| **initial total** | main + worker + shared + CSS | ${kb(report.initial.raw)} | ${kb(report.initial.gzip)} | ${kb(report.initial.brotli)} |`);
+  const rows = [
+    ['initial', 'main + CSS + worker entry', report.composites.initial],
+    ['first MP4 analysis', 'initial + ISO BMFF chunk', report.composites.firstMp4],
+    ['first Matroska analysis', 'initial + Matroska chunk', report.composites.firstMatroska],
+  ];
+  for (const [name, what, t] of rows) out.push(`| **${name}** | ${what} | ${kb(t.raw)} | ${kb(t.gzip)} | ${kb(t.brotli)} |`);
   out.push('');
   return `${out.join('\n')}\n`;
 }
 
 function printReport(report) {
   for (const b of report.budgets) {
-    console.log(`${b.label.padEnd(40)} ${(b.gzip === null ? '-' : kb(b.gzip)).padStart(10)} / ${kb(b.limit).padStart(9)}  ${b.status}`);
+    console.log(`${b.label.padEnd(52)} ${(b.gzip === null ? '-' : kb(b.gzip)).padStart(10)} / ${kb(b.limit).padStart(9)}  ${b.status}`);
   }
 }
 
@@ -348,17 +445,27 @@ function runSelfTest() {
     mkdirSync(dirname(p), { recursive: true });
     writeFileSync(p, content, 'latin1');
   };
+  const limit = (key) => BUDGETS[key].limit;
   const html = '<!doctype html><html><head><link rel="stylesheet" crossorigin href="./assets/index-C1.css"><script type="module" crossorigin src="./assets/index-M1.js"></script></head><body></body></html>';
   const mainText = (extra) =>
-    `const w=new Worker(new URL("assets/analyze.worker-W1.js",import.meta.url),{type:"module"});const a=()=>import("./rvfc-R1.js");const b=()=>import("./mp4box-B1.js");const c=()=>import("./mediabunny-D1.js");${extra}`;
-  const build = (name, sizes, { manifest, withHtml = true }) => {
+    `const w=new Worker(new URL("assets/analyze.worker-W1.js",import.meta.url),{type:"module"});const a=()=>import("./rvfc-R1.js");${extra}`;
+  const workerText = (extra) =>
+    `self.onmessage=e=>{postMessage(1)};const a=()=>import(\`./isobmff-I1.js\`);const b=()=>import(\`./matroska-K1.js\`);const c=()=>import(\`./mp4box-B1.js\`);const d=()=>import(\`./mediabunny-D1.js\`);${extra}`;
+  const sizesOf = (over = {}) => ({ main: 30_000, worker: 5_000, rvfc: 1_000, isobmff: 8_000, matroska: 7_000, css: 100, isobmffShared: 0, ...over });
+  const build = (name, overrides, { manifest = true, withHtml = true } = {}) => {
+    const sizes = sizesOf(overrides);
     const dir = join(root, name);
     write(dir, 'assets/index-M1.js', mainText(filler(sizes.main)));
-    write(dir, 'assets/analyze.worker-W1.js', `self.onmessage=e=>{postMessage(1)};${filler(sizes.worker)}`);
+    write(dir, 'assets/analyze.worker-W1.js', workerText(filler(sizes.worker)));
+    const shared = sizes.isobmffShared > 0;
+    write(dir, 'assets/isobmff-I1.js', `import{a as e}from"./analyze.worker-W1.js";${shared ? 'import{b as f}from"./shared-P1.js";' : ''}${filler(sizes.isobmff)}`);
+    if (shared) write(dir, 'assets/shared-P1.js', filler(sizes.isobmffShared));
+    if (sizes.matroska > 0) write(dir, 'assets/matroska-K1.js', `import{a as e}from"./analyze.worker-W1.js";${filler(sizes.matroska)}`);
     write(dir, 'assets/rvfc-R1.js', filler(sizes.rvfc));
-    write(dir, 'assets/mp4box-B1.js', filler(40_000));
-    write(dir, 'assets/mediabunny-D1.js', filler(50_000));
-    write(dir, 'assets/index-C1.css', 'body{margin:0}');
+    write(dir, 'assets/mp4box-B1.js', `import{a as e}from"./counting-C1.js";${filler(40_000)}`);
+    write(dir, 'assets/mediabunny-D1.js', `import{a as e}from"./counting-C1.js";${filler(50_000)}`);
+    write(dir, 'assets/counting-C1.js', filler(3_000));
+    write(dir, 'assets/index-C1.css', filler(sizes.css));
     if (withHtml) write(dir, 'index.html', html);
     if (manifest) {
       const m = {
@@ -369,23 +476,33 @@ function runSelfTest() {
     }
     return dir;
   };
+  const statusOf = (report, key) => report.budgets.find((b) => b.key === key).status;
   try {
-    const small = { main: 30_000, worker: 5_000, rvfc: 1_000 };
     for (const [label, opts] of [
       ['manifest', { manifest: true }],
       ['html', { manifest: false }],
       ['heuristic', { manifest: false, withHtml: false }],
     ]) {
-      const r = buildReport(build(`ok-${label}`, small, opts));
+      const r = buildReport(build(`ok-${label}`, { isobmffShared: 2_000 }, opts));
       const kind = (f) => r.chunks.find((c) => c.file === f)?.kind;
       expectEq(`${label}: main`, kind('assets/index-M1.js'), 'main');
       expectEq(`${label}: worker`, kind('assets/analyze.worker-W1.js'), 'worker');
+      expectEq(`${label}: isobmff`, kind('assets/isobmff-I1.js'), 'isobmff');
+      expectEq(`${label}: matroska`, kind('assets/matroska-K1.js'), 'matroska');
+      expectEq(`${label}: parser shared chunk`, kind('assets/shared-P1.js'), 'parser-shared');
       expectEq(`${label}: rvfc`, kind('assets/rvfc-R1.js'), 'rvfc');
       expectEq(`${label}: mp4box`, kind('assets/mp4box-B1.js'), 'mp4box');
       expectEq(`${label}: mediabunny`, kind('assets/mediabunny-D1.js'), 'mediabunny');
+      expectEq(`${label}: engine shared chunk`, kind('assets/counting-C1.js'), 'engine-shared');
       expectEq(`${label}: css`, kind('assets/index-C1.css'), 'css');
       expectEq(`${label}: no failures`, r.failures.length, 0);
-      expectEq(`${label}: initial excludes lazy chunks`, r.initial.raw < 40_000 + 5_000 + 1_000 + 30_000 + 100, true);
+      expectEq(`${label}: initial excludes lazy chunks`, r.composites.initial.files.length, 3);
+      expectEq(`${label}: first MP4 adds the parser and its shared chunk`, r.composites.firstMp4.files.length, 5);
+      expectEq(`${label}: first MP4 has no Matroska`, r.composites.firstMp4.files.includes('assets/matroska-K1.js'), false);
+      expectEq(`${label}: first Matroska adds only its parser`, r.composites.firstMatroska.files.length, 4);
+      const gz = (files) => files.reduce((n, f) => n + r.chunks.find((c) => c.file === f).gzip, 0);
+      expectEq(`${label}: first MP4 total is the sum of its chunks`, r.composites.firstMp4.gzip, gz(r.composites.firstMp4.files));
+      expectEq(`${label}: first MP4 is initial plus parser plus shared`, r.composites.firstMp4.gzip, r.composites.initial.gzip + gz(['assets/isobmff-I1.js', 'assets/shared-P1.js']));
     }
     const vite8 = (name, { manifestAssets, withRef }) => {
       const dir = join(root, name);
@@ -406,22 +523,47 @@ function runSelfTest() {
     const viaAssets = vite8('vite8-manifest-assets', { manifestAssets: true, withRef: false });
     expectEq('vite 8 manifest assets: worker found', viaAssets.chunks.find((c) => c.file === 'assets/w-W1.js')?.kind, 'worker');
     expectEq('vite 8 manifest assets: method', viaAssets.workerMethod, 'vite manifest assets');
-    const over = buildReport(build('over', { main: 76_000, worker: 13_000, rvfc: 3_000 }, { manifest: true }));
-    const status = Object.fromEntries(over.budgets.map((b) => [b.key, b.status]));
-    expectEq('over: main', status.main, 'over');
-    expectEq('over: worker', status.worker, 'over');
-    expectEq('over: rvfc', status.rvfc, 'over');
-    expectEq('over: initial', status.initial, 'over');
-    const edge = buildReport(build('edge', { main: 74_000, worker: 11_500, rvfc: 1_500 }, { manifest: true }));
-    expectEq('edge: initial total over 85 KB while parts are under', edge.budgets.find((b) => b.key === 'initial').status, 'over');
-    expectEq('edge: main ok', edge.budgets.find((b) => b.key === 'main').status, 'ok');
+    const over = buildReport(
+      build('over', {
+        main: limit('main') + 2_000,
+        worker: limit('worker') + 1_000,
+        rvfc: limit('rvfc') + 1_000,
+        isobmff: limit('isobmff') + 3_000,
+        matroska: limit('matroska') + 3_000,
+      }),
+    );
+    for (const key of ['main', 'worker', 'isobmff', 'matroska', 'rvfc', 'initial', 'firstMp4', 'firstMkv']) expectEq(`over: ${key}`, statusOf(over, key), 'over');
+    const fit = buildReport(
+      build('fit', {
+        main: limit('main') - 1_500,
+        worker: limit('worker') - 1_500,
+        isobmff: limit('isobmff') - 1_500,
+        matroska: limit('matroska') - 1_500,
+        rvfc: limit('rvfc') - 700,
+      }),
+    );
+    expectEq('fit: no failures', fit.failures.length, 0);
+    const edgeInitial = buildReport(build('edge-initial', { main: limit('main') - 800, worker: limit('worker') - 800, css: 4_500 }));
+    expectEq('edge: initial over while main and worker are ok', statusOf(edgeInitial, 'initial'), 'over');
+    expectEq('edge: main ok', statusOf(edgeInitial, 'main'), 'ok');
+    expectEq('edge: worker ok', statusOf(edgeInitial, 'worker'), 'ok');
+    const edgeShared = buildReport(build('edge-shared', { main: limit('main') - 1_500, isobmff: limit('isobmff') - 500, isobmffShared: 14_000 }));
+    expectEq('edge: parser shared chunk counts toward the first MP4 analysis', statusOf(edgeShared, 'firstMp4'), 'over');
+    expectEq('edge: parser budget still ok', statusOf(edgeShared, 'isobmff'), 'ok');
+    expectEq('edge: initial still ok', statusOf(edgeShared, 'initial'), 'ok');
+    expectEq('edge: first Matroska unaffected', statusOf(edgeShared, 'firstMkv'), 'ok');
+    const noMkv = buildReport(build('no-matroska', { matroska: 0 }));
+    expectEq('missing parser chunk is reported', statusOf(noMkv, 'matroska'), 'missing');
+    expectEq('missing parser makes the first analysis missing', statusOf(noMkv, 'firstMkv'), 'missing');
+    expectEq('missing parser fails', noMkv.failures.length, 2);
+    expectEq('other parser unaffected', statusOf(noMkv, 'firstMp4'), 'ok');
     const noWorkerDir = join(root, 'noworker');
     write(noWorkerDir, 'assets/index-M1.js', `console.log(1);${filler(1000)}`);
     write(noWorkerDir, 'index.html', html);
     const noWorker = buildReport(noWorkerDir);
-    expectEq('missing worker is reported', noWorker.budgets.find((b) => b.key === 'worker').status, 'missing');
+    expectEq('missing worker is reported', statusOf(noWorker, 'worker'), 'missing');
     expectEq('missing worker fails', noWorker.failures.length > 0, true);
-    expectEq('rvfc absent is not a failure', noWorker.budgets.find((b) => b.key === 'rvfc').status, 'not built');
+    expectEq('rvfc absent is not a failure', statusOf(noWorker, 'rvfc'), 'not built');
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -474,7 +616,7 @@ function main() {
     workerMethod: report.workerMethod,
     notes: report.notes,
     budgets: report.budgets,
-    initial: report.initial,
+    composites: report.composites,
     chunks: report.chunks,
   };
   writeFileSync(join(outDir, 'size.json'), `${JSON.stringify(json, null, 2)}\n`);
