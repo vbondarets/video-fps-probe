@@ -14,7 +14,7 @@ export const count = (n: number | null | undefined): string => (n === null || n 
 
 export function bytes(n: number): string {
   if (n < 1024) return `${n} B`;
-  const units = ['KB', 'MB', 'GB', 'TB'];
+  const units = ['KiB', 'MiB', 'GiB', 'TiB'];
   let v = n;
   let i = -1;
   do {
@@ -37,6 +37,7 @@ export function duration(s: number | null | undefined): string {
 }
 
 export function share(x: number): string {
+  if (x > 0 && x < 0.001) return '<0.1%';
   return `${(x * 100).toFixed(x > 0 && x < 0.1 ? 1 : 0)}%`;
 }
 
