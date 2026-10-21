@@ -5,6 +5,7 @@
 //   node make-corrupt.mjs truncate <in> <out> mdat-end|moov-half|ratio:<0..1>
 //   node make-corrupt.mjs mdat-size0 <in> <out>          set the (last) mdat 32-bit size to 0 ("extends to EOF")
 //   node make-corrupt.mjs stts-count <in> <out> <count>  overwrite the first stts entry_count with a lie
+//   node make-corrupt.mjs drop-fragment <in> <out> <n>   remove the n-th (1-based) moof and the mdat right after it
 import fs from 'node:fs';
 
 const [mode, a, b, c] = process.argv.slice(2);
@@ -57,6 +58,14 @@ if (mode === 'garbage') {
   const i = buf.indexOf(Buffer.from('stts'));
   buf.writeUInt32BE(Number(c) >>> 0, i + 8);
   fs.writeFileSync(b, buf);
+} else if (mode === 'drop-fragment') {
+  const buf = fs.readFileSync(a);
+  const t = top(buf);
+  const moofs = t.filter((x) => x.type === 'moof');
+  const moof = moofs[Number(c) - 1];
+  const next = moof ? t[t.indexOf(moof) + 1] : null;
+  if (!moof || !next || next.type !== 'mdat') throw new Error(`no moof+mdat pair number ${c}`);
+  fs.writeFileSync(b, Buffer.concat([buf.subarray(0, moof.pos), buf.subarray(next.pos + next.size)]));
 } else {
   console.error('unknown mode');
   process.exit(2);
