@@ -99,7 +99,7 @@ export function approxRational(value: number, relTol = 1e-9, maxDen = 1_000_000)
 export function applyStats(track: VideoTrackResult, stats: TimelineStats, source: Provenance = 'exact'): void {
   track.frames = stats.sampleCount;
   track.presentedFrames = stats.presentedFrames;
-  track.avgFps = stats.avgFps;
+  track.avgFps = stats.presentedAvgFps ?? stats.avgFps;
   track.avgFpsFfprobe = stats.avgFps ? stats.avgFpsString : null;
   track.rFpsFfprobe = stats.nominalFps?.kind === 'exact' ? `${stats.nominalFps.num}/${stats.nominalFps.den}` : null;
   track.nominalFps = stats.nominalFps;
