@@ -72,6 +72,16 @@ function histogram(values) {
   return Object.fromEntries([...h.entries()].sort((a, b) => a[0] - b[0]));
 }
 
+function msGridTicks(deltas, tbNum, tbDen) {
+  const perMs = tbDen / (1000 * tbNum);
+  if (!(perMs >= 1) || deltas.length === 0) return 0;
+  for (const d of new Set(deltas)) {
+    const v = d * tbNum * 1000;
+    if (!Number.isSafeInteger(v) || v % tbDen !== 0) return 0;
+  }
+  return perMs;
+}
+
 function fpsRange(deltas, tbNum, tbDen) {
   if (deltas.length === 0) return null;
   let mn = Infinity;
@@ -192,7 +202,7 @@ function analyzePackets(rows, timeBase) {
   if (used.length > 0) {
     const sorted = [...used].sort((a, b) => a - b);
     const median = sorted[Math.floor((sorted.length - 1) / 2)];
-    const tolerance = Math.max(1, Math.round(VFR_REL_TOL * median));
+    const tolerance = Math.max(1, Math.round(VFR_REL_TOL * median), msGridTicks(used, tbNum, tbDen));
     vfr = {
       isVfr: used.some((d) => Math.abs(d - median) > tolerance),
       medianDeltaTicks: median,
