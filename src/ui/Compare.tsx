@@ -106,7 +106,8 @@ export default function Compare({ row }: { row: Row }) {
                 <th scope="row">{label}</th>
                 {columns.map((c) => {
                   const r = resultOf(c);
-                  return <td key={c}>{r ? get(r) : '-'}</td>;
+                  const unmeasured = c === 'rvfc' && (label !== 'Time' || !!r?.error);
+                  return <td key={c}>{r && !unmeasured ? get(r) : '-'}</td>;
                 })}
               </tr>
             ))}
