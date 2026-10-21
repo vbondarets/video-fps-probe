@@ -38,7 +38,9 @@ jobs:
         run: npm ci
 
       - name: Build
-        run: npm run build
+        run: VITE_BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)" npm run build
+        env:
+          VITE_COMMIT: ${{ github.sha }}
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
