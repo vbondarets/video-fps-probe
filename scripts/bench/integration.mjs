@@ -892,8 +892,8 @@ const MEM_STEPS = [
   { id: 'loaded', label: 'page loaded, no worker yet', gc: true },
   { id: 'loaded2', label: 'same page 2 s later (noise reference)', gc: true },
   { id: 'first', label: 'after the first file', gc: true },
-  { id: 'batchPeak', label: 'right after 100 files, before GC', gc: false },
-  { id: 'batch', label: 'right after 100 files, after GC', gc: true },
+  { id: 'batchPeak', label: 'right after the batch, before GC', gc: false },
+  { id: 'batch', label: 'right after the batch, after GC', gc: true },
   { id: 'idle', label: '3 s idle after the batch, after GC', gc: true },
   { id: 'longPeak', label: 'right after the 3 h file, before GC', gc: false },
   { id: 'long', label: 'after the 3 h file, after GC', gc: true },
@@ -1251,6 +1251,8 @@ function profileText(p) {
   return `${p.downKbps >= 1000 ? `${p.downKbps / 1000} Mbps` : `${p.downKbps} kbps`} down, ${p.upKbps >= 1000 ? `${p.upKbps / 1000} Mbps` : `${p.upKbps} kbps`} up, ${p.latencyMs} ms latency`;
 }
 
+const batchN = (d) => d.main?.batchFiles ?? 'all';
+
 function headline(d) {
   const M = d.model;
   const out = [];
@@ -1258,10 +1260,10 @@ function headline(d) {
   out.push(`First MP4 lazily downloads ${fkb(M.lazyMp4Gzip)} gzip (glue + worker entry + ISO BMFF chunk): ${fpct(M.lazyMp4VsInitialPct)} of the host initial load, ${fpct(M.lazyMp4VsFullPct)} of the full app; both parsers ${fkb(M.lazyBothGzip)} (${fpct(M.lazyBothVsInitialPct)} / ${fpct(M.lazyBothVsFullPct)}).`);
   const lat = M.profiles.map((p) => `${p.label} ${fms(p.cold?.totalMs)} ms cold / ${fms(p.prefetch?.totalMs)} ms HTTP-prefetched / ${fms(p.prewarm?.totalMs)} ms prewarmed`);
   if (lat.length) out.push(`First MP4 from pick to result (host model, median of ${d.environment.options.reps}): ${lat.join('; ')}.`);
-  if (M.main) out.push(`Main thread on the host model: TBT ${fms(M.main.firstFileTbtMs)} ms for the first file, ${fms(M.main.coldBatchTbtMs)} ms for 100 files at once (cold), ${fms(M.main.warmBatchTbtMs)} ms warm, ${fms(M.main.longTbtMs)} ms for the 3 h file (no long tasks); probe main-thread CPU ${fms(M.main.firstFileProbeCpuMs)} ms for the first file and ${fms(M.main.coldBatchProbeCpuMs)} ms for 100 files, in short tasks.`);
-  if (M.memory) out.push(`Memory after use (host model, idle after 100 files, after GC, median of ${d.memory.reps} fresh browsers): +${fmb(M.memory.idle.jsAdded)} JS heap (page delta + ${M.memory.idle.workerCount} worker heaps), renderer private memory ${M.memory.idle.processPrivateDelta !== null ? `+${fmb(M.memory.idle.processPrivateDelta)}` : 'not measured'} (peak before GC +${fmb(M.memory.peak.processPrivateDelta)})${M.memory.probe ? `; of that the probe itself (minus the pick-and-list control) +${fmb(M.memory.probe.idle.processPrivateDelta)}, +${fmb(M.memory.probe.first.processPrivateDelta)} after the first file` : ''}.`);
+  if (M.main) out.push(`Main thread on the host model: TBT ${fms(M.main.firstFileTbtMs)} ms for the first file, ${fms(M.main.coldBatchTbtMs)} ms for ${batchN(d)} files at once (cold), ${fms(M.main.warmBatchTbtMs)} ms warm, ${fms(M.main.longTbtMs)} ms for the 3 h file (no long tasks); probe main-thread CPU ${fms(M.main.firstFileProbeCpuMs)} ms for the first file and ${fms(M.main.coldBatchProbeCpuMs)} ms for ${batchN(d)} files, in short tasks.`);
+  if (M.memory) out.push(`Memory after use (host model, idle after ${batchN(d)} files, after GC, median of ${d.memory.reps} fresh browsers): +${fmb(M.memory.idle.jsAdded)} JS heap (page delta + ${M.memory.idle.workerCount} worker heaps), renderer private memory ${M.memory.idle.processPrivateDelta !== null ? `+${fmb(M.memory.idle.processPrivateDelta)}` : 'not measured'} (peak before GC +${fmb(M.memory.peak.processPrivateDelta)})${M.memory.probe ? `; of that the probe itself (minus the pick-and-list control) +${fmb(M.memory.probe.idle.processPrivateDelta)}, +${fmb(M.memory.probe.first.processPrivateDelta)} after the first file` : ''}.`);
   const cpu = d.cpu?.perFile;
-  if (cpu) out.push(`Worker time per file (warm, median): ${Object.values(cpu).map((f) => `${f.name} ${fms(f.medianMs)} ms`).join(', ')}; 100 files ${fms(d.cpu.warmBatch.sumIoMs)} ms summed worker time.`);
+  if (cpu) out.push(`Worker time per file (warm, median): ${Object.values(cpu).map((f) => `${f.name} ${fms(f.medianMs)} ms`).join(', ')}; ${batchN(d)} files ${fms(d.cpu.warmBatch.sumIoMs)} ms summed worker time.`);
   const up = M.upload.find((u) => u.mbps === 10);
   if (up?.files.typical) out.push(`Against a 100 MB upload (${fms(up.uploadMs / 1000)} s at 10 Mbps): a typical MP4 adds ${fpct(up.files.typical.pct)}; the one-time cold first-file extra on 3G adds ${fpct(up.coldFirstFileExtra['3g']?.pct)}.`);
   return out;
@@ -1287,8 +1289,8 @@ function summaryTable(d) {
       `+${fms(P[id].prewarm?.extraMs)} ms prewarmed, +${fms(P[id].prefetch?.extraMs)} ms HTTP-prefetched or cached`,
       `+${fms(P[id].prewarm?.extraMs)} ms, but +${fms(M.options.eagerTransferMs[id])} ms on every page load`,
     ]),
-    ['Main thread (long tasks, TBT)', `0 long tasks, TBT ${fms(M.main?.coldBatchTbtMs)} ms even for 100 files at once`, 'same', 'same, plus worker start at page load'],
-    ['Memory (renderer, probe share)', `+${memPct(mem?.first.processPrivateDelta)} after the first video, +${memPct(mem?.idle.processPrivateDelta)} after 100`, 'same, from dialog open', `+${memPct(mem?.first.processPrivateDelta)} for every visitor`],
+    ['Main thread (long tasks, TBT)', `0 long tasks, TBT ${fms(M.main?.coldBatchTbtMs)} ms even for ${batchN(d)} files at once`, 'same', 'same, plus worker start at page load'],
+    ['Memory (renderer, probe share)', `+${memPct(mem?.first.processPrivateDelta)} after the first video, +${memPct(mem?.idle.processPrivateDelta)} after ${batchN(d)}`, 'same, from dialog open', `+${memPct(mem?.first.processPrivateDelta)} for every visitor`],
     ['Per video, against a 100 MB upload at 10 Mbps', typical ? `+${fms(typical.ms)} ms = ${fpct(typical.pct)}` : '-', 'same', 'same'],
   ];
   return table(['What', 'Lazy on the first file (proposed)', 'Lazy + prefetch when the upload dialog opens', 'Eager (in the critical bundle)'], 'llll', rows);
@@ -1337,7 +1339,7 @@ function renderMarkdown(d) {
   L.push('Two pages are measured on the same server and browser:');
   L.push('');
   L.push('- **Host model** (`/host.html`, generated by the script, not a file in the repo): a near-empty page whose only probe code in the critical path is a small inline trigger. On the first pick the trigger does `import()` of the glue chunk (the real `src/ui/workerPool.ts`, bundled and minified by rolldown, worker URL pointed at the built worker entry); the glue spawns the module worker, whose entry imports the parser chunk for the sniffed container. That is three chained requests: glue, worker entry, parser. It shows each result as one list item. This is the integration as proposed, without the PoC UI.');
-  L.push('- **PoC app** (`/`, the built React app): the worker pool is part of the main chunk, so the first pick chains two requests (worker entry, parser). Its 100-card React list is PoC UI the host would not ship; it is measured as a reference for what a heavy result UI adds.');
+  L.push(`- **PoC app** (\`/\`, the built React app): the worker pool is part of the main chunk, so the first pick chains two requests (worker entry, parser). Its ${batchN(d)}-card React list is PoC UI the host would not ship; it is measured as a reference for what a heavy result UI adds.`);
   L.push('');
   L.push('Critical bundle means the code the host downloads, parses and runs before its first render, on every page load. Only the trigger joins it. Everything else is lazy: it is fetched the first time a user picks a video (or earlier, if the host prefetches it), and never on page loads where nobody picks a file.');
   L.push('');
@@ -1425,7 +1427,7 @@ function renderMarkdown(d) {
     for (const kind of ['host', 'control', 'app']) {
       const K = d.main[kind];
       if (!K?.coldBatch) continue;
-      L.push({ host: '### Host model', control: '### Control (host model page with the probe switched off: files picked and listed by name only)', app: '### PoC app (React UI, 100 result cards)' }[kind]);
+      L.push({ host: '### Host model', control: '### Control (host model page with the probe switched off: files picked and listed by name only)', app: `### PoC app (React UI, ${batchN(d)} result cards)` }[kind]);
       L.push('');
       const rows = [];
       const add = (label, s) => {
@@ -1476,10 +1478,10 @@ function renderMarkdown(d) {
     }
     if (M.memory?.probe) {
       const P = M.memory.probe;
-      L.push(`Probe share (host model minus control, renderer private bytes): first file +${fmb(P.first.processPrivateDelta)}, right after ${d.main?.batchFiles ?? 100} files before GC +${fmb(P.peak.processPrivateDelta)}, idle after the batch +${fmb(P.idle.processPrivateDelta)}${P.long ? `, after the 3 h file +${fmb(P.long.processPrivateDelta)}` : ''}. The control alone (100 File objects, 100 list items) adds ${fmb(P.idle.controlPrivateDelta)} at idle.`);
+      L.push(`Probe share (host model minus control, renderer private bytes): first file +${fmb(P.first.processPrivateDelta)}, right after ${batchN(d)} files before GC +${fmb(P.peak.processPrivateDelta)}, idle after the batch +${fmb(P.idle.processPrivateDelta)}${P.long ? `, after the 3 h file +${fmb(P.long.processPrivateDelta)}` : ''}. The control alone (${batchN(d)} File objects, ${batchN(d)} list items) adds ${fmb(P.idle.controlPrivateDelta)} at idle.`);
       L.push('');
     }
-    L.push('Reading the host rows: the first file brings one worker and costs about 5 MB of private memory, almost all of it outside the JS heaps (worker thread, isolate, Blink worker scope); the second worker joins during the batch. JS heaps grow by only about 2.4 MB in total, so the rest of the idle delta after 100 files is allocator memory kept after 100 concurrent reads, not live objects. The peak before GC is transient.');
+    L.push(`Reading the host rows: the first file brings one worker and costs about 5 MB of private memory, almost all of it outside the JS heaps (worker thread, isolate, Blink worker scope); the second worker joins during the batch. JS heaps grow by only about 2.4 MB in total, so the rest of the idle delta after ${batchN(d)} files is allocator memory kept after ${batchN(d)} concurrent reads, not live objects. The peak before GC is transient.`);
     L.push('');
     L.push('The pool keeps its two workers alive after use (no idle termination in `workerPool.ts`), so the idle rows are what stays resident until the page unloads; terminating idle workers would hand the worker part back. The noise row shows how much the renderer moves on an idle page.');
     L.push('');
@@ -1528,8 +1530,8 @@ function renderMarkdown(d) {
     L.push(`- Main-thread blocking added (TBT, host model): first file ${fms(M.main.firstFileTbtMs)} ms, ${d.main.batchFiles} files at once ${fms(M.main.coldBatchTbtMs)} ms cold and ${fms(M.main.warmBatchTbtMs)} ms warm, 3 h file ${fms(M.main.longTbtMs)} ms. Probe main-thread CPU (host minus control): ${fms(M.main.firstFileProbeCpuMs)} ms for the first file, ${fms(M.main.coldBatchProbeCpuMs)} ms for ${d.main.batchFiles} files (${fpct(M.main.coldBatchProbeBusyPct)} of the batch window), ${fms(M.main.longProbeCpuMs)} ms for the 3 h file (differences of a few ms are within run-to-run noise). Parsing runs in the workers; the main thread only posts File handles and receives small result objects. Between picks the added main-thread work is zero.`);
   }
   if (M.memory) {
-    if (M.memory.probe) L.push(`- Memory added by the probe (host model minus control, renderer private bytes, after GC): first file +${fmb(M.memory.probe.first.processPrivateDelta)}, idle after 100 files +${fmb(M.memory.probe.idle.processPrivateDelta)}, peak right after 100 files before GC +${fmb(M.memory.probe.peak.processPrivateDelta)}. As an illustration against a host tab of ${M.memory.examples.map((x) => `${x.hostMB} MB: ${fpct(x.probeFirstPct)} after one file, ${fpct(x.probePct)} after 100`).join('; ')} (formula: added MB / host MB; the host's own memory was not measured).`);
-    L.push(`- Memory added (host model, after GC): after the first file JS +${fmb(M.memory.first.jsAdded)}, renderer private +${fmb(M.memory.first.processPrivateDelta)} (one worker); idle after 100 files JS +${fmb(M.memory.idle.jsAdded)} (page ${fmb(M.memory.idle.pageHeapDelta)}, workers ${fmb(M.memory.idle.workersUsed)} used), renderer private +${fmb(M.memory.idle.processPrivateDelta)} (two workers). Peak right after 100 files before GC: JS +${fmb(M.memory.peak.jsAdded)}, private +${fmb(M.memory.peak.processPrivateDelta)}. These host-model numbers include the pick-and-list work that the control isolates.`);
+    if (M.memory.probe) L.push(`- Memory added by the probe (host model minus control, renderer private bytes, after GC): first file +${fmb(M.memory.probe.first.processPrivateDelta)}, idle after ${batchN(d)} files +${fmb(M.memory.probe.idle.processPrivateDelta)}, peak right after ${batchN(d)} files before GC +${fmb(M.memory.probe.peak.processPrivateDelta)}. As an illustration against a host tab of ${M.memory.examples.map((x) => `${x.hostMB} MB: ${fpct(x.probeFirstPct)} after one file, ${fpct(x.probePct)} after ${batchN(d)}`).join('; ')} (formula: added MB / host MB; the host's own memory was not measured).`);
+    L.push(`- Memory added (host model, after GC): after the first file JS +${fmb(M.memory.first.jsAdded)}, renderer private +${fmb(M.memory.first.processPrivateDelta)} (one worker); idle after ${batchN(d)} files JS +${fmb(M.memory.idle.jsAdded)} (page ${fmb(M.memory.idle.pageHeapDelta)}, workers ${fmb(M.memory.idle.workersUsed)} used), renderer private +${fmb(M.memory.idle.processPrivateDelta)} (two workers). Peak right after ${batchN(d)} files before GC: JS +${fmb(M.memory.peak.jsAdded)}, private +${fmb(M.memory.peak.processPrivateDelta)}. These host-model numbers include the pick-and-list work that the control isolates.`);
   }
   L.push(`- Per-file cost against an upload of ${fmb(HOST.uploadBytes)}: upload time = B x 8 / upload bps, so ${HOST.uploadMbps.map((m) => `${fms((HOST.uploadBytes * 8) / (m * 1e6))} s at ${m} Mbps`).join(' and ')}. Share = probe ms / upload ms (the probe reads only container headers from the local file, it does not use the network):`);
   L.push('');
@@ -1570,7 +1572,7 @@ function renderMarkdown(d) {
   L.push('- One desktop machine, one Chrome build, headless. A mid-range phone runs JS several times slower: compile, first run and per-file times scale up accordingly, network-bound phases do not.');
   L.push('- The server is localhost. Throttling is CDP request-level emulation (latency added per request, bandwidth shaped per response), not packet-level: no TCP slow start, no TLS, no connection setup, no HTTP/2 multiplexing effects. Lighthouse applies a 3.75x latency multiplier to request-level throttling to approximate packet-level slow 4G (562.5 ms); with that, each of the three chained requests would wait about 410 ms longer than in the slow 4G row here.');
   L.push('- The host model page is near-empty. In the real host the pick happens on a busy main thread with its own long tasks and network traffic; the probe adds its numbers on top, it does not make the host slower outside the pick.');
-  L.push(`- Fixtures are short clips (the ${readdirSync(FILES_DIR).length}-file batch is ${fmb(sum(readdirSync(FILES_DIR).map((f) => statSync(join(FILES_DIR, f)).size)))} in total). Worker time grows with the number of samples in the index (moov/stts/stsz, fragments, Matroska blocks), not with file bytes: a 100 MB phone video with a few thousand frames costs about the same as the small MP4s here; the 3 h and 1 h files bound the long tail.`);
+  L.push(`- Fixtures are short clips (the batch is the ${batchN(d)} files of \`fixtures/files\` at measurement time). Worker time grows with the number of samples in the index (moov/stts/stsz, fragments, Matroska blocks), not with file bytes: a 100 MB phone video with a few thousand frames costs about the same as the small MP4s here; the 3 h and 1 h files bound the long tail.`);
   L.push('- Process memory is per renderer and includes everything Chrome keeps for the page; differences of a few hundred KB are within noise. Worker heap numbers exclude the isolate overhead that private bytes show.');
   L.push('- The glue chunk is `src/ui/workerPool.ts` as is; a production integration would add a small API (and maybe idle termination), within the same order of size.');
   L.push('');
