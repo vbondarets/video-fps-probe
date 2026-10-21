@@ -53,6 +53,7 @@ export interface TimelineStats {
   durationSum: number;
   avgFps: Rational | null;
   avgFpsString: string;
+  presentedAvgFps: Rational | null;
   presentedFrames: number | null;
   firstPts: number | null;
   lastPts: number | null;
@@ -66,6 +67,7 @@ export interface TimelineStats {
   minDelta: number | null;
   maxDelta: number | null;
   medianDelta: number | null;
+  meanDelta: number | null;
   tolerance: number | null;
   minFps: Rational | null;
   maxFps: Rational | null;
@@ -84,6 +86,8 @@ export const SNAP_RELATIVE_TOLERANCE = 0.001;
 export const VFR_RELATIVE_TOLERANCE = 0.005;
 export const RATE_CHANGE_RELATIVE = 0.15;
 export const CUSUM_DRIFT = RATE_CHANGE_RELATIVE / 2;
+export const FREEZE_MIN_SEC = 0.5;
+export const FREEZE_FACTOR = 4;
 
 const STANDARD_RATES: readonly Rational[] = (() => {
   const out: Rational[] = [];
@@ -106,12 +110,34 @@ export function snapToStandardRate(fps: number, relTol: number = SNAP_RELATIVE_T
   return bestErr <= relTol ? best : null;
 }
 
+export function msGridTicks(timescale: number, deltas: readonly number[]): number {
+  if (!(timescale > 1000) || deltas.length === 0) return 0;
+  for (const d of deltas) {
+    const v = d * 1000;
+    if (!Number.isSafeInteger(v) || v % timescale !== 0) return 0;
+  }
+  return timescale / 1000;
+}
+
+export function vfrTolerance(median: number, timescale: number, deltas: readonly number[]): number {
+  return Math.max(1, Math.round(VFR_RELATIVE_TOLERANCE * median), msGridTicks(timescale, deltas));
+}
+
 export function reorderDepthFromCts(ctsMin: number, ctsMax: number, firstDelta: number): number {
   if (!(ctsMax > ctsMin) || !(firstDelta > 0)) return 0;
   return Math.min(MAX_REORDER_DEPTH, Math.ceil((ctsMax - ctsMin) / firstDelta));
 }
 
+function nanosecondTick(timescale: number): number | null {
+  if (Number.isInteger(timescale) || !(timescale > 0)) return null;
+  const ns = 1e9 / timescale;
+  const n = Math.round(ns);
+  return n > 0 && Math.abs(ns - n) <= 1e-6 * n ? n : null;
+}
+
 export function rateFromTicks(timescale: number, ticks: number): Rational | null {
+  const ns = nanosecondTick(timescale);
+  if (ns !== null && ticks > 0 && Number.isSafeInteger(ns * ticks)) return reduceRational(1_000_000_000, ns * ticks, Number.MAX_SAFE_INTEGER);
   return ratioOf(timescale, ticks, Number.MAX_SAFE_INTEGER);
 }
 
@@ -151,6 +177,8 @@ function ratioOf(num: number, den: number, max: number = INT_MAX): Rational | nu
 
 function averageRate(timescale: number, n: number, d: number): Rational | null {
   if (!(n > 0) || !(d > 0)) return null;
+  const ns = nanosecondTick(timescale);
+  if (ns !== null && Number.isSafeInteger(n) && Number.isSafeInteger(d)) return reduceRational(BigInt(n) * 1_000_000_000n, BigInt(ns) * BigInt(d), INT_MAX);
   if (Number.isSafeInteger(timescale) && Number.isSafeInteger(n) && Number.isSafeInteger(d)) {
     return reduceRational(BigInt(timescale) * BigInt(n), d, INT_MAX);
   }
@@ -175,6 +203,7 @@ function emptyStats(timescale: number, warnings: string[]): TimelineStats {
     durationSum: 0,
     avgFps: null,
     avgFpsString: '0/0',
+    presentedAvgFps: null,
     presentedFrames: null,
     firstPts: null,
     lastPts: null,
@@ -188,6 +217,7 @@ function emptyStats(timescale: number, warnings: string[]): TimelineStats {
     minDelta: null,
     maxDelta: null,
     medianDelta: null,
+    meanDelta: null,
     tolerance: null,
     minFps: null,
     maxFps: null,
@@ -202,8 +232,33 @@ function emptyStats(timescale: number, warnings: string[]): TimelineStats {
   };
 }
 
-function profileJob(lo: number, hi: number, source: DeltaSource, ts: number, frames: number, span: number): ProfileJob | null {
-  return hi > lo * (1 + CUSUM_DRIFT) ? (impl) => impl(source, ts, frames, span) : null;
+function profileJob(base: TimelineStats, lo: number, hi: number, source: DeltaSource, frames: number, span: number): ProfileJob | null {
+  const ts = base.timescale;
+  const jitterOnly = base.isVfr === false && hi - lo <= (base.tolerance ?? 0) && hi < 2 * lo;
+  return hi > lo * (1 + CUSUM_DRIFT) && !jitterOnly ? (impl) => impl(source, ts, frames, span) : null;
+}
+
+function warnHeldLastFrame(base: TimelineStats, lastDuration: number | null | undefined): void {
+  const m = base.medianDelta;
+  const ts = base.timescale;
+  if (!m || !lastDuration || lastDuration < FREEZE_FACTOR * m || lastDuration < FREEZE_MIN_SEC * ts) return;
+  base.warnings.push(`last frame held ${(lastDuration / ts).toFixed(3)} s (${(lastDuration / m).toFixed(1)}x the median frame interval): the average is below the frame rate`);
+}
+
+function applyPresentedAverage(base: TimelineStats, lastDuration: number): void {
+  warnHeldLastFrame(base, lastDuration);
+  if (base.presentedFrames === null || base.presentedFrames <= 0 || base.firstPts === null || base.lastPts === null) return;
+  const last = lastDuration > 0 ? lastDuration : (base.medianDelta ?? 0);
+  base.presentedAvgFps = averageRate(base.timescale, base.presentedFrames, base.lastPts - base.firstPts + last);
+}
+
+function deltaAt(segments: readonly TimelineSegment[], index: number): number {
+  let k = 0;
+  for (const [n, d] of durationRuns(segments)) {
+    if (index < k + n) return d;
+    k += n;
+  }
+  return 0;
 }
 
 async function loadRateProfile(): Promise<RateProfileFn | null> {
@@ -229,7 +284,11 @@ function applyHistogram(base: TimelineStats, hist: Map<number, number>, tickQuan
   const keys = [...hist.keys()].sort((a, b) => a - b);
   const histogram: Array<[number, number]> = keys.map((k) => [k, hist.get(k) ?? 0]);
   let total = 0;
-  for (const [, c] of histogram) total += c;
+  let sum = 0;
+  for (const [k, c] of histogram) {
+    total += c;
+    sum += k * c;
+  }
   base.histogram = histogram;
   base.distinctDeltas = keys.length;
   if (total === 0) return;
@@ -250,7 +309,8 @@ function applyHistogram(base: TimelineStats, hist: Map<number, number>, tickQuan
       modeCount = c;
     }
   }
-  const tol = Math.max(1, Math.round(VFR_RELATIVE_TOLERANCE * median));
+  const msTicks = msGridTicks(ts, keys);
+  const tol = Math.max(1, Math.round(VFR_RELATIVE_TOLERANCE * median), msTicks);
   let off = 0;
   for (const [k, c] of histogram) if (Math.abs(k - median) > tol) off += c;
   const minD = keys[0];
@@ -259,6 +319,7 @@ function applyHistogram(base: TimelineStats, hist: Map<number, number>, tickQuan
   base.minDelta = minD;
   base.maxDelta = maxD;
   base.medianDelta = median;
+  base.meanDelta = sum / total;
   base.tolerance = tol;
   base.minFps = rateFromTicks(ts, maxD);
   base.maxFps = rateFromTicks(ts, minD);
@@ -271,12 +332,12 @@ function applyHistogram(base: TimelineStats, hist: Map<number, number>, tickQuan
     const r = rateFromTicks(ts, mode);
     if (r) base.dominantFps = { rate: r, share: modeCount / total };
   }
-  base.timestampsQuantized = tickQuantized && !isVfr && keys.length > 1;
+  base.timestampsQuantized = (tickQuantized || msTicks > 0) && !isVfr && keys.length > 1;
 }
 
 function applySnappedNominal(base: TimelineStats): void {
   if (base.nominalFps || base.isVfr !== false || base.distinctDeltas < 2 || !base.avgFps) return;
-  const snapped = snapToStandardRate(base.avgFps.value);
+  const snapped = snapToStandardRate(base.meanDelta ? base.timescale / base.meanDelta : base.avgFps.value);
   if (snapped) base.nominalFps = { ...snapped, kind: 'snapped' };
 }
 
@@ -467,7 +528,9 @@ function segmentStats(input: SegmentTimelineInput, ts: number, warnings: string[
     base.excludedTailDeltas = all - keep;
     applyHistogram(base, hist, tickQuantized);
     applySnappedNominal(base);
+    applyPresentedAverage(base, deltaAt(segments, b - 1));
     base.profile = profileJob(
+      base,
       dMin,
       dMax,
       (visit) => {
@@ -480,7 +543,6 @@ function segmentStats(input: SegmentTimelineInput, ts: number, warnings: string[
           j += n;
         }
       },
-      ts,
       b - a,
       lastPts - firstPts,
     );
@@ -517,8 +579,15 @@ function segmentStats(input: SegmentTimelineInput, ts: number, warnings: string[
       }
     }
   }
+  let lastIndex = -1;
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[i];
+    if (p >= ws && p < we && (lastIndex < 0 || p >= pts[lastIndex])) lastIndex = i;
+  }
+  const lastDuration = lastIndex >= 0 ? deltaAt(segments, lastIndex) : 0;
   const presented = presentSorted(pts, ws, we);
   histogramStage(base, presented, tail, tickQuantized);
+  applyPresentedAverage(base, lastDuration);
   applySnappedNominal(base);
   return base;
 }
@@ -569,12 +638,12 @@ function histogramStage(base: TimelineStats, sorted: Float64Array, tail: number,
   base.excludedTailDeltas = all - keep;
   applyHistogram(base, hist, tickQuantized);
   base.profile = profileJob(
+    base,
     dMin,
     dMax,
     (visit) => {
       for (let i = 1; i <= all; i++) visit(1, sorted[i] - sorted[i - 1]);
     },
-    base.timescale,
     m,
     sorted[all] - sorted[0],
   );
@@ -625,10 +694,12 @@ function ptsStats(input: PtsTimelineInput, ts: number, warnings: string[]): Time
   }
   base.reorderDepth = reorder;
   histogramStage(base, presented, 1 + reorder, input.tickQuantized ?? false);
+  warnHeldLastFrame(base, input.lastDuration);
   const lastDur = input.lastDuration ?? base.medianDelta ?? 0;
   base.durationSum = maxP - minP + lastDur;
   base.avgFps = averageRate(ts, n, base.durationSum);
   base.avgFpsString = toFfprobeString(base.avgFps);
+  base.presentedAvgFps = base.avgFps;
   applySnappedNominal(base);
   return base;
 }
