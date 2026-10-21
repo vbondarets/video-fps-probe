@@ -1,9 +1,10 @@
-import { useEffect, useState, type ChangeEvent } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import type { MatroskaMode } from './core/types.ts';
 import { bytes, ms, PROVENANCE } from './ui/format.ts';
+import type { ExportAction, ExportOutcome } from './ui/deviceInfo.ts';
 import { Mark, ResultCard } from './ui/ResultCard.tsx';
 import { loadSamples } from './ui/samples.ts';
-import { addFiles, clearAll, downloadJson, setMode, useStore } from './ui/store.ts';
+import { addFiles, clearAll, exportJson, loadDevice, setMode, useStore } from './ui/store.ts';
 
 const MODES: MatroskaMode[] = ['auto', 'header', 'probe', 'exact'];
 const REPO = 'https://github.com/vbondarets/video-fps-probe';
@@ -16,6 +17,22 @@ export default function App() {
   const { rows, mode } = useStore();
   const [dragging, setDragging] = useState(false);
   const [notice, setNotice] = useState('');
+  const [exportNote, setExportNote] = useState<{ rows: number; outcome: ExportOutcome } | null>(null);
+  const [envLine, setEnvLine] = useState('');
+  const input = useRef<HTMLInputElement>(null);
+  const deviceRequested = useRef(false);
+  const hasResult = rows.some((r) => r.result);
+
+  useEffect(() => {
+    if (!hasResult || deviceRequested.current) return;
+    deviceRequested.current = true;
+    const load = () => loadDevice().then((d) => d.watchEnvironmentLine(setEnvLine), () => {});
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(load, { timeout: 1000 });
+    else setTimeout(load, 0);
+  }, [hasResult]);
+
+  const exported = exportNote && exportNote.rows === rows.length ? exportNote.outcome : null;
+  const setExported = (outcome: ExportOutcome | null) => setExportNote(outcome ? { rows: rows.length, outcome } : null);
 
   useEffect(() => {
     const over = (e: DragEvent) => {
@@ -52,6 +69,12 @@ export default function App() {
     loadSamples().then(addFiles, (e: unknown) => setNotice(`Could not load samples: ${e instanceof Error ? e.message : String(e)}`));
   };
 
+  const exportAs = (action: ExportAction) => {
+    exportJson(action).then(setExported, (e: unknown) =>
+      setExported({ ok: false, message: `Export failed: ${e instanceof Error ? e.message : String(e)}`, text: null }),
+    );
+  };
+
   const done = rows.filter((r) => r.result);
   const pending = rows.filter((r) => r.busy).length;
   const totalSize = done.reduce((n, r) => n + r.file.size, 0);
@@ -66,7 +89,7 @@ export default function App() {
       </p>
 
       <label className={`drop${dragging ? ' on' : ''}`}>
-        <input type="file" multiple data-testid="file-input" accept="video/*,audio/*,.mp4,.m4v,.mov,.webm,.mkv" onChange={pick} />
+        <input ref={input} type="file" multiple data-testid="file-input" accept="video/*,audio/*,.mp4,.m4v,.mov,.webm,.mkv" onChange={pick} />
         <strong>Drop video files here</strong>
         <span>or click to choose files (several at once)</span>
       </label>
@@ -83,15 +106,32 @@ export default function App() {
             ))}
           </select>
         </label>
-        <button type="button" onClick={downloadJson} disabled={done.length === 0}>
+        <button type="button" onClick={() => exportAs('download')} disabled={done.length === 0}>
           Download JSON
         </button>
-        <button type="button" onClick={clearAll} disabled={rows.length === 0}>
+        <button type="button" onClick={() => exportAs('copy')} disabled={done.length === 0}>
+          Copy JSON
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            clearAll();
+            setExported(null);
+            input.current?.focus();
+          }}
+          disabled={rows.length === 0}
+        >
           Clear list
         </button>
       </div>
       <p className="mut small">Sample files are fetched into memory as blobs, so their reads never touch the disk and timings are optimistic.</p>
       {notice && <p className="err">{notice}</p>}
+      {exported && (
+        <div className="export-note" role="status">
+          <p className={exported.ok ? 'mut small' : 'err'}>{exported.message}</p>
+          {exported.text !== null && <textarea readOnly rows={8} value={exported.text} aria-label="Results JSON" onFocus={(e) => e.currentTarget.select()} />}
+        </div>
+      )}
 
       <p className="summary" role="status">
         {rows.length === 0
@@ -107,7 +147,8 @@ export default function App() {
         ))}
       </p>
 
-      <section className="list" aria-live="polite" aria-label="Results">
+      <h2 className="sr">Results</h2>
+      <section className="list" aria-label="Results">
         {rows.map((row) => (
           <ResultCard key={row.id} row={row} />
         ))}
@@ -122,6 +163,11 @@ export default function App() {
         <p>
           <a href={REPO}>{REPO}</a>
         </p>
+        {envLine && (
+          <p className="env mono" data-testid="env-line">
+            This device: {envLine}
+          </p>
+        )}
       </footer>
     </main>
   );
