@@ -1,4 +1,4 @@
-import { CUSUM_DRIFT, RATE_CHANGE_RELATIVE } from './stats.ts';
+import { CUSUM_DRIFT, FREEZE_FACTOR, FREEZE_MIN_SEC, RATE_CHANGE_RELATIVE } from './stats.ts';
 import type { RateAnomaly, RateAnomalyKind, RateProfile, RateSegmentKind } from './types.ts';
 
 export type DeltaVisitor = (count: number, delta: number) => void;
@@ -8,8 +8,7 @@ export type RateProfileFn = (source: DeltaSource, timescale: number, frames: num
 export const MIN_SEGMENT_SEC = 0.5;
 export const MIN_SEGMENT_FRAMES = 5;
 export const CUSUM_ALARM_PERIODS = 2;
-export const FREEZE_MIN_SEC = 0.5;
-export const FREEZE_FACTOR = 4;
+export { FREEZE_FACTOR, FREEZE_MIN_SEC };
 export const UNEVEN_DOMINANT_SHARE = 0.8;
 export const MAX_SEGMENTS = 50;
 export const MAX_ANOMALIES = 50;
@@ -235,6 +234,6 @@ export const rateProfile: RateProfileFn = (source, timescale, frames, spanTicks)
     buckets: { bucketSec: bw / ts, fps: Array.from(acc, (x) => (x * ts) / bw) },
     uneven,
     dominantShare: share,
-    summary: `${uneven ? 'Uneven' : 'Steady'}: ${list.join(', ')}${tags}`,
+    summary: `${uneven ? 'Uneven' : tags ? 'Mostly steady' : 'Steady'}: ${list.join(', ')}${tags}`,
   };
 };
