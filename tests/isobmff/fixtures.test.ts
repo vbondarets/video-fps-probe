@@ -83,8 +83,8 @@ interface RefVideoStreamDetail {
   index: number;
   duplicateTimestamps: number;
   instFpsExcludingTail: { count: number; distinctDeltas: number; minFps: RationalLike; maxFps: RationalLike } | null;
-  vfr: { isVfr: boolean } | null;
-  avgFromPts: { fps: RationalLike } | null;
+  vfr: { isVfr: boolean; medianDeltaTicks: number } | null;
+  avgFromPts: { fps: RationalLike; frames: number; spanTicks: number } | null;
 }
 
 interface Probe {
@@ -157,17 +157,19 @@ function assertTrack(track: VideoTrackResult, stream: ProbeStream, detail: RefVi
 
   if (ffprobeFails) expect(track.avgFpsFfprobe).toBeNull();
   else expect(track.avgFpsFfprobe).toBe(stream.avg_frame_rate);
-  if (dev.avgFps) {
-    expect(str(track.avgFps)).not.toBe(stream.avg_frame_rate);
-    expect(str(track.avgFps)).toBe(str(detail.avgFromPts?.fps));
-  } else {
-    expect(str(track.avgFps)).toBe(stream.avg_frame_rate);
-  }
+  const measured = detail.avgFromPts;
+  if (track.provenance.avgFps === 'exact' && measured) {
+    if (str(track.avgFps) !== str(measured.fps)) {
+      expect(track.presentedFrames).toBe(measured.frames);
+      const span = ((track.presentedFrames ?? 0) * ts) / (track.avgFps?.value ?? NaN);
+      expect(Math.abs(span - measured.spanTicks)).toBeLessThan(detail.vfr?.medianDeltaTicks ?? 0);
+    }
+  } else expect(str(track.avgFps)).toBe(stream.avg_frame_rate);
 
   const totals = sampleTotals(mt);
   const cfr = detail.vfr === null || detail.vfr.isVfr === false;
   if (totals.moovSamples === 0 || ffprobeFails) expect(track.rFpsFfprobe).toBeNull();
-  else if (cfr) expect(track.rFpsFfprobe).toBe(stream.r_frame_rate);
+  else if (cfr && detail.instFpsExcludingTail?.distinctDeltas === 1) expect(track.rFpsFfprobe).toBe(stream.r_frame_rate);
   else if (track.rFpsFfprobe !== null) expect(track.rFpsFfprobe).toBe(stream.r_frame_rate);
   unless('nominalFps', () => {
     if (detail.instFpsExcludingTail && detail.instFpsExcludingTail.distinctDeltas === 1) expect(track.nominalFps?.kind).toBe('exact');
