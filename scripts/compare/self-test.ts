@@ -45,6 +45,10 @@ function refStream(over: Partial<RefStream> = {}): RefStream {
       instFpsExcludingTail: inst(89, 1, fps(30000, 1001), fps(30000, 1001)),
       isVfr: false,
       avgFromPts: fps(30000, 1001),
+      avgFromPtsFrames: 90,
+      avgFromPtsSpanTicks: 90090,
+      lastDurationTicks: 1001,
+      medianDeltaTicks: 1001,
     },
     ...over,
   };
@@ -138,8 +142,8 @@ function oracleTrack(s: RefStream, trackId: number, matroska: boolean): VideoTra
     presentedFrames: s.nbReadFrames,
     durationSec: !matroska && s.durationTs !== null ? ticksToSec(s.durationTs, s.timeBase) : null,
     startSec: s.startPts !== null ? ticksToSec(s.startPts, s.timeBase) : null,
-    avgFps: matroska ? (measured ? { ...measured } : null) : avg,
-    avgFpsFfprobe: matroska && avg ? s.avgFrameRate : null,
+    avgFps: matroska ? (measured ? { ...measured } : null) : avg && measured ? { ...measured } : avg,
+    avgFpsFfprobe: avg ? s.avgFrameRate : null,
     rFpsFfprobe: matroska && r ? s.rFrameRate : null,
     nominalFps: !matroska && r && inst?.distinctDeltas === 1 ? { ...r, kind: 'exact' } : null,
     minFps: inst?.minFps ? { ...inst.minFps } : null,
@@ -219,6 +223,15 @@ export function runSelfTest(): number {
   expectEq('mp4 deviation: known-deviation', verdictOf(excused, 'avgFps'), 'known-deviation');
   expectEq('mp4 deviation: other mismatch stays', verdictOf(excused, 'frames'), 'mismatch');
   expectEq('mp4 deviation: stale key reported', excused.unusedDeviationKeys.join(','), 'durationSec');
+
+  const presented = (over: Partial<VideoTrackResult>): Evaluation =>
+    run({ info: MP4_INFO, ref: refFile([refStream()]), result: appResult([appTrack({ provenance: { avgFps: 'exact' }, ...over })]) });
+  expectEq('mp4 header average: measured n/a', verdictOf(cfr, 'avgFps.measured'), 'n/a');
+  expectEq('mp4 presented average: measured exact', verdictOf(presented({}), 'avgFps.measured'), 'exact');
+  expectEq('mp4 presented average, span 5 ticks off: within-tol', verdictOf(presented({ avgFps: rat(90 * 30000, 90095) }), 'avgFps.measured'), 'within-tol');
+  expectEq('mp4 presented average, one frame more: mismatch', verdictOf(presented({ avgFps: rat(91 * 30000, 90090), presentedFrames: 91 }), 'avgFps.measured'), 'mismatch');
+  expectEq('mp4 presented average, span a frame off: mismatch', verdictOf(presented({ avgFps: rat(90 * 30000, 91091) }), 'avgFps.measured'), 'mismatch');
+  expectEq('mp4 presented average differs: ffprobe parity uses avgFpsFfprobe', verdictOf(presented({ avgFps: rat(25, 1) }), 'avgFps'), 'exact');
 
   const fragRef = refFile(
     [
