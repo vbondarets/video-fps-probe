@@ -2,7 +2,7 @@ import { DEFAULT_COST_MODEL, predictReadMs } from '../options.ts';
 import { avgFrameRate, reduceRational, toFfprobeString } from '../rational.ts';
 import type { BlobReader } from '../reader.ts';
 import { emptyAnalysis, emptyTrack } from '../result.ts';
-import { analyzeTimeline, rateFromTicks, rateProfileOf, VFR_RELATIVE_TOLERANCE, type ProfileJob, type TimelineStats } from '../stats.ts';
+import { analyzeTimeline, rateFromTicks, rateProfileOf, vfrTolerance, type ProfileJob, type TimelineStats } from '../stats.ts';
 import type { ContainerAnalysis, Provenance, ResolvedAnalyzeOptions, VideoTrackResult } from '../types.ts';
 import { ID_BLOCK, ID_BLOCK_GROUP, ID_CLUSTER, ID_CRC32, ID_CUES, ID_POSITION, ID_PREV_SIZE, ID_SIMPLE_BLOCK, ID_TIMESTAMP, ID_VOID, readHeader, UNKNOWN_SIZE } from './ebml.ts';
 import { parseMaster, readMatroskaHeader, type MkvHeader, type MkvTrack } from './header.ts';
@@ -62,7 +62,7 @@ export function mergeRunStats(timescale: number, runs: readonly TimelineStats[])
   if (total === 0) return out;
   let acc = 0;
   const median = keys.find((k) => (acc += hist.get(k) ?? 0) * 2 >= total) ?? keys[0];
-  const tol = Math.max(1, Math.round(VFR_RELATIVE_TOLERANCE * median));
+  const tol = vfrTolerance(median, timescale, keys);
   let off = 0;
   for (const k of keys) if (Math.abs(k - median) > tol) off += hist.get(k) ?? 0;
   out.medianDelta = median;
@@ -171,8 +171,9 @@ async function sampleDensity(src: ByteSource, video: readonly MkvTrack[], first:
     if (block) {
       const g = e.id === ID_BLOCK_GROUP ? readHeader(b, e.dataStart - base, base) : e;
       const blk = g && (g.id === ID_SIMPLE_BLOCK || g.id === ID_BLOCK) ? parseBlockHeader(b, g.dataStart - base, g.size) : null;
-      d.blocks++;
-      if (blk && video.some((v) => v.number === blk.track)) d.video++;
+      const laced = blk && video.some((v) => v.number === blk.track) ? blk.laces : 0;
+      d.blocks += Math.max(1, laced);
+      d.video += laced;
       if (eEnd - e.pos >= SMALL_SCAN_WINDOW) d.large++;
       else d.smallBytes += eEnd - e.pos;
     }
@@ -309,6 +310,7 @@ async function probeScan(src: ByteSource, h: MkvHeader, video: readonly MkvTrack
     const ts = r.timescale;
     const merged = mergeRunStats(ts, runs.get(t.number) ?? []);
     if (merged.isVfr !== null) fillRates(r, merged, 'sampled');
+    else if (visited > 0) r.warnings.push('probe: every sampled cluster holds fewer than 2 frames of this track, so no frame interval was measured; scan all frames for min, max and VFR');
     const head = firstRun?.tracks.get(t.number);
     const start = head?.n ? Math.min(...head.pts.subarray(0, head.n)) : null;
     if (start !== null) {
