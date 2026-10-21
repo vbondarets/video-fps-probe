@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
 import type { AnalyzeProgress, FileResult, MatroskaMode } from '../core/types.ts';
+import type { ExportAction, ExportOutcome } from './deviceInfo.ts';
 import { submit } from './workerPool.ts';
 
 export type CompareEngine = 'mp4box' | 'mediabunny' | 'rvfc';
@@ -66,13 +67,16 @@ function patchRun(id: number, engine: CompareEngine, p: Partial<Run>): void {
   patch(id, { compare: { ...row.compare, [engine]: { ...prev, ...p } } });
 }
 
-function start(id: number, mode: MatroskaMode): void {
+function start(id: number, mode: MatroskaMode, followMode = true): void {
   const row = find(id);
   if (!row) return;
   const job = submit(row.file, 'own', { matroskaMode: mode }, (progress) => patch(id, { progress }));
   patch(id, { busy: true, progress: null, cancel: job.cancel });
   job.promise.then(
-    (result) => patch(id, { busy: false, result, error: null, progress: null, cancel: null }),
+    (result) => {
+      patch(id, { busy: false, result, error: null, progress: null, cancel: null });
+      if (followMode && isMatroska(result) && state.mode !== mode) start(id, state.mode);
+    },
     (e) => {
       const prev = find(id);
       const error = isAbort(e) ? (prev?.result ? prev.error : 'Cancelled') : message(e);
@@ -89,7 +93,7 @@ export function addFiles(files: File[]): void {
 }
 
 export function rescan(id: number, mode: MatroskaMode): void {
-  start(id, mode);
+  start(id, mode, false);
 }
 
 export function cancelRow(id: number): void {
@@ -158,17 +162,17 @@ export function autoCompare(id: number): void {
   }
 }
 
-export function downloadJson(): void {
-  const out = state.rows.flatMap((row) => {
-    if (!row.result) return [];
-    const compare: Record<string, FileResult> = {};
-    for (const [engine, run] of Object.entries(row.compare)) if (run?.result) compare[engine] = run.result;
-    return [Object.keys(compare).length > 0 ? { ...row.result, compare } : row.result];
-  });
-  const url = URL.createObjectURL(new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' }));
-  const a = Object.assign(document.createElement('a'), { href: url, download: 'video-fps-probe-results.json' });
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+type DeviceModule = typeof import('./deviceInfo.ts');
+
+let device: DeviceModule | null = null;
+
+export function loadDevice(): Promise<DeviceModule> {
+  return import('./deviceInfo.ts').then((m) => (device = m));
+}
+
+export function exportJson(action: ExportAction): Promise<ExportOutcome> {
+  const run = (d: DeviceModule) => d.exportResults(state.rows, { matroskaMode: state.mode }, action);
+  return device ? run(device) : loadDevice().then(run);
 }
 
 export function useStore(): State {
