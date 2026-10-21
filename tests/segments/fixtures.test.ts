@@ -108,9 +108,9 @@ describe('rate profile on fixtures', () => {
     }
   });
 
-  it('a CFR fixture has no rate profile, or one steady segment when its 1 ms ticks spread more than the drift', async () => {
+  it('a CFR fixture has no rate profile, also when its 1 ms ticks spread more than the drift', async () => {
     const rows = okRows.filter((r) => r.name.startsWith('cfr_'));
-    expect(rows.length).toBe(20);
+    expect(rows.length).toBe(21);
     const profiled: string[] = [];
     for (const row of rows) {
       const t = await track(row.name);
@@ -126,7 +126,7 @@ describe('rate profile on fixtures', () => {
       expect(p.dominantShare).toBe(1);
       expect(p.summary).toMatch(/^Steady: /);
     }
-    expect(profiled).toEqual(['cfr_vp9_120.webm', 'cfr_vp9_240.webm']);
+    expect(profiled).toEqual([]);
   });
 
   it('every VFR fixture has a profile, every fixture the VFR rule calls CFR has none or one steady segment, and every profile tiles the frames', async () => {
@@ -151,8 +151,8 @@ describe('rate profile on fixtures', () => {
         cfr++;
       }
     }
-    expect(vfr).toBe(19);
-    expect(cfr).toBe(2);
+    expect(vfr).toBe(22);
+    expect(cfr).toBe(0);
   });
 
   it('Matroska shows a profile only after an exact scan', async () => {
