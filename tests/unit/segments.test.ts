@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { MAX_ANOMALIES, MAX_BUCKETS, MAX_SEGMENTS, rateProfile, type DeltaSource } from '../../src/core/segments.ts';
 import { analyzeTimeline, rateProfileOf, type TimelineInput, type TimelineSegment, type TimelineStats } from '../../src/core/stats.ts';
 import type { RateProfile } from '../../src/core/types.ts';
-import { clock, rate } from '../../src/ui/format.ts';
+import { clock, rate, share } from '../../src/ui/format.ts';
 
 function runs(...pairs: Array<[count: number, delta: number]>): TimelineSegment {
   return { durations: { counts: pairs.map((p) => p[0]), deltas: pairs.map((p) => p[1]) } };
@@ -137,11 +137,17 @@ describe('rate profile: steady input', () => {
     expect(p?.uneven).toBe(false);
   });
 
-  it('240 fps at 1 ms ticks ({4, 5} ms) is not segmented', () => {
+  it('240 fps at 1 ms ticks ({4, 5} ms) is CFR and gets no profile', () => {
     const pts = Array.from({ length: 720 }, (_, i) => Math.round((i * 1000) / 240));
-    const p = profileOf({ timescale: 1000, pts });
-    expect(p.segments).toHaveLength(1);
-    expect(p.anomalies).toEqual([]);
+    const s = analyzeTimeline({ timescale: 1000, pts });
+    expect(s.isVfr).toBe(false);
+    expect(s.profile).toBeNull();
+  });
+
+  it('240 fps at timescale 600 (deltas 3 and 2 ticks) is CFR and gets no profile', () => {
+    const s = analyzeTimeline({ timescale: 600, segments: [{ durations: Array.from({ length: 480 }, (_, i) => (i % 2 ? 2 : 3)) }] });
+    expect(s.isVfr).toBe(false);
+    expect(s.profile).toBeNull();
   });
 
   it('screen-recorder jitter of 0-7 ms at timescale 1000 is not over-segmented', () => {
@@ -217,7 +223,7 @@ describe('rate profile: rate changes', () => {
     expect(p.anomalies.map((a) => a.kind)).toEqual(['burst']);
     expect(p.anomalies[0].atSec).toBeCloseTo(3, 9);
     expect(p.uneven).toBe(false);
-    expect(p.summary).toBe('Steady: 30 fps for 6.015 s; 1 burst');
+    expect(p.summary).toBe('Mostly steady: 30 fps for 6.015 s; 1 burst');
   });
 
   it('a 0.3 s burst holding over 20% of the frames makes the stream uneven', () => {
@@ -464,6 +470,14 @@ describe('rate profile formatting', () => {
     expect(clock(599.96)).toBe('10:00');
     expect(clock(3725)).toBe('1:02:05');
     expect(clock(10800)).toBe('3:00:00');
+  });
+
+  it('share prints tiny non-zero shares as <0.1% instead of 0.0%', () => {
+    expect(share(0)).toBe('0%');
+    expect(share(1 / 10000)).toBe('<0.1%');
+    expect(share(0.0024)).toBe('0.2%');
+    expect(share(0.024)).toBe('2.4%');
+    expect(share(0.98)).toBe('98%');
   });
 
   it('rate prints at most four significant digits', () => {
