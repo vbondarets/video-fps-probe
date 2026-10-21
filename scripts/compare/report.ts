@@ -139,6 +139,7 @@ export function verdictSummary(checks: readonly CheckResult[]): string {
   const rest = (['mismatch', 'known-deviation', 'within-tol'] as const)
     .filter((v) => by.has(v))
     .map((v) => `${v}: ${by.get(v)!.join(', ')}`);
+  if (rest.length === 0 && exact > 0 && by.get('exact')!.every((id) => id === 'error')) return 'expected outcome (manifest)';
   if (rest.length === 0) return exact > 0 ? `all exact (${exact})` : 'n/a';
   return rest.join('; ');
 }
