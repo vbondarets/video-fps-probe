@@ -2,15 +2,15 @@
 
 What the implementation decided and learned, relative to [research.md](research.md). Research stays the spec for formulas and tolerances; this file lists where the code deviates from it, why, and what was measured. Factual errors found in research are corrected in [research.md section 8](research.md#8-errata-found-during-implementation). Module layout and data flow are in [architecture.md](architecture.md).
 
-**State.** `tsc -b` is clean, oxlint is clean, 667 vitest tests pass. The own engine has 0 mismatches against ffprobe 8.1.1 on the 100 committed fixtures (1495 checks: 1449 exact, 3 known-deviation, 43 n/a; the 3 deviations are listed in section 9). Timings below are Node 24.20, warm, best of several runs, unless a browser is named.
+**State (2026-10-21).** `tsc -b` is clean, oxlint is clean, 799 vitest tests pass (3 skipped without the large files). The own engine has 0 mismatches against ffprobe 8.1.1 on the 104 committed fixtures (1561 checks: 1510 exact, 3 known-deviation, 48 n/a; the 3 deviations are listed in section 9). The e2e suite is in section 12. Timings below are Node 24.20, warm, best of several runs, unless a browser is named.
 
 ## 1. Reader and IO
 
 - **Header peek is 16 bytes, not 32** (research 4.2). Skipping a `uuid` box never needs its extended type, and a unit test covers the old 16-byte uuid bug. A moof read covers `size + 16`, so the next header is already in the same window.
-- **No speculative tail read.** Instead, after a final `mdat` with no `moov` seen yet, the walk reads the whole remainder when it is at most 16 MiB. Moov-at-end therefore costs 2 reads for any moov up to that size (2.68 MB on the 3 h file).
+- **No speculative tail read.** Instead, after a final `mdat` with no `moov` seen yet, the walk reads the whole remainder when it is at most 16 MiB. Moov-at-end therefore costs 2 reads for any moov up to that size (2.68 MB on the 3 h file). The remainder includes any `free`, `uuid` or vendor box between the mdat and the moov: with an 8 MiB uuid there, a file with a 3.7 KB moov read 8.46 MB of 8.52 MB in 2 reads (real-world probe, section 9). Reading a bounded tail window and walking box headers from there would fix it.
 - **`readMany` defaults to concurrency 4** (research allows 4-8). It is used only where offsets are known up front: sidx or tfra moof offsets.
 - **64-bit values.** Offsets are Numbers. `u64`/`i64` and the box-level `boxU64`/`boxI64` reject values above 2^53-1. In boxes the error is `unsupported: box 'x' at N holds a value above 2^53-1`. In the ISO BMFF parser any other RangeError becomes `corrupt file: ...`. `analyze()` returns every failure as `FileResult.error` and rethrows only an abort.
-- **Files above 4 GiB.** Node 24.20 `openAsBlob().size` wraps modulo 2^32, so that test uses a `FileSlice` over `fs.promises.open`. It is opt-in: `FPS_PROBE_LARGE=1`, scratch dir `FPS_PROBE_SCRATCH`, and it is skipped when sparse files are unsupported. Measured on the 4.5 GB co64 file: 4,500,088,814 B logical, 2 reads, 66,712 B, about 6.7 ms. A browser `File` above 4 GiB is untested.
+- **Files above 4 GiB.** Node 24.20 `openAsBlob().size` wraps modulo 2^32, so that test uses a `FileSlice` over `fs.promises.open`. It is opt-in: `FPS_PROBE_LARGE=1`, scratch dir `FPS_PROBE_SCRATCH`, and it is skipped when sparse files are unsupported. Measured on the 4.5 GB co64 file: 4,500,088,814 B logical, 2 reads, 66,712 B, about 6.7 ms. In the browser (built page, Playwright, three picks each, 2026-10-21) the same file gave the same result in 1.8 to 5.6 ms in Chromium 156 and 7 to 10 ms in WebKit 27.2; a manual run, not a committed test.
 - **Sniffing** looks at the first 1024 bytes. Unknown content gets `not a recognised container: <reason>`, where the reason names known non-video signatures (PNG, JPEG, GIF, RIFF, Ogg, FLV, MPEG-PS, PDF, ZIP, MP3, plain text).
 
 ## 2. ISO BMFF
@@ -99,9 +99,13 @@ What the implementation decided and learned, relative to [research.md](research.
 `src/core/stats.ts` follows research 4.3. Deviations and details:
 
 - **Tail exclusion.** The last `1 + reorderDepth` deltas are dropped, but all deltas are kept when fewer than 2 would remain. On very short tracks the reference data (`ref-extract.mjs`) drops `min(positive deltas, 1 + reorderDepth)` and reports no min or max; no fixture hits the difference.
-- **Median** is the lower median by cumulative count. VFR is any remaining delta farther than `max(1 tick, round(0.5% x median))`. `dominantFps` is set only for VFR tracks where the most common delta covers at least 50%.
-- **Nominal rate.** One distinct delta gives an exact rate. A CFR track with two or more distinct deltas snaps the average to {24, 30, 48, 60, 120, 240} x 1000/1001 or an integer 1..240 within 0.1%. `timestampsQuantized` marks CFR with quantized ticks (Matroska 1 ms).
-- **Fast path.** With constant ctts, no discontinuities and no negative durations, stats are computed from stts runs in O(runs). Otherwise a `Float64Array` of PTS is built, refused above 50M samples (`per-sample analysis skipped`).
+- **Median** is the lower median by cumulative count. VFR is any remaining delta farther than `max(1 tick, round(0.5% x median), 1 ms)`, where the 1 ms term counts only when the timescale is above 1000 and every kept delta is a whole number of milliseconds (`msGridTicks`). That term makes an MKV-to-MP4 remux (timescale 16000, 8 and 9 ms deltas) CFR, 1 ms quantized, like its source; `ref-extract.mjs` uses the same rule. `dominantFps` is set only for VFR tracks where the most common delta covers at least 50% of the frames.
+- **Nominal rate.** One distinct delta gives an exact rate. A CFR track with two or more distinct deltas snaps the mean of the kept deltas (not the full average, whose odd last tick moved 240 fps at timescale 600 to 240000/1001) to {24, 30, 48, 60, 120, 240} x 1000/1001 or an integer 1..240 within 0.1%. `timestampsQuantized` marks CFR with quantized ticks (Matroska 1 ms, and the millisecond grid above).
+- **Presented average.** `presentedAvgFps` = presented frames x timescale / (last PTS + stored duration of the last presented sample - first PTS); a zero stored duration falls back to the median delta. ISO BMFF reports it as `avgFps` (provenance exact) and keeps the duration-sum rational in `avgFpsFfprobe`, so the average agrees with Frames and Duration when an edit list trims VFR samples, a fragment is lost or overlaps (Chrome MediaRecorder `tfdt`), or the first frame is held. The library engines use the same value through `applyStats`.
+- **Held last frame.** When the stored duration of the last presented sample is at least 0.5 s and 4 median deltas (MP4 stts or trun, Matroska BlockDuration), a warning says so, because the average then sits below the frame rate.
+- **Profile gate.** The rate profile job is created when the largest delta is more than 7.5% above the smallest, unless the VFR rule calls the track CFR and the spread is within the VFR tolerance and below 2x (timestamp rounding only). CFR fixtures therefore never load the segments chunk, including 120 and 240 fps WebM at 1 ms ticks.
+- **Odd TimestampScale.** A Matroska timescale of 1e9 / TimestampScale that is not an integer is turned back into nanosecond ticks, so min, max and the average stay exact rationals (`10000000/333333` instead of `3000003/100000`).
+- **Fast path.** With constant ctts, no discontinuities and no negative durations, stats are computed from stts runs in O(runs). Otherwise a `Float64Array` of PTS is built, refused above 5M samples (`per-sample analysis skipped`; it was 50M, which let a 190 KB MP4 allocate 382 MB). The Matroska PTS array grows only up to the same limit, and the exact-scan cost model counts laced frames, not blocks.
 - **PTS input** (Matroska) takes `lastDuration`; reorder depth comes from the `ctsRange` or, when absent, from the largest PTS lag.
 - **Cost.** On the 1 h VFR file (124,761 stts runs) stats dominate the 21 ms total because the run generator is walked 2-4 times; plain index loops should roughly halve it. This is a performance note, not a correctness issue.
 - `avgFrameRate(ts, N, D)` uses BigInt and a port of `av_reduce` (`807689923/26949920` and `19001/317` are unit tests).
@@ -132,10 +136,10 @@ All engines return `FileResult` and fill the shared fields from `analyzeTimeline
 
 | Engine | Fixtures | Checks | exact | known-deviation | mismatch | n/a |
 |---|---:|---:|---:|---:|---:|---:|
-| mp4box | 100 | 1131 | 1017 | 2 | 97 (45 fixtures) | 15 |
-| mediabunny | 100 | 1495 | 1343 | 2 | 109 (50 fixtures) | 41 |
+| mp4box | 104 | 1169 | 1047 | 2 | 103 (47 fixtures) | 17 |
+| mediabunny | 104 | 1561 | 1401 | 2 | 113 (52 fixtures) | 45 |
 
-mp4box is exact on min, max, VFR, duplicates and dimensions for all 65 MP4/MOV tracks it parses; its mismatches come from the 35 files it cannot parse (27 Matroska, 7 corrupt, 1 empty), fragmented under-reads and truncated files. mediabunny `avgFps` is exact on 65 of 91 tracks, within tolerance on 19 (all 1 ms WebM/Matroska) and off on 7.
+Committed fixtures only, from `report/accuracy.json` of 2026-10-21. mp4box is exact on min, max, VFR, duplicates and dimensions for all 67 MP4/MOV tracks it parses; 29 of its 47 fixtures with a mismatch are WebM or Matroska files it cannot open, the other 18 are MP4/MOV files (edit lists, track selection with cover art or a second video track, audio-only, truncated and fragmented files). mediabunny's MP4/MOV average is exact on 63 tracks and off on 2 (plus the 2 sidx deviations); on Matroska its declared-rate check fails on 23 of 28 tracks, because it reports the packet rate, not DefaultDuration.
 
 ### rVFC (main thread, Chrome 155 only)
 
@@ -151,17 +155,19 @@ mp4box is exact on min, max, VFR, duplicates and dimensions for all 65 MP4/MOV t
 - **Pool** (`workerPool.ts`): up to 2 module workers, spawned lazily, FIFO queue. Cancel removes a queued job, or posts `cancel` and rejects with `AbortError` at once; a worker that is still busy 1.5 s later is terminated and replaced. A worker crash rejects the job and respawns.
 - **Store** (`store.ts`): an external store read with `useSyncExternalStore`. The Matroska mode (default `auto`) applies to files added later and re-runs finished Matroska rows. "Scan all frames" is a rescan in exact mode. A cancelled first analysis leaves `Cancelled`; a cancelled rescan keeps the previous result.
 - **Compare panel** is a lazy chunk. Opening it auto-runs mp4box (MP4/MOV only) and mediabunny; rVFC runs only on an explicit click (`Run (approximate)`), in the panel's host element or in a temporary fixed visible div on `body`. Closing the panel during an rVFC run detaches its host and is not handled.
-- **Download JSON** exports the own results, plus a `compare` object keyed by engine for rows with finished comparison runs.
+- **Download JSON and Copy JSON** export one envelope (`schema: video-fps-probe/export@1`, `app`, `environment`, `settings`, `results`; architecture.md, JSON export). `results` are the own results, plus a `compare` object keyed by engine for rows with finished comparison runs. Copy tries the async clipboard, then `execCommand('copy')` on a hidden text area, and when both fail shows the JSON in a read-only text area to select by hand (iOS on plain http, locked-down browsers). The write starts synchronously inside the click handler because Safari rejects a clipboard write after an `await`; Playwright's WebKit cannot prove that rule, so it needs a real iPhone. Both buttons stay disabled until a result exists.
+- **Device line.** The footer shows, for example, "Chrome 155 on Windows 10, 16 threads, 1280x900 @1x" (`data-testid="env-line"`). Where Chromium exposes UA client hints it adds the real OS version and the Android model, because Chrome on Android otherwise reports a frozen "Android 10"; macOS versions are left out because browsers freeze them at 10.15.7. The module is a lazy chunk (2.24 KB gzip) loaded on idle after the first result, or by the first export, so it is outside the initial and first-analysis composites. It used to load right after the first render, which put it on every page load without being counted (fixed 2026-10-21).
 - **Hooks for benchmarks.** `window.__fpsProbe` has `results` (finished rows in display order), `pending` and `runEngine(index, engine)`. DOM hooks: `input[data-testid="file-input"]` (multiple, focusable), `article.card`, `.summary` (`role=status`), `details.cmp`, `.rvfc-host`.
 - **Samples.** `public/samples/` holds 6 files (741,065 B) fetched into in-memory `File` objects, so their reads never touch the disk and timings are optimistic; the UI says so.
-- **Layout.** Light and dark through CSS variables, a 2-column card grid at 480 px and below, no horizontal scroll at 360 px.
-- **Verified in headless Chrome 155** (own profile, driven over CDP): 100 fixtures dropped at once gave 100 results in drop order in 0.2-0.4 s wall with the pool of 2 and zero console errors; header mode shows "Scan all frames" on Matroska cards and the click upgrades them to `exact`; all 6 samples run through own, mp4box and mediabunny; no overflow at 360 px with the compare table open. The real rVFC engine was verified separately (section 5); a full visible-tab GPU run is not covered.
+- **Layout.** Light and dark through CSS variables, a 2-column card grid at 480 px and below. The e2e 360 px test found a horizontal overflow with the Compare panel open: `section.list` is a grid with an `auto` track, so the card (min-width auto) took the table's min-content width (594 px in a 360 px viewport) and the `.scroll` wrapper never scrolled. The fix is `grid-template-columns: minmax(0, 1fr)` on `.list`.
+- **Verified in headless Chrome 155** (own profile, driven over CDP): 100 fixtures dropped at once gave 100 results in drop order in 0.2-0.4 s wall with the pool of 2 and zero console errors; header mode shows "Scan all frames" on Matroska cards and the click upgrades them to `exact`; all 6 samples run through own, mp4box and mediabunny. The 360 px check of that pass missed the overflow above, which the e2e suite caught. The real rVFC engine was verified separately (section 5); a full visible-tab GPU run is not covered.
 - **Bundle.** The first build, with both parsers inside the worker entry, measured main 73.67 KB gzip (limit 75), worker 23.93 KB (limit 12) and initial total 99.24 KB (limit 85); lazy mp4box 43.59 KB, mediabunny 52.46 KB, Compare 1.19 KB, shared counting 1.48 KB. The research prototypes were 5.5 KB (MP4) and 4.9 KB (EBML); the complete parsers are about twice that. Loading each parser as its own chunk on first use moves them out of the worker entry (architecture.md, Lazy chunks), and the budgets are now per chunk in `BUDGETS` of `scripts/size-report.mjs`. `npm run build && npm run size` gives the current numbers. The rVFC engine is 2,136 B gzip alone, of which about 270 B are core result builders that disappear when `core/result.ts` is shared with another chunk.
 
 ## 7. Compare rules and harness
 
 - **Known deviations** are per engine files, `fixtures/known-deviations/<engine>*.json`, merged for `own` (`own-isobmff.json`, `own-matroska.json`); the format is in `fixtures/known-deviations/README.md`. They replace the single `fixtures/known-deviations.json` of research 6.3. An entry applies only to a would-be mismatch, and an unused one is reported as stale.
-- **Built-in sidx rule.** The `avgFps` check is `known-deviation` (source `[built-in]`) when the app differs from ffprobe, equals the reference `avgFromPts` within 1e-9 relative, and the file is fragmented with a sidx (found by an independent top-level scan, not by the app). A file entry for the same fixture and field overrides the reason.
+- **ISO BMFF `avgFps`** is two checks: the plain one compares `avgFpsFfprobe` (falling back to `avgFps`) with `avg_frame_rate` exactly, and `measured` compares `avgFps` with `avgFromPts` when the app built a presented timeline (provenance exact). `measured` is within-tol when the frame counts match and the spans differ by less than one median delta, which happens when ffprobe fills the last packet duration itself (VP9 in MP4: 133 ticks for every packet against stored 128 and 144).
+- **Built-in sidx rule.** The `avgFps` check is `known-deviation` (source `[built-in]`) when the app differs from ffprobe, equals the reference `avgFromPts` within 1e-9 relative, and the file is fragmented with a sidx (found by an independent top-level scan, not by the app). Since the plain check reads `avgFpsFfprobe`, only the library engines reach it; the two own sidx entries were removed from `own-isobmff.json`.
 - **Primary track** for MP4/MOV uses ffprobe `disposition.default` as the tkhd enabled flag; Matroska uses the first video stream.
 - **Matroska `avgFps`** is two checks: `declared` (`avgFpsFfprobe` vs `avg_frame_rate`) and `measured` (only after an exact scan, vs `avgFromPts`, within 1e-9). A file with no declared rate is `n/a` only when the manifest notes say DefaultDuration is absent, so a parser that silently loses DefaultDuration is still caught.
 - Matroska `frames`, `presentedFrames`, `startSec` and measured `avgFps` apply only after an exact scan; estimated or sampled counts are `n/a`.
@@ -169,8 +175,8 @@ mp4box is exact on min, max, VFR, duplicates and dimensions for all 65 MP4/MOV t
 - **Outcome rule** for `error`: `expect=ok` needs no error, at least one track and a primary; `no-video` needs zero tracks and no error other than "no video"; `still` needs only single-sample tracks; `error` needs an error and zero tracks.
 - Per-track checks run for every video track, one table row each (`name (track N)`), primary first.
 - **Library engines** are loaded by the single `analyze*` export of `src/engines/<name>.ts`; large fixtures run once for them, and `--with-large` adds the 3 h and 1 h files. mp4box and mediabunny are exact on the 3 h CFR file (648,000 frames); both report 3600.001 s against 3600.000 s format duration for the 1 h VFR file.
-- Exit codes: 0 ok, 1 an unexpected own mismatch or throw, 2 harness error. `--filter` writes `report/accuracy.local.*`, which is git-ignored. `--self-test` runs 142 checks, including an oracle round trip that builds a synthetic app result from each of 102 ffprobe references and requires zero mismatches.
-- **Size report.** `scripts/size-report.mjs [dist] [--check]` finds the worker through the `Worker()` reference or the manifest, classifies the chunks, checks the limits in its `BUDGETS` table and reports the remaining lazy chunks without a limit.
+- Exit codes: 0 ok, 1 an unexpected own mismatch or throw, 2 harness error. `--filter` writes `report/accuracy.local.*`, which is git-ignored. `--self-test` runs 146 checks, including an oracle round trip that builds a synthetic app result from each of 106 ffprobe references and requires zero mismatches.
+- **Size report.** `scripts/size-report.mjs [dist] [--check]` finds the worker through the `Worker()` reference or the manifest, classifies the chunks, checks the limits in its `BUDGETS` table and reports the remaining lazy chunks without a limit. It knows the rate profile chunks (`segments`, `rateProfile`, not required) and the device info chunk (`deviceInfo`, unbudgeted), and adds a first VFR MP4 composite (initial + ISO BMFF + segments, 96.60 KB against 100 KB). Its component limits add up to 100.5 KB, so that composite can trip while every chunk is within its own limit. `--self-test` runs 136 checks.
 - **Header-mode caveat.** With `--mkv-mode header`, min, max and VFR are null by design; they must be rated `n/a` rather than compared (78 false mismatches otherwise).
 
 ## 8. Hostile-input verification
@@ -195,9 +201,9 @@ Two verifier passes returned FAIL on first review (13 ISO and 11 Matroska findin
 
 ## 9. Known differences from ffprobe outside the fixture set
 
-Deviations that the 100 fixtures exercise (3 accepted):
-- `frag_vfr_global_sidx.mp4`, `frag_vfr_dash.mp4`: ffprobe under-reads fragments; the app reports 4200/149 and still reproduces 60/1 and 30/1 in `avgFpsFfprobe`.
+Deviations that the committed fixtures exercise (1 accepted):
 - `vfr_concat_10_30_60.webm`: no DefaultDuration, so ffprobe fills the last packet duration from its estimated 30/1 and gets 3125/94; the app uses the median delta and gets 100/3.
+- `frag_vfr_global_sidx.mp4`, `frag_vfr_dash.mp4` are no longer deviations: ffprobe under-reads the fragments, the app shows 4200/149 as Average FPS (equal to `avgFromPts`) and reproduces 60/1 and 30/1 in `avgFpsFfprobe`, which is what the ffprobe check reads.
 
 Not covered by fixtures, known or suspected:
 - **ISO BMFF.**
@@ -207,7 +213,7 @@ Not covered by fixtures, known or suspected:
   - `rFpsFfprobe` is null where ffprobe prints `1/0` (all deltas 0) and wherever ffprobe's stages 2-4 decide.
   - Exotic fourccs read as `unknown`; width and height come from stsd, not the SPS; `cmov` and moov above 256 MiB are unsupported; only the first stsd entry is used.
   - 8.1.3 and later reject a trun whose sample count exceeds its payload (the app bounds it and warns), and master changed edit-list handling on 2026-10-12.
-  - Real recorder output (iPhone, Android, OBS, GoPro) and interlaced content were never tested.
+  - Real recorder output (iPhone, Android, OBS, GoPro) and interlaced content were never tested; the imitations below are the closest so far.
 - **Matroska.**
   - Laced blocks with no duration and no DefaultDuration: ffprobe average 75, app 37.5 (same last-frame class).
   - Damage to the EBML header: the app still produces a result, ffprobe fails (35 flips).
@@ -217,10 +223,89 @@ Not covered by fixtures, known or suspected:
   - Without DefaultDuration the ffprobe rate estimate is not reproduced.
   - At 1 ms ticks, VFR between rates whose periods differ by under about 1 ms is invisible.
   - mkvmerge output was not tested.
+- **Real-world imitations (2026-10-21).** A read-only probe built 32 phone, screen and browser recording imitations (ffmpeg with box patching, plus Chrome 155 MediaRecorder MP4, WebM and MKV) and a 48-file CFR snapping sweep. Everything matched ffprobe on average, frames, presented frames, duration, start, format duration, dimensions, codec and rotation, except the issues below. Fixed since (section 13): the Chrome MediaRecorder fMP4 average (now frames / span, 45.57 instead of 42.87), the 240 and 48 fps snapping at timescale 600 (now from the kept mean delta), and a warning for a held last frame. Open:
+  - The rate profile does not draw the stored duration of the last sample: a QuickTime-style recording whose last frame is held 2.5 s gets the held-frame warning, but the profile shows no freeze and ends at 3.0 s of 5.47 s. Segment durations include the freezes inside them while their rate excludes them (31 frames over 2.017 s shown as 30 fps), and the profile end can overshoot the duration by a few ms.
+  - `dominantFps` share counts frames, not time: a 20 fps QuickTime screen recording shows "dominant 60, 68% of frames" (the card now says "of frames", and shows "varies" for an uneven track), a MediaRecorder WebM "dominant 166.67".
+  - A multi-edit slow-motion list (rate 0.125 on the second edit) warns only "3 media edits, only the first is applied"; the rate warning covers the first media edit only and the profile covers edit 1 only. The compare script then labels the file "hybrid fragmented" in a detail text although it is not fragmented.
+  - Chrome MediaRecorder WebM and MKV: `avgFps.measured` differs from ffprobe's packet average by the last-frame rule (46.09 against 46.16), the class of the `vfr_concat_10_30_60.webm` deviation; the warnings say "no DefaultDuration: ffprobe estimates avg_frame_rate" although ffprobe prints 0/0, and "unknown size (live or unfinished recording)" for every finished recording.
+  - A non-box trailer after a complete moov (Samsung SEF-like) is reported as a truncated box with NUL characters in the warning and sets `truncated`, which triggers the truncated-sample walk; results stay exact.
+  - Phone-like one-tick jitter at timescale 600 gives VFR with min 28.571 and max 33.333, no nominal rate and "dominant 30 @ 0.68", while ffprobe prints `r_frame_rate` 30/1. This follows the documented VFR rule; users should expect it on real iPhone clips.
+  - Not imitated: real Apple VideoToolbox and Android MPEG4Writer files, HDR metadata, cinematic and slow-motion metadata, Safari and Firefox MediaRecorder, OBS hybrid MP4, GoPro, DJI, Sony, interlaced content and multi-GB files.
 - **Browser.** All IO and cost numbers are Node. The 150 ms exact-scan budget, the 4 KiB versus 1 MiB window choice, the fragment coalescing gap and the 16 MiB moov threshold need tuning with Chrome costs (0.65-0.85 ms per read). Firefox and Safari were not measured. rVFC was measured in Chrome 155 only.
 
 ## 10. Open items
 
-- `fixtures/README.md` still describes the placeholder `fixtures/known-deviations.json`.
-- A single stats pass over run-length tables would remove most of the 20 ms on the 1 h VFR file.
+- A single stats pass over run-length tables would remove most of the stats time on the 1 h VFR file; with the rate profile that file now takes 55.4 ms in Node and 63.0 ms in Chrome (section 11).
 - The mediabunny `packets()` stall is worth reporting upstream.
+- The open real-world findings of section 9 (last-frame hold drawn in the profile, frame-count dominant share, tail read size, trailer handling, MediaRecorder warnings).
+- ISMV (`ffmpeg -f ismv`) with B-frames: start 0 against ffprobe's 0.04 s and a format duration about 20 ms off (fragments without `tfdt`, negative composition offsets). Documented in the README limitations, no fixture.
+- Firefox does not start on the development machine (section 12), so Firefox results will come only from the CI job, which has not run yet.
+- `fixtures/known-deviations.json` is an empty placeholder that nothing reads.
+
+## 11. Rate profile
+
+Uneven frame distributions must be visible (half a video at 5 fps and half at 200 fps, freezes, bursts) without growing the bundle. The profile is `src/core/segments.ts`, a lazy chunk.
+
+- **Trigger.** `analyzeTimeline` records the smallest and largest positive interval. Only when the largest is more than 7.5% above the smallest (`CUSUM_DRIFT`, half of `RATE_CHANGE_RELATIVE` = 15%) does it return a `ProfileJob`, a closure over the interval source: run-length stts runs for MP4 (no per-frame array on the fast path), the sorted PTS for Matroska. CFR tracks get no job. Matroska gets a profile only after an exact scan; probe and header results have none.
+- **Deferred job.** After a track's result is built, the parser calls `rateProfileOf(job)`, which imports `segments.ts` once per worker. A failed import gives `rateProfile: null` instead of a failed file. The work stays inside `analyze`, so `io.ms` includes it.
+- **Segmentation.** One pass over `(count, interval)` runs in timeline order. A two-sided CUSUM tracks the deviation of each interval from the running mean `m` of the current segment, with drift `k = 0.075 m` and alarm level `h = 2 m` (`CUSUM_ALARM_PERIODS`). Runs of equal intervals inside the drift are consumed in one step. On an alarm the segment is cut where the deviation started; the boundary frame goes to the side whose rate it fits better (log ratio).
+- **Holds.** A single interval of at least `max(0.5 s, 4 m)` (`FREEZE_MIN_SEC`, `FREEZE_FACTOR`) closes the current segment and becomes a hold span.
+- **Short spans.** A span needs 5 frames and 0.5 s (`MIN_SEGMENT_FRAMES`, `MIN_SEGMENT_SEC`) to be a segment. A shorter one joins the neighbouring steady segment with the closest rate and becomes an anomaly: `freeze` when its mean interval is at least `max(0.5 s, 4 x the neighbour's mean interval)`, `gap` when its rate is more than 15% lower, `burst` when more than 15% higher; otherwise it merges silently. A long span that never settles is a `variable` segment.
+- **Merging and rate changes.** Adjacent steady segments within 15% of each other merge. A `rate-change` anomaly marks each remaining boundary between segments whose rates differ by 15% or more, and every boundary between two steady segments.
+- **Uneven.** The steady segments are sorted by rate and a sliding 15% band finds the dominant band by time (freeze time excluded) and by frames. `uneven` is true when that band covers under 80% of the time (`UNEVEN_DOMINANT_SHARE`) or of the frames, or when steady segments differ by 15% or more. A regular cadence (2:3 pulldown, `select` drops) stays one steady segment, VFR but not uneven.
+- **Buckets.** `min(120, frames / 2)` equal buckets over the PTS span; each interval spreads its frame over the buckets it covers. The UI draws them on a log scale.
+- **Output.** At most 50 segments and 50 anomalies, with counts of the rest; `dominantShare`; a summary of the first three segments plus anomaly and duplicate counts, for example `Uneven: 5 fps for 4 s, 200 fps for 4 s`.
+- **Tests.** `tests/unit/segments.test.ts` uses synthetic timelines; `tests/segments/fixtures.test.ts` asserts the profiles of the VFR fixtures, that 18 of the 20 CFR fixtures get no profile (the 120 and 240 fps WebM files get one steady segment, because 1 ms ticks spread more than 7.5% there), and that every profile tiles the presented frames. The e2e suite checks the uneven badge and the two-segment table in the browser.
+- **Size and cost.** The core chunk is 1.78 KB gzip (budget 2.00 KB) and the panel 0.94 KB (budget 1.50 KB); a first VFR MP4 loads 96.60 KB in total. In Node `vfr_two_phase_5_200.mp4` takes 0.52 ms in all and the 3 h CFR file is unaffected (3.83 ms). On the 1 h VFR screen recording (133,920 frames, 1439 gaps) the analysis takes 55.4 ms in Node and 63.0 ms in Chrome, against 31.7 ms and 31.1 ms in the reports committed before the profile (README of commit 83f7544). With the profile job switched off in a scratch copy of `src/core`, the same file takes 27 to 28 ms in Node against 45 to 48 ms with it (median of 9 runs each), so the profile is about 40% of the time on long VFR files.
+- **Known gaps** (section 9): the stored duration of the last sample is not used, so a long final hold is missing and the end can overshoot by a few ms; a segment's duration includes its freezes while its rate excludes them.
+
+## 12. End-to-end tests
+
+`tests/e2e` with Playwright 1.64.1 (`playwright.config.ts`): projects `chromium`, `firefox` and `webkit`; the web server builds to `.playwright/dist` (so the shared `dist/` is untouched) and serves it with `vite preview` on `127.0.0.1:4317` (`E2E_PORT` changes the port); `E2E_BASE_URL` points the same tests at a deployed copy instead. Timeouts 60 s per test and 15 s per assertion; retries 0 locally and 1 on CI; HTML report in `.playwright/report`.
+
+- **`parse.spec.ts`.** Every committed manifest fixture must exist on disk. In Matroska mode `exact` (set through the UI) all 104 fixtures are fed through the file input in batches of 26; in mode `header` the 30 `.mkv` and `.webm` names. Each fixture is one test: a hard check of the contract fields (container, codec, dimensions, the average as a rational and as the ffprobe string, frames, presented frames, min, max, VFR, duration, error, rate profile segment count and uneven flag), then deep equality of the whole `FileResult` against `analyze()` in Node except `io.ms`. A final test fails on any uncaught page error.
+- **`ui.spec.ts`.** Console errors on load; the six samples; "Scan all frames" on `h264_vfr_remux.mkv` in header mode, upgraded to the Node exact result; the uneven badge, sparkline, summary and 2-row table on `vfr_two_phase_5_200.mp4`; the compare panel per engine (mp4box, mediabunny) against the same engine in Node, skipped only on a dynamic-import load failure; Download JSON (file name, envelope, results equal the hook and the cards); no horizontal overflow at 360 px with the compare panel open; Tab reaches the file input with a visible focus ring.
+- **`rvfc.spec.ts`.** Runs the rVFC engine on `cfr_vp9_30.webm` and `cfr_h264_30.mp4` with a 75 s hang guard and attaches the estimates; it fails only on a hang, a rejected promise or a page error.
+
+First run, 2026-10-21, on the Windows development machine (about 30 s including the build):
+
+| Browser | Passed | Failed | Notes |
+|---|---:|---:|---|
+| Chromium 156.0.8078.4 | 146 | 1 | 360 px overflow (section 6) |
+| WebKit 27.2 | 146 | 1 | the same overflow; `requestVideoFrameCallback` unsupported in this Windows build |
+| Firefox 157 (Playwright build 1555) | 1 | 12 | the browser does not start: `browserType.launch: spawn UNKNOWN`, a SideBySide error for the `mozglue` assembly; 134 tests did not run |
+
+- In Chromium and WebKit all 104 fixtures in exact mode and the 30 Matroska names in header mode were identical to Node, including `io.reads`, `io.bytesRead`, warnings, error strings and the floating-point profile buckets. No uncaught page errors.
+- rVFC in Chromium: both files estimated 30 fps in about 1.85 s (VP9 with medium confidence and `estimates-differ`, H.264 high).
+- Firefox runs only in the CI job `e2e` (Ubuntu, `npx playwright install --with-deps chromium firefox webkit`), which has not run yet. The job uploads no report artifact.
+- The deployed demo has not been tested through `E2E_BASE_URL` yet: the repository has no remote. The README section "Publishing the demo" lists the steps, including Settings > Pages > Source = GitHub Actions, which `actions/configure-pages` does not set by itself.
+
+Second run, after the review fixes of section 13 (157 tests per browser, 7 new committed fixtures and 5 new UI tests):
+
+| Browser | Passed | Failed | Notes |
+|---|---:|---:|---|
+| Chromium 156.0.8078.4 | 157 | 0 | the 360 px overflow test passes with `grid-template-columns: minmax(0, 1fr)` on `.list` |
+| WebKit 27.2 | 157 | 0 | |
+| Firefox 157 (Playwright build 1555) | 1 | 15 | still `browserType.launch: spawn UNKNOWN`; 141 tests did not run |
+
+## 13. Review fixes (2026-10-21)
+
+An independent review (requirements, correctness, docs and UX) and a pass over device-like recordings reported 40 findings. Each was reproduced before the fix; the regression test or check is named in brackets.
+
+- **Layout.** `.list` now has `grid-template-columns: minmax(0, 1fr)`, so a result card no longer takes the min-content width of the Compare table; at 360 px the table scrolls inside `.scroll` [`ui.spec.ts` 360 px test, green in Chromium and WebKit; `app-mobile.png` now shows a card with the panel open].
+- **MKV-to-MP4 remux.** A CFR stream whose MP4 timestamps sit on a 1 ms grid at timescale 16000 was VFR with a "125 fps dominant" nominal. The VFR tolerance gains a 1 ms term for such grids (section 4), in the app and in `ref-extract.mjs`; three refs changed only in `toleranceTicks` [`remux_cfr_120_ts16000.mp4`, `remux_cfr_29.97_ts16000.mp4`, unit tests in `stats.test.ts`].
+- **Average FPS.** `avgFps` is now presented frames over the presentation span (section 4); `avgFpsFfprobe` keeps the duration-sum rational. The compare script checks both (section 7) [`start_freeze_bf.mp4`, `fmp4_missing_fragment.mp4`, `elst_trim_vfr_copy.mp4`, the oracle round trip and self-test cases].
+- **Nominal snapping** from the kept mean delta [`cfr_240_ts600.mp4`, unit test].
+- **DASH with B-frames.** A complete sidx sets the track duration to its earliest presentation time plus the subsegment durations, as `mov_read_sidx` does: 4.08 s and a format duration of 4.16 s, as ffprobe prints [`fmp4_global_sidx_bframes.mp4`].
+- **Memory limits.** Expansion limit 5M instead of 50M, the Matroska PTS array capped at the limit, and laced frames counted in the exact-scan cost: a 1.1 MB laced WebM no longer allocates 820 MB in auto mode [`robustness.test.ts`].
+- **Card wording.** For an uneven track the Nominal FPS cell says "varies" and the VFR badge drops its percentage; the dominant share says "of frames"; a probe-mode Matroska card says "no VFR in sample" instead of "CFR"; a freeze or gap count badge appears on otherwise steady tracks; the profile summary says "Mostly steady" when freezes, gaps or bursts exist; shares below 0.1% print as `<0.1%` [`ui.spec.ts`, `segments.test.ts`].
+- **UI state and accessibility.** A Matroska mode change applies to rows still in their first analysis (re-run when they finish); the results list is no longer an `aria-live` region and the progress bars no longer have `role=status` (only `.summary` announces); focus moves to the card heading after "Scan all frames" and to the file input after "Clear list"; provenance marks are `<abbr>` with a visually hidden name; a hidden `h2` labels the results; no rescan button without a video track; the export note clears when the list changes; rVFC shows `-` for bytes and reads; byte sizes print KiB and MiB [`ui.spec.ts`].
+- **Timing fairness.** The own engine's `io.ms` leaves out the parser chunk load, as the library engines leave out theirs [`analyze.test.ts`].
+- **Device info and build id.** The device chunk loads on idle after the first result, so it is outside the initial and first-analysis composites; the export names the build by its hashed entry chunk (`app.build`), and `buildTime` and `commit` come from `VITE_BUILD_TIME` and `VITE_COMMIT` when the build sets them [`device-info.test.ts`, `ui.spec.ts`].
+- **Embedding API.** `workerPool.ts` exports `prewarm()` and `dispose()` [`worker-pool.test.ts`].
+- **Warnings.** A held last frame (at least 0.5 s and 4 median deltas) is warned; a probe whose clusters hold one frame each says so; a skipped Attachments element is silent and other skipped header elements are named [`stats.test.ts`, `robustness.test.ts`].
+- **Odd TimestampScale.** Matroska rates stay exact rationals [`stats.test.ts`].
+- **Big files in the browser.** `--with-big` generates three 604 MB 1080p files; the bench measured them in Chrome 155: 2 reads, 75 KiB and 1.70 ms for the MP4 with the moov at the end, 1 read and 0.90 ms with faststart, and 117 ms, 126 reads and 16.5 MiB for the same stream in Matroska, where auto mode picks a probe.
+- **Docs.** `docs/research.md` now points at `scripts/fixtures/` and reads as a neutral spec; the README gained "Publishing the demo", the Firefox status, a 4 GiB browser result (re-measured), a large-Matroska limitation, ISMV, and the embedding API; the integration report labels its batch with the measured file count.
+
+Open after this round: the Firefox run (blocked on the development machine, covered by the CI e2e job), the deployed-demo run, and the real-world items left open in section 9.
