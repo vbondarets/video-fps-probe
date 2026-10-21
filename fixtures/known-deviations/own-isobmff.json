@@ -1,0 +1,8 @@
+{
+  "frag_vfr_global_sidx.mp4": {
+    "avgFps": "The global sidx covers the whole file, so ffprobe 8.1.1 stops its header walk after the first moof and mdat (mov.c:9740-9746) and computes avg_frame_rate 60/1 from 30 of 140 samples. The app reads every moof and reports the full-file average 4200/149, which equals avgFromPts; avgFpsFfprobe still reproduces 60/1."
+  },
+  "frag_vfr_dash.mp4": {
+    "avgFps": "Each fragment has its own sidx and the last one completes the index, so ffprobe 8.1.1 stops right after it and never parses the last moof: avg_frame_rate 30/1 comes from 120 of 140 samples. The app reads every moof and reports the full-file average 4200/149, which equals avgFromPts; avgFpsFfprobe still reproduces 30/1."
+  }
+}
