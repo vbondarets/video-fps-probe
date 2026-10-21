@@ -31,6 +31,19 @@ const failing: ContainerAnalyzer = async () => {
 const registry = (iso: ContainerAnalyzer, mkv: ContainerAnalyzer = failing): AnalyzerRegistry => ({ isobmff: iso, matroska: mkv });
 
 describe('analyze', () => {
+  it('leaves the parser chunk load out of io.ms, as the library engines do', async () => {
+    const slowLoad = async (): Promise<ContainerAnalyzer> => {
+      await new Promise((resolve) => setTimeout(resolve, 120));
+      return stubIso;
+    };
+    const t0 = performance.now();
+    const r = await analyze(ftypBlob(), 'clip.mp4', {}, registry(failing), { isobmff: slowLoad, matroska: slowLoad });
+    expect(performance.now() - t0).toBeGreaterThanOrEqual(100);
+    expect(r.error).toBeNull();
+    expect(r.container).toBe('mov');
+    expect(r.io.ms).toBeLessThan(100);
+  });
+
   it('dispatches ISO BMFF by content and fills io stats', async () => {
     const r = await analyze(ftypBlob(), 'clip.webm', {}, registry(stubIso));
     expect(r.name).toBe('clip.webm');
