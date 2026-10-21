@@ -23,6 +23,10 @@ export interface RefPackets {
   instFpsExcludingTail: RefInstFps | null;
   isVfr: boolean | null;
   avgFromPts: RefFps | null;
+  avgFromPtsFrames: number | null;
+  avgFromPtsSpanTicks: number | null;
+  lastDurationTicks: number | null;
+  medianDeltaTicks: number | null;
 }
 
 export interface RefStream {
@@ -122,6 +126,10 @@ function packetsOf(v: unknown): RefPackets | null {
     instFpsExcludingTail: instFpsOrNull(r.instFpsExcludingTail),
     isVfr: vfr && typeof vfr.isVfr === 'boolean' ? vfr.isVfr : null,
     avgFromPts: fpsOrNull(rec(r.avgFromPts)?.fps),
+    avgFromPtsFrames: numOrNull(rec(r.avgFromPts)?.frames),
+    avgFromPtsSpanTicks: numOrNull(rec(r.avgFromPts)?.spanTicks),
+    lastDurationTicks: numOrNull(rec(r.avgFromPts)?.lastDurationTicks),
+    medianDeltaTicks: vfr ? numOrNull(vfr.medianDeltaTicks) : null,
   };
 }
 
