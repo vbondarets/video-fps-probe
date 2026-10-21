@@ -1,5 +1,3 @@
-import { analyzeIsoBmff } from './isobmff/index.ts';
-import { analyzeMatroska } from './matroska/index.ts';
 import { resolveOptions } from './options.ts';
 import { BlobReader, type BlobLike } from './reader.ts';
 import { emptyAnalysis } from './result.ts';
@@ -9,8 +7,8 @@ import type { AnalyzeOptions, ContainerAnalysis, ContainerAnalyzer, FileResult }
 export type AnalyzerRegistry = Record<Exclude<SniffKind, 'unknown'>, ContainerAnalyzer>;
 
 export const DEFAULT_ANALYZERS: Readonly<AnalyzerRegistry> = {
-  isobmff: analyzeIsoBmff,
-  matroska: analyzeMatroska,
+  isobmff: async (reader, opts) => (await import('./isobmff/index.ts')).analyzeIsoBmff(reader, opts),
+  matroska: async (reader, opts) => (await import('./matroska/index.ts')).analyzeMatroska(reader, opts),
 };
 
 const SNIFF_BYTES = 1024;
