@@ -277,7 +277,7 @@ describe('analyzeTimeline: edit windows, fragments, limits', () => {
     expect(s.avgFpsString).toBe('1/1');
     expect(s.presentedFrames).toBeNull();
     expect(s.isVfr).toBeNull();
-    expect(s.warnings.join(' ')).toMatch(/exceed the limit of 50000000/);
+    expect(s.warnings.join(' ')).toMatch(/exceed the limit of 5000000/);
   });
 
   it('honours a custom expansion limit', () => {
@@ -310,6 +310,103 @@ describe('analyzeTimeline: edit windows, fragments, limits', () => {
     expect(s.timescale).toBe(1);
     expect(s.avgFpsString).toBe('1/1');
     expect(s.warnings[0]).toMatch(/invalid timescale/);
+  });
+});
+
+describe('analyzeTimeline: millisecond-grid timestamps at a fine timescale', () => {
+  const remux = (fps: number, frames: number, timescale: number): TimelineSegment => {
+    const pts = Array.from({ length: frames + 1 }, (_, i) => Math.round((i * 1000) / fps) * (timescale / 1000));
+    return { durations: pts.slice(1).map((p, i) => p - pts[i]) };
+  };
+
+  it('treats a 120 fps MKV-to-MP4 remux at timescale 16000 (8/9 ms) as quantized CFR', () => {
+    const s = analyzeTimeline({ timescale: 16000, segments: [remux(120, 360, 16000)] });
+    expect(s.isVfr).toBe(false);
+    expect(s.timestampsQuantized).toBe(true);
+    expect(s.tolerance).toBe(16);
+    expect(s.dominantFps).toBeNull();
+    expect(rat(s.nominalFps)).toBe('120/1');
+    expect(s.nominalFps?.kind).toBe('snapped');
+    expect(s.profile).toBeNull();
+  });
+
+  it('snaps NTSC rates on a 1 ms grid to the 1001 rationals', () => {
+    for (const [fps, want] of [[60000 / 1001, '60000/1001'], [24000 / 1001, '24000/1001'], [30000 / 1001, '30000/1001'], [240, '240/1']] as const) {
+      const s = analyzeTimeline({ timescale: 16000, segments: [remux(fps, 300, 16000)] });
+      expect(s.isVfr, want).toBe(false);
+      expect(rat(s.nominalFps), want).toBe(want);
+    }
+  });
+
+  it('keeps a real 1 ms jump VFR when the deltas are not on a millisecond grid', () => {
+    const s = analyzeTimeline({ timescale: 90000, segments: [runs([50, 3000], [50, 3090])] });
+    expect(s.isVfr).toBe(true);
+    expect(s.timestampsQuantized).toBe(false);
+  });
+
+  it('keeps a freeze VFR on a millisecond grid', () => {
+    const s = analyzeTimeline({ timescale: 16000, segments: [runs([30, 528], [1, 16000], [30, 544])] });
+    expect(s.isVfr).toBe(true);
+    expect(s.profile).not.toBeNull();
+  });
+});
+
+describe('analyzeTimeline: Matroska TimestampScale that does not divide 1e9', () => {
+  it('keeps min and max as exact rationals of 1e9 / (delta x TimestampScale)', () => {
+    const s = analyzeTimeline({ timescale: 1e9 / 333333, pts: roundedPts(90, 100), tickQuantized: true });
+    expect(rat(s.minFps)).toBe('10000000/333333');
+    expect(rat(s.maxFps)).toBe('10000000/333333');
+    expect(rat(s.avgFps)).toBe('10000000/333333');
+    const ntsc = analyzeTimeline({ timescale: 1e9 / 41708333, pts: roundedPts(48, 1), tickQuantized: true });
+    expect(rat(ntsc.minFps)).toBe('1000000000/41708333');
+  });
+});
+
+describe('analyzeTimeline: presented average', () => {
+  it('equals presented frames over the presentation span when an edit window trims VFR samples', () => {
+    const seg = runs([20, 18000], [800, 450]);
+    const s = analyzeTimeline({ timescale: 90000, segments: [seg], editWindow: { start: 18000 * 5, end: 18000 * 20 + 450 * 800 } });
+    expect(rat(s.avgFps)).toBe('205/2');
+    expect(s.presentedFrames).toBe(815);
+    expect(rat(s.presentedAvgFps)).toBe('815/7');
+  });
+
+  it('follows decode time gaps between fragments instead of the duration sum', () => {
+    const s = analyzeTimeline({
+      timescale: 15360,
+      segments: [
+        { baseDts: 0, durations: runs([60, 512]).durations },
+        { baseDts: 90 * 512, durations: runs([90, 512]).durations },
+      ],
+    });
+    expect(rat(s.avgFps)).toBe('30/1');
+    expect(rat(s.presentedAvgFps)).toBe('25/1');
+  });
+
+  it('uses the stored duration of the last presented sample, or the median when it is zero', () => {
+    const held = analyzeTimeline({ timescale: 15360, segments: [runs([149, 512], [1, 30720])] });
+    expect(rat(held.presentedAvgFps)).toBe(rat(held.avgFps));
+    const zero = analyzeTimeline({ timescale: 15360, segments: [runs([149, 512], [1, 0])] });
+    expect(rat(zero.avgFps)).not.toBe('30/1');
+    expect(rat(zero.presentedAvgFps)).toBe('30/1');
+  });
+
+  it('warns when the stored duration of the last frame is a long hold (screen recordings)', () => {
+    const held = analyzeTimeline({ timescale: 15360, segments: [runs([149, 512], [1, 30720])] });
+    expect(held.isVfr).toBe(false);
+    expect(held.warnings.join(' ')).toMatch(/last frame held 2\.000 s \(60\.0x the median frame interval\)/);
+    const block = analyzeTimeline({ timescale: 1000, pts: roundedPts(100, 40), lastDuration: 2000, tickQuantized: true });
+    expect(block.warnings.join(' ')).toMatch(/last frame held 2\.000 s/);
+    const normal = analyzeTimeline({ timescale: 15360, segments: [runs([150, 512])] });
+    expect(normal.warnings.join(' ')).not.toMatch(/last frame held/);
+    const short = analyzeTimeline({ timescale: 1000, pts: roundedPts(100, 40), lastDuration: 200 });
+    expect(short.warnings.join(' ')).not.toMatch(/last frame held/);
+  });
+
+  it('snaps 240 fps at timescale 600 (deltas 3 and 2) from the kept deltas, not the odd last tick', () => {
+    const s = analyzeTimeline({ timescale: 600, segments: [{ durations: [...Array.from({ length: 479 }, (_, i) => (i % 2 ? 2 : 3)), 3] }] });
+    expect(s.isVfr).toBe(false);
+    expect(rat(s.nominalFps)).toBe('240/1');
   });
 });
 
