@@ -6,9 +6,16 @@ import type { AnalyzeOptions, ContainerAnalysis, ContainerAnalyzer, FileResult }
 
 export type AnalyzerRegistry = Record<Exclude<SniffKind, 'unknown'>, ContainerAnalyzer>;
 
+export type AnalyzerLoaders = Record<Exclude<SniffKind, 'unknown'>, () => Promise<ContainerAnalyzer>>;
+
+export const DEFAULT_LOADERS: Readonly<AnalyzerLoaders> = {
+  isobmff: async () => (await import('./isobmff/index.ts')).analyzeIsoBmff,
+  matroska: async () => (await import('./matroska/index.ts')).analyzeMatroska,
+};
+
 export const DEFAULT_ANALYZERS: Readonly<AnalyzerRegistry> = {
-  isobmff: async (reader, opts) => (await import('./isobmff/index.ts')).analyzeIsoBmff(reader, opts),
-  matroska: async (reader, opts) => (await import('./matroska/index.ts')).analyzeMatroska(reader, opts),
+  isobmff: async (reader, opts) => (await DEFAULT_LOADERS.isobmff())(reader, opts),
+  matroska: async (reader, opts) => (await DEFAULT_LOADERS.matroska())(reader, opts),
 };
 
 const SNIFF_BYTES = 1024;
@@ -39,6 +46,7 @@ export async function analyze(
   name: string,
   opts: AnalyzeOptions = {},
   analyzers: Readonly<AnalyzerRegistry> = DEFAULT_ANALYZERS,
+  loaders: Readonly<AnalyzerLoaders> | null = analyzers === DEFAULT_ANALYZERS ? DEFAULT_LOADERS : null,
 ): Promise<FileResult> {
   const t0 = performance.now();
   const resolved = resolveOptions(opts);
@@ -51,6 +59,7 @@ export async function analyze(
     engine: 'own',
   };
   let reader: BlobReader | null = null;
+  let loadMs = 0;
   try {
     reader = new BlobReader(blob, { headWindow: resolved.readAhead.head, signal: resolved.signal });
     if (reader.size === 0) {
@@ -62,7 +71,13 @@ export async function analyze(
         result.error = `not a recognised container: ${sniffed.reason}`;
       } else {
         result.container = sniffed.kind === 'isobmff' ? 'mp4' : 'matroska';
-        applyAnalysis(result, await analyzers[sniffed.kind](reader, resolved));
+        let analyzer = analyzers[sniffed.kind];
+        if (loaders) {
+          const l0 = performance.now();
+          analyzer = await loaders[sniffed.kind]();
+          loadMs = performance.now() - l0;
+        }
+        applyAnalysis(result, await analyzer(reader, resolved));
       }
     }
   } catch (e) {
@@ -73,6 +88,6 @@ export async function analyze(
     result.io.reads = reader.reads;
     result.io.bytesRead = reader.bytesFetched;
   }
-  result.io.ms = performance.now() - t0;
+  result.io.ms = performance.now() - t0 - loadMs;
   return result;
 }
