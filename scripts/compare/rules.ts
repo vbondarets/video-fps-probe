@@ -26,7 +26,8 @@ const RULE = {
   codecName: 'Exact vs codec_name',
   width: 'Exact vs width',
   height: 'Exact vs height',
-  avgIso: 'Exact reduced rational vs avg_frame_rate',
+  avgIso: 'avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly',
+  avgIsoMeasured: 'Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration)',
   avgDeclared: 'Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists',
   avgMeasured: 'Measured average must equal avgFromPts (integer-ms last duration) within 1e-9 relative',
   nominalIso: 'Exact vs r_frame_rate, only when the track is CFR (stage 1); otherwise skipped',
@@ -316,7 +317,7 @@ function sidxFragmented(layout: FileLayout | null | undefined, s: RefStream, inf
 function avgIsoDraft(t: VideoTrackResult, s: RefStream, info: FixtureInfo, layout: FileLayout | null | undefined): Draft {
   const base = trackBase('avgFps', null, t, RULE.avgIso);
   const ff = parseRatio(s.avgFrameRate);
-  const app = toRatio(t.avgFps) ?? parseRatio(t.avgFpsFfprobe);
+  const app = parseRatio(t.avgFpsFfprobe) ?? toRatio(t.avgFps);
   if (!ff) return { ...base, verdict: 'n/a', app: fmtRatio(app), ffprobe: s.avgFrameRate, detail: 'unparseable ffprobe value' };
   if (!app) {
     if (isZeroRatio(ff)) return { ...base, verdict: 'exact', app: null, ffprobe: s.avgFrameRate, detail: 'both report no average' };
@@ -336,6 +337,30 @@ function avgIsoDraft(t: VideoTrackResult, s: RefStream, info: FixtureInfo, layou
     };
   }
   return { ...base, verdict: 'mismatch', app: fmtRatio(app), ffprobe: s.avgFrameRate };
+}
+
+function avgIsoMeasuredDraft(t: VideoTrackResult, s: RefStream): Draft {
+  const base = trackBase('avgFps', 'measured', t, RULE.avgIsoMeasured);
+  const full = s.packets?.avgFromPts ?? null;
+  const ffStr = fmtRatio(full);
+  const app = toRatio(t.avgFps);
+  if (t.provenance.avgFps !== 'exact') return { ...base, verdict: 'n/a', app: fmtRatio(app), ffprobe: ffStr, detail: 'no presented timeline: the average is the stored-duration value' };
+  if (!full) return { ...base, verdict: 'n/a', app: fmtRatio(app), ffprobe: null, detail: 'no reference average' };
+  if (!app) return { ...base, verdict: 'mismatch', app: null, ffprobe: ffStr, detail: 'presented timeline built but no average reported' };
+  if (sameRatio(app, full)) return { ...base, verdict: 'exact', app: fmtRatio(app), ffprobe: ffStr };
+  if (relDiff(ratioValue(app), full.value) <= MEASURED_AVG_RELATIVE_TOLERANCE) return { ...base, verdict: 'within-tol', app: fmtRatio(app), ffprobe: ffStr };
+  const p = s.packets;
+  const frames = t.presentedFrames;
+  const refSpan = p?.avgFromPtsSpanTicks ?? null;
+  const median = p?.medianDeltaTicks ?? null;
+  if (frames !== null && frames === p?.avgFromPtsFrames && refSpan !== null && median !== null && t.timescale > 0) {
+    const appSpan = (frames * t.timescale) / ratioValue(app);
+    const diff = Math.abs(appSpan - refSpan);
+    if (diff < median) {
+      return { ...base, verdict: 'within-tol', app: fmtRatio(app), ffprobe: ffStr, detail: `spans differ by ${Math.round(diff)} ticks: ffprobe's last packet duration is ${p?.lastDurationTicks ?? '?'} ticks, the stored one gives the app's span` };
+    }
+  }
+  return { ...base, verdict: 'mismatch', app: fmtRatio(app), ffprobe: ffStr };
 }
 
 function avgMatroskaDeclaredDraft(t: VideoTrackResult, s: RefStream, info: FixtureInfo): Draft {
@@ -526,8 +551,10 @@ function trackDrafts(
   out.push(compareExact('codecName', t, RULE.codecName, t.codecName, s.codecName));
   out.push(compareExact('width', t, RULE.width, t.width, s.width));
   out.push(compareExact('height', t, RULE.height, t.height, s.height));
-  if (family === 'isobmff') out.push(avgIsoDraft(t, s, info, layout));
-  else {
+  if (family === 'isobmff') {
+    out.push(avgIsoDraft(t, s, info, layout));
+    out.push(avgIsoMeasuredDraft(t, s));
+  } else {
     out.push(avgMatroskaDeclaredDraft(t, s, info));
     out.push(avgMatroskaMeasuredDraft(t, s, result));
   }
