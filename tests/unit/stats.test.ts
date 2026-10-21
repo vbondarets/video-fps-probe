@@ -6,6 +6,7 @@ import {
   type TimelineSegment,
   type TimelineStats,
 } from '../../src/core/stats.ts';
+import { rateProfile } from '../../src/core/segments.ts';
 
 function runs(...pairs: Array<[count: number, delta: number]>): TimelineSegment {
   return { durations: { counts: pairs.map((p) => p[0]), deltas: pairs.map((p) => p[1]) } };
@@ -23,9 +24,9 @@ function rat(r: { num: number; den: number } | null): string | null {
   return r ? `${r.num}/${r.den}` : null;
 }
 
-function comparable(s: TimelineStats): Omit<TimelineStats, 'fastPath' | 'warnings'> {
-  const { fastPath: _f, warnings: _w, ...rest } = s;
-  return rest;
+function comparable(s: TimelineStats) {
+  const { fastPath: _f, warnings: _w, profile, ...rest } = s;
+  return { ...rest, profile: profile?.(rateProfile) ?? null };
 }
 
 describe('analyzeTimeline: CFR', () => {
