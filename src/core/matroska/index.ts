@@ -2,7 +2,7 @@ import { DEFAULT_COST_MODEL, predictReadMs } from '../options.ts';
 import { avgFrameRate, reduceRational, toFfprobeString } from '../rational.ts';
 import type { BlobReader } from '../reader.ts';
 import { emptyAnalysis, emptyTrack } from '../result.ts';
-import { analyzeTimeline, rateFromTicks, VFR_RELATIVE_TOLERANCE, type TimelineStats } from '../stats.ts';
+import { analyzeTimeline, rateFromTicks, rateProfileOf, VFR_RELATIVE_TOLERANCE, type ProfileJob, type TimelineStats } from '../stats.ts';
 import type { ContainerAnalysis, Provenance, ResolvedAnalyzeOptions, VideoTrackResult } from '../types.ts';
 import { ID_BLOCK, ID_BLOCK_GROUP, ID_CLUSTER, ID_CRC32, ID_CUES, ID_POSITION, ID_PREV_SIZE, ID_SIMPLE_BLOCK, ID_TIMESTAMP, ID_VOID, readHeader, UNKNOWN_SIZE } from './ebml.ts';
 import { parseMaster, readMatroskaHeader, type MkvHeader, type MkvTrack } from './header.ts';
@@ -321,7 +321,7 @@ async function probeScan(src: ByteSource, h: MkvHeader, video: readonly MkvTrack
   });
 }
 
-function applyExact(r: VideoTrackResult, s: TrackScan): void {
+function applyExact(r: VideoTrackResult, s: TrackScan): ProfileJob | null {
   const ts = r.timescale;
   r.frames = r.presentedFrames = s.frames;
   r.provenance.frames = r.provenance.presentedFrames = 'computed';
@@ -332,7 +332,7 @@ function applyExact(r: VideoTrackResult, s: TrackScan): void {
   if (s.overLimit) r.warnings.push(`per-frame statistics skipped: more than ${s.n} frames`);
   if (!s.n || s.overLimit) {
     if (!s.n) r.warnings.push('no blocks for this track');
-    return;
+    return null;
   }
   const tl = analyzeTimeline({ timescale: ts, pts: s.pts.subarray(0, s.n), lastDuration: s.maxPtsDur > 0 ? s.maxPtsDur : null, tickQuantized: true });
   r.warnings.push(...tl.warnings);
@@ -349,6 +349,7 @@ function applyExact(r: VideoTrackResult, s: TrackScan): void {
     r.warnings.push(`declared rate ${r.avgFpsFfprobe} differs from the measured average ${r.avgFps.value.toFixed(3)}`);
   }
   if (tl.duplicateTimestamps) r.warnings.push(`${tl.duplicateTimestamps} duplicate block timestamp(s) excluded from the instantaneous rates`);
+  return tl.profile;
 }
 
 export async function analyzeMatroska(reader: BlobReader, opts: ResolvedAnalyzeOptions): Promise<ContainerAnalysis> {
@@ -404,7 +405,10 @@ export async function analyzeMatroska(reader: BlobReader, opts: ResolvedAnalyzeO
     if (st.truncated) w.push('truncated file: the last Cluster or block ends beyond EOF');
     if (st.missingClusterTs) w.push(`${st.missingClusterTs} block(s) in Clusters without a Timestamp`);
     warnInfoDuration(h, st.maxAnyTicks, w);
-    video.forEach((t, i) => applyExact(a.videoTracks[i], st.tracks.get(t.number) as TrackScan));
+    for (const [i, t] of video.entries()) {
+      const r = a.videoTracks[i];
+      r.rateProfile = await rateProfileOf(applyExact(r, st.tracks.get(t.number) as TrackScan));
+    }
     return a;
   }
   src.window = plan.window === SMALL_SCAN_WINDOW ? SMALL_SCAN_WINDOW : opts.readAhead.head;

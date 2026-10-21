@@ -43,6 +43,42 @@ export type TrackField =
   | 'isVfr'
   | 'duplicateTimestamps';
 
+export type RateSegmentKind = 'steady' | 'variable';
+
+export interface RateSegment {
+  startSec: number;
+  endSec: number;
+  frames: number;
+  fps: number;
+  kind: RateSegmentKind;
+}
+
+export type RateAnomalyKind = 'rate-change' | 'freeze' | 'burst' | 'gap';
+
+export interface RateAnomaly {
+  kind: RateAnomalyKind;
+  atSec: number;
+  durationSec: number;
+  fromFps: number;
+  toFps: number;
+}
+
+export interface RateBuckets {
+  bucketSec: number;
+  fps: number[];
+}
+
+export interface RateProfile {
+  segments: RateSegment[];
+  moreSegments: number;
+  anomalies: RateAnomaly[];
+  moreAnomalies: number;
+  buckets: RateBuckets;
+  uneven: boolean;
+  dominantShare: number;
+  summary: string;
+}
+
 export interface VideoTrackResult {
   trackId: number;
   fourccOrCodecId: string;
@@ -68,6 +104,7 @@ export interface VideoTrackResult {
   duplicateTimestamps: number;
   timestampsQuantized: boolean;
   isStill: boolean;
+  rateProfile?: RateProfile | null;
   provenance: Partial<Record<TrackField, Provenance>>;
   warnings: string[];
 }

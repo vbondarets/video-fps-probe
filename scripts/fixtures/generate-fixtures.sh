@@ -178,6 +178,16 @@ note vfr_screenrec_ts1000.webm webm vfr ok "same in WebM: DefaultDuration claims
 "${FF[@]}" -f lavfi -i "$(src 24 5)" "${H264[@]}" -bf 0 -g 24 -video_track_timescale 90000 -f mp4 "$W/src24.mp4"
 "${FF[@]}" -i "$W/src24.mp4" -c copy -bsf:v "setts=pts='(5*floor(N/2)+2*mod(N,2))*1500':dts='(5*floor(N/2)+2*mod(N,2))*1500':duration='(2+mod(N,2))*1500'" -video_track_timescale 90000 vfr_pulldown_2_3.mp4
 note vfr_pulldown_2_3.mp4 mp4 vfr ok "VFR method 6: setts bsf rewrites a 24 fps stream to a 2:3 cadence (3000/4500 ticks); avg exactly 24, r=60"
+TWO=(-f lavfi -i "testsrc2=size=160x90:rate=5:duration=4" -f lavfi -i "testsrc2=size=160x90:rate=200:duration=4")
+TWOCAT='[0:v][1:v]concat=n=2:v=1:a=0[v]'
+"${FF[@]}" "${TWO[@]}" -filter_complex "$TWOCAT" -map '[v]' "${H264[@]}" "${VFR[@]}" -video_track_timescale 90000 vfr_two_phase_5_200.mp4
+note vfr_two_phase_5_200.mp4 mp4 vfr ok "rate profile: 4 s at 5 fps then 4 s at 200 fps (20 + 800 frames), passthrough, timescale 90000; avg 205/2"
+"${FF[@]}" "${TWO[@]}" -filter_complex "$TWOCAT" -map '[v]' "${VP9[@]}" "${VFR[@]}" "${BX[@]}" vfr_two_phase_5_200.webm
+note vfr_two_phase_5_200.webm webm vfr ok "same two phases in WebM (VP9): 200 ms and 5 ms block timestamps"
+"${FF[@]}" -i vfr_two_phase_5_200.mp4 -c copy "${BX[@]}" -f matroska vfr_two_phase_5_200.mkv
+note vfr_two_phase_5_200.mkv matroska vfr ok "same two phases, the H.264 MP4 stream-copied to Matroska"
+"${FF[@]}" -f lavfi -i "$(src 30 4)" -vf "settb=1/90000,setpts='(N+gt(N,59)*59)*3000'" "${H264[@]}" "${VFR[@]}" -enc_time_base:v 1/90000 -video_track_timescale 90000 vfr_freeze_2s.mp4
+note vfr_freeze_2s.mp4 mp4 vfr ok "rate profile: 30 fps with one frame held for 2 s at 1.967 s (frame 59), 120 frames over 5.967 s"
 
 # ---------- G. 64-bit box sizes (in-place header rewrite, as ffmpeg itself does when mdat > 4 GiB) ----------
 node "$TOOLS/patch-mp4.mjs" mdat64 mov_nobf_default.mov box64_mdat64_wide.mov > /dev/null

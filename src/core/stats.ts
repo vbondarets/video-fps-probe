@@ -1,6 +1,7 @@
 import { makeRational, reduceRational, toFfprobeString, INT_MAX } from './rational.ts';
 import { MAX_EXPANDED_SAMPLES } from './options.ts';
-import type { DominantFps, NominalFps, Rational } from './types.ts';
+import type { DeltaSource, RateProfileFn } from './segments.ts';
+import type { DominantFps, NominalFps, RateProfile, Rational } from './types.ts';
 
 export interface DurationRuns {
   counts: ArrayLike<number>;
@@ -44,6 +45,8 @@ export interface PtsTimelineInput extends TimelineCommon {
 
 export type TimelineInput = SegmentTimelineInput | PtsTimelineInput;
 
+export type ProfileJob = (impl: RateProfileFn) => RateProfile | null;
+
 export interface TimelineStats {
   timescale: number;
   sampleCount: number;
@@ -71,6 +74,7 @@ export interface TimelineStats {
   nominalFps: NominalFps | null;
   dominantFps: DominantFps | null;
   timestampsQuantized: boolean;
+  profile: ProfileJob | null;
   fastPath: boolean;
   warnings: string[];
 }
@@ -78,6 +82,8 @@ export interface TimelineStats {
 export const MAX_REORDER_DEPTH = 16;
 export const SNAP_RELATIVE_TOLERANCE = 0.001;
 export const VFR_RELATIVE_TOLERANCE = 0.005;
+export const RATE_CHANGE_RELATIVE = 0.15;
+export const CUSUM_DRIFT = RATE_CHANGE_RELATIVE / 2;
 
 const STANDARD_RATES: readonly Rational[] = (() => {
   const out: Rational[] = [];
@@ -190,9 +196,28 @@ function emptyStats(timescale: number, warnings: string[]): TimelineStats {
     nominalFps: null,
     dominantFps: null,
     timestampsQuantized: false,
+    profile: null,
     fastPath: false,
     warnings,
   };
+}
+
+function profileJob(lo: number, hi: number, source: DeltaSource, ts: number, frames: number, span: number): ProfileJob | null {
+  return hi > lo * (1 + CUSUM_DRIFT) ? (impl) => impl(source, ts, frames, span) : null;
+}
+
+async function loadRateProfile(): Promise<RateProfileFn | null> {
+  try {
+    const { rateProfile } = await import('./segments.ts');
+    return rateProfile;
+  } catch {
+    return null;
+  }
+}
+
+export async function rateProfileOf(job: ProfileJob | null): Promise<RateProfile | null> {
+  const impl = job && (await loadRateProfile());
+  return impl ? job(impl) : null;
 }
 
 function keptDeltas(all: number, tail: number): number {
@@ -411,12 +436,16 @@ function segmentStats(input: SegmentTimelineInput, ts: number, warnings: string[
     const b = Math.max(a, countPtsBelow(segments, p0, we, scan.n));
     base.presentedFrames = b - a;
     if (b === a) return base;
-    base.firstPts = ptsAt(segments, p0, a);
-    base.lastPts = ptsAt(segments, p0, b - 1);
+    const firstPts = ptsAt(segments, p0, a);
+    const lastPts = ptsAt(segments, p0, b - 1);
+    base.firstPts = firstPts;
+    base.lastPts = lastPts;
     const all = b - a - 1;
     const keep = keptDeltas(all, tail);
     const hist = new Map<number, number>();
     let k = 0;
+    let dMin = Infinity;
+    let dMax = 0;
     for (const [n, d] of durationRuns(segments)) {
       if (k >= a + all) break;
       const lo = Math.max(k, a);
@@ -424,6 +453,8 @@ function segmentStats(input: SegmentTimelineInput, ts: number, warnings: string[
       if (hiAll > lo) {
         if (d === 0) base.duplicateTimestamps += hiAll - lo;
         else {
+          dMin = Math.min(dMin, d);
+          dMax = Math.max(dMax, d);
           const hiKeep = Math.min(k + n, a + keep);
           if (hiKeep > lo) {
             hist.set(d, (hist.get(d) ?? 0) + (hiKeep - lo));
@@ -436,6 +467,23 @@ function segmentStats(input: SegmentTimelineInput, ts: number, warnings: string[
     base.excludedTailDeltas = all - keep;
     applyHistogram(base, hist, tickQuantized);
     applySnappedNominal(base);
+    base.profile = profileJob(
+      dMin,
+      dMax,
+      (visit) => {
+        let j = 0;
+        for (const [n, d] of durationRuns(segments)) {
+          if (j >= a + all) break;
+          const lo = Math.max(j, a);
+          const hi = Math.min(j + n, a + all);
+          if (hi > lo) visit(hi - lo, d);
+          j += n;
+        }
+      },
+      ts,
+      b - a,
+      lastPts - firstPts,
+    );
     return base;
   }
 
@@ -503,12 +551,16 @@ function histogramStage(base: TimelineStats, sorted: Float64Array, tail: number,
   const all = m - 1;
   const keep = keptDeltas(all, tail);
   const hist = new Map<number, number>();
+  let dMin = Infinity;
+  let dMax = 0;
   for (let i = 1; i <= all; i++) {
     const d = sorted[i] - sorted[i - 1];
     if (d <= 0) {
       base.duplicateTimestamps++;
       continue;
     }
+    dMin = Math.min(dMin, d);
+    dMax = Math.max(dMax, d);
     if (i <= keep) {
       hist.set(d, (hist.get(d) ?? 0) + 1);
       base.deltaCount++;
@@ -516,6 +568,16 @@ function histogramStage(base: TimelineStats, sorted: Float64Array, tail: number,
   }
   base.excludedTailDeltas = all - keep;
   applyHistogram(base, hist, tickQuantized);
+  base.profile = profileJob(
+    dMin,
+    dMax,
+    (visit) => {
+      for (let i = 1; i <= all; i++) visit(1, sorted[i] - sorted[i - 1]);
+    },
+    base.timescale,
+    m,
+    sorted[all] - sorted[0],
+  );
 }
 
 function reorderLag(pts: ArrayLike<number>): number {

@@ -5,6 +5,7 @@ import { bytes, count, duration, fps, ms, PROVENANCE, readPercent, share } from 
 import { cancelRow, rescan, type Row } from './store.ts';
 
 const Compare = lazy(() => import('./Compare.tsx'));
+const RateProfileView = lazy(() => import('./RateProfile.tsx'));
 
 const SCAN_HELP = 'header: container headers only. probe: headers plus sampled blocks. exact: every block walked.';
 
@@ -48,6 +49,11 @@ function VfrCell({ t }: { t: VideoTrackResult }) {
   return (
     <Cell k="Frame timing" p={t.provenance.isVfr}>
       {body}
+      {t.rateProfile?.uneven && (
+        <span className="badge uneven" title="the frame rate changes over time or frames stall: see the rate profile">
+          uneven
+        </span>
+      )}
     </Cell>
   );
 }
@@ -99,6 +105,14 @@ function TrackCells({ t, r }: { t: VideoTrackResult; r: FileResult }) {
       )}
     </>
   );
+}
+
+function Profile({ t }: { t: VideoTrackResult }) {
+  return t.rateProfile ? (
+    <Suspense fallback={null}>
+      <RateProfileView p={t.rateProfile} />
+    </Suspense>
+  ) : null;
 }
 
 function Notes({ kind, label, items }: { kind: 'warn' | 'err'; label: string; items: string[] }) {
@@ -169,11 +183,15 @@ export const ResultCard = memo(function ResultCard({ row }: { row: Row }) {
           )}
         </dl>
       )}
+      {t && <Profile t={t} />}
       {busy && <Progress row={row} />}
       {r && mkv && r.scan !== 'exact' && !busy && (
-        <button type="button" className="act" onClick={() => rescan(row.id, 'exact')}>
-          Scan all frames
-        </button>
+        <p className="act">
+          <button type="button" onClick={() => rescan(row.id, 'exact')}>
+            Scan all frames
+          </button>{' '}
+          <small>to check for rate changes and stalls</small>
+        </p>
       )}
       {others.length > 0 && (
         <details className="notes">
@@ -184,6 +202,7 @@ export const ResultCard = memo(function ResultCard({ row }: { row: Row }) {
               <dl className="grid">
                 <TrackCells t={x} r={r!} />
               </dl>
+              <Profile t={x} />
             </section>
           ))}
         </details>

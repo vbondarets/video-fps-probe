@@ -44,3 +44,12 @@ export function readPercent(read: number, size: number): string {
   const p = size > 0 ? (read / size) * 100 : 0;
   return p === 0 ? '0%' : p < 0.01 ? '<0.01%' : `${p.toFixed(p < 10 ? 2 : 1)}%`;
 }
+
+export const rate = (x: number): string => String(+x.toPrecision(4));
+
+export function clock(sec: number): string {
+  const t = Math.round(sec * 10) / 10;
+  const s = +(t % 60).toFixed(1);
+  const m = Math.floor(t / 60);
+  return `${m < 60 ? m : `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`}:${s < 10 ? '0' : ''}${s}`;
+}

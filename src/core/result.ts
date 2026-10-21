@@ -40,6 +40,7 @@ export function emptyTrack(trackId: number): VideoTrackResult {
     duplicateTimestamps: 0,
     timestampsQuantized: false,
     isStill: false,
+    rateProfile: null,
     provenance: {},
     warnings: [],
   };
