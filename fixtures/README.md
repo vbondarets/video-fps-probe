@@ -2,17 +2,18 @@
 
 Synthetic test corpus for the FPS probe, built with ffmpeg 8.1.1 and measured with ffprobe 8.1.1.
 Every video is generated from lavfi test sources (`testsrc2`, `sine`), so there is no third-party
-content. 100 core fixtures (about 9.7 MB) are committed; three optional heavy ones are generated on demand.
+content. 111 core fixtures (about 12.3 MB) are committed; six optional heavy ones are generated on demand.
 
 ## Layout
 
 | Path | Content | Committed |
 | --- | --- | --- |
-| `files/` | the 100 core fixtures | yes |
-| `large/` | optional `--with-long` and `--with-sparse` files | no (git-ignored) |
+| `files/` | the 111 core fixtures | yes |
+| `large/` | optional `--with-long`, `--with-sparse` and `--with-big` files | no (git-ignored) |
 | `manifest.tsv` | one row per fixture, optional ones included | yes |
 | `ref/<file name>.ref.json` | ffprobe ground truth per fixture | yes |
-| `known-deviations.json` | accepted differences between the app and ffprobe | yes |
+| `known-deviations/<engine>*.json` | accepted differences between an engine and ffprobe, one reason per fixture and field ([format](known-deviations/README.md)) | yes |
+| `known-deviations.json` | empty placeholder from the research, no longer read | yes |
 
 ## Regenerate
 
@@ -24,6 +25,7 @@ libx264, libx265, libvpx, libaom, libopus and prores_ks.
 npm run fixtures:generate                       # core set into fixtures/files, rewrites manifest.tsv
 npm run fixtures:generate -- --with-long        # adds the two long files to fixtures/large
 npm run fixtures:generate -- --with-sparse      # adds the 4.5 GB sparse file to fixtures/large
+npm run fixtures:generate -- --with-big         # adds three 604 MB 1080p files to fixtures/large
 npm run fixtures:refs                           # ffprobe references for every fixture present
 ```
 
@@ -32,7 +34,8 @@ which writes `files/`, `large/` and `manifest.tsv` under it. Generating the core
 Windows (process start dominates), the long files add about 30 seconds, and the references take under a minute.
 
 The generator fails when `files/` and `manifest.tsv` disagree. Output is byte-reproducible on the same ffmpeg
-build: a second run into a separate folder gives identical bytes for all 100 core files. WebM and Matroska
+build: a second run into a separate folder gave identical bytes for all 104 core files and the same manifest
+(checked on 2026-10-21). WebM and Matroska
 outputs use `-fflags +bitexact`, which removes random UIDs. The committed bytes come from ffmpeg
 `8.1.1-full_build-www.gyan.dev`; another build can differ in encoder output, so the generator warns when the
 version is not 8.1.1 and `fixtures:refs` refuses to run unless `ALLOW_FFPROBE_MISMATCH=1` is set.
@@ -59,10 +62,10 @@ lying `entry_count` by the box size and warns, while ffprobe fails on it (`ok: f
 
 | Category | Files | What it covers |
 | --- | --- | --- |
-| `cfr` | 20 | constant rates 23.976 to 240 fps, H.264 in MP4 and VP9 in WebM, exact rationals |
-| `vfr` | 13 | variable rate made by concat, `setpts`, `select`, `mpdecimate`, `setts` (2:3 pulldown) and stream copy, in MP4, MOV, WebM, fragmented MP4 and Matroska |
+| `cfr` | 23 | constant rates 23.976 to 240 fps, H.264 in MP4 and VP9 in WebM, exact rationals; two WebM files stream-copied to MP4 (timescale 16000, 1 ms grid) and 240 fps at timescale 600 |
+| `vfr` | 19 | variable rate made by concat, `setpts`, `select`, `mpdecimate`, `setts` (2:3 pulldown) and stream copy, in MP4, MOV, WebM, fragmented MP4 and Matroska, plus the four rate profile fixtures below, a first frame held 2 s with B-frames and a `-ss -c copy` trim of a VFR file |
 | `mov` | 11 | QuickTime and MP4 muxing variants, B-frames, edit lists (empty edit, trimmed start), faststart |
-| `fmp4` | 13 | fragmented MP4: `empty_moov`, `default_base_moof`, `global_sidx`, `dash`, `cmaf`, hybrid, DASH segments, plus two fragmented VFR files where ffprobe under-reads the fragments |
+| `fmp4` | 15 | fragmented MP4: `empty_moov`, `default_base_moof`, `global_sidx`, `dash`, `cmaf`, hybrid, DASH segments, plus two fragmented VFR files where ffprobe under-reads the fragments, a file with one fragment removed (tfdt gap) and plain DASH output with B-frames (global sidx with a non-zero earliest presentation time) |
 | `codec` | 9 | HEVC (`hvc1`, `hev1`, in Matroska), AV1, VP8, VP9, ProRes |
 | `matroska` | 2 | plain Matroska H.264, WebM without `DefaultDuration` |
 | `live` | 5 | WebM written without seeking: unknown sizes, no Cues or Duration, a false Duration, audio that outlasts the video |
@@ -75,6 +78,21 @@ lying `entry_count` by the box size and warns, while ffprobe fails on it (`ok: f
 | `sniff` | 3 | real containers under the wrong extension |
 | `long` | 2 | optional: 3 h CFR at 60 fps (648,000 frames, 13 MB) and 1 h VFR screen recording (133,920 frames, 3.9 MB) |
 | `sparse` | 1 | optional: 4.5 GB logical MP4 with `co64` offsets above 2^32 |
+| `big` | 3 | optional: 60 s of 1080p30 H.264 (604 MB) with the moov at the end, the same with faststart, and the same stream in Matroska, for browser timing of a realistic upload |
+
+## Rate profile fixtures
+
+Four `vfr` files exercise the rate profile (segments, anomalies, the uneven flag). `tests/segments/fixtures.test.ts`
+asserts their profiles, and their ffprobe references are checked like every other fixture.
+
+| File | Built as | Expected profile |
+| --- | --- | --- |
+| `vfr_two_phase_5_200.mp4` | `testsrc2` at 5 fps for 4 s concatenated with 200 fps for 4 s (20 + 800 frames), H.264, `-fps_mode passthrough`, timescale 90000; average 205/2 | 2 steady segments (5 fps, 200 fps), 1 rate change at 4 s, uneven |
+| `vfr_two_phase_5_200.webm` | the same two phases encoded as VP9 in WebM: 200 ms and 5 ms block timestamps | the same |
+| `vfr_two_phase_5_200.mkv` | the H.264 MP4 stream-copied to Matroska | the same |
+| `vfr_freeze_2s.mp4` | 30 fps H.264 whose frame 59 is held for 2 s (`setpts` at time base 1/90000): 120 frames over 5.967 s | 1 steady 30 fps segment, 1 freeze of 2 s at 1.967 s, uneven |
+
+The commands are in section F of `scripts/fixtures/generate-fixtures.sh`.
 
 ## Optional files
 
@@ -86,6 +104,10 @@ sparse files, and delete it after use. On Windows the generator sets the sparse 
 `openAsBlob().size` modulo 2^32 for this file, so tests must read it through a Blob-like wrapper over
 `fs.promises.open`. Its reference is committed (`ref/sparse_4_5gb_co64.mp4.ref.json`, probed without
 `-count_frames`), so the sparse file itself never needs to be kept.
+
+`--with-big` writes `large/big_1080p_moov_end.mp4`, `large/big_1080p_faststart.mp4` and `large/big_1080p.mkv`
+(604 MB each, about 10 s to encode). The encode uses CRF and a seeded noise filter, so the bytes are reproducible on
+the same ffmpeg build (rate-controlled `-b:v` was not). Their references are committed; delete the files after use.
 
 `crashed.mkv` (ffmpeg killed mid-write) from the research is not part of the corpus because it is not
 byte-reproducible.
@@ -138,5 +160,8 @@ and follows `docs/research.md` section 4.3. All times are integer ticks of `time
 
 ## Known deviations
 
-`known-deviations.json` is an object the comparison script reads to tell an accepted difference from a regression.
-It is empty for now. The intended shape is `{ "<fixture name>": { "<field>": { "reason": "<why the app differs from ffprobe>" } } }`.
+Accepted differences between an engine and ffprobe live in `known-deviations/`, one JSON file per engine part
+(`own-isobmff.json`, `own-matroska.json`, optional files for the library engines). Each entry maps a fixture and a
+field to a plain reason; an entry that no longer matches is reported as stale. The format and the rules are in
+[known-deviations/README.md](known-deviations/README.md). The own engine has three entries today, all listed in the
+main README. The top-level `known-deviations.json` is the empty placeholder of the research and is not read.
