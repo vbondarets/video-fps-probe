@@ -114,9 +114,9 @@ export function newScanState(h: MkvHeader, fileSize: number, tracks: readonly Mk
   };
 }
 
-function pushPts(t: TrackScan, v: number): void {
+function pushPts(t: TrackScan, v: number, max: number): void {
   if (t.n === t.pts.length) {
-    const next = new Float64Array(t.pts.length * 2);
+    const next = new Float64Array(Math.max(t.n + 1, Math.min(t.pts.length * 2, max)));
     next.set(t.pts);
     t.pts = next;
   }
@@ -209,7 +209,7 @@ export function parseBlock(b: Uint8Array, o: number, size: number, known: Readon
 }
 
 function emit(st: ScanState, t: TrackScan, pts: number, dur: number): void {
-  if (t.n < st.maxSamples) pushPts(t, pts);
+  if (t.n < st.maxSamples) pushPts(t, pts, st.maxSamples);
   else t.overLimit++;
   if (pts >= t.maxPts) {
     t.maxPts = pts;
