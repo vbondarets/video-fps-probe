@@ -14,7 +14,7 @@ export const DEFAULT_COST_MODEL: Readonly<CostModel> = {
 };
 
 export const DEFAULT_EXACT_BUDGET_MS = 150;
-export const MAX_EXPANDED_SAMPLES = 50_000_000;
+export const MAX_EXPANDED_SAMPLES = 5_000_000;
 
 function mergeDefined<T extends object>(base: Readonly<T>, patch: Partial<T> | undefined): T {
   const out = { ...base } as T;
