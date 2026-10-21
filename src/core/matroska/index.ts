@@ -1,4 +1,4 @@
-import { predictReadMs } from '../options.ts';
+import { DEFAULT_COST_MODEL, predictReadMs } from '../options.ts';
 import { avgFrameRate, reduceRational, toFfprobeString } from '../rational.ts';
 import type { BlobReader } from '../reader.ts';
 import { emptyAnalysis, emptyTrack } from '../result.ts';
@@ -22,7 +22,7 @@ const DENSITY_SAMPLE_BYTES = 16 * 1024;
 const MAX_CUE_FALLBACKS = 4;
 const MAX_BLOCK_BYTES = 0x10000000;
 const SAMPLED_IDS: ReadonlySet<number> = new Set([ID_TIMESTAMP, ID_VOID, ID_CRC32, ID_POSITION, ID_PREV_SIZE]);
-export const CPU_MS_PER_BLOCK = 0.0002;
+export const CPU_MS_PER_BLOCK = DEFAULT_COST_MODEL.perBlockMs;
 
 const CODECS =
   'V_AV1:av1 V_VP8:vp8 V_VP9:vp9 V_MPEG4/ISO/AVC:h264 V_MPEGH/ISO/HEVC:hevc V_MPEGI/ISO/VVC:vvc V_MPEG4/ISO/ASP:mpeg4 V_MPEG4/ISO/AP:mpeg4 ' +
@@ -202,7 +202,7 @@ export interface ScanPlan {
 }
 
 export function planExactScan(region: number, est: ScanEstimate | null, opts: ResolvedAnalyzeOptions): ScanPlan {
-  const cpu = (est?.blocks ?? 0) * CPU_MS_PER_BLOCK;
+  const cpu = (est?.blocks ?? 0) * opts.costModel.perBlockMs;
   const plan = (window: number, reads: number, bytes: number): ScanPlan => ({ window, reads, bytes, ms: predictReadMs(opts.costModel, reads, bytes) + cpu });
   const big = opts.readAhead.matroskaScan;
   const wide = plan(big, Math.ceil(region / big), region);

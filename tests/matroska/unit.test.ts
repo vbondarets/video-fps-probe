@@ -456,7 +456,7 @@ describe('modes', () => {
     expect(planExactScan(region, frames(64 * 1024), opts)).toMatchObject({ window: 1024 * 1024, reads: 100, bytes: region });
     expect(planExactScan(region, frames(8 * 1024), opts)).toMatchObject({ window: 1024 * 1024, reads: 100, bytes: region });
     expect(planExactScan(region, null, opts)).toMatchObject({ window: 1024 * 1024, reads: 100 });
-    expect(planExactScan(region, frames(512 * 1024), { ...opts, costModel: { perReadMs: 0.01, bytesPerMs: 500_000 } }).window).toBe(4096);
+    expect(planExactScan(region, frames(512 * 1024), { ...opts, costModel: { ...opts.costModel, perReadMs: 0.01 } }).window).toBe(4096);
   });
 
   it('reports progress during exact scans and honours abort', async () => {

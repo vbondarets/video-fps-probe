@@ -10,6 +10,7 @@ export const DEFAULT_READ_AHEAD: Readonly<ReadAheadSizes> = {
 export const DEFAULT_COST_MODEL: Readonly<CostModel> = {
   perReadMs: 0.8,
   bytesPerMs: 500_000,
+  perBlockMs: 0.0002,
 };
 
 export const DEFAULT_EXACT_BUDGET_MS = 150;

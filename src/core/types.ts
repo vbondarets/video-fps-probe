@@ -106,6 +106,7 @@ export interface ReadAheadSizes {
 export interface CostModel {
   perReadMs: number;
   bytesPerMs: number;
+  perBlockMs: number;
 }
 
 export interface AnalyzeProgress {
