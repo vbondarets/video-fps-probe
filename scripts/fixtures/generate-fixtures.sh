@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Builds the FPS test corpus with ffmpeg 8.1.1 (libx264, libx265, libvpx, libaom, libopus).
-# Usage: generate-fixtures.sh [rootDir] [--with-long] [--with-sparse]
+# Usage: generate-fixtures.sh [rootDir] [--with-long] [--with-sparse] [--with-big]
 #   rootDir        fixtures root, default <repo>/fixtures. Output: <rootDir>/files, <rootDir>/manifest.tsv,
 #                  and <rootDir>/large (git-ignored) when an optional set is requested.
 #   --with-long    adds a 3 h / 60 fps CFR file (~13 MB) and a 1 h VFR screen-recording-like file (~4 MB)
 #   --with-sparse  adds a 4.5 GB sparse MP4 (co64 + 64-bit mdat, ~87 KB of real disk on NTFS/ext4/APFS)
+#   --with-big     adds three 1080p files of 604 MB each (MP4 moov at the end, MP4 faststart, Matroska), ~1.8 GB of disk
 # The manifest always lists every fixture, including the optional ones (committed=no).
 # All data is synthetic (lavfi testsrc2/sine). Run from Git Bash on Windows, or bash on Linux/macOS.
 set -euo pipefail
@@ -13,11 +14,12 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TOOLS="${TOOLS:-$HERE/tools}"
 EXPECTED_FFMPEG="8.1.1"
 
-ROOT=""; WITH_LONG=0; WITH_SPARSE=0
+ROOT=""; WITH_LONG=0; WITH_SPARSE=0; WITH_BIG=0
 for a in "$@"; do
   case "$a" in
     --with-long) WITH_LONG=1 ;;
     --with-sparse) WITH_SPARSE=1 ;;
+    --with-big) WITH_BIG=1 ;;
     --*) echo "unknown option: $a" >&2; exit 2 ;;
     *) ROOT="$a" ;;
   esac
@@ -36,7 +38,7 @@ esac
 W="$(mktemp -d 2>/dev/null || mktemp -d -t fixtures)"
 trap 'rm -rf "$W"' EXIT
 cd "$FILES"
-[[ $WITH_LONG == 1 || $WITH_SPARSE == 1 ]] && mkdir -p "$LARGE"
+[[ $WITH_LONG == 1 || $WITH_SPARSE == 1 || $WITH_BIG == 1 ]] && mkdir -p "$LARGE"
 
 printf 'name\tcontainer\tcategory\texpect\tcommitted\tnotes\tpath\n' > "$MANIFEST"
 
@@ -267,14 +269,40 @@ note vp9_opus_live_audiotail.webm webm live ok "3 s video + 6 s Opus, -live 1: l
 "${FF[@]}" -f lavfi -i "$(src 25 3)" "${H264[@]}" -attach "$W/cover.png" -metadata:s:t mimetype=image/png "${BX[@]}" -f matroska h264_25_cover.mkv
 note h264_25_cover.mkv matroska cover ok "Matroska with an attached cover.png: ffprobe lists an attached_pic stream (r 90000/1) that the app ignores"
 
+# ---------- M. Real-world timing patterns (remuxes, held first frame, lost fragment, trimmed copy, slow motion) ----------
+for pair in 120:120 29.97:30000/1001; do
+  name=${pair%%:*}; rate=${pair#*:}
+  "${FF[@]}" -i "cfr_vp9_$name.webm" -c copy -f mp4 "remux_cfr_${name}_ts16000.mp4"
+  note "remux_cfr_${name}_ts16000.mp4" mp4 cfr ok "cfr_vp9_$name.webm stream-copied to MP4 (MKV-to-MP4 remux): timescale 16000, PTS on a 1 ms grid, so deltas differ by 16 ticks; CFR $rate, 1 ms quantized"
+done
+"${FF[@]}" -f lavfi -i "$(src 30 5)" -vf "setpts='if(eq(N\,0)\,0\,(2+(N-1)/30)/TB)'" "${VFR[@]}" -c:v libx264 -preset ultrafast -crf 30 -pix_fmt yuv420p -g 30 -bf 3 -an -video_track_timescale 30000 start_freeze_bf.mp4
+note start_freeze_bf.mp4 mp4 vfr ok "first frame held 2 s, then 30 fps, B-frames + elst: stts starts 60000, 1000, 60000; avg_frame_rate 1125/67 differs from presented frames / span 4500/209"
+"${FF[@]}" -f lavfi -i "$(src 30 6)" -c:v libx264 -preset ultrafast -crf 30 -pix_fmt yuv420p -g 30 -bf 0 -an -movflags +frag_keyframe+empty_moov+default_base_moof "$W/frag6.mp4"
+node "$TOOLS/make-corrupt.mjs" drop-fragment "$W/frag6.mp4" fmp4_missing_fragment.mp4 3
+note fmp4_missing_fragment.mp4 mp4 fmp4 ok "fragmented 30 fps with the 3rd moof+mdat removed: tfdt jumps 1 s, avg_frame_rate 30/1, presented frames / span 25/1"
+"${FF[@]}" -ss 0.95 -i vfr_two_phase_5_200.mp4 -c copy elst_trim_vfr_copy.mp4
+note elst_trim_vfr_copy.mp4 mp4 vfr ok "vfr_two_phase_5_200.mp4 trimmed with -ss 0.95 -c copy: elst skips 5 stored frames, avg_frame_rate counts them"
+"${FF[@]}" -f lavfi -i "$(src 240 2 64x64)" -c:v libx264 -preset ultrafast -crf 30 -pix_fmt yuv420p -bf 0 -an -video_track_timescale 600 cfr_240_ts600.mp4
+note cfr_240_ts600.mp4 mp4 cfr ok "240 fps at timescale 600 (QuickTime-like slow motion): deltas alternate 3 and 2 ticks, nominal 240/1"
+"${FF[@]}" -f lavfi -i "$(src 25 4 160x96)" -f lavfi -i "sine=frequency=440:sample_rate=48000:duration=4" -map 0:v -map 1:a -c:v libx264 -preset ultrafast -crf 30 -pix_fmt yuv420p -bf 2 -c:a aac -b:a 32k -movflags +frag_keyframe+empty_moov+global_sidx+dash fmp4_global_sidx_bframes.mp4
+note fmp4_global_sidx_bframes.mp4 mp4 fmp4 ok "plain ffmpeg DASH output with B-frames: global sidx with earliest_presentation_time 1024, ffprobe duration = ept + subsegment durations (4.08 s, format 4.16 s)"
+
 # ---------- L. Optional heavy files (manifest rows are always written, files only on request) ----------
 note_large long_cfr_3h_60fps.mp4 mp4 long ok "3 h x 60 fps = 648000 frames, 64x36, crf 51: 13 MB, moov 2.6 MB at the end (stsz 4 B/frame)"
 note_large long_vfr_1h_screenrec.mp4 mp4 long ok "1 h VFR screen-recording-like: 133920 frames, stts has 124761 entries (~1 MB)"
+note_large big_1080p_moov_end.mp4 mp4 big ok "60 s of 1080p30 H.264 with film-grain noise, CRF 21 (604 MB), moov at the end: a phone-sized upload, measured in the browser"
+note_large big_1080p_faststart.mp4 mp4 big ok "the same file with -movflags +faststart (moov before mdat)"
+note_large big_1080p.mkv matroska big ok "the same stream copied to Matroska: auto mode decides between probe and exact by the predicted scan cost"
 note_large sparse_4_5gb_co64.mp4 mp4 sparse ok "SPARSE 4.5 GB logical: ftyp + mdat(64-bit, hole+payload) + moov(co64, offsets > 2^32) at 4.5 GB; ~87 KB real data. Do NOT copy with tools that expand sparse files"
 if [[ $WITH_LONG == 1 ]]; then
   LONG=(-c:v libx264 -preset ultrafast -crf 51 -pix_fmt yuv420p -g 120 -bf 0 -an -x264-params scenecut=0:keyint=120)
   "${FF[@]}" -f lavfi -i "testsrc2=size=64x36:rate=60:duration=10800" "${LONG[@]}" -f mp4 "$LARGE/long_cfr_3h_60fps.mp4"
   "${FF[@]}" -f lavfi -i "testsrc2=size=64x36:rate=60:duration=3600" -vf "$SC" "${LONG[@]}" "${VFR[@]}" -enc_time_base:v 1/1000 -video_track_timescale 1000 -f mp4 "$LARGE/long_vfr_1h_screenrec.mp4"
+fi
+if [[ $WITH_BIG == 1 ]]; then
+  "${FF[@]}" -f lavfi -i "testsrc2=size=1920x1080:rate=30:duration=60" -vf "noise=alls=8:allf=t:all_seed=1" -c:v libx264 -preset ultrafast -crf 21 -pix_fmt yuv420p -g 60 -an "$LARGE/big_1080p_moov_end.mp4"
+  "${FF[@]}" -i "$LARGE/big_1080p_moov_end.mp4" -c copy -movflags +faststart "$LARGE/big_1080p_faststart.mp4"
+  "${FF[@]}" -i "$LARGE/big_1080p_moov_end.mp4" -c copy "${BX[@]}" -f matroska "$LARGE/big_1080p.mkv"
 fi
 if [[ $WITH_SPARSE == 1 ]]; then
   node "$TOOLS/patch-mp4.mjs" sparse cfr_h264_30.mp4 "$LARGE/sparse_4_5gb_co64.mp4" 4500000000 > /dev/null
