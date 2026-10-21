@@ -88,6 +88,12 @@ export const HEADER_MAX_BYTES = 1024 * 1024;
 export const MAX_DEPTH = 16;
 const SPARSE_CHILD_MAX = 64 * 1024;
 const SEGMENT_SEARCH_HOPS = 16;
+const SKIPPED_NAMES: ReadonlyMap<number, string> = new Map([
+  [ID_SEEK_HEAD, 'SeekHead'],
+  [ID_INFO, 'Info'],
+  [ID_TAGS, 'Tags'],
+]);
+
 const PARSED: ReadonlySet<number> = new Set([ID_SEEK_HEAD, ID_INFO, ID_TRACKS, ID_TAGS, ID_ATTACHMENTS]);
 const CHILDREN: ReadonlyMap<number, readonly number[]> = new Map([
   [ID_SEEK_HEAD, [ID_SEEK]],
@@ -297,7 +303,7 @@ async function parseLevel1(src: ByteSource, h: MkvHeader, e: ElementHeader, seen
     if (e.id === ID_TRACKS) {
       seen.ids.add(e.id);
       await sparseTracks(src, h, e);
-    } else h.warnings.push(`${hex(e.id)} at ${e.pos} not read (header budget)`);
+    } else if (e.id !== ID_ATTACHMENTS) h.warnings.push(`${SKIPPED_NAMES.get(e.id) ?? hex(e.id)} element at byte ${e.pos} not read (header budget)`);
     return;
   }
   seen.ids.add(e.id);
