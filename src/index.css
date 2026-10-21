@@ -167,6 +167,7 @@ button:disabled {
 
 .list {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.75rem;
 }
 
@@ -261,6 +262,7 @@ button:disabled {
 
 .p {
   display: inline-block;
+  text-decoration: none;
   min-width: 1.05em;
   margin-left: 0.3rem;
   padding: 0.1rem 0.2rem;
@@ -433,4 +435,27 @@ footer p {
   .toolbar > * {
     flex: 1 1 auto;
   }
+}
+
+.export-note {
+  margin: 0.25rem 0 0.5rem;
+}
+
+.export-note p {
+  margin: 0.25rem 0;
+}
+
+.export-note textarea {
+  display: block;
+  width: 100%;
+  font: 16px/1.35 ui-monospace, Consolas, monospace;
+  color: var(--fg);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.5rem;
+}
+
+footer .env {
+  overflow-wrap: anywhere;
 }
