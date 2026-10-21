@@ -118,11 +118,25 @@ export function trackTiming(tr: IsoTrack, movie: IsoMovie, totals: SampleTotals,
     trackEnd += f.durationSum;
     if (trackEnd > duration) duration = trackEnd;
   }
+  const sidxEnd = completeSidxEnd(tr, movie);
+  if (sidxEnd !== null && sidxEnd > duration) duration = sidxEnd;
   let startPts: number | null = null;
   if (fixIndex) startPts = edits.emptyBefore;
   else if (totals.moovSamples > 0) startPts = tr.cttsOffsets && tr.cttsOffsets.length ? tr.cttsOffsets[0] : 0;
   else startPts = firstFragmentPts;
   return { durationTs: duration, startPts };
+}
+
+function completeSidxEnd(tr: IsoTrack, movie: IsoMovie): number | null {
+  if (movie.ffprobeMoofLimit === Infinity) return null;
+  let moofs = 0;
+  let end: number | null = null;
+  for (const b of movie.topLevel) {
+    if (b.type === 'moof' && ++moofs > movie.ffprobeMoofLimit) break;
+    const x = b.sidx;
+    if (x && !x.hierarchical && x.referenceId === tr.id && x.timescale === tr.timescale) end = x.earliestPts + x.durationSum;
+  }
+  return end;
 }
 
 function timeOffsetOf(tr: IsoTrack, movie: IsoMovie): number {
