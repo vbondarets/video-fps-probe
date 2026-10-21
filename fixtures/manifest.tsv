@@ -67,6 +67,10 @@ vfr_mpdecimate.mp4	mp4	vfr	ok	yes	VFR method 4: mpdecimate removes the static mi
 vfr_screenrec_ts1000.mp4	mp4	vfr	ok	yes	VFR method 5: screen-recording-like, timescale 1000, 0-7 ms jitter, long gaps; 246 frames, avg ~41 (61500/1501)	files/vfr_screenrec_ts1000.mp4
 vfr_screenrec_ts1000.webm	webm	vfr	ok	yes	same in WebM: DefaultDuration claims 60 fps while real average is ~41	files/vfr_screenrec_ts1000.webm
 vfr_pulldown_2_3.mp4	mp4	vfr	ok	yes	VFR method 6: setts bsf rewrites a 24 fps stream to a 2:3 cadence (3000/4500 ticks); avg exactly 24, r=60	files/vfr_pulldown_2_3.mp4
+vfr_two_phase_5_200.mp4	mp4	vfr	ok	yes	rate profile: 4 s at 5 fps then 4 s at 200 fps (20 + 800 frames), passthrough, timescale 90000; avg 205/2	files/vfr_two_phase_5_200.mp4
+vfr_two_phase_5_200.webm	webm	vfr	ok	yes	same two phases in WebM (VP9): 200 ms and 5 ms block timestamps	files/vfr_two_phase_5_200.webm
+vfr_two_phase_5_200.mkv	matroska	vfr	ok	yes	same two phases, the H.264 MP4 stream-copied to Matroska	files/vfr_two_phase_5_200.mkv
+vfr_freeze_2s.mp4	mp4	vfr	ok	yes	rate profile: 30 fps with one frame held for 2 s at 1.967 s (frame 59), 120 frames over 5.967 s	files/vfr_freeze_2s.mp4
 box64_mdat64_wide.mov	mov	box64	ok	yes	'wide'+mdat(32) rewritten to size=1 'mdat' largesize (16-byte header); same file size, same stco offsets	files/box64_mdat64_wide.mov
 box64_mdat64_free.mp4	mp4	box64	ok	yes	'free'+mdat(32) rewritten the same way	files/box64_mdat64_free.mp4
 box64_co64_mdat64.mp4	mp4	box64	ok	yes	64-bit mdat header + every stco rewritten to co64 (moov grows by 4 bytes/chunk)	files/box64_co64_mdat64.mp4
