@@ -1,12 +1,14 @@
 # Reports
 
-Generated files. Do not edit them by hand: each one is written by a script, and `scripts/readme-tables.ts` reads the JSON files to fill the tables in the [main README](../README.md).
+Generated files, except `average-user.md`. Do not edit the generated ones by hand: each one is written by a script, and `scripts/readme-tables.ts` reads the JSON files to fill the tables in the [main README](../README.md).
 
 | Report | Written by | What it holds |
 |---|---|---|
 | [accuracy.md](accuracy.md), `accuracy.json` | `node scripts/compare-ffprobe.ts` (`npm run compare`) | Every field check of the own, mp4box and mediabunny engines against the ffprobe 8.1.1 references, with verdicts, plus reads, bytes and Node timings per fixture |
 | [size.md](size.md), `size.json` | `node scripts/size-report.mjs` (`npm run size`) | Raw, gzip and brotli size of every chunk in `dist/`, the budgets with their reasoning, and the initial and first-analysis totals |
 | [browser-bench.md](browser-bench.md), `browser-bench.json` | `node scripts/bench/run-bench.mjs` (`npm run bench`) | The built app measured in headless Chrome (and Edge when installed): cold start, warm timings per fixture, library engines, long files, the requestVideoFrameCallback fallback and a Chrome vs Node identity check |
+| [integration-cost.md](integration-cost.md), `integration-cost.json` | `node scripts/bench/integration.mjs` | What embedding the probe costs a large SPA: critical-path and lazy bytes, first-file latency on throttled links (cold, prefetched, prewarmed), main-thread blocking, memory and worker time per file |
+| [average-user.md](average-user.md) | written by hand | A model of the cost on the devices and networks real visitors use: device tiers with traffic shares, session cost, network, file IO unknowns; measured and modelled numbers are labelled |
 
 ## Regenerate everything
 
@@ -17,6 +19,7 @@ npm run build
 node scripts/compare-ffprobe.ts --engines own,mp4box,mediabunny --with-large --repeat 3
 node scripts/size-report.mjs dist --check
 npm run bench
+node scripts/bench/integration.mjs
 node scripts/readme-tables.ts
 ```
 
@@ -35,7 +38,7 @@ Timings depend on the machine and on what else runs on it; verdicts, reads, byte
 
 - Reads a production build (`npm run build` first). The page chunks come from `index.html`, the worker from its `Worker()` reference, the parser and engine chunks from the import graph.
 - Per chunk: raw bytes, gzip level 9 and brotli quality 11. KB means 1000 bytes.
-- Budgets (`BUDGETS` in `scripts/size-report.mjs`) cover the main chunk, the worker entry, each parser chunk, the rVFC chunk, the initial load and the first MP4 and first Matroska analysis. `size.md` gives the reason for every limit.
+- Budgets (`BUDGETS` in `scripts/size-report.mjs`) cover the main chunk, the worker entry, each parser chunk, the rate profile chunks (core and panel), the rVFC chunk, the initial load and the first MP4, first VFR MP4 and first Matroska analysis. `size.md` gives the reason for every limit.
 - `--check` exits 1 when a budget is exceeded or a required chunk is missing; CI runs it. `--self-test` checks chunk discovery on synthetic builds.
 
 ## browser-bench.md, browser-bench.json
@@ -46,8 +49,19 @@ Timings depend on the machine and on what else runs on it; verdicts, reads, byte
 - Every own-engine result in Chrome is compared field by field with `analyze()` in Node on the same file; the script exits 1 when they differ and 2 on a harness error.
 - Also writes the screenshots in `docs/screenshots/`.
 - `--filter <text>` writes `browser-bench.local.*` and skips the screenshots; `--skip warm,engines,large,cold-first,rvfc,edge,node,shots` drops sections; `--self-test` checks the helpers without a browser.
-- Only Chromium browsers are measured, on one desktop.
+- Only Chromium browsers are measured, on one desktop. Results (not timings) in Chromium, Firefox and WebKit are checked by the Playwright suite (`npm run test:e2e`).
+
+## integration-cost.md, integration-cost.json
+
+- Needs a build in `dist/` and Chrome. Serves `dist/` gzip-compressed from `127.0.0.1` and measures two pages: a near-empty host model whose only probe code in the critical path is a small trigger, and the demo app as a reference.
+- Network profiles (none, cable, fast 4G, slow 4G, 3G) are CDP request-level throttling; each first-file scenario (cold, prefetched, prewarmed) is the median of 5 page loads.
+- Main-thread blocking (long tasks, TBT, frame and input gaps), memory per renderer process (3 fresh browsers) and worker time per file.
+- `--render report/integration-cost.json` redraws the Markdown without measuring; `--skip latency,main,memory,cpu` drops sections; `--no-write` prints only.
+
+## average-user.md
+
+Not generated. It combines the measured numbers of `integration-cost.md` and `browser-bench.md` with published device, traffic and network data and labels each number as measured, published or modelled. Update it by hand when those reports change materially.
 
 ## README tables
 
-`node scripts/readme-tables.ts` rewrites the README sections between `<!-- tables:<name>:start -->` and `<!-- tables:<name>:end -->` from `accuracy.json`, `size.json`, `browser-bench.json` and `fixtures/manifest.tsv`. Sections: `headline`, `reads`, `approaches`, `engines`, `bundle`, `speed`, `accuracy`, `deviations`, `rvfc`, `corpus`. Running it twice changes nothing. It stops with an error when a marker or a value it needs is missing, for example when the accuracy report was generated without `--with-large`.
+`node scripts/readme-tables.ts` rewrites the README sections between `<!-- tables:<name>:start -->` and `<!-- tables:<name>:end -->` from `accuracy.json`, `size.json`, `browser-bench.json`, `integration-cost.json` and `fixtures/manifest.tsv`. Sections: `headline`, `profile`, `integration`, `reads`, `approaches`, `engines`, `bundle`, `speed`, `accuracy`, `deviations`, `rvfc`, `corpus`. Running it twice changes nothing. It stops with an error when a marker or a value it needs is missing, for example when the accuracy report was generated without `--with-large`.
