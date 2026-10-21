@@ -179,7 +179,7 @@
       "vfr": {
         "isVfr": true,
         "medianDeltaTicks": 450,
-        "toleranceTicks": 2,
+        "toleranceTicks": 90,
         "vfrRatio": 40
       },
       "avgFromPts": {
