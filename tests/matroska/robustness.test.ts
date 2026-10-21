@@ -353,6 +353,40 @@ describe('auto mode cost plan', () => {
     expect(r.io.reads).toBeLessThan(150);
   });
 
+  it('says so when probe clusters hold one frame each instead of returning silent blanks', async () => {
+    const bytes = concat(ebmlHeader('webm'), segment([info({ duration: 4000 }), tracks({ number: 1, defaultDuration: 40_000_000 }), ...cfrClusters({ frames: 100, periodMs: 40, perCluster: 1 })]));
+    const r = await run(bytes, { matroskaMode: 'probe' });
+    expect(r.scan).toBe('probe');
+    expect(r.videoTracks[0].isVfr).toBeNull();
+    expect(warnings(r)).toMatch(/fewer than 2 frames of this track/);
+    const exact = await run(bytes);
+    expect(exact.videoTracks[0].isVfr).toBe(false);
+  });
+
+  it('skips a large Attachments element (fonts, cover art) without a raw EBML ID warning', async () => {
+    const attachments = el(0x1941a469, new Uint8Array(3_000_000));
+    const bytes = concat(ebmlHeader('matroska'), segment([info(), tracks({ number: 1, defaultDuration: 40_000_000 }), attachments, ...cfrClusters({ frames: 50, periodMs: 40 })]));
+    const r = await run(bytes);
+    expect(r.error).toBeNull();
+    expect(r.videoTracks[0].frames).toBe(50);
+    expect(warnings(r)).not.toMatch(/1941A469|header budget/i);
+  });
+
+  it('prices laced frames, not blocks, so a small laced file cannot force a huge exact scan in auto mode', async () => {
+    const blocks = Array.from({ length: 50 }, (_, c) =>
+      cluster(c * 256 * 100, Array.from({ length: 100 }, (__, k) => simpleBlock({ track: 1, rel: k * 256, laces: 256, payload: 256 }))),
+    );
+    const bytes = concat(ebmlHeader('webm'), segment([info({ duration: 1000 }), tracks({ number: 1, defaultDuration: 1_000_000 }), ...blocks]));
+    expect(bytes.length).toBeLessThan(3_000_000);
+    const auto = await run(bytes, { matroskaMode: 'auto' });
+    expect(auto.scan).toBe('probe');
+    expect(warnings(auto)).toMatch(/exact block scan skipped: predicted \d+ ms/);
+    const capped = await run(bytes, { maxExpandedSamples: 100_000 });
+    expect(capped.scan).toBe('exact');
+    expect(capped.videoTracks[0].frames).toBe(50 * 100 * 256);
+    expect(warnings(capped)).toMatch(/per-frame statistics skipped: more than 100000 frames/);
+  });
+
   it('adds a per-block CPU term and estimates blocks from the sampled density', () => {
     const opts = resolveOptions();
     const region = 14_457_930;
