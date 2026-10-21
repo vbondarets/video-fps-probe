@@ -159,10 +159,48 @@ interface ManifestRow {
   committed: boolean;
 }
 
+interface ScenarioModel {
+  totalMs: number;
+  extraMs: number;
+  preMs: number | null;
+}
+
+interface ProfileModel {
+  id: string;
+  label: string;
+  cold: ScenarioModel;
+  prefetch: ScenarioModel;
+  prewarm: ScenarioModel;
+}
+
+interface PrivateDelta {
+  processPrivateDelta: number;
+}
+
+interface IntegrationReport {
+  host: { initialGzipBytes: number; fullGzipBytes: number };
+  profiles: { id: string; latencyMs: number; downKbps: number | null }[];
+  main: { batchFiles: number };
+  cpu: { perFile: Record<string, { label: string; name: string; medianMs: number }> };
+  environment: { browser: string };
+  model: {
+    triggerGzip: number;
+    initialIncreaseMeasuredPct: number;
+    lazyMp4Gzip: number;
+    lazyBothGzip: number;
+    lazyMp4VsInitialPct: number;
+    profiles: ProfileModel[];
+    options: { eagerBytes: number; eagerVsInitialPct: number; eagerTransferMs: Record<string, number> };
+    main: { firstFileProbeCpuMs: number; coldBatchProbeCpuMs: number; coldBatchTbtMs: number; firstFileTbtMs: number };
+    memory: { probe: { first: PrivateDelta; idle: PrivateDelta } };
+  };
+}
+
 interface Inputs {
   acc: AccuracyReport;
   size: SizeReport;
   bench: BenchReport;
+  integration: IntegrationReport;
   manifest: ManifestRow[];
 }
 
@@ -202,7 +240,25 @@ const SPEED_FILES: ReadonlyArray<readonly [string, string]> = [
   ['corrupt_trunc_no_moov.mp4', 'interrupted recording, no moov (error)'],
   ['long_cfr_3h_60fps.mp4', 'long CFR MP4, moov at the end'],
   ['long_vfr_1h_screenrec.mp4', 'long VFR screen recording MP4'],
+  ['big_1080p_moov_end.mp4', '1080p MP4 of 1 min, moov at the end'],
+  ['big_1080p_faststart.mp4', 'same file, faststart'],
+  ['big_1080p.mkv', 'same stream in Matroska (auto mode)'],
 ];
+
+const OPTIONAL_SPEED_FILES: ReadonlySet<string> = new Set(['big_1080p_moov_end.mp4', 'big_1080p_faststart.mp4', 'big_1080p.mkv']);
+
+const PROFILE_FILES: ReadonlyArray<readonly [string, string]> = [
+  ['vfr_two_phase_5_200.mp4', '2 steady segments, 5 fps for 4 s then 200 fps for 4 s; 1 rate change; uneven'],
+  ['vfr_two_phase_5_200.mkv', 'the same stream in Matroska: the same 2 segments'],
+  ['vfr_freeze_2s.mp4', '1 steady segment at 30 fps; 1 freeze of 2 s at 1.967 s; uneven'],
+  ['vfr_concat_10_30_60.mp4', '3 steady segments at 10, 30 and 60 fps, 2 s each; 2 rate changes; uneven'],
+  ['vfr_screenrec_ts1000.mp4', '1 steady segment at 60 fps; 2 gaps of about 1 s; uneven'],
+  ['vfr_pulldown_2_3.mp4', '1 steady segment at 24 fps (a 2:3 cadence is not uneven)'],
+  ['cfr_h264_30.mp4', 'none: all intervals equal, the chunk is not loaded'],
+  ['long_vfr_1h_screenrec.mp4', '60 fps for 3598 s plus a 1.5 s variable tail; 1439 gaps (50 listed); uneven'],
+];
+
+const INTEGRATION_PROFILES = ['fast4g', 'slow4g', '3g'];
 
 const READ_PAIRS: ReadonlyArray<readonly [string, string]> = [
   ['mov_nobf_faststart.mov', 'mov_nobf_default.mov'],
@@ -215,7 +271,7 @@ const CATEGORY_TEXT: Record<string, string> = {
   fmp4: 'fragmented MP4: empty moov, default-base-is-moof, CMAF, DASH, sidx, hybrid',
   codec: 'HEVC (hvc1, hev1), AV1, VP8, VP9 and ProRes in MP4, MOV, WebM and Matroska',
   live: 'WebM from live, pipe and MediaRecorder-like muxing: unknown sizes, no Duration or Cues, a false Duration, an audio-only tail',
-  vfr: 'VFR from concatenation, non-linear setpts, frame dropping, mpdecimate, screen recording and pulldown, also with B-frames, fragmented, in MOV, WebM and Matroska',
+  vfr: 'VFR from concatenation, non-linear setpts, frame dropping, mpdecimate, screen recording, pulldown, a 5/200 fps two-phase file and a 2 s freeze, also with B-frames, fragmented, in MOV, WebM and Matroska',
   box64: '64-bit mdat headers, co64 chunk offsets, an mdat with size 0',
   multi: 'video plus audio, two video tracks, a still image track before the video',
   cover: 'cover art in M4A, MP4 and Matroska',
@@ -235,6 +291,9 @@ const CHUNK_WHEN: Record<string, string> = {
   isobmff: 'first MP4 or MOV file, once per worker',
   matroska: 'first WebM or MKV file, once per worker',
   rvfc: 'click on Run (approximate)',
+  segments: 'first VFR timeline, once per worker',
+  rateProfile: 'first card with a rate profile',
+  deviceInfo: 'on idle after the first result, or the first export (footer device line, JSON export)',
   lazy: 'first open of a Compare engines panel',
   mp4box: 'Compare engines on an MP4 or MOV card',
   mediabunny: 'Compare engines',
@@ -248,19 +307,25 @@ const CHUNK_NAME: Record<string, string> = {
   isobmff: 'ISO BMFF parser',
   matroska: 'Matroska parser',
   rvfc: 'rVFC fallback',
+  segments: 'rate profile core (segments, anomalies, sparkline buckets)',
+  rateProfile: 'rate profile panel (UI)',
+  deviceInfo: 'device info and JSON export',
   lazy: 'Compare panel',
   mp4box: 'mp4box.js engine',
   mediabunny: 'mediabunny engine',
   'engine-shared': 'shared by mp4box and mediabunny',
 };
 
-const CHUNK_ORDER = ['main', 'css', 'worker', 'isobmff', 'matroska', 'rvfc', 'lazy', 'mp4box', 'mediabunny', 'engine-shared'];
+const CHUNK_ORDER = ['main', 'css', 'worker', 'isobmff', 'matroska', 'segments', 'rateProfile', 'deviceInfo', 'rvfc', 'lazy', 'mp4box', 'mediabunny', 'engine-shared'];
 
-const COMPOSITE_BUDGET: Record<string, string> = { initial: 'initial', firstMp4: 'firstMp4', firstMatroska: 'firstMkv' };
+const COMPOSITE_BUDGET: Record<string, string> = { initial: 'initial', firstMp4: 'firstMp4', firstVfrMp4: 'firstVfrMp4', firstMatroska: 'firstMkv' };
+
+const OPTIONAL_COMPOSITES = new Set(['firstVfrMp4']);
 
 const COMPOSITE_LABEL: Record<string, string> = {
   initial: 'initial: main + CSS + worker entry',
   firstMp4: 'first MP4 analysis: initial + ISO BMFF parser',
+  firstVfrMp4: 'first VFR MP4 analysis: first MP4 + rate profile core',
   firstMatroska: 'first Matroska analysis: initial + Matroska parser',
 };
 
@@ -432,6 +497,7 @@ function verdictText(checks: readonly Check[]): string {
   if (known.length > 0) parts.push(`known deviation: ${known.join(', ')}`);
   const within = ids('within-tol');
   if (within.length > 0) parts.push(`within tolerance: ${within.join(', ')}`);
+  if (parts.length === 0 && exact > 0 && checks.every((c) => c.id === 'error' || c.verdict === 'n/a')) return 'expected outcome (manifest)';
   if (parts.length === 0) return exact > 0 ? `all exact (${exact})` : 'n/a';
   return `${exact} exact; ${parts.join('; ')}`;
 }
@@ -455,11 +521,23 @@ function headline(inp: Inputs): string[] {
   const browser = majorVersion(inp.bench.environment.chrome.product);
   const firstMp4 = need(inp.size.composites['firstMp4'], 'size composite firstMp4');
   const firstMkv = need(inp.size.composites['firstMatroska'], 'size composite firstMatroska');
+  const { m, prof } = integrationModel(inp.integration);
+  const fast = prof('fast4g');
+  const bigFixture = own.fixtures.find((f) => f.name === 'big_1080p_moov_end.mp4');
+  const bigChrome = inp.bench.chrome.large['big_1080p_moov_end.mp4']?.['own'];
+  const bigMkv = own.fixtures.find((f) => f.name === 'big_1080p.mkv');
+  const bigMkvChrome = inp.bench.chrome.large['big_1080p.mkv']?.['own'];
+  const big =
+    bigFixture && bigChrome
+      ? ` A ${fmtMB(bigFixture.sizeBytes)} 1080p MP4 with the moov at the end takes ${io(bigFixture).reads} reads (${fmtBytes(io(bigFixture).bytesRead)}) and ${fmtMs(bigChrome.medianMs)} ms${bigMkv && bigMkvChrome ? `; the same stream in Matroska takes ${fmtMs(bigMkvChrome.medianMs)} ms in auto mode (${io(bigMkv).reads} reads; a probe, so no frame count until "Scan all frames")` : ''}.`
+      : '';
+  const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? '' : 's'}`;
   return [
-    `- **Accuracy.** The own parsers were checked against ffprobe 8.1.1 on ${own.fixtures.length} fixtures (${committed.length} committed, ${large.length} long local files): ${checks} field checks, ${counts.exact} exact, ${counts['known-deviation']} known deviations with a recorded reason, ${counts.mismatch} mismatches, ${counts['n/a']} not applicable.`,
+    `- **Accuracy.** The own parsers were checked against ffprobe 8.1.1 on ${own.fixtures.length} synthetic fixtures made with ffmpeg (${committed.length} committed, ${large.length} large local files; real recorder output is not in the corpus, see Limitations): ${checks} field checks, ${counts.exact} exact, ${counts['within-tol']} within tolerance, ${plural(counts['known-deviation'], 'known deviation')} with a recorded reason, ${plural(counts.mismatch, 'mismatch').replace(/hs$/, 'hes')}, ${counts['n/a']} not applicable.`,
     `- **Reads.** Median ${median(reads)} reads per committed fixture, at most ${Math.max(...reads)}. The ${fmtDuration(longDur)}, ${longFrames}-frame MP4 (${fmtBytes(long.sizeBytes)}) takes ${io(long).reads} reads and ${fmtBytes(io(long).bytesRead)} (${fmtPct(io(long).percent)}% of the file).`,
-    `- **Speed.** In ${browser}, warm: median ${fmtMs(median(warm.map((w) => w.medianMs)))} ms per file in the worker and ${fmtMs(median(warm.map((w) => w.medianWallMs)))} ms from file pick to rendered result; the ${fmtDuration(longDur)} file takes ${fmtMs(chromeLong.medianMs)} ms.`,
+    `- **Speed.** In ${browser}, warm: median ${fmtMs(median(warm.map((w) => w.medianMs)))} ms per file in the worker and ${fmtMs(median(warm.map((w) => w.medianWallMs)))} ms from file pick to rendered result; the ${fmtDuration(longDur)} file takes ${fmtMs(chromeLong.medianMs)} ms.${big}`,
     `- **Size.** The page plus the first MP4 result loads ${fmtKB(firstMp4.gzip)} gzip (page, worker entry, ISO BMFF parser); the first Matroska result ${fmtKB(firstMkv.gzip)}.`,
+    `- **Embedding.** In a host app the critical path grows by a ${fmtKB(m.triggerGzip)} gzip trigger (${pctSmall(m.initialIncreaseMeasuredPct)} of a ${fmtMB(inp.integration.host.initialGzipBytes)} initial load); the first MP4 lazily loads ${fmtKB(m.lazyMp4Gzip)}. With the worker prewarmed when the upload dialog opens, the first result on fast 4G takes ${fmtMs(fast.prewarm.totalMs)} ms instead of ${fmtMs(fast.cold.totalMs)} ms.`,
     `- **Same result in Node and Chrome.** ${inp.bench.sanity.identical} of ${inp.bench.sanity.compared} files give identical results field by field (timing excluded).`,
     `- **Machine.** ${machine(inp)}.`,
   ];
@@ -487,7 +565,7 @@ function readsBlock(inp: Inputs): string[] {
       return row([`\`${name}\``, fmtBytes(f.sizeBytes), io(f).reads, fmtBytes(io(f).bytesRead), fmtMs(io(f).ms), fmtMs(w.medianMs)]);
     }),
   );
-  const committed = own.fixtures.filter((f) => !isLarge(f, inp.manifest) && io(f).reads > 0);
+  const committed = own.fixtures.filter((f) => !isLarge(f, inp.manifest));
   const byReads = new Map<number, AccFixture[]>();
   for (const f of committed) byReads.set(io(f).reads, [...(byReads.get(io(f).reads) ?? []), f]);
   const groups = [...byReads.entries()].sort((a, b) => a[0] - b[0]);
@@ -704,17 +782,20 @@ function bundleBlock(inp: Inputs): string[] {
   const rows = chunks.map((c) =>
     row([CHUNK_NAME[c.kind] ?? c.kind, CHUNK_WHEN[c.kind] ?? 'lazy', fmtKB(c.raw), `**${fmtKB(c.gzip)}**`, fmtKB(c.brotli), ...budgetCells(budgets.get(c.kind))]),
   );
-  const compRows = Object.entries(COMPOSITE_BUDGET).map(([key, budgetKey]) => {
-    const c = need(inp.size.composites[key], `size composite ${key}`);
-    return row([COMPOSITE_LABEL[key] ?? key, '', fmtKB(c.raw), `**${fmtKB(c.gzip)}**`, fmtKB(c.brotli), ...budgetCells(budgets.get(budgetKey))]);
-  });
+  const compRows = Object.entries(COMPOSITE_BUDGET)
+    .filter(([key]) => !OPTIONAL_COMPOSITES.has(key) || inp.size.composites[key])
+    .map(([key, budgetKey]) => {
+      const c = need(inp.size.composites[key], `size composite ${key}`);
+      return row([COMPOSITE_LABEL[key] ?? key, '', fmtKB(c.raw), `**${fmtKB(c.gzip)}**`, fmtKB(c.brotli), ...budgetCells(budgets.get(budgetKey))]);
+    });
   return table(['Chunk', 'Loaded', 'Raw', 'gzip -9', 'brotli q11', 'Budget (gzip)', 'Headroom', 'Status'], 'llrrrrrl', [...rows, ...compRows]);
 }
 
 function speedBlock(inp: Inputs): string[] {
   const own = engine(inp.acc, 'own');
   const warm = inp.bench.chrome.warm;
-  const rows = SPEED_FILES.map(([name, label]) => {
+  const measured = (name: string): boolean => own.fixtures.some((f) => f.name === name) && !!(warm[name] ?? inp.bench.chrome.large[name]?.['own']);
+  const rows = SPEED_FILES.filter(([name]) => !OPTIONAL_SPEED_FILES.has(name) || measured(name)).map(([name, label]) => {
     const f = fixture(own, name);
     const t = primaryOf(f);
     const frames = findCheck(t?.checks ?? [], 'frames')?.app ?? '-';
@@ -896,8 +977,94 @@ function corpusBlock(inp: Inputs): string[] {
   return table(['Category', 'Fixtures', 'Committed', 'Expected outcome', 'Covers'], 'lrrll', rows);
 }
 
+function profileBlock(inp: Inputs): string[] {
+  const own = engine(inp.acc, 'own');
+  const sz = inp.size;
+  const browser = majorVersion(inp.bench.environment.chrome.product);
+  const vfr = need(sz.composites['firstVfrMp4'], 'size composite firstVfrMp4');
+  const mp4 = need(sz.composites['firstMp4'], 'size composite firstMp4');
+  const limit = sz.budgets.find((b) => b.key === 'firstVfrMp4');
+  const rows = PROFILE_FILES.map(([name, label]) => {
+    const f = fixture(own, name);
+    const c = primaryOf(f)?.checks ?? [];
+    const min = findCheck(c, 'minFps')?.app;
+    const max = findCheck(c, 'maxFps')?.app;
+    const chrome = need(inp.bench.chrome.warm[name] ?? inp.bench.chrome.large[name]?.['own'], `chrome timing for ${name}`);
+    return row([`\`${name}\``, label, findCheck(c, 'frames')?.app ?? '-', min || max ? `${decimal(min)} to ${decimal(max)}` : '-', fmtMs(io(f).ms), fmtMs(chrome.medianMs)]);
+  });
+  return [
+    `The profile code is ${fmtKB(chunkGzip(sz, 'segments'))} gzip in the worker and the panel ${fmtKB(chunkGzip(sz, 'rateProfile'))} on the main thread, both lazy. The first VFR MP4 loads ${fmtKB(vfr.gzip)} gzip, ${fmtKB(vfr.gzip - mp4.gzip)} more than a CFR one${limit ? ` (budget ${fmtKB(limit.limit)})` : ''}. Times are the whole analysis, profile included.`,
+    '',
+    ...table(['File', 'Rate profile', 'Frames', 'Min to max FPS', 'Node ms', `${browser} ms`], 'llrlrr', rows),
+  ];
+}
+
+function integrationModel(ic: IntegrationReport) {
+  const m = ic.model;
+  const prof = (id: string): ProfileModel => need(m.profiles.find((p) => p.id === id), `integration profile ${id}`);
+  const link = (id: string): string => {
+    const p = need(
+      ic.profiles.find((x) => x.id === id),
+      `integration link ${id}`,
+    );
+    return `${prof(id).label} (${p.downKbps === null ? 'unthrottled' : `${Number((p.downKbps / 1000).toFixed(2))} Mbps`}, ${p.latencyMs} ms)`;
+  };
+  return { m, prof, link };
+}
+
+function pctSmall(p: number): string {
+  return `${p < 0.1 ? p.toFixed(3) : p.toFixed(2)}%`;
+}
+
+function fmtMB(bytes: number): string {
+  return `${(bytes / 1e6).toFixed(2)} MB`;
+}
+
+function integrationBlock(inp: Inputs): string[] {
+  const ic = inp.integration;
+  const { m, prof, link } = integrationModel(ic);
+  const first = m.memory.probe.first.processPrivateDelta;
+  const idle = m.memory.probe.idle.processPrivateDelta;
+  const batch = ic.main.batchFiles;
+  const rows = [
+    row([
+      'Critical path, gzip',
+      `${fmtKB(m.triggerGzip)} trigger (+${pctSmall(m.initialIncreaseMeasuredPct)})`,
+      'same',
+      `${fmtKB(m.options.eagerBytes)} (+${pctSmall(m.options.eagerVsInitialPct)})`,
+    ]),
+    row(['Downloaded on use, gzip', `${fmtKB(m.lazyMp4Gzip)} for the first MP4, ${fmtKB(m.lazyBothGzip)} with both parsers`, 'the same, when the dialog opens', 'nothing more']),
+    ...INTEGRATION_PROFILES.map((id) => {
+      const p = prof(id);
+      return row([
+        `First video, ${link(id)}`,
+        `+${fmtMs(p.cold.extraMs)} ms once`,
+        `${fmtMs(p.prewarm.totalMs)} ms prewarmed, ${fmtMs(p.prefetch.totalMs)} ms HTTP-prefetched`,
+        `${fmtMs(p.prewarm.totalMs)} ms, plus ${fmtMs(need(m.options.eagerTransferMs[id], `eager transfer ${id}`))} ms of transfer on every page load`,
+      ]);
+    }),
+    row([
+      'Main thread',
+      `0 long tasks, TBT ${fmtMs(m.main.coldBatchTbtMs)} ms for ${batch} files at once; ${fmtMs(m.main.firstFileProbeCpuMs)} ms of main-thread CPU for the first file`,
+      'same',
+      'same, plus a worker started on every page load',
+    ]),
+    row(['Memory (renderer private, probe share)', `+${fmtMB(first)} after the first video, +${fmtMB(idle)} idle after ${batch}`, 'same, from the dialog open', `+${fmtMB(first)} for every visitor`]),
+  ];
+  const cpu = Object.values(ic.cpu.perFile).map((f) => `\`${f.name}\` ${fmtMs(f.medianMs)} ms`);
+  return [
+    `Host model: an SPA with a ${fmtMB(ic.host.initialGzipBytes)} gzip initial load, ${majorVersion(ic.environment.browser)} headless, local server with CDP network throttling; the probe is the real worker pool, worker entry and parser chunks. "Prewarmed" means the worker was started and the parser loaded before the pick.`,
+    '',
+    ...table(['', 'Lazy on the first pick', 'Lazy + prefetch when the upload dialog opens', 'Eager (in the critical bundle)'], 'llll', rows),
+    '',
+    `Worker time per file after warm-up: ${cpu.join(', ')}.`,
+  ];
+}
+
 const BLOCKS: Record<string, (inp: Inputs) => string[]> = {
   headline,
+  profile: profileBlock,
+  integration: integrationBlock,
   reads: readsBlock,
   approaches: approachesBlock,
   engines: enginesBlock,
@@ -947,7 +1114,8 @@ function main(): number {
     console.log(`Usage: node scripts/readme-tables.ts [--check] [--readme <file>] [--report <dir>]
 
 Rewrites the README sections between <!-- tables:<name>:start --> and <!-- tables:<name>:end -->
-from report/accuracy.json, report/size.json, report/browser-bench.json and fixtures/manifest.tsv.
+from report/accuracy.json, report/size.json, report/browser-bench.json,
+report/integration-cost.json and fixtures/manifest.tsv.
 Sections: ${Object.keys(BLOCKS).join(', ')}.
 
   --check    exit 1 if the README is not up to date, write nothing
@@ -961,6 +1129,7 @@ Sections: ${Object.keys(BLOCKS).join(', ')}.
     acc: readJson<AccuracyReport>(join(reportDir, 'accuracy.json')),
     size: readJson<SizeReport>(join(reportDir, 'size.json')),
     bench: readJson<BenchReport>(join(reportDir, 'browser-bench.json')),
+    integration: readJson<IntegrationReport>(join(reportDir, 'integration-cost.json')),
     manifest: readManifest(join(root, 'fixtures', 'manifest.tsv')),
   };
   const before = readFileSync(readmePath, 'utf8');
