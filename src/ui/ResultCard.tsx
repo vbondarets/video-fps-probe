@@ -1,4 +1,4 @@
-import { lazy, memo, Suspense, useState, type ReactNode } from 'react';
+import { lazy, memo, Suspense, useRef, useState, type ReactNode } from 'react';
 import { primaryTrack } from '../core/result.ts';
 import type { FileResult, Provenance, VideoTrackResult } from '../core/types.ts';
 import { bytes, count, duration, fps, ms, PROVENANCE, readPercent, share } from './format.ts';
@@ -12,9 +12,10 @@ const SCAN_HELP = 'header: container headers only. probe: headers plus sampled b
 export function Mark({ p }: { p: Provenance }) {
   const [glyph, text] = PROVENANCE[p];
   return (
-    <i className={`p p-${p}`} title={text} aria-label={p}>
-      {glyph}
-    </i>
+    <abbr className={`p p-${p}`} title={text}>
+      <span aria-hidden="true">{glyph}</span>
+      <span className="sr">{` (${p})`}</span>
+    </abbr>
   );
 }
 
@@ -39,19 +40,45 @@ function Cell({ k, p, title, extra, children }: CellProps) {
   );
 }
 
+const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+function stallBadge(t: VideoTrackResult): string | null {
+  const prof = t.rateProfile;
+  if (!prof || prof.uneven) return null;
+  const freezes = prof.anomalies.filter((a) => a.kind === 'freeze').length;
+  const gaps = prof.anomalies.filter((a) => a.kind === 'gap').length;
+  if (freezes) return plural(freezes, 'freeze');
+  return gaps ? plural(gaps, 'gap') : null;
+}
+
 function VfrCell({ t }: { t: VideoTrackResult }) {
+  const sampled = t.provenance.isVfr === 'sampled';
+  const uneven = t.rateProfile?.uneven ?? false;
+  const stalls = stallBadge(t);
   let body: ReactNode = <span className="mut">n/a</span>;
   if (t.isStill) body = <span className="mut">still image</span>;
+  else if (t.isVfr && uneven) body = <span className="badge vfr">VFR</span>;
   else if (t.isVfr) body = <span className="badge vfr" title="share of frame intervals that differ from the median">VFR {share(t.vfrRatio)}</span>;
-  else if (t.isVfr === false) {
+  else if (t.isVfr === false && sampled) {
+    body = (
+      <span className="badge" title="probe mode reads a few clusters only: scan all frames for a verdict">
+        no VFR in sample
+      </span>
+    );
+  } else if (t.isVfr === false) {
     body = <span className="badge cfr">{t.timestampsQuantized ? 'CFR, 1 ms quantized' : 'CFR'}</span>;
   }
   return (
     <Cell k="Frame timing" p={t.provenance.isVfr}>
       {body}
-      {t.rateProfile?.uneven && (
+      {uneven && (
         <span className="badge uneven" title="the frame rate changes over time or frames stall: see the rate profile">
           uneven
+        </span>
+      )}
+      {stalls && (
+        <span className="badge uneven" title="frames stall in an otherwise steady stream: see the rate profile">
+          {stalls}
         </span>
       )}
     </Cell>
@@ -86,9 +113,11 @@ function TrackCells({ t, r }: { t: VideoTrackResult; r: FileResult }) {
           <>
             <b>{fps(nominal)}</b> <small>{nominal.kind}</small>
           </>
+        ) : dominant && t.rateProfile?.uneven ? (
+          <small>varies, see the rate profile</small>
         ) : dominant ? (
           <>
-            <small>dominant</small> <b>{fps(dominant.rate)}</b> <small>{share(dominant.share)}</small>
+            <small>dominant</small> <b>{fps(dominant.rate)}</b> <small>{share(dominant.share)} of frames</small>
           </>
         ) : (
           '-'
@@ -132,7 +161,7 @@ function Notes({ kind, label, items }: { kind: 'warn' | 'err'; label: string; it
 function Progress({ row }: { row: Row }) {
   const { progress } = row;
   return (
-    <div className="bar" role="status">
+    <div className="bar">
       <progress value={progress && progress.total > 0 ? progress.done : undefined} max={progress && progress.total > 0 ? progress.total : undefined} />
       <span>{progress ? `${progress.phase}${progress.total > 0 ? ` ${share(progress.done / progress.total)}` : ''}` : row.result ? 'Scanning' : 'Analyzing'}</span>
       <button type="button" onClick={() => cancelRow(row.id)}>
@@ -148,6 +177,7 @@ function ErrorLine({ text }: { text: string }) {
 
 export const ResultCard = memo(function ResultCard({ row }: { row: Row }) {
   const [open, setOpen] = useState(false);
+  const heading = useRef<HTMLHeadingElement>(null);
   const { file, result: r, busy } = row;
   const t = r ? primaryTrack(r) : null;
   const others = r && t ? r.videoTracks.filter((x) => x !== t) : [];
@@ -156,7 +186,9 @@ export const ResultCard = memo(function ResultCard({ row }: { row: Row }) {
   return (
     <article className="card" aria-busy={busy}>
       <header>
-        <h3>{file.name}</h3>
+        <h3 ref={heading} tabIndex={-1}>
+          {file.name}
+        </h3>
         <span className="mut">{bytes(file.size)}</span>
         {r && r.container !== 'unknown' && (
           <span className="tag">
@@ -185,9 +217,15 @@ export const ResultCard = memo(function ResultCard({ row }: { row: Row }) {
       )}
       {t && <Profile t={t} />}
       {busy && <Progress row={row} />}
-      {r && mkv && r.scan !== 'exact' && !busy && (
+      {r && t && mkv && r.scan !== 'exact' && !busy && (
         <p className="act">
-          <button type="button" onClick={() => rescan(row.id, 'exact')}>
+          <button
+            type="button"
+            onClick={() => {
+              rescan(row.id, 'exact');
+              heading.current?.focus();
+            }}
+          >
             Scan all frames
           </button>{' '}
           <small>to check for rate changes and stalls</small>
