@@ -222,7 +222,8 @@ async function main(): Promise<number> {
       }
       const path = fixturePath(entry.name);
       if (!path) {
-        skipped.push({ name: entry.name, reason: isLarge(entry) ? 'optional file not present (generate it with npm run fixtures:generate)' : 'fixture file missing' });
+        const flag = entry.category === 'sparse' ? '--with-sparse' : entry.category === 'big' ? '--with-big' : '--with-long';
+        skipped.push({ name: entry.name, reason: isLarge(entry) ? `optional file not present (generate it with npm run fixtures:generate -- ${flag})` : 'fixture file missing' });
         continue;
       }
       const ref = refOf(entry.name);
