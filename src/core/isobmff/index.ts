@@ -1,6 +1,6 @@
 import type { BlobReader } from '../reader.ts';
 import { emptyAnalysis, emptyTrack } from '../result.ts';
-import { analyzeTimeline } from '../stats.ts';
+import { analyzeTimeline, rateProfileOf, type ProfileJob } from '../stats.ts';
 import { toFfprobeString } from '../rational.ts';
 import type { ContainerAnalysis, ContainerKind, ResolvedAnalyzeOptions, VideoTrackResult } from '../types.ts';
 import { IsoBmffError, readBoxHeader, type BoxHeader } from './boxes.ts';
@@ -184,6 +184,7 @@ interface Built {
   result: VideoTrackResult;
   enabled: boolean;
   auxiliary: boolean;
+  profile?: ProfileJob | null;
 }
 
 interface BuildContext {
@@ -282,7 +283,7 @@ function buildVideoTrack(tr: IsoTrack, movie: IsoMovie, opts: ResolvedAnalyzeOpt
   t.timestampsQuantized = stats.timestampsQuantized;
   if (t.duplicateTimestamps > 0) w.push(`${t.duplicateTimestamps} duplicate timestamps`);
   finishProvenance(t);
-  return { result: t, enabled: tr.enabled, auxiliary };
+  return { result: t, enabled: tr.enabled, auxiliary, profile: stats.profile };
 }
 
 function finishProvenance(t: VideoTrackResult): void {
@@ -390,6 +391,7 @@ export async function analyzeIsoBmffDetailed(reader: BlobReader, opts: ResolvedA
     if ([...ids].some(([t, id]) => t.id !== id)) movie.warnings.push('duplicate track_ID values');
     const videos = movie.tracks.filter((t) => isVideoTrack(t, movie));
     const built = videos.map((t) => buildVideoTrack(t, movie, opts, { reportedId: ids.get(t) ?? t.id, ffprobeFails }));
+    for (const b of built) b.result.rateProfile = await rateProfileOf(b.profile ?? null);
     analysis.videoTracks = built.map((b) => b.result);
     analysis.audioTrackCount = movie.tracks.filter((t) => t.handler === 'soun').length;
     analysis.primaryTrackId = pickPrimary(built);
