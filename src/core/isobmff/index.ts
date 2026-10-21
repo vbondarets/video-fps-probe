@@ -281,8 +281,10 @@ function buildVideoTrack(tr: IsoTrack, movie: IsoMovie, opts: ResolvedAnalyzeOpt
   t.nominalFps = stats.nominalFps;
   t.dominantFps = stats.dominantFps;
   t.timestampsQuantized = stats.timestampsQuantized;
+  if (stats.presentedAvgFps) t.avgFps = stats.presentedAvgFps;
   if (t.duplicateTimestamps > 0) w.push(`${t.duplicateTimestamps} duplicate timestamps`);
   finishProvenance(t);
+  if (stats.presentedAvgFps) t.provenance.avgFps = 'exact';
   return { result: t, enabled: tr.enabled, auxiliary, profile: stats.profile };
 }
 
