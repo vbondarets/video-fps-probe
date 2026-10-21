@@ -110,3 +110,16 @@ export function submit(
     },
   };
 }
+
+const WARMUP_FTYP = new Uint8Array([0, 0, 0, 16, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d, 0, 0, 2, 0]);
+
+export function prewarm(): Promise<void> {
+  return submit(new File([WARMUP_FTYP], 'warmup.mp4'), 'own', {}).promise.then(
+    () => undefined,
+    () => undefined,
+  );
+}
+
+export function dispose(): void {
+  for (const slot of [...slots]) if (!slot.job) discard(slot);
+}
