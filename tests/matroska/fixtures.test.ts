@@ -44,7 +44,7 @@ interface Probe {
 }
 
 const DEVIATIONS = JSON.parse(readFileSync(join(FIXTURES_DIR, 'known-deviations', 'own-matroska.json'), 'utf8')) as Record<string, Record<string, string>>;
-const ROWS = loadManifest().filter((r) => r.container === 'webm' || r.container === 'matroska');
+const ROWS = loadManifest().filter((r) => (r.container === 'webm' || r.container === 'matroska') && (r.committed || fixturePath(r.name) !== null));
 const NO_DEFAULT_DURATION = /\bDefaultDuration\b[^.]*\b(overwritten|voided|void|not written|missing|absent)\b|\b(no|without|missing)\s+DefaultDuration\b/i;
 
 function deviation(name: string, field: string): string | null {
