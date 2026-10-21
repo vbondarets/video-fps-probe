@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "file": "corrupt_text_named.mp4",
+  "bytes": 63,
+  "ffprobeVersion": "ffprobe version 8.1.1-full_build-www.gyan.dev Copyright (c) 2007-2026 the FFmpeg developers",
+  "countFrames": true,
+  "ok": false,
+  "exitCode": 1,
+  "stderr": [
+    "moov atom not found",
+    "<file>: Invalid data found when processing input"
+  ],
+  "probeExit": 1,
+  "probeErr": "moov atom not found"
+}

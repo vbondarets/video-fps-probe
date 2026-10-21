@@ -1,0 +1,238 @@
+{
+  "schema": 1,
+  "file": "cfr_vp9_120.webm",
+  "bytes": 208688,
+  "ffprobeVersion": "ffprobe version 8.1.1-full_build-www.gyan.dev Copyright (c) 2007-2026 the FFmpeg developers",
+  "countFrames": true,
+  "ok": true,
+  "exitCode": 0,
+  "stderr": [],
+  "probeExit": 0,
+  "probeErr": null,
+  "probe": {
+    "streams": [
+      {
+        "index": 0,
+        "codec_name": "vp9",
+        "codec_long_name": "Google VP9",
+        "profile": "Profile 0",
+        "codec_type": "video",
+        "codec_tag_string": "[0][0][0][0]",
+        "codec_tag": "0x0000",
+        "mime_codec_string": "vp09.00.11.08",
+        "width": 160,
+        "height": 90,
+        "coded_width": 160,
+        "coded_height": 90,
+        "has_b_frames": 0,
+        "sample_aspect_ratio": "1:1",
+        "display_aspect_ratio": "16:9",
+        "pix_fmt": "yuv420p",
+        "level": -99,
+        "color_range": "tv",
+        "color_space": "unknown",
+        "color_transfer": "unknown",
+        "color_primaries": "unknown",
+        "chroma_location": "unspecified",
+        "field_order": "progressive",
+        "refs": 1,
+        "id": "N/A",
+        "r_frame_rate": "120/1",
+        "avg_frame_rate": "120/1",
+        "time_base": "1/1000",
+        "start_pts": 0,
+        "start_time": "0.000000",
+        "duration_ts": "N/A",
+        "duration": "N/A",
+        "bit_rate": "N/A",
+        "max_bit_rate": "N/A",
+        "bits_per_raw_sample": "N/A",
+        "nb_frames": "N/A",
+        "nb_read_frames": "360",
+        "nb_read_packets": "360",
+        "disposition": {
+          "default": 0,
+          "dub": 0,
+          "original": 0,
+          "comment": 0,
+          "lyrics": 0,
+          "karaoke": 0,
+          "forced": 0,
+          "hearing_impaired": 0,
+          "visual_impaired": 0,
+          "clean_effects": 0,
+          "attached_pic": 0,
+          "timed_thumbnails": 0,
+          "non_diegetic": 0,
+          "captions": 0,
+          "descriptions": 0,
+          "metadata": 0,
+          "dependent": 0,
+          "still_image": 0,
+          "multilayer": 0
+        },
+        "tags": {
+          "ENCODER": "Lavc libvpx-vp9",
+          "DURATION": "00:00:03.000000000"
+        }
+      }
+    ],
+    "format": {
+      "filename": "cfr_vp9_120.webm",
+      "nb_streams": 1,
+      "nb_programs": 0,
+      "nb_stream_groups": 0,
+      "format_name": "matroska,webm",
+      "format_long_name": "Matroska / WebM",
+      "start_time": "0.000000",
+      "duration": "3.000000",
+      "size": "208688",
+      "bit_rate": "556501",
+      "probe_score": 100,
+      "tags": {
+        "encoder": "Lavf"
+      }
+    }
+  },
+  "format": {
+    "format_name": "matroska,webm",
+    "duration": "3.000000",
+    "size": "208688",
+    "bit_rate": "556501",
+    "nb_streams": 1,
+    "start_time": "0.000000"
+  },
+  "streams": [
+    {
+      "index": 0,
+      "codec_type": "video",
+      "codec_name": "vp9",
+      "attachedPic": false
+    }
+  ],
+  "attachedPicStreams": [],
+  "videoStreams": [
+    {
+      "index": 0,
+      "codecName": "vp9",
+      "width": 160,
+      "height": 90,
+      "timeBase": "1/1000",
+      "packets": 360,
+      "presentedPackets": 360,
+      "discardedPackets": 0,
+      "keyframes": 12,
+      "ptsPresented": [0, 8, 17, 25, 33, 42, 50, 58, 67, 75, 83, 92, 100, 108, 117, 125, 133, 142, 150, 158, 167, 175, 183, 192, 200, 208, 217, 225, 233, 242, 250, 258, 267, 275, 283, 292, 300, 308, 317, 325, 333, 342, 350, 358, 367, 375, 383, 392, 400, 408, 417, 425, 433, 442, 450, 458, 467, 475, 483, 492, 500, 508, 517, 525, 533, 542, 550, 558, 567, 575, 583, 592, 600, 608, 617, 625, 633, 642, 650, 658, 667, 675, 683, 692, 700, 708, 717, 725, 733, 742, 750, 758, 767, 775, 783, 792, 800, 808, 817, 825, 833, 842, 850, 858, 867, 875, 883, 892, 900, 908, 917, 925, 933, 942, 950, 958, 967, 975, 983, 992, 1000, 1008, 1017, 1025, 1033, 1042, 1050, 1058, 1067, 1075, 1083, 1092, 1100, 1108, 1117, 1125, 1133, 1142, 1150, 1158, 1167, 1175, 1183, 1192, 1200, 1208, 1217, 1225, 1233, 1242, 1250, 1258, 1267, 1275, 1283, 1292, 1300, 1308, 1317, 1325, 1333, 1342, 1350, 1358, 1367, 1375, 1383, 1392, 1400, 1408, 1417, 1425, 1433, 1442, 1450, 1458, 1467, 1475, 1483, 1492, 1500, 1508, 1517, 1525, 1533, 1542, 1550, 1558, 1567, 1575, 1583, 1592, 1600, 1608, 1617, 1625, 1633, 1642, 1650, 1658, 1667, 1675, 1683, 1692, 1700, 1708, 1717, 1725, 1733, 1742, 1750, 1758, 1767, 1775, 1783, 1792, 1800, 1808, 1817, 1825, 1833, 1842, 1850, 1858, 1867, 1875, 1883, 1892, 1900, 1908, 1917, 1925, 1933, 1942, 1950, 1958, 1967, 1975, 1983, 1992, 2000, 2008, 2017, 2025, 2033, 2042, 2050, 2058, 2067, 2075, 2083, 2092, 2100, 2108, 2117, 2125, 2133, 2142, 2150, 2158, 2167, 2175, 2183, 2192, 2200, 2208, 2217, 2225, 2233, 2242, 2250, 2258, 2267, 2275, 2283, 2292, 2300, 2308, 2317, 2325, 2333, 2342, 2350, 2358, 2367, 2375, 2383, 2392, 2400, 2408, 2417, 2425, 2433, 2442, 2450, 2458, 2467, 2475, 2483, 2492, 2500, 2508, 2517, 2525, 2533, 2542, 2550, 2558, 2567, 2575, 2583, 2592, 2600, 2608, 2617, 2625, 2633, 2642, 2650, 2658, 2667, 2675, 2683, 2692, 2700, 2708, 2717, 2725, 2733, 2742, 2750, 2758, 2767, 2775, 2783, 2792, 2800, 2808, 2817, 2825, 2833, 2842, 2850, 2858, 2867, 2875, 2883, 2892, 2900, 2908, 2917, 2925, 2933, 2942, 2950, 2958, 2967, 2975, 2983, 2992],
+      "deltas": [8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9],
+      "deltasExcludingTail": [8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8, 9, 8, 8],
+      "arraysOmitted": false,
+      "duplicateTimestamps": 0,
+      "reorderDepth": 0,
+      "tailDropped": 1,
+      "deltaHistogramAll": {
+        "8": 239,
+        "9": 120
+      },
+      "deltaHistogramExcludingTail": {
+        "8": 239,
+        "9": 119
+      },
+      "instFpsAll": {
+        "count": 359,
+        "minDeltaTicks": 8,
+        "maxDeltaTicks": 9,
+        "distinctDeltas": 2,
+        "minFps": {
+          "num": 1000,
+          "den": 9,
+          "value": 111.11111111111111
+        },
+        "maxFps": {
+          "num": 125,
+          "den": 1,
+          "value": 125
+        }
+      },
+      "instFpsExcludingTail": {
+        "count": 358,
+        "minDeltaTicks": 8,
+        "maxDeltaTicks": 9,
+        "distinctDeltas": 2,
+        "minFps": {
+          "num": 1000,
+          "den": 9,
+          "value": 111.11111111111111
+        },
+        "maxFps": {
+          "num": 125,
+          "den": 1,
+          "value": 125
+        }
+      },
+      "vfr": {
+        "isVfr": false,
+        "medianDeltaTicks": 8,
+        "toleranceTicks": 1,
+        "vfrRatio": 1.125
+      },
+      "avgFromPts": {
+        "frames": 360,
+        "firstPts": 0,
+        "lastPts": 2992,
+        "lastDurationTicks": 8,
+        "spanTicks": 3000,
+        "fps": {
+          "num": 120,
+          "den": 1,
+          "value": 120
+        }
+      },
+      "lastPacketEnd": {
+        "ticks": 3000,
+        "seconds": 3
+      }
+    }
+  ],
+  "videos": [
+    {
+      "index": 0,
+      "codec_name": "vp9",
+      "profile": "Profile 0",
+      "codec_tag_string": "[0][0][0][0]",
+      "width": 160,
+      "height": 90,
+      "avg_frame_rate": "120/1",
+      "r_frame_rate": "120/1",
+      "avg_fps": 120,
+      "r_fps": 120,
+      "nb_frames": null,
+      "nb_read_frames": "360",
+      "duration": null,
+      "start_time": "0.000000",
+      "time_base": "1/1000",
+      "has_b_frames": 0,
+      "packets": {
+        "packets": 360,
+        "keyframes": 12,
+        "discardedPackets": 0,
+        "ptsDeltaMinTicks": 8,
+        "ptsDeltaMaxTicks": 9,
+        "distinctDeltas": 2,
+        "minInstFps": 111.11111111111111,
+        "maxInstFps": 125,
+        "zeroDeltas": 0,
+        "ptsFirstSec": 0,
+        "ptsLastSec": 2.992,
+        "avgFpsFromPts": 120,
+        "avgFpsFromSpan": 119.98663101604278,
+        "durMinTicks": 8,
+        "durMaxTicks": 8,
+        "vfrByDeltaRatio": true,
+        "minInstFpsByDur": 125,
+        "maxInstFpsByDur": 125,
+        "minInstFpsByDts": 111.11111111111111,
+        "maxInstFpsByDts": 125
+      }
+    }
+  ]
+}

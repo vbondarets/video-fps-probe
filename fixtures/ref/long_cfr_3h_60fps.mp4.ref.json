@@ -1,0 +1,243 @@
+{
+  "schema": 1,
+  "file": "long_cfr_3h_60fps.mp4",
+  "bytes": 13023277,
+  "ffprobeVersion": "ffprobe version 8.1.1-full_build-www.gyan.dev Copyright (c) 2007-2026 the FFmpeg developers",
+  "countFrames": true,
+  "ok": true,
+  "exitCode": 0,
+  "stderr": [],
+  "probeExit": 0,
+  "probeErr": null,
+  "probe": {
+    "streams": [
+      {
+        "index": 0,
+        "codec_name": "h264",
+        "codec_long_name": "H.264 / AVC / MPEG-4 AVC / MPEG-4 part 10",
+        "profile": "Constrained Baseline",
+        "codec_type": "video",
+        "codec_tag_string": "avc1",
+        "codec_tag": "0x31637661",
+        "mime_codec_string": "avc1.42c00a",
+        "width": 64,
+        "height": 36,
+        "coded_width": 64,
+        "coded_height": 48,
+        "has_b_frames": 0,
+        "sample_aspect_ratio": "1:1",
+        "display_aspect_ratio": "16:9",
+        "pix_fmt": "yuv420p",
+        "level": 10,
+        "color_range": "unknown",
+        "color_space": "unknown",
+        "color_transfer": "unknown",
+        "color_primaries": "unknown",
+        "chroma_location": "left",
+        "field_order": "progressive",
+        "refs": 1,
+        "is_avc": "true",
+        "nal_length_size": "4",
+        "id": "0x1",
+        "r_frame_rate": "60/1",
+        "avg_frame_rate": "60/1",
+        "time_base": "1/15360",
+        "start_pts": 0,
+        "start_time": "0.000000",
+        "duration_ts": 165888000,
+        "duration": "10800.000000",
+        "bit_rate": "7710",
+        "max_bit_rate": "N/A",
+        "bits_per_raw_sample": "8",
+        "nb_frames": "648000",
+        "nb_read_frames": "648000",
+        "nb_read_packets": "648000",
+        "extradata_size": 38,
+        "disposition": {
+          "default": 1,
+          "dub": 0,
+          "original": 0,
+          "comment": 0,
+          "lyrics": 0,
+          "karaoke": 0,
+          "forced": 0,
+          "hearing_impaired": 0,
+          "visual_impaired": 0,
+          "clean_effects": 0,
+          "attached_pic": 0,
+          "timed_thumbnails": 0,
+          "non_diegetic": 0,
+          "captions": 0,
+          "descriptions": 0,
+          "metadata": 0,
+          "dependent": 0,
+          "still_image": 0,
+          "multilayer": 0
+        },
+        "tags": {
+          "language": "und",
+          "handler_name": "VideoHandler",
+          "encoder": "Lavc62.28.101 libx264"
+        }
+      }
+    ],
+    "format": {
+      "filename": "long_cfr_3h_60fps.mp4",
+      "nb_streams": 1,
+      "nb_programs": 0,
+      "nb_stream_groups": 0,
+      "format_name": "mov,mp4,m4a,3gp,3g2,mj2",
+      "format_long_name": "QuickTime / MOV",
+      "start_time": "0.000000",
+      "duration": "10800.000000",
+      "size": "13023277",
+      "bit_rate": "9646",
+      "probe_score": 100,
+      "tags": {
+        "major_brand": "isom",
+        "minor_version": "512",
+        "compatible_brands": "isomiso2avc1mp41",
+        "encoder": "Lavf62.12.101"
+      }
+    }
+  },
+  "format": {
+    "format_name": "mov,mp4,m4a,3gp,3g2,mj2",
+    "duration": "10800.000000",
+    "size": "13023277",
+    "bit_rate": "9646",
+    "nb_streams": 1,
+    "start_time": "0.000000"
+  },
+  "streams": [
+    {
+      "index": 0,
+      "codec_type": "video",
+      "codec_name": "h264",
+      "attachedPic": false
+    }
+  ],
+  "attachedPicStreams": [],
+  "videoStreams": [
+    {
+      "index": 0,
+      "codecName": "h264",
+      "width": 64,
+      "height": 36,
+      "timeBase": "1/15360",
+      "packets": 648000,
+      "presentedPackets": 648000,
+      "discardedPackets": 0,
+      "keyframes": 5400,
+      "ptsPresented": null,
+      "deltas": null,
+      "deltasExcludingTail": null,
+      "arraysOmitted": true,
+      "duplicateTimestamps": 0,
+      "reorderDepth": 0,
+      "tailDropped": 1,
+      "deltaHistogramAll": {
+        "256": 647999
+      },
+      "deltaHistogramExcludingTail": {
+        "256": 647998
+      },
+      "instFpsAll": {
+        "count": 647999,
+        "minDeltaTicks": 256,
+        "maxDeltaTicks": 256,
+        "distinctDeltas": 1,
+        "minFps": {
+          "num": 60,
+          "den": 1,
+          "value": 60
+        },
+        "maxFps": {
+          "num": 60,
+          "den": 1,
+          "value": 60
+        }
+      },
+      "instFpsExcludingTail": {
+        "count": 647998,
+        "minDeltaTicks": 256,
+        "maxDeltaTicks": 256,
+        "distinctDeltas": 1,
+        "minFps": {
+          "num": 60,
+          "den": 1,
+          "value": 60
+        },
+        "maxFps": {
+          "num": 60,
+          "den": 1,
+          "value": 60
+        }
+      },
+      "vfr": {
+        "isVfr": false,
+        "medianDeltaTicks": 256,
+        "toleranceTicks": 1,
+        "vfrRatio": 1
+      },
+      "avgFromPts": {
+        "frames": 648000,
+        "firstPts": 0,
+        "lastPts": 165887744,
+        "lastDurationTicks": 256,
+        "spanTicks": 165888000,
+        "fps": {
+          "num": 60,
+          "den": 1,
+          "value": 60
+        }
+      },
+      "lastPacketEnd": {
+        "ticks": 165888000,
+        "seconds": 10800
+      }
+    }
+  ],
+  "videos": [
+    {
+      "index": 0,
+      "codec_name": "h264",
+      "profile": "Constrained Baseline",
+      "codec_tag_string": "avc1",
+      "width": 64,
+      "height": 36,
+      "avg_frame_rate": "60/1",
+      "r_frame_rate": "60/1",
+      "avg_fps": 60,
+      "r_fps": 60,
+      "nb_frames": "648000",
+      "nb_read_frames": "648000",
+      "duration": "10800.000000",
+      "start_time": "0.000000",
+      "time_base": "1/15360",
+      "has_b_frames": 0,
+      "packets": {
+        "packets": 648000,
+        "keyframes": 5400,
+        "discardedPackets": 0,
+        "ptsDeltaMinTicks": 256,
+        "ptsDeltaMaxTicks": 256,
+        "distinctDeltas": 1,
+        "minInstFps": 60,
+        "maxInstFps": 60,
+        "zeroDeltas": 0,
+        "ptsFirstSec": 0,
+        "ptsLastSec": 10799.983333333334,
+        "avgFpsFromPts": 60,
+        "avgFpsFromSpan": 60,
+        "durMinTicks": 256,
+        "durMaxTicks": 256,
+        "vfrByDeltaRatio": false,
+        "minInstFpsByDur": 60,
+        "maxInstFpsByDur": 60,
+        "minInstFpsByDts": 60,
+        "maxInstFpsByDts": 60
+      }
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "file": "corrupt_trunc_moov_partial.mp4",
+  "bytes": 88224,
+  "ffprobeVersion": "ffprobe version 8.1.1-full_build-www.gyan.dev Copyright (c) 2007-2026 the FFmpeg developers",
+  "countFrames": true,
+  "ok": false,
+  "exitCode": 1,
+  "stderr": [
+    "error reading header",
+    "<file>: End of file"
+  ],
+  "probeExit": 1,
+  "probeErr": "error reading header"
+}

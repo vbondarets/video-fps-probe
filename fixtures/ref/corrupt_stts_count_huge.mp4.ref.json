@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "file": "corrupt_stts_count_huge.mp4",
+  "bytes": 88810,
+  "ffprobeVersion": "ffprobe version 8.1.1-full_build-www.gyan.dev Copyright (c) 2007-2026 the FFmpeg developers",
+  "countFrames": true,
+  "ok": false,
+  "exitCode": 1,
+  "stderr": [
+    "error reading header",
+    "<file>: Cannot allocate memory"
+  ],
+  "probeExit": 1,
+  "probeErr": "error reading header"
+}

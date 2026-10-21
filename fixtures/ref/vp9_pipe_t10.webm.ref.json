@@ -1,0 +1,237 @@
+{
+  "schema": 1,
+  "file": "vp9_pipe_t10.webm",
+  "bytes": 72282,
+  "ffprobeVersion": "ffprobe version 8.1.1-full_build-www.gyan.dev Copyright (c) 2007-2026 the FFmpeg developers",
+  "countFrames": true,
+  "ok": true,
+  "exitCode": 0,
+  "stderr": [],
+  "probeExit": 0,
+  "probeErr": null,
+  "probe": {
+    "streams": [
+      {
+        "index": 0,
+        "codec_name": "vp9",
+        "codec_long_name": "Google VP9",
+        "profile": "Profile 0",
+        "codec_type": "video",
+        "codec_tag_string": "[0][0][0][0]",
+        "codec_tag": "0x0000",
+        "mime_codec_string": "vp09.00.10.08",
+        "width": 160,
+        "height": 90,
+        "coded_width": 160,
+        "coded_height": 90,
+        "has_b_frames": 0,
+        "sample_aspect_ratio": "1:1",
+        "display_aspect_ratio": "16:9",
+        "pix_fmt": "yuv420p",
+        "level": -99,
+        "color_range": "tv",
+        "color_space": "unknown",
+        "color_transfer": "unknown",
+        "color_primaries": "unknown",
+        "chroma_location": "unspecified",
+        "field_order": "progressive",
+        "refs": 1,
+        "id": "N/A",
+        "r_frame_rate": "30/1",
+        "avg_frame_rate": "30/1",
+        "time_base": "1/1000",
+        "start_pts": 0,
+        "start_time": "0.000000",
+        "duration_ts": "N/A",
+        "duration": "N/A",
+        "bit_rate": "N/A",
+        "max_bit_rate": "N/A",
+        "bits_per_raw_sample": "N/A",
+        "nb_frames": "N/A",
+        "nb_read_frames": "90",
+        "nb_read_packets": "90",
+        "disposition": {
+          "default": 0,
+          "dub": 0,
+          "original": 0,
+          "comment": 0,
+          "lyrics": 0,
+          "karaoke": 0,
+          "forced": 0,
+          "hearing_impaired": 0,
+          "visual_impaired": 0,
+          "clean_effects": 0,
+          "attached_pic": 0,
+          "timed_thumbnails": 0,
+          "non_diegetic": 0,
+          "captions": 0,
+          "descriptions": 0,
+          "metadata": 0,
+          "dependent": 0,
+          "still_image": 0,
+          "multilayer": 0
+        },
+        "tags": {
+          "ENCODER": "Lavc libvpx-vp9"
+        }
+      }
+    ],
+    "format": {
+      "filename": "vp9_pipe_t10.webm",
+      "nb_streams": 1,
+      "nb_programs": 0,
+      "nb_stream_groups": 0,
+      "format_name": "matroska,webm",
+      "format_long_name": "Matroska / WebM",
+      "start_time": "0.000000",
+      "duration": "10.000000",
+      "size": "72282",
+      "bit_rate": "57825",
+      "probe_score": 100,
+      "tags": {
+        "encoder": "Lavf"
+      }
+    }
+  },
+  "format": {
+    "format_name": "matroska,webm",
+    "duration": "10.000000",
+    "size": "72282",
+    "bit_rate": "57825",
+    "nb_streams": 1,
+    "start_time": "0.000000"
+  },
+  "streams": [
+    {
+      "index": 0,
+      "codec_type": "video",
+      "codec_name": "vp9",
+      "attachedPic": false
+    }
+  ],
+  "attachedPicStreams": [],
+  "videoStreams": [
+    {
+      "index": 0,
+      "codecName": "vp9",
+      "width": 160,
+      "height": 90,
+      "timeBase": "1/1000",
+      "packets": 90,
+      "presentedPackets": 90,
+      "discardedPackets": 0,
+      "keyframes": 3,
+      "ptsPresented": [0, 33, 67, 100, 133, 167, 200, 233, 267, 300, 333, 367, 400, 433, 467, 500, 533, 567, 600, 633, 667, 700, 733, 767, 800, 833, 867, 900, 933, 967, 1000, 1033, 1067, 1100, 1133, 1167, 1200, 1233, 1267, 1300, 1333, 1367, 1400, 1433, 1467, 1500, 1533, 1567, 1600, 1633, 1667, 1700, 1733, 1767, 1800, 1833, 1867, 1900, 1933, 1967, 2000, 2033, 2067, 2100, 2133, 2167, 2200, 2233, 2267, 2300, 2333, 2367, 2400, 2433, 2467, 2500, 2533, 2567, 2600, 2633, 2667, 2700, 2733, 2767, 2800, 2833, 2867, 2900, 2933, 2967],
+      "deltas": [33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34],
+      "deltasExcludingTail": [33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33, 34, 33, 33],
+      "arraysOmitted": false,
+      "duplicateTimestamps": 0,
+      "reorderDepth": 0,
+      "tailDropped": 1,
+      "deltaHistogramAll": {
+        "33": 59,
+        "34": 30
+      },
+      "deltaHistogramExcludingTail": {
+        "33": 59,
+        "34": 29
+      },
+      "instFpsAll": {
+        "count": 89,
+        "minDeltaTicks": 33,
+        "maxDeltaTicks": 34,
+        "distinctDeltas": 2,
+        "minFps": {
+          "num": 500,
+          "den": 17,
+          "value": 29.41176470588235
+        },
+        "maxFps": {
+          "num": 1000,
+          "den": 33,
+          "value": 30.303030303030305
+        }
+      },
+      "instFpsExcludingTail": {
+        "count": 88,
+        "minDeltaTicks": 33,
+        "maxDeltaTicks": 34,
+        "distinctDeltas": 2,
+        "minFps": {
+          "num": 500,
+          "den": 17,
+          "value": 29.41176470588235
+        },
+        "maxFps": {
+          "num": 1000,
+          "den": 33,
+          "value": 30.303030303030305
+        }
+      },
+      "vfr": {
+        "isVfr": false,
+        "medianDeltaTicks": 33,
+        "toleranceTicks": 1,
+        "vfrRatio": 1.0303030303030303
+      },
+      "avgFromPts": {
+        "frames": 90,
+        "firstPts": 0,
+        "lastPts": 2967,
+        "lastDurationTicks": 33,
+        "spanTicks": 3000,
+        "fps": {
+          "num": 30,
+          "den": 1,
+          "value": 30
+        }
+      },
+      "lastPacketEnd": {
+        "ticks": 3000,
+        "seconds": 3
+      }
+    }
+  ],
+  "videos": [
+    {
+      "index": 0,
+      "codec_name": "vp9",
+      "profile": "Profile 0",
+      "codec_tag_string": "[0][0][0][0]",
+      "width": 160,
+      "height": 90,
+      "avg_frame_rate": "30/1",
+      "r_frame_rate": "30/1",
+      "avg_fps": 30,
+      "r_fps": 30,
+      "nb_frames": null,
+      "nb_read_frames": "90",
+      "duration": null,
+      "start_time": "0.000000",
+      "time_base": "1/1000",
+      "has_b_frames": 0,
+      "packets": {
+        "packets": 90,
+        "keyframes": 3,
+        "discardedPackets": 0,
+        "ptsDeltaMinTicks": 33,
+        "ptsDeltaMaxTicks": 34,
+        "distinctDeltas": 2,
+        "minInstFps": 29.41176470588235,
+        "maxInstFps": 30.3030303030303,
+        "zeroDeltas": 0,
+        "ptsFirstSec": 0,
+        "ptsLastSec": 2.967,
+        "avgFpsFromPts": 30,
+        "avgFpsFromSpan": 29.996629592180653,
+        "durMinTicks": 33,
+        "durMaxTicks": 33,
+        "vfrByDeltaRatio": false,
+        "minInstFpsByDur": 30.3030303030303,
+        "maxInstFpsByDur": 30.3030303030303,
+        "minInstFpsByDts": 29.41176470588235,
+        "maxInstFpsByDts": 30.3030303030303
+      }
+    }
+  ]
+}
