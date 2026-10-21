@@ -34,7 +34,7 @@ const COLD_FIRST = [
   ['cfr_h264_30.mp4', 'ISO BMFF'],
   ['h264.mkv', 'Matroska'],
 ];
-const LARGE_FILES = ['long_cfr_3h_60fps.mp4', 'long_vfr_1h_screenrec.mp4'];
+const LARGE_FILES = ['long_cfr_3h_60fps.mp4', 'long_vfr_1h_screenrec.mp4', 'big_1080p_moov_end.mp4', 'big_1080p_faststart.mp4', 'big_1080p.mkv'];
 
 const USAGE = `Usage: npm run bench -- [options]
 
