@@ -1,0 +1,220 @@
+{
+  "generator": "scripts/size-report.mjs",
+  "dist": "dist",
+  "unit": "KB = 1000 bytes; gzip level 9; brotli quality 11",
+  "method": "index.html",
+  "workerMethod": "Worker() reference",
+  "notes": [],
+  "budgets": [
+    {
+      "key": "main",
+      "label": "main (React + UI)",
+      "limit": 75000,
+      "gzip": 73855,
+      "headroom": 1145,
+      "status": "ok",
+      "files": [
+        "assets/index-Dv2ZzZRw.js"
+      ],
+      "why": "User-facing goal, unchanged. React and ReactDOM are about 67.5 KB gzip of it. Measured 73.86 KB at gzip -9 when the limit was reviewed (the Vite build log prints 74.79 KB for the same chunk; both fit), so there is little room: new UI code has to be lazy."
+    },
+    {
+      "key": "worker",
+      "label": "worker entry (core + glue)",
+      "limit": 7500,
+      "gzip": 6560,
+      "headroom": 940,
+      "status": "ok",
+      "files": [
+        "assets/analyze.worker-BDRTs8Yh.js"
+      ],
+      "why": "Sniffing, reader, options, timeline statistics, message glue and the code the lazy parsers and comparison engines share. Both own parsers are lazy chunks. Measured 6.56 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB."
+    },
+    {
+      "key": "isobmff",
+      "label": "ISO BMFF parser chunk",
+      "limit": 13500,
+      "gzip": 11937,
+      "headroom": 1563,
+      "status": "ok",
+      "files": [
+        "assets/isobmff-Cr632sJh.js"
+      ],
+      "why": "Own MP4 and MOV parser, fetched by the worker only when a file sniffs as ISO BMFF. Measured 11.94 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB."
+    },
+    {
+      "key": "matroska",
+      "label": "Matroska parser chunk",
+      "limit": 12000,
+      "gzip": 10728,
+      "headroom": 1272,
+      "status": "ok",
+      "files": [
+        "assets/matroska-BGqmYQTb.js"
+      ],
+      "why": "Own Matroska and WebM parser, fetched by the worker only when a file sniffs as EBML. Measured 10.73 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB."
+    },
+    {
+      "key": "rvfc",
+      "label": "lazy rVFC fallback",
+      "limit": 2500,
+      "gzip": 1941,
+      "headroom": 559,
+      "status": "ok",
+      "files": [
+        "assets/rvfc-Cf3vbuc9.js"
+      ],
+      "why": "Loaded on demand from the main chunk. Measured 1.94 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB."
+    },
+    {
+      "key": "initial",
+      "label": "initial (main + CSS + worker entry)",
+      "limit": 85000,
+      "gzip": 82049,
+      "headroom": 2951,
+      "status": "ok",
+      "files": [
+        "assets/analyze.worker-BDRTs8Yh.js",
+        "assets/index-Dv2ZzZRw.js",
+        "assets/index-EzQSOrc3.css"
+      ],
+      "why": "User-facing goal, unchanged: the page, its styles and the worker entry, before any file is analysed. Measured 82.05 KB when set."
+    },
+    {
+      "key": "firstMp4",
+      "label": "first MP4 analysis (initial + ISO BMFF chunk)",
+      "limit": 100000,
+      "gzip": 93986,
+      "headroom": 6014,
+      "status": "ok",
+      "files": [
+        "assets/analyze.worker-BDRTs8Yh.js",
+        "assets/index-Dv2ZzZRw.js",
+        "assets/index-EzQSOrc3.css",
+        "assets/isobmff-Cr632sJh.js"
+      ],
+      "why": "User-facing promise: page plus first MP4 or MOV result stays under 100 KB gzip. Measured 93.99 KB when set. The component limits add up to 98.5 KB, so this only trips when something outside the budgeted chunks, such as a new shared chunk, joins the path."
+    },
+    {
+      "key": "firstMkv",
+      "label": "first Matroska analysis (initial + Matroska chunk)",
+      "limit": 100000,
+      "gzip": 92777,
+      "headroom": 7223,
+      "status": "ok",
+      "files": [
+        "assets/analyze.worker-BDRTs8Yh.js",
+        "assets/index-Dv2ZzZRw.js",
+        "assets/index-EzQSOrc3.css",
+        "assets/matroska-BGqmYQTb.js"
+      ],
+      "why": "User-facing promise: page plus first MKV or WebM result stays under 100 KB gzip. Measured 92.78 KB when set. The component limits add up to 97 KB, so this only trips when something outside the budgeted chunks joins the path."
+    }
+  ],
+  "composites": {
+    "initial": {
+      "files": [
+        "assets/analyze.worker-BDRTs8Yh.js",
+        "assets/index-Dv2ZzZRw.js",
+        "assets/index-EzQSOrc3.css"
+      ],
+      "raw": 257312,
+      "gzip": 82049,
+      "brotli": 71197
+    },
+    "firstMp4": {
+      "files": [
+        "assets/analyze.worker-BDRTs8Yh.js",
+        "assets/index-Dv2ZzZRw.js",
+        "assets/index-EzQSOrc3.css",
+        "assets/isobmff-Cr632sJh.js"
+      ],
+      "raw": 287590,
+      "gzip": 93986,
+      "brotli": 82014
+    },
+    "firstMatroska": {
+      "files": [
+        "assets/analyze.worker-BDRTs8Yh.js",
+        "assets/index-Dv2ZzZRw.js",
+        "assets/index-EzQSOrc3.css",
+        "assets/matroska-BGqmYQTb.js"
+      ],
+      "raw": 285934,
+      "gzip": 92777,
+      "brotli": 80952
+    }
+  },
+  "chunks": [
+    {
+      "file": "assets/Compare-dNBqNTTr.js",
+      "kind": "lazy",
+      "raw": 2840,
+      "gzip": 1174,
+      "brotli": 1064
+    },
+    {
+      "file": "assets/analyze.worker-BDRTs8Yh.js",
+      "kind": "worker",
+      "raw": 16546,
+      "gzip": 6560,
+      "brotli": 6006
+    },
+    {
+      "file": "assets/counting-D-o1Qw7U.js",
+      "kind": "engine-shared",
+      "raw": 2982,
+      "gzip": 1484,
+      "brotli": 1337
+    },
+    {
+      "file": "assets/index-Dv2ZzZRw.js",
+      "kind": "main",
+      "raw": 236429,
+      "gzip": 73855,
+      "brotli": 63811
+    },
+    {
+      "file": "assets/index-EzQSOrc3.css",
+      "kind": "css",
+      "raw": 4337,
+      "gzip": 1634,
+      "brotli": 1380
+    },
+    {
+      "file": "assets/isobmff-Cr632sJh.js",
+      "kind": "isobmff",
+      "raw": 30278,
+      "gzip": 11937,
+      "brotli": 10817
+    },
+    {
+      "file": "assets/matroska-BGqmYQTb.js",
+      "kind": "matroska",
+      "raw": 28622,
+      "gzip": 10728,
+      "brotli": 9755
+    },
+    {
+      "file": "assets/mediabunny-Lvsr5jF6.js",
+      "kind": "mediabunny",
+      "raw": 201474,
+      "gzip": 52761,
+      "brotli": 44404
+    },
+    {
+      "file": "assets/mp4box-BdBRyqZI.js",
+      "kind": "mp4box",
+      "raw": 187736,
+      "gzip": 43658,
+      "brotli": 37345
+    },
+    {
+      "file": "assets/rvfc-Cf3vbuc9.js",
+      "kind": "rvfc",
+      "raw": 3650,
+      "gzip": 1941,
+      "brotli": 1758
+    }
+  ]
+}
