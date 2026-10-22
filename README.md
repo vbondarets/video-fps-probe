@@ -547,7 +547,7 @@ The field-level table, with app and ffprobe values for every check of all three 
 - ISMV (Smooth Streaming, `ffmpeg -f ismv`) with B-frames: fragments without `tfdt` and with negative composition offsets give a start of 0 instead of ffprobe's 0.04 s and a format duration about 20 ms off. Frames, rates and the VFR flag match.
 - Compressed movie headers (`cmov`) and a moov above 256 MiB are unsupported. Only the first stsd entry is used.
 - Multi-segment edit lists get a warning and presented frames follow the first non-empty edit; a rate other than 1 is warned only on that first edit.
-- Speed was measured only in Chromium (headless Chrome and Edge on one Windows desktop). The e2e suite checks results, not speed, in Chromium and WebKit; Firefox has not run yet (it does not start on the development machine, and the CI job runs once the repository is pushed). Real Safari, iOS and Android devices, network shares and cloud placeholder files are untested ([Testing on your devices](#testing-on-your-devices)), and the Matroska cost model and exact-scan budget were tuned in Node.
+- Speed was measured only in Chromium (headless Chrome and Edge on one Windows desktop). The e2e suite checks results, not speed, in Chromium, Firefox and WebKit (Firefox only in CI on Ubuntu, because the Playwright build does not start on the Windows development machine). Real Safari, iOS and Android devices, network shares and cloud placeholder files are untested ([Testing on your devices](#testing-on-your-devices)), and the Matroska cost model and exact-scan budget were tuned in Node.
 - Files above 4 GiB: offsets are 64-bit safe and a 4.5 GB sparse MP4 passes an opt-in Node test. The same file picked through the built page in Playwright gave the Node result (2 reads, 66,712 B, 90 frames, 30/1) in 1.8 to 5.6 ms in Chromium 156 and 7 to 10 ms in WebKit 27.2, three picks each; that was a manual run, not a committed test.
 - A large Matroska file in `auto` mode usually ends as a probe. A 1 GB, 20 s H.264 MKV took 31 to 56 ms in Chrome (27 reads, 4.35 MB), and its card shows no frame count and no average until "Scan all frames" (601 reads, 2.5 MB, about 100 ms in Node). The same stream in MP4 takes 2 reads. The speed tables have no large Matroska row.
 - requestVideoFrameCallback needs a visible foreground tab and a playable codec: HEVC did not play in headless Chrome and ProRes does not play in Chrome.
@@ -580,14 +580,14 @@ What the build needs, from a syntax and API scan of the built chunks, with the f
 Tested:
 
 - Chromium 156 and WebKit 27.2 (Playwright builds, Windows): the e2e suite, including the 360 px layout check with the Compare panel open. All committed fixtures, picked through the page, gave results equal to Node field by field.
-- Firefox (Playwright build): not run yet. The build does not start on the development machine (`browserType.launch: spawn UNKNOWN`; the executable is blocked by the OS), and the CI job that runs the same suite on Ubuntu runs once the repository is pushed. Until then Firefox counts as untested.
+- Firefox (Playwright build): passes the full suite in the CI job on Ubuntu (157 of 157 tests, first run on 2026-10-21). The build does not start on the Windows development machine (`browserType.launch: spawn UNKNOWN`; the executable is blocked by the OS), so local runs cover Chromium and WebKit only.
 - Chrome 155 and Edge 155 (installed, headless, over the DevTools Protocol): the timings in this README and the Node identity check.
 - requestVideoFrameCallback: works in Chrome; the Windows WebKit build of Playwright has no `requestVideoFrameCallback`.
 - Real Safari on macOS and iOS, Android Chrome and phone recordings: not yet, see the next section.
 
 ## Publishing the demo
 
-The repository is meant to be public at `vbondarets/video-fps-probe`, with the demo on GitHub Pages. `.github/workflows/pages.yml` builds `dist/` and deploys it on every push to `main`; `.github/workflows/ci.yml` runs type-check, lint, unit and fixture tests, the size budgets and the e2e suite in Chromium, Firefox and WebKit.
+The repository is public at `vbondarets/video-fps-probe`, with the demo on GitHub Pages. `.github/workflows/pages.yml` builds `dist/` and deploys it on every push to `main`; `.github/workflows/ci.yml` runs type-check, lint, unit and fixture tests, the size budgets and the e2e suite in Chromium, Firefox and WebKit.
 
 1. Create the public repository on GitHub and push `main`.
 2. In the repository, open **Settings > Pages** and set **Source** to **GitHub Actions**. Without this the first deploy job fails, because `actions/configure-pages` does not switch Pages on by itself.
@@ -598,7 +598,7 @@ The repository is meant to be public at `vbondarets/video-fps-probe`, with the d
    E2E_BASE_URL=https://vbondarets.github.io/video-fps-probe/ npx playwright test
    ```
 
-5. Check the **CI** workflow run: its e2e job is the first Firefox run. Record the result in [Browser support](#browser-support).
+5. Check the **CI** workflow run: its e2e job runs the suite in Chromium, Firefox and WebKit on Ubuntu.
 
 ## Testing on your devices
 
