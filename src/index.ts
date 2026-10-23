@@ -5,6 +5,7 @@ export { summarize, type VideoFpsSummary } from './api/summary.ts';
 export type * from './client/types.ts';
 export type { BlobLike, BlobSlice } from './core/reader.ts';
 export type * from './core/types.ts';
+export type { MediabunnyNative, MediabunnyTrackNative, Mp4boxNative, Mp4boxTrackNative, RvfcConfidence, RvfcDetails, RvfcPass } from './engines/types.ts';
 export type { ContainerFamily, EngineDescriptor, EngineModule, WorkerEngineId } from './plugins/types.ts';
 export type { WireOptions } from './worker/protocol.ts';
 export { createProbe } from './probe.ts';

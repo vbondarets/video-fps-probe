@@ -8,9 +8,9 @@ The package is ESM only, targets ES2022 and ships its own types. Every entry exc
 
 | Entry | Exports | Worker literal in the build |
 |---|---|---|
-| `video-fps-probe` | `createProbe`, `analyze`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, all types | the own worker |
+| `video-fps-probe` | `createProbe`, `analyze`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, every type on this page except `EngineSource` and `RvfcPluginOptions` | the own worker |
 | `video-fps-probe/lazy` | `lazyProbe`, `lazyProbeFrom`, `LazyProbe`, `ProbeOptions` | the own worker |
-| `video-fps-probe/client` | `createProbeClient`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, all types | none |
+| `video-fps-probe/client` | `createProbeClient`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, every type on this page except `InThreadOptions`, `EngineSource` and `RvfcPluginOptions` | none |
 | `video-fps-probe/client/lazy` | `lazyProbeClient`, `lazyProbeFrom`, `ClientOptions`, `LazyProbe`, `Probe` | none |
 | `video-fps-probe/mp4box` | `mp4box()` descriptor | the mp4box worker |
 | `video-fps-probe/mediabunny` | `mediabunny()` descriptor | the mediabunny worker |

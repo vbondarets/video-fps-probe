@@ -1,7 +1,9 @@
 export { compareResults, type Agreement, type ComparedField, type ComparedFieldName, type ComparedValue } from '../api/agreement.ts';
 export { isAbortError, isTimeoutError, ProbeError, type ProbeErrorCode } from '../api/errors.ts';
 export { summarize, type VideoFpsSummary } from '../api/summary.ts';
+export type { BlobLike, BlobSlice } from '../core/reader.ts';
 export type * from '../core/types.ts';
+export type { MediabunnyNative, MediabunnyTrackNative, Mp4boxNative, Mp4boxTrackNative, RvfcConfidence, RvfcDetails, RvfcPass } from '../engines/types.ts';
 export type { ContainerFamily, EngineDescriptor, EngineModule, WorkerEngineId } from '../plugins/types.ts';
 export type { WireOptions } from '../worker/protocol.ts';
 export { createProbeClient } from './probe.ts';
