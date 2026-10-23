@@ -239,7 +239,7 @@ Where a bundler places modules shared by several lazy chunks can change between 
 - `import.meta.env`, the demo's test hook, a DOM global in a worker file;
 - an entry that throws when imported in plain Node (the SSR check).
 
-`node scripts/check-dist.mjs --self-test` checks the checker on synthetic trees. In CI the package job also runs attw (`npm run check:types`) and the dist parity suite (`npm run test:package`: `dist/` analyzes every committed fixture exactly like `src/`).
+`node scripts/check-dist.mjs --self-test` checks the checker on synthetic trees. In CI the package job also runs attw (`npm run check:types`) and the package suite (`npm run test:package`: `dist/` analyzes every committed fixture exactly like `src/`, and every name `docs/api.md` gives an entry resolves from that entry of the packed tarball).
 
 **Size matrix.** `npm run consumers:setup` packs the package and installs the tarball, Vite and the peers into a directory outside the repository; `npm run consumers:build` builds every fixture of `tests/consumers/fixtures/` with hidden sourcemaps; `scripts/size-matrix.mjs` measures them (the critical path cut out of the entry chunk by its sourcemap, lazy totals, worker files), checks must-not-exist modules against the sourcemap `sources` and the request chains, enforces the budgets and compares with the committed `report/size-matrix.*`. The same builds run in the consumer smoke test.
 
@@ -331,9 +331,9 @@ interface ExportDocument {
 | Layer | Runs | Checks |
 |---|---|---|
 | vitest (`npm test`) | Node: `src/` on the fixture files through `fs.openAsBlob`, the API with a fake worker | units, every manifest row, rate profiles, engine contracts, the worker runtime, the pool, routing, fallback, compare, timeouts, deadlines, lazy stubs, demo device info and export |
-| dist parity (`npm run test:package`) | Node, after `build:lib` | `dist/` gives the same results as `src/` on every committed fixture |
+| dist parity and API types (`npm run test:package`) | Node, after `build:lib` | `dist/` gives the same results as `src/` on every committed fixture; every name `docs/api.md` gives an entry resolves from that entry of the packed tarball (tsc) |
 | comparison (`npm run compare`) | Node, all engines against `fixtures/ref` | every field against ffprobe 8.1.1 under the research tolerances; gates on the own engine |
 | demo end-to-end (`npm run test:e2e`) | Playwright Chromium, Firefox and WebKit against a `vite preview` of the demo, or `E2E_BASE_URL` | browser results equal Node field by field, the UI flows, the export, the 360 px layout, keyboard access |
 | consumers (`npm run test:consumers`) | Playwright Chromium, Firefox and WebKit against the consumer fixtures under `vite build` and `vite dev` | results equal Node `analyze` from the same tarball; no dev reload when an engine first runs |
 | benchmark (`npm run bench`, `scripts/bench/integration.mjs`) | installed Chrome (and Edge) over the DevTools Protocol, real file input | timings, bytes, memory, main-thread blocking, Node identity of every result |
-| CI ([ci.yml](../.github/workflows/ci.yml)) | Ubuntu | job Verify: typecheck, lint, aliases, vitest, comparison, demo build, size budgets, generated tables; job Package: check-dist self-test, `build:lib`, publint and check-dist, attw, dist parity; job End-to-end: the demo suite in three browsers; job Consumers: the size matrix, the generated tables and the smoke test from the packed tarball |
+| CI ([ci.yml](../.github/workflows/ci.yml)) | Ubuntu | job Verify: typecheck, lint, aliases, vitest, comparison, demo build, size budgets, generated tables; job Package: check-dist self-test, `build:lib`, publint and check-dist, attw, dist parity and API types; job End-to-end: the demo suite in three browsers; job Consumers: the size matrix, the generated tables and the smoke test from the packed tarball |
