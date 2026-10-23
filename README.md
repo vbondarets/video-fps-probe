@@ -56,15 +56,15 @@ npm run test:e2e                 # Playwright: the built app in Chromium, Firefo
 npm run typecheck                # tsc -b
 npm run lint                     # oxlint
 npm run compare                  # own, mp4box and mediabunny vs the ffprobe references, writes report/accuracy.*
-npm run build                    # type-check and build to dist/
-npm run size                     # bundle size per chunk and budgets for dist/, writes report/size.*
-npm run bench                    # headless Chrome benchmark of dist/, writes report/browser-bench.*
+npm run build                    # type-check and build the demo to demo/dist/
+npm run size                     # bundle size per chunk and budgets for demo/dist/, writes report/size.*
+npm run bench                    # headless Chrome benchmark of demo/dist/, writes report/browser-bench.*
 node scripts/readme-tables.ts    # refresh the tables in this README from report/
 ```
 
 - `npm run compare -- --with-large` also runs every local file in `fixtures/large` that is present (made by `npm run fixtures:generate -- --with-long`, `--with-big` or `--with-sparse`).
-- `npm run size -- dist --check` exits 1 when a budget is exceeded; CI runs it.
-- `npm run bench` needs a built `dist/` and Chrome (or `CHROME_PATH`); Edge is added when installed.
+- `npm run size -- --check` exits 1 when a budget is exceeded; CI runs it.
+- `npm run bench` needs a built `demo/dist/` and Chrome (or `CHROME_PATH`); Edge is added when installed.
 - `npm run test:e2e` needs the Playwright browsers once: `npx playwright install chromium firefox webkit`. See [Testing](#testing).
 
 Fixtures need ffmpeg and ffprobe **8.1.1** on PATH (Git Bash on Windows, bash on Linux and macOS):
@@ -337,10 +337,11 @@ Per-file timings for every fixture, the library engines and the cold start are i
 
 The target is a large React app (about 1.95 MB gzip initial load) where a user uploads up to about 10 videos of at most 30 s. The probe must not grow the critical bundle, must not block the main thread and must not touch a server. How to wire it:
 
-- **Critical bundle: only a trigger.** Load the worker pool (`src/ui/workerPool.ts`) with a dynamic `import()` on the first file pick. It starts the module worker, and the worker loads the parser for the sniffed container on first use. Never import `src/core` statically from the app. The React UI of this demo is not needed.
-- **Prefetch when the upload dialog opens**: import the pool and call `prewarm()`. It spawns the worker and runs a 16-byte `ftyp` blob through the own parser, which also fetches the ISO BMFF chunk (the integration bench measures exactly this). The OS file dialog takes longer than the download, so the first result does not wait for the network.
-- **One worker, one file at a time.** The pool here keeps two workers alive for drag-and-drop of many files; for at most 10 videos a single worker is enough. Call `dispose()` when the uploads are done or from an idle timer: it terminates the idle workers to hand their memory back, and the next `submit()` spawns a new one.
-- **Fail open.** Give each file a timeout (a few seconds) and let the upload continue without the FPS check if it fires or the result has an `error`. Per file the probe reads the head and, for camera files with the moov at the end, the tail: usually two reads and no decoding.
+- **Critical bundle: only a trigger.** Hold a lazy probe and import nothing else from the library statically: `lazyProbeClient` from `video-fps-probe/client/lazy` with a custom worker, or `lazyProbeFrom(() => import('./probe.ts').then((m) => m.probe))` over a module that calls `createProbeClient`, as the demo does (`demo/src/ui/probe.ts`, with its worker `demo/src/ui/probe.worker.ts`). The first call fetches the probe client and starts the module worker, and the worker loads the parser for the sniffed container on first use. Never import `src/core` statically from the app. The React UI of this demo is not needed.
+- **Prefetch when the upload dialog opens**: call `probe.prewarm()`. It fetches the probe client, spawns the worker and sends a warm request, which fetches the ISO BMFF chunk without a file (the integration bench measures the same effect with a 16-byte `ftyp` blob run through the worker). The OS file dialog takes longer than the download, so the first result does not wait for the network.
+- **One worker, one file at a time.** The demo keeps two workers alive (`workers: 2`, `idleTimeoutMs: 0`) for drag-and-drop of many files; for at most 10 videos the default single worker is enough. Call `dispose()` when the uploads are done, or keep the default idle timeout of 30 s: both terminate the idle workers to hand their memory back, and the next `analyze()` spawns a new one.
+- **Fail open.** Give each file a timeout (a few seconds, `timeoutMs`) and let the upload continue without the FPS check if it fires or the result has an `error`; `tryAnalyze()` resolves `null` instead of rejecting. `timeoutMs` counts from the moment a worker takes the job, and the probe-wide value also bounds the warm request of `prewarm()`. A job queued behind a stalled one therefore waits without a limit: for a deadline over a whole batch, pass one `signal` to every call and abort it when the deadline passes. Per file the probe reads the head and, for camera files with the moov at the end, the tail: usually two reads and no decoding.
+- **This thread only with a descriptor.** The client flavor (`video-fps-probe/client`) bundles no parser for the main thread. With `worker: 'inline'`, or without a `Worker` global (SSR, Node), it runs an engine in this thread only when a registered descriptor serves it there; `mp4box()` and `mediabunny()` also serve own. An engine that only the custom worker lists then rejects with `ProbeError('unsupported-environment')`, and `createProbeClient({ worker: 'inline' })` without such a descriptor throws `engine-not-registered`. The root `createProbe` and `analyze()` parse in this thread whenever no worker is used.
 
 Measured with `scripts/bench/integration.mjs` (details and formulas in [report/integration-cost.md](report/integration-cost.md)):
 
@@ -595,7 +596,7 @@ Tested:
 
 ## Publishing the demo
 
-The repository is public at `vbondarets/video-fps-probe`, with the demo on GitHub Pages. `.github/workflows/pages.yml` builds `dist/` and deploys it on every push to `main`; `.github/workflows/ci.yml` runs type-check, lint, unit and fixture tests, the size budgets and the e2e suite in Chromium, Firefox and WebKit.
+The repository is public at `vbondarets/video-fps-probe`, with the demo on GitHub Pages. `.github/workflows/pages.yml` builds the demo from `demo/` and deploys `demo/dist/` on every push to `main`; `.github/workflows/ci.yml` runs type-check, lint, unit and fixture tests, the size budgets and the e2e suite in Chromium, Firefox and WebKit.
 
 1. Create the public repository on GitHub and push `main`.
 2. In the repository, open **Settings > Pages** and set **Source** to **GitHub Actions**. Without this the first deploy job fails, because `actions/configure-pages` does not switch Pages on by itself.
@@ -640,22 +641,26 @@ src/
   core/            reader, sniffing, statistics, exact rationals, options, analyze() (no DOM)
     isobmff/       MP4 and MOV parser (lazy chunk)
     matroska/      Matroska and WebM parser (lazy chunk)
-  worker/          module worker entry and message protocol
+  worker/          worker runtime (serveProbeWorker), the prebuilt own, mp4box and mediabunny workers, message protocol
   engines/         comparison engines: mp4box.js, mediabunny, requestVideoFrameCallback
-  ui/              store, worker pool, result card, compare panel
-  App.tsx          drop zone, toolbar, summary, result list
-tests/             vitest in Node: unit/, isobmff/, matroska/, segments/, engines/
+  plugins/         engine descriptors: own, mp4box, mediabunny, rvfc
+  client/          probe client: worker pool, engine routing, fallback, compare, in-thread runner, lazy stubs
+  api/             ProbeError, summarize, compareResults
+  index.ts         root entry: createProbe and the in-thread analyze(); lazy.ts holds lazyProbe
+demo/              the demo app: index.html, vite.config.ts, package.json, public/samples (sample files)
+  src/             App.tsx (drop zone, toolbar, summary, result list) and ui/ (store, probe client and worker, result card, compare panel)
+tests/             vitest in Node: unit/, api/, isobmff/, matroska/, segments/, engines/
   e2e/             Playwright: the built app in Chromium, Firefox and WebKit
 scripts/
   compare-ffprobe.ts, compare/   accuracy harness against the ffprobe references
   size-report.mjs                bundle sizes and budgets
+  src-aliases.mjs                package exports mapped to src/ for the demo, tsconfig paths and vitest
   bench/                         headless Chrome benchmark and integration cost over the DevTools Protocol
   fixtures/                      fixture generator and reference extraction
   readme-tables.ts               regenerates the tables in this README
 fixtures/          fixtures, manifest.tsv, ffprobe references, known deviations
 report/            generated reports, plus the average-user model
 docs/              research spec, architecture, implementation notes, screenshots
-public/samples/    sample files for the demo
 ```
 
 [docs/architecture.md](docs/architecture.md) has the module map and data flow, [docs/research.md](docs/research.md) the formulas and tolerances, and [docs/implementation-notes.md](docs/implementation-notes.md) where the code deviates from the spec and why.
@@ -714,7 +719,7 @@ public/samples/    sample files for the demo
 
 `npm run test:e2e -- --project=webkit` runs one browser, `npx playwright show-report .playwright/report` opens the report, and `E2E_BASE_URL=https://vbondarets.github.io/video-fps-probe/ npx playwright test` runs the same suite against the deployed demo instead of a local build.
 
-**CI.** [ci.yml](.github/workflows/ci.yml) runs the type check, lint, tests, the comparison against the committed references, the build and the size budgets, and in a second job the e2e suite in Chromium, Firefox and WebKit on Ubuntu. [pages.yml](.github/workflows/pages.yml) deploys `dist/` to GitHub Pages.
+**CI.** [ci.yml](.github/workflows/ci.yml) runs the type check, lint, tests, the comparison against the committed references, the build and the size budgets, and in a second job the e2e suite in Chromium, Firefox and WebKit on Ubuntu. [pages.yml](.github/workflows/pages.yml) deploys `demo/dist/` to GitHub Pages.
 
 ## License
 
