@@ -328,9 +328,9 @@ const OPTIONAL_COMPOSITES = new Set(['firstVfrMp4']);
 
 const COMPOSITE_LABEL: Record<string, string> = {
   initial: 'initial: main + CSS + worker entry',
-  firstMp4: 'first MP4 analysis: initial + ISO BMFF parser',
+  firstMp4: 'first MP4 analysis: initial + worker pool + statistics + ISO BMFF parser',
   firstVfrMp4: 'first VFR MP4 analysis: first MP4 + rate profile core',
-  firstMatroska: 'first Matroska analysis: initial + Matroska parser',
+  firstMatroska: 'first Matroska analysis: initial + worker pool + statistics + Matroska parser',
 };
 
 function fail(message: string): never {
