@@ -61,6 +61,9 @@ npm run build:lib                # build the library to dist/ (tsc, worker URL a
 npm run build                    # build the library, then type-check and build the demo to demo/dist/
 npm run check:package            # publint and check-dist on dist/: file whitelist, pack listing, worker literals, peer isolation
 npm run size                     # bundle size per chunk and budgets for demo/dist/, writes report/size.*
+npm run consumers:setup          # npm pack, then install the tarball, vite and the peers into a temp directory (--dir)
+npm run consumers:build          # build the consumer fixtures of tests/consumers/fixtures/ there
+npm run size:matrix              # package size per configuration from those builds, writes report/size-matrix.*
 npm run bench                    # headless Chrome benchmark of demo/dist/, writes report/browser-bench.*
 node scripts/readme-tables.ts    # refresh the tables in this README from report/
 ```
@@ -664,6 +667,7 @@ scripts/
   build-lib.mjs                  library build to dist/: tsc, worker URL and d.ts specifier rewrites, standalone worker
   check-dist.mjs                 package invariants for dist/ and the npm pack listing
   size-report.mjs                bundle sizes and budgets
+  consumers.mjs, size-matrix.mjs consumer fixtures from the packed tarball and the package size matrix
   src-aliases.mjs                package exports mapped to src/ for the demo, tsconfig paths and vitest
   bench/                         headless Chrome benchmark and integration cost over the DevTools Protocol
   fixtures/                      fixture generator and reference extraction

@@ -1,0 +1,410 @@
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { basename, dirname, join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { parseArgs } from 'node:util';
+import { FIXTURES, consumersDir, fixtureDist, installedPackage } from './consumers.mjs';
+import { discover, measure, scanReferences } from './size-report.mjs';
+
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const KB = 1000;
+const PACKAGE_SOURCE = 'node_modules/video-fps-probe/';
+
+const RESET = 'The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.';
+const PROMISE = 'User-facing promise of the package, accepted by the owner on 2026-10-23 when the demo budget moved to 101.5 KB: the default configuration adds at most 1 KB to the critical path and the first MP4 loads at most 24 KB lazily.';
+
+export const BUDGETS = {
+  default: [
+    { key: 'trigger', limit: 1 * KB, why: `${PROMISE} This row is the first half: the package code in the host entry chunk (the lazyProbe stub, ProbeError and the engine list), cut out of the entry chunk by its sourcemap. Vite's preload helper is not counted, because every Vite app with a dynamic import already has it. Design estimate 1.0 KB; measured 0.67 KB, and measured plus 10 percent rounded up to 0.5 KB is also 1.0 KB.` },
+    { key: 'client', limit: 3 * KB, why: `The probe client fetched on the first file: createProbe, engine routing, the worker pool and the own descriptor with the worker literal. Design estimate 3.5 KB; measured 2.67 KB. ${RESET}` },
+    { key: 'worker:own.worker', limit: 4.5 * KB, why: `The prebuilt own worker entry: reader, sniffing, options and the worker runtime. Both parsers and the statistics are lazy chunks of this worker. Design estimate 8.0 KB; measured 4.08 KB. ${RESET}` },
+    { key: 'isobmff', limit: 13.5 * KB, why: `The own MP4 and MOV parser chunk of the own worker. Design estimate 13.5 KB; measured 12.21 KB. ${RESET}` },
+    { key: 'matroska', limit: 12.5 * KB, why: `The own Matroska and WebM parser chunk of the own worker. Design estimate 12.0 KB; measured 11.14 KB. ${RESET}` },
+    { key: 'segments', limit: 2.5 * KB, why: `The rate profile core of the own worker, fetched only for a timeline with unequal frame rates. Design estimate 2.0 KB; measured 1.84 KB. ${RESET}` },
+    { key: 'firstMp4', limit: 24 * KB, why: `${PROMISE} This row is the second half: everything the first MP4 or MOV file loads lazily, which is the probe client, the own worker entry, the statistics chunk (requested in parallel with the parser) and the ISO BMFF parser. Measured 23.26 KB. Measured plus 10 percent would be 26.0 KB, so the promise stays the limit instead: it is the tighter one and it is what the README states.` },
+    { key: 'allOwn', limit: 40 * KB, why: `Every own path: the probe client, the own worker entry, the statistics, both parsers and the rate profile core. Design estimate 37.0 KB; measured 36.24 KB. ${RESET}` },
+  ],
+  custom: [
+    { key: 'trigger', limit: 1 * KB, why: `The lazyProbeClient stub in the host entry chunk. The host's worker literal is host code and is not counted. Design estimate 1.0 KB; measured 0.68 KB. ${RESET}` },
+    { key: 'worker:fps.worker', limit: 4.5 * KB, why: `The host worker built from video-fps-probe/worker-runtime, serving own only. Design estimate 8.5 KB; measured 4.08 KB. ${RESET}` },
+  ],
+  mp4box: [
+    { key: 'trigger', limit: 1 * KB, why: `The default trigger plus the mp4box descriptor and its worker literal. Design estimate the default plus 0.5 KB; measured 0.90 KB. ${RESET}` },
+    { key: 'worker:mp4box.worker', limit: 5 * KB, why: `The prebuilt mp4box worker entry, which serves own and mp4box. Design estimate 8.5 KB; measured 4.22 KB. ${RESET}` },
+    { key: 'mp4box', limit: 49.5 * KB, why: `The mp4box.js engine chunk of the mp4box worker: the mp4box library, the adapter and the counting code the engines share. Design estimate 48.0 KB; measured 44.77 KB. ${RESET}` },
+    { key: 'engineShared', limit: 2 * KB, required: false, why: 'Code the comparison engines share, when it is a chunk of its own. Not built: each prebuilt engine worker serves one comparison engine, so this code is part of the engine chunk. The design estimate of 2.0 KB stays the limit, so a split that grows it is caught.' },
+  ],
+  mediabunny: [
+    { key: 'trigger', limit: 1 * KB, why: `The default trigger plus the mediabunny descriptor and its worker literal. Design estimate the default plus 0.5 KB; measured 0.90 KB. ${RESET}` },
+    { key: 'worker:mediabunny.worker', limit: 5 * KB, why: `The prebuilt mediabunny worker entry, which serves own and mediabunny. Measured 4.12 KB. ${RESET}` },
+    { key: 'mediabunny', limit: 59.5 * KB, why: `The mediabunny engine chunk of the mediabunny worker, with the counting code the engines share. Design estimate 58.0 KB; measured 53.87 KB. ${RESET}` },
+    { key: 'engineShared', limit: 2 * KB, required: false, why: 'Code the comparison engines share, when it is a chunk of its own. Not built, for the same reason as in the mp4box configuration. The design estimate of 2.0 KB stays the limit.' },
+  ],
+  rvfc: [
+    { key: 'trigger', limit: 1 * KB, why: `The default trigger plus the rvfc descriptor, which has no worker literal. Measured 0.77 KB. ${RESET}` },
+    { key: 'rvfc', limit: 2.5 * KB, why: `The requestVideoFrameCallback engine, a main-thread chunk loaded on its first run. Design estimate 2.5 KB; measured 2.19 KB. ${RESET}` },
+  ],
+  all: [
+    { key: 'trigger', limit: 1.5 * KB, why: `The default trigger plus the mp4box, mediabunny and rvfc descriptors. Measured 1.02 KB. ${RESET}` },
+    { key: 'client', limit: 3 * KB, why: `As in the default configuration. Measured 2.71 KB. ${RESET}` },
+    { key: 'worker:own.worker', limit: 4.5 * KB, why: `As in the default configuration. Measured 4.08 KB. ${RESET}` },
+    { key: 'worker:mp4box.worker', limit: 5 * KB, why: `As in the mp4box configuration. Measured 4.22 KB. ${RESET}` },
+    { key: 'worker:mediabunny.worker', limit: 5 * KB, why: `As in the mediabunny configuration. Measured 4.12 KB. ${RESET}` },
+    { key: 'mp4box', limit: 49.5 * KB, why: `As in the mp4box configuration. Measured 44.77 KB. ${RESET}` },
+    { key: 'mediabunny', limit: 59.5 * KB, why: `As in the mediabunny configuration. Measured 53.87 KB. ${RESET}` },
+    { key: 'rvfc', limit: 2.5 * KB, why: `As in the rvfc configuration. Measured 2.19 KB. ${RESET}` },
+    { key: 'firstMp4', limit: 24 * KB, why: 'Registering engines must not change what the first own analysis loads, so the 24 KB promise of the default configuration applies here too. Measured 23.31 KB.' },
+  ],
+  'iife-nosplit': [
+    { key: 'trigger', limit: 1 * KB, why: `As in the default configuration. Measured 0.67 KB. ${RESET}` },
+    { key: 'worker:own.worker', limit: 35.5 * KB, why: `With worker.format iife and codeSplitting false the own worker is one file: both parsers, the statistics and the rate profile core are inlined. Design estimate 35.0 KB; measured 32.11 KB. ${RESET}` },
+  ],
+};
+
+export const STANDALONE_BUDGET = { limit: 35.5 * KB, why: `dist/standalone/own.worker.js: the own worker as one minified IIFE file with no imports, built by rolldown. Design estimate 35.0 KB; measured 32.04 KB. ${RESET}` };
+
+const LABELS = {
+  trigger: 'critical path (package code in the entry chunk)',
+  client: 'probe client (lazy)',
+  isobmff: 'ISO BMFF parser (in the own worker)',
+  matroska: 'Matroska parser (in the own worker)',
+  segments: 'rate profile core (in the own worker)',
+  firstMp4: 'first MP4 analysis, lazy total',
+  allOwn: 'all own paths, lazy total',
+  mp4box: 'mp4box engine chunk',
+  mediabunny: 'mediabunny engine chunk',
+  engineShared: 'shared engine chunk',
+  rvfc: 'rVFC engine (main thread)',
+};
+
+const CLASSES = [
+  ['mp4box', /node_modules\/mp4box\/|video-fps-probe\/dist\/engines\/mp4box\.js$/],
+  ['mediabunny', /node_modules\/mediabunny\/|video-fps-probe\/dist\/engines\/mediabunny\.js$/],
+  ['rvfc', /video-fps-probe\/dist\/engines\/rvfc\.js$/],
+  ['isobmff', /video-fps-probe\/dist\/core\/isobmff\//],
+  ['matroska', /video-fps-probe\/dist\/core\/matroska\//],
+  ['stats', /video-fps-probe\/dist\/core\/stats\.js$/],
+  ['segments', /video-fps-probe\/dist\/core\/segments\.js$/],
+  ['engineShared', /video-fps-probe\/dist\/engines\/(?:common|counting)\.js$/],
+];
+
+const USAGE = `Usage: node scripts/size-matrix.mjs [--dir <consumers dir>] [--check] [--out <dir>]
+
+Measures the consumer fixtures built by node scripts/consumers.mjs from the packed tarball.
+
+  --dir <dir>   consumers directory (default $CONSUMERS_DIR, else <os tmpdir>/video-fps-probe-consumers)
+  --check       exit 1 when a budget is exceeded, a worker count is wrong, a must-not-exist source
+                appears in a sourcemap, or a parser or engine chunk waits for a chunk it does not request
+  --out <dir>   where size-matrix.md and size-matrix.json are written (default report)
+`;
+
+const kb = (n) => `${(n / KB).toFixed(2)} KB`;
+const posix = (p) => p.split('\\').join('/');
+const gzipOf = (buf) => measure(buf).gzip;
+
+const B64 = new Map([...'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'].map((c, i) => [c, i]));
+
+export function decodeMappings(mappings) {
+  const lines = [];
+  let source = 0;
+  for (const line of mappings.split(';')) {
+    const segments = [];
+    let column = 0;
+    for (const segment of line ? line.split(',') : []) {
+      const values = [];
+      let value = 0;
+      let shift = 0;
+      for (const ch of segment) {
+        const digit = B64.get(ch);
+        if (digit === undefined) throw new Error(`invalid base64 VLQ digit ${ch}`);
+        value += (digit & 31) * 2 ** shift;
+        if (digit & 32) {
+          shift += 5;
+        } else {
+          values.push(value % 2 === 1 ? -Math.floor(value / 2) : value / 2);
+          value = 0;
+          shift = 0;
+        }
+      }
+      column += values[0];
+      if (values.length >= 4) source += values[1];
+      segments.push({ column, source: values.length >= 4 ? source : -1 });
+    }
+    lines.push(segments);
+  }
+  return lines;
+}
+
+export function codeFromSources(text, map, keep) {
+  const wanted = map.sources.map((s) => keep(s));
+  const out = [];
+  const lines = text.split('\n');
+  decodeMappings(map.mappings).forEach((segments, i) => {
+    const line = lines[i] ?? '';
+    segments.forEach((s, j) => {
+      if (s.source < 0 || !wanted[s.source]) return;
+      out.push(line.slice(s.column, j + 1 < segments.length ? segments[j + 1].column : line.length));
+    });
+  });
+  return out.join('');
+}
+
+function readMap(distDir, file) {
+  const path = join(distDir, `${file}.map`);
+  if (!existsSync(path)) return null;
+  const map = JSON.parse(readFileSync(path, 'utf8'));
+  const base = dirname(join(distDir, file));
+  return { ...map, sources: map.sources.map((s) => posix(resolve(base, map.sourceRoot ?? '', s))) };
+}
+
+function classify(sources) {
+  for (const [name, re] of CLASSES) if (sources.some((s) => re.test(s))) return name;
+  return 'shared';
+}
+
+function closureOf(start, fileSet, texts, { dynamic }) {
+  const seen = new Set([start]);
+  for (const stack = [start]; stack.length > 0; ) {
+    const f = stack.pop();
+    const refs = scanReferences(texts.get(f) ?? '', f, fileSet);
+    for (const dep of [...refs.staticImports, ...(dynamic ? refs.dynamicImports : [])]) {
+      if (seen.has(dep)) continue;
+      seen.add(dep);
+      stack.push(dep);
+    }
+  }
+  return seen;
+}
+
+export function measureFixture(dir, fixture) {
+  const distDir = fixtureDist(dir, fixture.name);
+  if (!existsSync(distDir)) throw new Error(`${posix(relative(dir, distDir))} not found: run node scripts/consumers.mjs build first`);
+  const found = discover(distDir);
+  const files = found.files.filter((f) => /\.m?js$/.test(f));
+  const fileSet = new Set(found.files);
+  const texts = new Map(files.map((f) => [f, readFileSync(join(distDir, f), 'utf8')]));
+  const maps = new Map(files.map((f) => [f, readMap(distDir, f)]));
+  const gz = new Map(files.map((f) => [f, gzipOf(readFileSync(join(distDir, f)))]));
+  const classOf = (f) => classify(maps.get(f)?.sources ?? []);
+  const sum = (list) => [...list].reduce((n, f) => n + (gz.get(f) ?? 0), 0);
+  const problems = [];
+
+  const entry = found.main ? closureOf(found.main, fileSet, texts, { dynamic: false }) : new Set();
+  let trigger = 0;
+  for (const f of entry) {
+    const map = maps.get(f);
+    if (map) trigger += gzipOf(Buffer.from(codeFromSources(texts.get(f), map, (s) => s.includes(PACKAGE_SOURCE))));
+    else problems.push(`${f}: no sourcemap`);
+  }
+  const without = (set) => new Set([...set].filter((f) => !entry.has(f)));
+  const clientFiles = new Set();
+  for (const f of files) if (found.kinds.get(f) === 'client') for (const g of closureOf(f, fileSet, texts, { dynamic: false })) clientFiles.add(g);
+
+  const workers = {};
+  for (const w of found.workers) {
+    const name = basename(w).replace(/-[\w-]{8}\.m?js$/, '').replace(/\.m?js$/, '');
+    const side = closureOf(w, fileSet, texts, { dynamic: true });
+    const statics = closureOf(w, fileSet, texts, { dynamic: false });
+    const byClass = {};
+    for (const f of side) {
+      if (statics.has(f)) continue;
+      const c = classOf(f);
+      (byClass[c] ??= new Set()).add(f);
+    }
+    const withStatics = (list) => {
+      const out = new Set();
+      for (const f of list ?? []) for (const g of closureOf(f, fileSet, texts, { dynamic: false })) out.add(g);
+      return out;
+    };
+    workers[name] = { file: w, entry: sum(statics), chunks: side.size - statics.size, side, statics, byClass, withStatics };
+  }
+  const names = Object.keys(workers).sort();
+  const expected = [...fixture.workers].sort();
+  if (JSON.stringify(names) !== JSON.stringify(expected)) problems.push(`worker files: expected ${expected.join(', ')}, built ${names.join(', ') || 'none'}`);
+  if (fixture.singleFileWorkers) for (const n of names) if (workers[n].side.size !== 1) problems.push(`worker ${n}: expected one file, it loads ${workers[n].side.size - 1} more`);
+
+  const ownWorker = workers[fixture.workers[0]];
+  const lazyTotal = (classes) => {
+    if (!ownWorker) return null;
+    const list = new Set([...clientFiles, ...ownWorker.statics]);
+    for (const c of classes) for (const f of ownWorker.withStatics(ownWorker.byClass[c])) list.add(f);
+    return sum(without(list));
+  };
+  const engineChunk = (engine) => {
+    const w = Object.values(workers).find((x) => x.byClass[engine]);
+    return w ? sum(w.byClass[engine]) : null;
+  };
+  const engineShared = Object.values(workers).reduce((n, w) => n + sum(w.byClass.engineShared ?? []), 0);
+  const mainThread = new Set(files.filter((f) => !Object.values(workers).some((w) => w.side.has(f))));
+  const rvfcFiles = [...mainThread].filter((f) => classOf(f) === 'rvfc');
+
+  const metrics = {
+    entry: sum(entry),
+    trigger,
+    client: clientFiles.size > 0 ? sum(without(clientFiles)) : null,
+    isobmff: ownWorker?.byClass.isobmff ? sum(ownWorker.byClass.isobmff) : null,
+    matroska: ownWorker?.byClass.matroska ? sum(ownWorker.byClass.matroska) : null,
+    segments: ownWorker?.byClass.segments ? sum(ownWorker.byClass.segments) : null,
+    firstMp4: ownWorker && !fixture.singleFileWorkers ? lazyTotal(['isobmff', 'stats']) : null,
+    allOwn: ownWorker && !fixture.singleFileWorkers ? lazyTotal(['isobmff', 'matroska', 'stats', 'segments']) : null,
+    mp4box: engineChunk('mp4box'),
+    mediabunny: engineChunk('mediabunny'),
+    engineShared: engineShared > 0 ? engineShared : null,
+    rvfc: rvfcFiles.length > 0 ? sum(rvfcFiles) : null,
+    lazyTotal: sum(without(new Set(files))),
+  };
+  if (fixture.singleFileWorkers && ownWorker) metrics.firstMp4 = sum(without(new Set([...clientFiles, ownWorker.file])));
+
+  const leaks = [];
+  for (const f of files) {
+    for (const s of maps.get(f)?.sources ?? []) for (const pattern of fixture.mustNot) if (s.includes(pattern)) leaks.push(`${f}: ${pattern} (${s.slice(s.indexOf('node_modules/'))})`);
+  }
+  for (const l of leaks) problems.push(`must not exist: ${l}`);
+  problems.push(...found.chains);
+
+  const value = (key) => (key.startsWith('worker:') ? (workers[key.slice(7)]?.entry ?? null) : metrics[key]);
+  const budgets = (BUDGETS[fixture.name] ?? []).map(({ key, limit, why, required = true }) => {
+    const gzip = value(key);
+    const label = key.startsWith('worker:') ? `${key.slice(7)} entry` : LABELS[key];
+    let status = 'ok';
+    if (gzip === null) status = required ? 'missing' : 'not built';
+    else if (gzip > limit) status = 'over';
+    if (status === 'over' || status === 'missing') problems.push(`${fixture.name} ${label}: ${status}${gzip === null ? '' : ` (${kb(gzip)} > ${kb(limit)})`}`);
+    return { key, label, limit, gzip, headroom: gzip === null ? null : limit - gzip, status, why };
+  });
+
+  return {
+    name: fixture.name,
+    imports: fixture.entry,
+    engines: fixture.engines,
+    metrics,
+    workers: names.map((n) => ({ name: n, entry: workers[n].entry, chunks: workers[n].chunks })),
+    files: files.map((f) => ({ file: f, gzip: gz.get(f), worker: Object.keys(workers).find((n) => workers[n].side.has(f)) ?? null, class: classOf(f) })),
+    mustNot: fixture.mustNot,
+    leaks,
+    chains: found.chains,
+    budgets,
+    problems,
+  };
+}
+
+function versionOf(dir, name) {
+  const path = join(dir, 'node_modules', name, 'package.json');
+  return existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')).version : null;
+}
+
+export function buildMatrix(dir) {
+  const fixtures = FIXTURES.map((f) => measureFixture(dir, f));
+  const standaloneFile = join(installedPackage(dir), 'dist', 'standalone', 'own.worker.js');
+  const standaloneGzip = existsSync(standaloneFile) ? gzipOf(readFileSync(standaloneFile)) : null;
+  const standalone = {
+    gzip: standaloneGzip,
+    limit: STANDALONE_BUDGET.limit,
+    status: standaloneGzip === null ? 'missing' : standaloneGzip > STANDALONE_BUDGET.limit ? 'over' : 'ok',
+    why: STANDALONE_BUDGET.why,
+  };
+  const failures = fixtures.flatMap((f) => f.problems.map((p) => (p.startsWith(`${f.name} `) ? p : `${f.name}: ${p}`)));
+  if (standalone.status !== 'ok') failures.push(`standalone own.worker.js: ${standalone.status}`);
+  const tarball = readdirSync(dir).find((f) => f.endsWith('.tgz')) ?? null;
+  return {
+    generator: 'scripts/size-matrix.mjs',
+    unit: 'KB = 1000 bytes; gzip level 9',
+    tarball,
+    versions: { 'video-fps-probe': versionOf(dir, 'video-fps-probe'), vite: versionOf(dir, 'vite'), mp4box: versionOf(dir, 'mp4box'), mediabunny: versionOf(dir, 'mediabunny') },
+    fixtures,
+    standalone,
+    failures,
+  };
+}
+
+const cell = (n) => (n === null || n === undefined ? '-' : kb(n));
+
+export function renderMarkdown(matrix) {
+  const out = [];
+  out.push('# Package size matrix');
+  out.push('');
+  out.push(
+    `What the package adds to a Vite ${matrix.versions.vite} app in each configuration, measured by \`scripts/size-matrix.mjs\` on production builds of the consumer fixtures in \`tests/consumers/fixtures/\`. Each fixture installs the packed tarball (${matrix.tarball ?? 'video-fps-probe'}) with mp4box ${matrix.versions.mp4box} and mediabunny ${matrix.versions.mediabunny} into a directory outside the repository, so nothing resolves to the source tree. KB means 1000 bytes; every size is gzip level 9 per file, and totals are sums of files.`,
+  );
+  out.push('');
+  out.push(
+    'The critical path is the package code inside the host entry chunk, cut out of the entry chunk by its hidden sourcemap: what a host pays before any file is picked. Vite adds its preload helper to the entry chunk of any app with a dynamic import; it is listed separately because a host that already code-splits has it anyway. Everything else loads lazily, on the first file or the first engine run.',
+  );
+  out.push('');
+  out.push('## Configurations');
+  out.push('');
+  out.push('| Configuration | Imports | Critical path | Entry chunk with the preload helper | First MP4, lazy | All own paths, lazy | Engine chunk | Worker files | Budgets |');
+  out.push('|---|---|---:|---:|---:|---:|---:|---:|---|');
+  for (const f of matrix.fixtures) {
+    const engine = [f.metrics.mp4box !== null ? `mp4box ${kb(f.metrics.mp4box)}` : null, f.metrics.mediabunny !== null ? `mediabunny ${kb(f.metrics.mediabunny)}` : null, f.metrics.rvfc !== null ? `rVFC ${kb(f.metrics.rvfc)}` : null].filter(Boolean).join(', ') || '-';
+    const status = f.problems.length === 0 ? 'ok' : `${f.problems.length} problem${f.problems.length === 1 ? '' : 's'}`;
+    out.push(`| ${f.name} | ${f.imports} | **${kb(f.metrics.trigger)}** | ${kb(f.metrics.entry)} | ${cell(f.metrics.firstMp4)} | ${cell(f.metrics.allOwn)} | ${engine} | ${f.workers.length} (${f.workers.map((w) => w.name).join(', ')}) | ${status} |`);
+  }
+  out.push(`| standalone worker file | video-fps-probe/standalone/own.worker.js | - | - | ${cell(matrix.standalone.gzip)} | ${cell(matrix.standalone.gzip)} | - | 1 file, no imports | ${matrix.standalone.status} |`);
+  out.push('');
+  out.push(
+    'First MP4: the probe client, the worker entry that serves own, the statistics chunk (requested in parallel with the parser) and the ISO BMFF parser. All own paths adds the Matroska parser and the rate profile core. In iife-nosplit the worker is one file, so both columns are the client plus that file.',
+  );
+  out.push('');
+  out.push('## Budgets (gzip)');
+  out.push('');
+  out.push('| Configuration | Budget | Limit | Actual | Headroom | Status |');
+  out.push('|---|---|---:|---:|---:|---|');
+  for (const f of matrix.fixtures) for (const b of f.budgets) out.push(`| ${f.name} | ${b.label} | ${kb(b.limit)} | ${cell(b.gzip)} | ${cell(b.headroom)} | ${b.status} |`);
+  out.push(`| standalone | own.worker.js | ${kb(matrix.standalone.limit)} | ${cell(matrix.standalone.gzip)} | ${matrix.standalone.gzip === null ? '-' : kb(matrix.standalone.limit - matrix.standalone.gzip)} | ${matrix.standalone.status} |`);
+  out.push('');
+  out.push('## Checks');
+  out.push('');
+  for (const f of matrix.fixtures) {
+    const leaks = f.leaks.length === 0 ? `none of ${f.mustNot.length > 0 ? f.mustNot.map((m) => `\`${m}\``).join(', ') : '(no patterns)'} appears in any sourcemap` : `${f.leaks.length} must-not-exist source(s): ${f.leaks.join('; ')}`;
+    const chains = f.chains.length === 0 ? 'request chains ok' : f.chains.join('; ');
+    out.push(`- **${f.name}**: worker files ${f.workers.map((w) => `${w.name} (${w.chunks} lazy chunk${w.chunks === 1 ? '' : 's'})`).join(', ')}; ${leaks}; ${chains}.`);
+  }
+  out.push('');
+  out.push(
+    'Must-not-exist reads the `sources` of every hidden sourcemap, because minified identifiers are renamed. The request chain check is the one in `scripts/size-report.mjs`: every static dependency of a parser or engine chunk is already loaded, or requested in the same Promise.all.',
+  );
+  out.push('');
+  out.push('## Why these limits');
+  out.push('');
+  for (const f of matrix.fixtures) for (const b of f.budgets) out.push(`- **${f.name}, ${b.label}** (${kb(b.limit)}): ${b.why}`);
+  out.push(`- **standalone, own.worker.js** (${kb(matrix.standalone.limit)}): ${matrix.standalone.why}`);
+  out.push('');
+  out.push('## Files');
+  out.push('');
+  out.push('| Configuration | File | Runs in | Holds | gzip -9 |');
+  out.push('|---|---|---|---|---:|');
+  for (const f of matrix.fixtures) for (const x of f.files) out.push(`| ${f.name} | ${x.file.replace(/-[\w-]{8}(\.m?js)$/, '$1')} | ${x.worker ?? 'page'} | ${x.class} | ${kb(x.gzip)} |`);
+  out.push('');
+  return `${out.join('\n')}\n`;
+}
+
+function main() {
+  const { values } = parseArgs({
+    options: { dir: { type: 'string' }, check: { type: 'boolean', default: false }, out: { type: 'string' }, help: { type: 'boolean', default: false } },
+    strict: true,
+  });
+  if (values.help) {
+    console.log(USAGE);
+    return 0;
+  }
+  const dir = consumersDir(values.dir);
+  const matrix = buildMatrix(dir);
+  const outDir = values.out ? resolve(values.out) : join(REPO_ROOT, 'report');
+  mkdirSync(outDir, { recursive: true });
+  writeFileSync(join(outDir, 'size-matrix.md'), renderMarkdown(matrix));
+  writeFileSync(join(outDir, 'size-matrix.json'), `${JSON.stringify(matrix, null, 2)}\n`);
+  for (const f of matrix.fixtures) {
+    console.log(`${f.name.padEnd(13)} critical ${kb(f.metrics.trigger).padStart(9)}  first MP4 ${cell(f.metrics.firstMp4).padStart(9)}  workers ${f.workers.length}  ${f.problems.length === 0 ? 'ok' : 'FAIL'}`);
+  }
+  console.log(`${'standalone'.padEnd(13)} own.worker.js ${cell(matrix.standalone.gzip)}  ${matrix.standalone.status}`);
+  console.log(`wrote ${join(outDir, 'size-matrix.md')} and size-matrix.json`);
+  if (values.check && matrix.failures.length > 0) {
+    for (const f of matrix.failures) console.error(`FAIL: ${f}`);
+    return 1;
+  }
+  return 0;
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  process.exitCode = main();
+}
