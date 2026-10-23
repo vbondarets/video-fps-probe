@@ -272,14 +272,14 @@ Headless Chrome 155, GPU decoding on, display 170 Hz.
 | probe fallback chain | first call with a fallback chain or a skipped engine | 0.98 KB | **0.62 KB** | 0.55 KB | not budgeted | - | - |
 | probe compare (agreement rules) | first probe.compare | 2.57 KB | **1.31 KB** | 1.20 KB | not budgeted | - | - |
 | in-thread engine runner | first main-thread engine run (rVFC) | 1.00 KB | **0.60 KB** | 0.53 KB | not budgeted | - | - |
-| shared by the lazy client parts and rVFC (result builders, sniffing) | with the fallback chain, compare, rVFC or the own engine in this thread | 0.10 KB | **0.11 KB** | 0.09 KB | not budgeted | - | - |
-| shared by the lazy client parts and rVFC (result builders, sniffing) | with the fallback chain, compare, rVFC or the own engine in this thread | 0.71 KB | **0.38 KB** | 0.33 KB | not budgeted | - | - |
-| shared by the lazy client parts and rVFC (result builders, sniffing) | with the fallback chain, compare, rVFC or the own engine in this thread | 2.12 KB | **0.99 KB** | 0.89 KB | not budgeted | - | - |
-| own engine in this thread (runtime and parser copies for worker inline) | only with worker inline or without a Worker global (own engine in this thread) | 30.83 KB | **12.23 KB** | 11.05 KB | not budgeted | - | - |
-| own engine in this thread (runtime and parser copies for worker inline) | only with worker inline or without a Worker global (own engine in this thread) | 29.17 KB | **11.19 KB** | 10.17 KB | not budgeted | - | - |
-| own engine in this thread (runtime and parser copies for worker inline) | only with worker inline or without a Worker global (own engine in this thread) | 5.90 KB | **2.48 KB** | 2.29 KB | not budgeted | - | - |
-| own engine in this thread (runtime and parser copies for worker inline) | only with worker inline or without a Worker global (own engine in this thread) | 3.35 KB | **1.84 KB** | 1.70 KB | not budgeted | - | - |
-| own engine in this thread (runtime and parser copies for worker inline) | only with worker inline or without a Worker global (own engine in this thread) | 10.31 KB | **4.33 KB** | 3.95 KB | not budgeted | - | - |
+| shared by the lazy client parts and rVFC (result builders, sniffing): `abort` | with the fallback chain, compare, rVFC or the own engine in this thread | 0.10 KB | **0.11 KB** | 0.09 KB | not budgeted | - | - |
+| shared by the lazy client parts and rVFC (result builders, sniffing): `result` | with the fallback chain, compare, rVFC or the own engine in this thread | 0.71 KB | **0.38 KB** | 0.33 KB | not budgeted | - | - |
+| shared by the lazy client parts and rVFC (result builders, sniffing): `sniff` | with the fallback chain, compare, rVFC or the own engine in this thread | 2.12 KB | **0.99 KB** | 0.89 KB | not budgeted | - | - |
+| own engine in this thread (runtime and parser copies for worker inline): `isobmff` | only with worker inline or without a Worker global (own engine in this thread) | 30.83 KB | **12.23 KB** | 11.05 KB | not budgeted | - | - |
+| own engine in this thread (runtime and parser copies for worker inline): `matroska` | only with worker inline or without a Worker global (own engine in this thread) | 29.17 KB | **11.19 KB** | 10.17 KB | not budgeted | - | - |
+| own engine in this thread (runtime and parser copies for worker inline): `runtime` | only with worker inline or without a Worker global (own engine in this thread) | 5.90 KB | **2.48 KB** | 2.29 KB | not budgeted | - | - |
+| own engine in this thread (runtime and parser copies for worker inline): `segments` | only with worker inline or without a Worker global (own engine in this thread) | 3.35 KB | **1.84 KB** | 1.70 KB | not budgeted | - | - |
+| own engine in this thread (runtime and parser copies for worker inline): `stats` | only with worker inline or without a Worker global (own engine in this thread) | 10.31 KB | **4.33 KB** | 3.95 KB | not budgeted | - | - |
 | worker entry (reader, sniffing, worker runtime) | first file | 10.14 KB | **4.22 KB** | 3.86 KB | 5.00 KB | 0.78 KB | ok |
 | shared by the parsers and engines (timeline statistics) | with the first parser, in parallel, once per worker | 10.21 KB | **4.29 KB** | 3.92 KB | 5.00 KB | 0.71 KB | ok |
 | ISO BMFF parser | first MP4 or MOV file, once per worker | 30.75 KB | **12.22 KB** | 11.08 KB | 13.50 KB | 1.28 KB | ok |

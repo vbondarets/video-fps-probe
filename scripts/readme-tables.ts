@@ -795,6 +795,16 @@ function enginesBlock(inp: Inputs): string[] {
   ];
 }
 
+const fileOf = (path: string): string => path.split('/').pop() ?? path;
+const stemOf = (path: string): string => fileOf(path).replace(/\.(?:js|css)$/, '').replace(/-[A-Za-z0-9_-]{8}$/, '');
+
+function distinctLabels(chunks: readonly Chunk[]): string[] {
+  const once = (labels: readonly string[], i: number) => labels.indexOf(labels[i]) === labels.lastIndexOf(labels[i]);
+  const names = chunks.map((c) => CHUNK_NAME[c.kind] ?? c.kind);
+  const stems = chunks.map((c, i) => `${names[i]}: \`${stemOf(c.file)}\``);
+  return chunks.map((c, i) => (once(names, i) ? names[i] : once(stems, i) ? stems[i] : `${names[i]}: \`${fileOf(c.file)}\``));
+}
+
 function bundleBlock(inp: Inputs): string[] {
   const budgets = new Map(inp.size.budgets.map((b) => [b.key, b]));
   const chunks = [...inp.size.chunks].sort((a, b) => {
@@ -803,8 +813,9 @@ function bundleBlock(inp: Inputs): string[] {
     return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.file.localeCompare(b.file);
   });
   const budgetCells = (b: Budget | undefined) => (b ? [fmtKB(b.limit), fmtKB(b.headroom), b.status] : ['not budgeted', '-', '-']);
-  const rows = chunks.map((c) =>
-    row([CHUNK_NAME[c.kind] ?? c.kind, CHUNK_WHEN[c.kind] ?? 'lazy', fmtKB(c.raw), `**${fmtKB(c.gzip)}**`, fmtKB(c.brotli), ...budgetCells(budgets.get(c.kind))]),
+  const labels = distinctLabels(chunks);
+  const rows = chunks.map((c, i) =>
+    row([labels[i], CHUNK_WHEN[c.kind] ?? 'lazy', fmtKB(c.raw), `**${fmtKB(c.gzip)}**`, fmtKB(c.brotli), ...budgetCells(budgets.get(c.kind))]),
   );
   const compRows = Object.entries(COMPOSITE_BUDGET)
     .filter(([key]) => !OPTIONAL_COMPOSITES.has(key) || inp.size.composites[key])
