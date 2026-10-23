@@ -278,11 +278,11 @@ Headless Chrome 155, GPU decoding on, display 170 Hz.
 |---|---|---|---:|---:|---:|---:|---:|---|
 | **default** | `video-fps-probe/lazy` | format: 'es' | **0.67 KB** | 23.26 KB | 36.24 KB | - | 1 | ok (8 budgets) |
 | zero-config | `video-fps-probe/lazy` | none, so Vite's default format: 'iife' | **0.67 KB** | 34.77 KB | 34.77 KB | - | 1 | ok (3 budgets) |
-| custom | `video-fps-probe/client/lazy` + `video-fps-probe/worker-runtime` (host worker serving own) | format: 'es' | **0.68 KB** | 23.15 KB | 36.13 KB | - | 1 | ok (2 budgets) |
+| custom | `video-fps-probe/client/lazy` + `video-fps-probe/worker-runtime` (host worker serving own) | format: 'es' | **0.68 KB** | 23.15 KB | 36.13 KB | - | 1 | ok (4 budgets) |
 | mp4box | `video-fps-probe/lazy` + `video-fps-probe/mp4box` | format: 'es' | **0.90 KB** | 23.29 KB | 36.27 KB | mp4box 44.77 KB | 2 | ok (3 budgets) |
 | mediabunny | `video-fps-probe/lazy` + `video-fps-probe/mediabunny` | format: 'es' | **0.90 KB** | 23.29 KB | 36.27 KB | mediabunny 53.87 KB | 2 | ok (3 budgets) |
 | rvfc | `video-fps-probe/lazy` + `video-fps-probe/rvfc` | format: 'es' | **0.77 KB** | 23.27 KB | 36.26 KB | rVFC 2.19 KB | 1 | ok (2 budgets) |
-| all | `video-fps-probe/lazy` + `video-fps-probe/mp4box` + `video-fps-probe/mediabunny` + `video-fps-probe/rvfc` | format: 'es' | **1.02 KB** | 23.31 KB | 36.29 KB | mp4box 44.77 KB, mediabunny 53.87 KB, rVFC 2.19 KB | 3 | ok (9 budgets) |
+| all | `video-fps-probe/lazy` + `video-fps-probe/mp4box` + `video-fps-probe/mediabunny` + `video-fps-probe/rvfc` | format: 'es' | **1.02 KB** | 23.31 KB | 36.29 KB | mp4box 44.77 KB, mediabunny 53.87 KB, rVFC 2.19 KB | 3 | ok (14 budgets) |
 | iife-nosplit | `video-fps-probe/lazy` | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.67 KB** | 34.77 KB | 34.77 KB | - | 1 | ok (2 budgets) |
 | standalone worker file | `video-fps-probe/standalone/own.worker.js` | - | - | 32.04 KB | 32.04 KB | - | 1 file, no imports | ok |
 

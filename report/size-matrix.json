@@ -32,6 +32,7 @@
         "mediabunny": null,
         "engineShared": null,
         "rvfc": null,
+        "pageEngineShared": null,
         "lazyTotal": 72201
       },
       "workers": [
@@ -252,6 +253,7 @@
         "mediabunny": null,
         "engineShared": null,
         "rvfc": null,
+        "pageEngineShared": null,
         "lazyTotal": 70752
       },
       "workers": [
@@ -404,6 +406,7 @@
         "mediabunny": null,
         "engineShared": null,
         "rvfc": null,
+        "pageEngineShared": null,
         "lazyTotal": 72106
       },
       "workers": [
@@ -537,6 +540,15 @@
           "why": "The lazyProbeClient stub in the host entry chunk. The host's worker literal is host code and is not counted. Design estimate 1.0 KB; measured 0.68 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
         {
+          "key": "client",
+          "label": "probe client (lazy)",
+          "limit": 3000,
+          "gzip": 2558,
+          "headroom": 442,
+          "status": "ok",
+          "why": "The probe client fetched on the first file, without the own descriptor and its worker literal, which the host replaces with its own worker. Measured 2.56 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        },
+        {
           "key": "worker:fps.worker",
           "label": "fps.worker entry",
           "limit": 4500,
@@ -544,6 +556,15 @@
           "headroom": 416,
           "status": "ok",
           "why": "The host worker built from video-fps-probe/worker-runtime, serving own only. Design estimate 8.5 KB; measured 4.08 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "firstMp4",
+          "label": "first MP4 analysis, lazy total",
+          "limit": 24000,
+          "gzip": 23153,
+          "headroom": 847,
+          "status": "ok",
+          "why": "A host worker that serves own holds the same code as the prebuilt own worker, so the 24 KB promise of the default configuration applies to the first MP4 here too. Measured 23.15 KB."
         }
       ],
       "problems": []
@@ -573,6 +594,7 @@
         "mediabunny": null,
         "engineShared": null,
         "rvfc": null,
+        "pageEngineShared": null,
         "lazyTotal": 195928
       },
       "workers": [
@@ -817,6 +839,7 @@
         "mediabunny": 53867,
         "engineShared": null,
         "rvfc": null,
+        "pageEngineShared": null,
         "lazyTotal": 212892
       },
       "workers": [
@@ -1061,6 +1084,7 @@
         "mediabunny": null,
         "engineShared": null,
         "rvfc": 2193,
+        "pageEngineShared": null,
         "lazyTotal": 74519
       },
       "workers": [
@@ -1244,6 +1268,7 @@
         "mediabunny": 53867,
         "engineShared": null,
         "rvfc": 2192,
+        "pageEngineShared": 1509,
         "lazyTotal": 338194
       },
       "workers": [
@@ -1561,6 +1586,33 @@
           "why": "As in the rvfc configuration. Measured 2.19 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
         {
+          "key": "isobmff",
+          "label": "ISO BMFF parser (in the own worker)",
+          "limit": 13500,
+          "gzip": 12205,
+          "headroom": 1295,
+          "status": "ok",
+          "why": "As in the default configuration. Measured 12.21 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "matroska",
+          "label": "Matroska parser (in the own worker)",
+          "limit": 12500,
+          "gzip": 11138,
+          "headroom": 1362,
+          "status": "ok",
+          "why": "As in the default configuration. Measured 11.14 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "segments",
+          "label": "rate profile core (in the own worker)",
+          "limit": 2500,
+          "gzip": 1844,
+          "headroom": 656,
+          "status": "ok",
+          "why": "As in the default configuration. Measured 1.84 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        },
+        {
           "key": "firstMp4",
           "label": "first MP4 analysis, lazy total",
           "limit": 24000,
@@ -1568,6 +1620,33 @@
           "headroom": 693,
           "status": "ok",
           "why": "Registering engines must not change what the first own analysis loads, so the 24 KB promise of the default configuration applies here too. Measured 23.31 KB."
+        },
+        {
+          "key": "allOwn",
+          "label": "all own paths, lazy total",
+          "limit": 40000,
+          "gzip": 36289,
+          "headroom": 3711,
+          "status": "ok",
+          "why": "As in the default configuration. Measured 36.29 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "engineShared",
+          "label": "shared engine chunk",
+          "limit": 2000,
+          "gzip": null,
+          "headroom": null,
+          "status": "not built",
+          "why": "As in the mp4box and mediabunny configurations: each prebuilt engine worker serves one comparison engine, so no worker builds this chunk. The design estimate of 2.0 KB stays the limit."
+        },
+        {
+          "key": "pageEngineShared",
+          "label": "shared engine chunk (main thread, inline mode)",
+          "limit": 2000,
+          "gzip": 1509,
+          "headroom": 491,
+          "status": "ok",
+          "why": "The counting code mp4box and mediabunny share, which becomes a main-thread chunk of its own when both are registered. It loads only when an engine runs in this thread (worker: 'inline', SSR, no Worker global). Measured 1.51 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         }
       ],
       "problems": []
@@ -1595,6 +1674,7 @@
         "mediabunny": null,
         "engineShared": null,
         "rvfc": null,
+        "pageEngineShared": null,
         "lazyTotal": 70752
       },
       "workers": [

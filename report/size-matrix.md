@@ -38,7 +38,9 @@ The host's worker option decides the first MP4: 23.26 KB with `worker: { format:
 | zero-config | own.worker entry | 35.50 KB | 32.11 KB | 3.39 KB | ok |
 | zero-config | first MP4 analysis, lazy total | 38.50 KB | 34.77 KB | 3.73 KB | ok |
 | custom | critical path (package code in the entry chunk) | 1.00 KB | 0.68 KB | 0.32 KB | ok |
+| custom | probe client (lazy) | 3.00 KB | 2.56 KB | 0.44 KB | ok |
 | custom | fps.worker entry | 4.50 KB | 4.08 KB | 0.42 KB | ok |
+| custom | first MP4 analysis, lazy total | 24.00 KB | 23.15 KB | 0.85 KB | ok |
 | mp4box | critical path (package code in the entry chunk) | 1.00 KB | 0.90 KB | 0.10 KB | ok |
 | mp4box | mp4box.worker entry | 5.00 KB | 4.22 KB | 0.78 KB | ok |
 | mp4box | mp4box engine chunk | 49.50 KB | 44.77 KB | 4.73 KB | ok |
@@ -57,7 +59,13 @@ The host's worker option decides the first MP4: 23.26 KB with `worker: { format:
 | all | mp4box engine chunk | 49.50 KB | 44.77 KB | 4.73 KB | ok |
 | all | mediabunny engine chunk | 59.50 KB | 53.87 KB | 5.63 KB | ok |
 | all | rVFC engine (main thread) | 2.50 KB | 2.19 KB | 0.31 KB | ok |
+| all | ISO BMFF parser (in the own worker) | 13.50 KB | 12.21 KB | 1.29 KB | ok |
+| all | Matroska parser (in the own worker) | 12.50 KB | 11.14 KB | 1.36 KB | ok |
+| all | rate profile core (in the own worker) | 2.50 KB | 1.84 KB | 0.66 KB | ok |
 | all | first MP4 analysis, lazy total | 24.00 KB | 23.31 KB | 0.69 KB | ok |
+| all | all own paths, lazy total | 40.00 KB | 36.29 KB | 3.71 KB | ok |
+| all | shared engine chunk | 2.00 KB | - | - | not built |
+| all | shared engine chunk (main thread, inline mode) | 2.00 KB | 1.51 KB | 0.49 KB | ok |
 | iife-nosplit | critical path (package code in the entry chunk) | 1.00 KB | 0.67 KB | 0.33 KB | ok |
 | iife-nosplit | own.worker entry | 35.50 KB | 32.11 KB | 3.39 KB | ok |
 | standalone | own.worker.js | 35.50 KB | 32.04 KB | 3.46 KB | ok |
@@ -89,7 +97,9 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 - **zero-config, own.worker entry** (35.50 KB): A Vite 8 app with no worker option builds workers with Vite's default format, 'iife', which cannot split, so the own worker is one file: both parsers, the statistics and the rate profile core are inlined. Measured 32.11 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **zero-config, first MP4 analysis, lazy total** (38.50 KB): What the first MP4 loads in a Vite 8 app that keeps the default worker format: the probe client and the one-file own worker. The 24 KB of the default configuration needs worker.format 'es' in the host's Vite config. Measured 34.77 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **custom, critical path (package code in the entry chunk)** (1.00 KB): The lazyProbeClient stub in the host entry chunk. The host's worker literal is host code and is not counted. Design estimate 1.0 KB; measured 0.68 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
+- **custom, probe client (lazy)** (3.00 KB): The probe client fetched on the first file, without the own descriptor and its worker literal, which the host replaces with its own worker. Measured 2.56 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **custom, fps.worker entry** (4.50 KB): The host worker built from video-fps-probe/worker-runtime, serving own only. Design estimate 8.5 KB; measured 4.08 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
+- **custom, first MP4 analysis, lazy total** (24.00 KB): A host worker that serves own holds the same code as the prebuilt own worker, so the 24 KB promise of the default configuration applies to the first MP4 here too. Measured 23.15 KB.
 - **mp4box, critical path (package code in the entry chunk)** (1.00 KB): The default trigger plus the mp4box descriptor and its worker literal. Design estimate the default plus 0.5 KB; measured 0.90 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **mp4box, mp4box.worker entry** (5.00 KB): The prebuilt mp4box worker entry, which serves own and mp4box. Design estimate 8.5 KB; measured 4.22 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **mp4box, mp4box engine chunk** (49.50 KB): The mp4box.js engine chunk of the mp4box worker: the mp4box library, the adapter and the counting code the engines share. Design estimate 48.0 KB; measured 44.77 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
@@ -108,7 +118,13 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 - **all, mp4box engine chunk** (49.50 KB): As in the mp4box configuration. Measured 44.77 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **all, mediabunny engine chunk** (59.50 KB): As in the mediabunny configuration. Measured 53.87 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **all, rVFC engine (main thread)** (2.50 KB): As in the rvfc configuration. Measured 2.19 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
+- **all, ISO BMFF parser (in the own worker)** (13.50 KB): As in the default configuration. Measured 12.21 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
+- **all, Matroska parser (in the own worker)** (12.50 KB): As in the default configuration. Measured 11.14 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
+- **all, rate profile core (in the own worker)** (2.50 KB): As in the default configuration. Measured 1.84 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **all, first MP4 analysis, lazy total** (24.00 KB): Registering engines must not change what the first own analysis loads, so the 24 KB promise of the default configuration applies here too. Measured 23.31 KB.
+- **all, all own paths, lazy total** (40.00 KB): As in the default configuration. Measured 36.29 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
+- **all, shared engine chunk** (2.00 KB): As in the mp4box and mediabunny configurations: each prebuilt engine worker serves one comparison engine, so no worker builds this chunk. The design estimate of 2.0 KB stays the limit.
+- **all, shared engine chunk (main thread, inline mode)** (2.00 KB): The counting code mp4box and mediabunny share, which becomes a main-thread chunk of its own when both are registered. It loads only when an engine runs in this thread (worker: 'inline', SSR, no Worker global). Measured 1.51 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **iife-nosplit, critical path (package code in the entry chunk)** (1.00 KB): As in the default configuration. Measured 0.67 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **iife-nosplit, own.worker entry** (35.50 KB): With worker.format iife and codeSplitting false the own worker is one file: both parsers, the statistics and the rate profile core are inlined. Design estimate 35.0 KB; measured 32.11 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **standalone, own.worker.js** (35.50 KB): dist/standalone/own.worker.js: the own worker as one minified IIFE file with no imports, built by rolldown. Design estimate 35.0 KB; measured 32.04 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.

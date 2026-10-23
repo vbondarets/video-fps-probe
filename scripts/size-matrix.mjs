@@ -31,7 +31,9 @@ export const BUDGETS = {
   ],
   custom: [
     { key: 'trigger', limit: 1 * KB, why: `The lazyProbeClient stub in the host entry chunk. The host's worker literal is host code and is not counted. Design estimate 1.0 KB; measured 0.68 KB. ${RESET}` },
+    { key: 'client', limit: 3 * KB, why: `The probe client fetched on the first file, without the own descriptor and its worker literal, which the host replaces with its own worker. Measured 2.56 KB. ${RESET}` },
     { key: 'worker:fps.worker', limit: 4.5 * KB, why: `The host worker built from video-fps-probe/worker-runtime, serving own only. Design estimate 8.5 KB; measured 4.08 KB. ${RESET}` },
+    { key: 'firstMp4', limit: 24 * KB, why: 'A host worker that serves own holds the same code as the prebuilt own worker, so the 24 KB promise of the default configuration applies to the first MP4 here too. Measured 23.15 KB.' },
   ],
   mp4box: [
     { key: 'trigger', limit: 1 * KB, why: `The default trigger plus the mp4box descriptor and its worker literal. Design estimate the default plus 0.5 KB; measured 0.90 KB. ${RESET}` },
@@ -58,7 +60,13 @@ export const BUDGETS = {
     { key: 'mp4box', limit: 49.5 * KB, why: `As in the mp4box configuration. Measured 44.77 KB. ${RESET}` },
     { key: 'mediabunny', limit: 59.5 * KB, why: `As in the mediabunny configuration. Measured 53.87 KB. ${RESET}` },
     { key: 'rvfc', limit: 2.5 * KB, why: `As in the rvfc configuration. Measured 2.19 KB. ${RESET}` },
+    { key: 'isobmff', limit: 13.5 * KB, why: `As in the default configuration. Measured 12.21 KB. ${RESET}` },
+    { key: 'matroska', limit: 12.5 * KB, why: `As in the default configuration. Measured 11.14 KB. ${RESET}` },
+    { key: 'segments', limit: 2.5 * KB, why: `As in the default configuration. Measured 1.84 KB. ${RESET}` },
     { key: 'firstMp4', limit: 24 * KB, why: 'Registering engines must not change what the first own analysis loads, so the 24 KB promise of the default configuration applies here too. Measured 23.31 KB.' },
+    { key: 'allOwn', limit: 40 * KB, why: `As in the default configuration. Measured 36.29 KB. ${RESET}` },
+    { key: 'engineShared', limit: 2 * KB, required: false, why: 'As in the mp4box and mediabunny configurations: each prebuilt engine worker serves one comparison engine, so no worker builds this chunk. The design estimate of 2.0 KB stays the limit.' },
+    { key: 'pageEngineShared', limit: 2 * KB, why: `The counting code mp4box and mediabunny share, which becomes a main-thread chunk of its own when both are registered. It loads only when an engine runs in this thread (worker: 'inline', SSR, no Worker global). Measured 1.51 KB. ${RESET}` },
   ],
   'iife-nosplit': [
     { key: 'trigger', limit: 1 * KB, why: `As in the default configuration. Measured 0.67 KB. ${RESET}` },
@@ -79,6 +87,7 @@ const LABELS = {
   mp4box: 'mp4box engine chunk',
   mediabunny: 'mediabunny engine chunk',
   engineShared: 'shared engine chunk',
+  pageEngineShared: 'shared engine chunk (main thread, inline mode)',
   rvfc: 'rVFC engine (main thread)',
 };
 
@@ -247,6 +256,7 @@ export function measureFixture(dir, fixture) {
   const engineShared = Object.values(workers).reduce((n, w) => n + sum(w.byClass.engineShared ?? []), 0);
   const mainThread = new Set(files.filter((f) => !Object.values(workers).some((w) => w.side.has(f))));
   const rvfcFiles = [...mainThread].filter((f) => classOf(f) === 'rvfc');
+  const pageEngineShared = [...mainThread].filter((f) => classOf(f) === 'engineShared');
 
   const metrics = {
     entry: sum(entry),
@@ -261,6 +271,7 @@ export function measureFixture(dir, fixture) {
     mediabunny: engineChunk('mediabunny'),
     engineShared: engineShared > 0 ? engineShared : null,
     rvfc: rvfcFiles.length > 0 ? sum(rvfcFiles) : null,
+    pageEngineShared: pageEngineShared.length > 0 ? sum(pageEngineShared) : null,
     lazyTotal: sum(without(new Set(files))),
   };
   if (fixture.singleFileWorkers && ownWorker) metrics.firstMp4 = metrics.allOwn = sum(without(new Set([...clientFiles, ownWorker.file])));
