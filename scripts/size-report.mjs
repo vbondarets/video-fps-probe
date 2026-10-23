@@ -546,8 +546,9 @@ export function renderMarkdown(report, label) {
 }
 
 function printReport(report) {
+  const width = Math.max(...report.budgets.map((b) => b.label.length));
   for (const b of report.budgets) {
-    console.log(`${b.label.padEnd(56)} ${(b.gzip === null ? '-' : kb(b.gzip)).padStart(10)} / ${kb(b.limit).padStart(9)}  ${b.status}`);
+    console.log(`${b.label.padEnd(width)} ${(b.gzip === null ? '-' : kb(b.gzip)).padStart(10)} / ${kb(b.limit).padStart(9)}  ${b.status}`);
   }
 }
 
