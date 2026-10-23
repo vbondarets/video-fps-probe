@@ -162,7 +162,16 @@
           "gzip": 668,
           "headroom": 332,
           "status": "ok",
-          "why": "User-facing promise of the package, accepted by the owner on 2026-10-23 when the demo budget moved to 101.5 KB: the default configuration adds at most 1 KB to the critical path and the first MP4 loads at most 24 KB lazily. This row is the first half: the package code in the host entry chunk (the lazyProbe stub, ProbeError and the engine list), cut out of the entry chunk by its sourcemap. Vite's preload helper is not counted, because every Vite app with a dynamic import already has it. Design estimate 1.0 KB; measured 0.67 KB, and measured plus 10 percent rounded up to 0.5 KB is also 1.0 KB."
+          "why": "User-facing promise of the package, accepted by the owner on 2026-10-23 when the demo budget moved to 101.5 KB: the default configuration adds at most 1 KB to the critical path and the first MP4 loads at most 24 KB lazily. This row is the first half: the package code in the host entry chunk (the lazyProbe stub, ProbeError and the engine list), cut out of the entry chunk by its sourcemap. Vite's preload helper is not counted here, because every Vite app with a dynamic import already has it; the entry chunk row counts it. Design estimate 1.0 KB; measured 0.67 KB, and measured plus 10 percent rounded up to 0.5 KB is also 1.0 KB."
+        },
+        {
+          "key": "entry",
+          "label": "entry chunk with the preload helper",
+          "limit": 2000,
+          "gzip": 1397,
+          "headroom": 603,
+          "status": "ok",
+          "why": "The whole host entry chunk: the package code of the critical path row, Vite's preload helper, which Vite adds to the entry chunk of any app with a dynamic import, and the one line of host code. The critical path row stays the package promise; this row also catches what the package makes Vite add next to its code, such as a longer preload dependency list per dynamic import. Measured 1.40 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
         {
           "key": "client",
@@ -362,6 +371,15 @@
           "why": "As in the default configuration: the worker option does not change the entry chunk. Measured 0.67 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
         {
+          "key": "entry",
+          "label": "entry chunk with the preload helper",
+          "limit": 2000,
+          "gzip": 1398,
+          "headroom": 602,
+          "status": "ok",
+          "why": "As in the default configuration: the worker option does not change the entry chunk. Measured 1.40 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        },
+        {
           "key": "worker:own.worker",
           "label": "own.worker entry",
           "limit": 35500,
@@ -538,6 +556,15 @@
           "headroom": 323,
           "status": "ok",
           "why": "The lazyProbeClient stub in the host entry chunk. The host's worker literal is host code and is not counted. Design estimate 1.0 KB; measured 0.68 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "entry",
+          "label": "entry chunk with the preload helper",
+          "limit": 2000,
+          "gzip": 1466,
+          "headroom": 534,
+          "status": "ok",
+          "why": "The lazyProbeClient stub, Vite's preload helper and the host's worker literal. Measured 1.47 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
         {
           "key": "client",
@@ -785,6 +812,15 @@
           "why": "The default trigger plus the mp4box descriptor and its worker literal. Design estimate the default plus 0.5 KB; measured 0.90 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
         {
+          "key": "entry",
+          "label": "entry chunk with the preload helper",
+          "limit": 2000,
+          "gzip": 1748,
+          "headroom": 252,
+          "status": "ok",
+          "why": "The trigger of this configuration plus Vite's preload helper. Measured 1.75 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        },
+        {
           "key": "worker:mp4box.worker",
           "label": "mp4box.worker entry",
           "limit": 5000,
@@ -1030,6 +1066,15 @@
           "why": "The default trigger plus the mediabunny descriptor and its worker literal. Design estimate the default plus 0.5 KB; measured 0.90 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
         {
+          "key": "entry",
+          "label": "entry chunk with the preload helper",
+          "limit": 2000,
+          "gzip": 1749,
+          "headroom": 251,
+          "status": "ok",
+          "why": "The trigger of this configuration plus Vite's preload helper. Measured 1.75 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        },
+        {
           "key": "worker:mediabunny.worker",
           "label": "mediabunny.worker entry",
           "limit": 5000,
@@ -1226,6 +1271,15 @@
           "headroom": 228,
           "status": "ok",
           "why": "The default trigger plus the rvfc descriptor, which has no worker literal. Measured 0.77 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "entry",
+          "label": "entry chunk with the preload helper",
+          "limit": 2000,
+          "gzip": 1586,
+          "headroom": 414,
+          "status": "ok",
+          "why": "The trigger of this configuration plus Vite's preload helper. Measured 1.59 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
         {
           "key": "rvfc",
@@ -1523,6 +1577,15 @@
           "why": "The default trigger plus the mp4box, mediabunny and rvfc descriptors. Measured 1.02 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
         {
+          "key": "entry",
+          "label": "entry chunk with the preload helper",
+          "limit": 2500,
+          "gzip": 1921,
+          "headroom": 579,
+          "status": "ok",
+          "why": "The trigger of this configuration plus Vite's preload helper. Measured 1.92 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        },
+        {
           "key": "client",
           "label": "probe client (lazy)",
           "limit": 3000,
@@ -1785,6 +1848,15 @@
           "why": "The lazyProbeClient stub in the host entry chunk, as in the custom configuration. The asset URL of the standalone file is host code and is not counted. Measured 0.71 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
         {
+          "key": "entry",
+          "label": "entry chunk with the preload helper",
+          "limit": 2000,
+          "gzip": 1459,
+          "headroom": 541,
+          "status": "ok",
+          "why": "The lazyProbeClient stub, Vite's preload helper and the host's asset URL of the standalone file. Measured 1.46 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        },
+        {
           "key": "client",
           "label": "probe client (lazy)",
           "limit": 3000,
@@ -1943,6 +2015,15 @@
           "headroom": 331,
           "status": "ok",
           "why": "As in the default configuration. Measured 0.67 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "entry",
+          "label": "entry chunk with the preload helper",
+          "limit": 2000,
+          "gzip": 1398,
+          "headroom": 602,
+          "status": "ok",
+          "why": "As in the default configuration. Measured 1.40 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
         {
           "key": "worker:own.worker",

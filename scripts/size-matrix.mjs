@@ -15,7 +15,8 @@ const PROMISE = 'User-facing promise of the package, accepted by the owner on 20
 
 export const BUDGETS = {
   default: [
-    { key: 'trigger', limit: 1 * KB, why: `${PROMISE} This row is the first half: the package code in the host entry chunk (the lazyProbe stub, ProbeError and the engine list), cut out of the entry chunk by its sourcemap. Vite's preload helper is not counted, because every Vite app with a dynamic import already has it. Design estimate 1.0 KB; measured 0.67 KB, and measured plus 10 percent rounded up to 0.5 KB is also 1.0 KB.` },
+    { key: 'trigger', limit: 1 * KB, why: `${PROMISE} This row is the first half: the package code in the host entry chunk (the lazyProbe stub, ProbeError and the engine list), cut out of the entry chunk by its sourcemap. Vite's preload helper is not counted here, because every Vite app with a dynamic import already has it; the entry chunk row counts it. Design estimate 1.0 KB; measured 0.67 KB, and measured plus 10 percent rounded up to 0.5 KB is also 1.0 KB.` },
+    { key: 'entry', limit: 2 * KB, why: `The whole host entry chunk: the package code of the critical path row, Vite's preload helper, which Vite adds to the entry chunk of any app with a dynamic import, and the one line of host code. The critical path row stays the package promise; this row also catches what the package makes Vite add next to its code, such as a longer preload dependency list per dynamic import. Measured 1.40 KB. ${RESET}` },
     { key: 'client', limit: 3 * KB, why: `The probe client fetched on the first file: createProbe, engine routing, the worker pool and the own descriptor with the worker literal. Design estimate 3.5 KB; measured 2.67 KB. ${RESET}` },
     { key: 'worker:own.worker', limit: 4.5 * KB, why: `The prebuilt own worker entry: reader, sniffing, options and the worker runtime. Both parsers and the statistics are lazy chunks of this worker. Design estimate 8.0 KB; measured 4.08 KB. ${RESET}` },
     { key: 'isobmff', limit: 13.5 * KB, why: `The own MP4 and MOV parser chunk of the own worker. Design estimate 13.5 KB; measured 12.21 KB. ${RESET}` },
@@ -26,33 +27,39 @@ export const BUDGETS = {
   ],
   'zero-config': [
     { key: 'trigger', limit: 1 * KB, why: `As in the default configuration: the worker option does not change the entry chunk. Measured 0.67 KB. ${RESET}` },
+    { key: 'entry', limit: 2 * KB, why: `As in the default configuration: the worker option does not change the entry chunk. Measured 1.40 KB. ${RESET}` },
     { key: 'worker:own.worker', limit: 35.5 * KB, why: `A Vite 8 app with no worker option builds workers with Vite's default format, 'iife', which cannot split, so the own worker is one file: both parsers, the statistics and the rate profile core are inlined. Measured 32.11 KB. ${RESET}` },
     { key: 'firstMp4', limit: 38.5 * KB, why: `What the first MP4 loads in a Vite 8 app that keeps the default worker format: the probe client and the one-file own worker. The 24 KB of the default configuration needs worker.format 'es' in the host's Vite config. Measured 34.77 KB. ${RESET}` },
   ],
   custom: [
     { key: 'trigger', limit: 1 * KB, why: `The lazyProbeClient stub in the host entry chunk. The host's worker literal is host code and is not counted. Design estimate 1.0 KB; measured 0.68 KB. ${RESET}` },
+    { key: 'entry', limit: 2 * KB, why: `The lazyProbeClient stub, Vite's preload helper and the host's worker literal. Measured 1.47 KB. ${RESET}` },
     { key: 'client', limit: 3 * KB, why: `The probe client fetched on the first file, without the own descriptor and its worker literal, which the host replaces with its own worker. Measured 2.56 KB. ${RESET}` },
     { key: 'worker:fps.worker', limit: 4.5 * KB, why: `The host worker built from video-fps-probe/worker-runtime, serving own only. Design estimate 8.5 KB; measured 4.08 KB. ${RESET}` },
     { key: 'firstMp4', limit: 24 * KB, why: 'A host worker that serves own holds the same code as the prebuilt own worker, so the 24 KB promise of the default configuration applies to the first MP4 here too. Measured 23.15 KB.' },
   ],
   mp4box: [
     { key: 'trigger', limit: 1 * KB, why: `The default trigger plus the mp4box descriptor and its worker literal. Design estimate the default plus 0.5 KB; measured 0.90 KB. ${RESET}` },
+    { key: 'entry', limit: 2 * KB, why: `The trigger of this configuration plus Vite's preload helper. Measured 1.75 KB. ${RESET}` },
     { key: 'worker:mp4box.worker', limit: 5 * KB, why: `The prebuilt mp4box worker entry, which serves own and mp4box. Design estimate 8.5 KB; measured 4.22 KB. ${RESET}` },
     { key: 'mp4box', limit: 49.5 * KB, why: `The mp4box.js engine chunk of the mp4box worker: the mp4box library, the adapter and the counting code the engines share. Design estimate 48.0 KB; measured 44.77 KB. ${RESET}` },
     { key: 'engineShared', limit: 2 * KB, required: false, why: 'Code the comparison engines share, when it is a chunk of its own. Not built: each prebuilt engine worker serves one comparison engine, so this code is part of the engine chunk. The design estimate of 2.0 KB stays the limit, so a split that grows it is caught.' },
   ],
   mediabunny: [
     { key: 'trigger', limit: 1 * KB, why: `The default trigger plus the mediabunny descriptor and its worker literal. Design estimate the default plus 0.5 KB; measured 0.90 KB. ${RESET}` },
+    { key: 'entry', limit: 2 * KB, why: `The trigger of this configuration plus Vite's preload helper. Measured 1.75 KB. ${RESET}` },
     { key: 'worker:mediabunny.worker', limit: 5 * KB, why: `The prebuilt mediabunny worker entry, which serves own and mediabunny. Measured 4.12 KB. ${RESET}` },
     { key: 'mediabunny', limit: 59.5 * KB, why: `The mediabunny engine chunk of the mediabunny worker, with the counting code the engines share. Design estimate 58.0 KB; measured 53.87 KB. ${RESET}` },
     { key: 'engineShared', limit: 2 * KB, required: false, why: 'Code the comparison engines share, when it is a chunk of its own. Not built, for the same reason as in the mp4box configuration. The design estimate of 2.0 KB stays the limit.' },
   ],
   rvfc: [
     { key: 'trigger', limit: 1 * KB, why: `The default trigger plus the rvfc descriptor, which has no worker literal. Measured 0.77 KB. ${RESET}` },
+    { key: 'entry', limit: 2 * KB, why: `The trigger of this configuration plus Vite's preload helper. Measured 1.59 KB. ${RESET}` },
     { key: 'rvfc', limit: 2.5 * KB, why: `The requestVideoFrameCallback engine, a main-thread chunk loaded on its first run. Design estimate 2.5 KB; measured 2.19 KB. ${RESET}` },
   ],
   all: [
     { key: 'trigger', limit: 1.5 * KB, why: `The default trigger plus the mp4box, mediabunny and rvfc descriptors. Measured 1.02 KB. ${RESET}` },
+    { key: 'entry', limit: 2.5 * KB, why: `The trigger of this configuration plus Vite's preload helper. Measured 1.92 KB. ${RESET}` },
     { key: 'client', limit: 3 * KB, why: `As in the default configuration. Measured 2.71 KB. ${RESET}` },
     { key: 'worker:own.worker', limit: 4.5 * KB, why: `As in the default configuration. Measured 4.08 KB. ${RESET}` },
     { key: 'worker:mp4box.worker', limit: 5 * KB, why: `As in the mp4box configuration. Measured 4.22 KB. ${RESET}` },
@@ -70,12 +77,14 @@ export const BUDGETS = {
   ],
   'standalone-url': [
     { key: 'trigger', limit: 1 * KB, why: `The lazyProbeClient stub in the host entry chunk, as in the custom configuration. The asset URL of the standalone file is host code and is not counted. Measured 0.71 KB. ${RESET}` },
+    { key: 'entry', limit: 2 * KB, why: `The lazyProbeClient stub, Vite's preload helper and the host's asset URL of the standalone file. Measured 1.46 KB. ${RESET}` },
     { key: 'client', limit: 3 * KB, why: `As in the custom configuration. Measured 2.56 KB. ${RESET}` },
     { key: 'worker:own.worker', limit: 35.5 * KB, why: `dist/standalone/own.worker.js, which Vite copies unchanged as an asset for the ?url import and the host starts as a classic worker. Measured 32.04 KB, the standalone row below. ${RESET}` },
     { key: 'firstMp4', limit: 38.5 * KB, why: `What the first MP4 loads with the standalone worker: the probe client and the one-file worker. It suits a host whose workers must stay classic scripts. Measured 34.60 KB. ${RESET}` },
   ],
   'iife-nosplit': [
     { key: 'trigger', limit: 1 * KB, why: `As in the default configuration. Measured 0.67 KB. ${RESET}` },
+    { key: 'entry', limit: 2 * KB, why: `As in the default configuration. Measured 1.40 KB. ${RESET}` },
     { key: 'worker:own.worker', limit: 35.5 * KB, why: `With worker.format iife and codeSplitting false the own worker is one file: both parsers, the statistics and the rate profile core are inlined. Design estimate 35.0 KB; measured 32.11 KB. ${RESET}` },
   ],
 };
@@ -84,6 +93,7 @@ export const STANDALONE_BUDGET = { limit: 35.5 * KB, why: `dist/standalone/own.w
 
 const LABELS = {
   trigger: 'critical path (package code in the entry chunk)',
+  entry: 'entry chunk with the preload helper',
   client: 'probe client (lazy)',
   isobmff: 'ISO BMFF parser (in the own worker)',
   matroska: 'Matroska parser (in the own worker)',
@@ -365,7 +375,7 @@ export function renderMarkdown(matrix) {
   );
   out.push('');
   out.push(
-    'The critical path is the package code inside the host entry chunk, cut out of the entry chunk by its hidden sourcemap: what a host pays before any file is picked. Vite adds its preload helper to the entry chunk of any app with a dynamic import; it is listed separately because a host that already code-splits has it anyway. Everything else loads lazily, on the first file or the first engine run.',
+    'The critical path is the package code inside the host entry chunk, cut out of the entry chunk by its hidden sourcemap: what a host pays before any file is picked. Vite adds its preload helper to the entry chunk of any app with a dynamic import; it is listed and budgeted separately because a host that already code-splits has it anyway. Everything else loads lazily, on the first file or the first engine run.',
   );
   out.push('');
   out.push('## Configurations');

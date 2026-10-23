@@ -2,7 +2,7 @@
 
 What the package adds to a Vite 8.3.5 app in each configuration, measured by `scripts/size-matrix.mjs` on production builds of the consumer fixtures in `tests/consumers/fixtures/`. Each fixture installs the packed tarball (video-fps-probe-0.0.0.tgz) with mp4box 2.4.1 and mediabunny 1.62.0 into a directory outside the repository, so nothing resolves to the source tree. KB means 1000 bytes; every size is gzip level 9 per file, and totals are sums of files.
 
-The critical path is the package code inside the host entry chunk, cut out of the entry chunk by its hidden sourcemap: what a host pays before any file is picked. Vite adds its preload helper to the entry chunk of any app with a dynamic import; it is listed separately because a host that already code-splits has it anyway. Everything else loads lazily, on the first file or the first engine run.
+The critical path is the package code inside the host entry chunk, cut out of the entry chunk by its hidden sourcemap: what a host pays before any file is picked. Vite adds its preload helper to the entry chunk of any app with a dynamic import; it is listed and budgeted separately because a host that already code-splits has it anyway. Everything else loads lazily, on the first file or the first engine run.
 
 ## Configurations
 
@@ -28,6 +28,7 @@ The host's worker option decides the first MP4: 23.26 KB with `worker: { format:
 | Configuration | Budget | Limit | Actual | Headroom | Status |
 |---|---|---:|---:|---:|---|
 | default | critical path (package code in the entry chunk) | 1.00 KB | 0.67 KB | 0.33 KB | ok |
+| default | entry chunk with the preload helper | 2.00 KB | 1.40 KB | 0.60 KB | ok |
 | default | probe client (lazy) | 3.00 KB | 2.67 KB | 0.34 KB | ok |
 | default | own.worker entry | 4.50 KB | 4.08 KB | 0.42 KB | ok |
 | default | ISO BMFF parser (in the own worker) | 13.50 KB | 12.21 KB | 1.29 KB | ok |
@@ -36,23 +37,29 @@ The host's worker option decides the first MP4: 23.26 KB with `worker: { format:
 | default | first MP4 analysis, lazy total | 24.00 KB | 23.26 KB | 0.74 KB | ok |
 | default | all own paths, lazy total | 40.00 KB | 36.24 KB | 3.76 KB | ok |
 | zero-config | critical path (package code in the entry chunk) | 1.00 KB | 0.67 KB | 0.33 KB | ok |
+| zero-config | entry chunk with the preload helper | 2.00 KB | 1.40 KB | 0.60 KB | ok |
 | zero-config | own.worker entry | 35.50 KB | 32.11 KB | 3.39 KB | ok |
 | zero-config | first MP4 analysis, lazy total | 38.50 KB | 34.77 KB | 3.73 KB | ok |
 | custom | critical path (package code in the entry chunk) | 1.00 KB | 0.68 KB | 0.32 KB | ok |
+| custom | entry chunk with the preload helper | 2.00 KB | 1.47 KB | 0.53 KB | ok |
 | custom | probe client (lazy) | 3.00 KB | 2.56 KB | 0.44 KB | ok |
 | custom | fps.worker entry | 4.50 KB | 4.08 KB | 0.42 KB | ok |
 | custom | first MP4 analysis, lazy total | 24.00 KB | 23.15 KB | 0.85 KB | ok |
 | mp4box | critical path (package code in the entry chunk) | 1.00 KB | 0.90 KB | 0.10 KB | ok |
+| mp4box | entry chunk with the preload helper | 2.00 KB | 1.75 KB | 0.25 KB | ok |
 | mp4box | mp4box.worker entry | 5.00 KB | 4.22 KB | 0.78 KB | ok |
 | mp4box | mp4box engine chunk | 49.50 KB | 44.77 KB | 4.73 KB | ok |
 | mp4box | shared engine chunk | 2.00 KB | - | - | not built |
 | mediabunny | critical path (package code in the entry chunk) | 1.00 KB | 0.90 KB | 0.10 KB | ok |
+| mediabunny | entry chunk with the preload helper | 2.00 KB | 1.75 KB | 0.25 KB | ok |
 | mediabunny | mediabunny.worker entry | 5.00 KB | 4.12 KB | 0.88 KB | ok |
 | mediabunny | mediabunny engine chunk | 59.50 KB | 53.87 KB | 5.63 KB | ok |
 | mediabunny | shared engine chunk | 2.00 KB | - | - | not built |
 | rvfc | critical path (package code in the entry chunk) | 1.00 KB | 0.77 KB | 0.23 KB | ok |
+| rvfc | entry chunk with the preload helper | 2.00 KB | 1.59 KB | 0.41 KB | ok |
 | rvfc | rVFC engine (main thread) | 2.50 KB | 2.19 KB | 0.31 KB | ok |
 | all | critical path (package code in the entry chunk) | 1.50 KB | 1.02 KB | 0.48 KB | ok |
+| all | entry chunk with the preload helper | 2.50 KB | 1.92 KB | 0.58 KB | ok |
 | all | probe client (lazy) | 3.00 KB | 2.71 KB | 0.29 KB | ok |
 | all | own.worker entry | 4.50 KB | 4.08 KB | 0.42 KB | ok |
 | all | mp4box.worker entry | 5.00 KB | 4.22 KB | 0.78 KB | ok |
@@ -68,10 +75,12 @@ The host's worker option decides the first MP4: 23.26 KB with `worker: { format:
 | all | shared engine chunk | 2.00 KB | - | - | not built |
 | all | shared engine chunk (main thread, inline mode) | 2.00 KB | 1.51 KB | 0.49 KB | ok |
 | standalone-url | critical path (package code in the entry chunk) | 1.00 KB | 0.71 KB | 0.29 KB | ok |
+| standalone-url | entry chunk with the preload helper | 2.00 KB | 1.46 KB | 0.54 KB | ok |
 | standalone-url | probe client (lazy) | 3.00 KB | 2.56 KB | 0.45 KB | ok |
 | standalone-url | own.worker entry | 35.50 KB | 32.04 KB | 3.46 KB | ok |
 | standalone-url | first MP4 analysis, lazy total | 38.50 KB | 34.60 KB | 3.90 KB | ok |
 | iife-nosplit | critical path (package code in the entry chunk) | 1.00 KB | 0.67 KB | 0.33 KB | ok |
+| iife-nosplit | entry chunk with the preload helper | 2.00 KB | 1.40 KB | 0.60 KB | ok |
 | iife-nosplit | own.worker entry | 35.50 KB | 32.11 KB | 3.39 KB | ok |
 | standalone | own.worker.js | 35.50 KB | 32.04 KB | 3.46 KB | ok |
 
@@ -91,7 +100,8 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 
 ## Why these limits
 
-- **default, critical path (package code in the entry chunk)** (1.00 KB): User-facing promise of the package, accepted by the owner on 2026-10-23 when the demo budget moved to 101.5 KB: the default configuration adds at most 1 KB to the critical path and the first MP4 loads at most 24 KB lazily. This row is the first half: the package code in the host entry chunk (the lazyProbe stub, ProbeError and the engine list), cut out of the entry chunk by its sourcemap. Vite's preload helper is not counted, because every Vite app with a dynamic import already has it. Design estimate 1.0 KB; measured 0.67 KB, and measured plus 10 percent rounded up to 0.5 KB is also 1.0 KB.
+- **default, critical path (package code in the entry chunk)** (1.00 KB): User-facing promise of the package, accepted by the owner on 2026-10-23 when the demo budget moved to 101.5 KB: the default configuration adds at most 1 KB to the critical path and the first MP4 loads at most 24 KB lazily. This row is the first half: the package code in the host entry chunk (the lazyProbe stub, ProbeError and the engine list), cut out of the entry chunk by its sourcemap. Vite's preload helper is not counted here, because every Vite app with a dynamic import already has it; the entry chunk row counts it. Design estimate 1.0 KB; measured 0.67 KB, and measured plus 10 percent rounded up to 0.5 KB is also 1.0 KB.
+- **default, entry chunk with the preload helper** (2.00 KB): The whole host entry chunk: the package code of the critical path row, Vite's preload helper, which Vite adds to the entry chunk of any app with a dynamic import, and the one line of host code. The critical path row stays the package promise; this row also catches what the package makes Vite add next to its code, such as a longer preload dependency list per dynamic import. Measured 1.40 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **default, probe client (lazy)** (3.00 KB): The probe client fetched on the first file: createProbe, engine routing, the worker pool and the own descriptor with the worker literal. Design estimate 3.5 KB; measured 2.67 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **default, own.worker entry** (4.50 KB): The prebuilt own worker entry: reader, sniffing, options and the worker runtime. Both parsers and the statistics are lazy chunks of this worker. Design estimate 8.0 KB; measured 4.08 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **default, ISO BMFF parser (in the own worker)** (13.50 KB): The own MP4 and MOV parser chunk of the own worker. Design estimate 13.5 KB; measured 12.21 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
@@ -100,23 +110,29 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 - **default, first MP4 analysis, lazy total** (24.00 KB): User-facing promise of the package, accepted by the owner on 2026-10-23 when the demo budget moved to 101.5 KB: the default configuration adds at most 1 KB to the critical path and the first MP4 loads at most 24 KB lazily. This row is the second half: everything the first MP4 or MOV file loads lazily, which is the probe client, the own worker entry, the statistics chunk (requested in parallel with the parser) and the ISO BMFF parser. Measured 23.26 KB. Measured plus 10 percent would be 26.0 KB, so the promise stays the limit instead: it is the tighter one and it is what the README states.
 - **default, all own paths, lazy total** (40.00 KB): Every own path: the probe client, the own worker entry, the statistics, both parsers and the rate profile core. Design estimate 37.0 KB; measured 36.24 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **zero-config, critical path (package code in the entry chunk)** (1.00 KB): As in the default configuration: the worker option does not change the entry chunk. Measured 0.67 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
+- **zero-config, entry chunk with the preload helper** (2.00 KB): As in the default configuration: the worker option does not change the entry chunk. Measured 1.40 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **zero-config, own.worker entry** (35.50 KB): A Vite 8 app with no worker option builds workers with Vite's default format, 'iife', which cannot split, so the own worker is one file: both parsers, the statistics and the rate profile core are inlined. Measured 32.11 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **zero-config, first MP4 analysis, lazy total** (38.50 KB): What the first MP4 loads in a Vite 8 app that keeps the default worker format: the probe client and the one-file own worker. The 24 KB of the default configuration needs worker.format 'es' in the host's Vite config. Measured 34.77 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **custom, critical path (package code in the entry chunk)** (1.00 KB): The lazyProbeClient stub in the host entry chunk. The host's worker literal is host code and is not counted. Design estimate 1.0 KB; measured 0.68 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
+- **custom, entry chunk with the preload helper** (2.00 KB): The lazyProbeClient stub, Vite's preload helper and the host's worker literal. Measured 1.47 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **custom, probe client (lazy)** (3.00 KB): The probe client fetched on the first file, without the own descriptor and its worker literal, which the host replaces with its own worker. Measured 2.56 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **custom, fps.worker entry** (4.50 KB): The host worker built from video-fps-probe/worker-runtime, serving own only. Design estimate 8.5 KB; measured 4.08 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **custom, first MP4 analysis, lazy total** (24.00 KB): A host worker that serves own holds the same code as the prebuilt own worker, so the 24 KB promise of the default configuration applies to the first MP4 here too. Measured 23.15 KB.
 - **mp4box, critical path (package code in the entry chunk)** (1.00 KB): The default trigger plus the mp4box descriptor and its worker literal. Design estimate the default plus 0.5 KB; measured 0.90 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
+- **mp4box, entry chunk with the preload helper** (2.00 KB): The trigger of this configuration plus Vite's preload helper. Measured 1.75 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **mp4box, mp4box.worker entry** (5.00 KB): The prebuilt mp4box worker entry, which serves own and mp4box. Design estimate 8.5 KB; measured 4.22 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **mp4box, mp4box engine chunk** (49.50 KB): The mp4box.js engine chunk of the mp4box worker: the mp4box library, the adapter and the counting code the engines share. Design estimate 48.0 KB; measured 44.77 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **mp4box, shared engine chunk** (2.00 KB): Code the comparison engines share, when it is a chunk of its own. Not built: each prebuilt engine worker serves one comparison engine, so this code is part of the engine chunk. The design estimate of 2.0 KB stays the limit, so a split that grows it is caught.
 - **mediabunny, critical path (package code in the entry chunk)** (1.00 KB): The default trigger plus the mediabunny descriptor and its worker literal. Design estimate the default plus 0.5 KB; measured 0.90 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
+- **mediabunny, entry chunk with the preload helper** (2.00 KB): The trigger of this configuration plus Vite's preload helper. Measured 1.75 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **mediabunny, mediabunny.worker entry** (5.00 KB): The prebuilt mediabunny worker entry, which serves own and mediabunny. Measured 4.12 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **mediabunny, mediabunny engine chunk** (59.50 KB): The mediabunny engine chunk of the mediabunny worker, with the counting code the engines share. Design estimate 58.0 KB; measured 53.87 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **mediabunny, shared engine chunk** (2.00 KB): Code the comparison engines share, when it is a chunk of its own. Not built, for the same reason as in the mp4box configuration. The design estimate of 2.0 KB stays the limit.
 - **rvfc, critical path (package code in the entry chunk)** (1.00 KB): The default trigger plus the rvfc descriptor, which has no worker literal. Measured 0.77 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
+- **rvfc, entry chunk with the preload helper** (2.00 KB): The trigger of this configuration plus Vite's preload helper. Measured 1.59 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **rvfc, rVFC engine (main thread)** (2.50 KB): The requestVideoFrameCallback engine, a main-thread chunk loaded on its first run. Design estimate 2.5 KB; measured 2.19 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **all, critical path (package code in the entry chunk)** (1.50 KB): The default trigger plus the mp4box, mediabunny and rvfc descriptors. Measured 1.02 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
+- **all, entry chunk with the preload helper** (2.50 KB): The trigger of this configuration plus Vite's preload helper. Measured 1.92 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **all, probe client (lazy)** (3.00 KB): As in the default configuration. Measured 2.71 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **all, own.worker entry** (4.50 KB): As in the default configuration. Measured 4.08 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **all, mp4box.worker entry** (5.00 KB): As in the mp4box configuration. Measured 4.22 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
@@ -132,10 +148,12 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 - **all, shared engine chunk** (2.00 KB): As in the mp4box and mediabunny configurations: each prebuilt engine worker serves one comparison engine, so no worker builds this chunk. The design estimate of 2.0 KB stays the limit.
 - **all, shared engine chunk (main thread, inline mode)** (2.00 KB): The counting code mp4box and mediabunny share, which becomes a main-thread chunk of its own when both are registered. It loads only when an engine runs in this thread (worker: 'inline', SSR, no Worker global). Measured 1.51 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **standalone-url, critical path (package code in the entry chunk)** (1.00 KB): The lazyProbeClient stub in the host entry chunk, as in the custom configuration. The asset URL of the standalone file is host code and is not counted. Measured 0.71 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
+- **standalone-url, entry chunk with the preload helper** (2.00 KB): The lazyProbeClient stub, Vite's preload helper and the host's asset URL of the standalone file. Measured 1.46 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **standalone-url, probe client (lazy)** (3.00 KB): As in the custom configuration. Measured 2.56 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **standalone-url, own.worker entry** (35.50 KB): dist/standalone/own.worker.js, which Vite copies unchanged as an asset for the ?url import and the host starts as a classic worker. Measured 32.04 KB, the standalone row below. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **standalone-url, first MP4 analysis, lazy total** (38.50 KB): What the first MP4 loads with the standalone worker: the probe client and the one-file worker. It suits a host whose workers must stay classic scripts. Measured 34.60 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **iife-nosplit, critical path (package code in the entry chunk)** (1.00 KB): As in the default configuration. Measured 0.67 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
+- **iife-nosplit, entry chunk with the preload helper** (2.00 KB): As in the default configuration. Measured 1.40 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **iife-nosplit, own.worker entry** (35.50 KB): With worker.format iife and codeSplitting false the own worker is one file: both parsers, the statistics and the rate profile core are inlined. Design estimate 35.0 KB; measured 32.11 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **standalone, own.worker.js** (35.50 KB): dist/standalone/own.worker.js: the own worker as one minified IIFE file with no imports, built by rolldown. Design estimate 35.0 KB; measured 32.04 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 
