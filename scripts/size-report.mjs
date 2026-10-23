@@ -18,9 +18,10 @@ export const BUDGETS = {
   },
   worker: {
     label: 'worker entry (core + glue)',
-    limit: 7.5 * KB,
+    limit: 8.5 * KB,
     required: true,
-    why: 'Sniffing, reader, options, timeline statistics, message glue and the code the lazy parsers and comparison engines share. Both own parsers are lazy chunks. Measured 6.56 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB.',
+    entry: 'analyze.worker',
+    why: 'Sniffing, reader, options, timeline statistics, message glue and the code the lazy parsers and comparison engines share. Both own parsers are lazy chunks. Budgeted by entry name: only the analyze.worker file counts, and any other worker file fails as unbudgeted. Re-set once before the package work: measured 7.37 KB with 0.13 KB of headroom left, while loading the statistics module next to each parser and the worker runtime (versioned protocol, warm requests, per-engine container gate) both grow this entry. Limit is that measurement plus 10 percent, rounded up to 0.5 KB, which is also the 8.5 KB a consumer custom worker gets.',
   },
   isobmff: {
     label: 'ISO BMFF parser chunk',
@@ -45,6 +46,12 @@ export const BUDGETS = {
     limit: 2 * KB,
     required: false,
     why: 'Segmentation, anomalies, uneven flag and sparkline buckets. Fetched by the worker only for a timeline with unequal frame rates (VFR), after the parser chunk. Measured 1.79 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB. Not required: when the chunk is merged into another one, that chunk budget catches the growth.',
+  },
+  client: {
+    label: 'lazy probe client',
+    limit: 3.5 * KB,
+    required: false,
+    why: 'Probe client, engine descriptors and worker pool in one lazy chunk (probe-*), fetched by the main chunk before the first analysis. Estimate until the chunk is first built; then reset to measured plus 10 percent, rounded up to 0.5 KB. Not required: until the client chunk exists the pool is part of the main chunk.',
   },
   rateProfile: {
     label: 'lazy rate profile panel (UI)',
@@ -80,7 +87,8 @@ export const BUDGETS = {
 
 const USAGE = `Usage: node scripts/size-report.mjs [distDir=dist] [--check] [--out <dir>] [--self-test]
 
-  --check       exit 1 when a budget is exceeded or a required chunk (main, worker entry, either parser) is missing
+  --check       exit 1 when a budget is exceeded, a required chunk (main, worker entry, either parser) is missing,
+                a worker file has no budget, or a parser or engine chunk waits for a chunk its worker does not request
   --out <dir>   where size.md and size.json are written (default report)
   --self-test   check chunk discovery and budgets on synthetic builds and exit
 `;
@@ -235,6 +243,7 @@ function closureOf(start, fileSet, texts) {
 }
 
 const LAZY_BY_NAME = [
+  ['client', /^probe-/i],
   ['rvfc', /rvfc/i],
   ['mp4box', /mp4box/i],
   ['mediabunny', /mediabunny/i],
@@ -247,6 +256,47 @@ const LAZY_BY_NAME = [
 const ENGINE_KINDS = new Set(['mp4box', 'mediabunny', 'engine-shared']);
 const PARSER_KINDS = new Set(['isobmff', 'matroska', 'segments', 'parser-shared']);
 const PATH_ENTRIES = ['isobmff', 'matroska', 'segments'];
+const CHAIN_KINDS = new Set(['isobmff', 'matroska', 'segments', 'mp4box', 'mediabunny']);
+const WORKER_BUDGETS = Object.entries(BUDGETS).filter(([, b]) => b.entry);
+
+export function workerBudgetOf(file) {
+  const name = basename(file);
+  return WORKER_BUDGETS.find(([, b]) => name.startsWith(`${b.entry}-`) || name.startsWith(`${b.entry}.`))?.[0] ?? null;
+}
+
+function reachableFrom(start, fileSet, texts, stop) {
+  const seen = new Set();
+  const stack = [start];
+  while (stack.length > 0) {
+    const f = stack.pop();
+    const refs = scanReferences(texts.get(f) ?? '', f, fileSet);
+    for (const dep of [...refs.staticImports, ...refs.dynamicImports]) {
+      if (seen.has(dep) || dep === start || stop.has(dep)) continue;
+      seen.add(dep);
+      stack.push(dep);
+    }
+  }
+  return [...seen];
+}
+
+export function requestChains({ files, kinds, workers, texts }) {
+  const fileSet = new Set(files);
+  const problems = [];
+  for (const w of workers) {
+    const refs = scanReferences(texts.get(w) ?? '', w, fileSet);
+    const ready = new Set([w, ...closureOf(w, fileSet, texts), ...refs.dynamicImports]);
+    for (const chunk of reachableFrom(w, fileSet, texts, workers)) {
+      const kind = kinds.get(chunk);
+      if (!CHAIN_KINDS.has(kind)) continue;
+      for (const dep of closureOf(chunk, fileSet, texts)) {
+        if (ready.has(dep)) continue;
+        if (ENGINE_KINDS.has(kind) && kinds.get(dep) === 'engine-shared') continue;
+        problems.push(`request chain: ${chunk} (${kind}) waits for ${dep}, which ${w} does not request in parallel`);
+      }
+    }
+  }
+  return problems;
+}
 
 export function discover(distDir) {
   const files = walk(distDir);
@@ -355,11 +405,12 @@ export function discover(distDir) {
   }
   const entryDeps = new Map();
   for (const f of js) if (PATH_ENTRIES.includes(kinds.get(f))) entryDeps.set(f, closureOf(f, fileSet, texts));
-  return { files, kinds, method, workerMethod, notes, main, entryDeps };
+  const chains = requestChains({ files, kinds, workers, texts });
+  return { files, kinds, method, workerMethod, notes, main, entryDeps, workers: [...workers], chains };
 }
 
 export function buildReport(distDir) {
-  const { files, kinds, method, workerMethod, notes, entryDeps } = discover(distDir);
+  const { files, kinds, method, workerMethod, notes, entryDeps, workers, chains } = discover(distDir);
   const chunks = files.map((file) => ({ file, kind: kinds.get(file), ...measure(readFileSync(join(distDir, file))) }));
   const byFile = new Map(chunks.map((c) => [c.file, c]));
   const ofKind = (wanted) => chunks.filter((c) => wanted.includes(c.kind));
@@ -374,7 +425,7 @@ export function buildReport(distDir) {
   const initial = totalOf(initialChunks);
   const afterChunks = (wanted) => {
     const entries = ofKind(wanted);
-    const extra = new Set(entries.map((c) => c.file));
+    const extra = new Set([...entries, ...ofKind(['client'])].map((c) => c.file));
     for (const p of entries) for (const dep of entryDeps.get(p.file) ?? []) extra.add(dep);
     for (const c of initialChunks) extra.delete(c.file);
     const list = [...initialChunks, ...[...extra].map((f) => byFile.get(f)).filter(Boolean)];
@@ -394,11 +445,16 @@ export function buildReport(distDir) {
     const list = ofKind([kind]);
     return evaluate(key, list.length > 0, totalOf(list).gzip, list.map((c) => c.file));
   };
+  const workerBudget = (key) => {
+    const list = workers.filter((f) => workerBudgetOf(f) === key).map((f) => byFile.get(f));
+    return evaluate(key, list.length > 0, totalOf(list).gzip, list.map((c) => c.file));
+  };
   const budgets = [
     ofKindBudget('main', 'main'),
-    ofKindBudget('worker', 'worker'),
+    ...WORKER_BUDGETS.map(([key]) => workerBudget(key)),
     ofKindBudget('isobmff', 'isobmff'),
     ofKindBudget('matroska', 'matroska'),
+    ofKindBudget('client', 'client'),
     ofKindBudget('rvfc', 'rvfc'),
     ofKindBudget('segments', 'segments'),
     ofKindBudget('rateProfile', 'rateProfile'),
@@ -407,9 +463,11 @@ export function buildReport(distDir) {
     evaluate('firstVfrMp4', firstVfrMp4.present, firstVfrMp4.total.gzip, firstVfrMp4.total.files),
     evaluate('firstMkv', firstMkv.present, firstMkv.total.gzip, firstMkv.total.files),
   ];
-  const failures = budgets.filter((b) => b.status === 'over' || b.status === 'missing');
+  const failures = budgets.filter((b) => b.status === 'over' || b.status === 'missing').map((b) => `${b.label}: ${b.status}`);
+  for (const w of workers) if (!workerBudgetOf(w)) failures.push(`unbudgeted worker ${w}`);
+  failures.push(...chains);
   const composites = { initial, firstMp4: firstMp4.total, firstVfrMp4: firstVfrMp4.total, firstMatroska: firstMkv.total };
-  return { distDir, method, workerMethod, notes, chunks, initial, composites, budgets, failures: failures.map((b) => `${b.label}: ${b.status}`) };
+  return { distDir, method, workerMethod, notes, chunks, initial, composites, budgets, chains, failures };
 }
 
 export function renderMarkdown(report, label) {
@@ -430,6 +488,10 @@ export function renderMarkdown(report, label) {
   }
   out.push('');
   out.push('The lazy mp4box and mediabunny comparison chunks (and the chunk they share) are reported but not budgeted.');
+  out.push('');
+  out.push(
+    `Request chain check: every static dependency of a parser or engine chunk is in its worker entry or requested by it in parallel (the chunk the engines share may follow the engine). ${report.chains.length === 0 ? 'No problems.' : report.chains.join('; ')}`,
+  );
   out.push('');
   out.push('## Why these limits');
   out.push('');
@@ -476,8 +538,8 @@ function runSelfTest() {
   const html = '<!doctype html><html><head><link rel="stylesheet" crossorigin href="./assets/index-C1.css"><script type="module" crossorigin src="./assets/index-M1.js"></script></head><body></body></html>';
   const mainText = (extra) =>
     `const w=new Worker(new URL("assets/analyze.worker-W1.js",import.meta.url),{type:"module"});const a=()=>import("./rvfc-R1.js");const b=()=>import("./RateProfile-P1.js");const h=()=>import("./deviceInfo-V1.js");${extra}`;
-  const workerText = (extra) =>
-    `self.onmessage=e=>{postMessage(1)};const a=()=>import(\`./isobmff-I1.js\`);const b=()=>import(\`./matroska-K1.js\`);const c=()=>import(\`./mp4box-B1.js\`);const d=()=>import(\`./mediabunny-D1.js\`);const g=()=>import(\`./segments-G1.js\`);${extra}`;
+  const workerText = (extra, parallel = []) =>
+    `self.onmessage=e=>{postMessage(1)};const a=()=>import(\`./isobmff-I1.js\`);const b=()=>import(\`./matroska-K1.js\`);const c=()=>import(\`./mp4box-B1.js\`);const d=()=>import(\`./mediabunny-D1.js\`);const g=()=>import(\`./segments-G1.js\`);${parallel.map((f) => `import(\`./${f}\`);`).join('')}${extra}`;
   const sizesOf = (over = {}) => ({
     main: 30_000,
     worker: 5_000,
@@ -489,13 +551,19 @@ function runSelfTest() {
     css: 100,
     isobmffShared: 0,
     segmentsShared: 0,
+    client: 0,
     ...over,
   });
-  const build = (name, overrides, { manifest = true, withHtml = true } = {}) => {
+  const build = (name, overrides, { manifest = true, withHtml = true, parallel = true, extraWorker = false } = {}) => {
     const sizes = sizesOf(overrides);
     const dir = join(root, name);
-    write(dir, 'assets/index-M1.js', mainText(filler(sizes.main)));
-    write(dir, 'assets/analyze.worker-W1.js', workerText(filler(sizes.worker)));
+    const preload = parallel ? [sizes.isobmffShared > 0 && 'shared-P1.js', sizes.segmentsShared > 0 && 'common-S1.js'].filter(Boolean) : [];
+    const client = sizes.client > 0 ? 'const l=()=>import("./probe-L1.js");' : '';
+    const other = extraWorker ? 'const o=new Worker(new URL("assets/other.worker-O1.js",import.meta.url),{type:"module"});' : '';
+    write(dir, 'assets/index-M1.js', mainText(`${client}${other}${filler(sizes.main)}`));
+    write(dir, 'assets/analyze.worker-W1.js', workerText(filler(sizes.worker), preload));
+    if (client) write(dir, 'assets/probe-L1.js', `import{a as e}from"./index-M1.js";${filler(sizes.client)}`);
+    if (other) write(dir, 'assets/other.worker-O1.js', `self.onmessage=e=>{postMessage(1)};${filler(1_000)}`);
     const shared = sizes.isobmffShared > 0;
     write(dir, 'assets/isobmff-I1.js', `import{a as e}from"./analyze.worker-W1.js";${shared ? 'import{b as f}from"./shared-P1.js";' : ''}${filler(sizes.isobmff)}`);
     if (shared) write(dir, 'assets/shared-P1.js', filler(sizes.isobmffShared));
@@ -647,6 +715,41 @@ function runSelfTest() {
     expectEq('missing parser fails', noMkv.failures.length, 2);
     expectEq('missing Matroska parser leaves the first VFR MP4 analysis ok', statusOf(noMkv, 'firstVfrMp4'), 'ok');
     expectEq('other parser unaffected', statusOf(noMkv, 'firstMp4'), 'ok');
+    const withClient = buildReport(build('client', { client: 2_000 }));
+    expectEq('client: kind', withClient.chunks.find((c) => c.file === 'assets/probe-L1.js')?.kind, 'client');
+    expectEq('client: budget ok', statusOf(withClient, 'client'), 'ok');
+    expectEq('client: not part of initial', withClient.composites.initial.files.includes('assets/probe-L1.js'), false);
+    expectEq('client: part of the first MP4 analysis', withClient.composites.firstMp4.files.includes('assets/probe-L1.js'), true);
+    expectEq('client: part of the first Matroska analysis', withClient.composites.firstMatroska.files.includes('assets/probe-L1.js'), true);
+    expectEq('client: no failures', withClient.failures.length, 0);
+    expectEq('client absent is not a failure', statusOf(buildReport(build('no-client', {})), 'client'), 'not built');
+    const overClient = buildReport(build('client-over', { client: limit('client') + 1_000 }));
+    expectEq('client over is a failure', statusOf(overClient, 'client'), 'over');
+    const twoWorkers = buildReport(build('two-workers', {}, { extraWorker: true }));
+    expectEq('extra worker: classified as a worker', twoWorkers.chunks.find((c) => c.file === 'assets/other.worker-O1.js')?.kind, 'worker');
+    expectEq('extra worker: not summed into the worker budget', twoWorkers.budgets.find((b) => b.key === 'worker').files.join(','), 'assets/analyze.worker-W1.js');
+    expectEq('extra worker: fails as unbudgeted', twoWorkers.failures.includes('unbudgeted worker assets/other.worker-O1.js'), true);
+    expectEq('extra worker: only that failure', twoWorkers.failures.length, 1);
+    const serial = buildReport(build('serial-shared', { isobmffShared: 2_000, segmentsShared: 1_500 }, { parallel: false }));
+    const chainsOf = (r, chunk) => r.chains.filter((c) => c.startsWith(`request chain: ${chunk} `));
+    expectEq('serial: parser waiting for an unrequested shared chunk fails', chainsOf(serial, 'assets/isobmff-I1.js').length, 1);
+    expectEq('serial: segments waiting for an unrequested shared chunk fails', chainsOf(serial, 'assets/segments-G1.js').length, 1);
+    expectEq('serial: chain problems are failures', serial.failures.filter((f) => f.startsWith('request chain:')).length, 2);
+    expectEq('serial: budgets unaffected', serial.budgets.every((b) => b.status !== 'over' && b.status !== 'missing'), true);
+    expectEq('parallel: no chain problems when the worker requests the shared chunks', buildReport(build('parallel-shared', { isobmffShared: 2_000, segmentsShared: 1_500 })).chains.length, 0);
+    expectEq('engines: the chunk the engines share may follow the engine', serial.chains.some((c) => c.includes('counting-C1.js')), false);
+    const engineCore = join(root, 'engine-core');
+    write(engineCore, 'assets/index-M1.js', mainText(filler(1_000)));
+    write(engineCore, 'assets/analyze.worker-W1.js', workerText(filler(1_000)));
+    write(engineCore, 'assets/isobmff-I1.js', `import{a as e}from"./analyze.worker-W1.js";import{b as f}from"./core-X1.js";${filler(1_000)}`);
+    write(engineCore, 'assets/matroska-K1.js', `import{a as e}from"./analyze.worker-W1.js";${filler(1_000)}`);
+    write(engineCore, 'assets/mp4box-B1.js', `import{a as e}from"./core-X1.js";${filler(1_000)}`);
+    write(engineCore, 'assets/mediabunny-D1.js', `import{a as e}from"./analyze.worker-W1.js";${filler(1_000)}`);
+    write(engineCore, 'assets/core-X1.js', filler(1_000));
+    write(engineCore, 'index.html', html);
+    const engineChain = buildReport(engineCore);
+    expectEq('engines: a chunk shared with a parser is a chain problem for the engine', chainsOf(engineChain, 'assets/mp4box-B1.js').length, 1);
+    expectEq('engines: and for the parser', chainsOf(engineChain, 'assets/isobmff-I1.js').length, 1);
     const noWorkerDir = join(root, 'noworker');
     write(noWorkerDir, 'assets/index-M1.js', `console.log(1);${filler(1000)}`);
     write(noWorkerDir, 'index.html', html);
