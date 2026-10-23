@@ -7,6 +7,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 import { gzipSync } from 'node:zlib';
+import { discover } from '../size-report.mjs';
 import { AppPage } from './app.mjs';
 import { findBrowser, killAllBrowsers, launchBrowser } from './browser.mjs';
 import { mimeOf, resolveRequest } from './server.mjs';
@@ -40,12 +41,12 @@ const PROFILES = [
 const SCENARIOS = {
   host: [
     { id: 'cold', label: 'nothing loaded before the pick' },
-    { id: 'prefetch', label: 'fetch() of the glue, worker entry and ISO BMFF chunk before the pick (HTTP cache warm)' },
+    { id: 'prefetch', label: 'fetch() of the glue, worker entry, ISO BMFF and statistics chunks before the pick (HTTP cache warm)' },
     { id: 'prewarm', label: 'prewarm hook before the pick: glue imported, worker spawned, ISO BMFF chunk loaded and run once on a 16-byte ftyp blob' },
   ],
   app: [
     { id: 'cold', label: 'nothing loaded before the pick' },
-    { id: 'prefetch', label: 'fetch() of the worker entry and ISO BMFF chunk before the pick (HTTP cache warm)' },
+    { id: 'prefetch', label: 'fetch() of the probe client, worker entry, ISO BMFF and statistics chunks before the pick (HTTP cache warm)' },
     { id: 'prewarm', label: 'a tiny MP4 (edge_single_frame.mp4, 4 KB) picked first, which spawns the worker and loads the parser' },
   ],
 };
@@ -144,13 +145,21 @@ const gz = (buf) => gzipSync(buf, { level: 9 });
 function distChunks() {
   const assets = join(DIST, 'assets');
   if (!existsSync(join(DIST, 'index.html')) || !existsSync(assets)) throw new Error('demo/dist/ is missing: run npm run build first');
-  const files = readdirSync(assets);
-  const pick = (prefix) => {
-    const f = files.find((x) => x.startsWith(prefix) && x.endsWith('.js'));
-    if (!f) throw new Error(`demo/dist/assets has no ${prefix}*.js`);
-    return f;
+  const { kinds } = discover(DIST);
+  const pick = (kind, required = true) => {
+    const f = [...kinds].find(([file, k]) => k === kind && file.endsWith('.js'))?.[0];
+    if (!f && required) throw new Error(`demo/dist/assets has no ${kind} chunk`);
+    return f ? basename(f) : null;
   };
-  return { entry: pick('probe.worker-'), isobmff: pick('isobmff-'), matroska: pick('matroska-'), main: pick('index-') };
+  return {
+    entry: pick('worker'),
+    client: pick('client', false),
+    isobmff: pick('isobmff'),
+    matroska: pick('matroska'),
+    stats: pick('parser-shared', false),
+    segments: pick('segments', false),
+    main: pick('main'),
+  };
 }
 
 const GLUE_ID = 'fps-glue';
@@ -654,7 +663,8 @@ async function latencyRun(bench, kind, profile, scenario) {
   const preMark = server.mark();
   let pre = null;
   if (scenario === 'prefetch') {
-    const urls = [...(kind === 'host' ? ['./assets/fps-glue.js'] : []), `./assets/${chunks.entry}`, `./assets/${chunks.isobmff}`];
+    const first = kind === 'host' ? ['./assets/fps-glue.js'] : chunks.client ? [`./assets/${chunks.client}`] : [];
+    const urls = [...first, `./assets/${chunks.entry}`, `./assets/${chunks.isobmff}`, ...(chunks.stats ? [`./assets/${chunks.stats}`] : [])];
     pre = await page.eval(`window.__mt.prefetch(${JSON.stringify(urls)})`);
   } else if (scenario === 'prewarm') {
     pre = kind === 'host' ? await page.eval('window.__harness.prewarm()') : { ms: (await bench.pick([TINY])).wallMs };
@@ -1050,7 +1060,9 @@ function sizes(chunks, glue) {
     row('entry', `worker entry (${chunks.entry})`, file(chunks.entry)),
     row('isobmff', `ISO BMFF parser chunk (${chunks.isobmff})`, file(chunks.isobmff)),
     row('matroska', `Matroska parser chunk (${chunks.matroska})`, file(chunks.matroska)),
+    ...(chunks.stats ? [row('stats', `shared statistics chunk (${chunks.stats}), requested with either parser`, file(chunks.stats))] : []),
     row('main', `PoC main chunk, React + UI (${chunks.main}), not shipped in the integration`, file(chunks.main)),
+    ...(chunks.client ? [row('client', `PoC probe client (${chunks.client}), fetched by the app on the first pick, not shipped in the integration`, file(chunks.client))] : []),
   ];
 }
 
@@ -1073,8 +1085,9 @@ function environment(version, opts, pauseMs) {
 
 function model(data) {
   const S = Object.fromEntries(data.sizes.map((s) => [s.id, s]));
-  const lazyMp4 = S.glue.gzip + S.entry.gzip + S.isobmff.gzip;
-  const lazyMkv = S.glue.gzip + S.entry.gzip + S.matroska.gzip;
+  const stats = S.stats?.gzip ?? 0;
+  const lazyMp4 = S.glue.gzip + S.entry.gzip + S.isobmff.gzip + stats;
+  const lazyMkv = S.glue.gzip + S.entry.gzip + S.matroska.gzip + stats;
   const lazyBoth = lazyMp4 + S.matroska.gzip;
   const pct = (a, b) => (100 * a) / b;
   const out = {
@@ -1262,11 +1275,13 @@ function profileText(p) {
 
 const batchN = (d) => d.main?.batchFiles ?? 'all';
 
+const statsPart = (d) => (d.sizes.some((s) => s.id === 'stats') ? ' + statistics chunk' : '');
+
 function headline(d) {
   const M = d.model;
   const out = [];
   out.push(`Initial load of the host grows only by the trigger: ${M.triggerGzip} B gzip measured (budget ${HOST.triggerBudgetBytes} B), ${fpct(M.initialIncreaseMeasuredPct)} of ${fmb(HOST.initialGzipBytes)} (${fpct(M.initialIncreasePct)} at the 1 KB budget).`);
-  out.push(`First MP4 lazily downloads ${fkb(M.lazyMp4Gzip)} gzip (glue + worker entry + ISO BMFF chunk): ${fpct(M.lazyMp4VsInitialPct)} of the host initial load, ${fpct(M.lazyMp4VsFullPct)} of the full app; both parsers ${fkb(M.lazyBothGzip)} (${fpct(M.lazyBothVsInitialPct)} / ${fpct(M.lazyBothVsFullPct)}).`);
+  out.push(`First MP4 lazily downloads ${fkb(M.lazyMp4Gzip)} gzip (glue + worker entry + ISO BMFF chunk${statsPart(d)}): ${fpct(M.lazyMp4VsInitialPct)} of the host initial load, ${fpct(M.lazyMp4VsFullPct)} of the full app; both parsers ${fkb(M.lazyBothGzip)} (${fpct(M.lazyBothVsInitialPct)} / ${fpct(M.lazyBothVsFullPct)}).`);
   const lat = M.profiles.map((p) => `${p.label} ${fms(p.cold?.totalMs)} ms cold / ${fms(p.prefetch?.totalMs)} ms HTTP-prefetched / ${fms(p.prewarm?.totalMs)} ms prewarmed`);
   if (lat.length) out.push(`First MP4 from pick to result (host model, median of ${d.environment.options.reps}): ${lat.join('; ')}.`);
   if (M.main) out.push(`Main thread on the host model: TBT ${fms(M.main.firstFileTbtMs)} ms for the first file, ${fms(M.main.coldBatchTbtMs)} ms for ${batchN(d)} files at once (cold), ${fms(M.main.warmBatchTbtMs)} ms warm, ${fms(M.main.longTbtMs)} ms for the 3 h file (no long tasks); probe main-thread CPU ${fms(M.main.firstFileProbeCpuMs)} ms for the first file and ${fms(M.main.coldBatchProbeCpuMs)} ms for ${batchN(d)} files, in short tasks.`);
@@ -1347,8 +1362,8 @@ function renderMarkdown(d) {
   L.push('');
   L.push('Two pages are measured on the same server and browser:');
   L.push('');
-  L.push('- **Host model** (`/host.html`, generated by the script, not a file in the repo): a near-empty page whose only probe code in the critical path is a small inline trigger. On the first pick the trigger does `import()` of the glue chunk (the real `WorkerPool` class from `src/client/pool.ts` with two workers, bundled and minified by rolldown, worker URL pointed at the built worker entry); the glue spawns the module worker, whose entry imports the parser chunk for the sniffed container. That is three chained requests: glue, worker entry, parser. It shows each result as one list item. This is the integration as proposed, without the PoC UI.');
-  L.push(`- **PoC app** (\`/\`, the built React app): the worker pool is part of the main chunk, so the first pick chains two requests (worker entry, parser). Its ${batchN(d)}-card React list is PoC UI the host would not ship; it is measured as a reference for what a heavy result UI adds.`);
+  L.push('- **Host model** (`/host.html`, generated by the script, not a file in the repo): a near-empty page whose only probe code in the critical path is a small inline trigger. On the first pick the trigger does `import()` of the glue chunk (the real `WorkerPool` class from `src/client/pool.ts` with two workers, bundled and minified by rolldown, worker URL pointed at the built worker entry); the glue spawns the module worker, whose entry imports the parser chunk for the sniffed container together with the shared statistics chunk. That is three chained requests: glue, worker entry, then parser and statistics in parallel. It shows each result as one list item. This is the integration as proposed, without the PoC UI.');
+  L.push(`- **PoC app** (\`/\`, the built React app): the probe client (\`createProbeClient\` with its worker pool) is a lazy chunk of its own, so the first pick chains three requests: probe client, worker entry, then parser and statistics in parallel. Its ${batchN(d)}-card React list is PoC UI the host would not ship; it is measured as a reference for what a heavy result UI adds.`);
   L.push('');
   L.push('Critical bundle means the code the host downloads, parses and runs before its first render, on every page load. Only the trigger joins it. Everything else is lazy: it is fetched the first time a user picks a video (or earlier, if the host prefetches it), and never on page loads where nobody picks a file.');
   L.push('');
@@ -1357,7 +1372,7 @@ function renderMarkdown(d) {
   const hdr = d.latency?.host?.none?.cold?.runs?.[0]?.network?.parser?.headersBytes;
   L.push(`Sizes from the files, gzip level 9 (the server sends exactly these bodies). Each request adds its response headers on the wire (${Number.isFinite(hdr) ? `${hdr} B` : 'a few hundred bytes'} with this server, CDP \`responseReceived.encodedDataLength\`).`);
   L.push('');
-  L.push(table(['Piece', 'When it loads', 'Raw', 'gzip'], 'llrr', d.sizes.map((s) => [s.label, { trigger: 'host critical path (every page load)', glue: 'first pick (or prefetch)', entry: 'first pick (worker spawn)', isobmff: 'first MP4/MOV', matroska: 'first MKV/WebM', main: 'PoC only' }[s.id], fkb(s.raw), fkb(s.gzip)])));
+  L.push(table(['Piece', 'When it loads', 'Raw', 'gzip'], 'llrr', d.sizes.map((s) => [s.label, { trigger: 'host critical path (every page load)', glue: 'first pick (or prefetch)', entry: 'first pick (worker spawn)', isobmff: 'first MP4/MOV', matroska: 'first MKV/WebM', stats: 'first pick, with the parser', main: 'PoC only', client: 'PoC only, first pick' }[s.id], fkb(s.raw), fkb(s.gzip)])));
   L.push('');
   const coldNone = d.latency?.host?.none?.cold?.runs ?? d.latency?.host?.[Object.keys(d.latency?.host ?? {})[0]]?.cold?.runs;
   if (coldNone?.length) {
@@ -1520,7 +1535,7 @@ function renderMarkdown(d) {
   L.push('Formulas (B = bytes, gzip):');
   L.push('');
   L.push(`- Initial-load increase = trigger B / ${HOST.initialGzipBytes} B. Measured trigger ${M.triggerGzip} B gives ${fpct(M.initialIncreaseMeasuredPct)}; the 1 KB budget gives ${fpct(M.initialIncreasePct)}. Parse and run cost of the trigger: one closure and one event listener, not measurable against the host's ${fmb(HOST.initialRawBytes)} of raw JS.`);
-  L.push(`- Lazy first-file bytes = glue + worker entry + parser chunk = ${fkb(M.lazyMp4Gzip)} for MP4/MOV (${fkb(M.lazyMkvGzip)} for MKV/WebM, ${fkb(M.lazyBothGzip)} once both parsers loaded). Against the initial load: ${fpct(M.lazyMp4VsInitialPct)} (both parsers ${fpct(M.lazyBothVsInitialPct)}); against the full app: ${fpct(M.lazyMp4VsFullPct)} (both ${fpct(M.lazyBothVsFullPct)}). Paid once per page session, only by users who pick a video, and cacheable (hashed file names).`);
+  L.push(`- Lazy first-file bytes = glue + worker entry + parser chunk${statsPart(d)} = ${fkb(M.lazyMp4Gzip)} for MP4/MOV (${fkb(M.lazyMkvGzip)} for MKV/WebM, ${fkb(M.lazyBothGzip)} once both parsers loaded). Against the initial load: ${fpct(M.lazyMp4VsInitialPct)} (both parsers ${fpct(M.lazyBothVsInitialPct)}); against the full app: ${fpct(M.lazyMp4VsFullPct)} (both ${fpct(M.lazyBothVsFullPct)}). Paid once per page session, only by users who pick a video, and cacheable (hashed file names).`);
   L.push(`- One-time latency = cold extra ms (pick to result, minus the warm pick). Relative figure: extra / time to download the host's initial ${fmb(HOST.initialGzipBytes)} on the same link (B x 8 / down bps, transfer only, so the real host load is longer and the percentage smaller).`);
   L.push('');
   if (M.profiles.length) {
