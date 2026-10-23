@@ -150,7 +150,7 @@ function distChunks() {
     if (!f) throw new Error(`dist/assets has no ${prefix}*.js`);
     return f;
   };
-  return { entry: pick('analyze.worker-'), isobmff: pick('isobmff-'), matroska: pick('matroska-'), main: pick('index-') };
+  return { entry: pick('probe.worker-'), isobmff: pick('isobmff-'), matroska: pick('matroska-'), main: pick('index-') };
 }
 
 const GLUE_ID = 'fps-glue';
