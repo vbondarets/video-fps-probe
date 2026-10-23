@@ -45,8 +45,14 @@ jobs:
       - name: Unit and fixture tests
         run: npm test
 
+      - name: Self-test the ffprobe comparison
+        run: node scripts/compare-ffprobe.ts --self-test
+
       - name: Compare engines against committed ffprobe references
         run: node scripts/compare-ffprobe.ts --engines own,mp4box,mediabunny --no-write
+
+      - name: Self-test the size report
+        run: node scripts/size-report.mjs --self-test
 
       - name: Build the demo
         run: npm run build:demo
