@@ -9,7 +9,7 @@ Frame rate, frame count and variable frame rate detection for local video files,
 - **Accuracy.** The own parsers were checked against ffprobe 8.1.1 on 116 synthetic fixtures made with ffmpeg (111 committed, 5 large local files; real recorder output is not in the corpus, see Limitations): 1832 field checks, 1769 exact, 2 within tolerance, 1 known deviation with a recorded reason, 0 mismatches, 60 not applicable.
 - **Reads.** Median 2 reads per committed fixture, at most 2. The 3 h, 648000-frame MP4 (12.42 MiB) takes 2 reads and 2.56 MiB (20.6% of the file).
 - **Speed.** In Chrome 155, warm: median 1.50 ms per file in the worker and 2.40 ms from file pick to rendered result; the 3 h file takes 4.10 ms. A 604.42 MB 1080p MP4 with the moov at the end takes 2 reads (75.0 KiB) and 1.70 ms; the same stream in Matroska takes 117 ms in auto mode (126 reads; a probe, so no frame count until "Scan all frames").
-- **Size.** The page plus the first MP4 result loads 99.39 KB gzip (page, probe client, worker entry, shared statistics chunk, ISO BMFF parser); the first Matroska result 98.27 KB.
+- **Size.** A default install (`video-fps-probe/lazy`) adds 0.67 KB gzip to a host app's critical path, and its first MP4 file loads 23.26 KB lazily ([Package size](#package-size)). The demo page plus its first MP4 result loads 99.39 KB gzip (page, probe client, worker entry, shared statistics chunk, ISO BMFF parser); the first Matroska result 98.27 KB.
 - **Embedding.** In a host app the critical path grows by a 0.52 KB gzip trigger (0.027% of a 1.95 MB initial load); the first MP4 lazily loads 22.01 KB. With the worker prewarmed when the upload dialog opens, the first result on fast 4G takes 4.60 ms instead of 345 ms.
 - **Same result in Node and Chrome.** 116 of 116 files give identical results field by field (timing excluded).
 - **Machine.** Windows 10 Pro, Intel Core i7-10700KF (16 threads), 32 GiB, Node v24.20.0, Chrome 155 headless; ffprobe 8.1.1-full_build-www.gyan.dev.
@@ -265,6 +265,27 @@ Headless Chrome 155, GPU decoding on, display 170 Hz.
 | `h264.mkv` | 30000/1001 (29.970) | 30000/1001 (29.970) | 0.0% | no / no | medium | 1 (rate 1) | 1.86 s |
 
 <!-- tables:rvfc:end -->
+
+## Package size
+
+<!-- tables:package:start -->
+
+**A default install adds 0.67 KB gzip to the host app's critical path:** the package code in the entry chunk of a Vite 8.3.5 app that imports `video-fps-probe/lazy` (with Vite's preload helper, which any app with a dynamic import already has, that entry chunk is 1.40 KB). The first MP4 or MOV file then loads 23.26 KB lazily: the probe client, the own worker, the statistics chunk and the ISO BMFF parser. Every own path together is 36.24 KB, and mp4box.js and mediabunny are only in the build when their entries are imported.
+
+| Configuration | Imports | Critical path | First MP4, lazy | All own paths, lazy | Engine chunks, lazy | Worker files | Budgets |
+|---|---|---:|---:|---:|---:|---:|---|
+| **default** | `video-fps-probe/lazy` | **0.67 KB** | 23.26 KB | 36.24 KB | - | 1 | ok (8 budgets) |
+| custom | `video-fps-probe/client/lazy` + `video-fps-probe/worker-runtime` (host worker serving own) | **0.68 KB** | 23.15 KB | 36.13 KB | - | 1 | ok (2 budgets) |
+| mp4box | `video-fps-probe/lazy` + `video-fps-probe/mp4box` | **0.90 KB** | 23.29 KB | 36.27 KB | mp4box 44.77 KB | 2 | ok (3 budgets) |
+| mediabunny | `video-fps-probe/lazy` + `video-fps-probe/mediabunny` | **0.90 KB** | 23.29 KB | 36.27 KB | mediabunny 53.87 KB | 2 | ok (3 budgets) |
+| rvfc | `video-fps-probe/lazy` + `video-fps-probe/rvfc` | **0.77 KB** | 23.27 KB | 36.26 KB | rVFC 2.19 KB | 1 | ok (2 budgets) |
+| all | `video-fps-probe/lazy` + `video-fps-probe/mp4box` + `video-fps-probe/mediabunny` + `video-fps-probe/rvfc` | **1.02 KB** | 23.31 KB | 36.29 KB | mp4box 44.77 KB, mediabunny 53.87 KB, rVFC 2.19 KB | 3 | ok (9 budgets) |
+| iife-nosplit | `video-fps-probe/lazy` (Vite worker format iife with codeSplitting false) | **0.67 KB** | 34.77 KB | 34.77 KB | - | 1 | ok (2 budgets) |
+| standalone worker file | `video-fps-probe/standalone/own.worker.js` | - | 32.04 KB | 32.04 KB | - | 1 file, no imports | ok |
+
+Measured by `npm run size:matrix` on production builds of the fixtures in `tests/consumers/fixtures/`, installed from the packed tarball into a directory outside the repository with mp4box 2.4.1 and mediabunny 1.62.0; gzip -9, KB = 1000 bytes. The critical path is the package code in the entry chunk, cut out by the hidden sourcemap. CI fails when a budget is exceeded, a configuration builds an unexpected worker file, or a sourcemap lists a module that must not be there (mp4box or mediabunny where they are not imported, the prebuilt own worker in the custom-worker build); [report/size-matrix.md](report/size-matrix.md) lists every budget with its reason.
+
+<!-- tables:package:end -->
 
 ## Bundle size
 

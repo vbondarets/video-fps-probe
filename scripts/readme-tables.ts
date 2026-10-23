@@ -197,9 +197,34 @@ interface IntegrationReport {
   };
 }
 
+interface MatrixBudget {
+  key: string;
+  label: string;
+  limit: number;
+  gzip: number | null;
+  status: string;
+}
+
+interface MatrixFixture {
+  name: string;
+  imports: string[];
+  note: string | null;
+  metrics: Record<string, number | null>;
+  workers: { name: string; entry: number; chunks: number }[];
+  budgets: MatrixBudget[];
+  problems: string[];
+}
+
+interface SizeMatrix {
+  versions: Record<string, string | null>;
+  fixtures: MatrixFixture[];
+  standalone: { gzip: number | null; limit: number; status: string };
+}
+
 interface Inputs {
   acc: AccuracyReport;
   size: SizeReport;
+  matrix: SizeMatrix;
   bench: BenchReport;
   integration: IntegrationReport;
   manifest: ManifestRow[];
@@ -553,7 +578,7 @@ function headline(inp: Inputs): string[] {
     `- **Accuracy.** The own parsers were checked against ffprobe 8.1.1 on ${own.fixtures.length} synthetic fixtures made with ffmpeg (${committed.length} committed, ${large.length} large local files; real recorder output is not in the corpus, see Limitations): ${checks} field checks, ${counts.exact} exact, ${counts['within-tol']} within tolerance, ${plural(counts['known-deviation'], 'known deviation')} with a recorded reason, ${plural(counts.mismatch, 'mismatch').replace(/hs$/, 'hes')}, ${counts['n/a']} not applicable.`,
     `- **Reads.** Median ${median(reads)} reads per committed fixture, at most ${Math.max(...reads)}. The ${fmtDuration(longDur)}, ${longFrames}-frame MP4 (${fmtBytes(long.sizeBytes)}) takes ${io(long).reads} reads and ${fmtBytes(io(long).bytesRead)} (${fmtPct(io(long).percent)}% of the file).`,
     `- **Speed.** In ${browser}, warm: median ${fmtMs(median(warm.map((w) => w.medianMs)))} ms per file in the worker and ${fmtMs(median(warm.map((w) => w.medianWallMs)))} ms from file pick to rendered result; the ${fmtDuration(longDur)} file takes ${fmtMs(chromeLong.medianMs)} ms.${big}`,
-    `- **Size.** The page plus the first MP4 result loads ${fmtKB(firstMp4.gzip)} gzip (page, ${kindGzip(inp.size, 'client') === null ? '' : 'probe client, '}worker entry, ${sharedParserGzip(inp.size) === null ? '' : 'shared statistics chunk, '}ISO BMFF parser); the first Matroska result ${fmtKB(firstMkv.gzip)}.`,
+    `- **Size.** A default install (\`video-fps-probe/lazy\`) adds ${fmtKB(matrixMetric(inp, 'default', 'trigger'))} gzip to a host app's critical path, and its first MP4 file loads ${fmtKB(matrixMetric(inp, 'default', 'firstMp4'))} lazily ([Package size](#package-size)). The demo page plus its first MP4 result loads ${fmtKB(firstMp4.gzip)} gzip (page, ${kindGzip(inp.size, 'client') === null ? '' : 'probe client, '}worker entry, ${sharedParserGzip(inp.size) === null ? '' : 'shared statistics chunk, '}ISO BMFF parser); the first Matroska result ${fmtKB(firstMkv.gzip)}.`,
     `- **Embedding.** In a host app the critical path grows by a ${fmtKB(m.triggerGzip)} gzip trigger (${pctSmall(m.initialIncreaseMeasuredPct)} of a ${fmtMB(inp.integration.host.initialGzipBytes)} initial load); the first MP4 lazily loads ${fmtKB(m.lazyMp4Gzip)}. With the worker prewarmed when the upload dialog opens, the first result on fast 4G takes ${fmtMs(fast.prewarm.totalMs)} ms instead of ${fmtMs(fast.cold.totalMs)} ms.${integrationStale(inp) ? ` Measured on an earlier build whose worker entry and parser chunks differ from the current ones, so these figures are not current.` : ''}`,
     `- **Same result in Node and Chrome.** ${inp.bench.sanity.identical} of ${inp.bench.sanity.compared} files give identical results field by field (timing excluded).`,
     `- **Machine.** ${machine(inp)}.`,
@@ -824,6 +849,58 @@ function bundleBlock(inp: Inputs): string[] {
       return row([COMPOSITE_LABEL[key] ?? key, '', fmtKB(c.raw), `**${fmtKB(c.gzip)}**`, fmtKB(c.brotli), ...budgetCells(budgets.get(budgetKey))]);
     });
   return table(['Chunk', 'Loaded', 'Raw', 'gzip -9', 'brotli q11', 'Budget (gzip)', 'Headroom', 'Status'], 'llrrrrrl', [...rows, ...compRows]);
+}
+
+function matrixFixture(inp: Inputs, name: string): MatrixFixture {
+  return need(
+    inp.matrix.fixtures.find((f) => f.name === name),
+    `size matrix fixture ${name}`,
+  );
+}
+
+function matrixMetric(inp: Inputs, name: string, metric: string): number {
+  return need(matrixFixture(inp, name).metrics[metric], `size matrix ${name} ${metric}`);
+}
+
+const MATRIX_ENGINES: ReadonlyArray<readonly [string, string]> = [
+  ['mp4box', 'mp4box'],
+  ['mediabunny', 'mediabunny'],
+  ['rvfc', 'rVFC'],
+];
+
+function packageBlock(inp: Inputs): string[] {
+  const kbOrDash = (n: number | null | undefined): string => (n === null || n === undefined ? '-' : fmtKB(n));
+  const imports = (f: MatrixFixture): string => `${f.imports.map((i) => `\`video-fps-probe${i.slice(1)}\``).join(' + ')}${f.note ? ` (${f.note})` : ''}`;
+  const engines = (f: MatrixFixture): string =>
+    MATRIX_ENGINES.filter(([key]) => typeof f.metrics[key] === 'number')
+      .map(([key, label]) => `${label} ${fmtKB(f.metrics[key]!)}`)
+      .join(', ') || '-';
+  const status = (f: MatrixFixture): string => {
+    const failed = f.problems.length + f.budgets.filter((b) => b.status === 'over' || b.status === 'missing').length;
+    return failed === 0 ? `ok (${f.budgets.filter((b) => b.status === 'ok').length} budgets)` : 'fails';
+  };
+  const rows = inp.matrix.fixtures.map((f) =>
+    row([
+      f.name === 'default' ? '**default**' : f.name,
+      imports(f),
+      `**${fmtKB(matrixMetric(inp, f.name, 'trigger'))}**`,
+      kbOrDash(f.metrics['firstMp4']),
+      kbOrDash(f.metrics['allOwn']),
+      engines(f),
+      f.workers.length,
+      status(f),
+    ]),
+  );
+  const s = inp.matrix.standalone;
+  rows.push(row(['standalone worker file', '`video-fps-probe/standalone/own.worker.js`', '-', kbOrDash(s.gzip), kbOrDash(s.gzip), '-', '1 file, no imports', s.status]));
+  const v = inp.matrix.versions;
+  return [
+    `**A default install adds ${fmtKB(matrixMetric(inp, 'default', 'trigger'))} gzip to the host app's critical path:** the package code in the entry chunk of a Vite ${v['vite'] ?? ''} app that imports \`video-fps-probe/lazy\` (with Vite's preload helper, which any app with a dynamic import already has, that entry chunk is ${fmtKB(matrixMetric(inp, 'default', 'entry'))}). The first MP4 or MOV file then loads ${fmtKB(matrixMetric(inp, 'default', 'firstMp4'))} lazily: the probe client, the own worker, the statistics chunk and the ISO BMFF parser. Every own path together is ${fmtKB(matrixMetric(inp, 'default', 'allOwn'))}, and mp4box.js and mediabunny are only in the build when their entries are imported.`,
+    '',
+    ...table(['Configuration', 'Imports', 'Critical path', 'First MP4, lazy', 'All own paths, lazy', 'Engine chunks, lazy', 'Worker files', 'Budgets'], 'llrrrrrl', rows),
+    '',
+    `Measured by \`npm run size:matrix\` on production builds of the fixtures in \`tests/consumers/fixtures/\`, installed from the packed tarball into a directory outside the repository with mp4box ${v['mp4box'] ?? ''} and mediabunny ${v['mediabunny'] ?? ''}; gzip -9, KB = 1000 bytes. The critical path is the package code in the entry chunk, cut out by the hidden sourcemap. CI fails when a budget is exceeded, a configuration builds an unexpected worker file, or a sourcemap lists a module that must not be there (mp4box or mediabunny where they are not imported, the prebuilt own worker in the custom-worker build); [report/size-matrix.md](report/size-matrix.md) lists every budget with its reason.`,
+  ];
 }
 
 function speedBlock(inp: Inputs): string[] {
@@ -1115,6 +1192,7 @@ const BLOCKS: Record<string, (inp: Inputs) => string[]> = {
   reads: readsBlock,
   approaches: approachesBlock,
   engines: enginesBlock,
+  package: packageBlock,
   bundle: bundleBlock,
   speed: speedBlock,
   accuracy: accuracyBlock,
@@ -1161,7 +1239,7 @@ function main(): number {
     console.log(`Usage: node scripts/readme-tables.ts [--check] [--readme <file>] [--report <dir>]
 
 Rewrites the README sections between <!-- tables:<name>:start --> and <!-- tables:<name>:end -->
-from report/accuracy.json, report/size.json, report/browser-bench.json,
+from report/accuracy.json, report/size.json, report/size-matrix.json, report/browser-bench.json,
 report/integration-cost.json and fixtures/manifest.tsv.
 Sections: ${Object.keys(BLOCKS).join(', ')}.
 
@@ -1175,6 +1253,7 @@ Sections: ${Object.keys(BLOCKS).join(', ')}.
   const inputs: Inputs = {
     acc: readJson<AccuracyReport>(join(reportDir, 'accuracy.json')),
     size: readJson<SizeReport>(join(reportDir, 'size.json')),
+    matrix: readJson<SizeMatrix>(join(reportDir, 'size-matrix.json')),
     bench: readJson<BenchReport>(join(reportDir, 'browser-bench.json')),
     integration: readJson<IntegrationReport>(join(reportDir, 'integration-cost.json')),
     manifest: readManifest(join(root, 'fixtures', 'manifest.tsv')),
