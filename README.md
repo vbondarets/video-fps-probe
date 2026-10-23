@@ -19,8 +19,8 @@ A git dependency gets no code (`prepack` builds `dist/`, and npm skips it for gi
 
 ```
 git clone https://github.com/vbondarets/video-fps-probe.git && cd video-fps-probe
-npm ci && npm pack   # builds and checks dist/, writes video-fps-probe-0.0.0.tgz
-cd ../your-app && npm install ../video-fps-probe/video-fps-probe-0.0.0.tgz
+npm ci && npm pack   # builds and checks dist/, writes the tarball and prints its name last
+cd ../your-app && npm install ../video-fps-probe/video-fps-probe-<version>.tgz   # the name npm pack printed
 ```
 
 ## Quick start
