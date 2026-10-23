@@ -106,7 +106,7 @@ import { analyze } from 'video-fps-probe';
 const result = await analyze(await openAsBlob(path), { name: path });
 ```
 
-The root `analyze()` runs in the calling thread, with no worker. It takes a `Blob` or any `BlobLike` (`size` plus `slice(start, end)` returning something with `arrayBuffer()`), and `{ engine: mp4box() }` runs a registered engine instead of own. In Node 24, `fs.openAsBlob` reports the size of files above 4 GiB modulo 2^32, so pass a `BlobLike` over a file handle for those.
+The root `analyze()` runs in the calling thread, with no worker. It takes a `Blob` or any `BlobLike` (`size` plus `slice(start, end)` returning something with `arrayBuffer()`), and `{ engine: mp4box() }` runs that engine instead of own (its peer must be installed). In Node 24, `fs.openAsBlob` reports the size of files above 4 GiB modulo 2^32, so pass a `BlobLike` over a file handle for those.
 
 ## Cancellation, timeouts and failing open
 
