@@ -16,7 +16,7 @@ Frame rate, frame count and variable frame rate detection for local video files,
 
 <!-- tables:headline:end -->
 
-The headline and every measured table in this README are generated from the reports in [report/](report/README.md) by `node scripts/readme-tables.ts`.
+The headline and every measured table in this README are generated from the reports in [report/](report/README.md) by `node scripts/readme-tables.ts`. The accuracy figures (116 fixtures, 1832 checks) come from a run with `--with-large`, so they include 5 local large files that are not committed: the two long files and the three 604 MB 1080p files. On the 111 committed fixtures alone, `npm run compare` reproduces the own engine at 1747 checks: 1690 exact, 2 within tolerance, 1 known deviation, 0 mismatches and 54 not applicable.
 
 <p>
   <img src="docs/screenshots/app-light.png" width="280" alt="Results for eight files, light theme">
@@ -387,7 +387,7 @@ Every fixture has an ffprobe 8.1.1 reference in `fixtures/ref/`. `npm run compar
 
 <!-- tables:engines:end -->
 
-Frame-rate checks are `avgFps` (for Matroska its declared and measured variants), `nominalFps`, `frames`, `presentedFrames`, `minFps`, `maxFps`, `isVfr` and `duplicateTimestamps`. mp4box.js cannot open WebM or Matroska, which accounts for most of its mismatches.
+Frame-rate checks are `avgFps` (for Matroska its declared and measured variants), `nominalFps`, `frames`, `presentedFrames`, `minFps`, `maxFps`, `isVfr` and `duplicateTimestamps`. mp4box.js cannot open WebM or Matroska, which accounts for most of its mismatches. The fixture counts above include the 5 local large files that are not committed (see the note under the headline).
 
 The table below shows the primary track of every fixture. Frames are app / ffprobe. For Matroska, the declared rate is what ffprobe prints and the measured average comes from the block timestamps. For files without a video track, the two average columns show the outcome instead.
 
