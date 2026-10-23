@@ -437,7 +437,7 @@ export function discover(distDir) {
     }
   }
   const entryDeps = new Map();
-  for (const f of js) if (PATH_ENTRIES.includes(kinds.get(f))) entryDeps.set(f, closureOf(f, fileSet, texts));
+  for (const f of js) if (PATH_ENTRIES.includes(kinds.get(f)) || kinds.get(f) === 'client') entryDeps.set(f, closureOf(f, fileSet, texts));
   const chains = requestChains({ files, kinds, workers, texts });
   return { files, kinds, method, workerMethod, notes, main, entryDeps, workers: [...workers], chains };
 }
@@ -458,8 +458,9 @@ export function buildReport(distDir) {
   const initial = totalOf(initialChunks);
   const afterChunks = (wanted) => {
     const entries = ofKind(wanted);
-    const extra = new Set([...entries, ...ofKind(['client'])].map((c) => c.file));
-    for (const p of entries) for (const dep of entryDeps.get(p.file) ?? []) extra.add(dep);
+    const clients = ofKind(['client']);
+    const extra = new Set([...entries, ...clients].map((c) => c.file));
+    for (const p of [...entries, ...clients]) for (const dep of entryDeps.get(p.file) ?? []) extra.add(dep);
     for (const c of initialChunks) extra.delete(c.file);
     const list = [...initialChunks, ...[...extra].map((f) => byFile.get(f)).filter(Boolean)];
     return { present: has('main') && wanted.every(has), total: totalOf(list) };
@@ -764,6 +765,8 @@ function runSelfTest() {
     expectEq('other parser unaffected', statusOf(noMkv, 'firstMp4'), 'ok');
     const clientDir = build('client', { client: 1_000 });
     for (const f of ['compare-X1.js', 'fallback-F1.js', 'inline-N1.js']) write(clientDir, `assets/${f}`, `import{a as e}from"./probe-L1.js";${filler(300)}`);
+    write(clientDir, 'assets/probe-L1.js', `import{a as e}from"./index-M1.js";import{r as h}from"./result-H1.js";${filler(1_000)}`);
+    write(clientDir, 'assets/result-H1.js', filler(400));
     const withClient = buildReport(clientDir);
     expectEq('client: kind', withClient.chunks.find((c) => c.file === 'assets/probe-L1.js')?.kind, 'client');
     for (const [f, kind] of [
@@ -773,6 +776,9 @@ function runSelfTest() {
     ]) {
       expectEq(`client: lazy part ${f}`, withClient.chunks.find((c) => c.file === `assets/${f}`)?.kind, kind);
     }
+    expectEq('client: a static dependency of the client is part of the first MP4 analysis', withClient.composites.firstMp4.files.includes('assets/result-H1.js'), true);
+    expectEq('client: a static dependency of the client is part of the first Matroska analysis', withClient.composites.firstMatroska.files.includes('assets/result-H1.js'), true);
+    expectEq('client: a static dependency of the client is not part of initial', withClient.composites.initial.files.includes('assets/result-H1.js'), false);
     expectEq('client: lazy parts are not in the first MP4 analysis', withClient.composites.firstMp4.files.some((f) => /(compare|fallback|inline)-/.test(f)), false);
     expectEq('client: budget ok', statusOf(withClient, 'client'), 'ok');
     expectEq('client: not part of initial', withClient.composites.initial.files.includes('assets/probe-L1.js'), false);
