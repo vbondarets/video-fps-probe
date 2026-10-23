@@ -157,7 +157,7 @@ The thresholds are constants in `src/core/segments.ts` and `src/core/stats.ts`. 
 
 <!-- tables:profile:start -->
 
-The profile code is 1.84 KB gzip in the worker and the panel 0.94 KB on the main thread, both lazy. The first VFR MP4 loads 101.15 KB gzip, 1.84 KB more than a CFR one (budget 102.00 KB). Times are the whole analysis, profile included.
+The profile code is 1.84 KB gzip in the worker and the panel 0.94 KB on the main thread, both lazy. The first VFR MP4 loads 101.15 KB gzip, 1.84 KB more than a CFR one (budget 101.50 KB). Times are the whole analysis, profile included.
 
 | File | Rate profile | Frames | Min to max FPS | Node ms | Chrome 155 ms |
 |---|---|---:|---|---:|---:|
@@ -294,7 +294,7 @@ Headless Chrome 155, GPU decoding on, display 170 Hz.
 | shared by mp4box and mediabunny | with mp4box or mediabunny | 3.01 KB | **1.50 KB** | 1.35 KB | not budgeted | - | - |
 | initial: main + CSS + worker entry |  | 252.55 KB | **80.08 KB** | 69.57 KB | 85.00 KB | 4.92 KB | ok |
 | first MP4 analysis: initial + probe client + statistics + ISO BMFF parser |  | 299.85 KB | **99.31 KB** | 87.08 KB | 100.00 KB | 0.69 KB | ok |
-| first VFR MP4 analysis: first MP4 + rate profile core |  | 303.19 KB | **101.15 KB** | 88.79 KB | 102.00 KB | 0.85 KB | ok |
+| first VFR MP4 analysis: first MP4 + rate profile core |  | 303.19 KB | **101.15 KB** | 88.79 KB | 101.50 KB | 0.35 KB | ok |
 | first Matroska analysis: initial + probe client + statistics + Matroska parser |  | 298.15 KB | **98.18 KB** | 86.09 KB | 100.00 KB | 1.82 KB | ok |
 
 <!-- tables:bundle:end -->
