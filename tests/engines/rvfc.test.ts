@@ -208,6 +208,16 @@ describe('estimateWithRvfc on a simulated display', () => {
     expect(r.error).toContain('requestVideoFrameCallback');
   });
 
+  it('accepts a plain Blob and takes the name from the options', async () => {
+    const plain = { muted: false, playsInline: false, width: 0, removeAttribute() {}, load() {}, remove() {}, pause() {} };
+    vi.stubGlobal('document', { createElement: () => plain });
+    const blob = new Blob([new Uint8Array(8)], { type: 'video/mp4' });
+    const host = { append() {} } as unknown as HTMLElement;
+    const named = await drive(estimateWithRvfc(blob, { host, name: 'b.mp4' }));
+    expect(named).toMatchObject({ name: 'b.mp4', size: 8, engine: 'rvfc' });
+    expect((await drive(estimateWithRvfc(blob, { host }))).name).toBe('');
+  });
+
   it('rethrows an abort raised during playback and still cleans up', async () => {
     const h = install({ hz: 50, times: uniformTimes(25, 20), duration: 20 });
     const controller = new AbortController();

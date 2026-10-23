@@ -100,10 +100,10 @@ function estimate(frames: Frame[]): Estimate | null {
 }
 
 // The host element must be attached, visible and in a foreground tab, otherwise no frames are presented.
-export async function estimateWithRvfc(file: File, opts: RvfcOptions): Promise<RvfcResult> {
-  const { host, signal, onProgress } = opts;
+export async function estimateWithRvfc(file: Blob, opts: RvfcOptions): Promise<RvfcResult> {
+  const { host, signal, onProgress, name = file instanceof File ? file.name : '' } = opts;
   const t0 = performance.now();
-  const r: RvfcResult = { name: file.name, size: file.size, ...emptyAnalysis('unknown'), io: { reads: 0, bytesRead: 0, ms: 0 }, engine: 'rvfc' };
+  const r: RvfcResult = { name, size: file.size, ...emptyAnalysis('unknown'), io: { reads: 0, bytesRead: 0, ms: 0 }, engine: 'rvfc' };
   const url = URL.createObjectURL(file);
   const v = document.createElement('video');
   try {

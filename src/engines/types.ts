@@ -62,6 +62,7 @@ export interface RvfcDetails {
 
 export interface RvfcOptions {
   host: HTMLElement;
+  name?: string;
   signal?: AbortSignal;
   onProgress?: (p: { phase: string; done: number; total: number }) => void;
 }
