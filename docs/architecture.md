@@ -1,6 +1,21 @@
 # Architecture
 
-The app computes FPS statistics for local video files without decoding them. All parsing runs in module Web Workers; `src/core` has no DOM dependency, so the same code runs in a worker and in Node 24 (tests, the comparison script and benchmarks). The binding formulas and tolerances are in [research.md](research.md); where the code differs from them, and why, is in [implementation-notes.md](implementation-notes.md).
+The package computes FPS statistics for video files from their container headers, without decoding. Parsing runs in module Web Workers by default; `src/core` has no DOM dependency, so the same code runs in a worker, in the calling thread (`worker: 'inline'`, SSR) and in Node (tests, the comparison script, the root `analyze()`). The public API is in [api.md](api.md) and the bundler side in [bundlers.md](bundlers.md). The binding formulas and tolerances are in [research.md](research.md); where the code differs from them, and why, is in [implementation-notes.md](implementation-notes.md).
+
+```
+src/
+  index.ts, analyze.ts, probe.ts   root entry: createProbe (default flavor) and the in-thread analyze()
+  lazy.ts                          lazyProbe stub of the default flavor
+  api/                             ProbeError, summarize, compareResults (no worker, no parser)
+  client/                          probe client: routing, WorkerPool, fallback, compare, inline runner, lazy stubs
+  plugins/                         engine descriptors; the only modules with a worker literal
+  worker/                          worker runtime, the v1 protocol and the prebuilt worker entries
+  engines/                         mp4box.js, mediabunny and requestVideoFrameCallback adapters
+  core/                            reader, sniffing, statistics, rate profile, the ISO BMFF and Matroska parsers
+demo/                              the demo app, a consumer of the package (demo/README.md)
+scripts/                           build-lib, check-dist, size tools, the ffprobe comparison, benches, fixtures
+tests/                             vitest suites, e2e, consumer fixtures and dist parity
+```
 
 ## Module map
 
@@ -15,9 +30,10 @@ The app computes FPS statistics for local video files without decoding them. All
 | `segments.ts` | `rateProfile`: CUSUM segmentation of the frame intervals, anomalies (rate change, freeze, gap, burst), the uneven flag, the summary line and the sparkline buckets. Lazy chunk, imported only by `rateProfileOf` |
 | `sniff.ts` | Container detection from the first bytes, never from the file name; names known non-video signatures in the error |
 | `options.ts` | Defaults and `resolveOptions`: read-ahead sizes (head 64 KiB, fragment 1 MiB, Matroska scan 1 MiB, tail 256 KiB), cost model (0.8 ms per read, 500 kB/ms, 0.0002 ms per block or laced frame), exact-scan budget (150 ms), expansion limit (5M samples, also the Matroska PTS array cap), `predictReadMs` |
-| `result.ts` | `emptyAnalysis()`, `emptyTrack()`, `primaryTrack()` shared by the parsers, engines and UI |
-| `analyze.ts` | `analyze(blob, name, opts)`: timing, head read, sniffing, dispatch to the container parser (loaded with a dynamic `import()` on first use), error capture |
-| `index.ts` | Public exports of the above |
+| `result.ts` | `emptyAnalysis()`, `emptyTrack()`, `primaryTrack()` shared by the parsers, engines, API and demo |
+| `abort.ts` | `throwIfAborted(signal)`: the abort check of every read, written out because `AbortSignal.throwIfAborted` needs Chrome 100, above the floor |
+| `analyze.ts` | `analyze(blob, name, opts)`: timing, head read, sniffing, dispatch to the container parser (loaded with a dynamic `import()` on first use, together with `stats.ts`), error capture; `DEFAULT_LOADERS` |
+| `index.ts` | Barrel of the core modules for tests and scripts; not a package entry |
 
 ### ISO BMFF (`src/core/isobmff`)
 
@@ -42,13 +58,6 @@ The app computes FPS statistics for local video files without decoding them. All
 | `header.ts` | Stage A: EBML header, Segment, SeekHead, Info, Tracks, Tags, Cues, with resync, a read budget and a nesting limit |
 | `scan.ts` | Block parsing and validation, Cluster walk, top-level Segment scan with ffmpeg-style recovery, tail scan |
 
-### Worker (`src/worker`)
-
-| Path | Role |
-|---|---|
-| `protocol.ts` | Typed request and response messages |
-| `analyze.worker.ts` | Worker entry: runs `analyze()` for engine `own`, dynamically imports the mp4box or mediabunny engine, one `AbortController` per job, progress throttled to 50 ms |
-
 ### Comparison engines (`src/engines`)
 
 | Path | Role |
@@ -58,108 +67,185 @@ The app computes FPS statistics for local video files without decoding them. All
 | `common.ts` | Helpers shared by the engines (`applyStats`, `approxRational`, `ffprobeRotation`, `codecNameFromFourcc`, `newResult`) |
 | `mp4box.ts` | `analyzeWithMp4box`: mp4box 2.4.1 fed box by box; durations from the parsed stts, never from the last sample |
 | `mediabunny.ts` | `analyzeWithMediabunny`: mediabunny 1.62.0 over a `CustomSource`; native `averagePacketRate` kept as the average |
-| `rvfc.ts` | `estimateWithRvfc`: `requestVideoFrameCallback` playback estimate, main thread only |
+| `rvfc.ts` | `estimateWithRvfc`: `requestVideoFrameCallback` playback estimate, main thread only; `hosted(host)` is the engine module the `rvfc()` descriptor loads |
 
-Engines import `src/core` pieces (types, reader, rational, result, sniff, stats, options) but never `analyze.ts` or `index.ts`, so they do not pull in the own parsers.
+Each engine module exports `run` and `containers` (the `EngineModule` contract). Engines import `src/core` pieces (types, reader, rational, result, sniff, stats, options) but never `analyze.ts` or `index.ts`, so they do not pull in the own parsers. `mp4box.ts` and `mediabunny.ts` are the only modules that import a peer, and only `import()` reaches them.
 
-### UI (`src/App.tsx`, `src/main.tsx`, `src/index.css`, `src/ui`)
-
-| Path | Role |
-|---|---|
-| `ui/workerPool.ts` | Pool of up to 2 module workers, FIFO queue, `submit(file, engine, options, onProgress)` returning `{ promise, cancel }`; `prewarm()` spawns a worker and runs a 16-byte `ftyp` blob through it (loads the ISO BMFF chunk), `dispose()` terminates idle workers |
-| `ui/store.ts` | External store (`useSyncExternalStore`): rows, Matroska mode, add / rescan / cancel / clear, comparison runs, `exportJson` and `loadDevice` (both through the lazy `deviceInfo.ts`), `window.__fpsProbe` test hook |
-| `ui/deviceInfo.ts` | Lazy chunk: `collectEnvironment` (user agent, client hints where Chromium offers them, threads, memory, screen, viewport, time zone), the footer device line, `buildExport` (the `video-fps-probe/export@1` envelope) and `exportResults` (download, or copy through the async clipboard, then `execCommand`, then a read-only text box to select by hand) |
-| `ui/RateProfile.tsx` | Lazy chunk (`React.lazy` in `ResultCard.tsx`): sparkline, summary, segment table and anomaly list of one track |
-| `ui/format.ts` | Number, duration and byte formatting; provenance label table |
-| `ui/ResultCard.tsx` | One card per file: values with provenance marks, the uneven badge, the rate profile panel, notes, rescan and cancel |
-| `ui/Compare.tsx` | Lazy comparison table (own vs mp4box, mediabunny, rVFC) |
-| `ui/samples.ts` | Fetches the bundled sample files into in-memory `File` objects |
-| `App.tsx` | Drop zone and picker, toolbar (Matroska mode, Download JSON, Copy JSON, Clear list), summary line, provenance legend, result list, footer device line |
-
-### Scripts, tests, data
+### Worker runtime (`src/worker`)
 
 | Path | Role |
 |---|---|
-| `scripts/compare-ffprobe.ts` | CLI that compares engines with the ffprobe references and writes `report/accuracy.md` and `.json`; exit 1 on an unexpected own mismatch |
-| `scripts/compare/` | `ref.ts` (reference parser), `rules.ts` (research 6.4 tolerances per field), `deviations.ts` (known-deviation loader), `layout.ts` (independent box scan), `engines.ts` (engine loader), `report.ts`, `types.ts`, `self-test.ts` |
-| `scripts/size-report.mjs` | Reads a Vite build, reports raw, gzip -9 and brotli q11 per chunk and checks the budgets |
-| `scripts/fixtures/` | Fixture generator, reference extraction and the patch tools (`tools/*.mjs`) |
-| `scripts/bench/` | Chrome DevTools Protocol drivers: `run-bench.mjs` (`npm run bench`, timings, Node identity check, screenshots) and `integration.mjs` (cost of embedding in a host SPA); they drive the page through `window.__fpsProbe` |
-| `scripts/readme-tables.ts` | Rewrites the README tables between markers from the JSON reports |
-| `tests/` | vitest, Node environment: `unit/` (core, device info), `isobmff/`, `matroska/`, `segments/` (rate profile on fixtures), `engines/`, `helpers/` |
-| `tests/e2e/`, `playwright.config.ts` | Playwright end-to-end suite on the built app in Chromium, Firefox and WebKit (`npm run test:e2e`) |
-| `fixtures/` | `files/` (111 committed fixtures), `manifest.tsv`, `ref/*.ref.json` (ffprobe 8.1.1), `known-deviations/*.json`, `large/` (git-ignored) |
-| `public/samples/` | The six sample files shown by "Try sample files" |
-| `report/` | Generated accuracy, size, browser benchmark and integration cost reports, and the hand-written average-user model |
+| `protocol.ts` | `PROTOCOL_VERSION = 1` and the typed request and response messages |
+| `runtime.ts` | `serveProbeWorker(engines)`: installs `self.onmessage`, loads engine sources on first use (in parallel with `core/stats.ts`), gates engines by container family, one `AbortController` per job, progress throttled to 50 ms, warm requests. `ownEngine`: the core `analyze` as an `EngineModule` whose `warm` loads the parser chunks |
+| `own.worker.ts` | `serveProbeWorker({ own: ownEngine })` |
+| `mp4box.worker.ts` | `serveProbeWorker({ own: ownEngine, mp4box: () => import('../engines/mp4box.ts') })` |
+| `mediabunny.worker.ts` | the same with mediabunny |
+
+### Descriptors (`src/plugins`)
+
+| Path | Role |
+|---|---|
+| `types.ts` | `EngineModule` (`run`, `containers`, optional `warm`), `EngineDescriptor` (`id`, `thread`, `createWorker`, `load`, `loadOwn`), `ContainerFamily`, `WorkerEngineId` |
+| `own.ts` | `ownDescriptor`, internal: the own worker literal, and `load` of the runtime for the calling thread. Reachable only from `.` and `./lazy` |
+| `mp4box.ts`, `mediabunny.ts` | `mp4box()`, `mediabunny()`: their worker literal, `load` of the engine (with the statistics chunk) and `loadOwn` |
+| `rvfc.ts` | `rvfc({ host })`: `thread: 'main'`, no worker, `load` of `engines/rvfc.ts` |
+
+### Client (`src/client`) and API helpers (`src/api`)
+
+| Path | Role |
+|---|---|
+| `client/probe.ts` | `createProbeCore`: builds the route of every engine, owns the pools, runs `analyze`, `tryAnalyze`, `prewarm`, `dispose` and `destroy`; `createProbeClient` |
+| `client/pool.ts` | `WorkerPool`: one pool per worker kind, queue, timeouts, cancel, idle termination |
+| `client/fallback.ts` | `runChain`: the fallback chain, `attempts`, skipped results; a lazy chunk loaded only for chains or skips |
+| `client/compare.ts` | `compare`: per-engine outcomes and the agreement; a lazy chunk |
+| `client/inline.ts` | `runInline`: an engine in the calling thread with abort, timeout and the containers gate; a lazy chunk |
+| `client/stub.ts`, `client/lazy.ts` | `lazyStub`, `lazyProbeClient`, `lazyProbeFrom` |
+| `client/types.ts`, `client/index.ts` | the public types and the `./client` entry |
+| `api/errors.ts` | `ProbeError`, `isAbortError`, `isTimeoutError` |
+| `api/summary.ts` | `summarize` |
+| `api/agreement.ts` | `compareResults` and the agreement rules |
+| `index.ts`, `probe.ts`, `analyze.ts`, `lazy.ts` | the root entry (`createProbe` registers `ownDescriptor` first), the in-thread `analyze()` and `lazyProbe` |
+
+## Two flavors
+
+Bundlers emit a worker file for every `new Worker(new URL('...', import.meta.url))` literal they find in the module graph, also behind `import()` and also when the code never runs (Vite 8 matches the literal in every module it loads). The package therefore comes in two flavors:
+
+- **Default** (`.`, `./lazy`): `createProbe` registers `ownDescriptor`, so the own worker is built in.
+- **Client** (`./client`, `./client/lazy`): no descriptor is built in; the host passes `worker: { create, engines }`, `'inline'` or prebuilt descriptors. A host with a custom worker pays for exactly one worker file.
+
+**Literal hygiene.** Worker literals live only in `plugins/own.ts`, `plugins/mp4box.ts` and `plugins/mediabunny.ts`. The static and dynamic import closure of `./client`, `./client/lazy`, `./rvfc`, `./worker-runtime` and `./engines/*` reaches none of them, and no other `new URL(..., import.meta.url)` of a worker or standalone file. `check-dist` enforces it on the built `dist/`, and the size matrix asserts the worker files of each consumer build.
+
+## Worker kinds and routing
+
+A worker kind is a worker script: `own`, `mp4box`, `mediabunny` (the prebuilt ones) or `custom` (the host's). Each kind has its own `WorkerPool`. At creation the probe computes one route per engine id:
+
+- an engine listed on the custom worker runs there;
+- `own` otherwise runs on the worker of the default engine when that descriptor has `loadOwn` (mp4box, mediabunny), else on the own worker, else on any descriptor with `loadOwn`, else in the calling thread when inline;
+- any other engine runs on its descriptor's worker, or through its `load()` in the calling thread when the descriptor is `thread: 'main'` (rvfc) or the probe is inline;
+- an engine listed only on the custom worker gets an `unsupported-environment` route when the probe is inline.
+
+Creation throws `ProbeError('engine-not-registered')` when `own`, the default `engine` or a `fallback` id has no route. Inline is `worker: 'inline'` or no `Worker` global.
+
+## WorkerPool
+
+```
+run(request, { signal, timeoutMs, onProgress, engine })
+  queue (FIFO) --> free slot? reuse : (slots < size ? spawn : wait)
+  postMessage { v: 1, id, ...request }      timer starts here when timeoutMs > 0
+  <-- progress   forwarded unless the job already settled
+  <-- result | skipped | warmed   resolve, slot released, idle timer armed
+  <-- error      reject: 'aborted' when aborted, else the code ('unknown-engine', 'protocol') or 'worker-failed'
+```
+
+- `size` is the `workers` option (default 1). Workers spawn on demand and terminate after `idleTimeoutMs` idle (default 30 s; 0 keeps them).
+- Timeout: reject `timeout` and terminate the worker at once; the next job spawns a new one.
+- Abort: a queued job is removed and rejected at once; a running job is rejected at once and its worker gets `cancel`, and the worker is terminated if it has not replied within `KILL_AFTER_MS` (1.5 s).
+- A worker `error` event rejects its job with `worker-failed` and drops the worker. A throwing `create()` rejects the job it was spawned for.
+- `dispose()` terminates idle workers; `destroy()` rejects every queued and running job with `aborted` and terminates every worker.
+
+## Protocol v1
+
+```ts
+type WorkerRequest = { v: 1; id: number } & (
+  | { type: 'analyze'; file: Blob; name: string; engine: WorkerEngineId; options: WireOptions }
+  | { type: 'warm'; engines: readonly WorkerEngineId[]; containers: readonly ContainerFamily[] }
+  | { type: 'cancel' }
+);
+
+type WorkerResponse = { v: 1; id: number } & (
+  | { type: 'progress'; progress: AnalyzeProgress }
+  | { type: 'result'; result: FileResult }
+  | { type: 'skipped'; reason: 'unsupported-container'; family: ContainerFamily | null }
+  | { type: 'warmed' }
+  | { type: 'error'; message: string; aborted: boolean; code?: 'unknown-engine' | 'protocol' }
+);
+```
+
+- The `File` is cloned by reference, so no bytes are copied. `signal` and `onProgress` cannot cross the boundary; the worker builds them per job id.
+- A message with another `v`, a malformed analyze or warm request, or an unknown type gets `error` with code `protocol`. An engine the worker was not given gets `unknown-engine`.
+- For an engine with a `containers` list, the runtime sniffs the container family first and replies `skipped` for any other.
+- `progress` is sent at most once per 50 ms. Phases: `fragments` (ISO BMFF, every 64 moofs), `matroska-exact` (bytes after the first Cluster), `read` and `analyze` (mp4box), `packets` (mediabunny).
+- `warm` loads the listed engines and calls their `warm(containers)`; for own that loads the parser chunks of those containers.
+
+## Lazy stubs
+
+`lazyStub(factory, known)` is all a host keeps in its critical bundle: `lazyProbe` passes `() => import('./probe.ts').then((m) => m.createProbe(options))`, `lazyProbeClient` the same for `createProbeClient`, `lazyProbeFrom` any factory. The first `analyze`, `tryAnalyze`, `compare`, `prewarm` or `load()` runs the factory once (retried after a failure) and every call is forwarded. `destroy()` aborts a load in flight and destroys the probe when it arrives. The stub is what the size matrix measures as the critical path.
 
 ## Data flow
 
 ```
-main thread                    worker (module)                  core
------------                    ---------------                  ----
-File (drop / picker / sample)
-  store.addFiles -> workerPool.submit(file, 'own', opts)
-     postMessage {analyze} --> analyze(file, name, opts) -----> BlobReader(file)
-                                                                read head window (64 KiB, 1 read)
-                                                                sniff(head) -> isobmff | matroska | unknown
-                                                                import() of that parser (first use only)
-                                                                analyzeIsoBmff / analyzeMatroska(reader, opts)
-                                                                   box or EBML walk through reader.view()
-                                                                   timeline -> analyzeTimeline() -> stats (+ profile job)
-                                                                profile job? import() of segments.ts -> rateProfile
-                                                                FileResult + io { reads, bytesRead, ms }
-     {progress} / {result} <-- postMessage
-  store row updated -> React render
+main thread                         worker (module)                       core
+-----------                         ---------------                       ----
+probe.analyze(file)                                                       
+  [stub: import() of the client]
+  route of the engine -> WorkerPool(kind).run
+     postMessage {analyze} -------> serveProbeWorker: load engine ------> BlobReader(file)
+                                    (own: ownEngine = core analyze)       read head window (64 KiB, 1 read)
+                                                                          sniff(head) -> isobmff | matroska | unknown
+                                                                          import() of that parser and stats.ts (first use)
+                                                                          analyzeIsoBmff / analyzeMatroska(reader, opts)
+                                                                             timeline -> analyzeTimeline() (+ profile job)
+                                                                          profile job? import() of segments.ts
+                                                                          FileResult + io { reads, bytesRead, ms }
+     {progress} / {result} <------- postMessage
+  single engine: the result; a chain or a skip: import() of fallback.ts
 ```
 
 - The head window read by `analyze` stays in the reader cache, so a faststart MP4 or a Matroska header usually needs no second read.
-- `io.bytesRead` counts unique bytes fetched; overlapping reads are not counted twice. `io.ms` covers the whole `analyze` call, measured where it runs.
-- The rate profile runs after the statistics of a track, inside the same `analyze` call, so `io.ms` includes it. A track whose intervals are all within 7.5% of each other has no job and never loads `segments.ts`.
-- Cancellation: pass an `AbortSignal`. Every read checks it before and after the fetch, and `analyze` rethrows `AbortError` instead of returning a result. Every other failure becomes `FileResult.error`; `analyze` never throws for a bad file.
+- `io.bytesRead` counts unique bytes fetched; overlapping reads are not counted twice. `io.ms` covers the analysis where it runs, without the chunk loads.
+- The rate profile runs after the statistics of a track, inside the same `analyze` call. A track whose intervals are all within 7.5% of each other has no job and never loads `segments.ts`.
+- Cancellation: every read checks the signal before and after the fetch, and `analyze` rethrows the abort instead of returning a result. Every other failure becomes `FileResult.error`; `analyze` never throws for a bad file.
 
 **ISO BMFF.** Top-level walk: `ftyp`, then `moov` read exactly (a moov at the end costs one extra read of the remainder), `moof` windows with read-ahead and sidx or mfra prefetch, `mfra` stops the walk. Then the ffprobe header extent is emulated, each video track is built (rates, edit window, timeline segments into `analyzeTimeline`), the primary track is picked and the format duration is computed.
 
 **Matroska.** Stage A header (budget 5 reads and 1 MiB, with resync) gives tracks, DefaultDuration, Duration and tags. Mode `header` stops there. Otherwise the first Cluster is found, the block density is sampled and a scan plan is costed. `auto` runs the exact scan when the prediction is within the budget (150 ms by default) and the sampled probe otherwise. Exact walks every block header and feeds the PTS array to `analyzeTimeline`; probe samples clusters from Cues plus a tail scan and never reports an average.
 
-**Comparison engines.** The compare panel sends `mp4box` and `mediabunny` jobs through the same pool and worker protocol; the worker imports the engine on first use and returns a `FileResult` tagged with its engine. `rvfc` runs on the main thread: the store imports `rvfc.ts` and plays the file in a visible host element. It has no IO counters.
+**Library engines.** mp4box and mediabunny run on their prebuilt worker (or a custom worker that serves them) through the same protocol; the runtime imports the engine on its first job and returns a `FileResult` tagged with its engine. rvfc runs on the main thread through `runInline` and plays the file in a visible host element; it has no IO counters.
 
-## Worker protocol
-
-```ts
-type WorkerEngine = 'own' | 'mp4box' | 'mediabunny';
-
-type WorkerRequest =
-  | { type: 'analyze'; id: number; file: File; engine: WorkerEngine; options: Omit<AnalyzeOptions, 'signal' | 'onProgress'> }
-  | { type: 'cancel'; id: number };
-
-type WorkerResponse =
-  | { type: 'progress'; id: number; progress: AnalyzeProgress }
-  | { type: 'result'; id: number; result: FileResult }
-  | { type: 'error'; id: number; message: string; aborted: boolean };
-```
-
-- The `File` is cloned by reference, so no bytes are copied. `signal` and `onProgress` cannot cross the boundary; the worker builds them per job id.
-- `progress` is sent at most once per 50 ms. Phases: `fragments` (ISO BMFF, every 64 moofs), `matroska-exact` (bytes after the first Cluster), `read` and `analyze` (mp4box), `packets` (mediabunny).
-- `cancel` aborts the job's controller. The pool rejects the job with `AbortError` immediately and terminates and replaces a worker that is still busy 1.5 s later. A worker crash rejects its job and the next job spawns a new worker.
-
-## Lazy chunks
+## Chunks
 
 | Chunk | Contents | Loaded by | When |
 |---|---|---|---|
-| main | React, UI, store, pool | `index.html` | page load |
-| worker entry | message glue, `analyze`, reader, sniff, options, result builders | `new Worker(new URL('../worker/analyze.worker.ts', import.meta.url), { type: 'module' })` in `workerPool.ts` | first file |
-| ISO BMFF parser | `src/core/isobmff` | dynamic `import()` in `analyze.ts` | first file that sniffs as ISO BMFF, once per worker |
-| Matroska parser | `src/core/matroska` | dynamic `import()` in `analyze.ts` | first file that sniffs as EBML, once per worker |
-| mp4box | mp4box 2.4.1 and `engines/mp4box.ts` | dynamic `import()` in the worker | compare panel on an MP4 or MOV card |
-| mediabunny | mediabunny 1.62.0 and `engines/mediabunny.ts` | dynamic `import()` in the worker | compare panel |
-| shared chunks | modules several lazy chunks use, such as `stats.ts` and `rational.ts` (parsers and engines) and `engines/counting.ts` (library engines) | static imports of the lazy chunks that need them | with the first chunk that needs them |
-| Compare | comparison table (`React.lazy`) | `ResultCard.tsx` | first time a card's compare panel opens |
-| rVFC | `engines/rvfc.ts` | dynamic `import()` in `store.ts`, main thread | explicit click on "Run (approximate)" |
-| segments | `core/segments.ts` (rate profile) | dynamic `import()` in `stats.ts` (`rateProfileOf`), in the worker | first track with unequal frame intervals, once per worker |
-| RateProfile | `ui/RateProfile.tsx` | `React.lazy` in `ResultCard.tsx` | first card that has a rate profile |
-| deviceInfo | `ui/deviceInfo.ts` | dynamic `import()` in `store.ts` | on idle after the first result (footer device line), or by the first export |
+| stub | `lazyStub` and the lazy entry | the host's entry chunk | page load (the critical path) |
+| probe client | `client/probe.ts`, `pool.ts` and, in the default flavor, the own descriptor | `import()` in the stub | first call or `prewarm()` |
+| fallback, compare, inline | `client/fallback.ts`, `client/compare.ts` with `api/agreement.ts`, `client/inline.ts` | `import()` in the client | first chain or skip, first `compare`, first in-thread run |
+| worker entry | runtime, reader, sniff, options, result builders | the worker literal of the kind | first job of that kind |
+| statistics | `core/stats.ts` and what it shares | `import()` with each parser or engine, in parallel | first parser or engine, once per worker |
+| ISO BMFF, Matroska | `src/core/isobmff`, `src/core/matroska` | `import()` in `core/analyze.ts` | first file of that container, once per worker |
+| segments | `core/segments.ts` (rate profile) | `import()` in `stats.ts` | first track with unequal intervals, once per worker |
+| mp4box, mediabunny | the library and its adapter | `import()` in the runtime | first job of that engine |
+| rVFC | `engines/rvfc.ts` | `import()` from the `rvfc()` descriptor, main thread | first rvfc run |
+| main-thread copies | runtime and parsers for the calling thread | `import()` in the inline route or the root `analyze()` | only inline, without `Worker`, or a root `analyze()` |
 
-Each worker of the pool fetches the chunks it needs once. Where the bundler places modules shared by several lazy chunks can change between builds; the size report classifies them as shared chunks. `scripts/size-report.mjs` discovers the chunks from the build output and enforces the budgets in its `BUDGETS` table; run `npm run build && npm run size` for current numbers.
+Where a bundler places modules shared by several lazy chunks can change between builds; the size tools classify them as shared chunks.
+
+## Build and package checks
+
+**`scripts/build-lib.mjs`** (`npm run build:lib`, also run by `prepack`):
+
+1. Deletes `dist/`.
+2. Runs `tsc -p tsconfig.lib.json`: per-module ES2022 output with declarations.
+3. Rewrites worker URLs from `.worker.ts` to `.worker.js` in the emitted JavaScript.
+4. Rewrites relative `.ts` specifiers to `.js` in the emitted `.d.ts` files (TypeScript 6 rewrites them only in JavaScript).
+5. Builds `dist/standalone/own.worker.js` with rolldown: one minified IIFE file, no code splitting.
+
+**`scripts/check-dist.mjs`** (`npm run check:package` after publint, and `prepack`) fails on any of:
+
+- a file outside the whitelist (`dist/{index,lazy,analyze,probe}` and `dist/{core,engines,worker,client,api,plugins,react,standalone}/**` as `.js` and `.d.ts`), or a pack listing with anything but those plus `package.json`, `README.md`, `LICENSE` and `CHANGELOG.md`;
+- an unpacked package size above the cap (`UNPACKED_CAP`, README and CHANGELOG included);
+- an export or `typesVersions` target that does not exist, an import that does not resolve inside `dist/`, a `.ts` specifier, a `.d.ts` import without a `.d.ts` behind it;
+- a worker reference that is not a literal `.js` URL to an existing file, or a literal outside the three plugin modules; the literal hygiene above;
+- peer isolation: the static closure of the entries and plugins reaching a parser, an engine adapter or a bare `mp4box` or `mediabunny` import; a peer imported anywhere but the two engine adapters, or by a `.d.ts`;
+- `import.meta.env`, the demo's test hook, a DOM global in a worker file;
+- an entry that throws when imported in plain Node (the SSR check).
+
+`node scripts/check-dist.mjs --self-test` checks the checker on synthetic trees. In CI the package job also runs attw (`npm run check:types`) and the dist parity suite (`npm run test:package`: `dist/` analyzes every committed fixture exactly like `src/`).
+
+**Size matrix.** `npm run consumers:setup` packs the package and installs the tarball, Vite and the peers into a directory outside the repository; `npm run consumers:build` builds every fixture of `tests/consumers/fixtures/` with hidden sourcemaps; `scripts/size-matrix.mjs` measures them (the critical path cut out of the entry chunk by its sourcemap, lazy totals, worker files), checks must-not-exist modules against the sourcemap `sources` and the request chains, enforces the budgets and compares with the committed `report/size-matrix.*`. The same builds run in the consumer smoke test.
+
+## Demo
+
+`demo/` is a React app and a consumer of the package. It imports `video-fps-probe/client/lazy`, `video-fps-probe/client`, `video-fps-probe/rvfc`, `video-fps-probe/worker-runtime` and `video-fps-probe/engines/*` by package name, and only types from `video-fps-probe`; `scripts/src-aliases.mjs` maps those names to `src/` for the demo build, the TypeScript paths and vitest, derived from the `exports` map and checked by `npm run check:aliases`. Its store holds `lazyProbeFrom(() => import('./probe.ts').then((m) => m.probe))`, and `probe.ts` creates a client with a custom worker (`probe.worker.ts`, serving own, mp4box and mediabunny), `engines: [rvfc()]`, `workers: 2` and `idleTimeoutMs: 0`, so the demo build has exactly one worker file. Its sizes are budgeted by `node scripts/size-report.mjs demo/dist --check`. See [demo/README.md](../demo/README.md).
 
 ## ContainerAnalyzer contract
 
@@ -178,7 +264,7 @@ type ContainerAnalysis = Omit<FileResult, 'name' | 'size' | 'io' | 'engine'>;
 
 ## Provenance
 
-Each `VideoTrackResult` field can carry a provenance tag in `provenance`. The UI shows it as a one-letter mark with a tooltip, and the legend under the summary line lists all five.
+Each `VideoTrackResult` field can carry a provenance tag in `provenance`. The demo shows it as a one-letter mark with a tooltip, and the legend under its summary line lists all five.
 
 | Value | Mark | Meaning | Produced by |
 |---|---|---|---|
@@ -202,12 +288,12 @@ max > min x 1.075 ? ProfileJob : null  --> after the track result is built:
 ```
 
 - The job is a closure over the timeline's delta source: run-length stts runs for MP4 (no per-frame array on the fast path), the sorted PTS for Matroska. Nothing is computed for CFR tracks, and a failed import leaves `rateProfile` null instead of failing the file.
-- `RateProfile` is plain data (segments, anomalies, buckets, flags and a summary string), so it crosses the worker boundary and lands in the JSON export unchanged. The card shows the `uneven` badge from `rateProfile.uneven` and renders the panel through `React.lazy`.
+- `RateProfile` is plain data (segments, anomalies, buckets, flags and a summary string), so it crosses the worker boundary and lands in the JSON export unchanged. The demo card shows the `uneven` badge from `rateProfile.uneven` and renders the panel through `React.lazy`.
 - The algorithm, its thresholds and its known gaps are in [implementation-notes.md section 11](implementation-notes.md#11-rate-profile).
 
-## JSON export
+## Demo JSON export
 
-Download JSON and Copy JSON produce one document:
+The demo's Download JSON and Copy JSON produce one document:
 
 ```ts
 interface ExportDocument {
@@ -225,12 +311,29 @@ interface ExportDocument {
 - `build` is the file name of the page's hashed entry chunk (for example `index-uMRvdkcZ.js`), so exports from different devices show whether they ran the same deployed build. `buildTime` and `commit` come from the `VITE_BUILD_TIME` and `VITE_COMMIT` environment variables at build time (Vite exposes `VITE_*` variables) and are null when the build does not set them.
 - The copy path starts the clipboard write synchronously inside the click handler (Safari rejects a write after an `await`), which is why the chunk is preloaded on idle after the first result, before the export buttons matter.
 
+## Scripts and data
+
+| Path | Role |
+|---|---|
+| `scripts/build-lib.mjs`, `scripts/check-dist.mjs` | the library build and the package checks above |
+| `scripts/src-aliases.mjs` | package exports mapped to `src/` for the demo, the TypeScript paths and vitest; `--check` |
+| `scripts/consumers.mjs`, `scripts/size-matrix.mjs` | consumer fixtures from the packed tarball and the package size matrix |
+| `scripts/size-report.mjs` | chunk sizes and budgets of the demo build (`demo/dist`), the request chain check |
+| `scripts/compare-ffprobe.ts`, `scripts/compare/` | compares engines with the ffprobe references and writes `report/accuracy.*`; exit 1 on an unexpected own mismatch |
+| `scripts/bench/` | Chrome DevTools Protocol drivers: `run-bench.mjs` (timings, Node identity check, screenshots) and `integration.mjs` (cost of embedding in a host SPA); they drive the demo through its test hook |
+| `scripts/readme-tables.ts` | rewrites the generated blocks of the README, `docs/benchmarks.md` and `docs/bundlers.md` from the JSON reports |
+| `scripts/fixtures/` | fixture generator, reference extraction and patch tools |
+| `fixtures/` | `files/` (111 committed fixtures), `manifest.tsv`, `ref/*.ref.json` (ffprobe 8.1.1), `known-deviations/*.json`, `large/` (git-ignored) |
+| `report/` | generated accuracy, size, size matrix, browser benchmark and integration cost reports, and the hand-written average-user model |
+
 ## Test layers
 
 | Layer | Runs | Checks |
 |---|---|---|
-| vitest (`npm test`) | Node, `src/core` on the fixture files through `fs.openAsBlob` | units, every manifest row, rate profiles, engine contracts, device info and export with fake navigators |
+| vitest (`npm test`) | Node: `src/` on the fixture files through `fs.openAsBlob`, the API with a fake worker | units, every manifest row, rate profiles, engine contracts, the worker runtime, the pool, routing, fallback, compare, timeouts, deadlines, lazy stubs, demo device info and export |
+| dist parity (`npm run test:package`) | Node, after `build:lib` | `dist/` gives the same results as `src/` on every committed fixture |
 | comparison (`npm run compare`) | Node, all engines against `fixtures/ref` | every field against ffprobe 8.1.1 under the research tolerances; gates on the own engine |
+| demo end-to-end (`npm run test:e2e`) | Playwright Chromium, Firefox and WebKit against a `vite preview` of the demo, or `E2E_BASE_URL` | browser results equal Node field by field, the UI flows, the export, the 360 px layout, keyboard access |
+| consumers (`npm run test:consumers`) | Playwright Chromium, Firefox and WebKit against the consumer fixtures under `vite build` and `vite dev` | results equal Node `analyze` from the same tarball; no dev reload when an engine first runs |
 | benchmark (`npm run bench`, `scripts/bench/integration.mjs`) | installed Chrome (and Edge) over the DevTools Protocol, real file input | timings, bytes, memory, main-thread blocking, Node identity of every result |
-| end-to-end (`npm run test:e2e`) | Playwright Chromium, Firefox and WebKit against a `vite preview` of the build, or `E2E_BASE_URL` | browser results equal Node field by field, the UI flows, the export, the 360 px layout, keyboard access |
-| CI ([ci.yml](../.github/workflows/ci.yml)) | Ubuntu | job `verify`: typecheck, lint, vitest, comparison, build, size budgets; job `e2e`: the Playwright suite in all three browsers |
+| CI ([ci.yml](../.github/workflows/ci.yml)) | Ubuntu | job Verify: typecheck, lint, aliases, vitest, comparison, demo build, size budgets, generated tables; job Package: check-dist self-test, `build:lib`, publint and check-dist, attw, dist parity; job End-to-end: the demo suite in three browsers; job Consumers: the size matrix, the generated tables and the smoke test from the packed tarball |
