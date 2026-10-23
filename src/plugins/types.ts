@@ -12,3 +12,11 @@ export interface EngineModule<R extends FileResult = FileResult> {
   readonly containers: readonly ContainerFamily[] | 'any';
   readonly warm?: (containers: readonly ContainerFamily[]) => Promise<void>;
 }
+
+export interface EngineDescriptor<Id extends EngineId = EngineId> {
+  readonly id: Id;
+  readonly thread: 'worker' | 'main';
+  readonly createWorker?: () => Worker;
+  readonly load: () => Promise<EngineModule>;
+  readonly loadOwn?: () => Promise<EngineModule>;
+}
