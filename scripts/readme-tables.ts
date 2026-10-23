@@ -291,6 +291,7 @@ const CHUNK_WHEN: Record<string, string> = {
   main: 'page load',
   css: 'page load',
   client: 'first file',
+  'client-lazy': 'probe.compare, a fallback chain or a skipped engine, an rVFC run',
   worker: 'first file',
   isobmff: 'first MP4 or MOV file, once per worker',
   matroska: 'first WebM or MKV file, once per worker',
@@ -308,7 +309,8 @@ const CHUNK_WHEN: Record<string, string> = {
 const CHUNK_NAME: Record<string, string> = {
   main: 'main (React, UI, store)',
   css: 'CSS',
-  client: 'worker pool (lazy client)',
+  client: 'probe client (lazy)',
+  'client-lazy': 'probe client parts loaded on use (compare, fallback chain, in-thread runner)',
   worker: 'worker entry (reader, sniffing, worker runtime)',
   isobmff: 'ISO BMFF parser',
   matroska: 'Matroska parser',
@@ -323,7 +325,7 @@ const CHUNK_NAME: Record<string, string> = {
   'engine-shared': 'shared by mp4box and mediabunny',
 };
 
-const CHUNK_ORDER = ['main', 'css', 'client', 'worker', 'parser-shared', 'isobmff', 'matroska', 'segments', 'rateProfile', 'deviceInfo', 'rvfc', 'lazy', 'mp4box', 'mediabunny', 'engine-shared'];
+const CHUNK_ORDER = ['main', 'css', 'client', 'client-lazy', 'worker', 'parser-shared', 'isobmff', 'matroska', 'segments', 'rateProfile', 'deviceInfo', 'rvfc', 'lazy', 'mp4box', 'mediabunny', 'engine-shared'];
 
 const COMPOSITE_BUDGET: Record<string, string> = { initial: 'initial', firstMp4: 'firstMp4', firstVfrMp4: 'firstVfrMp4', firstMatroska: 'firstMkv' };
 
@@ -331,9 +333,9 @@ const OPTIONAL_COMPOSITES = new Set(['firstVfrMp4']);
 
 const COMPOSITE_LABEL: Record<string, string> = {
   initial: 'initial: main + CSS + worker entry',
-  firstMp4: 'first MP4 analysis: initial + worker pool + statistics + ISO BMFF parser',
+  firstMp4: 'first MP4 analysis: initial + probe client + statistics + ISO BMFF parser',
   firstVfrMp4: 'first VFR MP4 analysis: first MP4 + rate profile core',
-  firstMatroska: 'first Matroska analysis: initial + worker pool + statistics + Matroska parser',
+  firstMatroska: 'first Matroska analysis: initial + probe client + statistics + Matroska parser',
 };
 
 function fail(message: string): never {
@@ -543,7 +545,7 @@ function headline(inp: Inputs): string[] {
     `- **Accuracy.** The own parsers were checked against ffprobe 8.1.1 on ${own.fixtures.length} synthetic fixtures made with ffmpeg (${committed.length} committed, ${large.length} large local files; real recorder output is not in the corpus, see Limitations): ${checks} field checks, ${counts.exact} exact, ${counts['within-tol']} within tolerance, ${plural(counts['known-deviation'], 'known deviation')} with a recorded reason, ${plural(counts.mismatch, 'mismatch').replace(/hs$/, 'hes')}, ${counts['n/a']} not applicable.`,
     `- **Reads.** Median ${median(reads)} reads per committed fixture, at most ${Math.max(...reads)}. The ${fmtDuration(longDur)}, ${longFrames}-frame MP4 (${fmtBytes(long.sizeBytes)}) takes ${io(long).reads} reads and ${fmtBytes(io(long).bytesRead)} (${fmtPct(io(long).percent)}% of the file).`,
     `- **Speed.** In ${browser}, warm: median ${fmtMs(median(warm.map((w) => w.medianMs)))} ms per file in the worker and ${fmtMs(median(warm.map((w) => w.medianWallMs)))} ms from file pick to rendered result; the ${fmtDuration(longDur)} file takes ${fmtMs(chromeLong.medianMs)} ms.${big}`,
-    `- **Size.** The page plus the first MP4 result loads ${fmtKB(firstMp4.gzip)} gzip (page, ${kindGzip(inp.size, 'client') === null ? '' : 'worker pool, '}worker entry, ${sharedParserGzip(inp.size) === null ? '' : 'shared statistics chunk, '}ISO BMFF parser); the first Matroska result ${fmtKB(firstMkv.gzip)}.`,
+    `- **Size.** The page plus the first MP4 result loads ${fmtKB(firstMp4.gzip)} gzip (page, ${kindGzip(inp.size, 'client') === null ? '' : 'probe client, '}worker entry, ${sharedParserGzip(inp.size) === null ? '' : 'shared statistics chunk, '}ISO BMFF parser); the first Matroska result ${fmtKB(firstMkv.gzip)}.`,
     `- **Embedding.** In a host app the critical path grows by a ${fmtKB(m.triggerGzip)} gzip trigger (${pctSmall(m.initialIncreaseMeasuredPct)} of a ${fmtMB(inp.integration.host.initialGzipBytes)} initial load); the first MP4 lazily loads ${fmtKB(m.lazyMp4Gzip)}. With the worker prewarmed when the upload dialog opens, the first result on fast 4G takes ${fmtMs(fast.prewarm.totalMs)} ms instead of ${fmtMs(fast.cold.totalMs)} ms.${integrationStale(inp) ? ` Measured on an earlier build whose worker entry and parser chunks differ from the current ones, so these figures are not current.` : ''}`,
     `- **Same result in Node and Chrome.** ${inp.bench.sanity.identical} of ${inp.bench.sanity.compared} files give identical results field by field (timing excluded).`,
     `- **Machine.** ${machine(inp)}.`,
@@ -717,7 +719,7 @@ function approachesBlock(inp: Inputs): string[] {
     row([`${durOf(longVfr)} VFR MP4, ${fmtBytes(longVfr.sizeBytes)}`, ...all.map((e) => largeCell(e, longVfr.name)), 'not measured']),
     row([
       'gzip, loaded on demand',
-      `${kindGzip(sz, 'client') === null ? '' : `worker pool ${fmtKB(kindGzip(sz, 'client')!)} + `}worker entry ${fmtKB(chunkGzip(sz, 'worker'))}${sharedParserGzip(sz) === null ? '' : ` + statistics ${fmtKB(sharedParserGzip(sz)!)}`} + ISO BMFF ${fmtKB(chunkGzip(sz, 'isobmff'))} or Matroska ${fmtKB(chunkGzip(sz, 'matroska'))}`,
+      `${kindGzip(sz, 'client') === null ? '' : `probe client ${fmtKB(kindGzip(sz, 'client')!)} + `}worker entry ${fmtKB(chunkGzip(sz, 'worker'))}${sharedParserGzip(sz) === null ? '' : ` + statistics ${fmtKB(sharedParserGzip(sz)!)}`} + ISO BMFF ${fmtKB(chunkGzip(sz, 'isobmff'))} or Matroska ${fmtKB(chunkGzip(sz, 'matroska'))}`,
       `${fmtKB(chunkGzip(sz, 'mp4box'))} + ${fmtKB(shared)} shared`,
       `${fmtKB(chunkGzip(sz, 'mediabunny'))} + ${fmtKB(shared)} shared`,
       fmtKB(chunkGzip(sz, 'rvfc')),
