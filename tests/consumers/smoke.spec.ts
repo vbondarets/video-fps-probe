@@ -10,7 +10,7 @@ type WorkerEngine = 'own' | 'mp4box' | 'mediabunny';
 
 interface ConsumerProbe {
   readonly engines: readonly string[];
-  analyze(file: Blob, options?: { engine?: string }): Promise<ProbeResult>;
+  analyze(file: Blob, options?: { engine?: string; host?: HTMLElement }): Promise<ProbeResult>;
 }
 
 interface PackageRoot {
@@ -29,6 +29,9 @@ const FAMILIES: Record<WorkerEngine, readonly string[]> = {
   mediabunny: ['isobmff', 'matroska'],
 };
 
+const RVFC_FILES = ['cfr_h264_29.97.mp4', 'cfr_vp9_29.97.webm'] as const;
+const RVFC_UNSUPPORTED = 'requestVideoFrameCallback unsupported';
+
 const DIST = pathToFileURL(join(installedPackage(consumersDir()), 'dist')).href;
 
 async function nodeAnalyze(name: string, engine: WorkerEngine): Promise<ProbeResult> {
@@ -46,6 +49,17 @@ async function browserAnalyze(page: Page, name: string, engine: WorkerEngine): P
   }, engine);
 }
 
+async function browserRvfc(page: Page, name: string): Promise<{ supported: boolean; engine: string; error: string | null }> {
+  await page.locator('#file').setInputFiles(join(FILES_DIR, name));
+  return page.evaluate(async () => {
+    const file = document.querySelector<HTMLInputElement>('#file')?.files?.[0];
+    if (!file) throw new Error('no file picked');
+    const supported = 'requestVideoFrameCallback' in HTMLVideoElement.prototype;
+    const { engine, error } = await (window.__probe as ConsumerProbe).analyze(file, { engine: 'rvfc', host: document.body });
+    return { supported, engine, error };
+  });
+}
+
 function withoutTiming(r: ProbeResult) {
   const { io, mediabunny, ...rest } = r;
   return { ...rest, io: { reads: io.reads, bytesRead: io.bytesRead }, ...(mediabunny ? { mediabunny: { ...mediabunny, nativeStatsMs: 0 } } : {}) };
@@ -53,7 +67,7 @@ function withoutTiming(r: ProbeResult) {
 
 for (const fixture of FIXTURES) {
   for (const mode of ['build', 'dev'] as const) {
-    test(`${fixture.name} under vite ${mode} equals Node analyze from the same tarball`, async ({ page }) => {
+    test(`${fixture.name} under vite ${mode} equals Node analyze from the same tarball`, async ({ page, browserName }) => {
       const pageErrors: string[] = [];
       page.on('pageerror', (e) => pageErrors.push(`${e.name}: ${e.message}`));
       let navigations = 0;
@@ -80,6 +94,15 @@ for (const fixture of FIXTURES) {
         }
       }
       expect(runs).toBeGreaterThanOrEqual(FILES.length);
+      if (fixture.engines.includes('rvfc')) {
+        const rvfcSupported = browserName !== 'webkit' || process.platform !== 'win32';
+        for (const name of RVFC_FILES) {
+          const { supported, engine, error } = await browserRvfc(page, name);
+          expect(engine, `${name} with rvfc`).toBe('rvfc');
+          expect(supported, `requestVideoFrameCallback in ${browserName} on ${process.platform}`).toBe(rvfcSupported);
+          expect(error, `${name} with rvfc`).toBe(rvfcSupported ? null : RVFC_UNSUPPORTED);
+        }
+      }
       for (const name of fixture.workers) expect(workerUrls.some((url) => url.includes(name)), `a ${name} worker ran (started: ${workerUrls.join(', ') || 'none'})`).toBe(true);
       expect(pageErrors).toEqual([]);
       expect(navigations, mode === 'dev' ? 'the dev server reloaded the page when an engine first ran' : 'the page navigated again').toBe(1);
