@@ -53,6 +53,7 @@ npm ci
 npm run dev                      # Vite dev server
 npm test                         # vitest: unit and fixture tests in Node
 npm run test:e2e                 # Playwright: the built app in Chromium, Firefox and WebKit
+npm run test:package             # dist parity: analyze() from dist/ equals src/ on every committed fixture (after build:lib)
 npm run typecheck                # tsc -b
 npm run lint                     # oxlint
 npm run compare                  # own, mp4box and mediabunny vs the ffprobe references, writes report/accuracy.*

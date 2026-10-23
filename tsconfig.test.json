@@ -34,5 +34,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["tests", "scripts", "vitest.config.ts"]
+  "include": ["tests", "scripts", "vitest.config.ts", "vitest.package.config.ts"]
 }

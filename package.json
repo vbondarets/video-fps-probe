@@ -145,6 +145,7 @@
     "typecheck": "tsc -b",
     "lint": "oxlint",
     "test": "vitest run",
+    "test:package": "vitest run -c vitest.package.config.ts",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "fixtures:generate": "bash scripts/fixtures/generate-fixtures.sh",
