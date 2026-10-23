@@ -4,6 +4,9 @@ import { PROTOCOL_VERSION, type JobRequest, type WorkerRequest, type WorkerRespo
 
 export const KILL_AFTER_MS = 1500;
 export const DEFAULT_IDLE_TIMEOUT_MS = 30_000;
+const MAX_DELAY_MS = 2 ** 31 - 1;
+
+const delayOf = (ms = 0): number => (ms > 0 && ms <= MAX_DELAY_MS ? ms : 0);
 
 export interface PoolOptions {
   create: () => Worker;
@@ -47,8 +50,9 @@ export class WorkerPool {
 
   constructor(options: PoolOptions) {
     this.#create = options.create;
-    this.#size = Math.max(1, options.size ?? 1);
-    this.#idleMs = options.idleTimeoutMs ?? DEFAULT_IDLE_TIMEOUT_MS;
+    const size = options.size ?? 1;
+    this.#size = Number.isFinite(size) && size >= 1 ? Math.floor(size) : 1;
+    this.#idleMs = delayOf(options.idleTimeoutMs ?? DEFAULT_IDLE_TIMEOUT_MS);
   }
 
   get workers(): number {
@@ -162,8 +166,8 @@ export class WorkerPool {
       const job = this.#queue.shift()!;
       clearTimeout(slot.idle);
       slot.job = job;
-      const { timeoutMs } = job.options;
-      if ((timeoutMs ?? 0) > 0) {
+      const timeoutMs = delayOf(job.options.timeoutMs);
+      if (timeoutMs > 0) {
         job.timer = setTimeout(() => {
           this.#fail(job, 'timeout', `timed out after ${timeoutMs} ms`);
           if (slot.job === job) this.#kill(slot);

@@ -180,6 +180,45 @@ describe('WorkerPool', () => {
     expect(FakeWorker.instances[0].terminated).toBe(false);
   });
 
+  it('treats a non-finite or too large timeoutMs as no timeout and a non-finite idleTimeoutMs as keep alive', async () => {
+    FakeWorker.reset('manual');
+    const pool = new WorkerPool({ create: FakeWorker.create, size: 3, idleTimeoutMs: Number.POSITIVE_INFINITY });
+    const settled: string[] = [];
+    const runs = [Number.POSITIVE_INFINITY, Number.NaN, 2 ** 31].map((timeoutMs, i) =>
+      pool.run(analyzeRequest(String(i)), { timeoutMs }).then(
+        () => settled.push(String(i)),
+        (e: unknown) => settled.push(`failed ${i}: ${String(e)}`),
+      ),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(settled).toEqual([]);
+    expect(FakeWorker.instances.map((w) => w.terminated)).toEqual([false, false, false]);
+    FakeWorker.instances.forEach((w, i) => w.answer(i + 1));
+    await Promise.all(runs);
+    expect(settled.sort()).toEqual(['0', '1', '2']);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(pool.workers).toBe(3);
+    expect(FakeWorker.instances.map((w) => w.terminated)).toEqual([false, false, false]);
+  });
+
+  it('falls back to one worker for a size that is not a finite number of at least 1 and rounds a fractional size down', async () => {
+    for (const size of [Number.NaN, 0, -2, Number.POSITIVE_INFINITY]) {
+      FakeWorker.reset('manual');
+      const pool = new WorkerPool({ create: FakeWorker.create, size, idleTimeoutMs: 0 });
+      const runs = [pool.run(analyzeRequest('a')), pool.run(analyzeRequest('b'))];
+      expect(FakeWorker.instances).toHaveLength(1);
+      FakeWorker.instances[0].answer(1);
+      FakeWorker.instances[0].answer(2);
+      expect((await Promise.all(runs)).map((r) => r.type)).toEqual(['result', 'result']);
+    }
+    FakeWorker.reset('manual');
+    const pool = new WorkerPool({ create: FakeWorker.create, size: 2.7, idleTimeoutMs: 0 });
+    const runs = ['a', 'b', 'c'].map((n) => pool.run(analyzeRequest(n)).catch((e: unknown) => e));
+    expect(FakeWorker.instances).toHaveLength(2);
+    pool.destroy();
+    expect(await Promise.all(runs)).toMatchObject([{ code: 'aborted' }, { code: 'aborted' }, { code: 'aborted' }]);
+  });
+
   it('destroy rejects queued and running jobs as aborted and terminates every worker', async () => {
     FakeWorker.reset('manual');
     const pool = new WorkerPool({ create: FakeWorker.create, size: 2 });
