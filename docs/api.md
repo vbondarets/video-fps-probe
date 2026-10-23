@@ -206,11 +206,14 @@ interface EngineDescriptor<Id extends EngineId = EngineId> {
 | Engine | Containers | Notes |
 |---|---|---|
 | `own` | MP4, MOV, WebM, Matroska | the default; exact rationals, provenance, rate profile |
-| `mp4box` | MP4, MOV | other containers are skipped (`unsupported by mp4box`); durations come from the stts box, not the last sample; verified with mp4box 2.4.1 (`MP4BOX_VERSION`) |
+| `mp4box` | MP4, MOV | other containers are skipped (`unsupported by mp4box`); durations come from the stts box, not the last sample; verified with mp4box 2.4.1 (`MP4BOX_VERSION`); BSD-3-Clause; needs Safari 16.4 (class static blocks) |
 | `mediabunny` | MP4, MOV, WebM, Matroska | its average is the packet rate; reads whole Matroska clusters; verified with mediabunny 1.62.0 (`MEDIABUNNY_VERSION`); MPL-2.0 |
 | `rvfc` | anything the browser plays | main thread; plays the file muted in a 320 px video element appended to `host`; every value is `estimated`; needs a visible foreground tab; never part of a default compare set or fallback chain |
 
 The host of rvfc comes from the per-call `host`, else from `rvfc({ host })`. Without one, or without a DOM, it rejects (`worker-failed` and `unsupported-environment` respectively).
+
+- The peers are optional and never installed with the package: `npm install mp4box` or `npm install mediabunny` (or the yarn, pnpm or bun equivalent). Importing `video-fps-probe/mp4box` or `video-fps-probe/mediabunny` without its peer fails the build, because the peer cannot be resolved.
+- Engine ids are typed from what you register: `engine: 'mp4box'` without `mp4box()` is a type error, and `ProbeError('engine-not-registered')` at run time.
 
 ### Custom worker
 
