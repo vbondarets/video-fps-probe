@@ -85,6 +85,36 @@ describe('lazyProbeFrom', () => {
     expect(stub.loaded).toBe(true);
   });
 
+  it('rejects the calls waiting for the load with aborted when destroyed while loading, and serves the calls after it', async () => {
+    const probe = fakeProbe();
+    let resolve: ((p: Probe<EngineId>) => void) | null = null;
+    const stub = lazyProbeFrom(() => new Promise<Probe<EngineId>>((r) => (resolve = r)));
+    const analyzed = stub.analyze(mp4File('a.mp4'));
+    const compared = stub.compare(mp4File('a.mp4'));
+    const tried = stub.tryAnalyze(mp4File('b.mp4'));
+    const warmed = stub.prewarm();
+    stub.destroy();
+    resolve!(probe);
+    await expect(analyzed).rejects.toMatchObject({ name: 'ProbeError', code: 'aborted' });
+    await expect(compared).rejects.toMatchObject({ name: 'ProbeError', code: 'aborted' });
+    expect(await tried).toBeNull();
+    await expect(warmed).resolves.toBeUndefined();
+    expect(stub.loaded).toBe(true);
+    expect(probe.calls).toEqual([]);
+    expect((await stub.analyze(mp4File('c.mp4'))).name).toBe('c.mp4');
+    expect(probe.calls).toEqual(['analyze']);
+  });
+
+  it('forwards a call to a loaded probe at once, so a destroy right after it reaches the probe second', async () => {
+    const probe = fakeProbe();
+    const stub = lazyProbeFrom(async () => probe);
+    await stub.load();
+    const pending = stub.analyze(mp4File('a.mp4'));
+    stub.destroy();
+    await pending;
+    expect(probe.calls).toEqual(['analyze', 'destroy']);
+  });
+
   it('is the same function from the lazy entry', () => {
     expect(fromLazyEntry).toBe(lazyProbeFrom);
   });
@@ -104,5 +134,15 @@ describe('lazy entries', () => {
     expect(String(FakeWorker.instances[1].label)).toMatch(/\/worker\/own\.worker\.ts$/);
     expect(FakeWorker.instances[1].posted).toEqual([{ v: 1, id: 1, type: 'warm', engines: ['own'], containers: ['isobmff'] }]);
     expect(stub.engines).toEqual(['own']);
+  });
+
+  it('lazyProbeClient destroyed before its chunk loads spawns no worker and posts no job', async () => {
+    const client = lazyProbeClient({ worker: customWorker('own') });
+    const pending = client.analyze(mp4File('a.mp4'));
+    client.destroy();
+    await expect(pending).rejects.toMatchObject({ name: 'ProbeError', code: 'aborted' });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(client.loaded).toBe(true);
+    expect(FakeWorker.instances).toHaveLength(0);
   });
 });

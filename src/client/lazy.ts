@@ -1,3 +1,4 @@
+import { ProbeError } from '../api/errors.ts';
 import type { EngineId } from '../core/types.ts';
 import type { EngineDescriptor, WorkerEngineId } from '../plugins/types.ts';
 import type { ClientOptions, IdOf, LazyProbe, Probe } from './types.ts';
@@ -7,6 +8,7 @@ export type { ClientOptions, LazyProbe, Probe };
 export function lazyProbeFrom<Id extends EngineId>(factory: () => Promise<Probe<Id>>): LazyProbe<Id> {
   let probe: Probe<Id> | null = null;
   let loading: Promise<Probe<Id>> | null = null;
+  let generation = 0;
   const load = () =>
     (loading ??= factory().then(
       (p) => (probe = p),
@@ -15,6 +17,11 @@ export function lazyProbeFrom<Id extends EngineId>(factory: () => Promise<Probe<
         throw e;
       },
     ));
+  const forward = <T>(call: (p: Probe<Id>) => Promise<T>): Promise<T> => {
+    if (probe) return call(probe);
+    const at = generation;
+    return load().then((p) => (at === generation ? call(p) : Promise.reject(new ProbeError('aborted', 'probe destroyed'))));
+  };
   return {
     get loaded() {
       return probe !== null;
@@ -23,12 +30,15 @@ export function lazyProbeFrom<Id extends EngineId>(factory: () => Promise<Probe<
       return probe?.engines ?? [];
     },
     load,
-    analyze: (file, o) => load().then((p) => p.analyze(file, o)),
-    tryAnalyze: (file, o) => load().then((p) => p.tryAnalyze(file, o), () => null),
-    compare: (file, o) => load().then((p) => p.compare(file, o)),
-    prewarm: (o) => load().then((p) => p.prewarm(o), () => {}),
+    analyze: (file, o) => forward((p) => p.analyze(file, o)),
+    tryAnalyze: (file, o) => forward((p) => p.tryAnalyze(file, o)).catch(() => null),
+    compare: (file, o) => forward((p) => p.compare(file, o)),
+    prewarm: (o) => forward((p) => p.prewarm(o)).catch(() => {}),
     dispose: () => probe?.dispose(),
-    destroy: () => probe?.destroy(),
+    destroy: () => {
+      generation++;
+      probe?.destroy();
+    },
   };
 }
 
