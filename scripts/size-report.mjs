@@ -88,7 +88,8 @@ export const BUDGETS = {
 const USAGE = `Usage: node scripts/size-report.mjs [distDir=dist] [--check] [--out <dir>] [--self-test]
 
   --check       exit 1 when a budget is exceeded, a required chunk (main, worker entry, either parser) is missing,
-                a worker file has no budget, or a parser or engine chunk waits for a chunk its worker does not request
+                a worker file has no budget, or a parser or engine chunk waits for a chunk that is neither loaded
+                nor requested together with it
   --out <dir>   where size.md and size.json are written (default report)
   --self-test   check chunk discovery and budgets on synthetic builds and exit
 `;
@@ -264,38 +265,60 @@ export function workerBudgetOf(file) {
   return WORKER_BUDGETS.find(([, b]) => name.startsWith(`${b.entry}-`) || name.startsWith(`${b.entry}.`))?.[0] ?? null;
 }
 
-function reachableFrom(start, fileSet, texts, stop) {
-  const seen = new Set();
-  const stack = [start];
-  while (stack.length > 0) {
-    const f = stack.pop();
-    const refs = scanReferences(texts.get(f) ?? '', f, fileSet);
-    for (const dep of [...refs.staticImports, ...refs.dynamicImports]) {
-      if (seen.has(dep) || dep === start || stop.has(dep)) continue;
-      seen.add(dep);
-      stack.push(dep);
+const IMPORT_GROUP = /Promise\.all\(\s*\[([^\]]*)\]\s*\)/g;
+const IMPORT_CALL = /import\(\s*["'`]([^"'`]+)["'`]\s*\)/g;
+
+export function importGroups(text, fromFile, fileSet) {
+  const groups = [];
+  for (const m of text.matchAll(IMPORT_GROUP)) {
+    const group = new Set();
+    for (const call of m[1].matchAll(IMPORT_CALL)) {
+      const target = resolveFrom(call[1], fromFile, fileSet);
+      if (target && target !== fromFile) group.add(target);
     }
+    if (group.size > 1) groups.push(group);
   }
-  return [...seen];
+  return groups;
 }
 
 export function requestChains({ files, kinds, workers, texts }) {
   const fileSet = new Set(files);
-  const problems = [];
-  for (const w of workers) {
-    const refs = scanReferences(texts.get(w) ?? '', w, fileSet);
-    const ready = new Set([w, ...closureOf(w, fileSet, texts), ...refs.dynamicImports]);
-    for (const chunk of reachableFrom(w, fileSet, texts, workers)) {
-      const kind = kinds.get(chunk);
-      if (!CHAIN_KINDS.has(kind)) continue;
-      for (const dep of closureOf(chunk, fileSet, texts)) {
-        if (ready.has(dep)) continue;
-        if (ENGINE_KINDS.has(kind) && kinds.get(dep) === 'engine-shared') continue;
-        problems.push(`request chain: ${chunk} (${kind}) waits for ${dep}, which ${w} does not request in parallel`);
+  const problems = new Set();
+  const closures = new Map();
+  const closure = (f) => {
+    if (!closures.has(f)) closures.set(f, closureOf(f, fileSet, texts));
+    return closures.get(f);
+  };
+  const visited = new Set();
+  const visit = (file, loaded) => {
+    const key = `${file}|${[...loaded].sort().join(',')}`;
+    if (visited.has(key)) return;
+    visited.add(key);
+    const text = texts.get(file) ?? '';
+    const groups = importGroups(text, file, fileSet);
+    for (const target of scanReferences(text, file, fileSet).dynamicImports) {
+      if (workers.has(target) || loaded.has(target)) continue;
+      const requested = new Set([target]);
+      for (const g of groups) if (g.has(target)) for (const f of g) requested.add(f);
+      const kind = kinds.get(target);
+      if (CHAIN_KINDS.has(kind)) {
+        const direct = scanReferences(texts.get(target) ?? '', target, fileSet).staticImports;
+        for (const dep of closure(target)) {
+          if (loaded.has(dep) || requested.has(dep)) continue;
+          if (ENGINE_KINDS.has(kind) && kinds.get(dep) === 'engine-shared' && direct.has(dep)) continue;
+          problems.add(`request chain: ${target} (${kind}) waits for ${dep}, which ${file} does not request in parallel`);
+        }
       }
+      const next = new Set(loaded);
+      for (const f of requested) for (const g of [f, ...closure(f)]) next.add(g);
+      for (const f of next) if (!loaded.has(f)) visit(f, next);
     }
+  };
+  for (const w of workers) {
+    const loaded = new Set([w, ...closure(w)]);
+    for (const f of loaded) visit(f, loaded);
   }
-  return problems;
+  return [...problems];
 }
 
 export function discover(distDir) {
@@ -491,7 +514,7 @@ export function renderMarkdown(report, label) {
   out.push('The lazy mp4box and mediabunny comparison chunks (and the chunk they share) are reported but not budgeted.');
   out.push('');
   out.push(
-    `Request chain check: every static dependency of a parser or engine chunk is in its worker entry or requested by it in parallel (the chunk the engines share may follow the engine). ${report.chains.length === 0 ? 'No problems.' : report.chains.join('; ')}`,
+    `Request chain check: every static dependency of a parser or engine chunk is already loaded when it is requested, or requested together with it in one Promise.all. The one exception: an engine chunk may wait for the chunk the engines share when it imports that chunk directly, so the mp4box and mediabunny paths have one extra sequential request. ${report.chains.length === 0 ? 'No problems.' : report.chains.join('; ')}`,
   );
   out.push('');
   out.push('## Why these limits');
@@ -539,8 +562,12 @@ function runSelfTest() {
   const html = '<!doctype html><html><head><link rel="stylesheet" crossorigin href="./assets/index-C1.css"><script type="module" crossorigin src="./assets/index-M1.js"></script></head><body></body></html>';
   const mainText = (extra) =>
     `const w=new Worker(new URL("assets/analyze.worker-W1.js",import.meta.url),{type:"module"});const a=()=>import("./rvfc-R1.js");const b=()=>import("./RateProfile-P1.js");const h=()=>import("./deviceInfo-V1.js");${extra}`;
-  const workerText = (extra, parallel = []) =>
-    `self.onmessage=e=>{postMessage(1)};const a=()=>import(\`./isobmff-I1.js\`);const b=()=>import(\`./matroska-K1.js\`);const c=()=>import(\`./mp4box-B1.js\`);const d=()=>import(\`./mediabunny-D1.js\`);const g=()=>import(\`./segments-G1.js\`);${parallel.map((f) => `import(\`./${f}\`);`).join('')}${extra}`;
+  const load = (file, groups) => {
+    const calls = [file, ...(groups[file] ?? [])].map((f) => `import(\`./${f}\`)`);
+    return calls.length > 1 ? `Promise.all([${calls.join(',')}])` : calls[0];
+  };
+  const workerText = (extra, groups = {}, loose = []) =>
+    `self.onmessage=e=>{postMessage(1)};${['isobmff-I1.js', 'matroska-K1.js', 'mp4box-B1.js', 'mediabunny-D1.js', 'segments-G1.js'].map((f, i) => `const l${i}=()=>${load(f, groups)};`).join('')}${loose.map((f) => `import(\`./${f}\`);`).join('')}${extra}`;
   const sizesOf = (over = {}) => ({
     main: 30_000,
     worker: 5_000,
@@ -558,11 +585,13 @@ function runSelfTest() {
   const build = (name, overrides, { manifest = true, withHtml = true, parallel = true, extraWorker = false } = {}) => {
     const sizes = sizesOf(overrides);
     const dir = join(root, name);
-    const preload = parallel ? [sizes.isobmffShared > 0 && 'shared-P1.js', sizes.segmentsShared > 0 && 'common-S1.js'].filter(Boolean) : [];
+    const groups = {};
+    if (parallel && sizes.isobmffShared > 0) groups['isobmff-I1.js'] = ['shared-P1.js'];
+    if (parallel && sizes.segmentsShared > 0) groups['segments-G1.js'] = ['common-S1.js'];
     const client = sizes.client > 0 ? 'const l=()=>import("./probe-L1.js");' : '';
     const other = extraWorker ? 'const o=new Worker(new URL("assets/other.worker-O1.js",import.meta.url),{type:"module"});' : '';
     write(dir, 'assets/index-M1.js', mainText(`${client}${other}${filler(sizes.main)}`));
-    write(dir, 'assets/analyze.worker-W1.js', workerText(filler(sizes.worker), preload));
+    write(dir, 'assets/analyze.worker-W1.js', workerText(filler(sizes.worker), groups));
     if (client) write(dir, 'assets/probe-L1.js', `import{a as e}from"./index-M1.js";${filler(sizes.client)}`);
     if (other) write(dir, 'assets/other.worker-O1.js', `self.onmessage=e=>{postMessage(1)};${filler(1_000)}`);
     const shared = sizes.isobmffShared > 0;
@@ -756,6 +785,43 @@ function runSelfTest() {
     expectEq('a chunk shared by a parser and an engine is parser-shared', engineChain.chunks.find((c) => c.file === 'assets/core-X1.js')?.kind, 'parser-shared');
     expectEq('engines: a chunk shared with a parser is a chain problem for the engine', chainsOf(engineChain, 'assets/mp4box-B1.js').length, 1);
     expectEq('engines: and for the parser', chainsOf(engineChain, 'assets/isobmff-I1.js').length, 1);
+    const looseDir = build('loose-shared', { isobmffShared: 2_000 }, { parallel: false });
+    write(looseDir, 'assets/analyze.worker-W1.js', workerText(filler(5_000), {}, ['shared-P1.js']));
+    expectEq('loose: a shared chunk the worker imports on its own does not count as parallel', chainsOf(buildReport(looseDir), 'assets/isobmff-I1.js').length, 1);
+    const siblingDir = build('sibling-shared', { isobmffShared: 2_000 }, { parallel: false });
+    write(siblingDir, 'assets/analyze.worker-W1.js', workerText(filler(5_000), { 'matroska-K1.js': ['shared-P1.js'] }));
+    const sibling = buildReport(siblingDir);
+    expectEq('sibling: a shared chunk requested with another parser is a chain problem', chainsOf(sibling, 'assets/isobmff-I1.js').length, 1);
+    expectEq('sibling: and none for the parser it is requested with', chainsOf(sibling, 'assets/matroska-K1.js').length, 0);
+    const engineStats = (name, groups) => {
+      const dir = build(name, { isobmffShared: 2_000 }, { parallel: false });
+      write(dir, 'assets/analyze.worker-W1.js', workerText(filler(5_000), groups));
+      write(dir, 'assets/mp4box-B1.js', `import{a as e}from"./counting-C1.js";import{b as f}from"./shared-P1.js";${filler(40_000)}`);
+      return buildReport(dir);
+    };
+    const engineWaits = engineStats('engine-waits', { 'isobmff-I1.js': ['shared-P1.js'] });
+    expectEq('engines: a parser-shared chunk requested only with a parser is a chain problem for the engine', chainsOf(engineWaits, 'assets/mp4box-B1.js').length, 1);
+    expectEq('engines: and none for that parser', chainsOf(engineWaits, 'assets/isobmff-I1.js').length, 0);
+    const engineParallel = engineStats('engine-parallel', { 'isobmff-I1.js': ['shared-P1.js'], 'mp4box-B1.js': ['shared-P1.js'] });
+    expectEq('engines: no chain problem when the engine is requested with that chunk', engineParallel.chains.length, 0);
+    const deepDir = build('engine-deep', {});
+    write(deepDir, 'assets/counting-C1.js', `import{a as e}from"./deep-E1.js";${filler(3_000)}`);
+    write(deepDir, 'assets/deep-E1.js', filler(1_000));
+    const deep = buildReport(deepDir);
+    expectEq('engines: a chunk behind the engine-shared chunk is classified engine-shared', deep.chunks.find((c) => c.file === 'assets/deep-E1.js')?.kind, 'engine-shared');
+    expectEq('engines: only one extra level, a chunk behind the engine-shared chunk is a chain problem', chainsOf(deep, 'assets/mp4box-B1.js').length, 1);
+    expectEq('engines: for both engines', deep.chains.filter((c) => c.includes('waits for assets/deep-E1.js')).length, 2);
+    const nestedBuild = (name, segmentsImports) => {
+      const dir = build(name, { isobmffShared: 2_000 }, { parallel: false });
+      write(dir, 'assets/analyze.worker-W1.js', `self.onmessage=e=>{postMessage(1)};const a=()=>Promise.all([import(\`./isobmff-I1.js\`),import(\`./shared-P1.js\`)]);const b=()=>import(\`./matroska-K1.js\`);${filler(5_000)}`);
+      write(dir, 'assets/shared-P1.js', `const s=()=>import(\`./segments-G1.js\`);${filler(2_000)}`);
+      write(dir, 'assets/segments-G1.js', `${segmentsImports}${filler(1_000)}`);
+      write(dir, 'assets/common-S1.js', filler(1_000));
+      return buildReport(dir);
+    };
+    expectEq('nested: a chunk imported by a loaded shared chunk may use what is already loaded', nestedBuild('nested-ok', 'import{b as f}from"./shared-P1.js";').chains.length, 0);
+    const nestedWaits = nestedBuild('nested-waits', 'import{b as f}from"./shared-P1.js";import{c as g}from"./common-S1.js";');
+    expectEq('nested: and fails for a chunk nobody requests with it', nestedWaits.chains.join('; '), 'request chain: assets/segments-G1.js (segments) waits for assets/common-S1.js, which assets/shared-P1.js does not request in parallel');
     const noWorkerDir = join(root, 'noworker');
     write(noWorkerDir, 'assets/index-M1.js', `console.log(1);${filler(1000)}`);
     write(noWorkerDir, 'index.html', html);
