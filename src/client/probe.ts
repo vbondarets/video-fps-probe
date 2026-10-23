@@ -26,6 +26,8 @@ const notRegistered = (id: EngineId, message = `engine ${id} is not registered`)
 
 export const nameOf = (file: Blob): string => (typeof File !== 'undefined' && file instanceof File ? file.name : '');
 
+const loadOwnInThread = async (): Promise<EngineModule> => (await import('../worker/runtime.ts')).ownEngine;
+
 export function createProbeCore(options: CoreOptions): Probe<EngineId> {
   const { worker, engines: descriptors = [], engine: defaultEngine = 'own', fallback: defaultFallback = [], workers, idleTimeoutMs, timeoutMs: defaultTimeout, defaults } = options;
   const custom = typeof worker === 'object' ? worker : null;
@@ -63,7 +65,7 @@ export function createProbeCore(options: CoreOptions): Probe<EngineId> {
     if (listed && 'pool' in listed) return listed;
     const route =
       id === 'own'
-        ? (servedBy(byId.get(defaultEngine), 'loadOwn') ?? servedBy(byId.get('own'), 'load') ?? servedBy(descriptors.find((d) => d.loadOwn), 'loadOwn'))
+        ? (servedBy(byId.get(defaultEngine), 'loadOwn') ?? servedBy(byId.get('own'), 'load') ?? servedBy(descriptors.find((d) => d.loadOwn), 'loadOwn') ?? (inline ? { load: loadOwnInThread } : null))
         : servedBy(byId.get(id), 'load');
     return route ?? listed;
   };

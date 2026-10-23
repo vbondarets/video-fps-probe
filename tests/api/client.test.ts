@@ -41,7 +41,7 @@ describe('createProbeClient', () => {
     expect(() => createProbeClient({ worker: customWorker('mp4box'), engines: [mainDescriptor('rvfc')] })).toThrow(expect.objectContaining({ code: 'engine-not-registered' }));
     expect(createProbeClient({ worker: customWorker('mediabunny'), engines: [workerDescriptor('mp4box')] }).engines).toEqual(['own', 'mediabunny', 'mp4box']);
     expect(createProbeClient({ worker: 'inline', engines: [workerDescriptor('mp4box')] }).engines).toEqual(['own', 'mp4box']);
-    expect(() => createProbeClient({ worker: 'inline' })).toThrow(expect.objectContaining({ code: 'engine-not-registered' }));
+    expect(createProbeClient({ worker: 'inline' }).engines).toEqual(['own']);
   });
 
   it('checks the default engine and fallback at creation and the call engines at call time', async () => {

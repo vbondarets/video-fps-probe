@@ -1,5 +1,10 @@
+import { openAsBlob } from 'node:fs';
+import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createProbeClient, createProbeCore } from '../../src/client/probe.ts';
+import { analyze as analyzeCore } from '../../src/core/analyze.ts';
+import type { FileResult } from '../../src/core/types.ts';
+import { FILES_DIR } from '../helpers/fixtures.ts';
 import { fakeResult, FakeWorker } from './fake-worker.ts';
 import { analyzed, customWorker, fakeModule, mainDescriptor, mp4File, workerDescriptor } from './probe-helpers.ts';
 
@@ -11,6 +16,11 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals();
 });
+
+const MP4 = join(FILES_DIR, 'cfr_h264_30.mp4');
+const WEBM = join(FILES_DIR, 'cfr_vp9_30.webm');
+
+const untimed = (r: FileResult) => ({ ...r, io: { ...r.io, ms: 0 } });
 
 const spawned = () => FakeWorker.instances.map((w) => [w.label, analyzed(w).map((m) => (m.type === 'analyze' ? m.engine : null))]);
 
@@ -71,15 +81,31 @@ describe('engine routing', () => {
     expect(FakeWorker.instances).toHaveLength(0);
   });
 
-  it('without a Worker global falls back to this thread and rejects custom worker engines with unsupported-environment', async () => {
+  it('with worker inline and no prebuilt engine runs own in this thread exactly as the core does', async () => {
+    const probe = createProbeClient({ worker: 'inline' });
+    expect(probe.engines).toEqual(['own']);
+    for (const [file, name] of [
+      [MP4, 'a.mp4'],
+      [WEBM, 'a.webm'],
+    ]) {
+      const blob = await openAsBlob(file);
+      expect(untimed(await probe.analyze(blob, { name }))).toEqual(untimed(await analyzeCore(blob, name)));
+    }
+    await expect(probe.prewarm({ containers: ['isobmff', 'matroska'] })).resolves.toBeUndefined();
+    expect(FakeWorker.instances).toHaveLength(0);
+  });
+
+  it('without a Worker global runs own in this thread and rejects the other custom worker engines with unsupported-environment', async () => {
     vi.unstubAllGlobals();
     expect(typeof Worker).toBe('undefined');
     const created = vi.fn();
     const own = fakeModule('own');
     const ssr = createProbeClient({ worker: { create: created, engines: ['own', 'mediabunny'] } });
     expect(ssr.engines).toEqual(['own', 'mediabunny']);
-    await expect(ssr.analyze(mp4File())).rejects.toMatchObject({ name: 'ProbeError', code: 'unsupported-environment', engine: 'own' });
-    expect(await ssr.tryAnalyze(mp4File())).toBeNull();
+    const blob = await openAsBlob(MP4);
+    expect(untimed(await ssr.analyze(blob, { name: 'a.mp4' }))).toEqual(untimed(await analyzeCore(blob, 'a.mp4')));
+    await expect(ssr.analyze(mp4File(), { engine: 'mediabunny' })).rejects.toMatchObject({ name: 'ProbeError', code: 'unsupported-environment', engine: 'mediabunny' });
+    expect(await ssr.tryAnalyze(mp4File(), { engine: 'mediabunny' })).toBeNull();
     const withPrebuilt = createProbeClient({ worker: { create: created, engines: ['own', 'mediabunny'] }, engines: [workerDescriptor('mp4box', fakeModule('mp4box'), own)] });
     expect((await withPrebuilt.analyze(mp4File('a.mp4'))).engine).toBe('own');
     expect(own.calls).toHaveLength(1);

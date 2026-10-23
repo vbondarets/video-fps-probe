@@ -197,7 +197,7 @@ describe('lazy entries', () => {
     const inline = lazyProbeClient({ worker: 'inline', engines: [mainDescriptor('rvfc')] });
     expect([lazyProbe().engines, root.engines, client.engines, inline.engines]).toEqual([['own'], ['own', 'rvfc', 'mp4box'], ['own', 'mediabunny', 'rvfc', 'mp4box'], ['own', 'rvfc']]);
     expect([root.loaded, client.loaded, inline.loaded]).toEqual([false, false, false]);
-    for (const stub of [root, client]) {
+    for (const stub of [root, client, inline]) {
       const before = stub.engines;
       expect((await stub.load()).engines).toEqual(before);
     }
