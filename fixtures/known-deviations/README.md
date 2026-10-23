@@ -1,6 +1,6 @@
 # Known deviations
 
-Accepted differences between an engine and ffprobe 8.1.1. `npm run compare` (`scripts/compare-ffprobe.ts`) reads these files to tell an accepted difference from a regression. This format replaces the placeholder `fixtures/known-deviations.json`.
+Accepted differences between an engine and ffprobe 8.1.1. `npm run compare` (`scripts/compare-ffprobe.ts`) reads these files to tell an accepted difference from a regression. This format replaces the single `fixtures/known-deviations.json` that research 6.3 planned; that file no longer exists.
 
 ## Files
 

@@ -13,7 +13,6 @@ content. 111 core fixtures (about 12.3 MB) are committed; six optional heavy one
 | `manifest.tsv` | one row per fixture, optional ones included | yes |
 | `ref/<file name>.ref.json` | ffprobe ground truth per fixture | yes |
 | `known-deviations/<engine>*.json` | accepted differences between an engine and ffprobe, one reason per fixture and field ([format](known-deviations/README.md)) | yes |
-| `known-deviations.json` | empty placeholder from the research, no longer read | yes |
 
 ## Regenerate
 
@@ -34,8 +33,9 @@ which writes `files/`, `large/` and `manifest.tsv` under it. Generating the core
 Windows (process start dominates), the long files add about 30 seconds, and the references take under a minute.
 
 The generator fails when `files/` and `manifest.tsv` disagree. Output is byte-reproducible on the same ffmpeg
-build: a second run into a separate folder gave identical bytes for all 104 core files and the same manifest
-(checked on 2026-10-21). WebM and Matroska
+build: a second run into a separate folder gave identical bytes for all 104 core files of that date and the same
+manifest (checked on 2026-10-21). The check ran only on those 104 files; the 7 core fixtures added later were not
+re-checked. WebM and Matroska
 outputs use `-fflags +bitexact`, which removes random UIDs. The committed bytes come from ffmpeg
 `8.1.1-full_build-www.gyan.dev`; another build can differ in encoder output, so the generator warns when the
 version is not 8.1.1 and `fixtures:refs` refuses to run unless `ALLOW_FFPROBE_MISMATCH=1` is set.
@@ -153,7 +153,7 @@ and follows `docs/research.md` section 4.3. All times are integer ticks of `time
 | `deltasExcludingTail` | the positive deltas minus the last `tailDropped` ones |
 | `deltaHistogramAll`, `deltaHistogramExcludingTail` | delta in ticks mapped to its count |
 | `instFpsAll`, `instFpsExcludingTail` | `{ count, minDeltaTicks, maxDeltaTicks, distinctDeltas, minFps, maxFps }` where an FPS is the reduced rational `{ num, den, value }` equal to `timeBase.den / (delta * timeBase.num)` (`minFps` uses the largest delta) |
-| `vfr` | `{ isVfr, medianDeltaTicks, toleranceTicks, vfrRatio }` over `deltasExcludingTail`: median is the lower median, `tolerance = max(1, round(0.005 * median))`, VFR when any delta is further than the tolerance from the median, `vfrRatio = max delta / min delta`; `null` when there are no deltas |
+| `vfr` | `{ isVfr, medianDeltaTicks, toleranceTicks, vfrRatio }` over `deltasExcludingTail`: median is the lower median, `tolerance = max(1, round(0.005 * median), 1 ms in ticks)`, where the 1 ms term counts only when a tick is at most 1 ms and every delta is a whole number of milliseconds, VFR when any delta is further than the tolerance from the median, `vfrRatio = max delta / min delta`; `null` when there are no deltas |
 | `avgFromPts` | `{ frames, firstPts, lastPts, lastDurationTicks, spanTicks, fps }` with `fps = frames / (lastPts + lastDuration - firstPts)` as a reduced rational, using the duration of the packet that has the greatest PTS |
 | `lastPacketEnd` | `{ ticks, seconds }` for `lastPts + lastDuration` |
 | `arraysOmitted` | true when the stream has more than 20,000 presented packets; `ptsPresented`, `deltas` and `deltasExcludingTail` are then `null` and only the histograms remain |
@@ -163,5 +163,5 @@ and follows `docs/research.md` section 4.3. All times are integer ticks of `time
 Accepted differences between an engine and ffprobe live in `known-deviations/`, one JSON file per engine part
 (`own-isobmff.json`, `own-matroska.json`, optional files for the library engines). Each entry maps a fixture and a
 field to a plain reason; an entry that no longer matches is reported as stale. The format and the rules are in
-[known-deviations/README.md](known-deviations/README.md). The own engine has three entries today, all listed in the
-main README. The top-level `known-deviations.json` is the empty placeholder of the research and is not read.
+[known-deviations/README.md](known-deviations/README.md). The own engine has one entry today
+(`vfr_concat_10_30_60.webm` in `own-matroska.json`; `own-isobmff.json` is empty), listed in the main README.
