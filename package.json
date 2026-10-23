@@ -111,17 +111,13 @@
   },
   "peerDependencies": {
     "mp4box": "^2.4.1",
-    "mediabunny": "^1.62.0",
-    "react": ">=18"
+    "mediabunny": "^1.62.0"
   },
   "peerDependenciesMeta": {
     "mp4box": {
       "optional": true
     },
     "mediabunny": {
-      "optional": true
-    },
-    "react": {
       "optional": true
     }
   },
