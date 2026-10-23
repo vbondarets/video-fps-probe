@@ -263,6 +263,8 @@ Uneven frame distributions must be visible (half a video at 5 fps and half at 20
 
 ## 12. End-to-end tests
 
+> Historical in part: the setup in the next paragraph is current (the web server builds the demo with `demo/vite.config.ts`), but the test lists, counts and runs below are those of the app before the package (157 tests per browser at the end). The suite now has 158 tests per browser.
+
 `tests/e2e` with Playwright 1.64.1 (`playwright.config.ts`): projects `chromium`, `firefox` and `webkit`; the web server builds to `.playwright/dist` (so the shared `dist/` is untouched) and serves it with `vite preview` on `127.0.0.1:4317` (`E2E_PORT` changes the port); `E2E_BASE_URL` points the same tests at a deployed copy instead. Timeouts 60 s per test and 15 s per assertion; retries 0 locally and 1 on CI; HTML report in `.playwright/report`.
 
 - **`parse.spec.ts`.** Every committed manifest fixture must exist on disk. In Matroska mode `exact` (set through the UI) all 111 fixtures are fed through the file input in batches of 26; in mode `header` the 30 `.mkv` and `.webm` names. Each fixture is one test: a hard check of the contract fields (container, codec, dimensions, the average as a rational and as the ffprobe string, frames, presented frames, min, max, VFR, duration, error, rate profile segment count and uneven flag), then deep equality of the whole `FileResult` against `analyze()` in Node except `io.ms`. A final test fails on any uncaught page error.
