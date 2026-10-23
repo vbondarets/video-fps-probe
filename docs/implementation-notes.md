@@ -315,4 +315,4 @@ An independent review (requirements, correctness, docs and UX) and a pass over d
 - **Big files in the browser.** `--with-big` generates three 604 MB 1080p files; the bench measured them in Chrome 155: 2 reads, 75 KiB and 1.70 ms for the MP4 with the moov at the end, 1 read and 0.90 ms with faststart, and 117 ms, 126 reads and 16.5 MiB for the same stream in Matroska, where auto mode picks a probe.
 - **Docs.** `docs/research.md` now points at `scripts/fixtures/` and reads as a neutral spec; the README gained "Publishing the demo", the Firefox status, a 4 GiB browser result (re-measured), a large-Matroska limitation, ISMV, and the embedding API; the integration report labels its batch with the measured file count.
 
-Open after this round: the Firefox run (blocked on the development machine, covered by the CI e2e job), the deployed-demo run, and the real-world items left open in section 9.
+Open after this round: the Firefox run (blocked on the development machine, covered by the CI e2e job), the deployed-demo run, and the real-world items left open in section 9. The first two have since passed (section 12, after publishing).
