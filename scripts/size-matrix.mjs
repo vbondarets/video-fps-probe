@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,6 +23,11 @@ export const BUDGETS = {
     { key: 'segments', limit: 2.5 * KB, why: `The rate profile core of the own worker, fetched only for a timeline with unequal frame rates. Design estimate 2.0 KB; measured 1.84 KB. ${RESET}` },
     { key: 'firstMp4', limit: 24 * KB, why: `${PROMISE} This row is the second half: everything the first MP4 or MOV file loads lazily, which is the probe client, the own worker entry, the statistics chunk (requested in parallel with the parser) and the ISO BMFF parser. Measured 23.26 KB. Measured plus 10 percent would be 26.0 KB, so the promise stays the limit instead: it is the tighter one and it is what the README states.` },
     { key: 'allOwn', limit: 40 * KB, why: `Every own path: the probe client, the own worker entry, the statistics, both parsers and the rate profile core. Design estimate 37.0 KB; measured 36.24 KB. ${RESET}` },
+  ],
+  'zero-config': [
+    { key: 'trigger', limit: 1 * KB, why: `As in the default configuration: the worker option does not change the entry chunk. Measured 0.67 KB. ${RESET}` },
+    { key: 'worker:own.worker', limit: 35.5 * KB, why: `A Vite 8 app with no worker option builds workers with Vite's default format, 'iife', which cannot split, so the own worker is one file: both parsers, the statistics and the rate profile core are inlined. Measured 32.11 KB. ${RESET}` },
+    { key: 'firstMp4', limit: 38.5 * KB, why: `What the first MP4 loads in a Vite 8 app that keeps the default worker format: the probe client and the one-file own worker. The 24 KB of the default configuration needs worker.format 'es' in the host's Vite config. Measured 34.77 KB. ${RESET}` },
   ],
   custom: [
     { key: 'trigger', limit: 1 * KB, why: `The lazyProbeClient stub in the host entry chunk. The host's worker literal is host code and is not counted. Design estimate 1.0 KB; measured 0.68 KB. ${RESET}` },
@@ -219,7 +225,8 @@ export function measureFixture(dir, fixture) {
       for (const f of list ?? []) for (const g of closureOf(f, fileSet, texts, { dynamic: false })) out.add(g);
       return out;
     };
-    workers[name] = { file: w, entry: sum(statics), chunks: side.size - statics.size, side, statics, byClass, withStatics };
+    const sha256 = createHash('sha256').update(readFileSync(join(distDir, w))).digest('hex').slice(0, 16);
+    workers[name] = { file: w, entry: sum(statics), chunks: side.size - statics.size, sha256, side, statics, byClass, withStatics };
   }
   const names = Object.keys(workers).sort();
   const expected = [...fixture.workers].sort();
@@ -280,9 +287,10 @@ export function measureFixture(dir, fixture) {
     name: fixture.name,
     imports: fixture.imports,
     note: fixture.note ?? null,
+    worker: fixture.worker,
     engines: fixture.engines,
     metrics,
-    workers: names.map((n) => ({ name: n, entry: workers[n].entry, chunks: workers[n].chunks })),
+    workers: names.map((n) => ({ name: n, entry: workers[n].entry, chunks: workers[n].chunks, sha256: workers[n].sha256 })),
     files: files.map((f) => ({ file: f, gzip: gz.get(f), worker: Object.keys(workers).find((n) => workers[n].side.has(f)) ?? null, class: classOf(f) })),
     mustNot: fixture.mustNot,
     leaks,
@@ -321,6 +329,13 @@ export function buildMatrix(dir) {
   };
 }
 
+const matrixMetric = (matrix, name, key) => matrix.fixtures.find((f) => f.name === name)?.metrics[key] ?? null;
+
+function sameOwnWorker(matrix, a, b) {
+  const digest = (name) => matrix.fixtures.find((f) => f.name === name)?.workers.find((w) => w.name === 'own.worker')?.sha256 ?? null;
+  return digest(a) !== null && digest(a) === digest(b);
+}
+
 const importsOf = (f) => `${f.imports.map((i) => `video-fps-probe${i.slice(1)}`).join(' + ')}${f.note ? ` (${f.note})` : ''}`;
 const cell = (n) => (n === null || n === undefined ? '-' : kb(n));
 
@@ -338,17 +353,24 @@ export function renderMarkdown(matrix) {
   out.push('');
   out.push('## Configurations');
   out.push('');
-  out.push('| Configuration | Imports | Critical path | Entry chunk with the preload helper | First MP4, lazy | All own paths, lazy | Engine chunk | Worker files | Budgets |');
-  out.push('|---|---|---:|---:|---:|---:|---:|---:|---|');
+  out.push('| Configuration | Imports | Vite worker option | Critical path | Entry chunk with the preload helper | First MP4, lazy | All own paths, lazy | Engine chunk | Worker files | Budgets |');
+  out.push('|---|---|---|---:|---:|---:|---:|---:|---:|---|');
   for (const f of matrix.fixtures) {
     const engine = [f.metrics.mp4box !== null ? `mp4box ${kb(f.metrics.mp4box)}` : null, f.metrics.mediabunny !== null ? `mediabunny ${kb(f.metrics.mediabunny)}` : null, f.metrics.rvfc !== null ? `rVFC ${kb(f.metrics.rvfc)}` : null].filter(Boolean).join(', ') || '-';
     const status = f.problems.length === 0 ? 'ok' : `${f.problems.length} problem${f.problems.length === 1 ? '' : 's'}`;
-    out.push(`| ${f.name} | ${importsOf(f)} | **${kb(f.metrics.trigger)}** | ${kb(f.metrics.entry)} | ${cell(f.metrics.firstMp4)} | ${cell(f.metrics.allOwn)} | ${engine} | ${f.workers.length} (${f.workers.map((w) => w.name).join(', ')}) | ${status} |`);
+    out.push(`| ${f.name} | ${importsOf(f)} | ${f.worker} | **${kb(f.metrics.trigger)}** | ${kb(f.metrics.entry)} | ${cell(f.metrics.firstMp4)} | ${cell(f.metrics.allOwn)} | ${engine} | ${f.workers.length} (${f.workers.map((w) => w.name).join(', ')}) | ${status} |`);
   }
-  out.push(`| standalone worker file | video-fps-probe/standalone/own.worker.js | - | - | ${cell(matrix.standalone.gzip)} | ${cell(matrix.standalone.gzip)} | - | 1 file, no imports | ${matrix.standalone.status} |`);
+  out.push(`| standalone worker file | video-fps-probe/standalone/own.worker.js | - | - | - | ${cell(matrix.standalone.gzip)} | ${cell(matrix.standalone.gzip)} | - | 1 file, no imports | ${matrix.standalone.status} |`);
   out.push('');
   out.push(
-    'First MP4: the probe client, the worker entry that serves own, the statistics chunk (requested in parallel with the parser) and the ISO BMFF parser. All own paths adds the Matroska parser and the rate profile core. In iife-nosplit the worker is one file, so both columns are the client plus that file.',
+    'First MP4: the probe client, the worker entry that serves own, the statistics chunk (requested in parallel with the parser) and the ISO BMFF parser. All own paths adds the Matroska parser and the rate profile core. A worker built as iife cannot split, so in zero-config and iife-nosplit the own worker is one file and both columns are the client plus that file.',
+  );
+  out.push('');
+  const same = sameOwnWorker(matrix, 'zero-config', 'iife-nosplit')
+    ? ` In Vite ${matrix.versions.vite} zero-config and iife-nosplit build byte-identical own worker files: with format 'iife' Vite already inlines the worker's dynamic imports, so \`codeSplitting: false\` changes nothing.`
+    : '';
+  out.push(
+    `The host's worker option decides the first MP4: ${cell(matrixMetric(matrix, 'default', 'firstMp4'))} with \`worker: { format: 'es' }\` (default), ${cell(matrixMetric(matrix, 'zero-config', 'firstMp4'))} with no worker option (zero-config), because Vite's default worker format is 'iife'.${same}`,
   );
   out.push('');
   out.push('## Budgets (gzip)');

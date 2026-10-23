@@ -15,6 +15,7 @@
         "./lazy"
       ],
       "note": null,
+      "worker": "format: 'es'",
       "engines": [
         "own"
       ],
@@ -37,7 +38,8 @@
         {
           "name": "own.worker",
           "entry": 4082,
-          "chunks": 4
+          "chunks": 4,
+          "sha256": "2f06496741da727d"
         }
       ],
       "files": [
@@ -228,12 +230,164 @@
       "problems": []
     },
     {
+      "name": "zero-config",
+      "imports": [
+        "./lazy"
+      ],
+      "note": null,
+      "worker": "none, so Vite's default format: 'iife'",
+      "engines": [
+        "own"
+      ],
+      "metrics": {
+        "entry": 1398,
+        "trigger": 669,
+        "client": 2665,
+        "isobmff": null,
+        "matroska": null,
+        "segments": null,
+        "firstMp4": 34772,
+        "allOwn": 34772,
+        "mp4box": null,
+        "mediabunny": null,
+        "engineShared": null,
+        "rvfc": null,
+        "lazyTotal": 70752
+      },
+      "workers": [
+        {
+          "name": "own.worker",
+          "entry": 32107,
+          "chunks": 0,
+          "sha256": "bbcf430d0d0816d6"
+        }
+      ],
+      "files": [
+        {
+          "file": "assets/compare-DanCTYmc.js",
+          "gzip": 1313,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/fallback-WZSHXMkZ.js",
+          "gzip": 624,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/index-4ZjWBqsC.js",
+          "gzip": 1398,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/inline-B7ylGHqc.js",
+          "gzip": 597,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/isobmff-S62FvHCC.js",
+          "gzip": 12234,
+          "worker": null,
+          "class": "isobmff"
+        },
+        {
+          "file": "assets/matroska-BjmAax9-.js",
+          "gzip": 11191,
+          "worker": null,
+          "class": "matroska"
+        },
+        {
+          "file": "assets/own.worker-CcnN1N-b.js",
+          "gzip": 32107,
+          "worker": "own.worker",
+          "class": "isobmff"
+        },
+        {
+          "file": "assets/probe-Cg5CRn8e.js",
+          "gzip": 2665,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/result-DwUAyOGs.js",
+          "gzip": 381,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/runtime-BzQ4DgAB.js",
+          "gzip": 2471,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/segments-gjM93sEj.js",
+          "gzip": 1845,
+          "worker": null,
+          "class": "segments"
+        },
+        {
+          "file": "assets/sniff-DecauIFI.js",
+          "gzip": 989,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/stats-CCXnClPO.js",
+          "gzip": 4335,
+          "worker": null,
+          "class": "stats"
+        }
+      ],
+      "mustNot": [
+        "node_modules/mp4box/",
+        "node_modules/mediabunny/",
+        "video-fps-probe/dist/engines/"
+      ],
+      "leaks": [],
+      "chains": [],
+      "budgets": [
+        {
+          "key": "trigger",
+          "label": "critical path (package code in the entry chunk)",
+          "limit": 1000,
+          "gzip": 669,
+          "headroom": 331,
+          "status": "ok",
+          "why": "As in the default configuration: the worker option does not change the entry chunk. Measured 0.67 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "worker:own.worker",
+          "label": "own.worker entry",
+          "limit": 35500,
+          "gzip": 32107,
+          "headroom": 3393,
+          "status": "ok",
+          "why": "A Vite 8 app with no worker option builds workers with Vite's default format, 'iife', which cannot split, so the own worker is one file: both parsers, the statistics and the rate profile core are inlined. Measured 32.11 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "firstMp4",
+          "label": "first MP4 analysis, lazy total",
+          "limit": 38500,
+          "gzip": 34772,
+          "headroom": 3728,
+          "status": "ok",
+          "why": "What the first MP4 loads in a Vite 8 app that keeps the default worker format: the probe client and the one-file own worker. The 24 KB of the default configuration needs worker.format 'es' in the host's Vite config. Measured 34.77 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        }
+      ],
+      "problems": []
+    },
+    {
       "name": "custom",
       "imports": [
         "./client/lazy",
         "./worker-runtime"
       ],
       "note": "host worker serving own",
+      "worker": "format: 'es'",
       "engines": [
         "own"
       ],
@@ -256,7 +410,8 @@
         {
           "name": "fps.worker",
           "entry": 4084,
-          "chunks": 4
+          "chunks": 4,
+          "sha256": "4f680ab6a7d5b25c"
         }
       ],
       "files": [
@@ -400,6 +555,7 @@
         "./mp4box"
       ],
       "note": null,
+      "worker": "format: 'es'",
       "engines": [
         "own",
         "mp4box"
@@ -423,12 +579,14 @@
         {
           "name": "mp4box.worker",
           "entry": 4218,
-          "chunks": 5
+          "chunks": 5,
+          "sha256": "a294448764a2ba30"
         },
         {
           "name": "own.worker",
           "entry": 4082,
-          "chunks": 4
+          "chunks": 4,
+          "sha256": "2f06496741da727d"
         }
       ],
       "files": [
@@ -641,6 +799,7 @@
         "./mediabunny"
       ],
       "note": null,
+      "worker": "format: 'es'",
       "engines": [
         "own",
         "mediabunny"
@@ -664,12 +823,14 @@
         {
           "name": "mediabunny.worker",
           "entry": 4116,
-          "chunks": 5
+          "chunks": 5,
+          "sha256": "0a2f3c811d4d2e16"
         },
         {
           "name": "own.worker",
           "entry": 4082,
-          "chunks": 4
+          "chunks": 4,
+          "sha256": "2f06496741da727d"
         }
       ],
       "files": [
@@ -882,6 +1043,7 @@
         "./rvfc"
       ],
       "note": null,
+      "worker": "format: 'es'",
       "engines": [
         "own",
         "rvfc"
@@ -905,7 +1067,8 @@
         {
           "name": "own.worker",
           "entry": 4082,
-          "chunks": 4
+          "chunks": 4,
+          "sha256": "2f06496741da727d"
         }
       ],
       "files": [
@@ -1061,6 +1224,7 @@
         "./rvfc"
       ],
       "note": null,
+      "worker": "format: 'es'",
       "engines": [
         "own",
         "mp4box",
@@ -1086,17 +1250,20 @@
         {
           "name": "mediabunny.worker",
           "entry": 4116,
-          "chunks": 5
+          "chunks": 5,
+          "sha256": "0a2f3c811d4d2e16"
         },
         {
           "name": "mp4box.worker",
           "entry": 4218,
-          "chunks": 5
+          "chunks": 5,
+          "sha256": "a294448764a2ba30"
         },
         {
           "name": "own.worker",
           "entry": 4082,
-          "chunks": 4
+          "chunks": 4,
+          "sha256": "2f06496741da727d"
         }
       ],
       "files": [
@@ -1410,7 +1577,8 @@
       "imports": [
         "./lazy"
       ],
-      "note": "Vite worker format iife with codeSplitting false",
+      "note": null,
+      "worker": "format: 'iife', rolldownOptions.output.codeSplitting: false",
       "engines": [
         "own"
       ],
@@ -1433,7 +1601,8 @@
         {
           "name": "own.worker",
           "entry": 32107,
-          "chunks": 0
+          "chunks": 0,
+          "sha256": "bbcf430d0d0816d6"
         }
       ],
       "files": [

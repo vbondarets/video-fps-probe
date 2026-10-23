@@ -2,6 +2,7 @@ export interface ConsumerFixture {
   name: string;
   imports: string[];
   note?: string;
+  worker: string;
   engines: Array<'own' | 'mp4box' | 'mediabunny' | 'rvfc'>;
   workers: string[];
   singleFileWorkers?: boolean;

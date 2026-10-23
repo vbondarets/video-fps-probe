@@ -209,8 +209,9 @@ interface MatrixFixture {
   name: string;
   imports: string[];
   note: string | null;
+  worker: string;
   metrics: Record<string, number | null>;
-  workers: { name: string; entry: number; chunks: number }[];
+  workers: { name: string; entry: number; chunks: number; sha256: string }[];
   budgets: MatrixBudget[];
   problems: string[];
 }
@@ -883,6 +884,7 @@ function packageBlock(inp: Inputs): string[] {
     row([
       f.name === 'default' ? '**default**' : f.name,
       imports(f),
+      f.worker,
       `**${fmtKB(matrixMetric(inp, f.name, 'trigger'))}**`,
       kbOrDash(f.metrics['firstMp4']),
       kbOrDash(f.metrics['allOwn']),
@@ -892,12 +894,12 @@ function packageBlock(inp: Inputs): string[] {
     ]),
   );
   const s = inp.matrix.standalone;
-  rows.push(row(['standalone worker file', '`video-fps-probe/standalone/own.worker.js`', '-', kbOrDash(s.gzip), kbOrDash(s.gzip), '-', '1 file, no imports', s.status]));
+  rows.push(row(['standalone worker file', '`video-fps-probe/standalone/own.worker.js`', '-', '-', kbOrDash(s.gzip), kbOrDash(s.gzip), '-', '1 file, no imports', s.status]));
   const v = inp.matrix.versions;
   return [
     `**A default install adds ${fmtKB(matrixMetric(inp, 'default', 'trigger'))} gzip to the host app's critical path:** the package code in the entry chunk of a Vite ${v['vite'] ?? ''} app that imports \`video-fps-probe/lazy\` (with Vite's preload helper, which any app with a dynamic import already has, that entry chunk is ${fmtKB(matrixMetric(inp, 'default', 'entry'))}). The first MP4 or MOV file then loads ${fmtKB(matrixMetric(inp, 'default', 'firstMp4'))} lazily: the probe client, the own worker, the statistics chunk and the ISO BMFF parser. Every own path together is ${fmtKB(matrixMetric(inp, 'default', 'allOwn'))}, and mp4box.js and mediabunny are only in the build when their entries are imported.`,
     '',
-    ...table(['Configuration', 'Imports', 'Critical path', 'First MP4, lazy', 'All own paths, lazy', 'Engine chunks, lazy', 'Worker files', 'Budgets'], 'llrrrrrl', rows),
+    ...table(['Configuration', 'Imports', 'Vite worker option', 'Critical path', 'First MP4, lazy', 'All own paths, lazy', 'Engine chunks, lazy', 'Worker files', 'Budgets'], 'lllrrrrrl', rows),
     '',
     `Measured by \`npm run size:matrix\` on production builds of the fixtures in \`tests/consumers/fixtures/\`, installed from the packed tarball into a directory outside the repository with mp4box ${v['mp4box'] ?? ''} and mediabunny ${v['mediabunny'] ?? ''}; gzip -9, KB = 1000 bytes. The critical path is the package code in the entry chunk, cut out by the hidden sourcemap. CI fails when a budget is exceeded, a configuration builds an unexpected worker file, or a sourcemap lists a module that must not be there (mp4box or mediabunny where they are not imported, the prebuilt own worker in the custom-worker build); [report/size-matrix.md](report/size-matrix.md) lists every budget with its reason.`,
   ];

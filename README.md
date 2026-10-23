@@ -274,16 +274,17 @@ Headless Chrome 155, GPU decoding on, display 170 Hz.
 
 **A default install adds 0.67 KB gzip to the host app's critical path:** the package code in the entry chunk of a Vite 8.3.5 app that imports `video-fps-probe/lazy` (with Vite's preload helper, which any app with a dynamic import already has, that entry chunk is 1.40 KB). The first MP4 or MOV file then loads 23.26 KB lazily: the probe client, the own worker, the statistics chunk and the ISO BMFF parser. Every own path together is 36.24 KB, and mp4box.js and mediabunny are only in the build when their entries are imported.
 
-| Configuration | Imports | Critical path | First MP4, lazy | All own paths, lazy | Engine chunks, lazy | Worker files | Budgets |
-|---|---|---:|---:|---:|---:|---:|---|
-| **default** | `video-fps-probe/lazy` | **0.67 KB** | 23.26 KB | 36.24 KB | - | 1 | ok (8 budgets) |
-| custom | `video-fps-probe/client/lazy` + `video-fps-probe/worker-runtime` (host worker serving own) | **0.68 KB** | 23.15 KB | 36.13 KB | - | 1 | ok (2 budgets) |
-| mp4box | `video-fps-probe/lazy` + `video-fps-probe/mp4box` | **0.90 KB** | 23.29 KB | 36.27 KB | mp4box 44.77 KB | 2 | ok (3 budgets) |
-| mediabunny | `video-fps-probe/lazy` + `video-fps-probe/mediabunny` | **0.90 KB** | 23.29 KB | 36.27 KB | mediabunny 53.87 KB | 2 | ok (3 budgets) |
-| rvfc | `video-fps-probe/lazy` + `video-fps-probe/rvfc` | **0.77 KB** | 23.27 KB | 36.26 KB | rVFC 2.19 KB | 1 | ok (2 budgets) |
-| all | `video-fps-probe/lazy` + `video-fps-probe/mp4box` + `video-fps-probe/mediabunny` + `video-fps-probe/rvfc` | **1.02 KB** | 23.31 KB | 36.29 KB | mp4box 44.77 KB, mediabunny 53.87 KB, rVFC 2.19 KB | 3 | ok (9 budgets) |
-| iife-nosplit | `video-fps-probe/lazy` (Vite worker format iife with codeSplitting false) | **0.67 KB** | 34.77 KB | 34.77 KB | - | 1 | ok (2 budgets) |
-| standalone worker file | `video-fps-probe/standalone/own.worker.js` | - | 32.04 KB | 32.04 KB | - | 1 file, no imports | ok |
+| Configuration | Imports | Vite worker option | Critical path | First MP4, lazy | All own paths, lazy | Engine chunks, lazy | Worker files | Budgets |
+|---|---|---|---:|---:|---:|---:|---:|---|
+| **default** | `video-fps-probe/lazy` | format: 'es' | **0.67 KB** | 23.26 KB | 36.24 KB | - | 1 | ok (8 budgets) |
+| zero-config | `video-fps-probe/lazy` | none, so Vite's default format: 'iife' | **0.67 KB** | 34.77 KB | 34.77 KB | - | 1 | ok (3 budgets) |
+| custom | `video-fps-probe/client/lazy` + `video-fps-probe/worker-runtime` (host worker serving own) | format: 'es' | **0.68 KB** | 23.15 KB | 36.13 KB | - | 1 | ok (2 budgets) |
+| mp4box | `video-fps-probe/lazy` + `video-fps-probe/mp4box` | format: 'es' | **0.90 KB** | 23.29 KB | 36.27 KB | mp4box 44.77 KB | 2 | ok (3 budgets) |
+| mediabunny | `video-fps-probe/lazy` + `video-fps-probe/mediabunny` | format: 'es' | **0.90 KB** | 23.29 KB | 36.27 KB | mediabunny 53.87 KB | 2 | ok (3 budgets) |
+| rvfc | `video-fps-probe/lazy` + `video-fps-probe/rvfc` | format: 'es' | **0.77 KB** | 23.27 KB | 36.26 KB | rVFC 2.19 KB | 1 | ok (2 budgets) |
+| all | `video-fps-probe/lazy` + `video-fps-probe/mp4box` + `video-fps-probe/mediabunny` + `video-fps-probe/rvfc` | format: 'es' | **1.02 KB** | 23.31 KB | 36.29 KB | mp4box 44.77 KB, mediabunny 53.87 KB, rVFC 2.19 KB | 3 | ok (9 budgets) |
+| iife-nosplit | `video-fps-probe/lazy` | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.67 KB** | 34.77 KB | 34.77 KB | - | 1 | ok (2 budgets) |
+| standalone worker file | `video-fps-probe/standalone/own.worker.js` | - | - | 32.04 KB | 32.04 KB | - | 1 file, no imports | ok |
 
 Measured by `npm run size:matrix` on production builds of the fixtures in `tests/consumers/fixtures/`, installed from the packed tarball into a directory outside the repository with mp4box 2.4.1 and mediabunny 1.62.0; gzip -9, KB = 1000 bytes. The critical path is the package code in the entry chunk, cut out by the hidden sourcemap. CI fails when a budget is exceeded, a configuration builds an unexpected worker file, or a sourcemap lists a module that must not be there (mp4box or mediabunny where they are not imported, the prebuilt own worker in the custom-worker build); [report/size-matrix.md](report/size-matrix.md) lists every budget with its reason.
 
