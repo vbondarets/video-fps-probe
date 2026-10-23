@@ -21,7 +21,7 @@ export const BUDGETS = {
     limit: 8.5 * KB,
     required: true,
     entry: 'analyze.worker',
-    why: 'Sniffing, reader, options, timeline statistics, message glue and the code the lazy parsers and comparison engines share. Both own parsers are lazy chunks. Budgeted by entry name: only the analyze.worker file counts, and any other worker file fails as unbudgeted. Re-set once before the package work: measured 7.37 KB with 0.13 KB of headroom left, while loading the statistics module next to each parser and the worker runtime (versioned protocol, warm requests, per-engine container gate) both grow this entry. Limit is that measurement plus 10 percent, rounded up to 0.5 KB, which is also the 8.5 KB a consumer custom worker gets.',
+    why: 'Sniffing, reader, options, the worker runtime and the code the lazy parsers and comparison engines share. Both own parsers are lazy chunks, and the timeline statistics are the shared statistics chunk. Budgeted by entry name: only the analyze.worker file counts, and any other worker file fails as unbudgeted. Re-set once before the package work: measured 7.37 KB with 0.13 KB of headroom left, while loading the statistics module next to each parser and the worker runtime (versioned protocol, warm requests, per-engine container gate) both grow this entry. Limit is that measurement plus 10 percent, rounded up to 0.5 KB, which is also the 8.5 KB a consumer custom worker gets. The worker runtime then moved the timeline statistics out of the entry, so the entry measures about 4.2 KB against this limit; the statistics have their own budget, and this limit is re-set when the demo worker entry is renamed to probe.worker.',
   },
   isobmff: {
     label: 'ISO BMFF parser chunk',
@@ -34,6 +34,12 @@ export const BUDGETS = {
     limit: 12 * KB,
     required: true,
     why: 'Own Matroska and WebM parser, fetched by the worker only when a file sniffs as EBML. Measured 10.73 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB.',
+  },
+  'parser-shared': {
+    label: 'shared statistics chunk',
+    limit: 5 * KB,
+    required: false,
+    why: 'Timeline statistics shared by both own parsers and the comparison engines. The worker requests the chunk in parallel with the first parser, so it is part of every first analysis row. Measured 4.29 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB. Counts every chunk the parsers share. Not required: when the statistics are part of the worker entry, the worker budget catches them.',
   },
   rvfc: {
     label: 'lazy rVFC fallback',
@@ -66,22 +72,22 @@ export const BUDGETS = {
     why: 'User-facing goal, unchanged: the page, its styles and the worker entry, before any file is analysed. Nothing else loads without a user action: the device info chunk (footer line and JSON export) is fetched on idle after the first result, or by the first export, so it is in neither the initial row nor the first analysis rows. Measured 82.05 KB when set.',
   },
   firstMp4: {
-    label: 'first MP4 analysis (initial + ISO BMFF chunk)',
+    label: 'first MP4 analysis (initial + client + ISO BMFF + shared chunks)',
     limit: 100 * KB,
     required: true,
-    why: 'User-facing promise: page plus first MP4 or MOV result stays under 100 KB gzip. Measured 93.99 KB when set. The component limits add up to 98.5 KB, so this only trips when something outside the budgeted chunks, such as a new shared chunk, joins the path.',
+    why: 'User-facing promise: page plus first MP4 or MOV result stays under 100 KB gzip. Measured 93.99 KB when set. Counts the lazy probe client and the shared statistics chunk too, so the component limits (85 + 1.5 + 5 + 13.5 = 105 KB) add up to more than the promise and this can trip while every component is within its own limit.',
   },
   firstVfrMp4: {
-    label: 'first VFR MP4 analysis (initial + ISO BMFF + segments)',
+    label: 'first VFR MP4 analysis (initial + client + ISO BMFF + segments + shared chunks)',
     limit: 100 * KB,
     required: false,
-    why: 'User-facing promise: page plus the first MP4 or MOV result with unequal frame rates, which also fetches the rate profile chunk, stays under 100 KB gzip. Measured 96.41 KB when set. Unlike the first MP4 analysis, the component limits (85 + 13.5 + 2 = 100.5 KB) add up to more than the promise, so this can trip while every component is within its own limit. Not required: without a segments chunk the code lives elsewhere and the first MP4 analysis covers it.',
+    why: 'User-facing promise: page plus the first MP4 or MOV result with unequal frame rates, which also fetches the rate profile chunk, stays under 100 KB gzip. Measured 96.41 KB when set. With the lazy probe client and the shared statistics chunk, the component limits (85 + 1.5 + 5 + 13.5 + 2 = 107 KB) add up to more than the promise, so this can trip while every component is within its own limit. Not required: without a segments chunk the code lives elsewhere and the first MP4 analysis covers it.',
   },
   firstMkv: {
-    label: 'first Matroska analysis (initial + Matroska chunk)',
+    label: 'first Matroska analysis (initial + client + Matroska + shared chunks)',
     limit: 100 * KB,
     required: true,
-    why: 'User-facing promise: page plus first MKV or WebM result stays under 100 KB gzip. Measured 92.78 KB when set. The component limits add up to 97 KB, so this only trips when something outside the budgeted chunks joins the path.',
+    why: 'User-facing promise: page plus first MKV or WebM result stays under 100 KB gzip. Measured 92.78 KB when set. Counts the lazy probe client and the shared statistics chunk too, so the component limits (85 + 1.5 + 5 + 12 = 103.5 KB) add up to more than the promise and this can trip while every component is within its own limit.',
   },
 };
 
@@ -478,6 +484,7 @@ export function buildReport(distDir) {
     ...WORKER_BUDGETS.map(([key]) => workerBudget(key)),
     ofKindBudget('isobmff', 'isobmff'),
     ofKindBudget('matroska', 'matroska'),
+    ofKindBudget('parser-shared', 'parser-shared'),
     ofKindBudget('client', 'client'),
     ofKindBudget('rvfc', 'rvfc'),
     ofKindBudget('segments', 'segments'),
@@ -529,9 +536,9 @@ export function renderMarkdown(report, label) {
   const vfrBuilt = report.budgets.find((b) => b.key === 'firstVfrMp4')?.gzip != null;
   const rows = [
     ['initial', 'main + CSS + worker entry', report.composites.initial],
-    ['first MP4 analysis', 'initial + ISO BMFF chunk', report.composites.firstMp4],
-    ...(vfrBuilt ? [['first VFR MP4 analysis', 'initial + ISO BMFF chunk + segments chunk', report.composites.firstVfrMp4]] : []),
-    ['first Matroska analysis', 'initial + Matroska chunk', report.composites.firstMatroska],
+    ['first MP4 analysis', 'initial + client chunk + ISO BMFF chunk + shared chunks', report.composites.firstMp4],
+    ...(vfrBuilt ? [['first VFR MP4 analysis', 'initial + client chunk + ISO BMFF chunk + segments chunk + shared chunks', report.composites.firstVfrMp4]] : []),
+    ['first Matroska analysis', 'initial + client chunk + Matroska chunk + shared chunks', report.composites.firstMatroska],
   ];
   for (const [name, what, t] of rows) out.push(`| **${name}** | ${what} | ${kb(t.raw)} | ${kb(t.gzip)} | ${kb(t.brotli)} |`);
   out.push('');
@@ -696,9 +703,10 @@ function runSelfTest() {
         rateProfile: limit('rateProfile') + 1_000,
         isobmff: limit('isobmff') + 3_000,
         matroska: limit('matroska') + 3_000,
+        isobmffShared: limit('parser-shared') + 1_000,
       }),
     );
-    for (const key of ['main', 'worker', 'isobmff', 'matroska', 'rvfc', 'segments', 'rateProfile', 'initial', 'firstMp4', 'firstVfrMp4', 'firstMkv']) expectEq(`over: ${key}`, statusOf(over, key), 'over');
+    for (const key of ['main', 'worker', 'isobmff', 'matroska', 'parser-shared', 'rvfc', 'segments', 'rateProfile', 'initial', 'firstMp4', 'firstVfrMp4', 'firstMkv']) expectEq(`over: ${key}`, statusOf(over, key), 'over');
     const fit = buildReport(
       build('fit', {
         main: limit('main') - 1_500,
@@ -708,24 +716,27 @@ function runSelfTest() {
         rvfc: limit('rvfc') - 700,
         segments: limit('segments') - 700,
         rateProfile: limit('rateProfile') - 500,
+        isobmffShared: limit('parser-shared') - 700,
       }),
     );
     expectEq('fit: no failures', fit.failures.length, 0);
-    for (const key of ['segments', 'rateProfile', 'firstVfrMp4']) expectEq(`fit: ${key}`, statusOf(fit, key), 'ok');
+    for (const key of ['parser-shared', 'segments', 'rateProfile', 'firstVfrMp4']) expectEq(`fit: ${key}`, statusOf(fit, key), 'ok');
     const edgeInitial = buildReport(build('edge-initial', { main: limit('main') - 800, worker: limit('worker') - 800, css: 4_500 }));
     expectEq('edge: initial over while main and worker are ok', statusOf(edgeInitial, 'initial'), 'over');
     expectEq('edge: main ok', statusOf(edgeInitial, 'main'), 'ok');
     expectEq('edge: worker ok', statusOf(edgeInitial, 'worker'), 'ok');
-    const edgeShared = buildReport(build('edge-shared', { main: limit('main') - 1_500, isobmff: limit('isobmff') - 500, isobmffShared: 14_000 }));
+    const edgeShared = buildReport(build('edge-shared', { main: limit('main') - 500, worker: limit('worker') - 500, isobmff: limit('isobmff') - 500, isobmffShared: 4_500 }));
     expectEq('edge: parser shared chunk counts toward the first MP4 analysis', statusOf(edgeShared, 'firstMp4'), 'over');
     expectEq('edge: parser budget still ok', statusOf(edgeShared, 'isobmff'), 'ok');
+    expectEq('edge: shared chunk budget still ok', statusOf(edgeShared, 'parser-shared'), 'ok');
     expectEq('edge: initial still ok', statusOf(edgeShared, 'initial'), 'ok');
     expectEq('edge: first Matroska unaffected', statusOf(edgeShared, 'firstMkv'), 'ok');
     const edgeVfr = buildReport(
-      build('edge-vfr', { main: limit('main') - 1_500, isobmff: limit('isobmff') - 500, segments: limit('segments') - 300, segmentsShared: 9_000 }),
+      build('edge-vfr', { main: limit('main') - 1_500, worker: limit('worker') - 500, isobmff: limit('isobmff') - 500, segments: limit('segments') - 300, segmentsShared: 4_500 }),
     );
     expectEq('edge: segments shared chunk counts toward the first VFR MP4 analysis', statusOf(edgeVfr, 'firstVfrMp4'), 'over');
     expectEq('edge: segments budget still ok', statusOf(edgeVfr, 'segments'), 'ok');
+    expectEq('edge: segments shared chunk within the shared chunk budget', statusOf(edgeVfr, 'parser-shared'), 'ok');
     expectEq('edge: first MP4 unaffected by the segments chunk', statusOf(edgeVfr, 'firstMp4'), 'ok');
     expectEq('edge: initial unaffected by the segments chunk', statusOf(edgeVfr, 'initial'), 'ok');
     expectEq('edge: first Matroska unaffected by the segments chunk', statusOf(edgeVfr, 'firstMkv'), 'ok');
@@ -736,6 +747,7 @@ function runSelfTest() {
     expectEq('absent segments chunk leaves the first VFR MP4 analysis not built', statusOf(noSegments, 'firstVfrMp4'), 'not built');
     expectEq('absent segments chunk: no failures', noSegments.failures.length, 0);
     expectEq('absent segments chunk: first MP4 unaffected', statusOf(noSegments, 'firstMp4'), 'ok');
+    expectEq('absent shared chunk is not a failure', statusOf(noSegments, 'parser-shared'), 'not built');
     const noPanel = buildReport(build('no-panel', { rateProfile: 0 }));
     expectEq('absent rate profile panel is not a failure', statusOf(noPanel, 'rateProfile'), 'not built');
     expectEq('absent rate profile panel: no failures', noPanel.failures.length, 0);
