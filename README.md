@@ -16,7 +16,7 @@ Frame rate, frame count and variable frame rate detection for local video files,
 
 <!-- tables:headline:end -->
 
-The headline and every measured table in this README are generated from the reports in [report/](report/README.md) by `node scripts/readme-tables.ts`. The accuracy figures (116 fixtures, 1832 checks) come from a run with `--with-large`, so they include 5 local large files that are not committed: the two long files and the three 604 MB 1080p files. On the 111 committed fixtures alone, `npm run compare -- --no-write` (without the flag it overwrites `report/accuracy.*`) reproduces the own engine at 1747 checks: 1690 exact, 2 within tolerance, 1 known deviation, 0 mismatches and 54 not applicable.
+The headline and every measured table in this README are generated from the reports in [report/](report/README.md) by `node scripts/readme-tables.ts`. The accuracy figures (116 fixtures, 1832 checks), the Node and Chrome identity count (116 of 116) and the 604 MB rows come from runs with `--with-large`, so they include 5 local large files that are not committed: the two long files and the three 604 MB 1080p files. On the 111 committed fixtures alone, `npm run compare -- --no-write` (without the flag it overwrites `report/accuracy.*`) reproduces the own engine at 1747 checks: 1690 exact, 2 within tolerance, 1 known deviation, 0 mismatches and 54 not applicable.
 
 <p>
   <img src="docs/screenshots/app-light.png" width="280" alt="Results for eight files, light theme">
@@ -62,7 +62,7 @@ npm run bench                    # headless Chrome benchmark of dist/, writes re
 node scripts/readme-tables.ts    # refresh the tables in this README from report/
 ```
 
-- `npm run compare -- --with-large` also runs the long files in `fixtures/large` when they exist.
+- `npm run compare -- --with-large` also runs every local file in `fixtures/large` that is present (made by `npm run fixtures:generate -- --with-long`, `--with-big` or `--with-sparse`).
 - `npm run size -- dist --check` exits 1 when a budget is exceeded; CI runs it.
 - `npm run bench` needs a built `dist/` and Chrome (or `CHROME_PATH`); Edge is added when installed.
 - `npm run test:e2e` needs the Playwright browsers once: `npx playwright install chromium firefox webkit`. See [Testing](#testing).
