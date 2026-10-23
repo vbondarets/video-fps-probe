@@ -1,6 +1,6 @@
 # Reports
 
-Generated files, except `average-user.md`. Do not edit the generated ones by hand: each one is written by a script, and `scripts/readme-tables.ts` reads the JSON files to fill the generated blocks of the [README](../README.md) and [docs/benchmarks.md](../docs/benchmarks.md).
+Generated files, except `average-user.md`. Do not edit the generated ones by hand: each one is written by a script, and `scripts/readme-tables.ts` reads the JSON files to fill the generated blocks of the [README](../README.md), [docs/benchmarks.md](../docs/benchmarks.md) and [docs/bundlers.md](../docs/bundlers.md).
 
 | Report | Written by | What it holds |
 |---|---|---|
@@ -24,7 +24,7 @@ node scripts/bench/integration.mjs
 node scripts/readme-tables.ts
 ```
 
-Timings depend on the machine and on what else runs on it; verdicts, reads, bytes and sizes do not. Commit the reports together with the README and docs/benchmarks.md so the tables and the reports agree. `node scripts/readme-tables.ts --check` exits 1 when either file is out of date.
+Timings depend on the machine and on what else runs on it; verdicts, reads, bytes and sizes do not. Commit the reports together with the README and the docs so the tables and the reports agree. `node scripts/readme-tables.ts --check` exits 1 when any of those files is out of date.
 
 ## accuracy.md, accuracy.json
 
@@ -75,4 +75,4 @@ Not generated. It combines the measured numbers of `integration-cost.md` and `br
 
 ## Generated tables
 
-`node scripts/readme-tables.ts` rewrites the sections between `<!-- tables:<name>:start -->` and `<!-- tables:<name>:end -->` from `accuracy.json`, `size.json`, `size-matrix.json`, `browser-bench.json`, `integration-cost.json` and `fixtures/manifest.tsv`. Each section lives in exactly one file (`TARGETS` in the script): `size` and `accuracy-summary` in the README; `headline`, `reads`, `profile`, `engines`, `accuracy`, `deviations`, `approaches`, `rvfc`, `speed`, `package`, `bundle`, `integration` and `corpus` in `docs/benchmarks.md`. Running it twice changes nothing. It stops with an error when a marker or a value it needs is missing, for example when the accuracy report was generated without `--with-large`.
+`node scripts/readme-tables.ts` rewrites the sections between `<!-- tables:<name>:start -->` and `<!-- tables:<name>:end -->` from `accuracy.json`, `size.json`, `size-matrix.json`, `browser-bench.json`, `integration-cost.json` and `fixtures/manifest.tsv`. Each section lives in exactly one file (`TARGETS` in the script): `size` and `accuracy-summary` in the README; `headline`, `reads`, `profile`, `engines`, `accuracy`, `deviations`, `approaches`, `rvfc`, `speed`, `package`, `bundle`, `integration` and `corpus` in `docs/benchmarks.md`; `vite` in `docs/bundlers.md`. Running it twice changes nothing. It stops with an error when a marker or a value it needs is missing, for example when the accuracy report was generated without `--with-large`.

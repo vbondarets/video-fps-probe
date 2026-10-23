@@ -937,6 +937,28 @@ function sizeBlock(inp: Inputs, doc: Doc): string[] {
   ];
 }
 
+const VITE_SETUPS = ['default', 'zero-config', 'iife-nosplit', 'custom', 'standalone-url'];
+
+function viteBlock(inp: Inputs, doc: Doc): string[] {
+  const kb = (name: string, metric: string): string => fmtKB(matrixMetric(inp, name, metric));
+  const imports = (f: MatrixFixture): string => f.imports.map((i) => `\`video-fps-probe${i.slice(1)}\``).join(' + ');
+  const workers = (f: MatrixFixture): string => f.workers.map((w) => `${w.name} (${w.chunks} lazy chunk${w.chunks === 1 ? '' : 's'})`).join(', ');
+  const rows = VITE_SETUPS.map((name) => {
+    const f = matrixFixture(inp, name);
+    return row([name, imports(f), f.worker, `**${kb(name, 'trigger')}**`, kb(name, 'firstMp4'), kb(name, 'allOwn'), workers(f)]);
+  });
+  const hash = (name: string): string | undefined => matrixFixture(inp, name).workers.find((w) => w.name === 'own.worker')?.sha256;
+  const identical = hash('zero-config') !== undefined && hash('zero-config') === hash('iife-nosplit');
+  const v = inp.matrix.versions;
+  return [
+    `Measured with Vite ${v['vite'] ?? ''} on production builds installed from the packed tarball (gzip -9, KB = 1000 bytes; the fixtures are in \`tests/consumers/fixtures/\`):`,
+    '',
+    ...table(['Fixture', 'Imports', 'Vite worker option', 'Critical path', 'First MP4, lazy', 'All own paths, lazy', 'Worker files'], 'lllrrrl', rows),
+    '',
+    `With format 'es' the own worker entry stays small and loads one parser per container; with 'iife' it is one file with both parsers.${identical ? ` In Vite ${v['vite'] ?? ''} the zero-config and iife-nosplit own workers are byte-identical: with format 'iife' Vite already inlines the worker's dynamic imports, so \`codeSplitting: false\` changes nothing for this package.` : ''} Everything the default build emits outside the entry chunk is ${kb('default', 'lazyTotal')}, because it also holds the main-thread copies of the runtime and parsers ([SSR](#ssr-and-the-lazy-main-thread-chunks)). The full matrix, engines included, is in [benchmarks.md](${doc.link('docs/benchmarks.md')}#package-size).`,
+  ];
+}
+
 function accuracySummaryBlock(inp: Inputs): string[] {
   const committed = (e: EngineReport): AccFixture[] => e.fixtures.filter((f) => !isLarge(f, inp.manifest));
   const tally = (e: EngineReport) => {
@@ -1265,11 +1287,13 @@ const BLOCKS: Record<string, (inp: Inputs, doc: Doc) => string[]> = {
   corpus: corpusBlock,
   size: sizeBlock,
   'accuracy-summary': accuracySummaryBlock,
+  vite: viteBlock,
 };
 
 export const TARGETS: ReadonlyArray<{ path: string; blocks: readonly string[] }> = [
   { path: 'README.md', blocks: ['size', 'accuracy-summary'] },
   { path: 'docs/benchmarks.md', blocks: ['headline', 'reads', 'profile', 'engines', 'accuracy', 'deviations', 'approaches', 'rvfc', 'speed', 'package', 'bundle', 'integration', 'corpus'] },
+  { path: 'docs/bundlers.md', blocks: ['vite'] },
 ];
 
 export function renderBlocks(inp: Inputs, path: string, names: readonly string[]): Record<string, string> {
