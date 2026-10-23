@@ -7,10 +7,54 @@
   "engines": {
     "node": ">=22.12"
   },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./lazy": {
+      "types": "./dist/lazy.d.ts",
+      "default": "./dist/lazy.js"
+    },
+    "./client": {
+      "types": "./dist/client/index.d.ts",
+      "default": "./dist/client/index.js"
+    },
+    "./client/lazy": {
+      "types": "./dist/client/lazy.d.ts",
+      "default": "./dist/client/lazy.js"
+    },
+    "./mp4box": {
+      "types": "./dist/plugins/mp4box.d.ts",
+      "default": "./dist/plugins/mp4box.js"
+    },
+    "./mediabunny": {
+      "types": "./dist/plugins/mediabunny.d.ts",
+      "default": "./dist/plugins/mediabunny.js"
+    },
+    "./rvfc": {
+      "types": "./dist/plugins/rvfc.d.ts",
+      "default": "./dist/plugins/rvfc.js"
+    },
+    "./worker-runtime": {
+      "types": "./dist/worker/runtime.d.ts",
+      "default": "./dist/worker/runtime.js"
+    },
+    "./engines/mp4box": {
+      "types": "./dist/engines/mp4box.d.ts",
+      "default": "./dist/engines/mp4box.js"
+    },
+    "./engines/mediabunny": {
+      "types": "./dist/engines/mediabunny.d.ts",
+      "default": "./dist/engines/mediabunny.js"
+    },
+    "./package.json": "./package.json"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
+    "check:aliases": "node scripts/src-aliases.mjs --check",
     "typecheck": "tsc -b",
     "lint": "oxlint",
     "test": "vitest run",
