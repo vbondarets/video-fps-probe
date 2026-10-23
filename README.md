@@ -64,6 +64,7 @@ npm run size                     # bundle size per chunk and budgets for demo/di
 npm run consumers:setup          # npm pack, then install the tarball, vite and the peers into a temp directory (--dir)
 npm run consumers:build          # build the consumer fixtures of tests/consumers/fixtures/ there
 npm run size:matrix              # package size per configuration from those builds, writes report/size-matrix.*
+npm run test:consumers           # Playwright: each consumer fixture under vite build and vite dev equals Node analyze from the tarball
 npm run bench                    # headless Chrome benchmark of demo/dist/, writes report/browser-bench.*
 node scripts/readme-tables.ts    # refresh the tables in this README from report/
 ```
@@ -683,6 +684,8 @@ demo/              the demo app: index.html, vite.config.ts, package.json, publi
   src/             App.tsx (drop zone, toolbar, summary, result list) and ui/ (store, probe client and worker, result card, compare panel)
 tests/             vitest in Node: unit/, api/, isobmff/, matroska/, segments/, engines/
   e2e/             Playwright: the built app in Chromium, Firefox and WebKit
+  consumers/       Vite consumer fixtures of the packed tarball and their Playwright smoke test
+  package/         dist parity (vitest.package.config.ts, after build:lib)
 scripts/
   compare-ffprobe.ts, compare/   accuracy harness against the ffprobe references
   build-lib.mjs                  library build to dist/: tsc, worker URL and d.ts specifier rewrites, standalone worker

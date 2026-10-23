@@ -148,6 +148,7 @@
     "test:package": "vitest run -c vitest.package.config.ts",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:consumers": "playwright test -c playwright.consumers.config.ts",
     "fixtures:generate": "bash scripts/fixtures/generate-fixtures.sh",
     "fixtures:refs": "bash scripts/fixtures/extract-reference.sh",
     "compare": "node scripts/compare-ffprobe.ts",

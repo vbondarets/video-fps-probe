@@ -1,8 +1,9 @@
 import { execFileSync, execSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, createReadStream, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { dirname, extname, join, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -66,10 +67,10 @@ export function setup(dir) {
   console.log(`installed ${filename}, ${INSTALLED.map((n) => `${n}@${dependencies[n]}`).join(', ')} into ${dir}`);
 }
 
-export function copyFixtures(dir) {
+export function copyFixtures(dir, names = FIXTURES.map((f) => f.name)) {
   mkdirSync(join(dir, 'fixtures'), { recursive: true });
   cpSync(join(SOURCES, 'vite.base.ts'), join(dir, 'fixtures', 'vite.base.ts'));
-  for (const { name } of FIXTURES) {
+  for (const name of names) {
     const root = fixtureRoot(dir, name);
     rmSync(root, { recursive: true, force: true });
     cpSync(join(SOURCES, name), root, { recursive: true });
@@ -79,21 +80,63 @@ export function copyFixtures(dir) {
 
 export function build(dir, names = FIXTURES.map((f) => f.name)) {
   const vite = viteBin(dir);
-  copyFixtures(dir);
+  copyFixtures(dir, names);
   for (const name of names) {
     execFileSync(process.execPath, [vite, 'build', '--emptyOutDir'], { cwd: fixtureRoot(dir, name), stdio: 'inherit' });
     console.log(`built ${name}`);
   }
 }
 
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.map': 'application/json', '.css': 'text/css' };
+
+export const buildUrl = (port, name) => `http://127.0.0.1:${port}/${name}/`;
+export const devUrl = (port, name) => `http://127.0.0.1:${port + 1 + FIXTURES.findIndex((f) => f.name === name)}/`;
+
+function serveBuilds(dir, port) {
+  const server = createServer((req, res) => {
+    const path = decodeURIComponent(new URL(req.url ?? '/', 'http://localhost').pathname);
+    const [, name, ...rest] = path.split('/');
+    const fixture = FIXTURES.find((f) => f.name === name);
+    if (!fixture) {
+      res.writeHead(path === '/' ? 200 : 404, { 'Content-Type': 'text/plain' }).end(FIXTURES.map((f) => f.name).join('\n'));
+      return;
+    }
+    const root = fixtureDist(dir, fixture.name);
+    const file = resolve(root, rest.join('/') || 'index.html');
+    if (!file.startsWith(root) || !existsSync(file) || !statSync(file).isFile()) {
+      res.writeHead(404, { 'Content-Type': 'text/plain' }).end('not found');
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': MIME[extname(file)] ?? 'application/octet-stream', 'Cache-Control': 'no-store' });
+    createReadStream(file).pipe(res);
+  });
+  return new Promise((done, fail) => server.once('error', fail).listen(port, '127.0.0.1', () => done(server)));
+}
+
+export async function serve(dir, port) {
+  for (const { name } of FIXTURES) if (!existsSync(join(fixtureDist(dir, name), 'index.html'))) throw new Error(`${name} is not built: run node scripts/consumers.mjs build --dir ${dir}`);
+  const { createServer: createViteServer } = await import(pathToFileURL(join(dir, 'node_modules', 'vite', 'dist', 'node', 'index.js')).href);
+  for (const { name } of FIXTURES) {
+    const root = fixtureRoot(dir, name);
+    const url = new URL(devUrl(port, name));
+    const vite = await createViteServer({ root, configFile: join(root, 'vite.config.ts'), server: { host: url.hostname, port: Number(url.port), strictPort: true } });
+    await vite.listen();
+  }
+  await serveBuilds(dir, port);
+  console.log(`serving the fixture builds on ${buildUrl(port, '<fixture>')} and the dev servers from port ${port + 1}`);
+}
+
+export const CONSUMERS_PORT = Number(process.env.CONSUMERS_PORT || 4400);
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const { values, positionals } = parseArgs({ options: { dir: { type: 'string' }, only: { type: 'string' } }, allowPositionals: true, strict: true });
+  const { values, positionals } = parseArgs({ options: { dir: { type: 'string' }, only: { type: 'string' }, port: { type: 'string' } }, allowPositionals: true, strict: true });
   const dir = consumersDir(values.dir);
   const [command] = positionals;
   if (command === 'setup') setup(dir);
   else if (command === 'build') build(dir, values.only ? values.only.split(',') : undefined);
+  else if (command === 'serve') await serve(dir, values.port ? Number(values.port) : CONSUMERS_PORT);
   else {
-    console.error('Usage: node scripts/consumers.mjs setup|build [--dir <consumers dir>] [--only <fixture,...>]');
+    console.error('Usage: node scripts/consumers.mjs setup|build|serve [--dir <consumers dir>] [--only <fixture,...>] [--port <n>]');
     process.exitCode = 2;
   }
 }
