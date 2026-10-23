@@ -203,4 +203,30 @@ describe('serveProbeWorker', () => {
     expect(progress.length).toBeGreaterThanOrEqual(1);
     expect(progress.length).toBeLessThan(5);
   });
+
+  it('requests the statistics module together with a lazy engine source, before the source resolves, and not for an engine given as a module', async () => {
+    let statsLoads = 0;
+    vi.resetModules();
+    vi.doMock('../../src/core/stats.ts', async (importOriginal) => {
+      statsLoads++;
+      return importOriginal();
+    });
+    try {
+      const runtime = await import('../../src/worker/runtime.ts');
+      const fake = new FakeSelf();
+      vi.stubGlobal('self', fake);
+      let release: ((m: EngineModule) => void) | null = null;
+      runtime.serveProbeWorker({ own: runtime.ownEngine, mp4box: () => new Promise<EngineModule>((resolve) => (release = resolve)) });
+      fake.send({ v: 1, type: 'warm', id: 1, engines: ['own'], containers: [] });
+      expect(await fake.settled(1)).toMatchObject({ type: 'warmed' });
+      expect(statsLoads).toBe(0);
+      fake.send({ v: 1, type: 'warm', id: 2, engines: ['mp4box'], containers: ['isobmff'] });
+      await vi.waitFor(() => expect(statsLoads).toBe(1));
+      expect(fake.replies.some((r) => r.id === 2)).toBe(false);
+      release!(fakeEngine(['isobmff']));
+      expect(await fake.settled(2)).toMatchObject({ type: 'warmed' });
+    } finally {
+      vi.doUnmock('../../src/core/stats.ts');
+    }
+  });
 });

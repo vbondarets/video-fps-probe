@@ -1,4 +1,5 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { lazyProbeFrom } from '../../src/client/lazy.ts';
@@ -89,5 +90,24 @@ describe('demo probe chunk loading', () => {
     expect(result.name).toBe('b.mp4');
     expect(attempts).toBe(2);
     expect(FakeWorker.instances).toHaveLength(1);
+  });
+});
+
+describe('demo imports', () => {
+  it('reach the library only through its package entries', () => {
+    const demoSrc = fileURLToPath(new URL('../../demo/src/', import.meta.url));
+    const manifest = fileURLToPath(new URL('../../package.json', import.meta.url));
+    const files = readdirSync(demoSrc, { recursive: true, encoding: 'utf8' }).filter((f) => /\.tsx?$/.test(f));
+    const outside: string[] = [];
+    for (const file of files) {
+      const text = readFileSync(join(demoSrc, file), 'utf8');
+      for (const [, specifier] of text.matchAll(/(?:from\s*|import\s*\(\s*)['"]([^'"]+)['"]/g)) {
+        if (!specifier.startsWith('.')) continue;
+        const target = resolve(dirname(join(demoSrc, file)), specifier);
+        if (relative(demoSrc, target).startsWith('..') && target !== manifest) outside.push(`${file}: ${specifier}`);
+      }
+    }
+    expect(files.length).toBeGreaterThan(5);
+    expect(outside).toEqual([]);
   });
 });

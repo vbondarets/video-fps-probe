@@ -6,19 +6,19 @@ Production build in `demo/dist`, measured by `scripts/size-report.mjs`. KB means
 
 | Budget | Limit | Actual | Headroom | Status | Files |
 |---|---:|---:|---:|---|---|
-| main (React + UI) | 75.00 KB | 74.05 KB | 0.95 KB | ok | assets/index-BHpbjObp.js |
-| worker entry (core + glue) | 5.00 KB | 4.20 KB | 0.80 KB | ok | assets/probe.worker-C1o-MVK3.js |
-| ISO BMFF parser chunk | 13.50 KB | 12.22 KB | 1.28 KB | ok | assets/isobmff-dafJFW1e.js |
-| Matroska parser chunk | 12.00 KB | 11.10 KB | 0.91 KB | ok | assets/matroska-DHB5JXpt.js |
-| shared statistics chunk | 5.00 KB | 4.29 KB | 0.71 KB | ok | assets/stats-B2P8SpMe.js |
-| lazy probe client | 3.50 KB | 2.62 KB | 0.88 KB | ok | assets/probe-Buk3oV3u.js |
-| lazy rVFC fallback | 2.50 KB | 2.21 KB | 0.29 KB | ok | assets/rvfc-B4Chh_YO.js |
-| lazy rate profile core (segments) | 2.00 KB | 1.84 KB | 0.15 KB | ok | assets/segments-CltrQ3Y4.js |
-| lazy rate profile panel (UI) | 1.50 KB | 0.94 KB | 0.56 KB | ok | assets/RateProfile-CGUCTJPA.js |
-| initial (main + CSS + worker entry) | 85.00 KB | 80.06 KB | 4.94 KB | ok | assets/index-BHpbjObp.js, assets/index-UkwvJHuS.css, assets/probe.worker-C1o-MVK3.js |
-| first MP4 analysis (initial + client + ISO BMFF + shared chunks) | 100.00 KB | 99.20 KB | 0.80 KB | ok | assets/index-BHpbjObp.js, assets/index-UkwvJHuS.css, assets/probe.worker-C1o-MVK3.js, assets/isobmff-dafJFW1e.js, assets/probe-Buk3oV3u.js, assets/stats-B2P8SpMe.js |
-| first VFR MP4 analysis (initial + client + ISO BMFF + segments + shared chunks) | 102.00 KB | 101.05 KB | 0.95 KB | ok | assets/index-BHpbjObp.js, assets/index-UkwvJHuS.css, assets/probe.worker-C1o-MVK3.js, assets/isobmff-dafJFW1e.js, assets/segments-CltrQ3Y4.js, assets/probe-Buk3oV3u.js, assets/stats-B2P8SpMe.js |
-| first Matroska analysis (initial + client + Matroska + shared chunks) | 100.00 KB | 98.08 KB | 1.93 KB | ok | assets/index-BHpbjObp.js, assets/index-UkwvJHuS.css, assets/probe.worker-C1o-MVK3.js, assets/matroska-DHB5JXpt.js, assets/probe-Buk3oV3u.js, assets/stats-B2P8SpMe.js |
+| main (React + UI) | 75.00 KB | 74.05 KB | 0.95 KB | ok | assets/index-D2qTNKNw.js |
+| worker entry (core + glue) | 5.00 KB | 4.22 KB | 0.78 KB | ok | assets/probe.worker-CXKH7qGp.js |
+| ISO BMFF parser chunk | 13.50 KB | 12.22 KB | 1.28 KB | ok | assets/isobmff-B_j4RpJt.js |
+| Matroska parser chunk | 12.00 KB | 11.10 KB | 0.90 KB | ok | assets/matroska-CQWSyNUn.js |
+| shared statistics chunk | 5.00 KB | 4.29 KB | 0.70 KB | ok | assets/stats-PG6SWnie.js |
+| lazy probe client | 3.50 KB | 2.62 KB | 0.88 KB | ok | assets/probe-Byk94g7e.js |
+| lazy rVFC fallback | 2.50 KB | 2.21 KB | 0.29 KB | ok | assets/rvfc-CgFRtCyp.js |
+| lazy rate profile core (segments) | 2.00 KB | 1.84 KB | 0.16 KB | ok | assets/segments-BXhvnKTd.js |
+| lazy rate profile panel (UI) | 1.50 KB | 0.94 KB | 0.56 KB | ok | assets/RateProfile-BJxuzsTO.js |
+| initial (main + CSS + worker entry) | 85.00 KB | 80.08 KB | 4.92 KB | ok | assets/index-D2qTNKNw.js, assets/index-UkwvJHuS.css, assets/probe.worker-CXKH7qGp.js |
+| first MP4 analysis (initial + client + ISO BMFF + shared chunks) | 100.00 KB | 99.22 KB | 0.78 KB | ok | assets/index-D2qTNKNw.js, assets/index-UkwvJHuS.css, assets/probe.worker-CXKH7qGp.js, assets/isobmff-B_j4RpJt.js, assets/probe-Byk94g7e.js, assets/stats-PG6SWnie.js |
+| first VFR MP4 analysis (initial + client + ISO BMFF + segments + shared chunks) | 102.00 KB | 101.06 KB | 0.94 KB | ok | assets/index-D2qTNKNw.js, assets/index-UkwvJHuS.css, assets/probe.worker-CXKH7qGp.js, assets/isobmff-B_j4RpJt.js, assets/segments-BXhvnKTd.js, assets/probe-Byk94g7e.js, assets/stats-PG6SWnie.js |
+| first Matroska analysis (initial + client + Matroska + shared chunks) | 100.00 KB | 98.09 KB | 1.91 KB | ok | assets/index-D2qTNKNw.js, assets/index-UkwvJHuS.css, assets/probe.worker-CXKH7qGp.js, assets/matroska-CQWSyNUn.js, assets/probe-Byk94g7e.js, assets/stats-PG6SWnie.js |
 
 The lazy mp4box and mediabunny comparison chunks (and the chunk they share) are reported but not budgeted.
 
@@ -44,27 +44,27 @@ Request chain check: every static dependency of a parser or engine chunk is alre
 
 | File | Kind | Raw | gzip -9 | brotli q11 |
 |---|---|---:|---:|---:|
-| assets/Compare-X0RbAiHj.js | lazy | 2.88 KB | 1.20 KB | 1.09 KB |
-| assets/RateProfile-CGUCTJPA.js | rateProfile | 2.17 KB | 0.94 KB | 0.85 KB |
-| assets/compare-Di5EhA3F.js | client-compare | 2.57 KB | 1.31 KB | 1.19 KB |
-| assets/counting-r6OebIZA.js | engine-shared | 3.01 KB | 1.50 KB | 1.35 KB |
+| assets/Compare-DBEjRNvf.js | lazy | 2.88 KB | 1.21 KB | 1.09 KB |
+| assets/RateProfile-BJxuzsTO.js | rateProfile | 2.17 KB | 0.94 KB | 0.85 KB |
+| assets/compare-CXF0OHt7.js | client-compare | 2.57 KB | 1.31 KB | 1.20 KB |
+| assets/counting-pZdWgn-V.js | engine-shared | 3.01 KB | 1.50 KB | 1.35 KB |
 | assets/deviceInfo-BoHFvMfb.js | deviceInfo | 4.83 KB | 2.24 KB | 1.96 KB |
-| assets/fallback-CkYG27gY.js | client-fallback | 0.98 KB | 0.62 KB | 0.54 KB |
-| assets/index-BHpbjObp.js | main | 237.43 KB | 74.05 KB | 64.11 KB |
+| assets/fallback-Cpny0o_H.js | client-fallback | 0.98 KB | 0.62 KB | 0.54 KB |
+| assets/index-D2qTNKNw.js | main | 237.43 KB | 74.05 KB | 64.14 KB |
 | assets/index-UkwvJHuS.css | css | 4.98 KB | 1.81 KB | 1.53 KB |
-| assets/inline-CCK65lH2.js | client-inline | 3.07 KB | 1.48 KB | 1.33 KB |
-| assets/isobmff-dafJFW1e.js | isobmff | 30.75 KB | 12.22 KB | 11.04 KB |
-| assets/matroska-DHB5JXpt.js | matroska | 29.05 KB | 11.10 KB | 10.09 KB |
-| assets/mediabunny-DxV2spuW.js | mediabunny | 200.82 KB | 52.78 KB | 44.45 KB |
-| assets/mp4box-U2EMRXIA.js | mp4box | 187.64 KB | 43.65 KB | 37.29 KB |
-| assets/probe-Buk3oV3u.js | client | 6.08 KB | 2.62 KB | 2.42 KB |
-| assets/probe.worker-C1o-MVK3.js | worker | 10.20 KB | 4.20 KB | 3.83 KB |
+| assets/inline-DSpfnxkg.js | client-inline | 3.07 KB | 1.48 KB | 1.33 KB |
+| assets/isobmff-B_j4RpJt.js | isobmff | 30.75 KB | 12.22 KB | 11.04 KB |
+| assets/matroska-CQWSyNUn.js | matroska | 29.05 KB | 11.10 KB | 10.09 KB |
+| assets/mediabunny-pqFvvv1H.js | mediabunny | 200.82 KB | 52.78 KB | 44.47 KB |
+| assets/mp4box-BsG0ojjS.js | mp4box | 187.64 KB | 43.65 KB | 37.30 KB |
+| assets/probe-Byk94g7e.js | client | 6.08 KB | 2.62 KB | 2.42 KB |
+| assets/probe.worker-CXKH7qGp.js | worker | 10.14 KB | 4.22 KB | 3.84 KB |
 | assets/result-DwUAyOGs.js | client-shared | 0.71 KB | 0.38 KB | 0.33 KB |
-| assets/rvfc-B4Chh_YO.js | rvfc | 4.29 KB | 2.21 KB | 2.00 KB |
-| assets/segments-CltrQ3Y4.js | segments | 3.35 KB | 1.84 KB | 1.71 KB |
-| assets/stats-B2P8SpMe.js | parser-shared | 10.21 KB | 4.29 KB | 3.92 KB |
-| **initial** | main + CSS + worker entry | 252.61 KB | 80.06 KB | 69.46 KB |
-| **first MP4 analysis** | initial + client chunk + ISO BMFF chunk + shared chunks | 299.65 KB | 99.20 KB | 86.85 KB |
-| **first VFR MP4 analysis** | initial + client chunk + ISO BMFF chunk + segments chunk + shared chunks | 303.00 KB | 101.05 KB | 88.56 KB |
-| **first Matroska analysis** | initial + client chunk + Matroska chunk + shared chunks | 297.95 KB | 98.08 KB | 85.89 KB |
+| assets/rvfc-CgFRtCyp.js | rvfc | 4.29 KB | 2.21 KB | 2.00 KB |
+| assets/segments-BXhvnKTd.js | segments | 3.35 KB | 1.84 KB | 1.71 KB |
+| assets/stats-PG6SWnie.js | parser-shared | 10.21 KB | 4.29 KB | 3.92 KB |
+| **initial** | main + CSS + worker entry | 252.55 KB | 80.08 KB | 69.52 KB |
+| **first MP4 analysis** | initial + client chunk + ISO BMFF chunk + shared chunks | 299.59 KB | 99.22 KB | 86.90 KB |
+| **first VFR MP4 analysis** | initial + client chunk + ISO BMFF chunk + segments chunk + shared chunks | 302.94 KB | 101.06 KB | 88.61 KB |
+| **first Matroska analysis** | initial + client chunk + Matroska chunk + shared chunks | 297.89 KB | 98.09 KB | 85.94 KB |
 
