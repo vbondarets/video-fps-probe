@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, posix, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
@@ -869,7 +869,7 @@ const MATRIX_ENGINES: ReadonlyArray<readonly [string, string]> = [
   ['rvfc', 'rVFC'],
 ];
 
-function packageBlock(inp: Inputs): string[] {
+function packageBlock(inp: Inputs, doc: Doc): string[] {
   const kbOrDash = (n: number | null | undefined): string => (n === null || n === undefined ? '-' : fmtKB(n));
   const imports = (f: MatrixFixture): string => `${f.imports.map((i) => `\`video-fps-probe${i.slice(1)}\``).join(' + ')}${f.note ? ` (${f.note})` : ''}`;
   const engines = (f: MatrixFixture): string =>
@@ -907,7 +907,7 @@ function packageBlock(inp: Inputs): string[] {
     '',
     ...table(['Configuration', 'Imports', 'Vite worker option', 'Critical path', 'First MP4, lazy', 'All own paths, lazy', 'Engine chunks, lazy', 'Worker files', 'Budgets'], 'lllrrrrrl', rows),
     '',
-    `Measured by \`npm run size:matrix\` on production builds of the fixtures in \`tests/consumers/fixtures/\`, installed from the packed tarball into a directory outside the repository with mp4box ${v['mp4box'] ?? ''} and mediabunny ${v['mediabunny'] ?? ''}; gzip -9, KB = 1000 bytes. The critical path is the package code in the entry chunk, cut out by the hidden sourcemap. CI fails when a budget is exceeded, a configuration builds an unexpected worker file, or a sourcemap lists a module that must not be there (mp4box or mediabunny where they are not imported, the prebuilt own worker in the custom-worker build); [report/size-matrix.md](report/size-matrix.md) lists every budget with its reason.`,
+    `Measured by \`npm run size:matrix\` on production builds of the fixtures in \`tests/consumers/fixtures/\`, installed from the packed tarball into a directory outside the repository with mp4box ${v['mp4box'] ?? ''} and mediabunny ${v['mediabunny'] ?? ''}; gzip -9, KB = 1000 bytes. The critical path is the package code in the entry chunk, cut out by the hidden sourcemap. CI fails when a budget is exceeded, a configuration builds an unexpected worker file, or a sourcemap lists a module that must not be there (mp4box or mediabunny where they are not imported, the prebuilt own worker in the custom-worker build); [report/size-matrix.md](${doc.link('report/size-matrix.md')}) lists every budget with its reason.`,
   ];
 }
 
@@ -1193,7 +1193,11 @@ function integrationBlock(inp: Inputs): string[] {
   ];
 }
 
-const BLOCKS: Record<string, (inp: Inputs) => string[]> = {
+interface Doc {
+  link(path: string): string;
+}
+
+const BLOCKS: Record<string, (inp: Inputs, doc: Doc) => string[]> = {
   headline,
   profile: profileBlock,
   integration: integrationBlock,
@@ -1209,10 +1213,21 @@ const BLOCKS: Record<string, (inp: Inputs) => string[]> = {
   corpus: corpusBlock,
 };
 
-export function renderBlocks(inp: Inputs): Record<string, string> {
+export const TARGETS: ReadonlyArray<{ path: string; blocks: readonly string[] }> = [{ path: 'README.md', blocks: Object.keys(BLOCKS) }];
+
+export function renderBlocks(inp: Inputs, path: string, names: readonly string[]): Record<string, string> {
+  const doc: Doc = { link: (to) => posix.relative(posix.dirname(path), to) };
   const out: Record<string, string> = {};
-  for (const [name, fn] of Object.entries(BLOCKS)) out[name] = plain(fn(inp).join('\n'));
+  for (const name of names) out[name] = plain(need(BLOCKS[name], `block ${name}`)(inp, doc).join('\n'));
   return out;
+}
+
+function checkTargets(): void {
+  const placed = TARGETS.flatMap((t) => t.blocks);
+  for (const name of Object.keys(BLOCKS)) {
+    const n = placed.filter((b) => b === name).length;
+    if (n !== 1) fail(`block ${name} is placed in ${n} target files, expected 1`);
+  }
 }
 
 export function applyBlocks(readme: string, blocks: Record<string, string>): { text: string; missing: string[] } {
@@ -1237,27 +1252,25 @@ function main(): number {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
   const { values } = parseArgs({
     options: {
-      readme: { type: 'string' },
       report: { type: 'string' },
       check: { type: 'boolean' },
       help: { type: 'boolean' },
     },
   });
   if (values.help) {
-    console.log(`Usage: node scripts/readme-tables.ts [--check] [--readme <file>] [--report <dir>]
+    console.log(`Usage: node scripts/readme-tables.ts [--check] [--report <dir>]
 
-Rewrites the README sections between <!-- tables:<name>:start --> and <!-- tables:<name>:end -->
-from report/accuracy.json, report/size.json, report/size-matrix.json, report/browser-bench.json,
-report/integration-cost.json and fixtures/manifest.tsv.
-Sections: ${Object.keys(BLOCKS).join(', ')}.
+Rewrites the sections between <!-- tables:<name>:start --> and <!-- tables:<name>:end -->
+in ${TARGETS.map((t) => t.path).join(', ')} from report/accuracy.json, report/size.json,
+report/size-matrix.json, report/browser-bench.json, report/integration-cost.json and fixtures/manifest.tsv.
+${TARGETS.map((t) => `${t.path}: ${t.blocks.join(', ')}.`).join('\n')}
 
-  --check    exit 1 if the README is not up to date, write nothing
-  --readme   README path (default README.md)
+  --check    exit 1 if a file is not up to date, write nothing
   --report   report directory (default report)`);
     return 0;
   }
+  checkTargets();
   const reportDir = resolve(root, values.report ?? 'report');
-  const readmePath = resolve(root, values.readme ?? 'README.md');
   const inputs: Inputs = {
     acc: readJson<AccuracyReport>(join(reportDir, 'accuracy.json')),
     size: readJson<SizeReport>(join(reportDir, 'size.json')),
@@ -1266,27 +1279,25 @@ Sections: ${Object.keys(BLOCKS).join(', ')}.
     integration: readJson<IntegrationReport>(join(reportDir, 'integration-cost.json')),
     manifest: readManifest(join(root, 'fixtures', 'manifest.tsv')),
   };
-  const before = readFileSync(readmePath, 'utf8');
-  const { text, missing } = applyBlocks(before, renderBlocks(inputs));
-  if (missing.length > 0) {
-    console.error(`${readmePath}: missing or duplicated markers for ${missing.join(', ')}`);
-    return 1;
-  }
-  if (values.check) {
-    if (text !== before) {
-      console.error(`${readmePath} is out of date: run node scripts/readme-tables.ts`);
-      return 1;
+  let failed = 0;
+  for (const target of TARGETS) {
+    const path = resolve(root, target.path);
+    const before = readFileSync(path, 'utf8');
+    const { text, missing } = applyBlocks(before, renderBlocks(inputs, target.path, target.blocks));
+    if (missing.length > 0) {
+      console.error(`${path}: missing or duplicated markers for ${missing.join(', ')}`);
+      failed++;
+    } else if (text === before) {
+      console.log(values.check ? `${path} is up to date` : `${path} unchanged`);
+    } else if (values.check) {
+      console.error(`${path} is out of date: run node scripts/readme-tables.ts`);
+      failed++;
+    } else {
+      writeFileSync(path, text);
+      console.log(`updated ${path}: ${target.blocks.join(', ')}`);
     }
-    console.log(`${readmePath} is up to date`);
-    return 0;
   }
-  if (text === before) {
-    console.log(`${readmePath} unchanged`);
-    return 0;
-  }
-  writeFileSync(readmePath, text);
-  console.log(`updated ${readmePath}: ${Object.keys(BLOCKS).join(', ')}`);
-  return 0;
+  return failed > 0 ? 1 : 0;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
