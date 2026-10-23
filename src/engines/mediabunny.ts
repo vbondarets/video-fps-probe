@@ -1,5 +1,6 @@
 import { CustomSource, EncodedPacketSink, Input, Logging, LogLevel, MATROSKA, MP4, QTFF, WEBM } from 'mediabunny';
 import type { InputFormat, InputVideoTrack } from 'mediabunny';
+import { throwIfAborted } from '../core/abort.ts';
 import { resolveOptions } from '../core/options.ts';
 import type { BlobLike } from '../core/reader.ts';
 import { emptyTrack } from '../core/result.ts';
@@ -81,7 +82,7 @@ async function collectTrack(
   const options = { metadataOnly: true };
   // getNextPacket() instead of packets(): the async iterator is quadratic on very long tracks.
   for (let packet = await sink.getFirstPacket(options); packet; packet = await sink.getNextPacket(packet, options)) {
-    signal?.throwIfAborted();
+    throwIfAborted(signal);
     if (pts.length >= maxPackets) {
       result.warnings.push(`packet walk stopped at the limit of ${maxPackets} packets`);
       break;
@@ -227,7 +228,7 @@ async function run(counted: CountingBlob, result: MediabunnyResult, opts: Analyz
 
 export async function analyzeWithMediabunny(blob: BlobLike, name: string, opts: AnalyzeOptions = {}): Promise<MediabunnyResult> {
   const t0 = now();
-  opts.signal?.throwIfAborted();
+  throwIfAborted(opts.signal);
   const counted = new CountingBlob(blob, opts.signal ?? null);
   const result: MediabunnyResult = newResult(name, blob.size, 'mediabunny');
   try {

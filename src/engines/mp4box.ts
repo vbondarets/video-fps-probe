@@ -1,5 +1,6 @@
 import { createFile, Log, MP4BoxBuffer } from 'mp4box';
 import type { ISOFile } from 'mp4box';
+import { throwIfAborted } from '../core/abort.ts';
 import { resolveOptions } from '../core/options.ts';
 import { BlobReader, fourcc, u32, u64, type BlobLike } from '../core/reader.ts';
 import { emptyTrack } from '../core/result.ts';
@@ -414,7 +415,7 @@ async function run(counted: CountingBlob, result: Mp4boxResult, opts: AnalyzeOpt
 
 export async function analyzeWithMp4box(blob: BlobLike, name: string, opts: AnalyzeOptions = {}): Promise<Mp4boxResult> {
   const t0 = now();
-  opts.signal?.throwIfAborted();
+  throwIfAborted(opts.signal);
   const counted = new CountingBlob(blob, opts.signal ?? null);
   const result: Mp4boxResult = newResult(name, blob.size, 'mp4box');
   try {

@@ -1,3 +1,5 @@
+import { throwIfAborted } from './abort.ts';
+
 export interface BlobSlice {
   arrayBuffer(): Promise<ArrayBuffer>;
 }
@@ -88,7 +90,7 @@ export class BlobReader {
   }
 
   checkAbort(): void {
-    this.signal?.throwIfAborted();
+    throwIfAborted(this.signal);
   }
 
   async read(offset: number, length: number): Promise<Uint8Array> {

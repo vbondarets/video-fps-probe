@@ -1,3 +1,4 @@
+import { throwIfAborted } from './abort.ts';
 import { resolveOptions } from './options.ts';
 import { BlobReader, type BlobLike } from './reader.ts';
 import { emptyAnalysis } from './result.ts';
@@ -50,7 +51,7 @@ export async function analyze(
 ): Promise<FileResult> {
   const t0 = performance.now();
   const resolved = resolveOptions(opts);
-  resolved.signal?.throwIfAborted();
+  throwIfAborted(resolved.signal);
   const result: FileResult = {
     name,
     size: blob.size,

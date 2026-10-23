@@ -1,3 +1,4 @@
+import { throwIfAborted } from '../core/abort.ts';
 import { emptyAnalysis, emptyTrack } from '../core/result.ts';
 import type { Rational } from '../core/types.ts';
 import type { RvfcOptions, RvfcPass, RvfcResult } from './types.ts';
@@ -106,7 +107,7 @@ export async function estimateWithRvfc(file: File, opts: RvfcOptions): Promise<R
   const url = URL.createObjectURL(file);
   const v = document.createElement('video');
   try {
-    signal?.throwIfAborted();
+    throwIfAborted(signal);
     if (!('requestVideoFrameCallback' in v)) throw Error('requestVideoFrameCallback unsupported');
     v.muted = v.playsInline = true;
     v.width = 320;

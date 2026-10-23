@@ -1,3 +1,4 @@
+import { throwIfAborted } from '../core/abort.ts';
 import type { BlobLike, BlobSlice } from '../core/reader.ts';
 import type { IoStats } from '../core/types.ts';
 
@@ -46,9 +47,9 @@ export class CountingBlob implements BlobLike {
     const e = Math.max(s, Math.min(end, this.size));
     return {
       arrayBuffer: async () => {
-        this.#signal?.throwIfAborted();
+        throwIfAborted(this.#signal);
         const ab = await this.#source.slice(s, e).arrayBuffer();
-        this.#signal?.throwIfAborted();
+        throwIfAborted(this.#signal);
         this.#reads++;
         this.#transferred += ab.byteLength;
         this.#cover(s, s + ab.byteLength);
