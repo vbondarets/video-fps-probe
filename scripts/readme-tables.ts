@@ -564,7 +564,7 @@ function headline(inp: Inputs): string[] {
   const browser = majorVersion(inp.bench.environment.chrome.product);
   const firstMp4 = need(inp.size.composites['firstMp4'], 'size composite firstMp4');
   const firstMkv = need(inp.size.composites['firstMatroska'], 'size composite firstMatroska');
-  const { m, prof } = integrationModel(inp.integration);
+  const { prof } = integrationModel(inp.integration);
   const fast = prof('fast4g');
   const bigFixture = own.fixtures.find((f) => f.name === 'big_1080p_moov_end.mp4');
   const bigChrome = inp.bench.chrome.large['big_1080p_moov_end.mp4']?.['own'];
@@ -580,7 +580,7 @@ function headline(inp: Inputs): string[] {
     `- **Reads.** Median ${median(reads)} reads per committed fixture, at most ${Math.max(...reads)}. The ${fmtDuration(longDur)}, ${longFrames}-frame MP4 (${fmtBytes(long.sizeBytes)}) takes ${io(long).reads} reads and ${fmtBytes(io(long).bytesRead)} (${fmtPct(io(long).percent)}% of the file).`,
     `- **Speed.** In ${browser}, warm: median ${fmtMs(median(warm.map((w) => w.medianMs)))} ms per file in the worker and ${fmtMs(median(warm.map((w) => w.medianWallMs)))} ms from file pick to rendered result; the ${fmtDuration(longDur)} file takes ${fmtMs(chromeLong.medianMs)} ms.${big}`,
     `- **Size.** A default install (\`video-fps-probe/lazy\`) adds ${fmtKB(matrixMetric(inp, 'default', 'trigger'))} gzip to a host app's critical path. Its first MP4 file loads ${fmtKB(matrixMetric(inp, 'default', 'firstMp4'))} lazily when the host's Vite config sets \`worker: { format: 'es' }\`, and ${fmtKB(matrixMetric(inp, 'zero-config', 'firstMp4'))} with Vite's default worker format, 'iife', which builds the own worker as one file ([Package size](#package-size)). The demo page plus its first MP4 result loads ${fmtKB(firstMp4.gzip)} gzip (page, ${kindGzip(inp.size, 'client') === null ? '' : 'probe client, '}worker entry, ${sharedParserGzip(inp.size) === null ? '' : 'shared statistics chunk, '}ISO BMFF parser); the first Matroska result ${fmtKB(firstMkv.gzip)}.`,
-    `- **Embedding.** In a host app the critical path grows by a ${fmtKB(m.triggerGzip)} gzip trigger (${pctSmall(m.initialIncreaseMeasuredPct)} of a ${fmtMB(inp.integration.host.initialGzipBytes)} initial load); the first MP4 lazily loads ${fmtKB(m.lazyMp4Gzip)}. With the worker prewarmed when the upload dialog opens, the first result on fast 4G takes ${fmtMs(fast.prewarm.totalMs)} ms instead of ${fmtMs(fast.cold.totalMs)} ms.${integrationStale(inp) ? ` Measured on an earlier build whose worker entry and parser chunks differ from the current ones, so these figures are not current.` : ''}`,
+    `- **Embedding.** In a host app with a ${fmtMB(inp.integration.host.initialGzipBytes)} gzip initial load, prewarming the worker when the upload dialog opens makes the first result on fast 4G take ${fmtMs(fast.prewarm.totalMs)} ms instead of ${fmtMs(fast.cold.totalMs)} ms ([Embedding in an existing app](#embedding-in-an-existing-app)).${integrationStale(inp) ? ` Measured on an earlier build whose worker entry and parser chunks differ from the current ones, so these figures are not current.` : ''}`,
     `- **Same result in Node and Chrome.** ${inp.bench.sanity.identical} of ${inp.bench.sanity.compared} files give identical results field by field (timing excluded).`,
     `- **Machine.** ${machine(inp)}.`,
   ];
@@ -1179,7 +1179,7 @@ function integrationBlock(inp: Inputs): string[] {
     : [];
   return [
     ...stale,
-    `Host model: an SPA with a ${fmtMB(ic.host.initialGzipBytes)} gzip initial load, ${majorVersion(ic.environment.browser)} headless, local server with CDP network throttling; the probe is the real worker pool, worker entry and parser chunks. "Prewarmed" means the worker was started and the parser loaded before the pick.`,
+    `Host model: an SPA with a ${fmtMB(ic.host.initialGzipBytes)} gzip initial load, ${majorVersion(ic.environment.browser)} headless, local server with CDP network throttling; the probe is the real worker pool, worker entry and parser chunks. "Prewarmed" means the worker was started and the parser loaded before the pick. The trigger is an inline script and the glue the WorkerPool class bundled by the bench, so the sizes below are not those of the package entries: what an app that imports \`video-fps-probe/lazy\` adds is in [Package size](#package-size).`,
     '',
     ...table(['', 'Lazy on the first pick', 'Lazy + prefetch when the upload dialog opens', 'Eager (in the critical bundle)'], 'llll', rows),
     '',
