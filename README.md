@@ -63,7 +63,8 @@ npm run check:package            # publint and check-dist on dist/: file whiteli
 npm run size                     # bundle size per chunk and budgets for demo/dist/, writes report/size.*
 npm run consumers:setup          # npm pack, then install the tarball, vite and the peers into a temp directory (--dir)
 npm run consumers:build          # build the consumer fixtures of tests/consumers/fixtures/ there
-npm run size:matrix              # package size per configuration from those builds, writes report/size-matrix.*
+npm run size:matrix              # package size per configuration from those builds, fails on a budget or a stale report/size-matrix.*
+npm run size:matrix:write        # the same measurement, writes report/size-matrix.*
 npm run test:consumers           # Playwright: each consumer fixture under vite build and vite dev equals Node analyze from the tarball
 npm run bench                    # headless Chrome benchmark of demo/dist/, writes report/browser-bench.*
 node scripts/readme-tables.ts    # refresh the tables in this README from report/

@@ -156,6 +156,7 @@
     "consumers:setup": "node scripts/consumers.mjs setup",
     "consumers:build": "node scripts/consumers.mjs build",
     "size:matrix": "node scripts/size-matrix.mjs --check",
+    "size:matrix:write": "node scripts/size-matrix.mjs",
     "bench": "node scripts/bench/run-bench.mjs"
   },
   "devDependencies": {

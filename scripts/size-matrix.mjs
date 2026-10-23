@@ -93,8 +93,12 @@ Measures the consumer fixtures built by node scripts/consumers.mjs from the pack
 
   --dir <dir>   consumers directory (default $CONSUMERS_DIR, else <os tmpdir>/video-fps-probe-consumers)
   --check       exit 1 when a budget is exceeded, a worker count is wrong, a must-not-exist source
-                appears in a sourcemap, or a parser or engine chunk waits for a chunk it does not request
+                appears in a sourcemap, or a parser or engine chunk waits for a chunk it does not request;
+                without --out it also exits 1 when report/size-matrix.md or .json differs from this
+                measurement, and writes nothing
   --out <dir>   where size-matrix.md and size-matrix.json are written (default report)
+
+Without --check the report is written to --out, or to report/ (npm run size:matrix:write).
 `;
 
 const kb = (n) => `${(n / KB).toFixed(2)} KB`;
@@ -391,20 +395,42 @@ function main() {
   }
   const dir = consumersDir(values.dir);
   const matrix = buildMatrix(dir);
-  const outDir = values.out ? resolve(values.out) : join(REPO_ROOT, 'report');
-  mkdirSync(outDir, { recursive: true });
-  writeFileSync(join(outDir, 'size-matrix.md'), renderMarkdown(matrix));
-  writeFileSync(join(outDir, 'size-matrix.json'), `${JSON.stringify(matrix, null, 2)}\n`);
+  const outputs = { 'size-matrix.md': renderMarkdown(matrix), 'size-matrix.json': `${JSON.stringify(matrix, null, 2)}\n` };
   for (const f of matrix.fixtures) {
     console.log(`${f.name.padEnd(13)} critical ${kb(f.metrics.trigger).padStart(9)}  first MP4 ${cell(f.metrics.firstMp4).padStart(9)}  workers ${f.workers.length}  ${f.problems.length === 0 ? 'ok' : 'FAIL'}`);
   }
   console.log(`${'standalone'.padEnd(13)} own.worker.js ${cell(matrix.standalone.gzip)}  ${matrix.standalone.status}`);
-  console.log(`wrote ${join(outDir, 'size-matrix.md')} and size-matrix.json`);
-  if (values.check && matrix.failures.length > 0) {
-    for (const f of matrix.failures) console.error(`FAIL: ${f}`);
+  const failures = [...matrix.failures];
+  if (values.check && !values.out) {
+    const reportDir = join(REPO_ROOT, 'report');
+    for (const [name, text] of Object.entries(outputs)) {
+      const difference = firstDifference(readIfExists(join(reportDir, name)), text);
+      if (difference) failures.push(`report/${name} differs from this measurement (${difference}); run npm run size:matrix:write and commit the report`);
+    }
+    if (failures.length === 0) console.log('report/size-matrix.md and size-matrix.json match this measurement');
+  } else {
+    const outDir = values.out ? resolve(values.out) : join(REPO_ROOT, 'report');
+    mkdirSync(outDir, { recursive: true });
+    for (const [name, text] of Object.entries(outputs)) writeFileSync(join(outDir, name), text);
+    console.log(`wrote ${join(outDir, 'size-matrix.md')} and size-matrix.json`);
+  }
+  if (values.check && failures.length > 0) {
+    for (const f of failures) console.error(`FAIL: ${f}`);
     return 1;
   }
   return 0;
+}
+
+const readIfExists = (path) => (existsSync(path) ? readFileSync(path, 'utf8') : null);
+
+export function firstDifference(committed, measured) {
+  if (committed === null) return 'not committed';
+  if (committed === measured) return null;
+  const a = committed.split('\n');
+  const b = measured.split('\n');
+  const i = a.findIndex((line, n) => line !== b[n]);
+  const line = i === -1 ? a.length : i;
+  return `line ${line + 1}: committed ${JSON.stringify(a[line] ?? '<end of file>')}, measured ${JSON.stringify(b[line] ?? '<end of file>')}`;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

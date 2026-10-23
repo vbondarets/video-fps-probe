@@ -161,7 +161,7 @@ jobs:
       - name: Build the consumer fixtures
         run: npm run consumers:build
 
-      - name: Check the package size matrix
+      - name: Check the package size matrix and the committed report
         run: npm run size:matrix
 
       - name: Check the README size matrix against this measurement
