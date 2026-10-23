@@ -1,4 +1,4 @@
-import { ownEngine, serveProbeWorker } from './runtime.ts';
+import { ownEngine, serveProbeWorker } from '../worker/runtime.ts';
 
 serveProbeWorker({
   own: ownEngine,

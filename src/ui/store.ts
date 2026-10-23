@@ -1,8 +1,8 @@
 import { useSyncExternalStore } from 'react';
 import { isAbortError as isAbort } from '../api/errors.ts';
+import { lazyProbeFrom } from '../client/lazy.ts';
 import type { AnalyzeProgress, FileResult, MatroskaMode } from '../core/types.ts';
 import type { ExportAction, ExportOutcome } from './deviceInfo.ts';
-import { submit } from './workerPool.ts';
 
 export type CompareEngine = 'mp4box' | 'mediabunny' | 'rvfc';
 
@@ -44,6 +44,7 @@ let state: State = { rows: [], mode: 'auto' };
 let nextRow = 1;
 const listeners = new Set<() => void>();
 const hosts = new Map<number, HTMLElement>();
+const probe = lazyProbeFrom(() => import('./probe.ts').then((m) => m.probe));
 
 const message = (e: unknown) => (e instanceof Error ? e.message || e.name : String(e));
 const find = (id: number) => state.rows.find((r) => r.id === id);
@@ -70,9 +71,10 @@ function patchRun(id: number, engine: CompareEngine, p: Partial<Run>): void {
 function start(id: number, mode: MatroskaMode, followMode = true): void {
   const row = find(id);
   if (!row) return;
-  const job = submit(row.file, 'own', { matroskaMode: mode }, (progress) => patch(id, { progress }));
-  patch(id, { busy: true, progress: null, cancel: job.cancel });
-  job.promise.then(
+  const controller = new AbortController();
+  const job = probe.analyze(row.file, { matroskaMode: mode, signal: controller.signal, onProgress: (progress) => patch(id, { progress }) });
+  patch(id, { busy: true, progress: null, cancel: () => controller.abort() });
+  job.then(
     (result) => {
       patch(id, { busy: false, result, error: null, progress: null, cancel: null });
       if (followMode && isMatroska(result) && state.mode !== mode) start(id, state.mode);
@@ -128,21 +130,12 @@ export async function runCompare(id: number, engine: CompareEngine): Promise<Fil
   let float: HTMLElement | null = null;
   patchRun(id, engine, { busy: true, result: null, error: null, progress: null, cancel: () => controller.abort() });
   try {
-    let result: FileResult;
+    let host: HTMLElement | undefined;
     if (engine === 'rvfc') {
-      let host = hosts.get(id);
+      host = hosts.get(id);
       if (!host?.isConnected) host = float = document.body.appendChild(Object.assign(document.createElement('div'), { className: 'rvfc-host rvfc-float' }));
-      const { estimateWithRvfc } = await import('../engines/rvfc.ts');
-      result = await estimateWithRvfc(row.file, {
-        host,
-        signal: controller.signal,
-        onProgress: (progress: AnalyzeProgress) => patchRun(id, engine, { progress }),
-      });
-    } else {
-      const job = submit(row.file, engine, {}, (progress) => patchRun(id, engine, { progress }));
-      patchRun(id, engine, { cancel: job.cancel });
-      result = await job.promise;
     }
+    const result = await probe.analyze(row.file, { engine, host, signal: controller.signal, onProgress: (progress) => patchRun(id, engine, { progress }) });
     patchRun(id, engine, { busy: false, result, progress: null, cancel: null });
     return result;
   } catch (e) {
