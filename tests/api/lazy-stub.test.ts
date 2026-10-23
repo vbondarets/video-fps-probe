@@ -19,6 +19,9 @@ vi.mock('../../src/client/probe.ts', async (importOriginal) => {
 import { lazyProbeClient, lazyProbeFrom } from '../../src/client/lazy.ts';
 import { lazyProbe, lazyProbeFrom as fromLazyEntry } from '../../src/lazy.ts';
 
+const settledByNextTick = <T>(p: Promise<T>): Promise<T> =>
+  Promise.race([p, new Promise<never>((_, reject) => setTimeout(() => reject(new Error('still pending on the next tick')), 0))]);
+
 function fakeProbe(): Probe<EngineId> & { calls: string[] } {
   const calls: string[] = [];
   return {
@@ -105,6 +108,42 @@ describe('lazyProbeFrom', () => {
     expect(await stub.tryAnalyze(mp4File('c.mp4'))).toBeNull();
     await expect(stub.prewarm()).resolves.toBeUndefined();
     expect(probe.calls).toEqual(['destroy']);
+  });
+
+  it('rejects the calls waiting for a load still in flight with aborted at once on destroy, without waiting for the factory', async () => {
+    const probe = fakeProbe();
+    let resolve: ((p: Probe<EngineId>) => void) | null = null;
+    const stub = lazyProbeFrom(() => new Promise<Probe<EngineId>>((r) => (resolve = r)));
+    const loading = stub.load();
+    const analyzed = stub.analyze(mp4File('a.mp4'));
+    const compared = stub.compare(mp4File('a.mp4'));
+    const tried = stub.tryAnalyze(mp4File('b.mp4'));
+    const warmed = stub.prewarm();
+    stub.destroy();
+    await expect(settledByNextTick(analyzed)).rejects.toMatchObject({ name: 'ProbeError', code: 'aborted' });
+    await expect(settledByNextTick(compared)).rejects.toMatchObject({ name: 'ProbeError', code: 'aborted' });
+    expect(await settledByNextTick(tried)).toBeNull();
+    await expect(settledByNextTick(warmed)).resolves.toBeUndefined();
+    expect(stub.loaded).toBe(false);
+    resolve!(probe);
+    expect(await loading).toBe(probe);
+    expect(probe.calls).toEqual(['destroy']);
+  });
+
+  it('rejects the calls waiting for a load with aborted, not the load error, when the factory fails after destroy', async () => {
+    let reject: ((e: unknown) => void) | null = null;
+    const stub = lazyProbeFrom(() => new Promise<Probe<EngineId>>((_, r) => (reject = r)));
+    const analyzed = stub.analyze(mp4File('a.mp4'));
+    const compared = stub.compare(mp4File('a.mp4'));
+    const tried = stub.tryAnalyze(mp4File('b.mp4'));
+    const warmed = stub.prewarm();
+    stub.destroy();
+    reject!(new TypeError('Failed to fetch dynamically imported module'));
+    await expect(analyzed).rejects.toMatchObject({ name: 'ProbeError', code: 'aborted' });
+    await expect(compared).rejects.toMatchObject({ name: 'ProbeError', code: 'aborted' });
+    expect(await tried).toBeNull();
+    await expect(warmed).resolves.toBeUndefined();
+    expect(stub.loaded).toBe(false);
   });
 
   it('destroyed before any use, never loads and rejects every call with aborted', async () => {

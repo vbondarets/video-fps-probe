@@ -38,10 +38,12 @@ export function createProbeCore(options: CoreOptions): Probe<EngineId> {
   const life = new AbortController();
   const destroyed = (engine: EngineId | null) => new ProbeError('aborted', 'probe destroyed', { engine });
   const lazy = <T>(chunk: Promise<T>, engine: EngineId | null): Promise<T> =>
-    chunk.then(
-      (m) => (life.signal.aborted ? Promise.reject(destroyed(engine)) : m),
-      (e: unknown) => Promise.reject(new ProbeError('worker-failed', String(e), { engine, cause: e })),
-    );
+    new Promise<T>((resolve, reject) => {
+      const stop = () => reject(destroyed(engine));
+      life.signal.addEventListener('abort', stop);
+      if (life.signal.aborted) stop();
+      chunk.then(resolve, (e: unknown) => reject(new ProbeError('worker-failed', String(e), { engine, cause: e }))).finally(() => life.signal.removeEventListener('abort', stop));
+    });
 
   const poolOf = (kind: string, create: () => Worker): Route => ({
     kind,
@@ -118,7 +120,7 @@ export function createProbeCore(options: CoreOptions): Probe<EngineId> {
       for (const id of o.engines ?? [defaultEngine]) {
         const route = routes.get(id);
         if (!route || 'error' in route) continue;
-        if ('load' in route) jobs.push(route.load().then((m) => m.warm?.(containers)));
+        if ('load' in route) jobs.push(lazy(route.load(), id).then((m) => m.warm?.(containers)));
         else {
           const pool = route.pool();
           warm.set(pool, [...(warm.get(pool) ?? []), id as WorkerEngineId]);

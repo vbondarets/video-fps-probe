@@ -9,12 +9,12 @@ export const knownEngines = <Id extends EngineId>(worker: { readonly engines: re
 export function lazyStub<Id extends EngineId>(factory: () => Promise<Probe<Id>>, known: readonly Id[]): LazyProbe<Id> {
   let probe: Probe<Id> | null = null;
   let loading: Promise<Probe<Id>> | null = null;
-  let destroyed = false;
-  const aborted = () => Promise.reject(new ProbeError('aborted', 'probe destroyed'));
+  const life = new AbortController();
+  const aborted = () => new ProbeError('aborted', 'probe destroyed');
   const load = () =>
     (loading ??= new Promise<Probe<Id>>((resolve) => resolve(factory())).then(
       (p) => {
-        if (destroyed) p.destroy();
+        if (life.signal.aborted) p.destroy();
         return (probe = p);
       },
       (e: unknown) => {
@@ -22,10 +22,16 @@ export function lazyStub<Id extends EngineId>(factory: () => Promise<Probe<Id>>,
         throw e;
       },
     ));
+  const loadUnlessDestroyed = () =>
+    new Promise<Probe<Id>>((resolve, reject) => {
+      const stop = () => reject(aborted());
+      life.signal.addEventListener('abort', stop);
+      load().then(resolve, reject).finally(() => life.signal.removeEventListener('abort', stop));
+    });
   const forward = <T>(call: (p: Probe<Id>) => Promise<T>): Promise<T> => {
-    if (destroyed) return aborted();
+    if (life.signal.aborted) return Promise.reject(aborted());
     const loaded = probe;
-    return loaded ? new Promise<T>((resolve) => resolve(call(loaded))) : load().then((p) => (destroyed ? aborted() : call(p)));
+    return loaded ? new Promise<T>((resolve) => resolve(call(loaded))) : loadUnlessDestroyed().then((p) => (life.signal.aborted ? Promise.reject(aborted()) : call(p)));
   };
   return {
     get loaded() {
@@ -41,7 +47,7 @@ export function lazyStub<Id extends EngineId>(factory: () => Promise<Probe<Id>>,
     prewarm: (o) => forward((p) => p.prewarm(o)).catch(() => {}),
     dispose: () => probe?.dispose(),
     destroy: () => {
-      destroyed = true;
+      life.abort();
       probe?.destroy();
     },
   };
