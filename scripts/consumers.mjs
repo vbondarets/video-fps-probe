@@ -1,5 +1,5 @@
 import { execFileSync, execSync } from 'node:child_process';
-import { cpSync, createReadStream, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { cpSync, createReadStream, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, extname, join, resolve } from 'node:path';
@@ -87,8 +87,16 @@ export function setup(dir) {
   }
   writeFileSync(join(dir, 'package.json'), `${JSON.stringify({ name: 'video-fps-probe-consumers', private: true, type: 'module', dependencies }, null, 2)}\n`);
   rmSync(join(dir, 'node_modules', 'video-fps-probe'), { recursive: true, force: true });
-  execSync('npm install --prefer-offline --no-audit --no-fund --no-package-lock', { cwd: dir, stdio: 'inherit' });
-  console.log(`installed ${filename}, ${INSTALLED.map((n) => `${n}@${dependencies[n]}`).join(', ')} into ${dir}`);
+  const offline = process.env.CONSUMERS_OFFLINE === '1';
+  const userconfig = offline ? mkdtempSync(join(tmpdir(), 'video-fps-probe-npmrc-')) : null;
+  try {
+    if (userconfig) writeFileSync(join(userconfig, '.npmrc'), '');
+    const mode = userconfig ? `--offline --userconfig "${join(userconfig, '.npmrc')}"` : '--prefer-offline';
+    execSync(`npm install ${mode} --no-audit --no-fund --no-package-lock`, { cwd: dir, stdio: 'inherit' });
+  } finally {
+    if (userconfig) rmSync(userconfig, { recursive: true, force: true });
+  }
+  console.log(`installed ${filename}, ${INSTALLED.map((n) => `${n}@${dependencies[n]}`).join(', ')} into ${dir}${offline ? ' from the npm cache only' : ''}`);
 }
 
 export function copyFixtures(dir, names = FIXTURES.map((f) => f.name)) {
@@ -162,6 +170,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   else if (command === 'serve') await serve(dir, values.port ? Number(values.port) : CONSUMERS_PORT);
   else {
     console.error('Usage: node scripts/consumers.mjs setup|build|serve [--dir <consumers dir>] [--only <fixture,...>] [--port <n>]');
+    console.error('CONSUMERS_OFFLINE=1 makes setup install from the npm cache only (npm install --offline) with an empty npmrc as --userconfig, so no registry credentials are read.');
     process.exitCode = 2;
   }
 }
