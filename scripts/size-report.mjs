@@ -49,9 +49,9 @@ export const BUDGETS = {
   },
   client: {
     label: 'lazy probe client',
-    limit: 3.5 * KB,
+    limit: 1.5 * KB,
     required: false,
-    why: 'Probe client, engine descriptors and worker pool in one lazy chunk (probe-*), fetched by the main chunk before the first analysis. Estimate until the chunk is first built; then reset to measured plus 10 percent, rounded up to 0.5 KB. Not required: until the client chunk exists the pool is part of the main chunk.',
+    why: 'The probe client fetched by the main chunk on the first file, before the worker starts: the worker pool (pool-*) now, and the probe with its engine descriptors (probe-*) once the demo uses it. Counted in every first analysis row. Measured 1.04 KB when set, when the chunk held only the worker pool; limit is measured plus 10 percent, rounded up to 0.5 KB. Not required: without a client chunk the pool is part of the main chunk.',
   },
   rateProfile: {
     label: 'lazy rate profile panel (UI)',
@@ -243,7 +243,7 @@ function closureOf(start, fileSet, texts) {
 }
 
 const LAZY_BY_NAME = [
-  ['client', /^probe-/i],
+  ['client', /^(?:probe|pool)-/i],
   ['rvfc', /rvfc/i],
   ['mp4box', /mp4box/i],
   ['mediabunny', /mediabunny/i],
@@ -716,7 +716,7 @@ function runSelfTest() {
     expectEq('missing parser fails', noMkv.failures.length, 2);
     expectEq('missing Matroska parser leaves the first VFR MP4 analysis ok', statusOf(noMkv, 'firstVfrMp4'), 'ok');
     expectEq('other parser unaffected', statusOf(noMkv, 'firstMp4'), 'ok');
-    const withClient = buildReport(build('client', { client: 2_000 }));
+    const withClient = buildReport(build('client', { client: 1_000 }));
     expectEq('client: kind', withClient.chunks.find((c) => c.file === 'assets/probe-L1.js')?.kind, 'client');
     expectEq('client: budget ok', statusOf(withClient, 'client'), 'ok');
     expectEq('client: not part of initial', withClient.composites.initial.files.includes('assets/probe-L1.js'), false);
@@ -724,6 +724,10 @@ function runSelfTest() {
     expectEq('client: part of the first Matroska analysis', withClient.composites.firstMatroska.files.includes('assets/probe-L1.js'), true);
     expectEq('client: no failures', withClient.failures.length, 0);
     expectEq('client absent is not a failure', statusOf(buildReport(build('no-client', {})), 'client'), 'not built');
+    const poolDir = build('pool-client', {});
+    write(poolDir, 'assets/pool-Q1.js', `import{a as e}from"./index-M1.js";${filler(500)}`);
+    write(poolDir, 'assets/index-M1.js', mainText(`const q=()=>import("./pool-Q1.js");${filler(1_000)}`));
+    expectEq('client: a pool chunk is a client chunk', buildReport(poolDir).chunks.find((c) => c.file === 'assets/pool-Q1.js')?.kind, 'client');
     const overClient = buildReport(build('client-over', { client: limit('client') + 1_000 }));
     expectEq('client over is a failure', statusOf(overClient, 'client'), 'over');
     const twoWorkers = buildReport(build('two-workers', {}, { extraWorker: true }));
