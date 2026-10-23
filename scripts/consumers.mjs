@@ -37,6 +37,16 @@ export const FIXTURES = [
   { name: 'rvfc', imports: ['./lazy', './rvfc'], worker: ES, engines: ['own', 'rvfc'], workers: ['own.worker'], mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/'] },
   { name: 'all', imports: ['./lazy', './mp4box', './mediabunny', './rvfc'], worker: ES, engines: ['own', 'mp4box', 'mediabunny', 'rvfc'], workers: ['own.worker', 'mp4box.worker', 'mediabunny.worker'], mustNot: [] },
   {
+    name: 'standalone-url',
+    imports: ['./client/lazy', './standalone/own.worker.js?url'],
+    note: 'classic worker from the standalone file',
+    worker: 'none needed: the file is copied as an asset',
+    engines: ['own'],
+    workers: ['own.worker'],
+    singleFileWorkers: true,
+    mustNot: ['video-fps-probe/dist/plugins/own.js', 'video-fps-probe/dist/worker/own.worker.js', 'node_modules/mp4box/', 'node_modules/mediabunny/'],
+  },
+  {
     name: 'iife-nosplit',
     imports: ['./lazy'],
     worker: "format: 'iife', rolldownOptions.output.codeSplitting: false",

@@ -15,10 +15,11 @@ The critical path is the package code inside the host entry chunk, cut out of th
 | mediabunny | video-fps-probe/lazy + video-fps-probe/mediabunny | format: 'es' | **0.90 KB** | 1.75 KB | 23.29 KB | 36.27 KB | mediabunny 53.87 KB | 2 (mediabunny.worker, own.worker) | ok |
 | rvfc | video-fps-probe/lazy + video-fps-probe/rvfc | format: 'es' | **0.77 KB** | 1.59 KB | 23.27 KB | 36.26 KB | rVFC 2.19 KB | 1 (own.worker) | ok |
 | all | video-fps-probe/lazy + video-fps-probe/mp4box + video-fps-probe/mediabunny + video-fps-probe/rvfc | format: 'es' | **1.02 KB** | 1.92 KB | 23.31 KB | 36.29 KB | mp4box 44.77 KB, mediabunny 53.87 KB, rVFC 2.19 KB | 3 (mediabunny.worker, mp4box.worker, own.worker) | ok |
+| standalone-url | video-fps-probe/client/lazy + video-fps-probe/standalone/own.worker.js?url (classic worker from the standalone file) | none needed: the file is copied as an asset | **0.71 KB** | 1.46 KB | 34.60 KB | 34.60 KB | - | 1 (own.worker) | ok |
 | iife-nosplit | video-fps-probe/lazy | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.67 KB** | 1.40 KB | 34.77 KB | 34.77 KB | - | 1 (own.worker) | ok |
 | standalone worker file | video-fps-probe/standalone/own.worker.js | - | - | - | 32.04 KB | 32.04 KB | - | 1 file, no imports | ok |
 
-First MP4: the probe client, the worker entry that serves own, the statistics chunk (requested in parallel with the parser) and the ISO BMFF parser. All own paths adds the Matroska parser and the rate profile core. A worker built as iife cannot split, so in zero-config and iife-nosplit the own worker is one file and both columns are the client plus that file.
+First MP4: the probe client, the worker entry that serves own, the statistics chunk (requested in parallel with the parser) and the ISO BMFF parser. All own paths adds the Matroska parser and the rate profile core. A worker built as iife cannot split, so in zero-config and iife-nosplit the own worker is one file, as the standalone file is in standalone-url, and both columns are the client plus that file.
 
 The host's worker option decides the first MP4: 23.26 KB with `worker: { format: 'es' }` (default), 34.77 KB with no worker option (zero-config), because Vite's default worker format is 'iife'. In Vite 8.3.5 zero-config and iife-nosplit build byte-identical own worker files: with format 'iife' Vite already inlines the worker's dynamic imports, so `codeSplitting: false` changes nothing.
 
@@ -66,6 +67,10 @@ The host's worker option decides the first MP4: 23.26 KB with `worker: { format:
 | all | all own paths, lazy total | 40.00 KB | 36.29 KB | 3.71 KB | ok |
 | all | shared engine chunk | 2.00 KB | - | - | not built |
 | all | shared engine chunk (main thread, inline mode) | 2.00 KB | 1.51 KB | 0.49 KB | ok |
+| standalone-url | critical path (package code in the entry chunk) | 1.00 KB | 0.71 KB | 0.29 KB | ok |
+| standalone-url | probe client (lazy) | 3.00 KB | 2.56 KB | 0.45 KB | ok |
+| standalone-url | own.worker entry | 35.50 KB | 32.04 KB | 3.46 KB | ok |
+| standalone-url | first MP4 analysis, lazy total | 38.50 KB | 34.60 KB | 3.90 KB | ok |
 | iife-nosplit | critical path (package code in the entry chunk) | 1.00 KB | 0.67 KB | 0.33 KB | ok |
 | iife-nosplit | own.worker entry | 35.50 KB | 32.11 KB | 3.39 KB | ok |
 | standalone | own.worker.js | 35.50 KB | 32.04 KB | 3.46 KB | ok |
@@ -79,6 +84,7 @@ The host's worker option decides the first MP4: 23.26 KB with `worker: { format:
 - **mediabunny**: worker files mediabunny.worker (5 lazy chunks), own.worker (4 lazy chunks); none of `node_modules/mp4box/` appears in any sourcemap; request chains ok.
 - **rvfc**: worker files own.worker (4 lazy chunks); none of `node_modules/mp4box/`, `node_modules/mediabunny/` appears in any sourcemap; request chains ok.
 - **all**: worker files mediabunny.worker (5 lazy chunks), mp4box.worker (5 lazy chunks), own.worker (4 lazy chunks); none of (no patterns) appears in any sourcemap; request chains ok.
+- **standalone-url**: worker files own.worker (0 lazy chunks); none of `video-fps-probe/dist/plugins/own.js`, `video-fps-probe/dist/worker/own.worker.js`, `node_modules/mp4box/`, `node_modules/mediabunny/` appears in any sourcemap; request chains ok.
 - **iife-nosplit**: worker files own.worker (0 lazy chunks); none of `node_modules/mp4box/`, `node_modules/mediabunny/` appears in any sourcemap; request chains ok.
 
 Must-not-exist reads the `sources` of every hidden sourcemap, because minified identifiers are renamed. The request chain check is the one in `scripts/size-report.mjs`: every static dependency of a parser or engine chunk is already loaded, or requested in the same Promise.all.
@@ -125,6 +131,10 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 - **all, all own paths, lazy total** (40.00 KB): As in the default configuration. Measured 36.29 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **all, shared engine chunk** (2.00 KB): As in the mp4box and mediabunny configurations: each prebuilt engine worker serves one comparison engine, so no worker builds this chunk. The design estimate of 2.0 KB stays the limit.
 - **all, shared engine chunk (main thread, inline mode)** (2.00 KB): The counting code mp4box and mediabunny share, which becomes a main-thread chunk of its own when both are registered. It loads only when an engine runs in this thread (worker: 'inline', SSR, no Worker global). Measured 1.51 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
+- **standalone-url, critical path (package code in the entry chunk)** (1.00 KB): The lazyProbeClient stub in the host entry chunk, as in the custom configuration. The asset URL of the standalone file is host code and is not counted. Measured 0.71 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
+- **standalone-url, probe client (lazy)** (3.00 KB): As in the custom configuration. Measured 2.56 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
+- **standalone-url, own.worker entry** (35.50 KB): dist/standalone/own.worker.js, which Vite copies unchanged as an asset for the ?url import and the host starts as a classic worker. Measured 32.04 KB, the standalone row below. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
+- **standalone-url, first MP4 analysis, lazy total** (38.50 KB): What the first MP4 loads with the standalone worker: the probe client and the one-file worker. It suits a host whose workers must stay classic scripts. Measured 34.60 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **iife-nosplit, critical path (package code in the entry chunk)** (1.00 KB): As in the default configuration. Measured 0.67 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **iife-nosplit, own.worker entry** (35.50 KB): With worker.format iife and codeSplitting false the own worker is one file: both parsers, the statistics and the rate profile core are inlined. Design estimate 35.0 KB; measured 32.11 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **standalone, own.worker.js** (35.50 KB): dist/standalone/own.worker.js: the own worker as one minified IIFE file with no imports, built by rolldown. Design estimate 35.0 KB; measured 32.04 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
@@ -287,6 +297,19 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | all | assets/stats.js | mediabunny.worker | stats | 4.32 KB |
 | all | assets/stats.js | own.worker | stats | 4.31 KB |
 | all | assets/stats.js | page | stats | 4.34 KB |
+| standalone-url | assets/compare.js | page | shared | 1.31 KB |
+| standalone-url | assets/fallback.js | page | shared | 0.62 KB |
+| standalone-url | assets/index.js | page | shared | 1.46 KB |
+| standalone-url | assets/inline.js | page | shared | 0.59 KB |
+| standalone-url | assets/isobmff.js | page | isobmff | 12.23 KB |
+| standalone-url | assets/matroska.js | page | matroska | 11.19 KB |
+| standalone-url | assets/own.worker.js | own.worker | shared | 32.04 KB |
+| standalone-url | assets/probe.js | page | shared | 2.56 KB |
+| standalone-url | assets/result.js | page | shared | 0.38 KB |
+| standalone-url | assets/runtime.js | page | shared | 2.47 KB |
+| standalone-url | assets/segments.js | page | segments | 1.84 KB |
+| standalone-url | assets/sniff.js | page | shared | 0.99 KB |
+| standalone-url | assets/stats.js | page | stats | 4.33 KB |
 | iife-nosplit | assets/compare.js | page | shared | 1.31 KB |
 | iife-nosplit | assets/fallback.js | page | shared | 0.62 KB |
 | iife-nosplit | assets/index.js | page | shared | 1.40 KB |

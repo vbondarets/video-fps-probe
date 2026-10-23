@@ -60,6 +60,8 @@ for (const fixture of FIXTURES) {
       page.on('framenavigated', (frame) => {
         if (frame === page.mainFrame()) navigations++;
       });
+      const workerUrls: string[] = [];
+      page.on('worker', (worker) => workerUrls.push(worker.url()));
       await page.goto(mode === 'build' ? buildUrl(CONSUMERS_PORT, fixture.name) : devUrl(CONSUMERS_PORT, fixture.name));
       await page.waitForFunction(() => window.__probe !== undefined);
       expect(await page.evaluate(() => [...(window.__probe as ConsumerProbe).engines])).toEqual(fixture.engines);
@@ -78,6 +80,7 @@ for (const fixture of FIXTURES) {
         }
       }
       expect(runs).toBeGreaterThanOrEqual(FILES.length);
+      for (const name of fixture.workers) expect(workerUrls.some((url) => url.includes(name)), `a ${name} worker ran (started: ${workerUrls.join(', ') || 'none'})`).toBe(true);
       expect(pageErrors).toEqual([]);
       expect(navigations, mode === 'dev' ? 'the dev server reloaded the page when an engine first ran' : 'the page navigated again').toBe(1);
     });

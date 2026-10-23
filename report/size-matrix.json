@@ -1652,6 +1652,169 @@
       "problems": []
     },
     {
+      "name": "standalone-url",
+      "imports": [
+        "./client/lazy",
+        "./standalone/own.worker.js?url"
+      ],
+      "note": "classic worker from the standalone file",
+      "worker": "none needed: the file is copied as an asset",
+      "engines": [
+        "own"
+      ],
+      "metrics": {
+        "entry": 1459,
+        "trigger": 714,
+        "client": 2555,
+        "isobmff": null,
+        "matroska": null,
+        "segments": null,
+        "firstMp4": 34597,
+        "allOwn": 34597,
+        "mp4box": null,
+        "mediabunny": null,
+        "engineShared": null,
+        "rvfc": null,
+        "pageEngineShared": null,
+        "lazyTotal": 70557
+      },
+      "workers": [
+        {
+          "name": "own.worker",
+          "entry": 32042,
+          "chunks": 0,
+          "sha256": "4250a65eae546ea1"
+        }
+      ],
+      "files": [
+        {
+          "file": "assets/compare-BdC_HfEl.js",
+          "gzip": 1309,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/fallback-B_l-lVop.js",
+          "gzip": 621,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/index-esYvOOlr.js",
+          "gzip": 1459,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/inline-Bu1X3imP.js",
+          "gzip": 593,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/isobmff-B7_aA3_J.js",
+          "gzip": 12233,
+          "worker": null,
+          "class": "isobmff"
+        },
+        {
+          "file": "assets/matroska-BybTR5dy.js",
+          "gzip": 11190,
+          "worker": null,
+          "class": "matroska"
+        },
+        {
+          "file": "assets/own.worker-BWbJEj27.js",
+          "gzip": 32042,
+          "worker": "own.worker",
+          "class": "shared"
+        },
+        {
+          "file": "assets/probe-DzI7LlFA.js",
+          "gzip": 2555,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/result-DwUAyOGs.js",
+          "gzip": 381,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/runtime-Dks7gQP_.js",
+          "gzip": 2468,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/segments-DUScAX77.js",
+          "gzip": 1844,
+          "worker": null,
+          "class": "segments"
+        },
+        {
+          "file": "assets/sniff-DecauIFI.js",
+          "gzip": 989,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/stats-BvlF24MF.js",
+          "gzip": 4332,
+          "worker": null,
+          "class": "stats"
+        }
+      ],
+      "mustNot": [
+        "video-fps-probe/dist/plugins/own.js",
+        "video-fps-probe/dist/worker/own.worker.js",
+        "node_modules/mp4box/",
+        "node_modules/mediabunny/"
+      ],
+      "leaks": [],
+      "chains": [],
+      "budgets": [
+        {
+          "key": "trigger",
+          "label": "critical path (package code in the entry chunk)",
+          "limit": 1000,
+          "gzip": 714,
+          "headroom": 286,
+          "status": "ok",
+          "why": "The lazyProbeClient stub in the host entry chunk, as in the custom configuration. The asset URL of the standalone file is host code and is not counted. Measured 0.71 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "client",
+          "label": "probe client (lazy)",
+          "limit": 3000,
+          "gzip": 2555,
+          "headroom": 445,
+          "status": "ok",
+          "why": "As in the custom configuration. Measured 2.56 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "worker:own.worker",
+          "label": "own.worker entry",
+          "limit": 35500,
+          "gzip": 32042,
+          "headroom": 3458,
+          "status": "ok",
+          "why": "dist/standalone/own.worker.js, which Vite copies unchanged as an asset for the ?url import and the host starts as a classic worker. Measured 32.04 KB, the standalone row below. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "firstMp4",
+          "label": "first MP4 analysis, lazy total",
+          "limit": 38500,
+          "gzip": 34597,
+          "headroom": 3903,
+          "status": "ok",
+          "why": "What the first MP4 loads with the standalone worker: the probe client and the one-file worker. It suits a host whose workers must stay classic scripts. Measured 34.60 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        }
+      ],
+      "problems": []
+    },
+    {
       "name": "iife-nosplit",
       "imports": [
         "./lazy"

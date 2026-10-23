@@ -68,6 +68,12 @@ export const BUDGETS = {
     { key: 'engineShared', limit: 2 * KB, required: false, why: 'As in the mp4box and mediabunny configurations: each prebuilt engine worker serves one comparison engine, so no worker builds this chunk. The design estimate of 2.0 KB stays the limit.' },
     { key: 'pageEngineShared', limit: 2 * KB, why: `The counting code mp4box and mediabunny share, which becomes a main-thread chunk of its own when both are registered. It loads only when an engine runs in this thread (worker: 'inline', SSR, no Worker global). Measured 1.51 KB. ${RESET}` },
   ],
+  'standalone-url': [
+    { key: 'trigger', limit: 1 * KB, why: `The lazyProbeClient stub in the host entry chunk, as in the custom configuration. The asset URL of the standalone file is host code and is not counted. Measured 0.71 KB. ${RESET}` },
+    { key: 'client', limit: 3 * KB, why: `As in the custom configuration. Measured 2.56 KB. ${RESET}` },
+    { key: 'worker:own.worker', limit: 35.5 * KB, why: `dist/standalone/own.worker.js, which Vite copies unchanged as an asset for the ?url import and the host starts as a classic worker. Measured 32.04 KB, the standalone row below. ${RESET}` },
+    { key: 'firstMp4', limit: 38.5 * KB, why: `What the first MP4 loads with the standalone worker: the probe client and the one-file worker. It suits a host whose workers must stay classic scripts. Measured 34.60 KB. ${RESET}` },
+  ],
   'iife-nosplit': [
     { key: 'trigger', limit: 1 * KB, why: `As in the default configuration. Measured 0.67 KB. ${RESET}` },
     { key: 'worker:own.worker', limit: 35.5 * KB, why: `With worker.format iife and codeSplitting false the own worker is one file: both parsers, the statistics and the rate profile core are inlined. Design estimate 35.0 KB; measured 32.11 KB. ${RESET}` },
@@ -374,7 +380,7 @@ export function renderMarkdown(matrix) {
   out.push(`| standalone worker file | video-fps-probe/standalone/own.worker.js | - | - | - | ${cell(matrix.standalone.gzip)} | ${cell(matrix.standalone.gzip)} | - | 1 file, no imports | ${matrix.standalone.status} |`);
   out.push('');
   out.push(
-    'First MP4: the probe client, the worker entry that serves own, the statistics chunk (requested in parallel with the parser) and the ISO BMFF parser. All own paths adds the Matroska parser and the rate profile core. A worker built as iife cannot split, so in zero-config and iife-nosplit the own worker is one file and both columns are the client plus that file.',
+    'First MP4: the probe client, the worker entry that serves own, the statistics chunk (requested in parallel with the parser) and the ISO BMFF parser. All own paths adds the Matroska parser and the rate profile core. A worker built as iife cannot split, so in zero-config and iife-nosplit the own worker is one file, as the standalone file is in standalone-url, and both columns are the client plus that file.',
   );
   out.push('');
   const same = sameOwnWorker(matrix, 'zero-config', 'iife-nosplit')
