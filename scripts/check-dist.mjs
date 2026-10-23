@@ -21,6 +21,7 @@ const PARSER_DIRS = ['core/isobmff/', 'core/matroska/'];
 const PEERS = ['mp4box', 'mediabunny'];
 const WORKER_CALL = /\bnew\s+(?:Worker|SharedWorker)\s*\(/g;
 const WORKER_LITERAL = /^new\s+(?:Worker|SharedWorker)\s*\(\s*new\s+URL\s*\(\s*(?:'([^']+)'|"([^"]+)")\s*,\s*import\.meta\.url\s*\)/;
+const WORKER_ASSET = /^(?:worker\/[^/]+\.worker\.js|standalone\/.+)$/;
 const DOM_GLOBALS = new Set(['window', 'document']);
 const GLOBAL_OBJECTS = new Set(['globalThis', 'self']);
 const TS_EXTENSION = /\.(?:[cm]?ts|tsx)$/;
@@ -229,6 +230,12 @@ export function checkDist({ pack = true, ssr = true, repo = REPO_ROOT } = {}) {
     const reached = closure(edges, root, { dynamic: true }).files;
     for (const host of LITERAL_HOSTS) if (reached.has(host)) fail(`literal hygiene: ${root} reaches ${host}`);
     for (const f of reached) if (literalFiles.includes(f)) fail(`literal hygiene: ${root} reaches the worker literal in ${f}`);
+    for (const f of reached) {
+      for (const url of scans.get(f)?.urls ?? []) {
+        const target = url === null ? null : posix(join(dirname(f), url.replace(/[?#].*$/, '')));
+        if (target && WORKER_ASSET.test(target)) fail(`literal hygiene: ${root} reaches new URL('${url}', import.meta.url) in ${f}, which targets ${target}`);
+      }
+    }
   }
 
   const isolationRoots = ['index.js', 'lazy.js', 'react/index.js', ...files.filter((f) => /^(?:client|plugins)\/[^/]+\.js$/.test(f))].filter(has);
@@ -305,6 +312,14 @@ export function runSelfTest() {
     expectProblem('an import type of ./x.js fails when only x.js exists', problemsOf({ ...x, 'core/b.d.ts': "export type X = typeof import('./x.js');\n" }), 'core/b.d.ts: import ./x.js does not resolve inside dist (no core/x.d.ts)', true);
     expectProblem('a .d.ts import of ./x.js passes when x.d.ts exists', problemsOf({ ...x, 'core/x.d.ts': 'export declare const x: number;\n', ...reexport }), 'core/a.d.ts:', false);
     expectProblem('a .js import of a missing file fails', problemsOf({ 'core/a.js': "export { x } from './x.js';\n" }), 'core/a.js: import ./x.js does not resolve inside dist', true);
+
+    const assets = { 'worker/own.worker.js': 'self.onmessage = () => {};\n', 'standalone/own.worker.js': 'self.onmessage = () => {};\n', 'core/table.js': 'export const t = 1;\n' };
+    const lazyUrl = problemsOf({ ...assets, 'client/index.js': "export const load = () => import('./pool.js');\n", 'client/pool.js': "export const url = new URL('../worker/own.worker.js', import.meta.url);\n" });
+    expectProblem('client/index.js reaching a new URL of a worker file through import() fails', lazyUrl, "literal hygiene: client/index.js reaches new URL('../worker/own.worker.js', import.meta.url) in client/pool.js", true);
+    expectProblem('an engine with a new URL of the standalone worker fails', problemsOf({ ...assets, 'engines/rvfc.js': "export const url = new URL('../standalone/own.worker.js', import.meta.url).href;\n" }), "literal hygiene: engines/rvfc.js reaches new URL('../standalone/own.worker.js', import.meta.url)", true);
+    expectProblem('worker/runtime.js with a new URL of a worker file and a query fails', problemsOf({ ...assets, 'worker/runtime.js': "export const url = new URL('./own.worker.js?worker', import.meta.url);\n" }), 'literal hygiene: worker/runtime.js reaches', true);
+    expectProblem('the worker literal in plugins/own.js passes when no hygiene root reaches it', problemsOf({ ...assets, 'client/index.js': 'export const x = 1;\n', 'plugins/own.js': "export const start = () => new Worker(new URL('../worker/own.worker.js', import.meta.url), { type: 'module' });\n" }), 'literal hygiene', false);
+    expectProblem('a new URL of a file outside worker/ and standalone/ passes', problemsOf({ ...assets, 'client/index.js': "export const url = new URL('../core/table.js', import.meta.url);\n" }), 'literal hygiene', false);
   } finally {
     rmSync(repo, { recursive: true, force: true });
   }
