@@ -8,19 +8,23 @@ export type { ClientOptions, LazyProbe, Probe };
 export function lazyProbeFrom<Id extends EngineId>(factory: () => Promise<Probe<Id>>): LazyProbe<Id> {
   let probe: Probe<Id> | null = null;
   let loading: Promise<Probe<Id>> | null = null;
-  let generation = 0;
+  let destroyed = false;
+  const aborted = () => Promise.reject(new ProbeError('aborted', 'probe destroyed'));
   const load = () =>
     (loading ??= factory().then(
-      (p) => (probe = p),
+      (p) => {
+        if (destroyed) p.destroy();
+        return (probe = p);
+      },
       (e: unknown) => {
         loading = null;
         throw e;
       },
     ));
   const forward = <T>(call: (p: Probe<Id>) => Promise<T>): Promise<T> => {
+    if (destroyed) return aborted();
     if (probe) return call(probe);
-    const at = generation;
-    return load().then((p) => (at === generation ? call(p) : Promise.reject(new ProbeError('aborted', 'probe destroyed'))));
+    return load().then((p) => (destroyed ? aborted() : call(p)));
   };
   return {
     get loaded() {
@@ -36,7 +40,7 @@ export function lazyProbeFrom<Id extends EngineId>(factory: () => Promise<Probe<
     prewarm: (o) => forward((p) => p.prewarm(o)).catch(() => {}),
     dispose: () => probe?.dispose(),
     destroy: () => {
-      generation++;
+      destroyed = true;
       probe?.destroy();
     },
   };

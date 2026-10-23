@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProbeError } from '../../src/api/errors.ts';
 import { createProbeClient } from '../../src/client/probe.ts';
 import { fakeResult, FakeWorker } from './fake-worker.ts';
-import { analyzed, customWorker, mainDescriptor, mp4File, webmFile, workerDescriptor } from './probe-helpers.ts';
+import { analyzed, customWorker, fakeModule, mainDescriptor, mp4File, webmFile, workerDescriptor } from './probe-helpers.ts';
 
 beforeEach(() => {
   FakeWorker.reset();
@@ -148,7 +148,8 @@ describe('createProbeClient', () => {
     await expect(onMain).rejects.toMatchObject({ code: 'aborted', engine: 'rvfc' });
     expect(FakeWorker.instances[0].terminated).toBe(true);
     FakeWorker.reset();
-    expect(await busy.analyze(mp4File('after.mp4'))).toEqual(fakeResult('after.mp4'));
+    await expect(busy.analyze(mp4File('after.mp4'))).rejects.toMatchObject({ name: 'ProbeError', code: 'aborted' });
+    expect(FakeWorker.instances).toHaveLength(0);
   });
 
   it('applies the default timeout per attempt and a call timeout over it', async () => {
@@ -161,5 +162,69 @@ describe('createProbeClient', () => {
     expect(await byDefault).toMatchObject({ code: 'timeout' });
     await vi.advanceTimersByTimeAsync(5000);
     expect(await byCall).toMatchObject({ code: 'timeout', message: 'timed out after 5000 ms' });
+  });
+});
+
+describe('destroy', () => {
+  const aborted = { name: 'ProbeError', code: 'aborted' };
+
+  it('aborts a fallback call that waits for the fallback chunk, and no worker runs it', async () => {
+    const probe = createProbeClient({ worker: customWorker('own', 'mp4box') });
+    const pending = probe.analyze(mp4File(), { fallback: ['mp4box'] });
+    probe.destroy();
+    await expect(pending).rejects.toMatchObject(aborted);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(FakeWorker.instances).toHaveLength(0);
+  });
+
+  it('aborts a skipped call that waits for the fallback chunk instead of resolving with the skipped result', async () => {
+    FakeWorker.reset('manual');
+    const probe = createProbeClient({ worker: customWorker('own', 'mp4box') });
+    const pending = probe.analyze(webmFile(), { engine: 'mp4box' });
+    const [worker] = FakeWorker.instances;
+    const [request] = analyzed(worker);
+    worker.answer(request.id, { type: 'skipped', reason: 'unsupported-container', family: 'matroska' });
+    probe.destroy();
+    await expect(pending).rejects.toMatchObject(aborted);
+  });
+
+  it('aborts a compare that waits for the compare chunk, and no worker runs it', async () => {
+    const module = fakeModule('rvfc');
+    const probe = createProbeClient({ worker: customWorker('own', 'mp4box'), engines: [mainDescriptor('rvfc', module)] });
+    const pending = probe.compare(mp4File(), { engines: ['own', 'mp4box', 'rvfc'] });
+    probe.destroy();
+    await expect(pending).rejects.toMatchObject(aborted);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(FakeWorker.instances).toHaveLength(0);
+    expect(module.calls).toEqual([]);
+  });
+
+  it('aborts running and queued pool jobs and the engines a compare has not reached yet, without respawning', async () => {
+    FakeWorker.reset('manual');
+    const probe = createProbeClient({ worker: customWorker('own', 'mp4box'), workers: 1 });
+    const jobs = [probe.analyze(mp4File('a.mp4')), probe.analyze(mp4File('b.mp4')), probe.analyze(mp4File('c.mp4'), { fallback: ['mp4box'] })];
+    const compared = probe.compare(mp4File('d.mp4'), { engines: ['own', 'mp4box'] });
+    await vi.waitFor(() => expect(FakeWorker.instances).toHaveLength(1));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    probe.destroy();
+    for (const job of [...jobs, compared]) await expect(job).rejects.toMatchObject(aborted);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect(FakeWorker.instances).toHaveLength(1);
+    expect(FakeWorker.instances[0].terminated).toBe(true);
+    expect(analyzed(FakeWorker.instances[0]).map((r) => r.name)).toEqual(['a.mp4']);
+  });
+
+  it('rejects every call made after it on worker and main-thread routes, and prewarm spawns nothing', async () => {
+    const module = fakeModule('rvfc');
+    const probe = createProbeClient({ worker: customWorker('own', 'mp4box'), engines: [mainDescriptor('rvfc', module)] });
+    probe.destroy();
+    await expect(probe.analyze(mp4File())).rejects.toMatchObject({ ...aborted, engine: 'own' });
+    await expect(probe.analyze(mp4File(), { engine: 'rvfc' })).rejects.toMatchObject({ ...aborted, engine: 'rvfc' });
+    await expect(probe.analyze(mp4File(), { fallback: ['mp4box'] })).rejects.toMatchObject(aborted);
+    await expect(probe.compare(mp4File())).rejects.toMatchObject(aborted);
+    expect(await probe.tryAnalyze(mp4File())).toBeNull();
+    await expect(probe.prewarm({ engines: ['own', 'mp4box', 'rvfc'] })).resolves.toBeUndefined();
+    expect(FakeWorker.instances).toHaveLength(0);
+    expect(module.calls).toEqual([]);
   });
 });

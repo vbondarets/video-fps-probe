@@ -50,7 +50,6 @@ describe('lazyProbeFrom', () => {
     expect(stub.loaded).toBe(false);
     expect(stub.engines).toEqual([]);
     stub.dispose();
-    stub.destroy();
     expect(factory).not.toHaveBeenCalled();
     const [a, b] = await Promise.all([stub.analyze(mp4File('a.mp4')), stub.analyze(mp4File('b.mp4'))]);
     expect([a.name, b.name]).toEqual(['a.mp4', 'b.mp4']);
@@ -85,7 +84,7 @@ describe('lazyProbeFrom', () => {
     expect(stub.loaded).toBe(true);
   });
 
-  it('rejects the calls waiting for the load with aborted when destroyed while loading, and serves the calls after it', async () => {
+  it('rejects the calls waiting for the load with aborted when destroyed while loading, destroys the probe it loads, and rejects every call after it', async () => {
     const probe = fakeProbe();
     let resolve: ((p: Probe<EngineId>) => void) | null = null;
     const stub = lazyProbeFrom(() => new Promise<Probe<EngineId>>((r) => (resolve = r)));
@@ -100,9 +99,34 @@ describe('lazyProbeFrom', () => {
     expect(await tried).toBeNull();
     await expect(warmed).resolves.toBeUndefined();
     expect(stub.loaded).toBe(true);
-    expect(probe.calls).toEqual([]);
-    expect((await stub.analyze(mp4File('c.mp4'))).name).toBe('c.mp4');
-    expect(probe.calls).toEqual(['analyze']);
+    expect(probe.calls).toEqual(['destroy']);
+    await expect(stub.analyze(mp4File('c.mp4'))).rejects.toMatchObject({ name: 'ProbeError', code: 'aborted' });
+    await expect(stub.compare(mp4File('c.mp4'))).rejects.toMatchObject({ name: 'ProbeError', code: 'aborted' });
+    expect(await stub.tryAnalyze(mp4File('c.mp4'))).toBeNull();
+    await expect(stub.prewarm()).resolves.toBeUndefined();
+    expect(probe.calls).toEqual(['destroy']);
+  });
+
+  it('destroyed before any use, never loads and rejects every call with aborted', async () => {
+    const factory = vi.fn(async () => fakeProbe());
+    const stub = lazyProbeFrom(factory);
+    stub.destroy();
+    await expect(stub.analyze(mp4File())).rejects.toMatchObject({ name: 'ProbeError', code: 'aborted' });
+    await expect(stub.compare(mp4File())).rejects.toMatchObject({ name: 'ProbeError', code: 'aborted' });
+    expect(await stub.tryAnalyze(mp4File())).toBeNull();
+    await expect(stub.prewarm()).resolves.toBeUndefined();
+    expect(factory).not.toHaveBeenCalled();
+    expect(stub.loaded).toBe(false);
+  });
+
+  it('a loaded stub destroyed once rejects the calls after it without forwarding them', async () => {
+    const probe = fakeProbe();
+    const stub = lazyProbeFrom(async () => probe);
+    await stub.load();
+    stub.destroy();
+    await expect(stub.analyze(mp4File())).rejects.toMatchObject({ name: 'ProbeError', code: 'aborted' });
+    expect(await stub.tryAnalyze(mp4File())).toBeNull();
+    expect(probe.calls).toEqual(['destroy']);
   });
 
   it('forwards a call to a loaded probe at once, so a destroy right after it reaches the probe second', async () => {

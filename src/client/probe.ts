@@ -26,9 +26,6 @@ const notRegistered = (id: EngineId, message = `engine ${id} is not registered`)
 
 export const nameOf = (file: Blob): string => (typeof File !== 'undefined' && file instanceof File ? file.name : '');
 
-const lazy = <T>(chunk: Promise<T>, engine: EngineId | null): Promise<T> =>
-  chunk.catch((e: unknown) => Promise.reject(new ProbeError('worker-failed', String(e), { engine, cause: e })));
-
 export function createProbeCore(options: CoreOptions): Probe<EngineId> {
   const { worker, engines: descriptors = [], engine: defaultEngine = 'own', fallback: defaultFallback = [], workers, idleTimeoutMs, timeoutMs: defaultTimeout, defaults } = options;
   const custom = typeof worker === 'object' ? worker : null;
@@ -36,7 +33,13 @@ export function createProbeCore(options: CoreOptions): Probe<EngineId> {
   const pools = new Map<string, WorkerPool>();
   const byId = new Map<EngineId, EngineDescriptor>();
   for (const d of descriptors) if (!byId.has(d.id)) byId.set(d.id, d);
-  let life = new AbortController();
+  const life = new AbortController();
+  const destroyed = (engine: EngineId | null) => new ProbeError('aborted', 'probe destroyed', { engine });
+  const lazy = <T>(chunk: Promise<T>, engine: EngineId | null): Promise<T> =>
+    chunk.then(
+      (m) => (life.signal.aborted ? Promise.reject(destroyed(engine)) : m),
+      (e: unknown) => Promise.reject(new ProbeError('worker-failed', String(e), { engine, cause: e })),
+    );
 
   const poolOf = (kind: string, create: () => Worker): Route => ({
     kind,
@@ -76,6 +79,7 @@ export function createProbeCore(options: CoreOptions): Probe<EngineId> {
   const run: Run = (id, file, name, wire, call) => {
     const route = routes.get(id);
     if (!route) return Promise.reject(notRegistered(id));
+    if (life.signal.aborted) return Promise.reject(destroyed(id));
     if ('error' in route) return Promise.reject(route.error);
     const timeoutMs = call.timeoutMs ?? defaultTimeout;
     if ('pool' in route) {
@@ -105,6 +109,7 @@ export function createProbeCore(options: CoreOptions): Probe<EngineId> {
     tryAnalyze: (file, call) => analyze(file, call).catch(() => null),
     compare: (file, o) => lazy(import('./compare.ts'), null).then((m) => m.compare({ engines, routes, run, defaults }, file, o)),
     async prewarm(o = {}) {
+      if (life.signal.aborted) return;
       const containers = o.containers ?? ['isobmff'];
       const warm = new Map<WorkerPool, WorkerEngineId[]>();
       const jobs: Promise<unknown>[] = [];
@@ -125,7 +130,6 @@ export function createProbeCore(options: CoreOptions): Probe<EngineId> {
     },
     destroy() {
       life.abort();
-      life = new AbortController();
       for (const pool of pools.values()) pool.destroy();
     },
   };
