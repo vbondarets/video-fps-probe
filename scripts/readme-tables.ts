@@ -291,7 +291,9 @@ const CHUNK_WHEN: Record<string, string> = {
   main: 'page load',
   css: 'page load',
   client: 'first file',
-  'client-lazy': 'probe.compare, a fallback chain or a skipped engine, an rVFC run',
+  'client-compare': 'first probe.compare',
+  'client-fallback': 'first call with a fallback chain or a skipped engine',
+  'client-inline': 'first main-thread engine run (rVFC)',
   worker: 'first file',
   isobmff: 'first MP4 or MOV file, once per worker',
   matroska: 'first WebM or MKV file, once per worker',
@@ -310,7 +312,9 @@ const CHUNK_NAME: Record<string, string> = {
   main: 'main (React, UI, store)',
   css: 'CSS',
   client: 'probe client (lazy)',
-  'client-lazy': 'probe client parts loaded on use (compare, fallback chain, in-thread runner)',
+  'client-compare': 'probe compare (agreement rules)',
+  'client-fallback': 'probe fallback chain',
+  'client-inline': 'in-thread engine runner',
   worker: 'worker entry (reader, sniffing, worker runtime)',
   isobmff: 'ISO BMFF parser',
   matroska: 'Matroska parser',
@@ -325,7 +329,7 @@ const CHUNK_NAME: Record<string, string> = {
   'engine-shared': 'shared by mp4box and mediabunny',
 };
 
-const CHUNK_ORDER = ['main', 'css', 'client', 'client-lazy', 'worker', 'parser-shared', 'isobmff', 'matroska', 'segments', 'rateProfile', 'deviceInfo', 'rvfc', 'lazy', 'mp4box', 'mediabunny', 'engine-shared'];
+const CHUNK_ORDER = ['main', 'css', 'client', 'client-fallback', 'client-compare', 'client-inline', 'worker', 'parser-shared', 'isobmff', 'matroska', 'segments', 'rateProfile', 'deviceInfo', 'rvfc', 'lazy', 'mp4box', 'mediabunny', 'engine-shared'];
 
 const COMPOSITE_BUDGET: Record<string, string> = { initial: 'initial', firstMp4: 'firstMp4', firstVfrMp4: 'firstVfrMp4', firstMatroska: 'firstMkv' };
 
