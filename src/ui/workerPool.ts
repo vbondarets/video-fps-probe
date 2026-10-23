@@ -1,123 +1,43 @@
+import type { WorkerPool } from '../client/pool.ts';
 import type { AnalyzeProgress, FileResult } from '../core/types.ts';
 import type { WorkerEngineId } from '../plugins/types.ts';
-import { PROTOCOL_VERSION, type JobRequest, type WireOptions, type WorkerRequest, type WorkerResponse } from '../worker/protocol.ts';
+import type { WireOptions } from '../worker/protocol.ts';
 
-const POOL_SIZE = 2;
-const KILL_AFTER_MS = 1500;
+let pool: Promise<WorkerPool> | undefined;
+let loaded: WorkerPool | undefined;
 
-interface Job {
-  id: number;
-  request: JobRequest;
-  onProgress: ((progress: AnalyzeProgress) => void) | undefined;
-  resolve(result: FileResult | undefined): void;
-  reject(reason: unknown): void;
-}
+const load = (): Promise<WorkerPool> =>
+  (pool ??= import('../client/pool.ts').then(
+    ({ WorkerPool }) =>
+      (loaded = new WorkerPool({
+        create: () => new Worker(new URL('../worker/analyze.worker.ts', import.meta.url), { type: 'module' }),
+        size: 2,
+        idleTimeoutMs: 0,
+      })),
+  ));
 
-interface Slot {
-  worker: Worker;
-  job: Job | null;
-}
-
-export interface Submitted<T = FileResult> {
-  promise: Promise<T>;
+export interface Submitted {
+  promise: Promise<FileResult>;
   cancel(): void;
 }
 
-const slots: Slot[] = [];
-const queue: Job[] = [];
-let nextId = 1;
-
-const abortError = () => new DOMException('Aborted', 'AbortError');
-
-function release(slot: Slot): void {
-  slot.job = null;
-  pump();
-}
-
-function discard(slot: Slot): void {
-  slot.worker.terminate();
-  const i = slots.indexOf(slot);
-  if (i >= 0) slots.splice(i, 1);
-}
-
-function spawn(): Slot {
-  const worker = new Worker(new URL('../worker/analyze.worker.ts', import.meta.url), { type: 'module' });
-  const slot: Slot = { worker, job: null };
-  worker.onmessage = ({ data }: MessageEvent<WorkerResponse>) => {
-    const job = slot.job;
-    if (!job || job.id !== data.id) return;
-    if (data.type === 'progress') {
-      job.onProgress?.(data.progress);
-      return;
-    }
-    if (data.type === 'result') job.resolve(data.result);
-    else if (data.type === 'warmed') job.resolve(undefined);
-    else if (data.type === 'skipped') job.reject(new Error(`skipped: ${data.reason}`));
-    else job.reject(data.aborted ? abortError() : new Error(data.message));
-    release(slot);
-  };
-  worker.onerror = (event) => {
-    const job = slot.job;
-    discard(slot);
-    job?.reject(new Error(event.message || 'worker failed'));
-    pump();
-  };
-  slots.push(slot);
-  return slot;
-}
-
-function pump(): void {
-  while (queue.length > 0) {
-    const slot = slots.find((s) => s.job === null) ?? (slots.length < POOL_SIZE ? spawn() : null);
-    if (!slot) return;
-    const job = queue.shift()!;
-    slot.job = job;
-    const request: WorkerRequest = { v: PROTOCOL_VERSION, id: job.id, ...job.request };
-    slot.worker.postMessage(request);
-  }
-}
-
-function enqueue<T>(request: JobRequest, onProgress?: (progress: AnalyzeProgress) => void): Submitted<T> {
-  let job!: Job;
-  const promise = new Promise<T>((resolve, reject) => {
-    job = { id: nextId++, request, onProgress, resolve: resolve as Job['resolve'], reject };
-  });
-  queue.push(job);
-  pump();
-  return {
-    promise,
-    cancel() {
-      const queued = queue.indexOf(job);
-      if (queued >= 0) {
-        queue.splice(queued, 1);
-        job.reject(abortError());
-        return;
-      }
-      const slot = slots.find((s) => s.job === job);
-      if (!slot) return;
-      const request: WorkerRequest = { v: PROTOCOL_VERSION, type: 'cancel', id: job.id };
-      slot.worker.postMessage(request);
-      job.reject(abortError());
-      setTimeout(() => {
-        if (slot.job !== job) return;
-        discard(slot);
-        pump();
-      }, KILL_AFTER_MS);
-    },
-  };
-}
-
 export function submit(file: File, engine: WorkerEngineId, options: WireOptions, onProgress?: (progress: AnalyzeProgress) => void): Submitted {
-  return enqueue({ type: 'analyze', file, name: file.name, engine, options }, onProgress);
+  const controller = new AbortController();
+  const promise = load()
+    .then((p) => p.run({ type: 'analyze', file, name: file.name, engine, options }, { signal: controller.signal, onProgress, engine }))
+    .then((reply) => (reply.type === 'result' ? reply.result : Promise.reject(new Error(`skipped: ${reply.type === 'skipped' ? reply.reason : reply.type}`))));
+  return { promise, cancel: () => controller.abort() };
 }
 
 export function prewarm(): Promise<void> {
-  return enqueue<void>({ type: 'warm', engines: ['own'], containers: ['isobmff'] }).promise.then(
-    () => undefined,
-    () => undefined,
-  );
+  return load()
+    .then((p) => p.run({ type: 'warm', engines: ['own'], containers: ['isobmff'] }))
+    .then(
+      () => undefined,
+      () => undefined,
+    );
 }
 
 export function dispose(): void {
-  for (const slot of [...slots]) if (!slot.job) discard(slot);
+  loaded?.dispose();
 }

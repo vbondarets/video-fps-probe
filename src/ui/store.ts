@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { isAbortError as isAbort } from '../api/errors.ts';
 import type { AnalyzeProgress, FileResult, MatroskaMode } from '../core/types.ts';
 import type { ExportAction, ExportOutcome } from './deviceInfo.ts';
 import { submit } from './workerPool.ts';
@@ -45,7 +46,6 @@ const listeners = new Set<() => void>();
 const hosts = new Map<number, HTMLElement>();
 
 const message = (e: unknown) => (e instanceof Error ? e.message || e.name : String(e));
-const isAbort = (e: unknown) => e instanceof Error && e.name === 'AbortError';
 const find = (id: number) => state.rows.find((r) => r.id === id);
 const isMatroska = (r: FileResult) => r.container === 'webm' || r.container === 'matroska';
 const isIso = (r: FileResult) => r.container === 'mp4' || r.container === 'mov';
