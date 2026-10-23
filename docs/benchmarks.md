@@ -558,6 +558,7 @@ What the build needs, from a syntax and API scan of the built chunks, with the f
 | parsing off the main thread | module workers (`new Worker(url, { type: 'module' })`) with `import()` inside | 80 | 114 | 15 |
 | 64-bit box sizes and offsets | `BigInt`, `DataView.getBigUint64` | 67 | 68 | 15 |
 | the ES2022 build target | private class methods, logical assignment (`??=`) | 85 | 90 | 15 |
+| the engine lookup of every worker (`worker-runtime`, the standalone file) | `Object.hasOwn` | 93 | 92 | 15.4 |
 | keyboard focus ring (styling only) | `:focus-visible` | 86 | 85 | 15.4 |
 | rVFC fallback (optional) | `requestVideoFrameCallback` | 83 | 132 | 15.4 |
 | mp4box.js comparison (optional) | class static blocks in the mp4box chunk | 94 | 93 | 16.4 |
