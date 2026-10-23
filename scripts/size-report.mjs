@@ -264,6 +264,7 @@ const LAZY_BY_NAME = [
   ['deviceInfo', /^deviceinfo[-.]/i],
 ];
 const ENGINE_KINDS = new Set(['mp4box', 'mediabunny', 'engine-shared']);
+const CLIENT_LAZY_KINDS = new Set(['client-compare', 'client-fallback', 'client-inline', 'rvfc', 'client-shared']);
 const PARSER_KINDS = new Set(['isobmff', 'matroska', 'segments', 'parser-shared']);
 const PATH_ENTRIES = ['isobmff', 'matroska', 'segments'];
 const CHAIN_KINDS = new Set(['isobmff', 'matroska', 'segments', 'mp4box', 'mediabunny']);
@@ -420,6 +421,7 @@ export function discover(distDir) {
     }
   }
   const groups = [
+    [CLIENT_LAZY_KINDS, 'client-shared'],
     [ENGINE_KINDS, 'engine-shared'],
     [PARSER_KINDS, 'parser-shared'],
     [new Set([...PARSER_KINDS, ...ENGINE_KINDS]), 'parser-shared'],
@@ -767,6 +769,8 @@ function runSelfTest() {
     for (const f of ['compare-X1.js', 'fallback-F1.js', 'inline-N1.js']) write(clientDir, `assets/${f}`, `import{a as e}from"./probe-L1.js";${filler(300)}`);
     write(clientDir, 'assets/probe-L1.js', `import{a as e}from"./index-M1.js";import{r as h}from"./result-H1.js";${filler(1_000)}`);
     write(clientDir, 'assets/result-H1.js', filler(400));
+    write(clientDir, 'assets/builders-B1.js', filler(300));
+    for (const f of ['compare-X1.js', 'fallback-F1.js']) write(clientDir, `assets/${f}`, `import{a as e}from"./probe-L1.js";import{b as g}from"./builders-B1.js";${filler(300)}`);
     const withClient = buildReport(clientDir);
     expectEq('client: kind', withClient.chunks.find((c) => c.file === 'assets/probe-L1.js')?.kind, 'client');
     for (const [f, kind] of [
@@ -776,6 +780,8 @@ function runSelfTest() {
     ]) {
       expectEq(`client: lazy part ${f}`, withClient.chunks.find((c) => c.file === `assets/${f}`)?.kind, kind);
     }
+    expectEq('client: a chunk only the lazy client parts share', withClient.chunks.find((c) => c.file === 'assets/builders-B1.js')?.kind, 'client-shared');
+    expectEq('client: the chunk the lazy client parts share is not in the first MP4 analysis', withClient.composites.firstMp4.files.includes('assets/builders-B1.js'), false);
     expectEq('client: a static dependency of the client is part of the first MP4 analysis', withClient.composites.firstMp4.files.includes('assets/result-H1.js'), true);
     expectEq('client: a static dependency of the client is part of the first Matroska analysis', withClient.composites.firstMatroska.files.includes('assets/result-H1.js'), true);
     expectEq('client: a static dependency of the client is not part of initial', withClient.composites.initial.files.includes('assets/result-H1.js'), false);
