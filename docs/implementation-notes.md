@@ -240,6 +240,7 @@ Not covered by fixtures, known or suspected:
 - The open real-world findings of section 9 (last-frame hold drawn in the profile, frame-count dominant share, tail read size, trailer handling, MediaRecorder warnings).
 - ISMV (`ffmpeg -f ismv`) with B-frames: start 0 against ffprobe's 0.04 s and a format duration about 20 ms off (fragments without `tfdt`, negative composition offsets). Documented in the README limitations, no fixture.
 - Firefox does not start on the development machine (section 12), so Firefox results come only from the CI job `e2e`.
+- For `docs/bundlers.md`: Vite 8's default `worker.format` is `'iife'`, and an iife worker cannot split. A host that keeps it gets the own worker as one file, so its first MP4 loads 34.77 KB instead of the 23.26 KB measured with `worker: { format: 'es' }` (zero-config and default rows of [report/size-matrix.md](../report/size-matrix.md), Vite 8.3.5). In 8.3.5 `worker.rolldownOptions.output.codeSplitting: false` builds a byte-identical worker, so the design's second Vite option changes nothing there. The 24 KB first-MP4 promise therefore holds only with `format: 'es'`.
 
 ## 11. Rate profile
 
