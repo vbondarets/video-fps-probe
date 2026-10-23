@@ -13,7 +13,7 @@ import { mimeOf, resolveRequest } from './server.mjs';
 import { median } from './values.mjs';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const DIST = join(REPO, 'dist');
+const DIST = join(REPO, 'demo', 'dist');
 const BENCH_DIR = join(REPO, '.bench');
 const FILES_DIR = join(REPO, 'fixtures', 'files');
 const LARGE_DIR = join(REPO, 'fixtures', 'large');
@@ -66,7 +66,7 @@ const PHASES = ['latency', 'main', 'memory', 'cpu'];
 
 const USAGE = `Usage: node scripts/bench/integration.mjs [options]
 
-Integration cost of the FPS probe inside a large host SPA. Serves dist/ gzip-compressed
+Integration cost of the FPS probe inside a large host SPA. Serves demo/dist/ gzip-compressed
 from a local node:http server (plus a virtual host-model page and the bundled worker
 pool glue), drives a headless Chrome with a throwaway profile in .bench/ over CDP.
 
@@ -80,7 +80,7 @@ pool glue), drives a headless Chrome with a throwaway profile in .bench/ over CD
   --no-write         print the summary only
   --help
 
-Build first: npx vite build.
+Build first: npm run build.
 `;
 
 const log = (...a) => console.log(...a);
@@ -143,11 +143,11 @@ const gz = (buf) => gzipSync(buf, { level: 9 });
 
 function distChunks() {
   const assets = join(DIST, 'assets');
-  if (!existsSync(join(DIST, 'index.html')) || !existsSync(assets)) throw new Error('dist/ is missing: run npx vite build first');
+  if (!existsSync(join(DIST, 'index.html')) || !existsSync(assets)) throw new Error('demo/dist/ is missing: run npm run build first');
   const files = readdirSync(assets);
   const pick = (prefix) => {
     const f = files.find((x) => x.startsWith(prefix) && x.endsWith('.js'));
-    if (!f) throw new Error(`dist/assets has no ${prefix}*.js`);
+    if (!f) throw new Error(`demo/dist/assets has no ${prefix}*.js`);
     return f;
   };
   return { entry: pick('probe.worker-'), isobmff: pick('isobmff-'), matroska: pick('matroska-'), main: pick('index-') };
@@ -1311,7 +1311,7 @@ function renderMarkdown(d) {
   const L = [];
   L.push('# Integration cost');
   L.push('');
-  L.push('What it costs to embed the FPS probe into an existing large React SPA, measured in headless Chrome on the built `dist/` served gzip-compressed from localhost. Produced by `scripts/bench/integration.mjs`. KB and MB are powers of 1000.');
+  L.push('What it costs to embed the FPS probe into an existing large React SPA, measured in headless Chrome on the built `demo/dist/` served gzip-compressed from localhost. Produced by `scripts/bench/integration.mjs`. KB and MB are powers of 1000.');
   L.push('');
   L.push('## Headline');
   L.push('');
@@ -1587,7 +1587,7 @@ function renderMarkdown(d) {
   L.push('');
   L.push('## Rerun');
   L.push('');
-  L.push('`npx vite build && node scripts/bench/integration.mjs` (options: `--reps`, `--batch-reps`, `--cpu-reps`, `--profiles none,cable,fast4g,slow4g,3g`, `--skip latency,main,memory,cpu`, `--render report/integration-cost.json` to redraw this file without measuring, `--no-write`). Writes `report/integration-cost.md` and `.json`. Command of this run: `' + d.command + '`.');
+  L.push('`npm run build && node scripts/bench/integration.mjs` (options: `--reps`, `--batch-reps`, `--cpu-reps`, `--profiles none,cable,fast4g,slow4g,3g`, `--skip latency,main,memory,cpu`, `--render report/integration-cost.json` to redraw this file without measuring, `--no-write`). Writes `report/integration-cost.md` and `.json`. Command of this run: `' + d.command + '`.');
   L.push('');
   return L.join('\n');
 }

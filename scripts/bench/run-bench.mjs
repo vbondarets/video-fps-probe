@@ -12,7 +12,7 @@ import { takeScreenshots } from './shots.mjs';
 import { agreement, compareRuns, median, minimum, summarize } from './values.mjs';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const DIST = join(REPO, 'dist');
+const DIST = join(REPO, 'demo', 'dist');
 const BENCH_DIR = join(REPO, '.bench');
 const PHASES = ['warm', 'engines', 'large', 'cold-first', 'rvfc', 'edge', 'node', 'shots'];
 const RVFC_FILES = [
@@ -38,7 +38,7 @@ const LARGE_FILES = ['long_cfr_3h_60fps.mp4', 'long_vfr_1h_screenrec.mp4', 'big_
 
 const USAGE = `Usage: npm run bench -- [options]
 
-Real-browser benchmark of the built app (dist/). Starts a local static server and a
+Real-browser benchmark of the built app (demo/dist/). Starts a local static server and a
 headless Chrome with a throwaway profile in .bench/, drives the file input over CDP.
 
   --reps <n>          warm own-engine runs per fixture (default 5)
@@ -360,7 +360,7 @@ function distAssets() {
 
 async function run(opts) {
   const assets = distAssets();
-  if (!assets) throw new Error('dist/ is missing: run npm run build first');
+  if (!assets) throw new Error('demo/dist/ is missing: run npm run build first');
   const chromeExe = findBrowser('chrome');
   if (!chromeExe) throw new Error('Chrome not found: set CHROME_PATH');
   const mods = await loadRepoModules();

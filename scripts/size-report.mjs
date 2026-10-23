@@ -91,7 +91,7 @@ export const BUDGETS = {
   },
 };
 
-const USAGE = `Usage: node scripts/size-report.mjs [distDir=dist] [--check] [--out <dir>] [--self-test]
+const USAGE = `Usage: node scripts/size-report.mjs [distDir=demo/dist] [--check] [--out <dir>] [--self-test]
 
   --check       exit 1 when a budget is exceeded, a required chunk (main, worker entry, either parser) is missing,
                 a worker file has no budget, or a parser or engine chunk waits for a chunk that is neither loaded
@@ -893,7 +893,7 @@ function main() {
   }
   if (values['self-test']) return runSelfTest();
   const arg = positionals[0];
-  const distDir = arg ? resolve(arg) : join(REPO_ROOT, 'dist');
+  const distDir = arg ? resolve(arg) : join(REPO_ROOT, 'demo', 'dist');
   if (!existsSync(distDir)) {
     console.error(`dist directory not found: ${distDir} (run npm run build first)`);
     return 2;
