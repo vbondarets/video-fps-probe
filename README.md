@@ -580,7 +580,7 @@ What the build needs, from a syntax and API scan of the built chunks, with the f
 Tested:
 
 - Chromium 156 and WebKit 27.2 (Playwright builds, Windows): the e2e suite, including the 360 px layout check with the Compare panel open. All committed fixtures, picked through the page, gave results equal to Node field by field.
-- Firefox (Playwright build): passes the full suite in the CI job on Ubuntu (157 of 157 tests, first run on 2026-10-21). The build does not start on the Windows development machine (`browserType.launch: spawn UNKNOWN`; the executable is blocked by the OS), so local runs cover Chromium and WebKit only.
+- Firefox (Playwright build): passes the full suite in the CI job on Ubuntu (157 of 157 tests, first CI run 39679082486). On the Windows development machine the build does not start (`browserType.launch: spawn UNKNOWN`); the only confirmed cause is a Windows side-by-side (SxS) activation-context failure for its `mozglue` dependent assembly (SideBySide event 33 in the Application log) on that machine. Firefox e2e therefore runs in CI, and local runs cover Chromium and WebKit only.
 - Chrome 155 and Edge 155 (installed, headless, over the DevTools Protocol): the timings in this README and the Node identity check.
 - requestVideoFrameCallback: works in Chrome; the Windows WebKit build of Playwright has no `requestVideoFrameCallback`.
 - Real Safari on macOS and iOS, Android Chrome and phone recordings: not yet, see the next section.
