@@ -45,7 +45,7 @@ describe('prebuilt worker entries', () => {
     const file = await openAsBlob(MP4);
     expect(await send({ type: 'analyze', file, name: 'a.mp4', engine: 'own' })).toMatchObject({ type: 'result', result: { engine: 'own' } });
     expect(await send({ type: 'analyze', file, name: 'a.mp4', engine: 'mp4box' })).toMatchObject({ type: 'result', result: { engine: 'mp4box' } });
-    expect(await send({ type: 'analyze', file: await openAsBlob(WEBM), name: 'a.webm', engine: 'mp4box' })).toMatchObject({ type: 'skipped', reason: 'unsupported-container' });
+    expect(await send({ type: 'analyze', file: await openAsBlob(WEBM), name: 'a.webm', engine: 'mp4box' })).toMatchObject({ type: 'skipped', reason: 'unsupported-container', family: 'matroska' });
     expect(await send({ type: 'analyze', file, name: 'a.mp4', engine: 'mediabunny' })).toMatchObject({ type: 'error', code: 'unknown-engine' });
   });
 

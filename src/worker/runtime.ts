@@ -64,7 +64,7 @@ export function serveProbeWorker(engines: Partial<Record<WorkerEngineId, EngineS
       const engine = await load(job.engine);
       if (engine.containers !== 'any') {
         const family = await containerFamily(job.file);
-        if (!family || !engine.containers.includes(family)) return post({ type: 'skipped', id: job.id, reason: 'unsupported-container' });
+        if (!family || !engine.containers.includes(family)) return post({ type: 'skipped', id: job.id, reason: 'unsupported-container', family });
       }
       const result = await engine.run(job.file, job.name, {
         ...job.options,

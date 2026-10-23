@@ -70,9 +70,9 @@ describe('serveProbeWorker', () => {
     const mp4box = fakeEngine(['isobmff']);
     const self = serve({ own: ownEngine, mp4box });
     self.send({ v: 1, type: 'analyze', id: 1, file: await openAsBlob(WEBM), name: 'a.webm', engine: 'mp4box', options: {} });
-    expect(await self.settled(1)).toEqual({ v: 1, type: 'skipped', id: 1, reason: 'unsupported-container' });
+    expect(await self.settled(1)).toEqual({ v: 1, type: 'skipped', id: 1, reason: 'unsupported-container', family: 'matroska' });
     self.send({ v: 1, type: 'analyze', id: 2, file: new Blob([new Uint8Array(64)]), name: 'zeros.bin', engine: 'mp4box', options: {} });
-    expect(await self.settled(2)).toMatchObject({ type: 'skipped', reason: 'unsupported-container' });
+    expect(await self.settled(2)).toEqual({ v: 1, type: 'skipped', id: 2, reason: 'unsupported-container', family: null });
     self.send({ v: 1, type: 'analyze', id: 3, file: await openAsBlob(MP4), name: 'b.mp4', engine: 'mp4box', options: {} });
     expect(await self.settled(3)).toMatchObject({ type: 'result', result: { name: 'b.mp4' } });
     expect(mp4box.calls).toEqual(['b.mp4']);

@@ -29,8 +29,8 @@ describe('runInline', () => {
 
   it('skips a container the engine does not read without running it', async () => {
     const module = fakeModule('mp4box', undefined, ['isobmff']);
-    expect(await runInline(async () => module, webmFile(), 'a.webm', {}, { engine: 'mp4box', signals: [] })).toEqual({ type: 'skipped', reason: 'unsupported-container' });
-    expect(await runInline(async () => module, new Blob([new Uint8Array(32)]), 'zeros', {}, { engine: 'mp4box', signals: [] })).toEqual({ type: 'skipped', reason: 'unsupported-container' });
+    expect(await runInline(async () => module, webmFile(), 'a.webm', {}, { engine: 'mp4box', signals: [] })).toEqual({ type: 'skipped', reason: 'unsupported-container', family: 'matroska' });
+    expect(await runInline(async () => module, new Blob([new Uint8Array(32)]), 'zeros', {}, { engine: 'mp4box', signals: [] })).toEqual({ type: 'skipped', reason: 'unsupported-container', family: null });
     expect((await runInline(async () => module, mp4File(), 'a.mp4', {}, { engine: 'mp4box', signals: [] })).type).toBe('result');
     expect(module.calls.map((c) => c.name)).toEqual(['a.mp4']);
   });

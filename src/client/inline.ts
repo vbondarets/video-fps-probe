@@ -1,7 +1,7 @@
 import { ProbeError, type ProbeErrorCode } from '../api/errors.ts';
 import { containerFamily } from '../core/sniff.ts';
 import type { AnalyzeOptions, AnalyzeProgress, EngineId, FileResult } from '../core/types.ts';
-import type { EngineModule } from '../plugins/types.ts';
+import type { ContainerFamily, EngineModule } from '../plugins/types.ts';
 import type { SkipReason, WireOptions } from '../worker/protocol.ts';
 
 export interface InlineRun {
@@ -12,7 +12,7 @@ export interface InlineRun {
   host?: HTMLElement;
 }
 
-export type InlineReply = { type: 'result'; result: FileResult } | { type: 'skipped'; reason: SkipReason };
+export type InlineReply = { type: 'result'; result: FileResult } | { type: 'skipped'; reason: SkipReason; family: ContainerFamily | null };
 
 export function runInline(load: () => Promise<EngineModule>, file: Blob, name: string, options: WireOptions, run: InlineRun): Promise<InlineReply> {
   const { engine, signals, onProgress, host } = run;
@@ -40,7 +40,7 @@ export function runInline(load: () => Promise<EngineModule>, file: Blob, name: s
       const module = await load();
       if (module.containers !== 'any') {
         const family = await containerFamily(file);
-        if (!family || !module.containers.includes(family)) return { type: 'skipped', reason: 'unsupported-container' };
+        if (!family || !module.containers.includes(family)) return { type: 'skipped', reason: 'unsupported-container', family };
       }
       const opts: AnalyzeOptions & { host?: HTMLElement } = { ...options, signal: controller.signal, onProgress, host };
       return { type: 'result', result: await module.run(file, name, opts) };

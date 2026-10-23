@@ -20,7 +20,7 @@ export type WorkerRequest = { v: typeof PROTOCOL_VERSION; id: number } & (JobReq
 export type WorkerResponse = { v: typeof PROTOCOL_VERSION; id: number } & (
   | { type: 'progress'; progress: AnalyzeProgress }
   | { type: 'result'; result: FileResult }
-  | { type: 'skipped'; reason: SkipReason }
+  | { type: 'skipped'; reason: SkipReason; family: ContainerFamily | null }
   | { type: 'warmed' }
   | { type: 'error'; message: string; aborted: boolean; code?: WorkerErrorCode }
 );
