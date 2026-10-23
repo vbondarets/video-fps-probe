@@ -294,7 +294,8 @@ const CHUNK_WHEN: Record<string, string> = {
   'client-compare': 'first probe.compare',
   'client-fallback': 'first call with a fallback chain or a skipped engine',
   'client-inline': 'first main-thread engine run (rVFC)',
-  'client-shared': 'with the fallback chain, compare or rVFC',
+  'client-shared': 'with the fallback chain, compare, rVFC or the own engine in this thread',
+  'inline-own': 'only with worker inline or without a Worker global (own engine in this thread)',
   worker: 'first file',
   isobmff: 'first MP4 or MOV file, once per worker',
   matroska: 'first WebM or MKV file, once per worker',
@@ -316,7 +317,8 @@ const CHUNK_NAME: Record<string, string> = {
   'client-compare': 'probe compare (agreement rules)',
   'client-fallback': 'probe fallback chain',
   'client-inline': 'in-thread engine runner',
-  'client-shared': 'shared by the lazy client parts and rVFC (result builders)',
+  'client-shared': 'shared by the lazy client parts and rVFC (result builders, sniffing)',
+  'inline-own': 'own engine in this thread (runtime and parser copies for worker inline)',
   worker: 'worker entry (reader, sniffing, worker runtime)',
   isobmff: 'ISO BMFF parser',
   matroska: 'Matroska parser',
@@ -331,7 +333,7 @@ const CHUNK_NAME: Record<string, string> = {
   'engine-shared': 'shared by mp4box and mediabunny',
 };
 
-const CHUNK_ORDER = ['main', 'css', 'client', 'client-fallback', 'client-compare', 'client-inline', 'client-shared', 'worker', 'parser-shared', 'isobmff', 'matroska', 'segments', 'rateProfile', 'deviceInfo', 'rvfc', 'lazy', 'mp4box', 'mediabunny', 'engine-shared'];
+const CHUNK_ORDER = ['main', 'css', 'client', 'client-fallback', 'client-compare', 'client-inline', 'client-shared', 'inline-own', 'worker', 'parser-shared', 'isobmff', 'matroska', 'segments', 'rateProfile', 'deviceInfo', 'rvfc', 'lazy', 'mp4box', 'mediabunny', 'engine-shared'];
 
 const COMPOSITE_BUDGET: Record<string, string> = { initial: 'initial', firstMp4: 'firstMp4', firstVfrMp4: 'firstVfrMp4', firstMatroska: 'firstMkv' };
 

@@ -254,6 +254,7 @@ const LAZY_BY_NAME = [
   ['client-compare', /^compare-/],
   ['client-fallback', /^fallback-/],
   ['client-inline', /^inline-/],
+  ['inline-own', /^runtime[-.]/i],
   ['rvfc', /rvfc/i],
   ['mp4box', /mp4box/i],
   ['mediabunny', /mediabunny/i],
@@ -265,6 +266,7 @@ const LAZY_BY_NAME = [
 ];
 const ENGINE_KINDS = new Set(['mp4box', 'mediabunny', 'engine-shared']);
 const CLIENT_LAZY_KINDS = new Set(['client-compare', 'client-fallback', 'client-inline', 'rvfc', 'client-shared']);
+const WORKER_ONLY_KINDS = new Set(['isobmff', 'matroska', 'segments', 'mp4box', 'mediabunny']);
 const PARSER_KINDS = new Set(['isobmff', 'matroska', 'segments', 'parser-shared']);
 const PATH_ENTRIES = ['isobmff', 'matroska', 'segments'];
 const CHAIN_KINDS = new Set(['isobmff', 'matroska', 'segments', 'mp4box', 'mediabunny']);
@@ -415,6 +417,14 @@ export function discover(distDir) {
 
   const workerShared = new Set();
   for (const w of workers) for (const dep of closureOf(w, fileSet, texts)) if (!workers.has(dep) && dep !== main) workerShared.add(dep);
+  const workerSide = new Set();
+  for (const stack = [...workers]; stack.length > 0; ) {
+    const f = stack.pop();
+    if (workerSide.has(f)) continue;
+    workerSide.add(f);
+    const refs = scanReferences(texts.get(f) ?? '', f, fileSet);
+    stack.push(...refs.staticImports, ...refs.dynamicImports);
+  }
 
   if (main) kinds.set(main, 'main');
   for (const w of workers) kinds.set(w, 'worker');
@@ -422,8 +432,10 @@ export function discover(distDir) {
   for (const c of css) if (!kinds.has(c)) kinds.set(c, 'css');
   for (const f of files) {
     if (kinds.has(f)) continue;
-    const lazy = LAZY_BY_NAME.find(([, re]) => re.test(basename(f)));
-    if (lazy) kinds.set(f, lazy[0]);
+    const named = LAZY_BY_NAME.find(([, re]) => re.test(basename(f)))?.[0];
+    const inThread = workers.size > 0 && !workerSide.has(f) && (named === 'inline-own' || WORKER_ONLY_KINDS.has(named));
+    if (inThread) kinds.set(f, 'inline-own');
+    else if (named && named !== 'inline-own') kinds.set(f, named);
     else if (/\.css$/i.test(f)) kinds.set(f, 'lazy-css');
     else if (dynamic.includes(f)) kinds.set(f, 'lazy');
     else kinds.set(f, 'other');
@@ -436,7 +448,8 @@ export function discover(distDir) {
     }
   }
   const groups = [
-    [CLIENT_LAZY_KINDS, 'client-shared'],
+    [new Set(['inline-own']), 'inline-own'],
+    [new Set([...CLIENT_LAZY_KINDS, 'inline-own']), 'client-shared'],
     [ENGINE_KINDS, 'engine-shared'],
     [PARSER_KINDS, 'parser-shared'],
     [new Set([...PARSER_KINDS, ...ENGINE_KINDS]), 'parser-shared'],
@@ -868,6 +881,23 @@ function runSelfTest() {
     write(twoImports, 'assets/probe.worker-W1.js', workerText(`const s=()=>Promise.all([import(\`./deviceInfo-V1.js\`),import(\`./shared-P1.js\`)]);${filler(5_000)}`));
     write(twoImports, 'assets/mp4box-B1.js', `import{a as e}from"./counting-C1.js";import{b as f}from"./shared-P1.js";${filler(40_000)}`);
     expectEq('runtime: a group of two chunk imports without a source call is no companion', chainsOf(buildReport(twoImports), 'assets/mp4box-B1.js').length, 1);
+    const inThreadDir = build('in-thread-own', { client: 1_500 });
+    write(inThreadDir, 'assets/probe-L1.js', `import{a as e}from"./index-M1.js";const i=()=>import("./inline-N1.js");const o=()=>import("./runtime-R2.js");${filler(1_500)}`);
+    write(inThreadDir, 'assets/inline-N1.js', `import{s as e}from"./sniff-N2.js";${filler(1_000)}`);
+    write(inThreadDir, 'assets/runtime-R2.js', `import{s as e}from"./sniff-N2.js";const a=()=>Promise.all([import(\`./isobmff-I2.js\`),import(\`./stats-S2.js\`)]);const b=()=>Promise.all([import(\`./matroska-K2.js\`),import(\`./stats-S2.js\`)]);${filler(2_000)}`);
+    write(inThreadDir, 'assets/isobmff-I2.js', `import{a as e}from"./runtime-R2.js";import{b as f}from"./stats-S2.js";const s=()=>import(\`./segments-G2.js\`);${filler(8_000)}`);
+    write(inThreadDir, 'assets/matroska-K2.js', `import{a as e}from"./runtime-R2.js";import{b as f}from"./stats-S2.js";${filler(7_000)}`);
+    write(inThreadDir, 'assets/segments-G2.js', `import{b as f}from"./stats-S2.js";${filler(1_000)}`);
+    write(inThreadDir, 'assets/stats-S2.js', filler(3_000));
+    write(inThreadDir, 'assets/sniff-N2.js', filler(800));
+    const inThread = buildReport(inThreadDir);
+    const inThreadKind = (f) => inThread.chunks.find((c) => c.file === f)?.kind;
+    for (const f of ['runtime-R2', 'isobmff-I2', 'matroska-K2', 'segments-G2', 'stats-S2']) expectEq(`in-thread own: ${f} is a main-thread copy`, inThreadKind(`assets/${f}.js`), 'inline-own');
+    expectEq('in-thread own: the chunk it shares with the in-thread runner is client-shared', inThreadKind('assets/sniff-N2.js'), 'client-shared');
+    expectEq('in-thread own: the worker parsers keep their kinds', [inThreadKind('assets/isobmff-I1.js'), inThreadKind('assets/matroska-K1.js'), inThreadKind('assets/segments-G1.js')].join(','), 'isobmff,matroska,segments');
+    expectEq('in-thread own: the parser budgets count only the worker parsers', ['isobmff', 'matroska', 'segments'].map((k) => inThread.budgets.find((b) => b.key === k).files.join(',')).join(';'), 'assets/isobmff-I1.js;assets/matroska-K1.js;assets/segments-G1.js');
+    expectEq('in-thread own: no main-thread copy in the first analysis rows', [inThread.composites.firstMp4, inThread.composites.firstVfrMp4, inThread.composites.firstMatroska].some((c) => c.files.some((f) => /-(?:R2|I2|K2|G2|S2|N2)\.js$/.test(f))), false);
+    expectEq('in-thread own: no failures', inThread.failures.join('; '), '');
     const deepDir = build('engine-deep', {});
     write(deepDir, 'assets/counting-C1.js', `import{a as e}from"./deep-E1.js";${filler(3_000)}`);
     write(deepDir, 'assets/deep-E1.js', filler(1_000));
