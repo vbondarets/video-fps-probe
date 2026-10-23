@@ -291,6 +291,19 @@ export function importGroups(text, fromFile, fileSet) {
   return groups;
 }
 
+const SOURCE_CALL = /[\w$]\(\)/;
+
+export function companionImports(text, fromFile, fileSet) {
+  const found = new Set();
+  for (const m of text.matchAll(IMPORT_GROUP)) {
+    const calls = [...m[1].matchAll(IMPORT_CALL)];
+    if (calls.length !== 1 || !SOURCE_CALL.test(m[1].replace(IMPORT_CALL, ''))) continue;
+    const target = resolveFrom(calls[0][1], fromFile, fileSet);
+    if (target && target !== fromFile) found.add(target);
+  }
+  return found;
+}
+
 export function requestChains({ files, kinds, workers, texts }) {
   const fileSet = new Set(files);
   const problems = new Set();
@@ -300,7 +313,7 @@ export function requestChains({ files, kinds, workers, texts }) {
     return closures.get(f);
   };
   const visited = new Set();
-  const visit = (file, loaded) => {
+  const visit = (file, loaded, companions) => {
     const key = `${file}|${[...loaded].sort().join(',')}`;
     if (visited.has(key)) return;
     visited.add(key);
@@ -311,6 +324,7 @@ export function requestChains({ files, kinds, workers, texts }) {
       const requested = new Set([target]);
       for (const g of groups) if (g.has(target)) for (const f of g) requested.add(f);
       const kind = kinds.get(target);
+      if (kind === 'mp4box' || kind === 'mediabunny') for (const f of companions) requested.add(f);
       if (CHAIN_KINDS.has(kind)) {
         const direct = scanReferences(texts.get(target) ?? '', target, fileSet).staticImports;
         for (const dep of closure(target)) {
@@ -321,12 +335,13 @@ export function requestChains({ files, kinds, workers, texts }) {
       }
       const next = new Set(loaded);
       for (const f of requested) for (const g of [f, ...closure(f)]) next.add(g);
-      for (const f of next) if (!loaded.has(f)) visit(f, next);
+      for (const f of next) if (!loaded.has(f)) visit(f, next, companions);
     }
   };
   for (const w of workers) {
     const loaded = new Set([w, ...closure(w)]);
-    for (const f of loaded) visit(f, loaded);
+    const companions = new Set([...loaded].flatMap((f) => [...companionImports(texts.get(f) ?? '', f, fileSet)]));
+    for (const f of loaded) visit(f, loaded, companions);
   }
   return [...problems];
 }
@@ -527,7 +542,7 @@ export function renderMarkdown(report, label) {
   out.push('The lazy mp4box and mediabunny comparison chunks (and the chunk they share) are reported but not budgeted.');
   out.push('');
   out.push(
-    `Request chain check: every static dependency of a parser or engine chunk is already loaded when it is requested, or requested together with it in one Promise.all. The one exception: an engine chunk may wait for the chunk the engines share when it imports that chunk directly, so the mp4box and mediabunny paths have one extra sequential request. ${report.chains.length === 0 ? 'No problems.' : report.chains.join('; ')}`,
+    `Request chain check: every static dependency of a parser or engine chunk is already loaded when it is requested, or requested together with it in one Promise.all. The worker runtime requests the statistics chunk together with every lazy engine source (one Promise.all of the source call and that chunk), so it counts as requested with each mp4box and mediabunny chunk. The one exception: an engine chunk may wait for the chunk the engines share when it imports that chunk directly, so the mp4box and mediabunny paths have one extra sequential request. ${report.chains.length === 0 ? 'No problems.' : report.chains.join('; ')}`,
   );
   out.push('');
   out.push('## Why these limits');
@@ -843,6 +858,16 @@ function runSelfTest() {
     expectEq('engines: and none for that parser', chainsOf(engineWaits, 'assets/isobmff-I1.js').length, 0);
     const engineParallel = engineStats('engine-parallel', { 'isobmff-I1.js': ['shared-P1.js'], 'mp4box-B1.js': ['shared-P1.js'] });
     expectEq('engines: no chain problem when the engine is requested with that chunk', engineParallel.chains.length, 0);
+    const companionDir = build('engine-companion', { isobmffShared: 2_000 }, { parallel: false });
+    write(companionDir, 'assets/probe.worker-W1.js', workerText(`const s=e=>Promise.all([e(),import(\`./shared-P1.js\`)]);${filler(5_000)}`));
+    write(companionDir, 'assets/mp4box-B1.js', `import{a as e}from"./counting-C1.js";import{b as f}from"./shared-P1.js";${filler(40_000)}`);
+    const companion = buildReport(companionDir);
+    expectEq('runtime: a chunk requested with every engine source call counts as requested with each engine chunk', chainsOf(companion, 'assets/mp4box-B1.js').length, 0);
+    expectEq('runtime: but not with a parser chunk', chainsOf(companion, 'assets/isobmff-I1.js').length, 1);
+    const twoImports = build('engine-two-imports', { isobmffShared: 2_000 }, { parallel: false });
+    write(twoImports, 'assets/probe.worker-W1.js', workerText(`const s=()=>Promise.all([import(\`./deviceInfo-V1.js\`),import(\`./shared-P1.js\`)]);${filler(5_000)}`));
+    write(twoImports, 'assets/mp4box-B1.js', `import{a as e}from"./counting-C1.js";import{b as f}from"./shared-P1.js";${filler(40_000)}`);
+    expectEq('runtime: a group of two chunk imports without a source call is no companion', chainsOf(buildReport(twoImports), 'assets/mp4box-B1.js').length, 1);
     const deepDir = build('engine-deep', {});
     write(deepDir, 'assets/counting-C1.js', `import{a as e}from"./deep-E1.js";${filler(3_000)}`);
     write(deepDir, 'assets/deep-E1.js', filler(1_000));
