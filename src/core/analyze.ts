@@ -9,8 +9,8 @@ export type AnalyzerRegistry = Record<Exclude<SniffKind, 'unknown'>, ContainerAn
 export type AnalyzerLoaders = Record<Exclude<SniffKind, 'unknown'>, () => Promise<ContainerAnalyzer>>;
 
 export const DEFAULT_LOADERS: Readonly<AnalyzerLoaders> = {
-  isobmff: async () => (await import('./isobmff/index.ts')).analyzeIsoBmff,
-  matroska: async () => (await import('./matroska/index.ts')).analyzeMatroska,
+  isobmff: async () => (await Promise.all([import('./isobmff/index.ts'), import('./stats.ts')]))[0].analyzeIsoBmff,
+  matroska: async () => (await Promise.all([import('./matroska/index.ts'), import('./stats.ts')]))[0].analyzeMatroska,
 };
 
 export const DEFAULT_ANALYZERS: Readonly<AnalyzerRegistry> = {
