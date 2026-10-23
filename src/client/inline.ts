@@ -3,7 +3,6 @@ import { containerFamily } from '../core/sniff.ts';
 import type { AnalyzeOptions, AnalyzeProgress, EngineId, FileResult } from '../core/types.ts';
 import type { EngineModule } from '../plugins/types.ts';
 import type { SkipReason, WireOptions } from '../worker/protocol.ts';
-import { delayOf } from './pool.ts';
 
 export interface InlineRun {
   engine: EngineId;
@@ -17,7 +16,7 @@ export type InlineReply = { type: 'result'; result: FileResult } | { type: 'skip
 
 export function runInline(load: () => Promise<EngineModule>, file: Blob, name: string, options: WireOptions, run: InlineRun): Promise<InlineReply> {
   const { engine, signals, onProgress, host } = run;
-  const timeoutMs = delayOf(run.timeoutMs);
+  const timeoutMs = run.timeoutMs ?? 0;
   const controller = new AbortController();
   return new Promise<InlineReply>((resolve, reject) => {
     let done = false;
@@ -36,7 +35,7 @@ export function runInline(load: () => Promise<EngineModule>, file: Blob, name: s
     const onAbort = () => fail('aborted', 'aborted', signals.find((s) => s?.aborted)?.reason);
     if (signals.some((s) => s?.aborted)) return onAbort();
     for (const s of signals) s?.addEventListener('abort', onAbort);
-    if (timeoutMs > 0) timer = setTimeout(() => fail('timeout', `timed out after ${timeoutMs} ms`), timeoutMs);
+    if (timeoutMs > 0 && timeoutMs <= 2 ** 31 - 1) timer = setTimeout(() => fail('timeout', `timed out after ${timeoutMs} ms`), timeoutMs);
     (async (): Promise<InlineReply> => {
       const module = await load();
       if (module.containers !== 'any') {
