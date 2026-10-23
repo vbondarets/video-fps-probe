@@ -60,6 +60,9 @@ jobs:
       - name: Check bundle size budgets
         run: node scripts/size-report.mjs demo/dist --check
 
+      - name: Check the README tables against the reports
+        run: node scripts/readme-tables.ts --check
+
   e2e:
     name: End-to-end (Chromium, Firefox, WebKit)
     runs-on: ubuntu-latest
