@@ -7,9 +7,10 @@ Production build in `dist`, measured by `scripts/size-report.mjs`. KB means 1000
 | Budget | Limit | Actual | Headroom | Status | Files |
 |---|---:|---:|---:|---|---|
 | main (React + UI) | 75.00 KB | 74.70 KB | 0.30 KB | ok | assets/index-DP7ofC8T.js |
-| worker entry (core + glue) | 7.50 KB | 7.37 KB | 0.13 KB | ok | assets/analyze.worker-Cxu1jFcj.js |
+| worker entry (core + glue) | 8.50 KB | 7.37 KB | 1.13 KB | ok | assets/analyze.worker-Cxu1jFcj.js |
 | ISO BMFF parser chunk | 13.50 KB | 12.16 KB | 1.34 KB | ok | assets/isobmff-B7edjAwI.js |
 | Matroska parser chunk | 12.00 KB | 10.90 KB | 1.09 KB | ok | assets/matroska-DTWARJKN.js |
+| lazy probe client | 3.50 KB | - | - | not built | - |
 | lazy rVFC fallback | 2.50 KB | 1.94 KB | 0.56 KB | ok | assets/rvfc-CXzfTGGl.js |
 | lazy rate profile core (segments) | 2.00 KB | 1.80 KB | 0.20 KB | ok | assets/segments-_WfjZiol.js |
 | lazy rate profile panel (UI) | 1.50 KB | 0.94 KB | 0.56 KB | ok | assets/RateProfile-D1rfW1-Y.js |
@@ -20,12 +21,15 @@ Production build in `dist`, measured by `scripts/size-report.mjs`. KB means 1000
 
 The lazy mp4box and mediabunny comparison chunks (and the chunk they share) are reported but not budgeted.
 
+Request chain check: every static dependency of a parser or engine chunk is in its worker entry or requested by it in parallel (the chunk the engines share may follow the engine). No problems.
+
 ## Why these limits
 
 - **main (React + UI)** (75.00 KB): User-facing goal, unchanged. React and ReactDOM are about 67.5 KB gzip of it. Measured 73.86 KB at gzip -9 when the limit was reviewed, so there is little room: new UI code has to be lazy. The Vite build log prints a larger figure for the same chunk (its own gzip settings), which can exceed 75 KB; the budget is checked against the level 9 numbers of this script only.
-- **worker entry (core + glue)** (7.50 KB): Sniffing, reader, options, timeline statistics, message glue and the code the lazy parsers and comparison engines share. Both own parsers are lazy chunks. Measured 6.56 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB.
+- **worker entry (core + glue)** (8.50 KB): Sniffing, reader, options, timeline statistics, message glue and the code the lazy parsers and comparison engines share. Both own parsers are lazy chunks. Budgeted by entry name: only the analyze.worker file counts, and any other worker file fails as unbudgeted. Re-set once before the package work: measured 7.37 KB with 0.13 KB of headroom left, while loading the statistics module next to each parser and the worker runtime (versioned protocol, warm requests, per-engine container gate) both grow this entry. Limit is that measurement plus 10 percent, rounded up to 0.5 KB, which is also the 8.5 KB a consumer custom worker gets.
 - **ISO BMFF parser chunk** (13.50 KB): Own MP4 and MOV parser, fetched by the worker only when a file sniffs as ISO BMFF. Measured 11.94 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB.
 - **Matroska parser chunk** (12.00 KB): Own Matroska and WebM parser, fetched by the worker only when a file sniffs as EBML. Measured 10.73 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB.
+- **lazy probe client** (3.50 KB): Probe client, engine descriptors and worker pool in one lazy chunk (probe-*), fetched by the main chunk before the first analysis. Estimate until the chunk is first built; then reset to measured plus 10 percent, rounded up to 0.5 KB. Not required: until the client chunk exists the pool is part of the main chunk.
 - **lazy rVFC fallback** (2.50 KB): Loaded on demand from the main chunk. Measured 1.94 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB.
 - **lazy rate profile core (segments)** (2.00 KB): Segmentation, anomalies, uneven flag and sparkline buckets. Fetched by the worker only for a timeline with unequal frame rates (VFR), after the parser chunk. Measured 1.79 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB. Not required: when the chunk is merged into another one, that chunk budget catches the growth.
 - **lazy rate profile panel (UI)** (1.50 KB): Sparkline and segment table, fetched by the main chunk (React.lazy) when a result card has a rate profile. Measured 0.94 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB. Not required: when the chunk is merged into the main chunk, the main budget catches the growth.

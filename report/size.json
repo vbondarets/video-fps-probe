@@ -21,14 +21,14 @@
     {
       "key": "worker",
       "label": "worker entry (core + glue)",
-      "limit": 7500,
+      "limit": 8500,
       "gzip": 7366,
-      "headroom": 134,
+      "headroom": 1134,
       "status": "ok",
       "files": [
         "assets/analyze.worker-Cxu1jFcj.js"
       ],
-      "why": "Sniffing, reader, options, timeline statistics, message glue and the code the lazy parsers and comparison engines share. Both own parsers are lazy chunks. Measured 6.56 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB."
+      "why": "Sniffing, reader, options, timeline statistics, message glue and the code the lazy parsers and comparison engines share. Both own parsers are lazy chunks. Budgeted by entry name: only the analyze.worker file counts, and any other worker file fails as unbudgeted. Re-set once before the package work: measured 7.37 KB with 0.13 KB of headroom left, while loading the statistics module next to each parser and the worker runtime (versioned protocol, warm requests, per-engine container gate) both grow this entry. Limit is that measurement plus 10 percent, rounded up to 0.5 KB, which is also the 8.5 KB a consumer custom worker gets."
     },
     {
       "key": "isobmff",
@@ -53,6 +53,16 @@
         "assets/matroska-DTWARJKN.js"
       ],
       "why": "Own Matroska and WebM parser, fetched by the worker only when a file sniffs as EBML. Measured 10.73 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB."
+    },
+    {
+      "key": "client",
+      "label": "lazy probe client",
+      "limit": 3500,
+      "gzip": null,
+      "headroom": null,
+      "status": "not built",
+      "files": [],
+      "why": "Probe client, engine descriptors and worker pool in one lazy chunk (probe-*), fetched by the main chunk before the first analysis. Estimate until the chunk is first built; then reset to measured plus 10 percent, rounded up to 0.5 KB. Not required: until the client chunk exists the pool is part of the main chunk."
     },
     {
       "key": "rvfc",

@@ -268,7 +268,7 @@ Headless Chrome 155, GPU decoding on, display 170 Hz.
 |---|---|---:|---:|---:|---:|---:|---|
 | main (React, UI, store, worker pool) | page load | 239.10 KB | **74.70 KB** | 64.57 KB | 75.00 KB | 0.30 KB | ok |
 | CSS | page load | 4.98 KB | **1.81 KB** | 1.53 KB | not budgeted | - | - |
-| worker entry (reader, sniffing, statistics) | first file | 18.76 KB | **7.37 KB** | 6.71 KB | 7.50 KB | 0.13 KB | ok |
+| worker entry (reader, sniffing, statistics) | first file | 18.76 KB | **7.37 KB** | 6.71 KB | 8.50 KB | 1.13 KB | ok |
 | ISO BMFF parser | first MP4 or MOV file, once per worker | 30.77 KB | **12.16 KB** | 10.98 KB | 13.50 KB | 1.34 KB | ok |
 | Matroska parser | first WebM or MKV file, once per worker | 29.02 KB | **10.90 KB** | 9.92 KB | 12.00 KB | 1.09 KB | ok |
 | rate profile core (segments, anomalies, sparkline buckets) | first VFR timeline, once per worker | 3.32 KB | **1.80 KB** | 1.68 KB | 2.00 KB | 0.20 KB | ok |
