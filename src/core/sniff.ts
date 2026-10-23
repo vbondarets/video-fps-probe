@@ -1,3 +1,5 @@
+import type { BlobLike } from './reader.ts';
+
 export type SniffKind = 'isobmff' | 'matroska' | 'unknown';
 
 export interface SniffResult {
@@ -86,4 +88,11 @@ export function sniff(head: Uint8Array): SniffResult {
   }
   if (head.length < 8) return { kind: 'unknown', reason: `too small (${head.length} bytes)` };
   return { kind: 'unknown', reason: describeUnknown(head) };
+}
+
+const FAMILY_SNIFF_BYTES = 1024;
+
+export async function containerFamily(blob: BlobLike): Promise<Exclude<SniffKind, 'unknown'> | null> {
+  const { kind } = sniff(new Uint8Array(await blob.slice(0, Math.min(FAMILY_SNIFF_BYTES, blob.size)).arrayBuffer()));
+  return kind === 'unknown' ? null : kind;
 }

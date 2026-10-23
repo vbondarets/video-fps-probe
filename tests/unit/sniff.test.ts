@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { sniff } from '../../src/core/sniff.ts';
+import { containerFamily, sniff } from '../../src/core/sniff.ts';
 
 function box(size: number, type: string, extra: number[] = []): Uint8Array {
   const out = new Uint8Array(8 + extra.length);
@@ -56,5 +56,24 @@ describe('sniff', () => {
   it('ignores the content beyond the magic, never an extension', () => {
     const renamed = new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, ...text('ftyp')]);
     expect(sniff(renamed).kind).toBe('matroska');
+  });
+});
+
+describe('containerFamily', () => {
+  it('maps a blob head to the container family, or null', async () => {
+    const blob = (bytes: Uint8Array) => new Blob([bytes as Uint8Array<ArrayBuffer>]);
+    expect(await containerFamily(blob(box(16, 'ftyp', [0, 0, 0, 0, 0, 0, 0, 0])))).toBe('isobmff');
+    expect(await containerFamily(blob(new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 0, 0, 0, 0])))).toBe('matroska');
+    expect(await containerFamily(blob(text('hello world')))).toBeNull();
+    expect(await containerFamily(blob(new Uint8Array(0)))).toBeNull();
+  });
+
+  it('reads only the first kilobyte', async () => {
+    const reads: [number, number][] = [];
+    const head = new Uint8Array(2048);
+    head.set(box(0, 'mdat'));
+    const big = { size: 1 << 30, slice: (s = 0, e = 0) => (reads.push([s, e]), { arrayBuffer: async () => head.slice(s, Math.min(e, head.length)).buffer }) };
+    expect(await containerFamily(big)).toBe('isobmff');
+    expect(reads).toEqual([[0, 1024]]);
   });
 });

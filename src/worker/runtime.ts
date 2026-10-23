@@ -1,6 +1,5 @@
 import { analyze, DEFAULT_LOADERS, errorMessage, isAbortError } from '../core/analyze.ts';
-import type { BlobLike } from '../core/reader.ts';
-import { sniff } from '../core/sniff.ts';
+import { containerFamily } from '../core/sniff.ts';
 import type { ContainerFamily, EngineModule, WorkerEngineId } from '../plugins/types.ts';
 import { PROTOCOL_VERSION, type AnalyzeRequest, type WarmRequest, type WorkerErrorCode, type WorkerRequest, type WorkerResponse } from './protocol.ts';
 
@@ -9,7 +8,6 @@ export type EngineSource = EngineModule | (() => Promise<EngineModule>);
 type Reply = WorkerResponse extends infer R ? (R extends WorkerResponse ? Omit<R, 'v'> : never) : never;
 
 const PROGRESS_INTERVAL_MS = 50;
-const SNIFF_BYTES = 1024;
 
 export const ownEngine: EngineModule = {
   run: (blob, name, opts) => analyze(blob, name, opts),
@@ -18,11 +16,6 @@ export const ownEngine: EngineModule = {
     await Promise.all(containers.map((c) => DEFAULT_LOADERS[c]()));
   },
 };
-
-async function familyOf(blob: BlobLike): Promise<ContainerFamily | null> {
-  const { kind } = sniff(new Uint8Array(await blob.slice(0, Math.min(SNIFF_BYTES, blob.size)).arrayBuffer()));
-  return kind === 'unknown' ? null : kind;
-}
 
 const failure = (message: string, code: WorkerErrorCode) => Object.assign(new Error(message), { code });
 
@@ -70,7 +63,7 @@ export function serveProbeWorker(engines: Partial<Record<WorkerEngineId, EngineS
       if (!(job.file instanceof Blob)) throw failure('malformed analyze request', 'protocol');
       const engine = await load(job.engine);
       if (engine.containers !== 'any') {
-        const family = await familyOf(job.file);
+        const family = await containerFamily(job.file);
         if (!family || !engine.containers.includes(family)) return post({ type: 'skipped', id: job.id, reason: 'unsupported-container' });
       }
       const result = await engine.run(job.file, job.name, {
