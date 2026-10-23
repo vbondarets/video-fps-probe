@@ -120,6 +120,7 @@ export async function serve(dir, port) {
   const { createServer: createViteServer } = await import(pathToFileURL(join(dir, 'node_modules', 'vite', 'dist', 'node', 'index.js')).href);
   for (const { name } of FIXTURES) {
     const root = fixtureRoot(dir, name);
+    rmSync(join(root, 'node_modules', '.vite'), { recursive: true, force: true });
     const url = new URL(devUrl(port, name));
     const vite = await createViteServer({ root, configFile: join(root, 'vite.config.ts'), server: { host: url.hostname, port: Number(url.port), strictPort: true } });
     await vite.listen();

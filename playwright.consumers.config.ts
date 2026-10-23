@@ -12,6 +12,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: CI,
   retries: CI ? 1 : 0,
+  failOnFlakyTests: true,
   workers: CI ? 2 : undefined,
   reporter: [['list']],
   use: {
