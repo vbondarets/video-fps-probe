@@ -99,6 +99,25 @@ describe('serveProbeWorker', () => {
     expect(engine.calls.sort()).toEqual(['a.mp4', 'b.mp4']);
   });
 
+  it('retries a lazy engine source after a failed load', async () => {
+    const engine = fakeEngine('any');
+    const source = vi
+      .fn<() => Promise<EngineModule>>()
+      .mockRejectedValueOnce(new Error('Failed to fetch dynamically imported module'))
+      .mockResolvedValue(engine);
+    const self = serve({ own: ownEngine, mp4box: source as EngineSource });
+    self.send({ v: 1, type: 'analyze', id: 1, file: new Blob([new Uint8Array(8)]), name: 'a.mp4', engine: 'mp4box', options: {} });
+    const failed = await self.settled(1);
+    expect(failed).toMatchObject({ type: 'error', id: 1, aborted: false, message: 'Failed to fetch dynamically imported module' });
+    expect(failed).not.toHaveProperty('code');
+    self.send({ v: 1, type: 'analyze', id: 2, file: new Blob([new Uint8Array(8)]), name: 'b.mp4', engine: 'mp4box', options: {} });
+    expect(await self.settled(2)).toMatchObject({ type: 'result', result: { name: 'b.mp4' } });
+    self.send({ v: 1, type: 'analyze', id: 3, file: new Blob([new Uint8Array(8)]), name: 'c.mp4', engine: 'mp4box', options: {} });
+    await self.settled(3);
+    expect(source).toHaveBeenCalledTimes(2);
+    expect(engine.calls).toEqual(['b.mp4', 'c.mp4']);
+  });
+
   it('replies unknown-engine for an engine this worker does not serve', async () => {
     const self = serve({ own: ownEngine });
     self.send({ v: 1, type: 'analyze', id: 4, file: new Blob([new Uint8Array(8)]), name: 'a.mp4', engine: 'mp4box', options: {} });

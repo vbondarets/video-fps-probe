@@ -40,7 +40,10 @@ export function serveProbeWorker(engines: Partial<Record<WorkerEngineId, EngineS
     if (!module) {
       const source = Object.hasOwn(engines, id) ? engines[id] : undefined;
       if (!source) return Promise.reject(failure(`unknown engine ${id}`, 'unknown-engine'));
-      module = typeof source === 'function' ? source() : Promise.resolve(source);
+      module = (typeof source === 'function' ? source() : Promise.resolve(source)).catch((e: unknown) => {
+        loaded.delete(id);
+        throw e;
+      });
       loaded.set(id, module);
     }
     return module;
