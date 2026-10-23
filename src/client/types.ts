@@ -1,3 +1,5 @@
+import type { Agreement } from '../api/agreement.ts';
+import type { ProbeError } from '../api/errors.ts';
 import type { AnalyzeProgress, EngineId, FileResult } from '../core/types.ts';
 import type { MediabunnyNative, Mp4boxNative, RvfcDetails } from '../engines/types.ts';
 import type { ContainerFamily, EngineDescriptor, WorkerEngineId } from '../plugins/types.ts';
@@ -51,10 +53,33 @@ export interface PrewarmOptions<Id extends EngineId> {
   containers?: readonly ContainerFamily[];
 }
 
+export interface CompareOptions<K extends EngineId> {
+  engines?: readonly K[];
+  reference?: K;
+  signal?: AbortSignal;
+  timeoutMs?: number;
+  onProgress?: (progress: AnalyzeProgress & { engine: K }) => void;
+}
+
+export type EngineOutcome =
+  | { status: 'ok'; result: ProbeResult; ms: number }
+  | { status: 'failed'; result: ProbeResult; error: string; ms: number }
+  | { status: 'skipped'; reason: 'unsupported-container' | 'unsupported-environment' }
+  | { status: 'timeout' | 'crashed'; error: ProbeError };
+
+export interface CompareResult<K extends EngineId> {
+  name: string;
+  size: number;
+  reference: K | null;
+  outcomes: Partial<Record<K, EngineOutcome>>;
+  agreement: Agreement<K>;
+}
+
 export interface Probe<Id extends EngineId = 'own'> {
   readonly engines: readonly Id[];
   analyze(file: Blob, options?: CallOptions<Id>): Promise<ProbeResult>;
   tryAnalyze(file: Blob, options?: CallOptions<Id>): Promise<ProbeResult | null>;
+  compare<K extends Id>(file: Blob, options?: CompareOptions<K>): Promise<CompareResult<K>>;
   prewarm(options?: PrewarmOptions<Id>): Promise<void>;
   dispose(): void;
   destroy(): void;

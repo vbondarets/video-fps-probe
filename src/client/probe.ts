@@ -4,7 +4,7 @@ import type { EngineId } from '../core/types.ts';
 import type { EngineDescriptor, EngineModule, WorkerEngineId } from '../plugins/types.ts';
 import type { WireOptions } from '../worker/protocol.ts';
 import type { InlineReply } from './inline.ts';
-import { WorkerPool, type PoolReply } from './pool.ts';
+import { WorkerPool } from './pool.ts';
 import type { Attempt, BaseOptions, CallOptions, ClientOptions, CustomWorker, IdOf, Probe, ProbeResult } from './types.ts';
 
 export interface CoreOptions extends BaseOptions<EngineId> {
@@ -12,15 +12,25 @@ export interface CoreOptions extends BaseOptions<EngineId> {
   engines?: readonly EngineDescriptor[];
 }
 
-type Route = { pool: () => WorkerPool } | { load: () => Promise<EngineModule> } | { error: ProbeError };
+type Route = { kind: string; pool: () => WorkerPool } | { load: () => Promise<EngineModule> } | { error: ProbeError };
+
+export type Run = (id: EngineId, file: Blob, name: string, wire: WireOptions, call: CallOptions<EngineId>) => Promise<InlineReply>;
+
+export interface CompareContext {
+  engines: readonly EngineId[];
+  kindOf(id: EngineId): string;
+  has(id: EngineId): boolean;
+  run: Run;
+  defaults?: WireOptions;
+}
 
 type Failure = Attempt & { result?: ProbeResult };
 
 const notRegistered = (id: EngineId, message = `engine ${id} is not registered`) => new ProbeError('engine-not-registered', message, { engine: id });
 
-const nameOf = (file: Blob): string => (typeof File !== 'undefined' && file instanceof File ? file.name : '');
+export const nameOf = (file: Blob): string => (typeof File !== 'undefined' && file instanceof File ? file.name : '');
 
-const failureOf = (r: ProbeResult): string | null => {
+export const failureOf = (r: ProbeResult): string | null => {
   const t = primaryTrack(r);
   return r.error ?? (!t ? 'no video track' : t.avgFps ? null : 'no frame rate');
 };
@@ -38,6 +48,7 @@ export function createProbeCore(options: CoreOptions): Probe<EngineId> {
   let life = new AbortController();
 
   const poolOf = (kind: string, create: () => Worker): Route => ({
+    kind,
     pool: () => {
       let pool = pools.get(kind);
       if (!pool) pools.set(kind, (pool = new WorkerPool({ create, size: workers, idleTimeoutMs })));
@@ -71,13 +82,13 @@ export function createProbeCore(options: CoreOptions): Probe<EngineId> {
   if (!routes.has('own')) throw notRegistered('own', 'own has no route: list it on the custom worker or register a prebuilt engine');
   for (const id of [defaultEngine, ...defaultFallback]) if (!routes.has(id)) throw notRegistered(id);
 
-  const run = (id: EngineId, file: Blob, name: string, wire: WireOptions, call: CallOptions<EngineId>): Promise<PoolReply | InlineReply> => {
+  const run: Run = (id, file, name, wire, call) => {
     const route = routes.get(id);
     if (!route) return Promise.reject(notRegistered(id));
     if ('error' in route) return Promise.reject(route.error);
     const timeoutMs = call.timeoutMs ?? defaultTimeout;
     if ('pool' in route) {
-      return route.pool().run({ type: 'analyze', file, name, engine: id as WorkerEngineId, options: wire }, { signal: call.signal, timeoutMs, onProgress: call.onProgress, engine: id });
+      return route.pool().run({ type: 'analyze', file, name, engine: id as WorkerEngineId, options: wire }, { signal: call.signal, timeoutMs, onProgress: call.onProgress, engine: id }) as Promise<InlineReply>;
     }
     const signals = [call.signal, life.signal];
     return import('./inline.ts').then(
@@ -119,10 +130,23 @@ export function createProbeCore(options: CoreOptions): Probe<EngineId> {
     throw last;
   };
 
+  const engines = [...routes.keys()];
+  const context: CompareContext = {
+    engines,
+    kindOf: (id) => {
+      const route = routes.get(id);
+      return route && 'kind' in route ? route.kind : id;
+    },
+    has: (id) => routes.has(id),
+    run,
+    defaults,
+  };
+
   return {
-    engines: [...routes.keys()],
+    engines,
     analyze,
     tryAnalyze: (file, call) => analyze(file, call).catch(() => null),
+    compare: (file, o) => import('./compare.ts').then((m) => m.compare(context, file, o)),
     async prewarm(o = {}) {
       const containers = o.containers ?? ['isobmff'];
       const warm = new Map<WorkerPool, WorkerEngineId[]>();
