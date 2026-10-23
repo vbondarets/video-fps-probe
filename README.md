@@ -9,7 +9,7 @@ Frame rate, frame count and variable frame rate detection for local video files,
 - **Accuracy.** The own parsers were checked against ffprobe 8.1.1 on 116 synthetic fixtures made with ffmpeg (111 committed, 5 large local files; real recorder output is not in the corpus, see Limitations): 1832 field checks, 1769 exact, 2 within tolerance, 1 known deviation with a recorded reason, 0 mismatches, 60 not applicable.
 - **Reads.** Median 2 reads per committed fixture, at most 2. The 3 h, 648000-frame MP4 (12.42 MiB) takes 2 reads and 2.56 MiB (20.6% of the file).
 - **Speed.** In Chrome 155, warm: median 1.50 ms per file in the worker and 2.40 ms from file pick to rendered result; the 3 h file takes 4.10 ms. A 604.42 MB 1080p MP4 with the moov at the end takes 2 reads (75.0 KiB) and 1.70 ms; the same stream in Matroska takes 117 ms in auto mode (126 reads; a probe, so no frame count until "Scan all frames").
-- **Size.** The page plus the first MP4 result loads 99.45 KB gzip (page, probe client, worker entry, shared statistics chunk, ISO BMFF parser); the first Matroska result 98.33 KB.
+- **Size.** The page plus the first MP4 result loads 99.21 KB gzip (page, probe client, worker entry, shared statistics chunk, ISO BMFF parser); the first Matroska result 98.08 KB.
 - **Embedding.** In a host app the critical path grows by a 0.52 KB gzip trigger (0.027% of a 1.95 MB initial load); the first MP4 lazily loads 20.32 KB. With the worker prewarmed when the upload dialog opens, the first result on fast 4G takes 5.30 ms instead of 292 ms. Measured on an earlier build whose worker entry and parser chunks differ from the current ones, so these figures are not current.
 - **Same result in Node and Chrome.** 116 of 116 files give identical results field by field (timing excluded).
 - **Machine.** Windows 10 Pro, Intel Core i7-10700KF (16 threads), 32 GiB, Node v24.20.0, Chrome 155 headless; ffprobe 8.1.1-full_build-www.gyan.dev.
@@ -157,7 +157,7 @@ The thresholds are constants in `src/core/segments.ts` and `src/core/stats.ts`. 
 
 <!-- tables:profile:start -->
 
-The profile code is 1.84 KB gzip in the worker and the panel 0.94 KB on the main thread, both lazy. The first VFR MP4 loads 101.30 KB gzip, 1.84 KB more than a CFR one (budget 102.00 KB). Times are the whole analysis, profile included.
+The profile code is 1.84 KB gzip in the worker and the panel 0.94 KB on the main thread, both lazy. The first VFR MP4 loads 101.05 KB gzip, 1.84 KB more than a CFR one (budget 102.00 KB). Times are the whole analysis, profile included.
 
 | File | Rate profile | Frames | Min to max FPS | Node ms | Chrome 155 ms |
 |---|---|---:|---|---:|---:|
@@ -266,7 +266,7 @@ Headless Chrome 155, GPU decoding on, display 170 Hz.
 
 | Chunk | Loaded | Raw | gzip -9 | brotli q11 | Budget (gzip) | Headroom | Status |
 |---|---|---:|---:|---:|---:|---:|---|
-| main (React, UI, store) | page load | 237.85 KB | **74.27 KB** | 64.30 KB | 75.00 KB | 0.73 KB | ok |
+| main (React, UI, store) | page load | 237.32 KB | **74.02 KB** | 64.08 KB | 75.00 KB | 0.98 KB | ok |
 | CSS | page load | 4.98 KB | **1.81 KB** | 1.53 KB | not budgeted | - | - |
 | probe client (lazy) | first file | 6.14 KB | **2.66 KB** | 2.45 KB | 3.50 KB | 0.84 KB | ok |
 | probe fallback chain | first call with a fallback chain or a skipped engine | 0.98 KB | **0.62 KB** | 0.54 KB | not budgeted | - | - |
@@ -285,10 +285,10 @@ Headless Chrome 155, GPU decoding on, display 170 Hz.
 | mp4box.js engine | Compare engines on an MP4 or MOV card | 187.64 KB | **43.65 KB** | 37.29 KB | not budgeted | - | - |
 | mediabunny engine | Compare engines | 200.82 KB | **52.78 KB** | 44.45 KB | not budgeted | - | - |
 | shared by mp4box and mediabunny | with mp4box or mediabunny | 3.01 KB | **1.50 KB** | 1.35 KB | not budgeted | - | - |
-| initial: main + CSS + worker entry |  | 253.03 KB | **80.28 KB** | 69.65 KB | 85.00 KB | 4.72 KB | ok |
-| first MP4 analysis: initial + probe client + statistics + ISO BMFF parser |  | 300.13 KB | **99.45 KB** | 87.06 KB | 100.00 KB | 0.55 KB | ok |
-| first VFR MP4 analysis: first MP4 + rate profile core |  | 303.48 KB | **101.30 KB** | 88.77 KB | 102.00 KB | 0.70 KB | ok |
-| first Matroska analysis: initial + probe client + statistics + Matroska parser |  | 298.43 KB | **98.33 KB** | 86.11 KB | 100.00 KB | 1.67 KB | ok |
+| initial: main + CSS + worker entry |  | 252.50 KB | **80.03 KB** | 69.43 KB | 85.00 KB | 4.97 KB | ok |
+| first MP4 analysis: initial + probe client + statistics + ISO BMFF parser |  | 299.60 KB | **99.21 KB** | 86.85 KB | 100.00 KB | 0.79 KB | ok |
+| first VFR MP4 analysis: first MP4 + rate profile core |  | 302.95 KB | **101.05 KB** | 88.56 KB | 102.00 KB | 0.95 KB | ok |
+| first Matroska analysis: initial + probe client + statistics + Matroska parser |  | 297.90 KB | **98.08 KB** | 85.89 KB | 100.00 KB | 1.92 KB | ok |
 
 <!-- tables:bundle:end -->
 
