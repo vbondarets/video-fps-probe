@@ -139,6 +139,37 @@ describe('lazyProbeFrom', () => {
     expect(probe.calls).toEqual(['analyze', 'destroy']);
   });
 
+  it('turns a factory that throws synchronously into rejections; tryAnalyze and prewarm still resolve and the next call retries', async () => {
+    const probe = fakeProbe();
+    const factory = vi.fn((): Promise<Probe<EngineId>> => {
+      if (factory.mock.calls.length <= 4) throw new TypeError('factory threw');
+      return Promise.resolve(probe);
+    });
+    const stub = lazyProbeFrom(factory);
+    const loading = stub.load();
+    expect(loading).toBeInstanceOf(Promise);
+    await expect(loading).rejects.toThrow('factory threw');
+    await expect(stub.analyze(mp4File())).rejects.toThrow('factory threw');
+    expect(await stub.tryAnalyze(mp4File())).toBeNull();
+    await expect(stub.prewarm()).resolves.toBeUndefined();
+    expect(stub.loaded).toBe(false);
+    expect((await stub.compare(mp4File())).name).toBe('');
+    expect(factory).toHaveBeenCalledTimes(5);
+  });
+
+  it('keeps tryAnalyze and prewarm from throwing when a loaded probe throws synchronously', async () => {
+    const boom = () => {
+      throw new TypeError('probe threw');
+    };
+    const probe = { ...fakeProbe(), analyze: boom, tryAnalyze: boom, compare: boom, prewarm: boom } as unknown as Probe<EngineId>;
+    const stub = lazyProbeFrom(async () => probe);
+    await stub.load();
+    expect(await stub.tryAnalyze(mp4File())).toBeNull();
+    await expect(stub.prewarm()).resolves.toBeUndefined();
+    await expect(stub.analyze(mp4File())).rejects.toThrow('probe threw');
+    await expect(stub.compare(mp4File())).rejects.toThrow('probe threw');
+  });
+
   it('is the same function from the lazy entry', () => {
     expect(fromLazyEntry).toBe(lazyProbeFrom);
   });

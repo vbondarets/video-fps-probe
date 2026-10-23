@@ -11,7 +11,7 @@ export function lazyProbeFrom<Id extends EngineId>(factory: () => Promise<Probe<
   let destroyed = false;
   const aborted = () => Promise.reject(new ProbeError('aborted', 'probe destroyed'));
   const load = () =>
-    (loading ??= factory().then(
+    (loading ??= new Promise<Probe<Id>>((resolve) => resolve(factory())).then(
       (p) => {
         if (destroyed) p.destroy();
         return (probe = p);
@@ -23,8 +23,8 @@ export function lazyProbeFrom<Id extends EngineId>(factory: () => Promise<Probe<
     ));
   const forward = <T>(call: (p: Probe<Id>) => Promise<T>): Promise<T> => {
     if (destroyed) return aborted();
-    if (probe) return call(probe);
-    return load().then((p) => (destroyed ? aborted() : call(p)));
+    const loaded = probe;
+    return loaded ? new Promise<T>((resolve) => resolve(call(loaded))) : load().then((p) => (destroyed ? aborted() : call(p)));
   };
   return {
     get loaded() {
