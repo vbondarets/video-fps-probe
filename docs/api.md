@@ -79,7 +79,7 @@ Creating a probe throws `ProbeError('engine-not-registered')` when `engine` or a
 
 ```ts
 function lazyProbe<const E extends readonly EngineDescriptor[] = []>(options?: ProbeOptions<E>): LazyProbe<'own' | IdOf<E[number]>>; // video-fps-probe/lazy
-function lazyProbeClient<const E, const W>(options: ClientOptions<E, W>): LazyProbe<W | IdOf<E[number]> | 'own'>; // video-fps-probe/client/lazy
+function lazyProbeClient<const E extends readonly EngineDescriptor[] = [], const W extends WorkerEngineId = never>(options: ClientOptions<E, W>): LazyProbe<W | IdOf<E[number]> | 'own'>; // video-fps-probe/client/lazy
 function lazyProbeFrom<Id extends EngineId>(factory: () => Promise<Probe<Id>>): LazyProbe<Id>; // both lazy entries
 
 type LazyProbe<Id> = Probe<Id> & { readonly loaded: boolean; load(): Promise<Probe<Id>> };
@@ -89,7 +89,7 @@ A stub is what you keep in the critical bundle. It imports the probe client with
 
 - `load()` is idempotent; a failed load is retried on the next call. Creating a stub never throws: an option error such as an unregistered `engine` surfaces on the first call.
 - `engines` lists the ids known from the options before the load, and the routed ids after it.
-- `dispose()` on a stub that has not loaded does nothing; `destroy()` also stops a load in flight, and later calls reject with `ProbeError('aborted')`.
+- `dispose()` on a stub that has not loaded does nothing. `destroy()` also stops a load in flight. From then on `analyze` and `compare` reject with `ProbeError('aborted')`, calls that were waiting for the load included, `tryAnalyze` resolves `null`, and `prewarm` resolves without loading anything.
 - `lazyProbeFrom` wraps any factory, for example a module of your own that calls `createProbeClient` with your worker literal: `lazyProbeFrom(() => import('./probe.ts').then((m) => m.probe))`. The demo does this.
 
 ### Probe
@@ -121,7 +121,7 @@ interface CallOptions<Id> extends WireOptions {
 - **`tryAnalyze`** is `analyze` that resolves `null` instead of rejecting.
 - **`prewarm`** loads ahead of the first file: the probe client (for a stub), the worker, and the parser chunks for `containers` (default `['isobmff']`), for `engines` (default: the probe's `engine`). One warm request goes to each worker kind; in-thread engines load their chunks. It never rejects.
 - **`dispose`** terminates idle workers now. Busy workers finish their job; the next call starts new workers.
-- **`destroy`** rejects every queued and running job with `ProbeError('aborted')`, terminates every worker, and makes later calls reject with `ProbeError('aborted')`. `prewarm` after `destroy` does nothing.
+- **`destroy`** rejects every queued and running job with `ProbeError('aborted')` and terminates every worker. After it, `analyze` and `compare` reject with `ProbeError('aborted')`, `tryAnalyze` resolves `null`, and `prewarm` does nothing.
 
 ### Workers, queues and timeouts
 
@@ -130,7 +130,7 @@ Each worker kind has its own pool of `workers` workers, started on demand. Jobs 
 - **Timeout.** `timeoutMs` starts when a worker takes the job, not while it waits in the queue. When it fires, the call rejects with `ProbeError('timeout')`, the worker is terminated at once (it is presumed stuck), and the next job starts a new worker. In the calling thread (`'inline'`, rvfc) the call rejects and the engine's signal is aborted.
 - **Abort.** A queued job is removed and rejected at once. A running job is rejected at once and its worker gets a `cancel`; the worker is reused when it acknowledges, or terminated after 1.5 s. Pass one `signal` to every call of a batch to bound the whole batch, queue time included.
 - **Crashes.** A worker `error` event rejects its job with `ProbeError('worker-failed')` and the worker is replaced on the next job.
-- **Routing of own.** Own runs on the custom worker if it lists own; otherwise on the worker of the default engine when that engine also serves own (mp4box, mediabunny); otherwise on the own worker; otherwise in the calling thread when inline. So `createProbe({ engines: [mp4box()], engine: 'mp4box', fallback: ['own'] })` starts one worker for both engines.
+- **Routing of own.** Own runs on the custom worker if it lists own; otherwise on the worker of the default engine when that engine also serves own (mp4box, mediabunny); otherwise on the own worker; otherwise on the worker of the first registered descriptor that also serves own. Inline, the same order picks the in-thread modules, with the built-in in-thread own last. So `createProbe({ engines: [mp4box()], engine: 'mp4box', fallback: ['own'] })` starts one worker for both engines.
 - **Inline.** In the calling thread each engine loads as a lazy chunk. An engine listed only on a custom worker (mp4box or mediabunny without its descriptor) cannot run there and rejects with `ProbeError('unsupported-environment')`.
 
 ### WireOptions (parser options)
