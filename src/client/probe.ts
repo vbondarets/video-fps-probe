@@ -11,14 +11,13 @@ export interface CoreOptions extends BaseOptions<EngineId> {
   engines?: readonly EngineDescriptor[];
 }
 
-type Route = { kind: string; pool: () => WorkerPool } | { load: () => Promise<EngineModule> } | { error: ProbeError };
+export type Route = { kind: string; pool: () => WorkerPool } | { load: () => Promise<EngineModule> } | { error: ProbeError };
 
 export type Run = (id: EngineId, file: Blob, name: string, wire: WireOptions, call: CallOptions<EngineId>) => Promise<InlineReply>;
 
 export interface CompareContext {
   engines: readonly EngineId[];
-  kindOf(id: EngineId): string;
-  has(id: EngineId): boolean;
+  routes: ReadonlyMap<EngineId, Route>;
   run: Run;
   defaults?: WireOptions;
 }
@@ -99,22 +98,12 @@ export function createProbeCore(options: CoreOptions): Probe<EngineId> {
   };
 
   const engines = [...routes.keys()];
-  const context: CompareContext = {
-    engines,
-    kindOf: (id) => {
-      const route = routes.get(id);
-      return route && 'kind' in route ? route.kind : id;
-    },
-    has: (id) => routes.has(id),
-    run,
-    defaults,
-  };
 
   return {
     engines,
     analyze,
     tryAnalyze: (file, call) => analyze(file, call).catch(() => null),
-    compare: (file, o) => lazy(import('./compare.ts'), null).then((m) => m.compare(context, file, o)),
+    compare: (file, o) => lazy(import('./compare.ts'), null).then((m) => m.compare({ engines, routes, run, defaults }, file, o)),
     async prewarm(o = {}) {
       const containers = o.containers ?? ['isobmff'];
       const warm = new Map<WorkerPool, WorkerEngineId[]>();

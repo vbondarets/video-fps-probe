@@ -8,7 +8,7 @@ import type { CompareOptions, CompareResult, EngineOutcome, ProbeResult } from '
 export async function compare<K extends EngineId>(ctx: CompareContext, file: Blob, o: CompareOptions<K> = {}): Promise<CompareResult<K>> {
   const name = nameOf(file);
   const ids = [...new Set(o.engines ?? (ctx.engines.filter((id) => id !== 'rvfc') as K[]))];
-  const missing = ids.find((id) => !ctx.has(id));
+  const missing = ids.find((id) => !ctx.routes.has(id));
   if (missing) throw new ProbeError('engine-not-registered', `engine ${missing} is not registered`, { engine: missing });
   const wire = { ...ctx.defaults };
   const { signal, timeoutMs, onProgress } = o;
@@ -32,7 +32,8 @@ export async function compare<K extends EngineId>(ctx: CompareContext, file: Blo
 
   const groups = new Map<string, K[]>();
   for (const id of ids) {
-    const kind = ctx.kindOf(id);
+    const route = ctx.routes.get(id);
+    const kind = route && 'kind' in route ? route.kind : id;
     groups.set(kind, [...(groups.get(kind) ?? []), id]);
   }
   const settled = new Map<K, EngineOutcome>();
