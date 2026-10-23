@@ -140,6 +140,24 @@ describe('serveProbeWorker', () => {
     expect(await self.settled(0)).toMatchObject({ type: 'error', code: 'protocol' });
   });
 
+  it('replies protocol to a warm request with an unknown container and to an analyze request without a Blob file', async () => {
+    const own = fakeEngine('any');
+    const self = serve({ own });
+    self.send({ v: 1, type: 'warm', id: 1, engines: ['own'], containers: ['ogg'] });
+    expect(await self.settled(1)).toMatchObject({ v: 1, type: 'error', id: 1, aborted: false, code: 'protocol' });
+    self.send({ v: 1, type: 'warm', id: 2, engines: ['own'], containers: 'isobmff' });
+    expect(await self.settled(2)).toMatchObject({ type: 'error', code: 'protocol' });
+    self.send({ v: 1, type: 'warm', id: 3, engines: 'own', containers: ['isobmff'] });
+    expect(await self.settled(3)).toMatchObject({ type: 'error', code: 'protocol' });
+    self.send({ v: 1, type: 'analyze', id: 4, file: { size: 8 }, name: 'a.mp4', engine: 'own', options: {} });
+    expect(await self.settled(4)).toMatchObject({ type: 'error', id: 4, aborted: false, code: 'protocol' });
+    self.send({ v: 1, type: 'analyze', id: 5, name: 'b.mp4', engine: 'own', options: {} });
+    expect(await self.settled(5)).toMatchObject({ type: 'error', code: 'protocol' });
+    expect(own.calls).toEqual([]);
+    self.send({ v: 1, type: 'warm', id: 6, engines: ['own'], containers: [] });
+    expect(await self.settled(6)).toEqual({ v: 1, type: 'warmed', id: 6 });
+  });
+
   it('warms the requested engines and the own parsers for the requested containers', async () => {
     const warmed: string[][] = [];
     const engine: EngineModule = { ...fakeEngine(['isobmff']), warm: async (containers) => void warmed.push([...containers]) };

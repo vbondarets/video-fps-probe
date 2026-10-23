@@ -26,6 +26,8 @@ async function familyOf(blob: BlobLike): Promise<ContainerFamily | null> {
 
 const failure = (message: string, code: WorkerErrorCode) => Object.assign(new Error(message), { code });
 
+const isFamily = (c: unknown): c is ContainerFamily => c === 'isobmff' || c === 'matroska';
+
 export function serveProbeWorker(engines: Partial<Record<WorkerEngineId, EngineSource>>): void {
   const ctx = self as unknown as {
     postMessage(message: WorkerResponse): void;
@@ -65,6 +67,7 @@ export function serveProbeWorker(engines: Partial<Record<WorkerEngineId, EngineS
     running.set(job.id, controller);
     let lastProgress = 0;
     try {
+      if (!(job.file instanceof Blob)) throw failure('analyze request without a Blob file', 'protocol');
       const engine = await load(job.engine);
       if (engine.containers !== 'any') {
         const family = await familyOf(job.file);
@@ -90,6 +93,7 @@ export function serveProbeWorker(engines: Partial<Record<WorkerEngineId, EngineS
 
   const warmJob = async (job: WarmRequest & { id: number }) => {
     try {
+      if (![job.engines, job.containers].every(Array.isArray) || !job.containers.every(isFamily)) throw failure('malformed warm request', 'protocol');
       await Promise.all(job.engines.map(async (id) => (await load(id)).warm?.(job.containers)));
       post({ type: 'warmed', id: job.id });
     } catch (e) {
