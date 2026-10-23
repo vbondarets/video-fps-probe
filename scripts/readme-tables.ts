@@ -911,6 +911,58 @@ function packageBlock(inp: Inputs, doc: Doc): string[] {
   ];
 }
 
+function sizeBlock(inp: Inputs, doc: Doc): string[] {
+  const kb = (name: string, metric: string): string => fmtKB(matrixMetric(inp, name, metric));
+  const viteRow = (name: string, option: string): string =>
+    row([option, `**${kb(name, 'trigger')}**`, kb(name, 'firstMp4'), kb(name, 'allOwn'), matrixFixture(inp, name).workers.length]);
+  const engines = MATRIX_ENGINES.map(([key, label]) => `${label} ${kb(key, key)} (critical path ${kb(key, 'trigger')})`);
+  const v = inp.matrix.versions;
+  return [
+    `**${kb('default', 'trigger')} gzip on the critical path.** That is the package code in the entry chunk of a Vite ${v['vite'] ?? ''} app that imports \`video-fps-probe/lazy\` (${kb('default', 'entry')} together with Vite's preload helper, which any app with a dynamic import already has). Everything else loads lazily, on the first file:`,
+    '',
+    ...table(['Host Vite config', 'Critical path', 'First MP4, lazy', 'All own paths, lazy', 'Worker files'], 'lrrrr', [
+      viteRow('default', "`worker: { format: 'es' }` (recommended)"),
+      viteRow('zero-config', "no worker option (Vite's default format, 'iife')"),
+    ]),
+    '',
+    `Vite builds workers as 'iife' unless told otherwise, and an iife worker cannot split, so without the option the own worker is one file with both parsers. One line in the host's Vite config splits it; module workers run on the whole browser floor:`,
+    '',
+    '```js',
+    "export default defineConfig({ worker: { format: 'es' } });",
+    '```',
+    '',
+    `Engines cost nothing until their entry is imported. Each adds a lazy chunk, loaded on its first run: ${engines.join(', ')}. A custom worker (\`video-fps-probe/client/lazy\`) has a ${kb('custom', 'trigger')} critical path and a ${kb('custom', 'firstMp4')} first MP4; the standalone classic worker file is ${fmtKB(need(inp.matrix.standalone.gzip, 'standalone gzip'))}.`,
+    '',
+    `Measured by \`npm run size:matrix\` on production builds installed from the packed tarball (gzip -9, KB = 1000 bytes); CI fails on any budget overrun. Every configuration is in [docs/benchmarks.md](${doc.link('docs/benchmarks.md')}#package-size), every budget with its reason in [report/size-matrix.md](${doc.link('report/size-matrix.md')}).`,
+  ];
+}
+
+function accuracySummaryBlock(inp: Inputs): string[] {
+  const committed = (e: EngineReport): AccFixture[] => e.fixtures.filter((f) => !isLarge(f, inp.manifest));
+  const tally = (e: EngineReport) => {
+    const fixtures = committed(e);
+    const checks = fixtures.flatMap(checksOf);
+    const n = (v: Verdict): number => checks.filter((c) => c.verdict === v).length;
+    return { fixtures: fixtures.length, checks: checks.length, n, mismatchFixtures: fixtures.filter((f) => checksOf(f).some((c) => c.verdict === 'mismatch')).length };
+  };
+  const own = tally(engine(inp.acc, 'own'));
+  const others = inp.acc.engines
+    .filter((e) => e.engine !== 'own' && !e.loadSkipped)
+    .map((e) => {
+      const t = tally(e);
+      const missing = (['isobmff', 'matroska'] as const).filter((fam) => !(ENGINE_FAMILIES[e.engine] ?? []).includes(fam));
+      const unsupported = committed(e)
+        .filter((f) => f.family !== null && missing.includes(f.family))
+        .flatMap(checksOf)
+        .filter((c) => c.verdict === 'mismatch').length;
+      const files = missing.map((fam) => (fam === 'isobmff' ? 'MP4 and MOV' : 'WebM and Matroska')).join(' or ');
+      return `${ENGINE_LABEL[e.engine] ?? e.engine} has ${t.n('mismatch')} mismatches on ${t.mismatchFixtures} fixtures${unsupported > 0 ? ` (${unsupported} of them on ${files} files it cannot open)` : ''}`;
+    });
+  return [
+    `**${own.n('mismatch')} mismatches against ffprobe ${inp.acc.ffprobeVersions.map((s) => s.replace(/^ffprobe version /, '').replace(/-.*$/, '')).join(', ')}** on the ${own.fixtures} committed fixtures: ${own.checks} field checks, ${own.n('exact')} exact, ${own.n('within-tol')} within tolerance, ${own.n('known-deviation')} known deviation${own.n('known-deviation') === 1 ? '' : 's'} with a recorded reason, ${own.n('n/a')} not applicable. On the same fixtures ${others.join(' and ')}.`,
+  ];
+}
+
 function speedBlock(inp: Inputs): string[] {
   const own = engine(inp.acc, 'own');
   const warm = inp.bench.chrome.warm;
@@ -1179,7 +1231,7 @@ function integrationBlock(inp: Inputs): string[] {
   const cpu = Object.values(ic.cpu.perFile).map((f) => `\`${f.name}\` ${fmtMs(f.medianMs)} ms`);
   const stale = integrationStale(inp)
     ? [
-        `**Not current.** Measured on ${ic.environment.date.slice(0, 10)} on an earlier build (worker entry \`${ic.chunks['entry']}\`). The worker entry and parser chunks of the current build differ (see [Bundle size](#bundle-size)), so re-run \`scripts/bench/integration.mjs\` before quoting these sizes and timings.`,
+        `**Not current.** Measured on ${ic.environment.date.slice(0, 10)} on an earlier build (worker entry \`${ic.chunks['entry']}\`). The worker entry and parser chunks of the current build differ (see [Demo bundle size](#demo-bundle-size)), so re-run \`scripts/bench/integration.mjs\` before quoting these sizes and timings.`,
         '',
       ]
     : [];
@@ -1211,9 +1263,14 @@ const BLOCKS: Record<string, (inp: Inputs, doc: Doc) => string[]> = {
   deviations: deviationsBlock,
   rvfc: rvfcBlock,
   corpus: corpusBlock,
+  size: sizeBlock,
+  'accuracy-summary': accuracySummaryBlock,
 };
 
-export const TARGETS: ReadonlyArray<{ path: string; blocks: readonly string[] }> = [{ path: 'README.md', blocks: Object.keys(BLOCKS) }];
+export const TARGETS: ReadonlyArray<{ path: string; blocks: readonly string[] }> = [
+  { path: 'README.md', blocks: ['size', 'accuracy-summary'] },
+  { path: 'docs/benchmarks.md', blocks: ['headline', 'reads', 'profile', 'engines', 'accuracy', 'deviations', 'approaches', 'rvfc', 'speed', 'package', 'bundle', 'integration', 'corpus'] },
+];
 
 export function renderBlocks(inp: Inputs, path: string, names: readonly string[]): Record<string, string> {
   const doc: Doc = { link: (to) => posix.relative(posix.dirname(path), to) };

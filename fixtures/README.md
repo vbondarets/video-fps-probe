@@ -164,4 +164,4 @@ Accepted differences between an engine and ffprobe live in `known-deviations/`, 
 (`own-isobmff.json`, `own-matroska.json`, optional files for the library engines). Each entry maps a fixture and a
 field to a plain reason; an entry that no longer matches is reported as stale. The format and the rules are in
 [known-deviations/README.md](known-deviations/README.md). The own engine has one entry today
-(`vfr_concat_10_30_60.webm` in `own-matroska.json`; `own-isobmff.json` is empty), listed in the main README.
+(`vfr_concat_10_30_60.webm` in `own-matroska.json`; `own-isobmff.json` is empty), listed in [docs/benchmarks.md](../docs/benchmarks.md#known-deviations).
