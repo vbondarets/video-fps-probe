@@ -1,0 +1,48 @@
+import { ProbeError } from '../api/errors.ts';
+import type { EngineId } from '../core/types.ts';
+import type { EngineDescriptor } from '../plugins/types.ts';
+import type { LazyProbe, Probe } from './types.ts';
+
+export const knownEngines = <Id extends EngineId>(worker: { readonly engines: readonly EngineId[] } | string | undefined, descriptors: readonly EngineDescriptor[] = []): Id[] =>
+  [...new Set(['own', ...(typeof worker === 'object' ? worker.engines : []), ...descriptors.map((d) => d.id)])] as Id[];
+
+export function lazyStub<Id extends EngineId>(factory: () => Promise<Probe<Id>>, known: readonly Id[]): LazyProbe<Id> {
+  let probe: Probe<Id> | null = null;
+  let loading: Promise<Probe<Id>> | null = null;
+  let destroyed = false;
+  const aborted = () => Promise.reject(new ProbeError('aborted', 'probe destroyed'));
+  const load = () =>
+    (loading ??= new Promise<Probe<Id>>((resolve) => resolve(factory())).then(
+      (p) => {
+        if (destroyed) p.destroy();
+        return (probe = p);
+      },
+      (e: unknown) => {
+        loading = null;
+        throw e;
+      },
+    ));
+  const forward = <T>(call: (p: Probe<Id>) => Promise<T>): Promise<T> => {
+    if (destroyed) return aborted();
+    const loaded = probe;
+    return loaded ? new Promise<T>((resolve) => resolve(call(loaded))) : load().then((p) => (destroyed ? aborted() : call(p)));
+  };
+  return {
+    get loaded() {
+      return probe !== null;
+    },
+    get engines() {
+      return probe?.engines ?? known;
+    },
+    load,
+    analyze: (file, o) => forward((p) => p.analyze(file, o)),
+    tryAnalyze: (file, o) => forward((p) => p.tryAnalyze(file, o)).catch(() => null),
+    compare: (file, o) => forward((p) => p.compare(file, o)),
+    prewarm: (o) => forward((p) => p.prewarm(o)).catch(() => {}),
+    dispose: () => probe?.dispose(),
+    destroy: () => {
+      destroyed = true;
+      probe?.destroy();
+    },
+  };
+}

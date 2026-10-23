@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EngineId } from '../../src/core/types.ts';
 import type { Probe } from '../../src/client/types.ts';
 import { fakeResult, FakeWorker } from './fake-worker.ts';
-import { customWorker, mp4File } from './probe-helpers.ts';
+import { customWorker, mainDescriptor, mp4File, workerDescriptor } from './probe-helpers.ts';
 
 const loads = vi.hoisted(() => ({ root: 0, client: 0 }));
 
@@ -189,6 +189,18 @@ describe('lazy entries', () => {
     expect(String(FakeWorker.instances[1].label)).toMatch(/\/worker\/own\.worker\.ts$/);
     expect(FakeWorker.instances[1].posted).toEqual([{ v: 1, id: 1, type: 'warm', engines: ['own'], containers: ['isobmff'] }]);
     expect(stub.engines).toEqual(['own']);
+  });
+
+  it('lists the engines known from the options before the probe loads, as the loaded probe lists them', async () => {
+    const root = lazyProbe({ engines: [mainDescriptor('rvfc'), workerDescriptor('mp4box'), mainDescriptor('rvfc')] });
+    const client = lazyProbeClient({ worker: customWorker('mediabunny', 'own'), engines: [mainDescriptor('rvfc'), workerDescriptor('mp4box'), workerDescriptor('mediabunny')] });
+    const inline = lazyProbeClient({ worker: 'inline', engines: [mainDescriptor('rvfc')] });
+    expect([lazyProbe().engines, root.engines, client.engines, inline.engines]).toEqual([['own'], ['own', 'rvfc', 'mp4box'], ['own', 'mediabunny', 'rvfc', 'mp4box'], ['own', 'rvfc']]);
+    expect([root.loaded, client.loaded, inline.loaded]).toEqual([false, false, false]);
+    for (const stub of [root, client]) {
+      const before = stub.engines;
+      expect((await stub.load()).engines).toEqual(before);
+    }
   });
 
   it('lazyProbeClient destroyed before its chunk loads spawns no worker and posts no job', async () => {
