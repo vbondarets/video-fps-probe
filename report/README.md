@@ -32,6 +32,7 @@ Timings depend on the machine and on what else runs on it; verdicts, reads, byte
 - `io` per fixture: reads, unique bytes read, percent of the file and the median `analyze()` time in Node over `--repeat` runs (library engines run the long files once).
 - JSON: `engines[].fixtures[]` with `io`, `fileChecks` and `tracks[].checks` (`id`, `verdict`, `app`, `ffprobe`, optional `deviation`); `rules` maps `<family>:<check>` to the rule text.
 - `--with-large` adds the local files in `fixtures/large` (generated with `npm run fixtures:generate -- --with-long`, not committed). The README tables need the two long files, so regenerate with this flag.
+- The committed `accuracy.md` and `accuracy.json` cover 116 fixtures: the 111 committed ones plus 5 local files of `fixtures/large` that are not committed (the two `--with-long` files and the three `--with-big` 1080p files). Its own-engine totals (1832 checks, 1769 exact) therefore include those 5 files. On the committed corpus alone, `npm run compare -- --no-write` gives the own engine 1747 checks: 1690 exact, 2 within-tol, 1 known-deviation, 0 mismatch and 54 n/a.
 - `--filter <text>` writes `accuracy.local.*` (git-ignored) instead; `--mkv-mode header|probe|exact|auto` sets the Matroska scan mode; `--self-test` checks the comparison rules.
 
 ## size.md, size.json
@@ -56,6 +57,7 @@ Timings depend on the machine and on what else runs on it; verdicts, reads, byte
 - Needs a build in `dist/` and Chrome. Serves `dist/` gzip-compressed from `127.0.0.1` and measures two pages: a near-empty host model whose only probe code in the critical path is a small trigger, and the demo app as a reference.
 - Network profiles (none, cable, fast 4G, slow 4G, 3G) are CDP request-level throttling; each first-file scenario (cold, prefetched, prewarmed) is the median of 5 page loads.
 - Main-thread blocking (long tasks, TBT, frame and input gaps), memory per renderer process (3 fresh browsers) and worker time per file.
+- The batch rows pick every file in `fixtures/files` at once (the 111 committed fixtures in the committed report); the 3 h row and the long-file CPU rows need the two `--with-long` files in `fixtures/large` and are left out without them.
 - `--render report/integration-cost.json` redraws the Markdown without measuring; `--skip latency,main,memory,cpu` drops sections; `--no-write` prints only.
 
 ## average-user.md
