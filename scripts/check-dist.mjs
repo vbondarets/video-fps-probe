@@ -1,11 +1,12 @@
 import { execFileSync, execSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { parseArgs } from 'node:util';
 import ts from 'typescript';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const DIST = join(REPO_ROOT, 'dist');
 const KB = 1000;
 
 export const UNPACKED_CAP = 400 * KB;
@@ -135,8 +136,8 @@ function exportedEntries(manifest) {
   return entries;
 }
 
-function ssrImport(files) {
-  const urls = files.map((f) => pathToFileURL(join(DIST, f)).href);
+function ssrImport(dist, files) {
+  const urls = files.map((f) => pathToFileURL(join(dist, f)).href);
   const script = `for (const url of ${JSON.stringify(urls)}) { try { await import(url); } catch (e) { console.log(url + ': ' + (e && e.message)); process.exitCode = 1; } }`;
   try {
     execFileSync(process.execPath, ['--input-type=module', '-e', script], { cwd: REPO_ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
@@ -147,26 +148,27 @@ function ssrImport(files) {
   }
 }
 
-export function checkDist({ pack = true, ssr = true } = {}) {
+export function checkDist({ pack = true, ssr = true, repo = REPO_ROOT } = {}) {
   const problems = [];
   const fail = (message) => problems.push(message);
-  const manifest = JSON.parse(readFileSync(join(REPO_ROOT, 'package.json'), 'utf8'));
-  const files = walk(DIST);
-  if (files.length === 0) return { problems: [`${posix(relative(REPO_ROOT, DIST))} is empty or missing: run npm run build:lib`], files, pack: null };
-  const texts = new Map(files.filter((f) => /\.(?:js|d\.ts)$/.test(f)).map((f) => [f, readFileSync(join(DIST, f), 'utf8')]));
+  const dist = join(repo, 'dist');
+  const manifest = JSON.parse(readFileSync(join(repo, 'package.json'), 'utf8'));
+  const files = walk(dist);
+  if (files.length === 0) return { problems: [`${posix(relative(repo, dist))} is empty or missing: run npm run build:lib`], files, pack: null };
+  const texts = new Map(files.filter((f) => /\.(?:js|d\.ts)$/.test(f)).map((f) => [f, readFileSync(join(dist, f), 'utf8')]));
 
   for (const f of files) if (!ALLOWED.some((re) => re.test(f))) fail(`not allowed in dist: ${f}`);
 
   for (const { key, file } of exportedEntries(manifest)) {
-    if (!existsSync(join(DIST, file))) fail(`export ${key} points at a missing file dist/${file}`);
+    if (!existsSync(join(dist, file))) fail(`export ${key} points at a missing file dist/${file}`);
     const types = manifest.exports[key].types?.replace(/^\.\/dist\//, '');
-    if (types && !existsSync(join(DIST, types))) fail(`export ${key} types point at a missing file dist/${types}`);
+    if (types && !existsSync(join(dist, types))) fail(`export ${key} types point at a missing file dist/${types}`);
   }
   for (const [key, targets] of Object.entries(manifest.typesVersions?.['*'] ?? {})) {
-    for (const t of targets) if (!existsSync(join(REPO_ROOT, t))) fail(`typesVersions ${key} points at a missing file ${t}`);
+    for (const t of targets) if (!existsSync(join(repo, t))) fail(`typesVersions ${key} points at a missing file ${t}`);
   }
   for (const [key, entry] of Object.entries(manifest.exports ?? {})) {
-    if (typeof entry === 'string' && entry !== './package.json' && !existsSync(join(REPO_ROOT, entry))) fail(`export ${key} points at a missing file ${entry}`);
+    if (typeof entry === 'string' && entry !== './package.json' && !existsSync(join(repo, entry))) fail(`export ${key} points at a missing file ${entry}`);
   }
 
   for (const [file, text] of texts) {
@@ -178,8 +180,8 @@ export function checkDist({ pack = true, ssr = true } = {}) {
       if (TS_EXTENSION.test(specifier)) fail(`${file}: .ts specifier ${specifier}`);
       if (!bare(specifier)) {
         const target = posix(join(dirname(file), specifier));
-        const exists = existsSync(join(DIST, target)) || (file.endsWith('.d.ts') && existsSync(join(DIST, target.replace(/\.js$/, '.d.ts'))));
-        if (!exists) fail(`${file}: ${dynamic ? 'import()' : 'import'} ${specifier} does not resolve inside dist`);
+        const resolved = file.endsWith('.d.ts') ? target.replace(/\.js$/, '.d.ts') : target;
+        if (!existsSync(join(dist, resolved))) fail(`${file}: ${dynamic ? 'import()' : 'import'} ${specifier} does not resolve inside dist${resolved === target ? '' : ` (no ${resolved})`}`);
       }
       const peer = peerOf(specifier);
       if (file.endsWith('.d.ts')) {
@@ -198,7 +200,7 @@ export function checkDist({ pack = true, ssr = true } = {}) {
     for (const url of scan.urls) {
       if (url === null) fail(`${file}: new URL() with a non-literal specifier and import.meta.url`);
       else if (TS_EXTENSION.test(url)) fail(`${file}: new URL() of the .ts file ${url}`);
-      else if (!existsSync(join(DIST, dirname(file), url))) fail(`${file}: new URL() of ${url}, which does not exist in dist`);
+      else if (!existsSync(join(dist, dirname(file), url))) fail(`${file}: new URL() of ${url}, which does not exist in dist`);
     }
     for (const hazard of new Set(scan.hazards)) fail(`${file}: calls ${hazard}, which ESM output and peer isolation do not allow`);
   }
@@ -215,7 +217,7 @@ export function checkDist({ pack = true, ssr = true } = {}) {
       }
       const url = lit[1] ?? lit[2];
       if (!url.endsWith('.js')) fail(`${file}: worker URL ${url} does not end in .js`);
-      if (!existsSync(join(DIST, dirname(file), url))) fail(`${file}: worker URL ${url} does not exist`);
+      if (!existsSync(join(dist, dirname(file), url))) fail(`${file}: worker URL ${url} does not exist`);
       if (!LITERAL_HOSTS.includes(file)) fail(`${file}: worker literal outside ${LITERAL_HOSTS.join(', ')}`);
     }
   }
@@ -253,8 +255,8 @@ export function checkDist({ pack = true, ssr = true } = {}) {
   }
 
   if (ssr) {
-    const entries = exportedEntries(manifest).map((e) => e.file).filter((f) => existsSync(join(DIST, f)) && !/\.worker\.js$/.test(f));
-    for (const line of ssrImport(entries)) fail(`SSR import: ${line}`);
+    const entries = exportedEntries(manifest).map((e) => e.file).filter((f) => existsSync(join(dist, f)) && !/\.worker\.js$/.test(f));
+    for (const line of ssrImport(dist, entries)) fail(`SSR import: ${line}`);
   }
 
   let listing = null;
@@ -276,7 +278,48 @@ export function checkDist({ pack = true, ssr = true } = {}) {
   return { problems, files, pack: listing };
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+export function runSelfTest() {
+  let total = 0;
+  const failures = [];
+  const repo = mkdtempSync(join(tmpdir(), 'check-dist-'));
+  writeFileSync(join(repo, 'package.json'), `${JSON.stringify({ name: 'check-dist-self-test', exports: {} })}\n`);
+  const problemsOf = (tree) => {
+    rmSync(join(repo, 'dist'), { recursive: true, force: true });
+    for (const [file, text] of Object.entries(tree)) {
+      const path = join(repo, 'dist', file);
+      mkdirSync(dirname(path), { recursive: true });
+      writeFileSync(path, text);
+    }
+    return checkDist({ repo, pack: false, ssr: false }).problems;
+  };
+  const expectProblem = (label, problems, needle, wanted) => {
+    total++;
+    if (problems.some((p) => p.includes(needle)) !== wanted) failures.push(`${label}: expected ${wanted ? 'a' : 'no'} problem with "${needle}", got ${problems.length > 0 ? problems.join('; ') : 'none'}`);
+  };
+  try {
+    const x = { 'core/x.js': 'export const x = 1;\n' };
+    const reexport = { 'core/a.js': "export { x } from './x.js';\n", 'core/a.d.ts': "export { x } from './x.js';\n" };
+    const undeclared = problemsOf({ ...x, ...reexport });
+    expectProblem('a .d.ts import of ./x.js fails when only x.js exists', undeclared, 'core/a.d.ts: import ./x.js does not resolve inside dist (no core/x.d.ts)', true);
+    expectProblem('a .js import of ./x.js resolves to x.js', undeclared, 'core/a.js:', false);
+    expectProblem('an import type of ./x.js fails when only x.js exists', problemsOf({ ...x, 'core/b.d.ts': "export type X = typeof import('./x.js');\n" }), 'core/b.d.ts: import ./x.js does not resolve inside dist (no core/x.d.ts)', true);
+    expectProblem('a .d.ts import of ./x.js passes when x.d.ts exists', problemsOf({ ...x, 'core/x.d.ts': 'export declare const x: number;\n', ...reexport }), 'core/a.d.ts:', false);
+    expectProblem('a .js import of a missing file fails', problemsOf({ 'core/a.js': "export { x } from './x.js';\n" }), 'core/a.js: import ./x.js does not resolve inside dist', true);
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+  }
+  if (failures.length > 0) {
+    for (const f of failures) console.error(`self-test FAIL ${f}`);
+    console.error(`self-test: ${failures.length} of ${total} checks failed`);
+    return 1;
+  }
+  console.log(`self-test: ${total} checks passed`);
+  return 0;
+}
+
+function main() {
+  const { values } = parseArgs({ options: { 'self-test': { type: 'boolean', default: false } }, strict: true });
+  if (values['self-test']) return runSelfTest();
   const { problems, files, pack } = checkDist();
   for (const p of problems) console.error(`FAIL: ${p}`);
   if (pack) {
@@ -286,5 +329,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     console.log(`package: ${pack.entryCount} files, ${kb(pack.size)} packed, ${kb(pack.unpackedSize)} unpacked (${caps})`);
   }
   if (problems.length === 0) console.log(`dist: ${files.length} files pass every check`);
-  process.exitCode = problems.length > 0 ? 1 : 0;
+  return problems.length > 0 ? 1 : 0;
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  process.exitCode = main();
 }

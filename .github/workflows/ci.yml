@@ -82,6 +82,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Self-test the package checks
+        run: node scripts/check-dist.mjs --self-test
+
       - name: Build the library
         run: npm run build:lib
 
