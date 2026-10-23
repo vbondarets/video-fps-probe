@@ -170,7 +170,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   else if (command === 'serve') await serve(dir, values.port ? Number(values.port) : CONSUMERS_PORT);
   else {
     console.error('Usage: node scripts/consumers.mjs setup|build|serve [--dir <consumers dir>] [--only <fixture,...>] [--port <n>]');
-    console.error('CONSUMERS_OFFLINE=1 makes setup install from the npm cache only (npm install --offline) with an empty npmrc as --userconfig, so no registry credentials are read.');
+    console.error('CONSUMERS_OFFLINE=1 isolates only the npm install step of setup: it installs from the npm cache only (npm install --offline) with an empty npmrc as --userconfig.');
+    console.error("Not isolated: npm run build:lib, the npm pack --dry-run of check-dist and npm pack run with your npm config, any token included. They fetch no packages, but npm's update check can contact the registry unless update-notifier is false.");
     process.exitCode = 2;
   }
 }
