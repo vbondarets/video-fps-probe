@@ -63,6 +63,34 @@ jobs:
       - name: Check the README tables against the reports
         run: node scripts/readme-tables.ts --check
 
+  package:
+    name: Package
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the library
+        run: npm run build:lib
+
+      - name: Check the package (publint and check-dist)
+        run: npm run check:package
+
+      - name: Check the package types (attw)
+        run: npm run check:types
+
   e2e:
     name: End-to-end (Chromium, Firefox, WebKit)
     runs-on: ubuntu-latest
