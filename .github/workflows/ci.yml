@@ -69,7 +69,7 @@ jobs:
           path: report/size.*
           if-no-files-found: ignore
 
-      - name: Check the README tables against the reports
+      - name: Check the generated doc tables against the reports
         run: node scripts/readme-tables.ts --check
 
   package:
@@ -189,7 +189,7 @@ jobs:
           path: report/size-matrix.*
           if-no-files-found: ignore
 
-      - name: Check the README size matrix against this measurement
+      - name: Check the generated doc tables against this measurement
         run: node scripts/readme-tables.ts --check
 
       - name: Run the consumer smoke tests (Chromium, Firefox, WebKit)
