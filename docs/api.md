@@ -183,7 +183,7 @@ interface BlobLike {
 }
 ```
 
-Runs in the calling thread, without a worker: for Node, scripts and tests. `analyze(await fs.openAsBlob(path), { name: path })` in Node; in Node 24 `openAsBlob` wraps the size of files above 4 GiB modulo 2^32, so pass a `BlobLike` over a file handle for those. The parser chunks load with `import()` on first use. `{ engine: mp4box() }` or `{ engine: mediabunny() }` runs that library instead (the peer must be installed). With own it rejects only on an abort (the signal's reason, or an `AbortError`); a library engine can also reject when its chunk fails to load, and rvfc without a host or a DOM.
+Runs in the calling thread, without a worker: for Node, scripts and tests. `analyze(await fs.openAsBlob(path), { name: path })` in Node; in Node 24 `openAsBlob` wraps the size of files above 4 GiB modulo 2^32, so pass a `BlobLike` over a file handle for those. The parser chunks load with `import()` on first use. `{ engine: mp4box() }` or `{ engine: mediabunny() }` runs that library instead (the peer must be installed). With own it rejects on an abort (the signal's reason, or an `AbortError`) and, with the import error as it is, when the chunk with the worker runtime fails to load. A parser or statistics chunk that fails to load is not a rejection: own returns a result whose `error` is the import error's message. A library engine also rejects when its chunk fails to load, and rvfc without a host or a DOM.
 
 ## Engines
 
@@ -295,7 +295,7 @@ type ProbeResult = FileResult & {
 | `nominalFps` | `Rational & { kind: 'exact' \| 'snapped' \| 'declared' }`: the rate when every interval is equal, a standard rate when CFR timestamps jitter, or the declared Matroska rate |
 | `dominantFps` | `{ rate, share }` for a VFR track where one interval covers at least half of the frames; `share` counts frames |
 | `minFps`, `maxFps` | from the longest and the shortest frame interval |
-| `isVfr` | true when any interval differs from the median by more than `max(1 tick, 0.5%)`, plus 1 ms on millisecond grids ([the VFR rule](benchmarks.md#statistics-and-the-vfr-rule)); null when unknown |
+| `isVfr` | true when any interval differs from the median by more than `max(1 tick, round(0.005 x median), msGridTicks)`, where `msGridTicks` is 1 ms in ticks when the timescale is above 1000 and every interval is a whole number of milliseconds, else 0 ([the VFR rule](benchmarks.md#statistics-and-the-vfr-rule)); null when unknown |
 | `vfrRatio`, `distinctDeltas` | share of intervals off the median, number of distinct intervals |
 | `duplicateTimestamps` | frames sharing a timestamp (excluded from the statistics) |
 | `timestampsQuantized` | CFR content on 1 ms ticks (Matroska, MP4 remuxed from Matroska) |
@@ -401,13 +401,13 @@ function isTimeoutError(e: unknown): boolean; // ProbeError 'timeout', or any er
 |---|---|
 | `aborted` | the call's `signal` was aborted, or the probe was destroyed |
 | `timeout` | `timeoutMs` passed after a worker took the job (or after an in-thread start) |
-| `worker-failed` | a worker could not start or crashed, a chunk the probe loads failed to load (in a worker or on the main thread), or an engine threw |
+| `worker-failed` | a worker could not start or crashed; a worker could not load the engine of a job (the mp4box or mediabunny chunk or a custom loader, with the statistics chunk loaded next to it); a main-thread chunk failed to load (the inline, fallback or compare chunk, or the module of an in-thread engine); or an engine rejected. Not the parser and statistics chunks of own: see below |
 | `engine-not-registered` | the engine id has no route in this probe (thrown at creation for `engine` and `fallback`, rejected at call time otherwise) |
 | `unknown-engine` | the worker does not serve the engine it was asked for: `worker.engines` lists an engine that `serveProbeWorker` was not given |
 | `unsupported-environment` | the engine cannot run here: a worker-only engine without `Worker`, or rvfc without a DOM |
 | `protocol` | the worker speaks another protocol version or got a malformed message, usually a worker from another package version |
 
-Problems with the file itself are never errors: they are `result.error` (and `ok: false` in `summarize`).
+Problems with the file itself are never errors: they are `result.error` (and `ok: false` in `summarize`). So is a parser or statistics chunk of own that fails to load, in a worker or in the calling thread: own loads them itself and returns the import error's message as `result.error`, so the call resolves and a fallback chain moves on to its next engine. A rate profile chunk that fails to load leaves `rateProfile` null.
 
 Every rejection of a probe is a `ProbeError`. The exception is the load of a lazy stub: when its factory rejects, the stub rejects with that error as it is ([Lazy stubs](#lazy-stubs)).
 
