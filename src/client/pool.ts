@@ -6,7 +6,7 @@ export const KILL_AFTER_MS = 1500;
 export const DEFAULT_IDLE_TIMEOUT_MS = 30_000;
 const MAX_DELAY_MS = 2 ** 31 - 1;
 
-const delayOf = (ms = 0): number => (ms > 0 && ms <= MAX_DELAY_MS ? ms : 0);
+export const delayOf = (ms = 0): number => (ms > 0 && ms <= MAX_DELAY_MS ? ms : 0);
 
 export interface PoolOptions {
   create: () => Worker;
