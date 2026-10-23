@@ -2,15 +2,68 @@
   "name": "video-fps-probe",
   "private": true,
   "version": "0.0.0",
+  "description": "Video frame rate, frame count and VFR detection from MP4/MOV/WebM/MKV container headers in a Web Worker. ffprobe-exact, no decoding.",
   "type": "module",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vbondarets/video-fps-probe.git"
+  },
+  "homepage": "https://vbondarets.github.io/video-fps-probe/",
+  "bugs": "https://github.com/vbondarets/video-fps-probe/issues",
+  "keywords": [
+    "video",
+    "fps",
+    "frame-rate",
+    "vfr",
+    "mp4",
+    "mov",
+    "webm",
+    "mkv",
+    "ffprobe",
+    "web-worker"
+  ],
   "sideEffects": [
     "./dist/worker/*.worker.js",
     "./dist/standalone/*.js",
     "./src/worker/*.worker.ts"
   ],
-  "engines": {
-    "node": ">=22.12"
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
+  "types": "./dist/index.d.ts",
+  "module": "./dist/index.js",
+  "typesVersions": {
+    "*": {
+      "lazy": [
+        "dist/lazy.d.ts"
+      ],
+      "client": [
+        "dist/client/index.d.ts"
+      ],
+      "client/lazy": [
+        "dist/client/lazy.d.ts"
+      ],
+      "mp4box": [
+        "dist/plugins/mp4box.d.ts"
+      ],
+      "mediabunny": [
+        "dist/plugins/mediabunny.d.ts"
+      ],
+      "rvfc": [
+        "dist/plugins/rvfc.d.ts"
+      ],
+      "worker-runtime": [
+        "dist/worker/runtime.d.ts"
+      ],
+      "engines/mp4box": [
+        "dist/engines/mp4box.d.ts"
+      ],
+      "engines/mediabunny": [
+        "dist/engines/mediabunny.d.ts"
+      ]
+    }
   },
   "exports": {
     ".": {
@@ -53,7 +106,31 @@
       "types": "./dist/engines/mediabunny.d.ts",
       "default": "./dist/engines/mediabunny.js"
     },
+    "./standalone/own.worker.js": "./dist/standalone/own.worker.js",
     "./package.json": "./package.json"
+  },
+  "peerDependencies": {
+    "mp4box": "^2.4.1",
+    "mediabunny": "^1.62.0",
+    "react": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "mp4box": {
+      "optional": true
+    },
+    "mediabunny": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    }
+  },
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": ">=22.12",
+      "onFail": "warn"
+    }
   },
   "scripts": {
     "dev": "vite --config demo/vite.config.ts",
@@ -74,20 +151,18 @@
     "size": "node scripts/size-report.mjs demo/dist",
     "bench": "node scripts/bench/run-bench.mjs"
   },
-  "dependencies": {
-    "mediabunny": "1.62.0",
-    "mp4box": "2.4.1",
-    "react": "19.3.1",
-    "react-dom": "19.3.1"
-  },
   "devDependencies": {
     "@playwright/test": "1.64.1",
     "@types/node": "24.19.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.2",
+    "mediabunny": "1.62.0",
+    "mp4box": "2.4.1",
     "oxlint": "1.88.0",
     "publint": "0.3.25",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "rolldown": "1.2.14",
     "typescript": "6.0.3",
     "vite": "8.3.5",
