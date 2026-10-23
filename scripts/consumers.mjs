@@ -53,8 +53,10 @@ export function setup(dir) {
   const manifest = JSON.parse(readFileSync(join(REPO_ROOT, 'package.json'), 'utf8'));
   mkdirSync(dir, { recursive: true });
   for (const f of readdirSync(dir)) if (f.endsWith('.tgz')) rmSync(join(dir, f));
-  const out = execSync(`npm pack --json --pack-destination "${dir}"`, { cwd: REPO_ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
-  const [{ filename }] = JSON.parse(out.slice(out.indexOf('[')));
+  execSync('npm run build:lib', { cwd: REPO_ROOT, stdio: 'inherit' });
+  execFileSync(process.execPath, [join(REPO_ROOT, 'scripts', 'check-dist.mjs')], { cwd: REPO_ROOT, stdio: 'inherit' });
+  const out = execSync(`npm pack --ignore-scripts --json --pack-destination "${dir}"`, { cwd: REPO_ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
+  const [{ filename }] = JSON.parse(out);
   const dependencies = { 'video-fps-probe': `file:./${filename}` };
   for (const name of INSTALLED) {
     const version = manifest.devDependencies[name];
