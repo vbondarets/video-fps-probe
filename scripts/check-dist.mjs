@@ -10,6 +10,7 @@ const KB = 1000;
 
 export const UNPACKED_CAP = 400 * KB;
 export const README_CAP = 90 * KB;
+export const RESEARCH_README_MARKER = '<!-- tables:accuracy:start -->';
 
 const ALLOWED = [/^(?:index|lazy|analyze|probe)\.(?:js|d\.ts)$/, /^(?:core|engines|worker|client|api|plugins|react|standalone)\/[\w./-]+\.(?:js|d\.ts)$/];
 const PACK_EXTRAS = new Set(['package.json', 'README.md', 'LICENSE', 'CHANGELOG.md']);
@@ -266,10 +267,11 @@ export function checkDist({ pack = true, ssr = true } = {}) {
       if (!path.startsWith('dist/') || !ALLOWED.some((re) => re.test(path.slice(5)))) fail(`not allowed in the package: ${path}`);
     }
     for (const extra of PACK_EXTRAS) if (!listing.files.some((f) => f.path === extra)) fail(`missing from the package: ${extra}`);
-    const rest = listing.unpackedSize - readme;
-    if (rest > UNPACKED_CAP) fail(`unpacked size without README.md is ${kb(rest)}, over the ${kb(UNPACKED_CAP)} cap`);
-    if (readme > README_CAP) fail(`README.md is ${kb(readme)}, over the ${kb(README_CAP)} cap`);
-    listing.readme = readme;
+    const researchReadme = readFileSync(join(REPO_ROOT, 'README.md'), 'utf8').includes(RESEARCH_README_MARKER);
+    const capped = researchReadme ? listing.unpackedSize - readme : listing.unpackedSize;
+    if (capped > UNPACKED_CAP) fail(`unpacked size${researchReadme ? ' without README.md' : ''} is ${kb(capped)}, over the ${kb(UNPACKED_CAP)} cap`);
+    if (researchReadme && readme > README_CAP) fail(`README.md is ${kb(readme)}, over the ${kb(README_CAP)} cap that applies while it holds the research tables`);
+    Object.assign(listing, { readme, researchReadme, capped });
   }
   return { problems, files, pack: listing };
 }
@@ -278,7 +280,10 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const { problems, files, pack } = checkDist();
   for (const p of problems) console.error(`FAIL: ${p}`);
   if (pack) {
-    console.log(`package: ${pack.entryCount} files, ${kb(pack.size)} packed, ${kb(pack.unpackedSize)} unpacked (${kb(pack.unpackedSize - pack.readme)} without README.md, cap ${kb(UNPACKED_CAP)}; README.md ${kb(pack.readme)}, cap ${kb(README_CAP)})`);
+    const caps = pack.researchReadme
+      ? `${kb(pack.capped)} without README.md, cap ${kb(UNPACKED_CAP)}, headroom ${kb(UNPACKED_CAP - pack.capped)}; README.md ${kb(pack.readme)}, cap ${kb(README_CAP)} while it holds the research tables, then one ${kb(UNPACKED_CAP)} cap on the whole package`
+      : `cap ${kb(UNPACKED_CAP)}, headroom ${kb(UNPACKED_CAP - pack.capped)}`;
+    console.log(`package: ${pack.entryCount} files, ${kb(pack.size)} packed, ${kb(pack.unpackedSize)} unpacked (${caps})`);
   }
   if (problems.length === 0) console.log(`dist: ${files.length} files pass every check`);
   process.exitCode = problems.length > 0 ? 1 : 0;
