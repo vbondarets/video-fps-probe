@@ -58,7 +58,16 @@ jobs:
         run: npm run build:demo
 
       - name: Check bundle size budgets
+        id: size
         run: node scripts/size-report.mjs demo/dist --check
+
+      - name: Upload the measured size report
+        if: failure() && steps.size.outcome == 'failure'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: size-report
+          path: report/size.*
+          if-no-files-found: ignore
 
       - name: Check the README tables against the reports
         run: node scripts/readme-tables.ts --check
@@ -165,7 +174,20 @@ jobs:
         run: npm run consumers:build
 
       - name: Check the package size matrix and the committed report
+        id: matrix
         run: npm run size:matrix
+
+      - name: Write the measured size matrix
+        if: failure() && steps.matrix.outcome == 'failure'
+        run: npm run size:matrix:write
+
+      - name: Upload the measured size matrix
+        if: failure() && steps.matrix.outcome == 'failure'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: size-matrix
+          path: report/size-matrix.*
+          if-no-files-found: ignore
 
       - name: Check the README size matrix against this measurement
         run: node scripts/readme-tables.ts --check
