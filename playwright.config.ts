@@ -1,8 +1,10 @@
+import { resolve } from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
 
 const CI = !!process.env.CI;
 const PORT = Number(process.env.E2E_PORT || 4317);
-const DIST = '.playwright/dist';
+const DIST = resolve('.playwright/dist');
+const CONFIG = 'demo/vite.config.ts';
 const REMOTE = process.env.E2E_BASE_URL?.trim();
 const baseURL = REMOTE ? (REMOTE.endsWith('/') ? REMOTE : `${REMOTE}/`) : `http://127.0.0.1:${PORT}/`;
 
@@ -31,7 +33,7 @@ export default defineConfig({
   webServer: REMOTE
     ? undefined
     : {
-        command: `npx vite build --outDir ${DIST} --logLevel warn && npx vite preview --outDir ${DIST} --host 127.0.0.1 --port ${PORT} --strictPort`,
+        command: `npx vite build --config ${CONFIG} --outDir "${DIST}" --emptyOutDir --logLevel warn && npx vite preview --config ${CONFIG} --outDir "${DIST}" --host 127.0.0.1 --port ${PORT} --strictPort`,
         url: baseURL,
         reuseExistingServer: !CI,
         timeout: 180_000,

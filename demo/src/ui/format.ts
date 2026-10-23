@@ -1,4 +1,6 @@
-import type { Provenance, Rational } from '../core/types.ts';
+import type { FileResult, Provenance, Rational, VideoTrackResult } from 'video-fps-probe';
+
+export const primaryTrack = (r: FileResult): VideoTrackResult | null => r.videoTracks.find((t) => t.trackId === r.primaryTrackId) ?? null;
 
 export const PROVENANCE: Record<Provenance, readonly [string, string]> = {
   header: ['H', 'header: read from the container headers'],

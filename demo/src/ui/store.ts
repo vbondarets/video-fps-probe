@@ -1,7 +1,6 @@
 import { useSyncExternalStore } from 'react';
-import { isAbortError as isAbort } from '../api/errors.ts';
-import { lazyProbeFrom } from '../client/lazy.ts';
-import type { AnalyzeProgress, FileResult, MatroskaMode } from '../core/types.ts';
+import { isAbortError as isAbort, type AnalyzeProgress, type FileResult, type MatroskaMode } from 'video-fps-probe/client';
+import { lazyProbeFrom } from 'video-fps-probe/client/lazy';
 import type { ExportAction, ExportOutcome } from './deviceInfo.ts';
 
 export type CompareEngine = 'mp4box' | 'mediabunny' | 'rvfc';

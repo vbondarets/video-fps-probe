@@ -5,7 +5,7 @@ import { primaryTrack } from '../../src/core/result.ts';
 import type { FileResult } from '../../src/core/types.ts';
 import { analyzeWithMediabunny } from '../../src/engines/mediabunny.ts';
 import { analyzeWithMp4box } from '../../src/engines/mp4box.ts';
-import { count, fps } from '../../src/ui/format.ts';
+import { count, fps } from '../../demo/src/ui/format.ts';
 import { addFixtures, fixtureFile, nodeAnalyze, openApp, probeResults, waitSettled, withoutTiming, type ProbeWindow } from './support.ts';
 
 const SAMPLE_COUNT = 6;

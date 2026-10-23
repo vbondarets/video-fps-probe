@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ChangeEvent } from 'react';
-import type { MatroskaMode } from './core/types.ts';
+import type { MatroskaMode } from 'video-fps-probe';
 import { bytes, ms, PROVENANCE } from './ui/format.ts';
 import type { ExportAction, ExportOutcome } from './ui/deviceInfo.ts';
 import { Mark, ResultCard } from './ui/ResultCard.tsx';

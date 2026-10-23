@@ -14,7 +14,7 @@ import {
   type ExportRow,
   type HighEntropy,
   type UserAgentDataLike,
-} from '../../src/ui/deviceInfo.ts';
+} from '../../demo/src/ui/deviceInfo.ts';
 
 const NOW = new Date('2026-10-21T12:34:56.789Z');
 
@@ -288,7 +288,7 @@ describe('watchEnvironmentLine', () => {
       userAgentData: { brands: BRANDS.chrome, mobile: true, platform: 'Android', getHighEntropyValues },
       hardwareConcurrency: 8,
     });
-    const { watchEnvironmentLine, collectEnvironment: collect } = await import('../../src/ui/deviceInfo.ts');
+    const { watchEnvironmentLine, collectEnvironment: collect } = await import('../../demo/src/ui/deviceInfo.ts');
     const lines: string[] = [];
     watchEnvironmentLine((l) => lines.push(l));
     expect(lines).toEqual(['Chrome 155 on Android, 8 threads']);
@@ -300,7 +300,7 @@ describe('watchEnvironmentLine', () => {
   it('reports a single line when the browser has no userAgentData', async () => {
     vi.resetModules();
     vi.stubGlobal('navigator', { userAgent: UA.safariIphone, hardwareConcurrency: 6 });
-    const { watchEnvironmentLine } = await import('../../src/ui/deviceInfo.ts');
+    const { watchEnvironmentLine } = await import('../../demo/src/ui/deviceInfo.ts');
     const lines: string[] = [];
     watchEnvironmentLine((l) => lines.push(l));
     await new Promise((resolve) => setTimeout(resolve, 0));

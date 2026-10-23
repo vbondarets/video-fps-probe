@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
-import { version } from '../../package.json';
-import type { FileResult, MatroskaMode } from '../core/types.ts';
+import { version } from '../../../package.json';
+import type { FileResult, MatroskaMode } from 'video-fps-probe';
 
 
 export const EXPORT_SCHEMA = 'video-fps-probe/export@1';

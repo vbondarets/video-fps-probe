@@ -34,7 +34,7 @@ class FakeWorker {
   }
 }
 
-const demoProbe = () => lazyProbeFrom(() => import('../../src/ui/probe.ts').then((m) => m.probe));
+const demoProbe = () => lazyProbeFrom(() => import('../../demo/src/ui/probe.ts').then((m) => m.probe));
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -70,14 +70,14 @@ describe('demo probe lifecycle for embedding', () => {
 
 describe('demo probe chunk loading', () => {
   afterEach(() => {
-    vi.doUnmock('../../src/ui/probe.ts');
+    vi.doUnmock('../../demo/src/ui/probe.ts');
   });
 
   it('retries the probe chunk import on the next analysis after a failed fetch', async () => {
     vi.stubGlobal('Worker', FakeWorker);
     vi.resetModules();
     let attempts = 0;
-    vi.doMock('../../src/ui/probe.ts', async (importOriginal) => {
+    vi.doMock('../../demo/src/ui/probe.ts', async (importOriginal) => {
       attempts++;
       if (attempts === 1) throw new TypeError('Failed to fetch dynamically imported module');
       return importOriginal();

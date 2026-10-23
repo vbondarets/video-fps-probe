@@ -1,7 +1,6 @@
 import { lazy, memo, Suspense, useRef, useState, type ReactNode } from 'react';
-import { primaryTrack } from '../core/result.ts';
-import type { FileResult, Provenance, VideoTrackResult } from '../core/types.ts';
-import { bytes, count, duration, fps, ms, PROVENANCE, readPercent, share } from './format.ts';
+import type { FileResult, Provenance, VideoTrackResult } from 'video-fps-probe';
+import { bytes, count, duration, fps, ms, primaryTrack, PROVENANCE, readPercent, share } from './format.ts';
 import { cancelRow, rescan, type Row } from './store.ts';
 
 const Compare = lazy(() => import('./Compare.tsx'));

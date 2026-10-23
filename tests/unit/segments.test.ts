@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { MAX_ANOMALIES, MAX_BUCKETS, MAX_SEGMENTS, rateProfile, type DeltaSource } from '../../src/core/segments.ts';
 import { analyzeTimeline, rateProfileOf, type TimelineInput, type TimelineSegment, type TimelineStats } from '../../src/core/stats.ts';
 import type { RateProfile } from '../../src/core/types.ts';
-import { clock, rate, share } from '../../src/ui/format.ts';
+import { clock, rate, share } from '../../demo/src/ui/format.ts';
 
 function runs(...pairs: Array<[count: number, delta: number]>): TimelineSegment {
   return { durations: { counts: pairs.map((p) => p[0]), deltas: pairs.map((p) => p[1]) } };

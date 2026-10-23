@@ -1,5 +1,5 @@
-import { createProbeClient } from '../client/probe.ts';
-import { rvfc } from '../plugins/rvfc.ts';
+import { createProbeClient } from 'video-fps-probe/client';
+import { rvfc } from 'video-fps-probe/rvfc';
 
 export const probe = createProbeClient({
   worker: {

@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import type { RateProfile } from '../core/types.ts';
+import type { RateProfile } from 'video-fps-probe';
 import { clock, count, rate, share } from './format.ts';
 
 const W = 240;

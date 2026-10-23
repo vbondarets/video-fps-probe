@@ -1,7 +1,6 @@
 import { useCallback, useEffect } from 'react';
-import { primaryTrack } from '../core/result.ts';
-import type { FileResult, VideoTrackResult } from '../core/types.ts';
-import { bytes, count, duration, fps, ms, share } from './format.ts';
+import type { FileResult, VideoTrackResult } from 'video-fps-probe';
+import { bytes, count, duration, fps, ms, primaryTrack, share } from './format.ts';
 import { autoCompare, registerHost, runCompare, type CompareEngine, type Row } from './store.ts';
 
 type Column = 'own' | CompareEngine;
