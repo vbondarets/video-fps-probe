@@ -140,6 +140,7 @@ interface BenchReport {
   edge: { warm: Record<string, Timed> } | null;
   sanity: { compared: number; identical: number };
   environment: {
+    date: string;
     os: string;
     cpu: string;
     logicalCores: number;
@@ -578,7 +579,7 @@ function headline(inp: Inputs): string[] {
   return [
     `- **Accuracy.** The own parsers were checked against ffprobe 8.1.1 on ${own.fixtures.length} synthetic fixtures made with ffmpeg (${committed.length} committed, ${large.length} large local files; real recorder output is not in the corpus, see Limitations): ${checks} field checks, ${counts.exact} exact, ${counts['within-tol']} within tolerance, ${plural(counts['known-deviation'], 'known deviation')} with a recorded reason, ${plural(counts.mismatch, 'mismatch').replace(/hs$/, 'hes')}, ${counts['n/a']} not applicable.`,
     `- **Reads.** Median ${median(reads)} reads per committed fixture, at most ${Math.max(...reads)}. The ${fmtDuration(longDur)}, ${longFrames}-frame MP4 (${fmtBytes(long.sizeBytes)}) takes ${io(long).reads} reads and ${fmtBytes(io(long).bytesRead)} (${fmtPct(io(long).percent)}% of the file).`,
-    `- **Speed.** In ${browser}, warm: median ${fmtMs(median(warm.map((w) => w.medianMs)))} ms per file in the worker and ${fmtMs(median(warm.map((w) => w.medianWallMs)))} ms from file pick to rendered result; the ${fmtDuration(longDur)} file takes ${fmtMs(chromeLong.medianMs)} ms.${big}`,
+    `- **Speed.** In ${browser}, warm: median ${fmtMs(median(warm.map((w) => w.medianMs)))} ms per file in the worker and ${fmtMs(median(warm.map((w) => w.medianWallMs)))} ms from file pick to rendered result; the ${fmtDuration(longDur)} file takes ${fmtMs(chromeLong.medianMs)} ms.${big}${staleBenchChunks(inp).length > 0 ? ' Measured on an earlier build, so these figures are not current ([Speed](#speed)).' : ''}`,
     `- **Size.** A default install (\`video-fps-probe/lazy\`) adds ${fmtKB(matrixMetric(inp, 'default', 'trigger'))} gzip to a host app's critical path. Its first MP4 file loads ${fmtKB(matrixMetric(inp, 'default', 'firstMp4'))} lazily when the host's Vite config sets \`worker: { format: 'es' }\`, and ${fmtKB(matrixMetric(inp, 'zero-config', 'firstMp4'))} with Vite's default worker format, 'iife', which builds the own worker as one file ([Package size](#package-size)). The demo page plus its first MP4 result loads ${fmtKB(firstMp4.gzip)} gzip (page, ${kindGzip(inp.size, 'client') === null ? '' : 'probe client, '}worker entry, ${sharedParserGzip(inp.size) === null ? '' : 'shared statistics chunk, '}ISO BMFF parser); the first Matroska result ${fmtKB(firstMkv.gzip)}.`,
     `- **Embedding.** In a host app with a ${fmtMB(inp.integration.host.initialGzipBytes)} gzip initial load, prewarming the worker when the upload dialog opens makes the first result on fast 4G take ${fmtMs(fast.prewarm.totalMs)} ms instead of ${fmtMs(fast.cold.totalMs)} ms ([Embedding in an existing app](#embedding-in-an-existing-app)).${integrationStale(inp) ? ` Measured on an earlier build whose worker entry and parser chunks differ from the current ones, so these figures are not current.` : ''}`,
     `- **Same result in Node and Chrome.** ${inp.bench.sanity.identical} of ${inp.bench.sanity.compared} files give identical results field by field (timing excluded).`,
@@ -983,6 +984,12 @@ function accuracySummaryBlock(inp: Inputs): string[] {
   ];
 }
 
+function staleBenchChunks(inp: Inputs): string[] {
+  const current = new Set(inp.size.chunks.map((c) => c.file.split('/').pop()));
+  const fetched = inp.bench.chrome.coldFirst.flatMap((c) => c.chunks.map((k) => k.path.split('/').pop() ?? k.path));
+  return [...new Set(fetched)].filter((name) => !current.has(name));
+}
+
 function speedBlock(inp: Inputs): string[] {
   const own = engine(inp.acc, 'own');
   const warm = inp.bench.chrome.warm;
@@ -1049,9 +1056,18 @@ function speedBlock(inp: Inputs): string[] {
       `- ${majorVersion(inp.bench.environment.edge.product)}, same warm run: median ${fmtMs(median(names.map((n) => edgeWarm[n]!.medianMs)))} ms per file, geometric mean ${fmtRatio(ratio)} of ${browser}.`,
     );
   }
+  const stale = staleBenchChunks(inp);
+  const staleNote =
+    stale.length > 0
+      ? [
+          `**Not current.** The ${browser} timings and the fetched chunks below were measured on ${inp.bench.environment.date.slice(0, 10)} on an earlier build (worker entry \`${stale[0]}\`), whose chunks differ from the current ones (see [Demo bundle size](#demo-bundle-size)), so re-run \`npm run bench\` before quoting them.`,
+          '',
+        ]
+      : [];
   return [
     methodLine(inp),
     '',
+    ...staleNote,
     ...table(['File', 'What it is', 'Size', 'Duration', 'Frames', 'Reads', 'Bytes read', 'Node ms', `${browser} ms`, `${browser} UI ms`], 'lllrrrrrrr', rows),
     '',
     `- Cold start, ${browser}: the app is ready ${fmtMs(inp.bench.chrome.pageLoad.readyMs)} ms after navigation; ${cb.files} files picked at once on a fresh profile show all results after ${fmtMs(cb.wallMs)} ms (median of ${fmtMs(rb.medianMs)} ms over reloads, range ${fmtMs(rb.minMs)} to ${fmtMs(rb.maxMs)} ms).`,

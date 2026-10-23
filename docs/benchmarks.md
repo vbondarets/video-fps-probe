@@ -8,7 +8,7 @@ The measurements behind the [README](../README.md): accuracy against ffprobe, sp
 
 - **Accuracy.** The own parsers were checked against ffprobe 8.1.1 on 116 synthetic fixtures made with ffmpeg (111 committed, 5 large local files; real recorder output is not in the corpus, see Limitations): 1832 field checks, 1769 exact, 2 within tolerance, 1 known deviation with a recorded reason, 0 mismatches, 60 not applicable.
 - **Reads.** Median 2 reads per committed fixture, at most 2. The 3 h, 648000-frame MP4 (12.42 MiB) takes 2 reads and 2.56 MiB (20.6% of the file).
-- **Speed.** In Chrome 155, warm: median 1.50 ms per file in the worker and 2.40 ms from file pick to rendered result; the 3 h file takes 4.10 ms. A 604.42 MB 1080p MP4 with the moov at the end takes 2 reads (75.0 KiB) and 1.70 ms; the same stream in Matroska takes 117 ms in auto mode (126 reads; a probe, so no frame count until "Scan all frames").
+- **Speed.** In Chrome 155, warm: median 1.50 ms per file in the worker and 2.40 ms from file pick to rendered result; the 3 h file takes 4.10 ms. A 604.42 MB 1080p MP4 with the moov at the end takes 2 reads (75.0 KiB) and 1.70 ms; the same stream in Matroska takes 117 ms in auto mode (126 reads; a probe, so no frame count until "Scan all frames"). Measured on an earlier build, so these figures are not current ([Speed](#speed)).
 - **Size.** A default install (`video-fps-probe/lazy`) adds 0.67 KB gzip to a host app's critical path. Its first MP4 file loads 23.26 KB lazily when the host's Vite config sets `worker: { format: 'es' }`, and 34.77 KB with Vite's default worker format, 'iife', which builds the own worker as one file ([Package size](#package-size)). The demo page plus its first MP4 result loads 99.39 KB gzip (page, probe client, worker entry, shared statistics chunk, ISO BMFF parser); the first Matroska result 98.27 KB.
 - **Embedding.** In a host app with a 1.95 MB gzip initial load, prewarming the worker when the upload dialog opens makes the first result on fast 4G take 4.60 ms instead of 345 ms ([Embedding in an existing app](#embedding-in-an-existing-app)).
 - **Same result in Node and Chrome.** 116 of 116 files give identical results field by field (timing excluded).
@@ -196,6 +196,8 @@ Own parsers on representative files and the long local files.
 <!-- tables:speed:start -->
 
 Node: `npm run compare` (`analyze()` on `fs.openAsBlob`), median of 3 runs per file; library engines run the long files once. Chrome 155: `npm run bench` on the built app, file picked through the real file input, median of 5 warm runs (own) or 3 runs (libraries, long files); "UI ms" runs from the input's change event to the rendered result. Times are worker-side `io.ms`.
+
+**Not current.** The Chrome 155 timings and the fetched chunks below were measured on 2026-10-21 on an earlier build (worker entry `analyze.worker-Cxu1jFcj.js`), whose chunks differ from the current ones (see [Demo bundle size](#demo-bundle-size)), so re-run `npm run bench` before quoting them.
 
 | File | What it is | Size | Duration | Frames | Reads | Bytes read | Node ms | Chrome 155 ms | Chrome 155 UI ms |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|
