@@ -30,8 +30,8 @@ describe('fallback chain', () => {
     expect(await probe.analyze(mp4File('bad.mp4'))).toEqual({ ...fakeResult('bad.mp4'), error: 'moov not found' });
     expect(loads.fallback).toBe(0);
     const [worker] = FakeWorker.instances;
-    FakeWorker.reset('reply', () => ({ type: 'skipped', reason: 'unsupported-container' }));
-    expect(await probe.analyze(mp4File('c.webm'), { engine: 'mp4box' })).toMatchObject({ engine: 'mp4box', error: 'mp4box does not read this container' });
+    FakeWorker.reset('reply', () => ({ type: 'skipped', reason: 'unsupported-container', family: 'matroska' }));
+    expect(await probe.analyze(mp4File('c.webm'), { engine: 'mp4box' })).toMatchObject({ engine: 'mp4box', container: 'matroska', error: 'unsupported by mp4box' });
     expect(analyzed(worker)).toHaveLength(3);
     expect(loads.fallback).toBe(1);
   });

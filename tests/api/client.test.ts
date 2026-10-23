@@ -65,11 +65,13 @@ describe('createProbeClient', () => {
     expect(onProgress).toHaveBeenCalledWith({ phase: 'moov', done: 1, total: 2 });
   });
 
-  it('turns a skipped reply into a result with an error', async () => {
-    FakeWorker.reset('reply', () => ({ type: 'skipped', reason: 'unsupported-container' }));
+  it('turns a skipped reply into a result with the sniffed container and an error', async () => {
+    FakeWorker.reset('reply', (m) => ({ type: 'skipped', reason: 'unsupported-container', family: m.type === 'analyze' && m.name === 'a.webm' ? 'matroska' : null }));
     const probe = createProbeClient({ worker: customWorker('own', 'mp4box') });
     const result = await probe.analyze(webmFile('a.webm'), { engine: 'mp4box' });
-    expect(result).toMatchObject({ name: 'a.webm', size: 8, engine: 'mp4box', container: 'unknown', error: 'mp4box does not read this container', videoTracks: [] });
+    expect(result).toMatchObject({ name: 'a.webm', size: 8, engine: 'mp4box', container: 'matroska', error: 'unsupported by mp4box', videoTracks: [] });
+    const unknown = await probe.analyze(new File([new Uint8Array(8)], 'zeros.bin'), { engine: 'mp4box' });
+    expect(unknown).toMatchObject({ name: 'zeros.bin', engine: 'mp4box', container: 'unknown', error: 'not a recognised container' });
   });
 
   it('rejects infrastructure problems with ProbeError and tryAnalyze resolves null instead', async () => {

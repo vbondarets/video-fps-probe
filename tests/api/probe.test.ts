@@ -64,7 +64,15 @@ describe('createProbe', () => {
     const auto = root.createProbe({ engines: [mp4box()] });
     expect((await auto.analyze(blob, { name: 'a.mp4', engine: 'mp4box' })).engine).toBe('mp4box');
     const webm = await auto.analyze(await openAsBlob(WEBM), { name: 'a.webm', engine: 'mp4box', fallback: ['own'] });
-    expect(webm).toMatchObject({ engine: 'own', attempts: [{ engine: 'mp4box', error: 'mp4box does not read this container' }] });
+    expect(webm).toMatchObject({ engine: 'own', attempts: [{ engine: 'mp4box', error: 'unsupported by mp4box' }] });
+  });
+
+  it('reports a skipped engine with the container and error of the same engine run directly', async () => {
+    const webm = await openAsBlob(WEBM);
+    const direct = await root.analyze(webm, { engine: mp4box(), name: 'a.webm' });
+    const skipped = await root.createProbe({ engines: [mp4box()], worker: 'inline' }).analyze(webm, { name: 'a.webm', engine: 'mp4box' });
+    expect(direct).toMatchObject({ container: 'matroska', error: 'unsupported by mp4box' });
+    expect({ container: skipped.container, error: skipped.error, engine: skipped.engine }).toEqual({ container: direct.container, error: direct.error, engine: 'mp4box' });
   });
 
   it('compares own and mp4box in this thread on a real file', async () => {
