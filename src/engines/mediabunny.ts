@@ -6,6 +6,7 @@ import type { BlobLike } from '../core/reader.ts';
 import { emptyTrack } from '../core/result.ts';
 import { analyzeTimeline } from '../core/stats.ts';
 import type { AnalyzeOptions, ContainerKind, VideoTrackResult } from '../core/types.ts';
+import type { ContainerFamily, EngineModule } from '../plugins/types.ts';
 import { applyStats, approxRational, codecNameFromFourcc, errorMessage, isAbort, newResult } from './common.ts';
 import { CountingBlob, elapsed, now } from './counting.ts';
 import type { MediabunnyNative, MediabunnyResult, MediabunnyTrackNative } from './types.ts';
@@ -148,7 +149,7 @@ async function applyNativeStats(work: TrackWork, signal: AbortSignal | null): Pr
   }
 }
 
-async function run(counted: CountingBlob, result: MediabunnyResult, opts: AnalyzeOptions, t0: number): Promise<void> {
+async function probe(counted: CountingBlob, result: MediabunnyResult, opts: AnalyzeOptions, t0: number): Promise<void> {
   const signal = opts.signal ?? null;
   if (counted.size === 0) {
     result.error = 'not a recognised container: empty file';
@@ -232,7 +233,7 @@ export async function analyzeWithMediabunny(blob: BlobLike, name: string, opts: 
   const counted = new CountingBlob(blob, opts.signal ?? null);
   const result: MediabunnyResult = newResult(name, blob.size, 'mediabunny');
   try {
-    await run(counted, result, opts, t0);
+    await probe(counted, result, opts, t0);
   } catch (e) {
     if (isAbort(e, opts.signal)) throw e;
     result.error = errorMessage(e);
@@ -240,3 +241,7 @@ export async function analyzeWithMediabunny(blob: BlobLike, name: string, opts: 
   if (result.mediabunny === undefined) result.io = counted.io(t0);
   return result;
 }
+
+export const containers = ['isobmff', 'matroska'] as const satisfies readonly ContainerFamily[];
+
+export const run: EngineModule<MediabunnyResult>['run'] = analyzeWithMediabunny;

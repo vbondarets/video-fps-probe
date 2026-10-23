@@ -7,6 +7,7 @@ import { emptyTrack } from '../core/result.ts';
 import { sniff } from '../core/sniff.ts';
 import { analyzeTimeline, type EditWindow, type TimelineSegment } from '../core/stats.ts';
 import type { AnalyzeOptions, ContainerKind, VideoTrackResult } from '../core/types.ts';
+import type { ContainerFamily, EngineModule } from '../plugins/types.ts';
 import { applyStats, codecNameFromFourcc, errorMessage, ffprobeRotation, isAbort, newResult } from './common.ts';
 import { CountingBlob, now } from './counting.ts';
 import type { Mp4boxNative, Mp4boxResult, Mp4boxTrackNative } from './types.ts';
@@ -325,7 +326,7 @@ function containerOf(brand: string | null): ContainerKind {
   return brand === 'qt  ' ? 'mov' : 'mp4';
 }
 
-async function run(counted: CountingBlob, result: Mp4boxResult, opts: AnalyzeOptions): Promise<void> {
+async function probe(counted: CountingBlob, result: Mp4boxResult, opts: AnalyzeOptions): Promise<void> {
   const resolved = resolveOptions(opts);
   const reader = new BlobReader(counted, { headWindow: resolved.readAhead.head, signal: resolved.signal });
   if (reader.size === 0) {
@@ -419,7 +420,7 @@ export async function analyzeWithMp4box(blob: BlobLike, name: string, opts: Anal
   const counted = new CountingBlob(blob, opts.signal ?? null);
   const result: Mp4boxResult = newResult(name, blob.size, 'mp4box');
   try {
-    await run(counted, result, opts);
+    await probe(counted, result, opts);
   } catch (e) {
     if (isAbort(e, opts.signal)) throw e;
     result.error = errorMessage(e);
@@ -427,3 +428,7 @@ export async function analyzeWithMp4box(blob: BlobLike, name: string, opts: Anal
   result.io = counted.io(t0);
   return result;
 }
+
+export const containers = ['isobmff'] as const satisfies readonly ContainerFamily[];
+
+export const run: EngineModule<Mp4boxResult>['run'] = analyzeWithMp4box;
