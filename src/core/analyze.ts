@@ -25,7 +25,7 @@ export function isAbortError(e: unknown): boolean {
   return typeof e === 'object' && e !== null && 'name' in e && (e as { name: unknown }).name === 'AbortError';
 }
 
-function errorMessage(e: unknown): string {
+export function errorMessage(e: unknown): string {
   if (e instanceof Error) return e.message || e.name;
   return String(e);
 }

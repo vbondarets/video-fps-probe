@@ -1,4 +1,4 @@
-import { analyze, DEFAULT_LOADERS, isAbortError } from '../core/analyze.ts';
+import { analyze, DEFAULT_LOADERS, errorMessage, isAbortError } from '../core/analyze.ts';
 import type { BlobLike } from '../core/reader.ts';
 import { sniff } from '../core/sniff.ts';
 import type { ContainerFamily, EngineModule, WorkerEngineId } from '../plugins/types.ts';
@@ -56,7 +56,7 @@ export function serveProbeWorker(engines: Partial<Record<WorkerEngineId, EngineS
     post({
       type: 'error',
       id,
-      message: e instanceof Error ? e.message || e.name : String(e),
+      message: errorMessage(e),
       aborted: aborted || isAbortError(e),
       ...((code === 'unknown-engine' || code === 'protocol') && { code }),
     });
@@ -67,7 +67,7 @@ export function serveProbeWorker(engines: Partial<Record<WorkerEngineId, EngineS
     running.set(job.id, controller);
     let lastProgress = 0;
     try {
-      if (!(job.file instanceof Blob)) throw failure('analyze request without a Blob file', 'protocol');
+      if (!(job.file instanceof Blob)) throw failure('malformed analyze request', 'protocol');
       const engine = await load(job.engine);
       if (engine.containers !== 'any') {
         const family = await familyOf(job.file);
