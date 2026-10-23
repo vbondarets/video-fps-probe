@@ -18,10 +18,10 @@ export const BUDGETS = {
   },
   worker: {
     label: 'worker entry (core + glue)',
-    limit: 8.5 * KB,
+    limit: 5 * KB,
     required: true,
-    entry: 'analyze.worker',
-    why: 'Sniffing, reader, options, the worker runtime and the code the lazy parsers and comparison engines share. Both own parsers are lazy chunks, and the timeline statistics are the shared statistics chunk. Budgeted by entry name: only the analyze.worker file counts, and any other worker file fails as unbudgeted. Re-set once before the package work: measured 7.37 KB with 0.13 KB of headroom left, while loading the statistics module next to each parser and the worker runtime (versioned protocol, warm requests, per-engine container gate) both grow this entry. Limit is that measurement plus 10 percent, rounded up to 0.5 KB, which is also the 8.5 KB a consumer custom worker gets. The worker runtime then moved the timeline statistics out of the entry, so the entry measures about 4.2 KB against this limit; the statistics have their own budget, and this limit is re-set when the demo worker entry is renamed to probe.worker.',
+    entry: 'probe.worker',
+    why: 'Sniffing, reader, options, the worker runtime and the code the lazy parsers and comparison engines share: the demo custom worker, which serves own, mp4box and mediabunny. Both own parsers are lazy chunks, and the timeline statistics are the shared statistics chunk. Budgeted by entry name: only the probe.worker file counts, and any other worker file fails as unbudgeted, so the demo ships exactly one worker. Re-set when the demo worker entry was renamed from analyze.worker to probe.worker: measured 4.19 KB; limit is measured plus 10 percent, rounded up to 0.5 KB, under the 8.5 KB a consumer custom worker gets.',
   },
   isobmff: {
     label: 'ISO BMFF parser chunk',
@@ -55,9 +55,9 @@ export const BUDGETS = {
   },
   client: {
     label: 'lazy probe client',
-    limit: 1.5 * KB,
+    limit: 3.5 * KB,
     required: false,
-    why: 'The probe client fetched by the main chunk on the first file, before the worker starts: the worker pool (pool-*) now, and the probe with its engine descriptors (probe-*) once the demo uses it. Counted in every first analysis row. Measured 1.04 KB when set, when the chunk held only the worker pool; limit is measured plus 10 percent, rounded up to 0.5 KB. Not required: without a client chunk the pool is part of the main chunk.',
+    why: 'The probe client fetched by the main chunk on the first file, before the worker starts: the demo probe (probe-*) with createProbeClient, its engine routing, the worker pool and the rVFC descriptor. The fallback chain, compare and the in-thread runner are separate lazy chunks that the first analysis does not load. Counted in every first analysis row. Re-set when the demo moved from the module worker pool (1.04 KB) to the library probe client: measured 2.73 KB; limit is measured plus 10 percent, rounded up to 0.5 KB, which is also the consumer client chunk budget. Not required: without a client chunk the client is part of the main chunk.',
   },
   rateProfile: {
     label: 'lazy rate profile panel (UI)',
@@ -75,19 +75,19 @@ export const BUDGETS = {
     label: 'first MP4 analysis (initial + client + ISO BMFF + shared chunks)',
     limit: 100 * KB,
     required: true,
-    why: 'User-facing promise: page plus first MP4 or MOV result stays under 100 KB gzip. Measured 93.99 KB when set. Counts the lazy probe client and the shared statistics chunk too, so the component limits (85 + 1.5 + 5 + 13.5 = 105 KB) add up to more than the promise and this can trip while every component is within its own limit.',
+    why: 'User-facing promise: page plus first MP4 or MOV result stays under 100 KB gzip. Measured 93.99 KB when set. Counts the lazy probe client and the shared statistics chunk too, so the component limits (85 + 3.5 + 5 + 13.5 = 107 KB) add up to more than the promise and this can trip while every component is within its own limit.',
   },
   firstVfrMp4: {
     label: 'first VFR MP4 analysis (initial + client + ISO BMFF + segments + shared chunks)',
-    limit: 100 * KB,
+    limit: 102 * KB,
     required: false,
-    why: 'User-facing promise: page plus the first MP4 or MOV result with unequal frame rates, which also fetches the rate profile chunk, stays under 100 KB gzip. Measured 96.41 KB when set. With the lazy probe client and the shared statistics chunk, the component limits (85 + 1.5 + 5 + 13.5 + 2 = 107 KB) add up to more than the promise, so this can trip while every component is within its own limit. Not required: without a segments chunk the code lives elsewhere and the first MP4 analysis covers it.',
+    why: 'Page plus the first MP4 or MOV result with unequal frame rates, which also fetches the rate profile chunk. Measured 96.41 KB when set at 100 KB, and 99.96 KB before the demo moved to the library probe client. The client grew the first analysis rows by 1.5 to 1.7 KB (engine routing, fallback, prewarm and the compare and in-thread hooks on top of the worker pool), so this row measured 101.48 KB and the limit was raised to 102 KB, the measurement rounded up to the next whole KB. The first MP4 and first Matroska rows keep the 100 KB promise. With the lazy probe client and the shared statistics chunk, the component limits (85 + 3.5 + 5 + 13.5 + 2 = 109 KB) add up to more than this limit, so it can trip while every component is within its own limit. Not required: without a segments chunk the code lives elsewhere and the first MP4 analysis covers it.',
   },
   firstMkv: {
     label: 'first Matroska analysis (initial + client + Matroska + shared chunks)',
     limit: 100 * KB,
     required: true,
-    why: 'User-facing promise: page plus first MKV or WebM result stays under 100 KB gzip. Measured 92.78 KB when set. Counts the lazy probe client and the shared statistics chunk too, so the component limits (85 + 1.5 + 5 + 12 = 103.5 KB) add up to more than the promise and this can trip while every component is within its own limit.',
+    why: 'User-facing promise: page plus first MKV or WebM result stays under 100 KB gzip. Measured 92.78 KB when set. Counts the lazy probe client and the shared statistics chunk too, so the component limits (85 + 3.5 + 5 + 12 = 105.5 KB) add up to more than the promise and this can trip while every component is within its own limit.',
   },
 };
 
@@ -251,6 +251,7 @@ function closureOf(start, fileSet, texts) {
 
 const LAZY_BY_NAME = [
   ['client', /^(?:probe|pool)-/i],
+  ['client-lazy', /^(?:compare|fallback|inline)-/],
   ['rvfc', /rvfc/i],
   ['mp4box', /mp4box/i],
   ['mediabunny', /mediabunny/i],
@@ -569,7 +570,7 @@ function runSelfTest() {
   const limit = (key) => BUDGETS[key].limit;
   const html = '<!doctype html><html><head><link rel="stylesheet" crossorigin href="./assets/index-C1.css"><script type="module" crossorigin src="./assets/index-M1.js"></script></head><body></body></html>';
   const mainText = (extra) =>
-    `const w=new Worker(new URL("assets/analyze.worker-W1.js",import.meta.url),{type:"module"});const a=()=>import("./rvfc-R1.js");const b=()=>import("./RateProfile-P1.js");const h=()=>import("./deviceInfo-V1.js");${extra}`;
+    `const w=new Worker(new URL("assets/probe.worker-W1.js",import.meta.url),{type:"module"});const a=()=>import("./rvfc-R1.js");const b=()=>import("./RateProfile-P1.js");const h=()=>import("./deviceInfo-V1.js");${extra}`;
   const load = (file, groups) => {
     const calls = [file, ...(groups[file] ?? [])].map((f) => `import(\`./${f}\`)`);
     return calls.length > 1 ? `Promise.all([${calls.join(',')}])` : calls[0];
@@ -578,7 +579,7 @@ function runSelfTest() {
     `self.onmessage=e=>{postMessage(1)};${['isobmff-I1.js', 'matroska-K1.js', 'mp4box-B1.js', 'mediabunny-D1.js', 'segments-G1.js'].map((f, i) => `const l${i}=()=>${load(f, groups)};`).join('')}${loose.map((f) => `import(\`./${f}\`);`).join('')}${extra}`;
   const sizesOf = (over = {}) => ({
     main: 30_000,
-    worker: 5_000,
+    worker: 3_500,
     rvfc: 1_000,
     isobmff: 8_000,
     matroska: 7_000,
@@ -599,17 +600,17 @@ function runSelfTest() {
     const client = sizes.client > 0 ? 'const l=()=>import("./probe-L1.js");' : '';
     const other = extraWorker ? 'const o=new Worker(new URL("assets/other.worker-O1.js",import.meta.url),{type:"module"});' : '';
     write(dir, 'assets/index-M1.js', mainText(`${client}${other}${filler(sizes.main)}`));
-    write(dir, 'assets/analyze.worker-W1.js', workerText(filler(sizes.worker), groups));
+    write(dir, 'assets/probe.worker-W1.js', workerText(filler(sizes.worker), groups));
     if (client) write(dir, 'assets/probe-L1.js', `import{a as e}from"./index-M1.js";${filler(sizes.client)}`);
     if (other) write(dir, 'assets/other.worker-O1.js', `self.onmessage=e=>{postMessage(1)};${filler(1_000)}`);
     const shared = sizes.isobmffShared > 0;
-    write(dir, 'assets/isobmff-I1.js', `import{a as e}from"./analyze.worker-W1.js";${shared ? 'import{b as f}from"./shared-P1.js";' : ''}${filler(sizes.isobmff)}`);
+    write(dir, 'assets/isobmff-I1.js', `import{a as e}from"./probe.worker-W1.js";${shared ? 'import{b as f}from"./shared-P1.js";' : ''}${filler(sizes.isobmff)}`);
     if (shared) write(dir, 'assets/shared-P1.js', filler(sizes.isobmffShared));
-    if (sizes.matroska > 0) write(dir, 'assets/matroska-K1.js', `import{a as e}from"./analyze.worker-W1.js";${filler(sizes.matroska)}`);
+    if (sizes.matroska > 0) write(dir, 'assets/matroska-K1.js', `import{a as e}from"./probe.worker-W1.js";${filler(sizes.matroska)}`);
     write(dir, 'assets/rvfc-R1.js', filler(sizes.rvfc));
     const segmentsShared = sizes.segmentsShared > 0;
     if (sizes.segments > 0) {
-      write(dir, 'assets/segments-G1.js', `import{a as e}from"./analyze.worker-W1.js";${segmentsShared ? 'import{c as f}from"./common-S1.js";' : ''}${filler(sizes.segments)}`);
+      write(dir, 'assets/segments-G1.js', `import{a as e}from"./probe.worker-W1.js";${segmentsShared ? 'import{c as f}from"./common-S1.js";' : ''}${filler(sizes.segments)}`);
     }
     if (segmentsShared) write(dir, 'assets/common-S1.js', filler(sizes.segmentsShared));
     if (sizes.rateProfile > 0) write(dir, 'assets/RateProfile-P1.js', `import{a as e}from"./index-M1.js";${filler(sizes.rateProfile)}`);
@@ -640,7 +641,7 @@ function runSelfTest() {
       const r = buildReport(build(`ok-${label}`, { isobmffShared: 2_000, segmentsShared: 1_500 }, opts));
       const kind = (f) => r.chunks.find((c) => c.file === f)?.kind;
       expectEq(`${label}: main`, kind('assets/index-M1.js'), 'main');
-      expectEq(`${label}: worker`, kind('assets/analyze.worker-W1.js'), 'worker');
+      expectEq(`${label}: worker`, kind('assets/probe.worker-W1.js'), 'worker');
       expectEq(`${label}: isobmff`, kind('assets/isobmff-I1.js'), 'isobmff');
       expectEq(`${label}: matroska`, kind('assets/matroska-K1.js'), 'matroska');
       expectEq(`${label}: parser shared chunk`, kind('assets/shared-P1.js'), 'parser-shared');
@@ -705,6 +706,7 @@ function runSelfTest() {
         isobmff: limit('isobmff') + 3_000,
         matroska: limit('matroska') + 3_000,
         isobmffShared: limit('parser-shared') + 1_000,
+        css: 3_000,
       }),
     );
     for (const key of ['main', 'worker', 'isobmff', 'matroska', 'parser-shared', 'rvfc', 'segments', 'rateProfile', 'initial', 'firstMp4', 'firstVfrMp4', 'firstMkv']) expectEq(`over: ${key}`, statusOf(over, key), 'over');
@@ -722,18 +724,18 @@ function runSelfTest() {
     );
     expectEq('fit: no failures', fit.failures.length, 0);
     for (const key of ['parser-shared', 'segments', 'rateProfile', 'firstVfrMp4']) expectEq(`fit: ${key}`, statusOf(fit, key), 'ok');
-    const edgeInitial = buildReport(build('edge-initial', { main: limit('main') - 800, worker: limit('worker') - 800, css: 4_500 }));
+    const edgeInitial = buildReport(build('edge-initial', { main: limit('main') - 800, worker: limit('worker') - 800, css: 7_500 }));
     expectEq('edge: initial over while main and worker are ok', statusOf(edgeInitial, 'initial'), 'over');
     expectEq('edge: main ok', statusOf(edgeInitial, 'main'), 'ok');
     expectEq('edge: worker ok', statusOf(edgeInitial, 'worker'), 'ok');
-    const edgeShared = buildReport(build('edge-shared', { main: limit('main') - 500, worker: limit('worker') - 500, isobmff: limit('isobmff') - 500, isobmffShared: 4_500 }));
+    const edgeShared = buildReport(build('edge-shared', { main: limit('main') - 500, worker: limit('worker') - 500, isobmff: limit('isobmff') - 500, isobmffShared: 4_500, css: 3_600 }));
     expectEq('edge: parser shared chunk counts toward the first MP4 analysis', statusOf(edgeShared, 'firstMp4'), 'over');
     expectEq('edge: parser budget still ok', statusOf(edgeShared, 'isobmff'), 'ok');
     expectEq('edge: shared chunk budget still ok', statusOf(edgeShared, 'parser-shared'), 'ok');
     expectEq('edge: initial still ok', statusOf(edgeShared, 'initial'), 'ok');
     expectEq('edge: first Matroska unaffected', statusOf(edgeShared, 'firstMkv'), 'ok');
     const edgeVfr = buildReport(
-      build('edge-vfr', { main: limit('main') - 1_500, worker: limit('worker') - 500, isobmff: limit('isobmff') - 500, segments: limit('segments') - 300, segmentsShared: 4_500 }),
+      build('edge-vfr', { main: limit('main') - 1_500, worker: limit('worker') - 500, isobmff: limit('isobmff') - 500, segments: limit('segments') - 300, segmentsShared: 4_500, css: 6_000 }),
     );
     expectEq('edge: segments shared chunk counts toward the first VFR MP4 analysis', statusOf(edgeVfr, 'firstVfrMp4'), 'over');
     expectEq('edge: segments budget still ok', statusOf(edgeVfr, 'segments'), 'ok');
@@ -758,8 +760,12 @@ function runSelfTest() {
     expectEq('missing parser fails', noMkv.failures.length, 2);
     expectEq('missing Matroska parser leaves the first VFR MP4 analysis ok', statusOf(noMkv, 'firstVfrMp4'), 'ok');
     expectEq('other parser unaffected', statusOf(noMkv, 'firstMp4'), 'ok');
-    const withClient = buildReport(build('client', { client: 1_000 }));
+    const clientDir = build('client', { client: 1_000 });
+    for (const f of ['compare-X1.js', 'fallback-F1.js', 'inline-N1.js']) write(clientDir, `assets/${f}`, `import{a as e}from"./probe-L1.js";${filler(300)}`);
+    const withClient = buildReport(clientDir);
     expectEq('client: kind', withClient.chunks.find((c) => c.file === 'assets/probe-L1.js')?.kind, 'client');
+    for (const f of ['compare-X1.js', 'fallback-F1.js', 'inline-N1.js']) expectEq(`client: lazy part ${f}`, withClient.chunks.find((c) => c.file === `assets/${f}`)?.kind, 'client-lazy');
+    expectEq('client: lazy parts are not in the first MP4 analysis', withClient.composites.firstMp4.files.some((f) => /(compare|fallback|inline)-/.test(f)), false);
     expectEq('client: budget ok', statusOf(withClient, 'client'), 'ok');
     expectEq('client: not part of initial', withClient.composites.initial.files.includes('assets/probe-L1.js'), false);
     expectEq('client: part of the first MP4 analysis', withClient.composites.firstMp4.files.includes('assets/probe-L1.js'), true);
@@ -774,7 +780,7 @@ function runSelfTest() {
     expectEq('client over is a failure', statusOf(overClient, 'client'), 'over');
     const twoWorkers = buildReport(build('two-workers', {}, { extraWorker: true }));
     expectEq('extra worker: classified as a worker', twoWorkers.chunks.find((c) => c.file === 'assets/other.worker-O1.js')?.kind, 'worker');
-    expectEq('extra worker: not summed into the worker budget', twoWorkers.budgets.find((b) => b.key === 'worker').files.join(','), 'assets/analyze.worker-W1.js');
+    expectEq('extra worker: not summed into the worker budget', twoWorkers.budgets.find((b) => b.key === 'worker').files.join(','), 'assets/probe.worker-W1.js');
     expectEq('extra worker: fails as unbudgeted', twoWorkers.failures.includes('unbudgeted worker assets/other.worker-O1.js'), true);
     expectEq('extra worker: only that failure', twoWorkers.failures.length, 1);
     const serial = buildReport(build('serial-shared', { isobmffShared: 2_000, segmentsShared: 1_500 }, { parallel: false }));
@@ -787,11 +793,11 @@ function runSelfTest() {
     expectEq('engines: the chunk the engines share may follow the engine', serial.chains.some((c) => c.includes('counting-C1.js')), false);
     const engineCore = join(root, 'engine-core');
     write(engineCore, 'assets/index-M1.js', mainText(filler(1_000)));
-    write(engineCore, 'assets/analyze.worker-W1.js', workerText(filler(1_000)));
-    write(engineCore, 'assets/isobmff-I1.js', `import{a as e}from"./analyze.worker-W1.js";import{b as f}from"./core-X1.js";${filler(1_000)}`);
-    write(engineCore, 'assets/matroska-K1.js', `import{a as e}from"./analyze.worker-W1.js";${filler(1_000)}`);
+    write(engineCore, 'assets/probe.worker-W1.js', workerText(filler(1_000)));
+    write(engineCore, 'assets/isobmff-I1.js', `import{a as e}from"./probe.worker-W1.js";import{b as f}from"./core-X1.js";${filler(1_000)}`);
+    write(engineCore, 'assets/matroska-K1.js', `import{a as e}from"./probe.worker-W1.js";${filler(1_000)}`);
     write(engineCore, 'assets/mp4box-B1.js', `import{a as e}from"./core-X1.js";${filler(1_000)}`);
-    write(engineCore, 'assets/mediabunny-D1.js', `import{a as e}from"./analyze.worker-W1.js";${filler(1_000)}`);
+    write(engineCore, 'assets/mediabunny-D1.js', `import{a as e}from"./probe.worker-W1.js";${filler(1_000)}`);
     write(engineCore, 'assets/core-X1.js', filler(1_000));
     write(engineCore, 'index.html', html);
     const engineChain = buildReport(engineCore);
@@ -799,16 +805,16 @@ function runSelfTest() {
     expectEq('engines: a chunk shared with a parser is a chain problem for the engine', chainsOf(engineChain, 'assets/mp4box-B1.js').length, 1);
     expectEq('engines: and for the parser', chainsOf(engineChain, 'assets/isobmff-I1.js').length, 1);
     const looseDir = build('loose-shared', { isobmffShared: 2_000 }, { parallel: false });
-    write(looseDir, 'assets/analyze.worker-W1.js', workerText(filler(5_000), {}, ['shared-P1.js']));
+    write(looseDir, 'assets/probe.worker-W1.js', workerText(filler(5_000), {}, ['shared-P1.js']));
     expectEq('loose: a shared chunk the worker imports on its own does not count as parallel', chainsOf(buildReport(looseDir), 'assets/isobmff-I1.js').length, 1);
     const siblingDir = build('sibling-shared', { isobmffShared: 2_000 }, { parallel: false });
-    write(siblingDir, 'assets/analyze.worker-W1.js', workerText(filler(5_000), { 'matroska-K1.js': ['shared-P1.js'] }));
+    write(siblingDir, 'assets/probe.worker-W1.js', workerText(filler(5_000), { 'matroska-K1.js': ['shared-P1.js'] }));
     const sibling = buildReport(siblingDir);
     expectEq('sibling: a shared chunk requested with another parser is a chain problem', chainsOf(sibling, 'assets/isobmff-I1.js').length, 1);
     expectEq('sibling: and none for the parser it is requested with', chainsOf(sibling, 'assets/matroska-K1.js').length, 0);
     const engineStats = (name, groups) => {
       const dir = build(name, { isobmffShared: 2_000 }, { parallel: false });
-      write(dir, 'assets/analyze.worker-W1.js', workerText(filler(5_000), groups));
+      write(dir, 'assets/probe.worker-W1.js', workerText(filler(5_000), groups));
       write(dir, 'assets/mp4box-B1.js', `import{a as e}from"./counting-C1.js";import{b as f}from"./shared-P1.js";${filler(40_000)}`);
       return buildReport(dir);
     };
@@ -826,7 +832,7 @@ function runSelfTest() {
     expectEq('engines: for both engines', deep.chains.filter((c) => c.includes('waits for assets/deep-E1.js')).length, 2);
     const nestedBuild = (name, segmentsImports) => {
       const dir = build(name, { isobmffShared: 2_000 }, { parallel: false });
-      write(dir, 'assets/analyze.worker-W1.js', `self.onmessage=e=>{postMessage(1)};const a=()=>Promise.all([import(\`./isobmff-I1.js\`),import(\`./shared-P1.js\`)]);const b=()=>import(\`./matroska-K1.js\`);${filler(5_000)}`);
+      write(dir, 'assets/probe.worker-W1.js', `self.onmessage=e=>{postMessage(1)};const a=()=>Promise.all([import(\`./isobmff-I1.js\`),import(\`./shared-P1.js\`)]);const b=()=>import(\`./matroska-K1.js\`);${filler(5_000)}`);
       write(dir, 'assets/shared-P1.js', `const s=()=>import(\`./segments-G1.js\`);${filler(2_000)}`);
       write(dir, 'assets/segments-G1.js', `${segmentsImports}${filler(1_000)}`);
       write(dir, 'assets/common-S1.js', filler(1_000));
