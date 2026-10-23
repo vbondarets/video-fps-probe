@@ -272,7 +272,7 @@ Headless Chrome 155, GPU decoding on, display 170 Hz.
 | probe fallback chain | first call with a fallback chain or a skipped engine | 0.98 KB | **0.62 KB** | 0.54 KB | not budgeted | - | - |
 | probe compare (agreement rules) | first probe.compare | 2.57 KB | **1.31 KB** | 1.20 KB | not budgeted | - | - |
 | in-thread engine runner | first main-thread engine run (rVFC) | 3.07 KB | **1.48 KB** | 1.33 KB | not budgeted | - | - |
-| shared by the lazy client parts and rVFC (result builders) | with the fallback chain, compare or rVFC | 0.71 KB | **0.38 KB** | 0.33 KB | not budgeted | - | - |
+| shared by the lazy client parts and rVFC (result builders, sniffing) | with the fallback chain, compare, rVFC or the own engine in this thread | 0.71 KB | **0.38 KB** | 0.33 KB | not budgeted | - | - |
 | worker entry (reader, sniffing, worker runtime) | first file | 10.14 KB | **4.22 KB** | 3.84 KB | 5.00 KB | 0.78 KB | ok |
 | shared by the parsers and engines (timeline statistics) | with the first parser, in parallel, once per worker | 10.21 KB | **4.29 KB** | 3.92 KB | 5.00 KB | 0.70 KB | ok |
 | ISO BMFF parser | first MP4 or MOV file, once per worker | 30.75 KB | **12.22 KB** | 11.04 KB | 13.50 KB | 1.28 KB | ok |
