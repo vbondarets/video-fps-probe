@@ -53,3 +53,27 @@ describe('worker pool lifecycle for embedding', () => {
     expect(FakeWorker.instances).toHaveLength(2);
   });
 });
+
+describe('worker pool chunk loading', () => {
+  afterEach(() => {
+    vi.doUnmock('../../src/client/pool.ts');
+  });
+
+  it('retries the pool chunk import on the next submit after a failed fetch', async () => {
+    vi.stubGlobal('Worker', FakeWorker);
+    vi.resetModules();
+    let attempts = 0;
+    vi.doMock('../../src/client/pool.ts', async (importOriginal) => {
+      attempts++;
+      if (attempts === 1) throw new TypeError('Failed to fetch dynamically imported module');
+      return importOriginal();
+    });
+    const pool = await import('../../src/ui/workerPool.ts');
+    await expect(pool.submit(new File([new Uint8Array(8)], 'a.mp4'), 'own', {}).promise).rejects.toBeInstanceOf(Error);
+    expect(FakeWorker.instances).toHaveLength(0);
+    const result = await pool.submit(new File([new Uint8Array(8)], 'b.mp4'), 'own', {}).promise;
+    expect(result.name).toBe('b.mp4');
+    expect(attempts).toBe(2);
+    expect(FakeWorker.instances).toHaveLength(1);
+  });
+});

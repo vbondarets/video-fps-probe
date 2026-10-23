@@ -14,6 +14,10 @@ const load = (): Promise<WorkerPool> =>
         size: 2,
         idleTimeoutMs: 0,
       })),
+    (e: unknown) => {
+      pool = undefined;
+      throw e;
+    },
   ));
 
 export interface Submitted {
