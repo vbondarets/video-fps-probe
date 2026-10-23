@@ -57,9 +57,11 @@
   },
   "scripts": {
     "dev": "vite --config demo/vite.config.ts",
-    "build": "npm run build:demo",
+    "build": "npm run build:lib && npm run build:demo",
+    "build:lib": "node scripts/build-lib.mjs",
     "build:demo": "tsc -b && vite build --config demo/vite.config.ts",
     "preview": "vite preview --config demo/vite.config.ts",
+    "prepack": "npm run build:lib",
     "check:aliases": "node scripts/src-aliases.mjs --check",
     "typecheck": "tsc -b",
     "lint": "oxlint",

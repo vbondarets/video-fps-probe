@@ -56,7 +56,8 @@ npm run test:e2e                 # Playwright: the built app in Chromium, Firefo
 npm run typecheck                # tsc -b
 npm run lint                     # oxlint
 npm run compare                  # own, mp4box and mediabunny vs the ffprobe references, writes report/accuracy.*
-npm run build                    # type-check and build the demo to demo/dist/
+npm run build:lib                # build the library to dist/ (tsc, worker URL and d.ts rewrites, standalone worker)
+npm run build                    # build the library, then type-check and build the demo to demo/dist/
 npm run size                     # bundle size per chunk and budgets for demo/dist/, writes report/size.*
 npm run bench                    # headless Chrome benchmark of demo/dist/, writes report/browser-bench.*
 node scripts/readme-tables.ts    # refresh the tables in this README from report/
@@ -658,6 +659,7 @@ tests/             vitest in Node: unit/, api/, isobmff/, matroska/, segments/, 
   e2e/             Playwright: the built app in Chromium, Firefox and WebKit
 scripts/
   compare-ffprobe.ts, compare/   accuracy harness against the ffprobe references
+  build-lib.mjs                  library build to dist/: tsc, worker URL and d.ts specifier rewrites, standalone worker
   size-report.mjs                bundle sizes and budgets
   src-aliases.mjs                package exports mapped to src/ for the demo, tsconfig paths and vitest
   bench/                         headless Chrome benchmark and integration cost over the DevTools Protocol
