@@ -390,6 +390,7 @@ export function discover(distDir) {
   const groups = [
     [ENGINE_KINDS, 'engine-shared'],
     [PARSER_KINDS, 'parser-shared'],
+    [new Set([...PARSER_KINDS, ...ENGINE_KINDS]), 'parser-shared'],
   ];
   for (let changed = true; changed; ) {
     changed = false;
@@ -748,6 +749,7 @@ function runSelfTest() {
     write(engineCore, 'assets/core-X1.js', filler(1_000));
     write(engineCore, 'index.html', html);
     const engineChain = buildReport(engineCore);
+    expectEq('a chunk shared by a parser and an engine is parser-shared', engineChain.chunks.find((c) => c.file === 'assets/core-X1.js')?.kind, 'parser-shared');
     expectEq('engines: a chunk shared with a parser is a chain problem for the engine', chainsOf(engineChain, 'assets/mp4box-B1.js').length, 1);
     expectEq('engines: and for the parser', chainsOf(engineChain, 'assets/isobmff-I1.js').length, 1);
     const noWorkerDir = join(root, 'noworker');
