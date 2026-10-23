@@ -117,12 +117,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Check the container image matches @playwright/test
+      - name: Check every container image matches @playwright/test
         run: |
           installed="$(node -p "require('@playwright/test/package.json').version")"
-          image="$(sed -n 's|.*mcr\.microsoft\.com/playwright:v\([0-9][0-9.]*\)-.*|\1|p' .github/workflows/ci.yml | head -n 1)"
-          if [ "$installed" != "$image" ]; then
-            echo "::error file=.github/workflows/ci.yml::the e2e container image is Playwright v$image but @playwright/test is $installed; bump the image tag together with the package"
+          images="$(sed -n 's|.*mcr\.microsoft\.com/playwright:v\([0-9][0-9.]*\)-.*|\1|p' .github/workflows/ci.yml | sort -u)"
+          if [ "$images" != "$installed" ]; then
+            echo "::error file=.github/workflows/ci.yml::the container images are Playwright $(echo $images) but @playwright/test is $installed; bump every image tag together with the package"
             exit 1
           fi
 
