@@ -166,3 +166,6 @@ jobs:
 
       - name: Check the README size matrix against this measurement
         run: node scripts/readme-tables.ts --check
+
+      - name: Run the consumer smoke tests (Chromium, Firefox, WebKit)
+        run: npm run test:consumers
