@@ -97,7 +97,7 @@ An iife worker cannot split, so without the option the own worker is one file wi
 export default defineConfig({ worker: { format: 'es' } });
 ```
 
-Engines cost nothing until imported, then load lazily: mp4box 44.77 KB, mediabunny 53.87 KB, rVFC 2.19 KB. Gzip -9 of production builds from the packed tarball, budgeted in CI; every configuration is in [docs/benchmarks.md](docs/benchmarks.md#package-size).
+Engines cost nothing until imported. Importing a descriptor grows the critical path a little, from 0.67 KB to 0.90 KB with mp4box or mediabunny, 0.77 KB with rVFC and 1.02 KB with all three, and the engine itself loads lazily: mp4box 44.77 KB, mediabunny 53.87 KB, rVFC 2.19 KB. Gzip -9 of production builds from the packed tarball, budgeted in CI; every configuration is in [docs/benchmarks.md](docs/benchmarks.md#package-size).
 
 <!-- tables:size:end -->
 

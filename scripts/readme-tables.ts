@@ -917,6 +917,12 @@ function sizeBlock(inp: Inputs, doc: Doc): string[] {
   const viteRow = (name: string, option: string): string =>
     row([option, `**${kb(name, 'trigger')}**`, kb(name, 'firstMp4'), kb(name, 'allOwn'), matrixFixture(inp, name).workers.length]);
   const engines = MATRIX_ENGINES.map(([key, label]) => `${label} ${kb(key, key)}`);
+  const triggers = new Map<string, string[]>();
+  for (const [key, label] of MATRIX_ENGINES) {
+    const size = kb(key, 'trigger');
+    triggers.set(size, [...(triggers.get(size) ?? []), label]);
+  }
+  const grown = [...[...triggers].map(([size, labels]) => `${size} with ${labels.join(' or ')}`), `${kb('all', 'trigger')} with all three`];
   const v = inp.matrix.versions;
   return [
     `**${kb('default', 'trigger')} gzip on the critical path**: the package code in the entry chunk of a Vite ${v['vite'] ?? ''} app that imports \`video-fps-probe/lazy\` (${kb('default', 'entry')} with Vite's preload helper). The rest loads lazily, on the first file:`,
@@ -932,7 +938,7 @@ function sizeBlock(inp: Inputs, doc: Doc): string[] {
     "export default defineConfig({ worker: { format: 'es' } });",
     '```',
     '',
-    `Engines cost nothing until imported, then load lazily: ${engines.join(', ')}. Gzip -9 of production builds from the packed tarball, budgeted in CI; every configuration is in [docs/benchmarks.md](${doc.link('docs/benchmarks.md')}#package-size).`,
+    `Engines cost nothing until imported. Importing a descriptor grows the critical path a little, from ${kb('default', 'trigger')} to ${grown.slice(0, -1).join(', ')} and ${grown.at(-1)}, and the engine itself loads lazily: ${engines.join(', ')}. Gzip -9 of production builds from the packed tarball, budgeted in CI; every configuration is in [docs/benchmarks.md](${doc.link('docs/benchmarks.md')}#package-size).`,
   ];
 }
 
