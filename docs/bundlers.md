@@ -137,7 +137,7 @@ export const probe = lazyProbeClient({
 - The prebuilt and custom workers are same-origin script files. A policy must allow them with `worker-src 'self'`, or through the directives `worker-src` falls back to (`child-src`, `script-src`, `default-src`) when it is absent.
 - The parser and engine chunks are same-origin scripts too, loaded with `import()`.
 - The package uses no `eval`, no `new Function` and no WebAssembly.
-- The blob trampoline below additionally needs `worker-src blob:`.
+- The blob trampoline below additionally needs `worker-src blob:`, and `script-src` (or `script-src-elem`) must allow the CDN origin: the blob worker inherits the page's policy, and its `importScripts` call is checked against it.
 
 ## Scripts on a CDN origin
 
@@ -156,7 +156,8 @@ export const probe = lazyProbeClient({ worker: { create: viaBlob, engines: ['own
 ```
 
 - Only the classic standalone file works this way: a module worker cannot call `importScripts`, and the chunk imports of the prebuilt workers would resolve against the blob URL.
-- The CDN must serve the file with CORS headers for your origin, and the policy needs `worker-src blob:`.
+- `importScripts` fetches the file in no-cors mode, so the CDN needs no CORS headers. Only a cross-origin isolated page (`Cross-Origin-Embedder-Policy: require-corp`) needs the CDN to send `Cross-Origin-Resource-Policy: cross-origin`.
+- Under a Content Security Policy, `worker-src` must allow `blob:` and `script-src` the CDN origin ([above](#content-security-policy)).
 - This recipe is documented, not tested in CI.
 
 ## SSR and the lazy main-thread chunks
