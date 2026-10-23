@@ -1,23 +1,12 @@
 # video-fps-probe
 
-Frame rate, frame count, VFR detection and a rate profile for MP4, MOV, WebM and MKV files, read from the container headers in a Web Worker. Nothing is decoded and nothing leaves the browser, and the values are ffprobe-exact on the test corpus.
+Frame rate, frame count, VFR detection and a rate profile for MP4, MOV, WebM and MKV files, read from the container headers in a Web Worker. Nothing is decoded and nothing leaves the browser, and the values are ffprobe-exact on the test corpus. ESM only, no runtime dependencies, types included.
 
-**[Live demo](https://vbondarets.github.io/video-fps-probe/)** · [API](docs/api.md) · [Bundlers](docs/bundlers.md) · [Benchmarks and accuracy](docs/benchmarks.md) · [Architecture](docs/architecture.md) · [Changelog](CHANGELOG.md)
-
-## What you get
-
-- **Average FPS** as an exact rational, next to the `avg_frame_rate` string ffprobe 8.1.1 prints, plus nominal, minimum and maximum FPS.
-- **Frame count** (presented frames and stored samples), duration, codec, dimensions and rotation for every video track, primary track first.
-- **VFR detection** with the same rule as the ffprobe references, and a **rate profile** for timelines whose frame intervals differ: steady and variable segments, rate changes, freezes, gaps, bursts and an `uneven` flag.
-- **Provenance** on each value (header, exact, sampled, estimated, computed) and warnings in plain words. A bad file comes back as `result.error`, never as an exception.
-- **Containers**: MP4 and MOV (ISO BMFF, fragmented MP4 included), WebM and Matroska, sniffed from the bytes, never from the file name. Usually one or two `Blob.slice()` reads per file.
-- **Small and lazy**: the parsers run in a module worker and load per container on first use. Optional engines (mp4box.js, mediabunny, a `requestVideoFrameCallback` playback estimate) cost nothing until imported.
-
-ESM only, no runtime dependencies, TypeScript types included. A React entry (`video-fps-probe/react`) comes in 0.2.0.
+**[Live demo](https://vbondarets.github.io/video-fps-probe/)** · [API](docs/api.md) · [Bundlers](docs/bundlers.md) · [Benchmarks](docs/benchmarks.md) · [Architecture](docs/architecture.md) · [Changelog](CHANGELOG.md)
 
 ## Install
 
-**Not published yet; install from GitHub or wait for the first npm release.** Once it is on npm, one publish to the registry serves every package manager:
+**Not published yet; install from GitHub or wait for the first npm release.** One registry publish will serve every package manager:
 
 ```
 npm install video-fps-probe
@@ -26,76 +15,47 @@ pnpm add video-fps-probe
 bun add video-fps-probe
 ```
 
-Until then, install a tarball built from the repository. A plain git dependency (`npm install github:vbondarets/video-fps-probe`) does not work: `dist/` is not committed, the `prepack` script builds it, and npm runs only `prepare` for git dependencies, so the installed package would contain no code.
+A git dependency gets no code (`prepack` builds `dist/`, and npm skips it for git installs), so install a packed tarball:
 
 ```
-git clone https://github.com/vbondarets/video-fps-probe.git
-cd video-fps-probe
-npm ci
-npm pack                     # prepack builds dist/ and checks it, then writes video-fps-probe-0.0.0.tgz
-cd ../your-app
-npm install ../video-fps-probe/video-fps-probe-0.0.0.tgz
+git clone https://github.com/vbondarets/video-fps-probe.git && cd video-fps-probe
+npm ci && npm pack   # builds and checks dist/, writes video-fps-probe-0.0.0.tgz
+cd ../your-app && npm install ../video-fps-probe/video-fps-probe-0.0.0.tgz
 ```
-
-This is how CI installs the package for its consumer tests. The optional engines need their own peer packages, see [Choosing engines](#choosing-engines).
 
 ## Quick start
 
 ```ts
 import { lazyProbe } from 'video-fps-probe/lazy';
 
-const probe = lazyProbe(); // loads nothing until the first call
+const probe = lazyProbe(); // a small stub: loads nothing until the first call
 
-export async function fpsOf(file: File) {
-  const result = await probe.analyze(file);
-  const track = result.videoTracks.find((t) => t.trackId === result.primaryTrackId);
-  if (result.error || !track?.avgFps) return null;
-  return {
-    fps: track.avgFps.value, // exact rational in track.avgFps.num / track.avgFps.den
-    ffprobe: track.avgFpsFfprobe, // the avg_frame_rate string ffprobe prints, when it can be reproduced
-    frames: track.presentedFrames ?? track.frames,
-    vfr: track.isVfr,
-    profile: track.rateProfile?.summary ?? null, // for example "Uneven: 5 fps for 4 s, 200 fps for 4 s"
-  };
-}
+const result = await probe.analyze(file); // a broken file is result.error, not a rejection
+const track = result.videoTracks.find((t) => t.trackId === result.primaryTrackId);
+track?.avgFps; // exact rational { num, den, value }
+track?.avgFpsFfprobe; // the avg_frame_rate string of ffprobe, for example '30000/1001'
+track?.presentedFrames; // the frame count
+track?.isVfr;
+track?.rateProfile?.summary; // for example 'Uneven: 5 fps for 4 s, 200 fps for 4 s'
 ```
 
-- `lazyProbe()` keeps only a small stub in your bundle. The first call loads the probe client, starts the own worker, and the worker loads the parser for the sniffed container.
-- Call `probe.prewarm()` when an upload dialog opens: it does all of that without a file, so the first result does not wait for the network.
-- `summarize(result)` (from `video-fps-probe` or `video-fps-probe/client`) flattens the primary track into plain numbers with an `ok` flag.
-- `createProbe()` from `video-fps-probe` is the same probe without the lazy stub. Every option, the result schema and the error codes are in [docs/api.md](docs/api.md).
+The first call loads the probe client, the worker and the parser of the sniffed container; `probe.prewarm()` loads them ahead, for example when an upload dialog opens. `createProbe()` from `video-fps-probe` is the probe without the stub; `summarize(result)` flattens the primary track. React support comes in 0.2.0.
 
-## Choosing engines
+## Engines
 
-The own parsers are the default and the only engine that needs no extra package. The other engines are descriptors you import and register; each is for comparison or fallback.
-
-| Engine | Entry | Peer to install | Containers | Runs |
-|---|---|---|---|---|
-| own (default) | built into `video-fps-probe` and `video-fps-probe/lazy` | none | MP4, MOV, WebM, MKV | the own worker |
-| mp4box.js | `video-fps-probe/mp4box` | `mp4box` (`^2.4.1`, verified with 2.4.1, BSD-3-Clause) | MP4, MOV | an mp4box worker, which also serves own |
-| mediabunny | `video-fps-probe/mediabunny` | `mediabunny` (`^1.62.0`, verified with 1.62.0, MPL-2.0) | MP4, MOV, WebM, MKV | a mediabunny worker, which also serves own |
-| rVFC | `video-fps-probe/rvfc` | none | whatever the browser can play | the main thread: plays the file in a visible element |
+Own, the default, needs nothing else. mp4box.js and mediabunny are optional peers for a second opinion or a fallback, and rVFC estimates by playing the file:
 
 ```ts
-import { lazyProbe } from 'video-fps-probe/lazy';
-import { mediabunny } from 'video-fps-probe/mediabunny';
-import { mp4box } from 'video-fps-probe/mp4box';
+import { mediabunny } from 'video-fps-probe/mediabunny'; // npm install mediabunny
+import { mp4box } from 'video-fps-probe/mp4box'; // npm install mp4box
 
 const probe = lazyProbe({ engines: [mp4box(), mediabunny()] });
-
-await probe.analyze(file); // own
-await probe.analyze(file, { engine: 'mediabunny' }); // one engine per call
-await probe.analyze(file, { fallback: ['mediabunny'] }); // own first, mediabunny when own returns an error or no frame rate, times out or crashes
-
-const { outcomes, agreement } = await probe.compare(file); // every registered engine except rvfc, experimental
-agreement.agree; // true, false, or null when nothing could be compared
+await probe.analyze(file, { engine: 'mediabunny' });
+await probe.analyze(file, { fallback: ['mediabunny'] }); // on an error, no frame rate, a timeout or a crash
+const { outcomes, agreement } = await probe.compare(file); // experimental
 ```
 
-- Optional peers are never installed for you: `npm install mp4box` or `npm install mediabunny`. Importing `video-fps-probe/mp4box` without the peer fails the build, because `mp4box` cannot be resolved.
-- Engine ids are typed from what you register, so `engine: 'mp4box'` without `mp4box()` is a type error (and `ProbeError('engine-not-registered')` at run time).
-- `compare` runs engines on different workers in parallel and reports per engine `ok`, `failed`, `skipped`, `timeout` or `crashed`, plus an `agreement` on the primary track: exact rationals, exact frame counts, durations within 1e-6 s ([agreement rules](docs/api.md#compare-and-agreement)).
-- rVFC is never added to a compare set or a fallback chain implicitly. It needs a visible, attached host element (`rvfc({ host })` or the per-call `host` option), a foreground tab and a codec the browser can play, and it takes seconds per file.
-- One worker serving several engines, a classic worker file for esbuild or a CDN, and a host-built worker are in [docs/bundlers.md](docs/bundlers.md).
+`agreement.agree` is `true`, `false`, or `null` when nothing could be compared ([rules](docs/api.md#compare-and-agreement)). rVFC (`video-fps-probe/rvfc`) is never used implicitly and needs a visible host element ([engines](docs/api.md#engines)).
 
 ## Node
 
@@ -103,29 +63,22 @@ agreement.agree; // true, false, or null when nothing could be compared
 import { openAsBlob } from 'node:fs';
 import { analyze } from 'video-fps-probe';
 
-const result = await analyze(await openAsBlob(path), { name: path });
+const result = await analyze(await openAsBlob(path), { name: path }); // in the calling thread, no worker
 ```
 
-The root `analyze()` runs in the calling thread, with no worker. It takes a `Blob` or any `BlobLike` (`size` plus `slice(start, end)` returning something with `arrayBuffer()`), and `{ engine: mp4box() }` runs that engine instead of own (its peer must be installed). In Node 24, `fs.openAsBlob` reports the size of files above 4 GiB modulo 2^32, so pass a `BlobLike` over a file handle for those.
+Files above 4 GiB need a `BlobLike` in Node 24 ([in-thread analyze](docs/api.md#in-thread-analyze)).
 
 ## Cancellation, timeouts and failing open
 
-File problems are data (`result.error`); only infrastructure problems reject, always with a `ProbeError` that carries a `code`. For an upload flow that must never block on the probe:
-
 ```ts
 probe.prewarm(); // when the upload dialog opens
-
-const deadline = new AbortController(); // AbortSignal.timeout needs Chrome 103, above the browser floor
-const timer = setTimeout(() => deadline.abort(), 5000);
-const results = await Promise.all(files.map((f) => probe.tryAnalyze(f, { timeoutMs: 3000, signal: deadline.signal })));
-clearTimeout(timer);
-// null, or summarize(result).ok === false: continue the upload without the check
+const deadline = new AbortController();
+const late = new Promise<null>((resolve) => setTimeout(() => (deadline.abort(), resolve(null)), 5000));
+const checks = Promise.all(files.map((f) => probe.tryAnalyze(f, { timeoutMs: 3000, signal: deadline.signal })));
+const results = await Promise.race([checks, late]); // null, or null entries: upload without the check
 ```
 
-- `tryAnalyze()` resolves `null` where `analyze()` would reject.
-- `timeoutMs` counts from the moment a worker takes the job. A worker that times out is terminated at once and the next job starts a new one.
-- Queued jobs wait without a limit, so one shared `signal` is what bounds a whole batch: aborting it rejects queued jobs at once and cancels the running one.
-- `dispose()` terminates idle workers (they also stop after 30 s idle by default); `destroy()` aborts everything.
+`tryAnalyze` resolves `null` where `analyze` rejects. `timeoutMs` counts per job once a worker takes it and the signal cancels queued and running jobs, but neither covers main-thread chunk downloads: hence `prewarm()` and the race. A probe rejects only with a `ProbeError`; a lazy stub whose chunk fails to load rejects with the raw import error. [Details](docs/api.md#cancellation-and-failing-open).
 
 ## Size
 
@@ -156,44 +109,14 @@ Engines cost nothing until imported, then load lazily: mp4box 44.77 KB, mediabun
 
 <!-- tables:accuracy-summary:end -->
 
-Every check is against a stored ffprobe 8.1.1 reference of a synthetic fixture made with ffmpeg; real recorder output (phones, screen recorders, MediaRecorder) is not in the corpus. Per-engine tables, speed, the comparison with mp4box.js, mediabunny and rVFC, and the method are in [docs/benchmarks.md](docs/benchmarks.md).
+Synthetic fixtures made with ffmpeg; per-engine tables, speed and method: [docs/benchmarks.md](docs/benchmarks.md).
 
 ## Browser support
 
-**Chrome and Edge 94, Firefox 114, Safari and iOS Safari 15.4.** These floors are derived from the features the build uses (module workers with `import()`, `BigInt`, `Blob.arrayBuffer()`, ES2022), not tested on those versions. CI runs Chromium, Firefox and WebKit (Playwright builds).
+Chrome and Edge 94, Firefox 114, Safari and iOS 15.4: floors derived from the features used, not tested on those versions; CI runs Chromium, Firefox and WebKit. mp4box.js needs Safari 16.4; rVFC needs `requestVideoFrameCallback` (Chrome 83, Firefox 132, Safari 15.4), a visible foreground tab and a playable codec. [Details](docs/benchmarks.md#browser-support).
 
-- Firefox before 114 has no module workers; the classic standalone worker file (`video-fps-probe/standalone/own.worker.js`) is the route there, untested on old versions.
-- The mp4box.js engine needs Safari 16.4 (class static blocks in mp4box).
-- rVFC needs `requestVideoFrameCallback` (Chrome 83, Firefox 132, Safari 15.4), a visible foreground tab and a playable codec; HEVC did not play in headless Chrome and ProRes does not play in Chrome.
-
-## Known limitations
-
-- **Zero-config Vite builds one big worker.** Without `worker: { format: 'es' }`, the own worker is one file with both parsers ([Size](#size)).
-- **Cadence reads as steady.** A regular cadence such as 2:3 pulldown or a regular frame drop pattern is VFR, but the rate profile calls it "Steady", not uneven.
-- **rVFC needs playback**: seconds per file, a visible tab, a playable codec, and wrong averages on VFR files.
-- **Matroska has no frame index.** In the default `auto` mode a large file gets a sampled probe (no frame count, no average) unless the exact scan is predicted to take at most 150 ms; pass `matroskaMode: 'exact'` to force it.
-- **Size limits.** Files above 2^53 bytes, 64-bit values above 2^53-1, compressed movie headers (`cmov`) and a moov above 256 MiB are rejected with an error result. Only the first sample entry of a track is used.
-- **Synthetic corpus.** The references are pinned to ffprobe 8.1.1; real recorder files and later FFmpeg versions can differ on edge cases.
-
-The full list, with measured cases, is in [docs/benchmarks.md](docs/benchmarks.md#limitations).
-
-## Development
-
-Node 22.12 or newer. The demo lives in [demo/](demo/README.md) and consumes the library by package name.
-
-```
-npm ci
-npm test                 # vitest: unit, fixture and API tests in Node
-npm run typecheck        # tsc -b
-npm run lint             # oxlint
-npm run build:lib        # the library to dist/
-npm run check:package    # publint and check-dist on dist/
-npm run dev              # the demo on the Vite dev server
-npm run test:e2e         # Playwright: the built demo in Chromium, Firefox and WebKit
-```
-
-Every script, the fixture generator and the report pipeline: [docs/benchmarks.md](docs/benchmarks.md#reproducing-the-numbers).
+Known limitations: [changelog](CHANGELOG.md#known-limitations), [benchmarks](docs/benchmarks.md#limitations). Development: [demo/README.md](demo/README.md), [scripts](docs/benchmarks.md#reproducing-the-numbers).
 
 ## License
 
-[MIT](LICENSE). The optional peers have their own licenses: mediabunny is MPL-2.0 and mp4box is BSD-3-Clause. Neither is installed unless you add it.
+[MIT](LICENSE). The optional peers have their own licenses: mediabunny is MPL-2.0, mp4box is BSD-3-Clause.
