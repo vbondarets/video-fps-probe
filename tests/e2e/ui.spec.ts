@@ -5,7 +5,7 @@ import { primaryTrack } from '../../src/core/result.ts';
 import type { FileResult } from '../../src/core/types.ts';
 import { analyzeWithMediabunny } from '../../src/engines/mediabunny.ts';
 import { analyzeWithMp4box } from '../../src/engines/mp4box.ts';
-import { count, fps } from '../../demo/src/ui/format.ts';
+import { bytes, count, fps } from '../../demo/src/ui/format.ts';
 import { addFixtures, fixtureFile, nodeAnalyze, openApp, probeResults, waitSettled, withoutTiming, type ProbeWindow } from './support.ts';
 
 const SAMPLE_COUNT = 6;
@@ -125,6 +125,50 @@ for (const engine of ['mp4box', 'mediabunny'] as const) {
     expect(errors).toEqual([]);
   });
 }
+
+test('compare on a dropped non-media file shows the mediabunny error with its reads, and mp4box skips the file', async ({ page, browserName }) => {
+  const name = 'image.png';
+  const png = await readFile(fixtureFile('corrupt_png_named.mp4'));
+  const errors = watchErrors(page);
+  await openApp(page);
+  await page.evaluate(
+    ({ name, data }) => {
+      const transfer = new DataTransfer();
+      transfer.items.add(new File([new Uint8Array(data)], name, { type: 'image/png' }));
+      window.dispatchEvent(new DragEvent('drop', { dataTransfer: transfer, cancelable: true }));
+    },
+    { name, data: [...png] },
+  );
+  await waitSettled(page, 1);
+  const [own] = await probeResults(page);
+  expect(own.error).toMatch(/^not a recognised container/);
+  const c = card(page, name);
+  await c.locator('details.cmp > summary').click();
+  const table = c.locator('.cmp-body table');
+  await expect(table).toBeVisible();
+  await expect(table.locator('thead th')).toHaveCount(4);
+  await expect(table.locator('thead th', { hasText: 'mp4box' })).toHaveCount(0);
+  const column = ['own', 'mediabunny', 'rvfc'].indexOf('mediabunny');
+  const row = (label: string): Locator => table.locator('tbody tr', { has: page.locator('th', { hasText: new RegExp(`^${label}$`) }) }).locator('td');
+  const status = row('Status').nth(column);
+  await expect.poll(() => status.innerText(), { timeout: 30_000 }).not.toMatch(/^(not run|running)$|\d%$/);
+  const text = await status.innerText();
+  if (MODULE_LOAD_FAILURE.test(text)) {
+    test.info().annotations.push({ type: 'engine-unavailable', description: `mediabunny could not load in ${browserName}: ${text}` });
+    test.skip(true, `mediabunny could not load in ${browserName}: ${text}`);
+  }
+  const want = await analyzeWithMediabunny(new Blob([png]), name);
+  expect(want.error).toMatch(/\S/);
+  expect(want.io.reads).toBeGreaterThan(0);
+  expect(text).toBe(want.error);
+  await expect(status).toHaveClass('err');
+  await expect(row('Bytes read').nth(column)).toHaveText(bytes(want.io.bytesRead));
+  await expect(row('Reads').nth(column)).toHaveText(count(want.io.reads));
+  await expect(row('Time').nth(column)).toHaveText(/^\d+(\.\d+)? m?s$/);
+  const mp4box = await page.evaluate(() => (window as ProbeWindow).__fpsProbe!.runEngine(0, 'mp4box'));
+  expect(mp4box).toMatchObject({ name, engine: 'mp4box', error: 'not a recognised container', io: { reads: 0, bytesRead: 0 } });
+  expect(errors).toEqual([]);
+});
 
 interface ExportedJson {
   schema: string;
