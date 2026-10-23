@@ -884,7 +884,7 @@ function packageBlock(inp: Inputs): string[] {
     row([
       f.name === 'default' ? '**default**' : f.name,
       imports(f),
-      f.worker,
+      f.name === 'default' ? `${f.worker} (recommended)` : f.worker,
       `**${fmtKB(matrixMetric(inp, f.name, 'trigger'))}**`,
       kbOrDash(f.metrics['firstMp4']),
       kbOrDash(f.metrics['allOwn']),
@@ -898,6 +898,12 @@ function packageBlock(inp: Inputs): string[] {
   const v = inp.matrix.versions;
   return [
     `**A default install adds ${fmtKB(matrixMetric(inp, 'default', 'trigger'))} gzip to the host app's critical path:** the package code in the entry chunk of a Vite ${v['vite'] ?? ''} app that imports \`video-fps-probe/lazy\` (with Vite's preload helper, which any app with a dynamic import already has, that entry chunk is ${fmtKB(matrixMetric(inp, 'default', 'entry'))}). With \`worker: { format: 'es' }\` in the host's Vite config the first MP4 or MOV file then loads ${fmtKB(matrixMetric(inp, 'default', 'firstMp4'))} lazily: the probe client, the own worker, the statistics chunk and the ISO BMFF parser; every own path together is ${fmtKB(matrixMetric(inp, 'default', 'allOwn'))}. Without a worker option Vite builds workers as 'iife', which cannot split, so the own worker is one file with both parsers and the first file loads ${fmtKB(matrixMetric(inp, 'zero-config', 'firstMp4'))} (zero-config). mp4box.js and mediabunny are only in the build when their entries are imported. Everything the default build emits outside the entry chunk is ${fmtKB(matrixMetric(inp, 'default', 'lazyTotal'))}, because it also holds main-thread copies of the parsers, the statistics and the worker runtime: they exist for SSR, Node, \`worker: 'inline'\` and the root \`analyze()\`, and a browser with a \`Worker\` global does not download them otherwise.`,
+    '',
+    `Recommended: one line in the host's Vite config, so the own worker splits and the first MP4 loads ${fmtKB(matrixMetric(inp, 'default', 'firstMp4'))} instead of ${fmtKB(matrixMetric(inp, 'zero-config', 'firstMp4'))}. Module workers run on the whole package floor (Chrome and Edge 94, Firefox 114, Safari 15.4).`,
+    '',
+    '```js',
+    "export default defineConfig({ worker: { format: 'es' } });",
+    '```',
     '',
     ...table(['Configuration', 'Imports', 'Vite worker option', 'Critical path', 'First MP4, lazy', 'All own paths, lazy', 'Engine chunks, lazy', 'Worker files', 'Budgets'], 'lllrrrrrl', rows),
     '',

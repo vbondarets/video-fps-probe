@@ -274,9 +274,15 @@ Headless Chrome 155, GPU decoding on, display 170 Hz.
 
 **A default install adds 0.67 KB gzip to the host app's critical path:** the package code in the entry chunk of a Vite 8.3.5 app that imports `video-fps-probe/lazy` (with Vite's preload helper, which any app with a dynamic import already has, that entry chunk is 1.40 KB). With `worker: { format: 'es' }` in the host's Vite config the first MP4 or MOV file then loads 23.26 KB lazily: the probe client, the own worker, the statistics chunk and the ISO BMFF parser; every own path together is 36.24 KB. Without a worker option Vite builds workers as 'iife', which cannot split, so the own worker is one file with both parsers and the first file loads 34.77 KB (zero-config). mp4box.js and mediabunny are only in the build when their entries are imported. Everything the default build emits outside the entry chunk is 72.20 KB, because it also holds main-thread copies of the parsers, the statistics and the worker runtime: they exist for SSR, Node, `worker: 'inline'` and the root `analyze()`, and a browser with a `Worker` global does not download them otherwise.
 
+Recommended: one line in the host's Vite config, so the own worker splits and the first MP4 loads 23.26 KB instead of 34.77 KB. Module workers run on the whole package floor (Chrome and Edge 94, Firefox 114, Safari 15.4).
+
+```js
+export default defineConfig({ worker: { format: 'es' } });
+```
+
 | Configuration | Imports | Vite worker option | Critical path | First MP4, lazy | All own paths, lazy | Engine chunks, lazy | Worker files | Budgets |
 |---|---|---|---:|---:|---:|---:|---:|---|
-| **default** | `video-fps-probe/lazy` | format: 'es' | **0.67 KB** | 23.26 KB | 36.24 KB | - | 1 | ok (10 budgets) |
+| **default** | `video-fps-probe/lazy` | format: 'es' (recommended) | **0.67 KB** | 23.26 KB | 36.24 KB | - | 1 | ok (10 budgets) |
 | zero-config | `video-fps-probe/lazy` | none, so Vite's default format: 'iife' | **0.67 KB** | 34.77 KB | 34.77 KB | - | 1 | ok (5 budgets) |
 | custom | `video-fps-probe/client/lazy` + `video-fps-probe/worker-runtime` (host worker serving own) | format: 'es' | **0.68 KB** | 23.15 KB | 36.13 KB | - | 1 | ok (6 budgets) |
 | mp4box | `video-fps-probe/lazy` + `video-fps-probe/mp4box` | format: 'es' | **0.90 KB** | 23.29 KB | 36.27 KB | mp4box 44.77 KB | 2 | ok (5 budgets) |
