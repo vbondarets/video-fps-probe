@@ -91,6 +91,9 @@ jobs:
       - name: Check the package types (attw)
         run: npm run check:types
 
+      - name: Check that dist analyzes every committed fixture like src
+        run: npm run test:package
+
   e2e:
     name: End-to-end (Chromium, Firefox, WebKit)
     runs-on: ubuntu-latest
