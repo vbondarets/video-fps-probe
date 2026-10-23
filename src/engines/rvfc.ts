@@ -1,7 +1,9 @@
+import { ProbeError } from '../api/errors.ts';
 import { throwIfAborted } from '../core/abort.ts';
 import type { BlobLike } from '../core/reader.ts';
 import { emptyAnalysis, emptyTrack } from '../core/result.ts';
 import type { AnalyzeOptions, Rational } from '../core/types.ts';
+import type { EngineModule } from '../plugins/types.ts';
 import type { RvfcOptions, RvfcPass, RvfcResult } from './types.ts';
 
 const RATES = [24, 25, 30, 48, 50, 60, 100, 120, 144, 240];
@@ -196,4 +198,14 @@ export function run(blob: BlobLike, name: string, opts: RvfcRunOptions = {}): Pr
   if (!(blob instanceof Blob)) return Promise.reject(new TypeError('rVFC plays the file, so it needs a Blob'));
   if (!opts.host) return Promise.reject(new TypeError('rVFC needs an attached, visible host element'));
   return estimateWithRvfc(blob, { host: opts.host, name, signal: opts.signal ?? undefined, onProgress: opts.onProgress ?? undefined });
+}
+
+export function hosted(host?: HTMLElement | (() => HTMLElement)): EngineModule<RvfcResult> {
+  return {
+    containers,
+    run: (blob, name, opts: RvfcRunOptions) =>
+      typeof document === 'undefined'
+        ? Promise.reject(new ProbeError('unsupported-environment', 'rVFC plays the file, so it needs a DOM', { engine: 'rvfc' }))
+        : run(blob, name, { ...opts, host: opts.host ?? (typeof host === 'function' ? host() : host) }),
+  };
 }
