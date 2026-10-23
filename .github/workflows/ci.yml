@@ -39,17 +39,20 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Check the source aliases against the package exports
+        run: npm run check:aliases
+
       - name: Unit and fixture tests
         run: npm test
 
       - name: Compare engines against committed ffprobe references
         run: node scripts/compare-ffprobe.ts --engines own,mp4box,mediabunny --no-write
 
-      - name: Build
-        run: npm run build
+      - name: Build the demo
+        run: npm run build:demo
 
       - name: Check bundle size budgets
-        run: node scripts/size-report.mjs dist --check
+        run: node scripts/size-report.mjs demo/dist --check
 
   e2e:
     name: End-to-end (Chromium, Firefox, WebKit)
