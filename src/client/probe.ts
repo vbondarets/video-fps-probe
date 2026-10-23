@@ -1,11 +1,11 @@
-import { isAbortError, ProbeError } from '../api/errors.ts';
-import { emptyAnalysis, primaryTrack } from '../core/result.ts';
+import { ProbeError } from '../api/errors.ts';
+import { primaryTrack } from '../core/result.ts';
 import type { EngineId } from '../core/types.ts';
 import type { EngineDescriptor, EngineModule, WorkerEngineId } from '../plugins/types.ts';
 import type { WireOptions } from '../worker/protocol.ts';
 import type { InlineReply } from './inline.ts';
 import { WorkerPool } from './pool.ts';
-import type { Attempt, BaseOptions, CallOptions, ClientOptions, CustomWorker, IdOf, Probe, ProbeResult } from './types.ts';
+import type { BaseOptions, CallOptions, ClientOptions, CustomWorker, IdOf, Probe, ProbeResult } from './types.ts';
 
 export interface CoreOptions extends BaseOptions<EngineId> {
   worker?: CustomWorker<WorkerEngineId> | 'inline';
@@ -24,8 +24,6 @@ export interface CompareContext {
   defaults?: WireOptions;
 }
 
-type Failure = Attempt & { result?: ProbeResult };
-
 const notRegistered = (id: EngineId, message = `engine ${id} is not registered`) => new ProbeError('engine-not-registered', message, { engine: id });
 
 export const nameOf = (file: Blob): string => (typeof File !== 'undefined' && file instanceof File ? file.name : '');
@@ -35,8 +33,8 @@ export const failureOf = (r: ProbeResult): string | null => {
   return r.error ?? (!t ? 'no video track' : t.avgFps ? null : 'no frame rate');
 };
 
-const withAttempts = (result: ProbeResult, failures: readonly Failure[]): ProbeResult =>
-  failures.length > 0 ? { ...result, attempts: failures.map(({ engine, error }) => ({ engine, error })) } : result;
+const lazy = <T>(chunk: Promise<T>, engine: EngineId | null): Promise<T> =>
+  chunk.catch((e: unknown) => Promise.reject(new ProbeError('worker-failed', String(e), { engine, cause: e })));
 
 export function createProbeCore(options: CoreOptions): Probe<EngineId> {
   const { worker, engines: descriptors = [], engine: defaultEngine = 'own', fallback: defaultFallback = [], workers, idleTimeoutMs, timeoutMs: defaultTimeout, defaults } = options;
@@ -91,10 +89,7 @@ export function createProbeCore(options: CoreOptions): Probe<EngineId> {
       return route.pool().run({ type: 'analyze', file, name, engine: id as WorkerEngineId, options: wire }, { signal: call.signal, timeoutMs, onProgress: call.onProgress, engine: id }) as Promise<InlineReply>;
     }
     const signals = [call.signal, life.signal];
-    return import('./inline.ts').then(
-      (m) => m.runInline(route.load, file, name, wire, { engine: id, signals, timeoutMs, onProgress: call.onProgress, host: call.host }),
-      (e: unknown) => Promise.reject(new ProbeError('worker-failed', String(e), { engine: id, cause: e })),
-    );
+    return lazy(import('./inline.ts'), id).then((m) => m.runInline(route.load, file, name, wire, { engine: id, signals, timeoutMs, onProgress: call.onProgress, host: call.host }));
   };
 
   const analyze = async (file: Blob, call: CallOptions<EngineId> = {}): Promise<ProbeResult> => {
@@ -103,31 +98,10 @@ export function createProbeCore(options: CoreOptions): Probe<EngineId> {
     const missing = chain.find((id) => !routes.has(id));
     if (missing) throw notRegistered(missing);
     const wire = { ...defaults, ...rest };
-    const failures: Failure[] = [];
-    let last: ProbeError | null = null;
-    for (const id of chain) {
-      let result: ProbeResult;
-      try {
-        const reply = await run(id, file, name, wire, { host, signal, timeoutMs, onProgress });
-        result =
-          reply.type === 'result'
-            ? reply.result
-            : { name, size: file.size, ...emptyAnalysis('unknown', `${id} does not read this container`), io: { reads: 0, bytesRead: 0, ms: 0 }, engine: id };
-      } catch (e) {
-        if (isAbortError(e)) throw e;
-        last = e instanceof ProbeError ? e : new ProbeError('worker-failed', String(e), { engine: id, cause: e });
-        failures.push({ engine: id, error: last.message });
-        continue;
-      }
-      const error = failureOf(result);
-      if (error === null) return withAttempts(result, failures);
-      failures.push({ engine: id, error, result });
-    }
-    for (let i = failures.length - 1; i >= 0; i--) {
-      const { result } = failures[i];
-      if (result) return withAttempts(result, failures.slice(0, i).concat(failures.slice(i + 1)));
-    }
-    throw last;
+    const transport = { host, signal, timeoutMs, onProgress };
+    const first = chain.length === 1 ? await run(engine, file, name, wire, transport) : null;
+    if (first?.type === 'result') return first.result;
+    return lazy(import('./fallback.ts'), engine).then((m) => m.runChain(run, chain, file, name, wire, transport, first));
   };
 
   const engines = [...routes.keys()];
@@ -146,7 +120,7 @@ export function createProbeCore(options: CoreOptions): Probe<EngineId> {
     engines,
     analyze,
     tryAnalyze: (file, call) => analyze(file, call).catch(() => null),
-    compare: (file, o) => import('./compare.ts').then((m) => m.compare(context, file, o)),
+    compare: (file, o) => lazy(import('./compare.ts'), null).then((m) => m.compare(context, file, o)),
     async prewarm(o = {}) {
       const containers = o.containers ?? ['isobmff'];
       const warm = new Map<WorkerPool, WorkerEngineId[]>();

@@ -1,4 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const loads = vi.hoisted(() => ({ fallback: 0 }));
+
+vi.mock('../../src/client/fallback.ts', async (importOriginal) => {
+  loads.fallback++;
+  return importOriginal();
+});
+
 import { createProbeClient } from '../../src/client/probe.ts';
 import { fakeResult, FakeWorker } from './fake-worker.ts';
 import { analyzed, customWorker, fakeModule, mainDescriptor, mp4File } from './probe-helpers.ts';
@@ -15,6 +23,19 @@ afterEach(() => {
 const engines = (w: FakeWorker) => analyzed(w).map((m) => (m.type === 'analyze' ? m.engine : null));
 
 describe('fallback chain', () => {
+  it('returns a single engine result as it is, error included, and loads the chain module only for a chain or a skip', async () => {
+    FakeWorker.reset('reply', (m) => (m.type === 'analyze' && m.name === 'bad.mp4' ? { type: 'result', result: { ...fakeResult(m.name), error: 'moov not found' } } : undefined));
+    const probe = createProbeClient({ worker: customWorker('own', 'mp4box') });
+    expect(await probe.analyze(mp4File('a.mp4'))).toEqual(fakeResult('a.mp4'));
+    expect(await probe.analyze(mp4File('bad.mp4'))).toEqual({ ...fakeResult('bad.mp4'), error: 'moov not found' });
+    expect(loads.fallback).toBe(0);
+    const [worker] = FakeWorker.instances;
+    FakeWorker.reset('reply', () => ({ type: 'skipped', reason: 'unsupported-container' }));
+    expect(await probe.analyze(mp4File('c.webm'), { engine: 'mp4box' })).toMatchObject({ engine: 'mp4box', error: 'mp4box does not read this container' });
+    expect(analyzed(worker)).toHaveLength(3);
+    expect(loads.fallback).toBe(1);
+  });
+
   it('moves to the next engine on an error result and records the attempt', async () => {
     FakeWorker.reset('reply', (m) => (m.type === 'analyze' && m.engine === 'own' ? { type: 'result', result: { ...fakeResult(m.name), error: 'moov not found' } } : undefined));
     const probe = createProbeClient({ worker: customWorker('own', 'mp4box'), fallback: ['mp4box'] });
@@ -86,8 +107,10 @@ describe('fallback chain', () => {
     const probe = createProbeClient({ worker: customWorker('own', 'mp4box'), fallback: ['mp4box'] });
     const controller = new AbortController();
     const pending = probe.analyze(mp4File(), { signal: controller.signal });
+    await vi.waitFor(() => expect(FakeWorker.instances).toHaveLength(1));
     controller.abort();
     await expect(pending).rejects.toMatchObject({ code: 'aborted' });
+    await new Promise((resolve) => setTimeout(resolve, 10));
     expect(engines(FakeWorker.instances[0])).toEqual(['own']);
   });
 
