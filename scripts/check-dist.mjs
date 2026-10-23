@@ -19,7 +19,9 @@ const PARSER_DIRS = ['core/isobmff/', 'core/matroska/'];
 const PEERS = ['mp4box', 'mediabunny'];
 const WORKER_CALL = /\bnew\s+(?:Worker|SharedWorker)\s*\(/g;
 const WORKER_LITERAL = /^new\s+(?:Worker|SharedWorker)\s*\(\s*new\s+URL\s*\(\s*(?:'([^']+)'|"([^"]+)")\s*,\s*import\.meta\.url\s*\)/;
-const GLOBAL_DOM = /(?<![\w$.])(?:window|document)\s*[.[]|\btypeof\s+(?:window|document)\b/;
+const DOM_GLOBALS = new Set(['window', 'document']);
+const GLOBAL_OBJECTS = new Set(['globalThis', 'self']);
+const TS_EXTENSION = /\.(?:[cm]?ts|tsx)$/;
 
 const posix = (p) => p.split('\\').join('/');
 const kb = (n) => `${(n / KB).toFixed(2)} KB`;
@@ -48,6 +50,36 @@ export function moduleSpecifiers(text, fileName) {
     } else if (ts.isImportTypeNode(node) && ts.isLiteralTypeNode(node.argument) && ts.isStringLiteral(node.argument.literal)) {
       found.push({ specifier: node.argument.literal.text, dynamic: false });
     }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return found;
+}
+
+function isNamePosition(id) {
+  const parent = id.parent;
+  if ((ts.isPropertyAccessExpression(parent) || ts.isQualifiedName(parent)) && parent.name === id) return true;
+  if (ts.isBindingElement(parent) && parent.propertyName === id) return true;
+  if (ts.isLabeledStatement(parent) || ts.isBreakOrContinueStatement(parent)) return true;
+  const named = [ts.isPropertyAssignment, ts.isPropertyDeclaration, ts.isMethodDeclaration, ts.isGetAccessorDeclaration, ts.isSetAccessorDeclaration, ts.isVariableDeclaration, ts.isParameter, ts.isBindingElement, ts.isFunctionDeclaration, ts.isFunctionExpression, ts.isClassDeclaration, ts.isClassExpression];
+  return named.some((is) => is(parent)) && parent.name === id;
+}
+
+const isImportMetaUrl = (node) => ts.isPropertyAccessExpression(node) && ts.isMetaProperty(node.expression) && node.expression.keywordToken === ts.SyntaxKind.ImportKeyword && node.name.text === 'url';
+const calleeName = (node) => (ts.isIdentifier(node.expression) ? node.expression.text : null);
+
+export function scanCode(text, fileName) {
+  const source = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  const found = { urls: [], dom: [], hazards: [] };
+  const visit = (node) => {
+    if (ts.isIdentifier(node) && DOM_GLOBALS.has(node.text) && !isNamePosition(node)) found.dom.push(node.text);
+    else if (ts.isPropertyAccessExpression(node) && ts.isIdentifier(node.expression) && GLOBAL_OBJECTS.has(node.expression.text) && DOM_GLOBALS.has(node.name.text)) found.dom.push(`${node.expression.text}.${node.name.text}`);
+    else if (ts.isElementAccessExpression(node) && ts.isIdentifier(node.expression) && GLOBAL_OBJECTS.has(node.expression.text) && ts.isStringLiteralLike(node.argumentExpression) && DOM_GLOBALS.has(node.argumentExpression.text)) found.dom.push(`${node.expression.text}['${node.argumentExpression.text}']`);
+    if (ts.isNewExpression(node) && calleeName(node) === 'URL' && node.arguments?.length === 2 && isImportMetaUrl(node.arguments[1])) {
+      const [arg] = node.arguments;
+      found.urls.push(ts.isStringLiteralLike(arg) ? arg.text : null);
+    }
+    if ((ts.isCallExpression(node) || ts.isNewExpression(node)) && ['require', 'eval', 'Function'].includes(calleeName(node))) found.hazards.push(`${calleeName(node)}()`);
     ts.forEachChild(node, visit);
   };
   visit(source);
@@ -142,7 +174,7 @@ export function checkDist({ pack = true, ssr = true } = {}) {
         fail(`${file}: import() with a non-literal specifier`);
         continue;
       }
-      if (/\.(?:[cm]?ts|tsx)$/.test(specifier)) fail(`${file}: .ts specifier ${specifier}`);
+      if (TS_EXTENSION.test(specifier)) fail(`${file}: .ts specifier ${specifier}`);
       if (!bare(specifier)) {
         const target = posix(join(dirname(file), specifier));
         const exists = existsSync(join(DIST, target)) || (file.endsWith('.d.ts') && existsSync(join(DIST, target.replace(/\.js$/, '.d.ts'))));
@@ -158,6 +190,16 @@ export function checkDist({ pack = true, ssr = true } = {}) {
     }
     if (/import\.meta\.env/.test(text)) fail(`${file}: import.meta.env`);
     if (/__fpsProbe/.test(text)) fail(`${file}: __fpsProbe`);
+  }
+
+  const scans = new Map([...texts].filter(([f]) => f.endsWith('.js')).map(([f, text]) => [f, scanCode(text, f)]));
+  for (const [file, scan] of scans) {
+    for (const url of scan.urls) {
+      if (url === null) fail(`${file}: new URL() with a non-literal specifier and import.meta.url`);
+      else if (TS_EXTENSION.test(url)) fail(`${file}: new URL() of the .ts file ${url}`);
+      else if (!existsSync(join(DIST, dirname(file), url))) fail(`${file}: new URL() of ${url}, which does not exist in dist`);
+    }
+    for (const hazard of new Set(scan.hazards)) fail(`${file}: calls ${hazard}, which ESM output and peer isolation do not allow`);
   }
 
   const literalFiles = [];
@@ -205,7 +247,8 @@ export function checkDist({ pack = true, ssr = true } = {}) {
   }
 
   for (const f of files.filter((x) => /^worker\/[^/]+\.worker\.js$/.test(x) || /^standalone\/[^/]+\.js$/.test(x))) {
-    if (GLOBAL_DOM.test(texts.get(f))) fail(`${f}: references window or document`);
+    const dom = [...new Set(scans.get(f)?.dom ?? [])];
+    if (dom.length > 0) fail(`${f}: references ${dom.join(', ')}`);
   }
 
   if (ssr) {
