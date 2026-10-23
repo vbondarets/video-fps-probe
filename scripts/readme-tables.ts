@@ -182,7 +182,8 @@ interface IntegrationReport {
   profiles: { id: string; latencyMs: number; downKbps: number | null }[];
   main: { batchFiles: number };
   cpu: { perFile: Record<string, { label: string; name: string; medianMs: number }> };
-  environment: { browser: string };
+  chunks: Record<string, string | undefined>;
+  environment: { browser: string; date: string };
   model: {
     triggerGzip: number;
     initialIncreaseMeasuredPct: number;
@@ -259,6 +260,8 @@ const PROFILE_FILES: ReadonlyArray<readonly [string, string]> = [
 ];
 
 const INTEGRATION_PROFILES = ['fast4g', 'slow4g', '3g'];
+
+const INTEGRATION_CHUNKS = ['entry', 'isobmff', 'matroska'];
 
 const READ_PAIRS: ReadonlyArray<readonly [string, string]> = [
   ['mov_nobf_faststart.mov', 'mov_nobf_default.mov'],
@@ -541,7 +544,7 @@ function headline(inp: Inputs): string[] {
     `- **Reads.** Median ${median(reads)} reads per committed fixture, at most ${Math.max(...reads)}. The ${fmtDuration(longDur)}, ${longFrames}-frame MP4 (${fmtBytes(long.sizeBytes)}) takes ${io(long).reads} reads and ${fmtBytes(io(long).bytesRead)} (${fmtPct(io(long).percent)}% of the file).`,
     `- **Speed.** In ${browser}, warm: median ${fmtMs(median(warm.map((w) => w.medianMs)))} ms per file in the worker and ${fmtMs(median(warm.map((w) => w.medianWallMs)))} ms from file pick to rendered result; the ${fmtDuration(longDur)} file takes ${fmtMs(chromeLong.medianMs)} ms.${big}`,
     `- **Size.** The page plus the first MP4 result loads ${fmtKB(firstMp4.gzip)} gzip (page, ${kindGzip(inp.size, 'client') === null ? '' : 'worker pool, '}worker entry, ${sharedParserGzip(inp.size) === null ? '' : 'shared statistics chunk, '}ISO BMFF parser); the first Matroska result ${fmtKB(firstMkv.gzip)}.`,
-    `- **Embedding.** In a host app the critical path grows by a ${fmtKB(m.triggerGzip)} gzip trigger (${pctSmall(m.initialIncreaseMeasuredPct)} of a ${fmtMB(inp.integration.host.initialGzipBytes)} initial load); the first MP4 lazily loads ${fmtKB(m.lazyMp4Gzip)}. With the worker prewarmed when the upload dialog opens, the first result on fast 4G takes ${fmtMs(fast.prewarm.totalMs)} ms instead of ${fmtMs(fast.cold.totalMs)} ms.`,
+    `- **Embedding.** In a host app the critical path grows by a ${fmtKB(m.triggerGzip)} gzip trigger (${pctSmall(m.initialIncreaseMeasuredPct)} of a ${fmtMB(inp.integration.host.initialGzipBytes)} initial load); the first MP4 lazily loads ${fmtKB(m.lazyMp4Gzip)}. With the worker prewarmed when the upload dialog opens, the first result on fast 4G takes ${fmtMs(fast.prewarm.totalMs)} ms instead of ${fmtMs(fast.cold.totalMs)} ms.${integrationStale(inp) ? ` Measured on an earlier build whose worker entry and parser chunks differ from the current ones, so these figures are not current.` : ''}`,
     `- **Same result in Node and Chrome.** ${inp.bench.sanity.identical} of ${inp.bench.sanity.compared} files give identical results field by field (timing excluded).`,
     `- **Machine.** ${machine(inp)}.`,
   ];
@@ -1010,6 +1013,11 @@ function profileBlock(inp: Inputs): string[] {
   ];
 }
 
+function integrationStale(inp: Inputs): boolean {
+  const current = new Set(inp.size.chunks.map((c) => c.file.split('/').pop()));
+  return INTEGRATION_CHUNKS.some((k) => !current.has(inp.integration.chunks[k]));
+}
+
 function integrationModel(ic: IntegrationReport) {
   const m = ic.model;
   const prof = (id: string): ProfileModel => need(m.profiles.find((p) => p.id === id), `integration profile ${id}`);
@@ -1063,7 +1071,14 @@ function integrationBlock(inp: Inputs): string[] {
     row(['Memory (renderer private, probe share)', `+${fmtMB(first)} after the first video, +${fmtMB(idle)} idle after ${batch}`, 'same, from the dialog open', `+${fmtMB(first)} for every visitor`]),
   ];
   const cpu = Object.values(ic.cpu.perFile).map((f) => `\`${f.name}\` ${fmtMs(f.medianMs)} ms`);
+  const stale = integrationStale(inp)
+    ? [
+        `**Not current.** Measured on ${ic.environment.date.slice(0, 10)} on an earlier build (worker entry \`${ic.chunks['entry']}\`). The worker entry and parser chunks of the current build differ (see [Bundle size](#bundle-size)), so re-run \`scripts/bench/integration.mjs\` before quoting these sizes and timings.`,
+        '',
+      ]
+    : [];
   return [
+    ...stale,
     `Host model: an SPA with a ${fmtMB(ic.host.initialGzipBytes)} gzip initial load, ${majorVersion(ic.environment.browser)} headless, local server with CDP network throttling; the probe is the real worker pool, worker entry and parser chunks. "Prewarmed" means the worker was started and the parser loaded before the pick.`,
     '',
     ...table(['', 'Lazy on the first pick', 'Lazy + prefetch when the upload dialog opens', 'Eager (in the critical bundle)'], 'llll', rows),

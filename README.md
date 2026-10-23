@@ -10,7 +10,7 @@ Frame rate, frame count and variable frame rate detection for local video files,
 - **Reads.** Median 2 reads per committed fixture, at most 2. The 3 h, 648000-frame MP4 (12.42 MiB) takes 2 reads and 2.56 MiB (20.6% of the file).
 - **Speed.** In Chrome 155, warm: median 1.50 ms per file in the worker and 2.40 ms from file pick to rendered result; the 3 h file takes 4.10 ms. A 604.42 MB 1080p MP4 with the moov at the end takes 2 reads (75.0 KiB) and 1.70 ms; the same stream in Matroska takes 117 ms in auto mode (126 reads; a probe, so no frame count until "Scan all frames").
 - **Size.** The page plus the first MP4 result loads 98.06 KB gzip (page, worker pool, worker entry, shared statistics chunk, ISO BMFF parser); the first Matroska result 96.94 KB.
-- **Embedding.** In a host app the critical path grows by a 0.52 KB gzip trigger (0.027% of a 1.95 MB initial load); the first MP4 lazily loads 20.32 KB. With the worker prewarmed when the upload dialog opens, the first result on fast 4G takes 5.30 ms instead of 292 ms.
+- **Embedding.** In a host app the critical path grows by a 0.52 KB gzip trigger (0.027% of a 1.95 MB initial load); the first MP4 lazily loads 20.32 KB. With the worker prewarmed when the upload dialog opens, the first result on fast 4G takes 5.30 ms instead of 292 ms. Measured on an earlier build whose worker entry and parser chunks differ from the current ones, so these figures are not current.
 - **Same result in Node and Chrome.** 116 of 116 files give identical results field by field (timing excluded).
 - **Machine.** Windows 10 Pro, Intel Core i7-10700KF (16 threads), 32 GiB, Node v24.20.0, Chrome 155 headless; ffprobe 8.1.1-full_build-www.gyan.dev.
 
@@ -282,9 +282,9 @@ Headless Chrome 155, GPU decoding on, display 170 Hz.
 | mediabunny engine | Compare engines | 201.64 KB | **52.88 KB** | 44.54 KB | not budgeted | - | - |
 | shared by mp4box and mediabunny | with mp4box or mediabunny | 3.02 KB | **1.50 KB** | 1.35 KB | not budgeted | - | - |
 | initial: main + CSS + worker entry |  | 253.61 KB | **80.45 KB** | 69.80 KB | 85.00 KB | 4.55 KB | ok |
-| first MP4 analysis: initial + ISO BMFF parser |  | 297.02 KB | **98.06 KB** | 85.71 KB | 100.00 KB | 1.94 KB | ok |
+| first MP4 analysis: initial + worker pool + statistics + ISO BMFF parser |  | 297.02 KB | **98.06 KB** | 85.71 KB | 100.00 KB | 1.94 KB | ok |
 | first VFR MP4 analysis: first MP4 + rate profile core |  | 300.37 KB | **99.91 KB** | 87.42 KB | 100.00 KB | 0.09 KB | ok |
-| first Matroska analysis: initial + Matroska parser |  | 295.43 KB | **96.94 KB** | 84.79 KB | 100.00 KB | 3.06 KB | ok |
+| first Matroska analysis: initial + worker pool + statistics + Matroska parser |  | 295.43 KB | **96.94 KB** | 84.79 KB | 100.00 KB | 3.06 KB | ok |
 
 <!-- tables:bundle:end -->
 
@@ -341,6 +341,8 @@ The target is a large React app (about 1.95 MB gzip initial load) where a user u
 Measured with `scripts/bench/integration.mjs` (details and formulas in [report/integration-cost.md](report/integration-cost.md)):
 
 <!-- tables:integration:start -->
+
+**Not current.** Measured on 2026-10-23 on an earlier build (worker entry `analyze.worker-Cxu1jFcj.js`). The worker entry and parser chunks of the current build differ (see [Bundle size](#bundle-size)), so re-run `scripts/bench/integration.mjs` before quoting these sizes and timings.
 
 Host model: an SPA with a 1.95 MB gzip initial load, Chrome 155 headless, local server with CDP network throttling; the probe is the real worker pool, worker entry and parser chunks. "Prewarmed" means the worker was started and the parser loaded before the pick.
 
