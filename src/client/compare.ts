@@ -35,16 +35,19 @@ export async function compare<K extends EngineId>(ctx: CompareContext, file: Blo
     const kind = ctx.kindOf(id);
     groups.set(kind, [...(groups.get(kind) ?? []), id]);
   }
-  const outcomes: Partial<Record<K, EngineOutcome>> = {};
+  const settled = new Map<K, EngineOutcome>();
   await Promise.all(
     [...groups.values()].map(async (group) => {
-      for (const id of group) outcomes[id] = await outcomeOf(id);
+      for (const id of group) settled.set(id, await outcomeOf(id));
     }),
   );
+  const outcomes: Partial<Record<K, EngineOutcome>> = {};
   const results: Partial<Record<K, ProbeResult>> = {};
   for (const id of ids) {
-    const outcome = outcomes[id];
-    if (outcome && 'result' in outcome) results[id] = outcome.result;
+    const outcome = settled.get(id);
+    if (!outcome) continue;
+    outcomes[id] = outcome;
+    if ('result' in outcome) results[id] = outcome.result;
   }
   const agreement = compareResults(results, o.reference);
   return { name, size: file.size, reference: agreement.reference, outcomes, agreement };

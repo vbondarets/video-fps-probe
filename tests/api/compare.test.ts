@@ -65,6 +65,20 @@ describe('probe.compare', () => {
     expect(r.outcomes.rvfc).toMatchObject({ status: 'ok', result: { engine: 'rvfc' } });
   });
 
+  it('keeps the outcomes in the requested engine order when a later engine finishes first', async () => {
+    FakeWorker.reset('manual');
+    const probe = createProbeClient({ worker: customWorker('own', 'mp4box'), engines: [mainDescriptor('rvfc')] });
+    const pending = probe.compare(mp4File('a.mp4'), { engines: ['mp4box', 'own', 'rvfc'] });
+    await vi.waitFor(() => expect(posted()).toEqual([['custom', ['mp4box']]]));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    const [custom] = FakeWorker.instances;
+    custom.answer(analyzed(custom)[0].id);
+    await vi.waitFor(() => expect(posted()).toEqual([['custom', ['mp4box', 'own']]]));
+    custom.answer(analyzed(custom)[1].id);
+    const r = await pending;
+    expect(Object.keys(r.outcomes)).toEqual(['mp4box', 'own', 'rvfc']);
+  });
+
   it('reports failed, skipped, timeout and crashed outcomes per engine without rejecting', async () => {
     vi.useFakeTimers();
     FakeWorker.reset('reply', (m, w) => {
