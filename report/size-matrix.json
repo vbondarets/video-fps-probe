@@ -11,7 +11,10 @@
   "fixtures": [
     {
       "name": "default",
-      "imports": "./lazy",
+      "imports": [
+        "./lazy"
+      ],
+      "note": null,
       "engines": [
         "own"
       ],
@@ -226,7 +229,11 @@
     },
     {
       "name": "custom",
-      "imports": "./client/lazy + host worker",
+      "imports": [
+        "./client/lazy",
+        "./worker-runtime"
+      ],
+      "note": "host worker serving own",
       "engines": [
         "own"
       ],
@@ -388,7 +395,11 @@
     },
     {
       "name": "mp4box",
-      "imports": "./lazy + ./mp4box",
+      "imports": [
+        "./lazy",
+        "./mp4box"
+      ],
+      "note": null,
       "engines": [
         "own",
         "mp4box"
@@ -625,7 +636,11 @@
     },
     {
       "name": "mediabunny",
-      "imports": "./lazy + ./mediabunny",
+      "imports": [
+        "./lazy",
+        "./mediabunny"
+      ],
+      "note": null,
       "engines": [
         "own",
         "mediabunny"
@@ -862,7 +877,11 @@
     },
     {
       "name": "rvfc",
-      "imports": "./lazy + ./rvfc",
+      "imports": [
+        "./lazy",
+        "./rvfc"
+      ],
+      "note": null,
       "engines": [
         "own",
         "rvfc"
@@ -1035,7 +1054,13 @@
     },
     {
       "name": "all",
-      "imports": "./lazy + ./mp4box + ./mediabunny + ./rvfc",
+      "imports": [
+        "./lazy",
+        "./mp4box",
+        "./mediabunny",
+        "./rvfc"
+      ],
+      "note": null,
       "engines": [
         "own",
         "mp4box",
@@ -1382,7 +1407,10 @@
     },
     {
       "name": "iife-nosplit",
-      "imports": "./lazy, worker format iife with codeSplitting false",
+      "imports": [
+        "./lazy"
+      ],
+      "note": "Vite worker format iife with codeSplitting false",
       "engines": [
         "own"
       ],
@@ -1394,7 +1422,7 @@
         "matroska": null,
         "segments": null,
         "firstMp4": 34772,
-        "allOwn": null,
+        "allOwn": 34772,
         "mp4box": null,
         "mediabunny": null,
         "engineShared": null,

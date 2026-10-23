@@ -8,13 +8,13 @@ The critical path is the package code inside the host entry chunk, cut out of th
 
 | Configuration | Imports | Critical path | Entry chunk with the preload helper | First MP4, lazy | All own paths, lazy | Engine chunk | Worker files | Budgets |
 |---|---|---:|---:|---:|---:|---:|---:|---|
-| default | ./lazy | **0.67 KB** | 1.40 KB | 23.26 KB | 36.24 KB | - | 1 (own.worker) | ok |
-| custom | ./client/lazy + host worker | **0.68 KB** | 1.47 KB | 23.15 KB | 36.13 KB | - | 1 (fps.worker) | ok |
-| mp4box | ./lazy + ./mp4box | **0.90 KB** | 1.75 KB | 23.29 KB | 36.27 KB | mp4box 44.77 KB | 2 (mp4box.worker, own.worker) | ok |
-| mediabunny | ./lazy + ./mediabunny | **0.90 KB** | 1.75 KB | 23.29 KB | 36.27 KB | mediabunny 53.87 KB | 2 (mediabunny.worker, own.worker) | ok |
-| rvfc | ./lazy + ./rvfc | **0.77 KB** | 1.59 KB | 23.27 KB | 36.26 KB | rVFC 2.19 KB | 1 (own.worker) | ok |
-| all | ./lazy + ./mp4box + ./mediabunny + ./rvfc | **1.02 KB** | 1.92 KB | 23.31 KB | 36.29 KB | mp4box 44.77 KB, mediabunny 53.87 KB, rVFC 2.19 KB | 3 (mediabunny.worker, mp4box.worker, own.worker) | ok |
-| iife-nosplit | ./lazy, worker format iife with codeSplitting false | **0.67 KB** | 1.40 KB | 34.77 KB | - | - | 1 (own.worker) | ok |
+| default | video-fps-probe/lazy | **0.67 KB** | 1.40 KB | 23.26 KB | 36.24 KB | - | 1 (own.worker) | ok |
+| custom | video-fps-probe/client/lazy + video-fps-probe/worker-runtime (host worker serving own) | **0.68 KB** | 1.47 KB | 23.15 KB | 36.13 KB | - | 1 (fps.worker) | ok |
+| mp4box | video-fps-probe/lazy + video-fps-probe/mp4box | **0.90 KB** | 1.75 KB | 23.29 KB | 36.27 KB | mp4box 44.77 KB | 2 (mp4box.worker, own.worker) | ok |
+| mediabunny | video-fps-probe/lazy + video-fps-probe/mediabunny | **0.90 KB** | 1.75 KB | 23.29 KB | 36.27 KB | mediabunny 53.87 KB | 2 (mediabunny.worker, own.worker) | ok |
+| rvfc | video-fps-probe/lazy + video-fps-probe/rvfc | **0.77 KB** | 1.59 KB | 23.27 KB | 36.26 KB | rVFC 2.19 KB | 1 (own.worker) | ok |
+| all | video-fps-probe/lazy + video-fps-probe/mp4box + video-fps-probe/mediabunny + video-fps-probe/rvfc | **1.02 KB** | 1.92 KB | 23.31 KB | 36.29 KB | mp4box 44.77 KB, mediabunny 53.87 KB, rVFC 2.19 KB | 3 (mediabunny.worker, mp4box.worker, own.worker) | ok |
+| iife-nosplit | video-fps-probe/lazy (Vite worker format iife with codeSplitting false) | **0.67 KB** | 1.40 KB | 34.77 KB | 34.77 KB | - | 1 (own.worker) | ok |
 | standalone worker file | video-fps-probe/standalone/own.worker.js | - | - | 32.04 KB | 32.04 KB | - | 1 file, no imports | ok |
 
 First MP4: the probe client, the worker entry that serves own, the statistics chunk (requested in parallel with the parser) and the ISO BMFF parser. All own paths adds the Matroska parser and the rate profile core. In iife-nosplit the worker is one file, so both columns are the client plus that file.

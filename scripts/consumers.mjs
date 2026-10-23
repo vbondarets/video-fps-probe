@@ -10,21 +10,23 @@ const SOURCES = join(REPO_ROOT, 'tests', 'consumers', 'fixtures');
 const INSTALLED = ['vite', 'mp4box', 'mediabunny', 'react', 'react-dom'];
 
 export const FIXTURES = [
-  { name: 'default', entry: './lazy', engines: ['own'], workers: ['own.worker'], mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/', 'video-fps-probe/dist/engines/'] },
+  { name: 'default', imports: ['./lazy'], engines: ['own'], workers: ['own.worker'], mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/', 'video-fps-probe/dist/engines/'] },
   {
     name: 'custom',
-    entry: './client/lazy + host worker',
+    imports: ['./client/lazy', './worker-runtime'],
+    note: 'host worker serving own',
     engines: ['own'],
     workers: ['fps.worker'],
     mustNot: ['video-fps-probe/dist/plugins/own.js', 'video-fps-probe/dist/worker/own.worker.js', 'node_modules/mp4box/', 'node_modules/mediabunny/'],
   },
-  { name: 'mp4box', entry: './lazy + ./mp4box', engines: ['own', 'mp4box'], workers: ['own.worker', 'mp4box.worker'], mustNot: ['node_modules/mediabunny/'] },
-  { name: 'mediabunny', entry: './lazy + ./mediabunny', engines: ['own', 'mediabunny'], workers: ['own.worker', 'mediabunny.worker'], mustNot: ['node_modules/mp4box/'] },
-  { name: 'rvfc', entry: './lazy + ./rvfc', engines: ['own', 'rvfc'], workers: ['own.worker'], mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/'] },
-  { name: 'all', entry: './lazy + ./mp4box + ./mediabunny + ./rvfc', engines: ['own', 'mp4box', 'mediabunny', 'rvfc'], workers: ['own.worker', 'mp4box.worker', 'mediabunny.worker'], mustNot: [] },
+  { name: 'mp4box', imports: ['./lazy', './mp4box'], engines: ['own', 'mp4box'], workers: ['own.worker', 'mp4box.worker'], mustNot: ['node_modules/mediabunny/'] },
+  { name: 'mediabunny', imports: ['./lazy', './mediabunny'], engines: ['own', 'mediabunny'], workers: ['own.worker', 'mediabunny.worker'], mustNot: ['node_modules/mp4box/'] },
+  { name: 'rvfc', imports: ['./lazy', './rvfc'], engines: ['own', 'rvfc'], workers: ['own.worker'], mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/'] },
+  { name: 'all', imports: ['./lazy', './mp4box', './mediabunny', './rvfc'], engines: ['own', 'mp4box', 'mediabunny', 'rvfc'], workers: ['own.worker', 'mp4box.worker', 'mediabunny.worker'], mustNot: [] },
   {
     name: 'iife-nosplit',
-    entry: './lazy, worker format iife with codeSplitting false',
+    imports: ['./lazy'],
+    note: 'Vite worker format iife with codeSplitting false',
     engines: ['own'],
     workers: ['own.worker'],
     singleFileWorkers: true,

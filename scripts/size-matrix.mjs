@@ -252,7 +252,7 @@ export function measureFixture(dir, fixture) {
     rvfc: rvfcFiles.length > 0 ? sum(rvfcFiles) : null,
     lazyTotal: sum(without(new Set(files))),
   };
-  if (fixture.singleFileWorkers && ownWorker) metrics.firstMp4 = sum(without(new Set([...clientFiles, ownWorker.file])));
+  if (fixture.singleFileWorkers && ownWorker) metrics.firstMp4 = metrics.allOwn = sum(without(new Set([...clientFiles, ownWorker.file])));
 
   const leaks = [];
   for (const f of files) {
@@ -274,7 +274,8 @@ export function measureFixture(dir, fixture) {
 
   return {
     name: fixture.name,
-    imports: fixture.entry,
+    imports: fixture.imports,
+    note: fixture.note ?? null,
     engines: fixture.engines,
     metrics,
     workers: names.map((n) => ({ name: n, entry: workers[n].entry, chunks: workers[n].chunks })),
@@ -316,6 +317,7 @@ export function buildMatrix(dir) {
   };
 }
 
+const importsOf = (f) => `${f.imports.map((i) => `video-fps-probe${i.slice(1)}`).join(' + ')}${f.note ? ` (${f.note})` : ''}`;
 const cell = (n) => (n === null || n === undefined ? '-' : kb(n));
 
 export function renderMarkdown(matrix) {
@@ -337,7 +339,7 @@ export function renderMarkdown(matrix) {
   for (const f of matrix.fixtures) {
     const engine = [f.metrics.mp4box !== null ? `mp4box ${kb(f.metrics.mp4box)}` : null, f.metrics.mediabunny !== null ? `mediabunny ${kb(f.metrics.mediabunny)}` : null, f.metrics.rvfc !== null ? `rVFC ${kb(f.metrics.rvfc)}` : null].filter(Boolean).join(', ') || '-';
     const status = f.problems.length === 0 ? 'ok' : `${f.problems.length} problem${f.problems.length === 1 ? '' : 's'}`;
-    out.push(`| ${f.name} | ${f.imports} | **${kb(f.metrics.trigger)}** | ${kb(f.metrics.entry)} | ${cell(f.metrics.firstMp4)} | ${cell(f.metrics.allOwn)} | ${engine} | ${f.workers.length} (${f.workers.map((w) => w.name).join(', ')}) | ${status} |`);
+    out.push(`| ${f.name} | ${importsOf(f)} | **${kb(f.metrics.trigger)}** | ${kb(f.metrics.entry)} | ${cell(f.metrics.firstMp4)} | ${cell(f.metrics.allOwn)} | ${engine} | ${f.workers.length} (${f.workers.map((w) => w.name).join(', ')}) | ${status} |`);
   }
   out.push(`| standalone worker file | video-fps-probe/standalone/own.worker.js | - | - | ${cell(matrix.standalone.gzip)} | ${cell(matrix.standalone.gzip)} | - | 1 file, no imports | ${matrix.standalone.status} |`);
   out.push('');
