@@ -2,6 +2,6 @@ import { ownEngine, serveProbeWorker } from './runtime.ts';
 
 serveProbeWorker({
   own: ownEngine,
-  mp4box: () => import('../engines/mp4box.ts'),
-  mediabunny: () => import('../engines/mediabunny.ts'),
+  mp4box: async () => (await Promise.all([import('../engines/mp4box.ts'), import('../core/stats.ts')]))[0],
+  mediabunny: async () => (await Promise.all([import('../engines/mediabunny.ts'), import('../core/stats.ts')]))[0],
 });
