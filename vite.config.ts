@@ -6,6 +6,11 @@ export default defineConfig({
   plugins: [react()],
   worker: {
     format: 'es',
+    rolldownOptions: {
+      output: {
+        comments: { annotation: false },
+      },
+    },
   },
   build: {
     target: 'es2022',
