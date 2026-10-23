@@ -15,7 +15,7 @@ pnpm add video-fps-probe
 bun add video-fps-probe
 ```
 
-A git dependency gets no code (`prepack` builds `dist/`, and npm skips it for git installs), so install a packed tarball:
+With npm a git dependency gets no code: `prepack` builds `dist/`, and npm does not run it for git installs. That is verified for npm only; what yarn, pnpm and bun do for a git install is not verified. Install a packed tarball:
 
 ```
 git clone https://github.com/vbondarets/video-fps-probe.git && cd video-fps-probe
