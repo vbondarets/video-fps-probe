@@ -915,25 +915,23 @@ function sizeBlock(inp: Inputs, doc: Doc): string[] {
   const kb = (name: string, metric: string): string => fmtKB(matrixMetric(inp, name, metric));
   const viteRow = (name: string, option: string): string =>
     row([option, `**${kb(name, 'trigger')}**`, kb(name, 'firstMp4'), kb(name, 'allOwn'), matrixFixture(inp, name).workers.length]);
-  const engines = MATRIX_ENGINES.map(([key, label]) => `${label} ${kb(key, key)} (critical path ${kb(key, 'trigger')})`);
+  const engines = MATRIX_ENGINES.map(([key, label]) => `${label} ${kb(key, key)}`);
   const v = inp.matrix.versions;
   return [
-    `**${kb('default', 'trigger')} gzip on the critical path.** That is the package code in the entry chunk of a Vite ${v['vite'] ?? ''} app that imports \`video-fps-probe/lazy\` (${kb('default', 'entry')} together with Vite's preload helper, which any app with a dynamic import already has). Everything else loads lazily, on the first file:`,
+    `**${kb('default', 'trigger')} gzip on the critical path**: the package code in the entry chunk of a Vite ${v['vite'] ?? ''} app that imports \`video-fps-probe/lazy\` (${kb('default', 'entry')} with Vite's preload helper). The rest loads lazily, on the first file:`,
     '',
-    ...table(['Host Vite config', 'Critical path', 'First MP4, lazy', 'All own paths, lazy', 'Worker files'], 'lrrrr', [
+    ...table(['Host Vite config', 'Critical path', 'First MP4', 'All own paths', 'Worker files'], 'lrrrr', [
       viteRow('default', "`worker: { format: 'es' }` (recommended)"),
-      viteRow('zero-config', "no worker option (Vite's default format, 'iife')"),
+      viteRow('zero-config', "none (Vite's default, 'iife')"),
     ]),
     '',
-    `Vite builds workers as 'iife' unless told otherwise, and an iife worker cannot split, so without the option the own worker is one file with both parsers. One line in the host's Vite config splits it; module workers run on the whole browser floor:`,
+    `An iife worker cannot split, so without the option the own worker is one file with both parsers:`,
     '',
     '```js',
     "export default defineConfig({ worker: { format: 'es' } });",
     '```',
     '',
-    `Engines cost nothing until their entry is imported. Each adds a lazy chunk, loaded on its first run: ${engines.join(', ')}. A custom worker (\`video-fps-probe/client/lazy\`) has a ${kb('custom', 'trigger')} critical path and a ${kb('custom', 'firstMp4')} first MP4; the standalone classic worker file is ${fmtKB(need(inp.matrix.standalone.gzip, 'standalone gzip'))}.`,
-    '',
-    `Measured by \`npm run size:matrix\` on production builds installed from the packed tarball (gzip -9, KB = 1000 bytes); CI fails on any budget overrun. Every configuration is in [docs/benchmarks.md](${doc.link('docs/benchmarks.md')}#package-size), every budget with its reason in [report/size-matrix.md](${doc.link('report/size-matrix.md')}).`,
+    `Engines cost nothing until imported, then load lazily: ${engines.join(', ')}. Gzip -9 of production builds from the packed tarball, budgeted in CI; every configuration is in [docs/benchmarks.md](${doc.link('docs/benchmarks.md')}#package-size).`,
   ];
 }
 

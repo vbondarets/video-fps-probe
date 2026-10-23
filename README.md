@@ -131,22 +131,20 @@ clearTimeout(timer);
 
 <!-- tables:size:start -->
 
-**0.67 KB gzip on the critical path.** That is the package code in the entry chunk of a Vite 8.3.5 app that imports `video-fps-probe/lazy` (1.40 KB together with Vite's preload helper, which any app with a dynamic import already has). Everything else loads lazily, on the first file:
+**0.67 KB gzip on the critical path**: the package code in the entry chunk of a Vite 8.3.5 app that imports `video-fps-probe/lazy` (1.40 KB with Vite's preload helper). The rest loads lazily, on the first file:
 
-| Host Vite config | Critical path | First MP4, lazy | All own paths, lazy | Worker files |
+| Host Vite config | Critical path | First MP4 | All own paths | Worker files |
 |---|---:|---:|---:|---:|
 | `worker: { format: 'es' }` (recommended) | **0.67 KB** | 23.26 KB | 36.24 KB | 1 |
-| no worker option (Vite's default format, 'iife') | **0.67 KB** | 34.77 KB | 34.77 KB | 1 |
+| none (Vite's default, 'iife') | **0.67 KB** | 34.77 KB | 34.77 KB | 1 |
 
-Vite builds workers as 'iife' unless told otherwise, and an iife worker cannot split, so without the option the own worker is one file with both parsers. One line in the host's Vite config splits it; module workers run on the whole browser floor:
+An iife worker cannot split, so without the option the own worker is one file with both parsers:
 
 ```js
 export default defineConfig({ worker: { format: 'es' } });
 ```
 
-Engines cost nothing until their entry is imported. Each adds a lazy chunk, loaded on its first run: mp4box 44.77 KB (critical path 0.90 KB), mediabunny 53.87 KB (critical path 0.90 KB), rVFC 2.19 KB (critical path 0.77 KB). A custom worker (`video-fps-probe/client/lazy`) has a 0.68 KB critical path and a 23.15 KB first MP4; the standalone classic worker file is 32.04 KB.
-
-Measured by `npm run size:matrix` on production builds installed from the packed tarball (gzip -9, KB = 1000 bytes); CI fails on any budget overrun. Every configuration is in [docs/benchmarks.md](docs/benchmarks.md#package-size), every budget with its reason in [report/size-matrix.md](report/size-matrix.md).
+Engines cost nothing until imported, then load lazily: mp4box 44.77 KB, mediabunny 53.87 KB, rVFC 2.19 KB. Gzip -9 of production builds from the packed tarball, budgeted in CI; every configuration is in [docs/benchmarks.md](docs/benchmarks.md#package-size).
 
 <!-- tables:size:end -->
 
