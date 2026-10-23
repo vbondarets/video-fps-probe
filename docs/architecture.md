@@ -232,7 +232,7 @@ Where a bundler places modules shared by several lazy chunks can change between 
 **`scripts/check-dist.mjs`** (`npm run check:package` after publint, and `prepack`) fails on any of:
 
 - a file outside the whitelist (`dist/{index,lazy,analyze,probe}` and `dist/{core,engines,worker,client,api,plugins,react,standalone}/**` as `.js` and `.d.ts`), or a pack listing with anything but those plus `package.json`, `README.md`, `LICENSE` and `CHANGELOG.md`;
-- an unpacked package size above the cap (`UNPACKED_CAP`, README and CHANGELOG included);
+- an unpacked package size above the cap (`UNPACKED_CAP`, 450 KB, README and CHANGELOG included). The cap bounds the install footprint in `node_modules`, not the size of a host bundle: a bundler takes only the modules a host imports, and the size matrix below budgets that. It leaves room for the README and the CHANGELOG, which grow with every release;
 - an export or `typesVersions` target that does not exist, an import that does not resolve inside `dist/`, a `.ts` specifier, a `.d.ts` import without a `.d.ts` behind it;
 - a worker reference that is not a literal `.js` URL to an existing file, or a literal outside the three plugin modules; the literal hygiene above;
 - peer isolation: the static closure of the entries and plugins reaching a parser, an engine adapter or a bare `mp4box` or `mediabunny` import; a peer imported anywhere but the two engine adapters, or by a `.d.ts`;

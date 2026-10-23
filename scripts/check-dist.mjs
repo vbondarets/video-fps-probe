@@ -9,7 +9,7 @@ import ts from 'typescript';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const KB = 1000;
 
-export const UNPACKED_CAP = 400 * KB;
+export const UNPACKED_CAP = 450 * KB;
 
 const ALLOWED = [/^(?:index|lazy|analyze|probe)\.(?:js|d\.ts)$/, /^(?:core|engines|worker|client|api|plugins|react|standalone)\/[\w./-]+\.(?:js|d\.ts)$/];
 const PACK_EXTRAS = new Set(['package.json', 'README.md', 'LICENSE', 'CHANGELOG.md']);
