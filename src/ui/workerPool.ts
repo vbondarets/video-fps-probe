@@ -1,16 +1,15 @@
 import type { AnalyzeProgress, FileResult } from '../core/types.ts';
-import type { WireOptions, WorkerEngine, WorkerRequest, WorkerResponse } from '../worker/protocol.ts';
+import type { WorkerEngineId } from '../plugins/types.ts';
+import { PROTOCOL_VERSION, type JobRequest, type WireOptions, type WorkerRequest, type WorkerResponse } from '../worker/protocol.ts';
 
 const POOL_SIZE = 2;
 const KILL_AFTER_MS = 1500;
 
 interface Job {
   id: number;
-  file: File;
-  engine: WorkerEngine;
-  options: WireOptions;
+  request: JobRequest;
   onProgress: ((progress: AnalyzeProgress) => void) | undefined;
-  resolve(result: FileResult): void;
+  resolve(result: FileResult | undefined): void;
   reject(reason: unknown): void;
 }
 
@@ -19,8 +18,8 @@ interface Slot {
   job: Job | null;
 }
 
-export interface Submitted {
-  promise: Promise<FileResult>;
+export interface Submitted<T = FileResult> {
+  promise: Promise<T>;
   cancel(): void;
 }
 
@@ -52,6 +51,8 @@ function spawn(): Slot {
       return;
     }
     if (data.type === 'result') job.resolve(data.result);
+    else if (data.type === 'warmed') job.resolve(undefined);
+    else if (data.type === 'skipped') job.reject(new Error(`skipped: ${data.reason}`));
     else job.reject(data.aborted ? abortError() : new Error(data.message));
     release(slot);
   };
@@ -71,20 +72,15 @@ function pump(): void {
     if (!slot) return;
     const job = queue.shift()!;
     slot.job = job;
-    const request: WorkerRequest = { type: 'analyze', id: job.id, file: job.file, engine: job.engine, options: job.options };
+    const request: WorkerRequest = { v: PROTOCOL_VERSION, id: job.id, ...job.request };
     slot.worker.postMessage(request);
   }
 }
 
-export function submit(
-  file: File,
-  engine: WorkerEngine,
-  options: WireOptions,
-  onProgress?: (progress: AnalyzeProgress) => void,
-): Submitted {
+function enqueue<T>(request: JobRequest, onProgress?: (progress: AnalyzeProgress) => void): Submitted<T> {
   let job!: Job;
-  const promise = new Promise<FileResult>((resolve, reject) => {
-    job = { id: nextId++, file, engine, options, onProgress, resolve, reject };
+  const promise = new Promise<T>((resolve, reject) => {
+    job = { id: nextId++, request, onProgress, resolve: resolve as Job['resolve'], reject };
   });
   queue.push(job);
   pump();
@@ -99,7 +95,7 @@ export function submit(
       }
       const slot = slots.find((s) => s.job === job);
       if (!slot) return;
-      const request: WorkerRequest = { type: 'cancel', id: job.id };
+      const request: WorkerRequest = { v: PROTOCOL_VERSION, type: 'cancel', id: job.id };
       slot.worker.postMessage(request);
       job.reject(abortError());
       setTimeout(() => {
@@ -111,10 +107,12 @@ export function submit(
   };
 }
 
-const WARMUP_FTYP = new Uint8Array([0, 0, 0, 16, 0x66, 0x74, 0x79, 0x70, 0x69, 0x73, 0x6f, 0x6d, 0, 0, 2, 0]);
+export function submit(file: File, engine: WorkerEngineId, options: WireOptions, onProgress?: (progress: AnalyzeProgress) => void): Submitted {
+  return enqueue({ type: 'analyze', file, name: file.name, engine, options }, onProgress);
+}
 
 export function prewarm(): Promise<void> {
-  return submit(new File([WARMUP_FTYP], 'warmup.mp4'), 'own', {}).promise.then(
+  return enqueue<void>({ type: 'warm', engines: ['own'], containers: ['isobmff'] }).promise.then(
     () => undefined,
     () => undefined,
   );

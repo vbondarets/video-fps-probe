@@ -14,9 +14,12 @@ class FakeWorker {
 
   postMessage(message: WorkerRequest): void {
     this.posted.push(message);
+    const { v, id } = message;
     if (message.type === 'analyze') {
-      const { id, file } = message;
-      queueMicrotask(() => this.onmessage?.({ data: { type: 'result', id, result: { name: file.name } } }));
+      const { name } = message;
+      queueMicrotask(() => this.onmessage?.({ data: { v, type: 'result', id, result: { name } } }));
+    } else if (message.type === 'warm') {
+      queueMicrotask(() => this.onmessage?.({ data: { v, type: 'warmed', id } }));
     }
   }
 
@@ -31,19 +34,18 @@ afterEach(() => {
 });
 
 describe('worker pool lifecycle for embedding', () => {
-  it('prewarm spawns one worker and runs a 16-byte ftyp through the own parser; dispose terminates idle workers', async () => {
+  it('prewarm spawns one worker and sends a warm request for the own ISO BMFF parser; dispose terminates idle workers', async () => {
     vi.stubGlobal('Worker', FakeWorker);
     vi.resetModules();
     const pool = await import('../../src/ui/workerPool.ts');
     await pool.prewarm();
     expect(FakeWorker.instances).toHaveLength(1);
     const [request] = FakeWorker.instances[0].posted;
-    expect(request.type).toBe('analyze');
-    if (request.type !== 'analyze') return;
-    expect(request.engine).toBe('own');
-    expect(request.file.size).toBe(16);
-    expect(new TextDecoder().decode((await request.file.arrayBuffer()).slice(4, 8))).toBe('ftyp');
-    await pool.submit(new File([new Uint8Array(8)], 'a.mp4'), 'own', {}).promise;
+    expect(request).toEqual({ v: 1, type: 'warm', id: request.id, engines: ['own'], containers: ['isobmff'] });
+    const result = await pool.submit(new File([new Uint8Array(8)], 'a.mp4'), 'own', {}).promise;
+    expect(result.name).toBe('a.mp4');
+    const analyze = FakeWorker.instances[0].posted[1];
+    expect(analyze).toMatchObject({ v: 1, type: 'analyze', name: 'a.mp4', engine: 'own' });
     expect(FakeWorker.instances).toHaveLength(1);
     pool.dispose();
     expect(FakeWorker.instances[0].terminated).toBe(true);
