@@ -16,6 +16,11 @@ export interface BaseOptions<Id extends EngineId> {
   defaults?: WireOptions;
 }
 
+export interface ProbeOptions<E extends readonly EngineDescriptor[] = []> extends BaseOptions<NoInfer<'own' | IdOf<E[number]>>> {
+  engines?: E;
+  worker?: 'auto' | 'inline';
+}
+
 export interface CustomWorker<W extends WorkerEngineId> {
   create: () => Worker;
   engines: readonly W[];
@@ -84,3 +89,8 @@ export interface Probe<Id extends EngineId = 'own'> {
   dispose(): void;
   destroy(): void;
 }
+
+export type LazyProbe<Id extends EngineId> = Probe<Id> & {
+  readonly loaded: boolean;
+  load(): Promise<Probe<Id>>;
+};

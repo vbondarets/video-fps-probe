@@ -16,7 +16,17 @@ vi.mock('mediabunny', async (importOriginal) => {
   return importOriginal();
 });
 
-const ENTRIES = ['../../src/plugins/own.ts', '../../src/plugins/mp4box.ts', '../../src/plugins/mediabunny.ts', '../../src/plugins/rvfc.ts', '../../src/worker/runtime.ts'];
+const ENTRIES = [
+  '../../src/index.ts',
+  '../../src/lazy.ts',
+  '../../src/client/index.ts',
+  '../../src/client/lazy.ts',
+  '../../src/plugins/own.ts',
+  '../../src/plugins/mp4box.ts',
+  '../../src/plugins/mediabunny.ts',
+  '../../src/plugins/rvfc.ts',
+  '../../src/worker/runtime.ts',
+];
 
 class RecordingWorker {
   static created: { url: URL; options: WorkerOptions | undefined }[] = [];
@@ -32,7 +42,7 @@ afterEach(() => {
 });
 
 describe('lazy engine peers', () => {
-  it('importing the plugin entries and the worker runtime loads no engine peer', async () => {
+  it('importing any entry loads no engine peer', async () => {
     for (const entry of ENTRIES) await import(entry);
     expect(loads).toEqual({ mp4box: 0, mediabunny: 0 });
   });
