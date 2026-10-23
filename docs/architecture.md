@@ -88,7 +88,7 @@ Engines import `src/core` pieces (types, reader, rational, result, sniff, stats,
 | `scripts/readme-tables.ts` | Rewrites the README tables between markers from the JSON reports |
 | `tests/` | vitest, Node environment: `unit/` (core, device info), `isobmff/`, `matroska/`, `segments/` (rate profile on fixtures), `engines/`, `helpers/` |
 | `tests/e2e/`, `playwright.config.ts` | Playwright end-to-end suite on the built app in Chromium, Firefox and WebKit (`npm run test:e2e`) |
-| `fixtures/` | `files/` (104 committed fixtures), `manifest.tsv`, `ref/*.ref.json` (ffprobe 8.1.1), `known-deviations/*.json`, `large/` (git-ignored) |
+| `fixtures/` | `files/` (111 committed fixtures), `manifest.tsv`, `ref/*.ref.json` (ffprobe 8.1.1), `known-deviations/*.json`, `large/` (git-ignored) |
 | `public/samples/` | The six sample files shown by "Try sample files" |
 | `report/` | Generated accuracy, size, browser benchmark and integration cost reports, and the hand-written average-user model |
 
