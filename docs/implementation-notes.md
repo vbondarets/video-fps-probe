@@ -2,7 +2,7 @@
 
 What the implementation decided and learned, relative to [research.md](research.md). Research stays the spec for formulas and tolerances; this file lists where the code deviates from it, why, and what was measured. Factual errors found in research are corrected in [research.md section 8](research.md#8-errata-found-during-implementation). Module layout and data flow are in [architecture.md](architecture.md).
 
-**State (2026-10-21).** `tsc -b` is clean, oxlint is clean, 799 vitest tests pass (3 skipped without the large files). The own engine has 0 mismatches against ffprobe 8.1.1 on the 104 committed fixtures (1561 checks: 1510 exact, 3 known-deviation, 48 n/a; the 3 deviations are listed in section 9). The e2e suite is in section 12. Timings below are Node 24.20, warm, best of several runs, unless a browser is named.
+**State (2026-10-23).** `tsc -b` is clean, oxlint is clean, 838 vitest tests pass (3 skipped without the large files). The own engine has 0 mismatches against ffprobe 8.1.1 on the 111 committed fixtures (1747 checks: 1690 exact, 2 within-tol, 1 known-deviation, 0 mismatch, 54 n/a; the deviation is listed in section 9). The e2e suite is in section 12. Timings below are Node 24.20, warm, best of several runs, unless a browser is named.
 
 ## 1. Reader and IO
 
@@ -134,12 +134,12 @@ All engines return `FileResult` and fill the shared fields from `analyzeTimeline
 
 ### Informational deviation tally (never failing)
 
-| Engine | Fixtures | Checks | exact | known-deviation | mismatch | n/a |
-|---|---:|---:|---:|---:|---:|---:|
-| mp4box | 104 | 1169 | 1047 | 2 | 103 (47 fixtures) | 17 |
-| mediabunny | 104 | 1561 | 1401 | 2 | 113 (52 fixtures) | 45 |
+| Engine | Fixtures | Checks | exact | within-tol | known-deviation | mismatch | n/a |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| mp4box | 111 | 1355 | 1219 | 2 | 2 | 109 (50 fixtures) | 23 |
+| mediabunny | 111 | 1747 | 1569 | 3 | 2 | 122 (56 fixtures) | 51 |
 
-Committed fixtures only, from `report/accuracy.json` of 2026-10-21. mp4box is exact on min, max, VFR, duplicates and dimensions for all 67 MP4/MOV tracks it parses; 29 of its 47 fixtures with a mismatch are WebM or Matroska files it cannot open, the other 18 are MP4/MOV files (edit lists, track selection with cover art or a second video track, audio-only, truncated and fragmented files). mediabunny's MP4/MOV average is exact on 63 tracks and off on 2 (plus the 2 sidx deviations); on Matroska its declared-rate check fails on 23 of 28 tracks, because it reports the packet rate, not DefaultDuration.
+Committed fixtures only (`node scripts/compare-ffprobe.ts --no-write`, the same as the committed rows of `report/accuracy.json`). `report/accuracy.md` adds 5 local large files and reports 116 fixtures: mp4box 113 mismatches on 52 fixtures, mediabunny 126 on 58. mp4box is exact on min, max, VFR, duplicates and dimensions for all 74 MP4/MOV tracks it parses; 29 of its 50 fixtures with a mismatch are WebM or Matroska files it cannot open, the other 21 are MP4/MOV files: 19 of them have a `formatDurationSec` mismatch (B-frames, edit lists, fragments, audio and cover art tracks, truncated files), and the remaining 2 are the frame counts of a truncated fragment and the outcome of a corrupt stts count. mediabunny's MP4/MOV average is exact on 68 tracks and off on 4 (plus the 2 sidx deviations); on Matroska its declared-rate check fails on 23 of 28 tracks, because it reports the packet rate, not DefaultDuration.
 
 ### rVFC (main thread, Chrome 155 only)
 
@@ -175,8 +175,8 @@ Committed fixtures only, from `report/accuracy.json` of 2026-10-21. mp4box is ex
 - **Outcome rule** for `error`: `expect=ok` needs no error, at least one track and a primary; `no-video` needs zero tracks and no error other than "no video"; `still` needs only single-sample tracks; `error` needs an error and zero tracks.
 - Per-track checks run for every video track, one table row each (`name (track N)`), primary first.
 - **Library engines** are loaded by the single `analyze*` export of `src/engines/<name>.ts`; large fixtures run once for them, and `--with-large` adds the 3 h and 1 h files. mp4box and mediabunny are exact on the 3 h CFR file (648,000 frames); both report 3600.001 s against 3600.000 s format duration for the 1 h VFR file.
-- Exit codes: 0 ok, 1 an unexpected own mismatch or throw, 2 harness error. `--filter` writes `report/accuracy.local.*`, which is git-ignored. `--self-test` runs 146 checks, including an oracle round trip that builds a synthetic app result from each of 106 ffprobe references and requires zero mismatches.
-- **Size report.** `scripts/size-report.mjs [dist] [--check]` finds the worker through the `Worker()` reference or the manifest, classifies the chunks, checks the limits in its `BUDGETS` table and reports the remaining lazy chunks without a limit. It knows the rate profile chunks (`segments`, `rateProfile`, not required) and the device info chunk (`deviceInfo`, unbudgeted), and adds a first VFR MP4 composite (initial + ISO BMFF + segments, 96.60 KB against 100 KB). Its component limits add up to 100.5 KB, so that composite can trip while every chunk is within its own limit. `--self-test` runs 136 checks.
+- Exit codes: 0 ok, 1 an unexpected own mismatch or throw, 2 harness error. `--filter` writes `report/accuracy.local.*`, which is git-ignored. `--self-test` runs 162 checks, including an oracle round trip that builds a synthetic app result from each of 116 ffprobe references and requires zero mismatches.
+- **Size report.** `scripts/size-report.mjs [dist] [--check]` finds the worker through the `Worker()` reference or the manifest, classifies the chunks, checks the limits in its `BUDGETS` table and reports the remaining lazy chunks without a limit. It knows the rate profile chunks (`segments`, `rateProfile`, not required) and the device info chunk (`deviceInfo`, unbudgeted), and adds a first VFR MP4 composite (initial + ISO BMFF + segments, 97.84 KB against 100 KB). Its component limits add up to 100.5 KB, so that composite can trip while every chunk is within its own limit. `--self-test` runs 142 checks.
 - **Header-mode caveat.** With `--mkv-mode header`, min, max and VFR are null by design; they must be rated `n/a` rather than compared (78 false mismatches otherwise).
 
 ## 8. Hostile-input verification
@@ -235,12 +235,11 @@ Not covered by fixtures, known or suspected:
 
 ## 10. Open items
 
-- A single stats pass over run-length tables would remove most of the stats time on the 1 h VFR file; with the rate profile that file now takes 55.4 ms in Node and 63.0 ms in Chrome (section 11).
+- A single stats pass over run-length tables would remove most of the stats time on the 1 h VFR file; with the rate profile that file now takes 55.4 ms in Node and 70.4 ms in Chrome (section 11).
 - The mediabunny `packets()` stall is worth reporting upstream.
 - The open real-world findings of section 9 (last-frame hold drawn in the profile, frame-count dominant share, tail read size, trailer handling, MediaRecorder warnings).
 - ISMV (`ffmpeg -f ismv`) with B-frames: start 0 against ffprobe's 0.04 s and a format duration about 20 ms off (fragments without `tfdt`, negative composition offsets). Documented in the README limitations, no fixture.
-- Firefox does not start on the development machine (section 12), so Firefox results will come only from the CI job, which has not run yet.
-- `fixtures/known-deviations.json` is an empty placeholder that nothing reads.
+- Firefox does not start on the development machine (section 12), so Firefox results come only from the CI job `e2e`.
 
 ## 11. Rate profile
 
@@ -255,15 +254,15 @@ Uneven frame distributions must be visible (half a video at 5 fps and half at 20
 - **Uneven.** The steady segments are sorted by rate and a sliding 15% band finds the dominant band by time (freeze time excluded) and by frames. `uneven` is true when that band covers under 80% of the time (`UNEVEN_DOMINANT_SHARE`) or of the frames, or when steady segments differ by 15% or more. A regular cadence (2:3 pulldown, `select` drops) stays one steady segment, VFR but not uneven.
 - **Buckets.** `min(120, frames / 2)` equal buckets over the PTS span; each interval spreads its frame over the buckets it covers. The UI draws them on a log scale.
 - **Output.** At most 50 segments and 50 anomalies, with counts of the rest; `dominantShare`; a summary of the first three segments plus anomaly and duplicate counts, for example `Uneven: 5 fps for 4 s, 200 fps for 4 s`.
-- **Tests.** `tests/unit/segments.test.ts` uses synthetic timelines; `tests/segments/fixtures.test.ts` asserts the profiles of the VFR fixtures, that 18 of the 20 CFR fixtures get no profile (the 120 and 240 fps WebM files get one steady segment, because 1 ms ticks spread more than 7.5% there), and that every profile tiles the presented frames. The e2e suite checks the uneven badge and the two-segment table in the browser.
-- **Size and cost.** The core chunk is 1.78 KB gzip (budget 2.00 KB) and the panel 0.94 KB (budget 1.50 KB); a first VFR MP4 loads 96.60 KB in total. In Node `vfr_two_phase_5_200.mp4` takes 0.52 ms in all and the 3 h CFR file is unaffected (3.83 ms). On the 1 h VFR screen recording (133,920 frames, 1439 gaps) the analysis takes 55.4 ms in Node and 63.0 ms in Chrome, against 31.7 ms and 31.1 ms in the reports committed before the profile (README of commit 83f7544). With the profile job switched off in a scratch copy of `src/core`, the same file takes 27 to 28 ms in Node against 45 to 48 ms with it (median of 9 runs each), so the profile is about 40% of the time on long VFR files.
+- **Tests.** `tests/unit/segments.test.ts` uses synthetic timelines; `tests/segments/fixtures.test.ts` asserts the profiles of the VFR fixtures, that none of the 21 `cfr_` fixtures gets a profile (also the 120 and 240 fps WebM files, whose 1 ms ticks spread more than 7.5%: the gate skips a track the VFR rule calls CFR when the spread is within the VFR tolerance and below 2x, section 4), that every VFR fixture gets one and no fixture the VFR rule calls CFR does, and that every profile tiles the presented frames. The e2e suite checks the uneven badge and the two-segment table in the browser.
+- **Size and cost.** The core chunk is 1.80 KB gzip (budget 2.00 KB) and the panel 0.94 KB (budget 1.50 KB); a first VFR MP4 loads 97.84 KB in total (`report/size.md`). In Node `vfr_two_phase_5_200.mp4` takes 0.48 ms in all and the 3 h CFR file is unaffected (3.54 ms). On the 1 h VFR screen recording (133,920 frames, 1439 gaps) the analysis takes 55.4 ms in Node and 70.4 ms in Chrome (`report/accuracy.md`, `report/browser-bench.md`), against 31.7 ms and 31.1 ms in the reports committed before the profile (README of commit 3e475b2). With the profile job switched off in a scratch copy of `src/core`, the same file takes 27 to 28 ms in Node against 45 to 48 ms with it (median of 9 runs each), so the profile is about 40% of the time on long VFR files.
 - **Known gaps** (section 9): the stored duration of the last sample is not used, so a long final hold is missing and the end can overshoot by a few ms; a segment's duration includes its freezes while its rate excludes them.
 
 ## 12. End-to-end tests
 
 `tests/e2e` with Playwright 1.64.1 (`playwright.config.ts`): projects `chromium`, `firefox` and `webkit`; the web server builds to `.playwright/dist` (so the shared `dist/` is untouched) and serves it with `vite preview` on `127.0.0.1:4317` (`E2E_PORT` changes the port); `E2E_BASE_URL` points the same tests at a deployed copy instead. Timeouts 60 s per test and 15 s per assertion; retries 0 locally and 1 on CI; HTML report in `.playwright/report`.
 
-- **`parse.spec.ts`.** Every committed manifest fixture must exist on disk. In Matroska mode `exact` (set through the UI) all 104 fixtures are fed through the file input in batches of 26; in mode `header` the 30 `.mkv` and `.webm` names. Each fixture is one test: a hard check of the contract fields (container, codec, dimensions, the average as a rational and as the ffprobe string, frames, presented frames, min, max, VFR, duration, error, rate profile segment count and uneven flag), then deep equality of the whole `FileResult` against `analyze()` in Node except `io.ms`. A final test fails on any uncaught page error.
+- **`parse.spec.ts`.** Every committed manifest fixture must exist on disk. In Matroska mode `exact` (set through the UI) all 111 fixtures are fed through the file input in batches of 26; in mode `header` the 30 `.mkv` and `.webm` names. Each fixture is one test: a hard check of the contract fields (container, codec, dimensions, the average as a rational and as the ffprobe string, frames, presented frames, min, max, VFR, duration, error, rate profile segment count and uneven flag), then deep equality of the whole `FileResult` against `analyze()` in Node except `io.ms`. A final test fails on any uncaught page error.
 - **`ui.spec.ts`.** Console errors on load; the six samples; "Scan all frames" on `h264_vfr_remux.mkv` in header mode, upgraded to the Node exact result; the uneven badge, sparkline, summary and 2-row table on `vfr_two_phase_5_200.mp4`; the compare panel per engine (mp4box, mediabunny) against the same engine in Node, skipped only on a dynamic-import load failure; Download JSON (file name, envelope, results equal the hook and the cards); no horizontal overflow at 360 px with the compare panel open; Tab reaches the file input with a visible focus ring.
 - **`rvfc.spec.ts`.** Runs the rVFC engine on `cfr_vp9_30.webm` and `cfr_h264_30.mp4` with a 75 s hang guard and attaches the estimates; it fails only on a hang, a rejected promise or a page error.
 
@@ -277,8 +276,8 @@ First run, 2026-10-21, on the Windows development machine (about 30 s including 
 
 - In Chromium and WebKit all 104 fixtures in exact mode and the 30 Matroska names in header mode were identical to Node, including `io.reads`, `io.bytesRead`, warnings, error strings and the floating-point profile buckets. No uncaught page errors.
 - rVFC in Chromium: both files estimated 30 fps in about 1.85 s (VP9 with medium confidence and `estimates-differ`, H.264 high).
-- Firefox runs only in the CI job `e2e` (Ubuntu, `npx playwright install --with-deps chromium firefox webkit`), which has not run yet. The job uploads no report artifact.
-- The deployed demo has not been tested through `E2E_BASE_URL` yet: the repository has no remote. The README section "Publishing the demo" lists the steps, including Settings > Pages > Source = GitHub Actions, which `actions/configure-pages` does not set by itself.
+- Firefox runs only in the CI job `e2e` (Ubuntu, `npx playwright install --with-deps chromium firefox webkit`). The job uploads no report artifact.
+- At the time of this run the repository had no remote, so the deployed demo could not be tested through `E2E_BASE_URL`. The README section "Publishing the demo" lists the steps, including Settings > Pages > Source = GitHub Actions, which `actions/configure-pages` does not set by itself.
 
 Second run, after the review fixes of section 13 (157 tests per browser, 7 new committed fixtures and 5 new UI tests):
 
@@ -287,6 +286,14 @@ Second run, after the review fixes of section 13 (157 tests per browser, 7 new c
 | Chromium 156.0.8078.4 | 157 | 0 | the 360 px overflow test passes with `grid-template-columns: minmax(0, 1fr)` on `.list` |
 | WebKit 27.2 | 157 | 0 | |
 | Firefox 157 (Playwright build 1555) | 1 | 15 | still `browserType.launch: spawn UNKNOWN`; 141 tests did not run |
+
+In Chromium and WebKit all 111 fixtures in exact mode and the 30 Matroska names in header mode were identical to Node.
+
+After publishing:
+
+- The repository is public at github.com/vbondarets/video-fps-probe, with the demo on GitHub Pages at vbondarets.github.io/video-fps-probe.
+- The CI job `e2e` ran for the first time in run 39679082486: 471 passed, 157 in each of Chromium, Firefox and WebKit on Ubuntu. The CI run for commit 2407160, 39733982067, is green.
+- The suite against the deployed demo (`E2E_BASE_URL`) from the Windows development machine passed 314 of 314, 157 each in Chromium and WebKit.
 
 ## 13. Review fixes (2026-10-21)
 
