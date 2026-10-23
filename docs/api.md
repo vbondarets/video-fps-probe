@@ -88,6 +88,7 @@ type LazyProbe<Id> = Probe<Id> & { readonly loaded: boolean; load(): Promise<Pro
 A stub is what you keep in the critical bundle. It imports the probe client with a dynamic `import()` on the first `analyze`, `tryAnalyze`, `compare`, `prewarm` or `load()`, then forwards every call.
 
 - `load()` is idempotent; a failed load is retried on the next call. Creating a stub never throws: an option error such as an unregistered `engine` surfaces on the first call.
+- A failed load rejects with the factory's error as it is, not with a `ProbeError`. For the built-in stubs that is the browser's dynamic-import error (a `TypeError`), for example when the probe client chunk returns 404 after a redeploy, so check `e instanceof ProbeError` before reading `e.code`. `tryAnalyze` still resolves `null` and `prewarm` still resolves.
 - `engines` lists the ids known from the options before the load, and the routed ids after it.
 - `dispose()` on a stub that has not loaded does nothing. `destroy()` also stops a load in flight. From then on `analyze` and `compare` reject with `ProbeError('aborted')`, calls that were waiting for the load included, `tryAnalyze` resolves `null`, and `prewarm` resolves without loading anything.
 - `lazyProbeFrom` wraps any factory, for example a module of your own that calls `createProbeClient` with your worker literal: `lazyProbeFrom(() => import('./probe.ts').then((m) => m.probe))`. The demo does this.
@@ -116,7 +117,7 @@ interface CallOptions<Id> extends WireOptions {
 }
 ```
 
-- **`analyze`** resolves with the result of the first engine of the chain (`engine`, then `fallback`, duplicates removed). A file that cannot be analysed is a result with `error` set, not a rejection. It rejects only with a `ProbeError`: an abort, a timeout, a failed worker, or an engine that is not registered.
+- **`analyze`** resolves with the result of the first engine of the chain (`engine`, then `fallback`, duplicates removed). A file that cannot be analysed is a result with `error` set, not a rejection. A probe rejects only with a `ProbeError`: an abort, a timeout, a failed worker, or an engine that is not registered. A lazy stub can also reject with the import error of its own load ([Lazy stubs](#lazy-stubs)).
 - **Fallback.** With a chain of two or more, the next engine runs when the current one returns an error, no video track or no frame rate, skips the container (mp4box on WebM), times out or crashes. An abort stops the chain at once. If every engine fails, the result of the last engine that returned one comes back, with `attempts` listing the others (`{ engine, error }`); if none returned a result, the last error rejects.
 - **`tryAnalyze`** is `analyze` that resolves `null` instead of rejecting.
 - **`prewarm`** loads ahead of the first file: the probe client (for a stub), the worker, and the parser chunks for `containers` (default `['isobmff']`), for `engines` (default: the probe's `engine`). One warm request goes to each worker kind; in-thread engines load their chunks. It never rejects.
@@ -128,10 +129,29 @@ interface CallOptions<Id> extends WireOptions {
 Each worker kind has its own pool of `workers` workers, started on demand. Jobs queue first in, first out.
 
 - **Timeout.** `timeoutMs` starts when a worker takes the job, not while it waits in the queue. When it fires, the call rejects with `ProbeError('timeout')`, the worker is terminated at once (it is presumed stuck), and the next job starts a new worker. In the calling thread (`'inline'`, rvfc) the call rejects and the engine's signal is aborted.
-- **Abort.** A queued job is removed and rejected at once. A running job is rejected at once and its worker gets a `cancel`; the worker is reused when it acknowledges, or terminated after 1.5 s. Pass one `signal` to every call of a batch to bound the whole batch, queue time included.
+- **Abort.** A queued job is removed and rejected at once. A running job is rejected at once and its worker gets a `cancel`; the worker is reused when it acknowledges, or terminated after 1.5 s. Pass one `signal` to every call of a batch to cancel the whole batch, queued jobs included.
+- **Main-thread loads.** Neither `signal` nor `timeoutMs` covers code downloaded on the main thread: the probe client of a lazy stub, and the fallback, compare and inline chunks. A stalled download keeps the call pending; only `destroy()` ends it. The worker script and the chunks a worker loads do count toward `timeoutMs`.
 - **Crashes.** A worker `error` event rejects its job with `ProbeError('worker-failed')` and the worker is replaced on the next job.
 - **Routing of own.** Own runs on the custom worker if it lists own; otherwise on the worker of the default engine when that engine also serves own (mp4box, mediabunny); otherwise on the own worker; otherwise on the worker of the first registered descriptor that also serves own. Inline, the same order picks the in-thread modules, with the built-in in-thread own last. So `createProbe({ engines: [mp4box()], engine: 'mp4box', fallback: ['own'] })` starts one worker for both engines.
 - **Inline.** In the calling thread each engine loads as a lazy chunk. An engine listed only on a custom worker (mp4box or mediabunny without its descriptor) cannot run there and rejects with `ProbeError('unsupported-environment')`.
+
+### Cancellation and failing open
+
+For an upload flow that must go on when the check cannot finish:
+
+```ts
+probe.prewarm(); // when the upload dialog opens: the client, the worker and the MP4 parser
+
+const deadline = new AbortController(); // AbortSignal.timeout needs Chrome 103, above the browser floor
+const late = new Promise<null>((resolve) => setTimeout(() => (deadline.abort(), resolve(null)), 5000));
+const checks = Promise.all(files.map((f) => probe.tryAnalyze(f, { timeoutMs: 3000, signal: deadline.signal })));
+const results = await Promise.race([checks, late]);
+// results null, an entry null, or summarize(entry).ok false: upload without the check
+```
+
+- `tryAnalyze` resolves `null` wherever `analyze` would reject, a failed stub load included.
+- `timeoutMs` bounds each job once a worker takes it; queued jobs are not timed. Aborting the shared signal rejects queued jobs at once and cancels the running ones, so their `tryAnalyze` resolves `null`.
+- Neither bounds the [main-thread loads](#workers-queues-and-timeouts). `prewarm()` moves the probe client download to the dialog open, and the race bounds the batch even when a download stalls.
 
 ### WireOptions (parser options)
 
@@ -378,13 +398,15 @@ function isTimeoutError(e: unknown): boolean; // ProbeError 'timeout', or any er
 |---|---|
 | `aborted` | the call's `signal` was aborted, or the probe was destroyed |
 | `timeout` | `timeoutMs` passed after a worker took the job (or after an in-thread start) |
-| `worker-failed` | a worker could not start or crashed, a chunk failed to load, or an engine threw |
+| `worker-failed` | a worker could not start or crashed, a chunk the probe loads failed to load (in a worker or on the main thread), or an engine threw |
 | `engine-not-registered` | the engine id has no route in this probe (thrown at creation for `engine` and `fallback`, rejected at call time otherwise) |
 | `unknown-engine` | the worker does not serve the engine it was asked for: `worker.engines` lists an engine that `serveProbeWorker` was not given |
 | `unsupported-environment` | the engine cannot run here: a worker-only engine without `Worker`, or rvfc without a DOM |
 | `protocol` | the worker speaks another protocol version or got a malformed message, usually a worker from another package version |
 
 Problems with the file itself are never errors: they are `result.error` (and `ok: false` in `summarize`).
+
+Every rejection of a probe is a `ProbeError`. The exception is the load of a lazy stub: when its factory rejects, the stub rejects with that error as it is ([Lazy stubs](#lazy-stubs)).
 
 ## Worker protocol
 
