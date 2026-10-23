@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "license": "MIT",
+  "sideEffects": ["./dist/worker/*.worker.js", "./dist/standalone/*.js", "./src/worker/*.worker.ts"],
   "engines": {
     "node": ">=22.12"
   },
