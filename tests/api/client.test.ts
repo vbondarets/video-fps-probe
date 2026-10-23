@@ -108,6 +108,18 @@ describe('createProbeClient', () => {
     await expect(probe.prewarm({ engines: ['own', 'rvfc' as 'own'] })).resolves.toBeUndefined();
   });
 
+  it('applies the default timeout to warm requests, so a stalled warm frees its worker for the next call', async () => {
+    vi.useFakeTimers();
+    FakeWorker.reset('reply', (m) => (m.type === 'warm' ? 'hang' : undefined));
+    const probe = createProbeClient({ worker: customWorker('own'), timeoutMs: 1000 });
+    const warmed = probe.prewarm();
+    const analyzedFile = probe.analyze(mp4File('a.mp4'));
+    await vi.advanceTimersByTimeAsync(1000);
+    await expect(warmed).resolves.toBeUndefined();
+    expect(await analyzedFile).toEqual(fakeResult('a.mp4'));
+    expect(FakeWorker.instances.map((w) => w.terminated)).toEqual([true, false]);
+  });
+
   it('prewarm loads main-thread engines and calls their warm hook', async () => {
     const module = { containers: 'any' as const, run: vi.fn(), warm: vi.fn(async () => {}) };
     const probe = createProbeClient({ worker: customWorker('own'), engines: [mainDescriptor('rvfc', module)] });

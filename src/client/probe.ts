@@ -128,7 +128,7 @@ export function createProbeCore(options: CoreOptions): Probe<EngineId> {
           warm.set(pool, [...(warm.get(pool) ?? []), id as WorkerEngineId]);
         }
       }
-      for (const [pool, engines] of warm) jobs.push(pool.run({ type: 'warm', engines, containers }));
+      for (const [pool, engines] of warm) jobs.push(pool.run({ type: 'warm', engines, containers }, { timeoutMs: defaultTimeout }));
       await Promise.allSettled(jobs);
     },
     dispose() {
