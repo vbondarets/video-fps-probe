@@ -251,7 +251,9 @@ function closureOf(start, fileSet, texts) {
 
 const LAZY_BY_NAME = [
   ['client', /^(?:probe|pool)-/i],
-  ['client-lazy', /^(?:compare|fallback|inline)-/],
+  ['client-compare', /^compare-/],
+  ['client-fallback', /^fallback-/],
+  ['client-inline', /^inline-/],
   ['rvfc', /rvfc/i],
   ['mp4box', /mp4box/i],
   ['mediabunny', /mediabunny/i],
@@ -764,7 +766,13 @@ function runSelfTest() {
     for (const f of ['compare-X1.js', 'fallback-F1.js', 'inline-N1.js']) write(clientDir, `assets/${f}`, `import{a as e}from"./probe-L1.js";${filler(300)}`);
     const withClient = buildReport(clientDir);
     expectEq('client: kind', withClient.chunks.find((c) => c.file === 'assets/probe-L1.js')?.kind, 'client');
-    for (const f of ['compare-X1.js', 'fallback-F1.js', 'inline-N1.js']) expectEq(`client: lazy part ${f}`, withClient.chunks.find((c) => c.file === `assets/${f}`)?.kind, 'client-lazy');
+    for (const [f, kind] of [
+      ['compare-X1.js', 'client-compare'],
+      ['fallback-F1.js', 'client-fallback'],
+      ['inline-N1.js', 'client-inline'],
+    ]) {
+      expectEq(`client: lazy part ${f}`, withClient.chunks.find((c) => c.file === `assets/${f}`)?.kind, kind);
+    }
     expectEq('client: lazy parts are not in the first MP4 analysis', withClient.composites.firstMp4.files.some((f) => /(compare|fallback|inline)-/.test(f)), false);
     expectEq('client: budget ok', statusOf(withClient, 'client'), 'ok');
     expectEq('client: not part of initial', withClient.composites.initial.files.includes('assets/probe-L1.js'), false);
