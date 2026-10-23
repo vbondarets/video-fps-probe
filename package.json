@@ -4,7 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "license": "MIT",
-  "sideEffects": ["./dist/worker/*.worker.js", "./dist/standalone/*.js", "./src/worker/*.worker.ts"],
+  "sideEffects": [
+    "./dist/worker/*.worker.js",
+    "./dist/standalone/*.js",
+    "./src/worker/*.worker.ts"
+  ],
   "engines": {
     "node": ">=22.12"
   },
@@ -81,6 +85,8 @@
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.2",
     "oxlint": "1.88.0",
+    "publint": "0.3.25",
+    "rolldown": "1.2.14",
     "typescript": "6.0.3",
     "vite": "8.3.5",
     "vitest": "5.0.5"
