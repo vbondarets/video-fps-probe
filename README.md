@@ -266,36 +266,36 @@ Headless Chrome 155, GPU decoding on, display 170 Hz.
 
 | Chunk | Loaded | Raw | gzip -9 | brotli q11 | Budget (gzip) | Headroom | Status |
 |---|---|---:|---:|---:|---:|---:|---|
-| main (React, UI, store) | page load | 237.43 KB | **74.05 KB** | 64.12 KB | 75.00 KB | 0.95 KB | ok |
+| main (React, UI, store) | page load | 237.43 KB | **74.05 KB** | 64.19 KB | 75.00 KB | 0.95 KB | ok |
 | CSS | page load | 4.98 KB | **1.81 KB** | 1.53 KB | not budgeted | - | - |
-| probe client (lazy) | first file | 6.34 KB | **2.71 KB** | 2.51 KB | 3.50 KB | 0.79 KB | ok |
+| probe client (lazy) | first file | 6.34 KB | **2.71 KB** | 2.50 KB | 3.50 KB | 0.79 KB | ok |
 | probe fallback chain | first call with a fallback chain or a skipped engine | 0.98 KB | **0.62 KB** | 0.54 KB | not budgeted | - | - |
-| probe compare (agreement rules) | first probe.compare | 2.57 KB | **1.31 KB** | 1.20 KB | not budgeted | - | - |
-| in-thread engine runner | first main-thread engine run (rVFC) | 1.00 KB | **0.59 KB** | 0.53 KB | not budgeted | - | - |
+| probe compare (agreement rules) | first probe.compare | 2.57 KB | **1.31 KB** | 1.19 KB | not budgeted | - | - |
+| in-thread engine runner | first main-thread engine run (rVFC) | 1.00 KB | **0.60 KB** | 0.53 KB | not budgeted | - | - |
 | shared by the lazy client parts and rVFC (result builders, sniffing) | with the fallback chain, compare, rVFC or the own engine in this thread | 0.10 KB | **0.11 KB** | 0.09 KB | not budgeted | - | - |
 | shared by the lazy client parts and rVFC (result builders, sniffing) | with the fallback chain, compare, rVFC or the own engine in this thread | 0.71 KB | **0.38 KB** | 0.33 KB | not budgeted | - | - |
 | shared by the lazy client parts and rVFC (result builders, sniffing) | with the fallback chain, compare, rVFC or the own engine in this thread | 2.12 KB | **0.99 KB** | 0.89 KB | not budgeted | - | - |
-| own engine in this thread (runtime and parser copies for worker inline) | only with worker inline or without a Worker global (own engine in this thread) | 30.83 KB | **12.23 KB** | 11.10 KB | not budgeted | - | - |
-| own engine in this thread (runtime and parser copies for worker inline) | only with worker inline or without a Worker global (own engine in this thread) | 29.17 KB | **11.19 KB** | 10.16 KB | not budgeted | - | - |
+| own engine in this thread (runtime and parser copies for worker inline) | only with worker inline or without a Worker global (own engine in this thread) | 30.83 KB | **12.23 KB** | 11.03 KB | not budgeted | - | - |
+| own engine in this thread (runtime and parser copies for worker inline) | only with worker inline or without a Worker global (own engine in this thread) | 29.17 KB | **11.19 KB** | 10.17 KB | not budgeted | - | - |
 | own engine in this thread (runtime and parser copies for worker inline) | only with worker inline or without a Worker global (own engine in this thread) | 5.90 KB | **2.48 KB** | 2.29 KB | not budgeted | - | - |
 | own engine in this thread (runtime and parser copies for worker inline) | only with worker inline or without a Worker global (own engine in this thread) | 3.35 KB | **1.84 KB** | 1.71 KB | not budgeted | - | - |
-| own engine in this thread (runtime and parser copies for worker inline) | only with worker inline or without a Worker global (own engine in this thread) | 10.31 KB | **4.33 KB** | 3.96 KB | not budgeted | - | - |
-| worker entry (reader, sniffing, worker runtime) | first file | 10.14 KB | **4.22 KB** | 3.84 KB | 5.00 KB | 0.78 KB | ok |
-| shared by the parsers and engines (timeline statistics) | with the first parser, in parallel, once per worker | 10.21 KB | **4.29 KB** | 3.92 KB | 5.00 KB | 0.70 KB | ok |
-| ISO BMFF parser | first MP4 or MOV file, once per worker | 30.75 KB | **12.22 KB** | 11.04 KB | 13.50 KB | 1.28 KB | ok |
+| own engine in this thread (runtime and parser copies for worker inline) | only with worker inline or without a Worker global (own engine in this thread) | 10.31 KB | **4.33 KB** | 3.95 KB | not budgeted | - | - |
+| worker entry (reader, sniffing, worker runtime) | first file | 10.14 KB | **4.22 KB** | 3.86 KB | 5.00 KB | 0.78 KB | ok |
+| shared by the parsers and engines (timeline statistics) | with the first parser, in parallel, once per worker | 10.21 KB | **4.29 KB** | 3.92 KB | 5.00 KB | 0.71 KB | ok |
+| ISO BMFF parser | first MP4 or MOV file, once per worker | 30.75 KB | **12.22 KB** | 11.08 KB | 13.50 KB | 1.28 KB | ok |
 | Matroska parser | first WebM or MKV file, once per worker | 29.05 KB | **11.10 KB** | 10.09 KB | 12.00 KB | 0.90 KB | ok |
-| rate profile core (segments, anomalies, sparkline buckets) | first VFR timeline, once per worker | 3.35 KB | **1.84 KB** | 1.71 KB | 2.00 KB | 0.16 KB | ok |
+| rate profile core (segments, anomalies, sparkline buckets) | first VFR timeline, once per worker | 3.35 KB | **1.84 KB** | 1.71 KB | 2.00 KB | 0.15 KB | ok |
 | rate profile panel (UI) | first card with a rate profile | 2.17 KB | **0.94 KB** | 0.85 KB | 1.50 KB | 0.56 KB | ok |
 | device info and JSON export | on idle after the first result, or the first export (footer device line, JSON export) | 4.83 KB | **2.24 KB** | 1.96 KB | not budgeted | - | - |
-| rVFC fallback | click on Run (approximate) | 4.24 KB | **2.19 KB** | 1.98 KB | 2.50 KB | 0.31 KB | ok |
+| rVFC fallback | click on Run (approximate) | 4.24 KB | **2.19 KB** | 1.99 KB | 2.50 KB | 0.30 KB | ok |
 | Compare panel | first open of a Compare engines panel | 2.88 KB | **1.20 KB** | 1.09 KB | not budgeted | - | - |
-| mp4box.js engine | Compare engines on an MP4 or MOV card | 187.64 KB | **43.65 KB** | 37.30 KB | not budgeted | - | - |
-| mediabunny engine | Compare engines | 200.82 KB | **52.78 KB** | 44.47 KB | not budgeted | - | - |
+| mp4box.js engine | Compare engines on an MP4 or MOV card | 187.64 KB | **43.65 KB** | 37.26 KB | not budgeted | - | - |
+| mediabunny engine | Compare engines | 200.80 KB | **52.78 KB** | 44.50 KB | not budgeted | - | - |
 | shared by mp4box and mediabunny | with mp4box or mediabunny | 3.01 KB | **1.50 KB** | 1.35 KB | not budgeted | - | - |
-| initial: main + CSS + worker entry |  | 252.55 KB | **80.08 KB** | 69.49 KB | 85.00 KB | 4.92 KB | ok |
-| first MP4 analysis: initial + probe client + statistics + ISO BMFF parser |  | 299.85 KB | **99.31 KB** | 86.97 KB | 100.00 KB | 0.69 KB | ok |
-| first VFR MP4 analysis: first MP4 + rate profile core |  | 303.19 KB | **101.15 KB** | 88.68 KB | 102.00 KB | 0.85 KB | ok |
-| first Matroska analysis: initial + probe client + statistics + Matroska parser |  | 298.15 KB | **98.18 KB** | 86.01 KB | 100.00 KB | 1.82 KB | ok |
+| initial: main + CSS + worker entry |  | 252.55 KB | **80.08 KB** | 69.57 KB | 85.00 KB | 4.92 KB | ok |
+| first MP4 analysis: initial + probe client + statistics + ISO BMFF parser |  | 299.85 KB | **99.31 KB** | 87.08 KB | 100.00 KB | 0.69 KB | ok |
+| first VFR MP4 analysis: first MP4 + rate profile core |  | 303.19 KB | **101.15 KB** | 88.79 KB | 102.00 KB | 0.85 KB | ok |
+| first Matroska analysis: initial + probe client + statistics + Matroska parser |  | 298.15 KB | **98.18 KB** | 86.09 KB | 100.00 KB | 1.82 KB | ok |
 
 <!-- tables:bundle:end -->
 

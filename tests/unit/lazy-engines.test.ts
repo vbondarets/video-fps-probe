@@ -90,7 +90,7 @@ describe('lazy engine peers', () => {
     const blob = await openAsBlob(join(FILES_DIR, 'cfr_h264_30.mp4'));
     expect((await m.run(blob, 'a.mp4', {})).engine).toBe('mp4box');
     const b = await mediabunny().load();
-    expect(b.containers).toEqual(['isobmff', 'matroska']);
+    expect(b.containers).toBe('any');
     expect((await b.run(blob, 'a.mp4', {})).engine).toBe('mediabunny');
     expect(loads).toEqual({ mp4box: 1, mediabunny: 1 });
   });

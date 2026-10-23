@@ -6,7 +6,7 @@ import type { BlobLike } from '../core/reader.ts';
 import { emptyTrack } from '../core/result.ts';
 import { analyzeTimeline } from '../core/stats.ts';
 import type { AnalyzeOptions, ContainerKind, VideoTrackResult } from '../core/types.ts';
-import type { ContainerFamily, EngineModule } from '../plugins/types.ts';
+import type { EngineModule } from '../plugins/types.ts';
 import { applyStats, approxRational, codecNameFromFourcc, errorMessage, isAbort, newResult } from './common.ts';
 import { CountingBlob, elapsed, now } from './counting.ts';
 import type { MediabunnyNative, MediabunnyResult, MediabunnyTrackNative } from './types.ts';
@@ -242,6 +242,6 @@ export async function analyzeWithMediabunny(blob: BlobLike, name: string, opts: 
   return result;
 }
 
-export const containers = ['isobmff', 'matroska'] as const satisfies readonly ContainerFamily[];
+export const containers = 'any';
 
 export const run: EngineModule<MediabunnyResult>['run'] = analyzeWithMediabunny;
