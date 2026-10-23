@@ -1,12 +1,17 @@
 import { isAbortError, ProbeError } from '../api/errors.ts';
-import { emptyAnalysis } from '../core/result.ts';
+import { emptyAnalysis, primaryTrack } from '../core/result.ts';
 import type { EngineId } from '../core/types.ts';
 import type { WireOptions } from '../worker/protocol.ts';
 import type { InlineReply } from './inline.ts';
-import { failureOf, type Run } from './probe.ts';
+import type { Run } from './probe.ts';
 import type { Attempt, CallOptions, ProbeResult } from './types.ts';
 
 type Failure = Attempt & { result?: ProbeResult };
+
+export const failureOf = (r: ProbeResult): string | null => {
+  const t = primaryTrack(r);
+  return r.error ?? (!t ? 'no video track' : t.avgFps ? null : 'no frame rate');
+};
 
 const withAttempts = (result: ProbeResult, failures: readonly Failure[]): ProbeResult =>
   failures.length > 0 ? { ...result, attempts: failures.map(({ engine, error }) => ({ engine, error })) } : result;

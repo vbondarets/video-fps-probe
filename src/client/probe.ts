@@ -1,5 +1,4 @@
 import { ProbeError } from '../api/errors.ts';
-import { primaryTrack } from '../core/result.ts';
 import type { EngineId } from '../core/types.ts';
 import type { EngineDescriptor, EngineModule, WorkerEngineId } from '../plugins/types.ts';
 import type { WireOptions } from '../worker/protocol.ts';
@@ -27,11 +26,6 @@ export interface CompareContext {
 const notRegistered = (id: EngineId, message = `engine ${id} is not registered`) => new ProbeError('engine-not-registered', message, { engine: id });
 
 export const nameOf = (file: Blob): string => (typeof File !== 'undefined' && file instanceof File ? file.name : '');
-
-export const failureOf = (r: ProbeResult): string | null => {
-  const t = primaryTrack(r);
-  return r.error ?? (!t ? 'no video track' : t.avgFps ? null : 'no frame rate');
-};
 
 const lazy = <T>(chunk: Promise<T>, engine: EngineId | null): Promise<T> =>
   chunk.catch((e: unknown) => Promise.reject(new ProbeError('worker-failed', String(e), { engine, cause: e })));

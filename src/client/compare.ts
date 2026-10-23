@@ -1,7 +1,8 @@
 import { compareResults } from '../api/agreement.ts';
 import { isAbortError, ProbeError } from '../api/errors.ts';
 import type { EngineId } from '../core/types.ts';
-import { failureOf, nameOf, type CompareContext } from './probe.ts';
+import { failureOf } from './fallback.ts';
+import { nameOf, type CompareContext } from './probe.ts';
 import type { CompareOptions, CompareResult, EngineOutcome, ProbeResult } from './types.ts';
 
 export async function compare<K extends EngineId>(ctx: CompareContext, file: Blob, o: CompareOptions<K> = {}): Promise<CompareResult<K>> {
