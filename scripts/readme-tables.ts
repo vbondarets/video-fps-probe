@@ -17,12 +17,14 @@ interface Check {
   verdict: Verdict;
   app: string | null;
   ffprobe: string | null;
+  detail?: string | null;
   deviation?: string;
   outcome?: Outcome;
 }
 
 interface TrackEval {
   trackId: number;
+  refIndex: number | null;
   primary: boolean;
   checks: Check[];
 }
@@ -842,35 +844,69 @@ function enginesBlock(inp: Inputs): string[] {
   ];
 }
 
+const VERDICT_RANK: Record<Verdict, number> = { exact: 3, 'within-tol': 2, 'known-deviation': 1, mismatch: 0, 'n/a': 0 };
+
+function sameCheck(f: AccFixture, track: TrackEval | null, c: Check): Check | undefined {
+  if (!track) return f.fileChecks.find((x) => x.id === c.id);
+  const t = f.tracks.find((x) => x.refIndex !== null && x.refIndex === track.refIndex);
+  return t?.checks.find((x) => x.id === c.id);
+}
+
+function accuracyWins(own: EngineReport, arms: readonly EngineReport[]): string[] {
+  const out: string[] = [];
+  for (const f of own.fixtures) {
+    const scoped: Array<[TrackEval | null, Check]> = [...f.fileChecks.map((c): [null, Check] => [null, c]), ...f.tracks.flatMap((t) => t.checks.map((c): [TrackEval, Check] => [t, c]))];
+    for (const [track, c] of scoped) {
+      if (c.verdict === 'exact') continue;
+      const better = new Map<string, string[]>();
+      for (const e of arms) {
+        const theirs = e.fixtures.find((x) => x.name === f.name);
+        const x = theirs ? sameCheck(theirs, track, c) : undefined;
+        if (!x || (x.verdict !== 'exact' && x.verdict !== 'within-tol') || VERDICT_RANK[x.verdict] <= VERDICT_RANK[c.verdict]) continue;
+        if (x.field !== 'error' && (x.app === null || x.app === '')) continue;
+        const key = `${x.verdict === 'exact' ? 'exact' : 'within tolerance'} (${x.app ?? 'no error'})`;
+        better.set(key, [...(better.get(key) ?? []), `\`${e.engine}\``]);
+      }
+      if (better.size === 0) continue;
+      const where = track && f.tracks.length > 1 ? ` (track ${track.trackId})` : '';
+      const theirs = [...better.entries()].map(([what, names]) => `${what} in ${names.join(' and ')}`).join('; ');
+      const mine = `${c.verdict}${c.app ? ` (${c.app})` : ''}${c.detail ? `: ${c.detail}` : ''}`;
+      out.push(`\`${f.name}\`${where} \`${c.id}\`: ${theirs}; own ${mine}`);
+    }
+  }
+  return out;
+}
+
 function winsLines(inp: Inputs, engines: readonly EngineReport[]): string[] {
   const own = engine(inp.acc, 'own');
   const ownByName = new Map(own.fixtures.map((f) => [f.name, f]));
   const label = (e: EngineReport): string => ENGINE_LABEL[e.engine] ?? e.engine;
   const arms = engines.filter((e) => e.informational);
   const out: string[] = [];
-  const accuracy: string[] = [];
-  for (const f of own.fixtures) {
-    for (const c of checksOf(f)) {
-      if (c.verdict === 'exact' || c.verdict === 'n/a' || c.verdict === 'mismatch') continue;
-      const exact = arms.filter((e) => {
-        const theirs = e.fixtures.find((x) => x.name === f.name);
-        return !!theirs && checksOf(theirs).some((x) => x.id === c.id && x.verdict === 'exact');
-      });
-      if (exact.length > 0) accuracy.push(`\`${f.name}\` \`${c.id}\` (own: ${c.verdict}; exact: ${exact.map(label).join(', ')})`);
-    }
-  }
-  out.push(accuracy.length > 0 ? `- Exact where the own parsers are within tolerance or a known deviation: ${accuracy.join('; ')}.` : '- No check where a library arm is exact and the own parsers are not.');
-  const compare = (pick: (f: AccFixture) => number, what: string) => {
+  const scope = `all ${own.fixtures.length} fixtures, the ${own.fixtures.filter((f) => isLarge(f, inp.manifest)).length} large local files included`;
+  const accuracy = accuracyWins(own, arms);
+  out.push(
+    accuracy.length > 0
+      ? `- A library arm is exact or within tolerance where the own parsers are not (${scope}): ${accuracy.join('; ')}.`
+      : `- No check where a library arm is exact or within tolerance and the own parsers are not (${scope}).`,
+  );
+  const opened = (f: AccFixture | undefined): f is AccFixture => !!f && !!f.io && !f.appError;
+  const compare = (pick: (f: AccFixture) => number, fmt: (v: number) => string, what: string) => {
     const parts = arms.flatMap((e) => {
-      const files = supported(e, inp.manifest).filter((f) => f.io && !f.appError && ownByName.get(f.name)?.io);
-      const fewer = files.filter((f) => pick(f) < pick(ownByName.get(f.name)!)).length;
-      return fewer > 0 ? [`${label(e)} ${fewer} of ${files.length}`] : [];
+      const fams = familiesOf(e);
+      const both = e.fixtures.filter((f) => fams.includes(familyOf(f)) && opened(f) && opened(ownByName.get(f.name)));
+      const ownOf = (f: AccFixture): AccFixture => ownByName.get(f.name)!;
+      const committed = both.filter((f) => !isLarge(f, inp.manifest));
+      const fewer = committed.filter((f) => pick(f) < pick(ownOf(f))).length;
+      const large = both.filter((f) => isLarge(f, inp.manifest) && pick(f) < pick(ownOf(f))).map((f) => `\`${f.name}\` ${fmt(pick(f))} against ${fmt(pick(ownOf(f)))}`);
+      if (fewer === 0 && large.length === 0) return [];
+      return [`${label(e)} ${fewer} of ${committed.length}${large.length > 0 ? `, and ${large.join(', ')}` : ''}`];
     });
-    if (parts.length > 0) out.push(`- ${what}, on the committed files each arm opens: ${parts.join('; ')}.`);
+    if (parts.length > 0) out.push(`- ${what}, on the committed files that both the arm and the own parsers open, then the large local files: ${parts.join('; ')}.`);
   };
-  compare((f) => io(f).bytesRead, 'Fewer bytes read than the own parsers');
-  compare((f) => io(f).reads, 'Fewer reads than the own parsers');
-  compare((f) => io(f).ms, 'Faster than the own parsers in Node (median of the runs)');
+  compare((f) => io(f).bytesRead, fmtBytes, 'Fewer bytes read than the own parsers');
+  compare((f) => io(f).reads, (v) => String(v), 'Fewer reads than the own parsers');
+  compare((f) => io(f).ms, (v) => `${fmtMs(v)} ms`, 'Faster than the own parsers in Node (median of the runs; the library arms run each large file once)');
   const browser = majorVersion(inp.bench.environment.chrome.product);
   for (const lib of ['mp4box', 'mediabunny']) {
     const names = Object.keys(inp.bench.chrome.warm).filter((n) => inp.bench.chrome.engines[n]?.[lib]);
