@@ -1,21 +1,22 @@
 #!/usr/bin/env node
 // Records a canvas animation with MediaRecorder in headless Playwright browsers (the Tier R recorder corpus).
-// Usage: node record-mediarecorder.mjs [outDir] [--browsers chromium,webkit] [--list]
-//   outDir      where the recordings go, default <repo>/fixtures/files
+// Usage: node record-mediarecorder.mjs <outDir> [--browsers chromium,webkit] [--force] [--list]
+//   outDir      where the recordings go; required, there is no default, so a run cannot replace the
+//               committed recordings in fixtures/files by accident
 //   --browsers  comma separated: chromium, webkit, firefox (default chromium,webkit)
-//   --list      print which of TYPES each browser can record, then exit
+//   --force     overwrite a recording that already exists in outDir (without it the run refuses and exits 1)
+//   --list      print which of TYPES each browser can record, then exit (no outDir needed)
 // Every supported type is recorded twice, in one piece and with a 250 ms timeslice (_sliced), and named
 // after the type the recorder reports: rec_<browser>_<codec>[_sliced].<webm|mkv|mp4>. The drawing is the
 // same in every run; the frame timing is whatever the browser delivers: rAF for 1.5 s, a 0.6 s freeze,
 // a 15 fps timer until 3.6 s, then rAF until 4.5 s. One JSON line of provenance per file goes to stdout.
 // The output is not byte-reproducible: commit a recording once and keep it.
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import { chromium, firefox, webkit } from '@playwright/test';
 
-const HERE = dirname(fileURLToPath(import.meta.url));
+const USAGE = 'Usage: node scripts/fixtures/record-mediarecorder.mjs <outDir> [--browsers chromium,webkit,firefox] [--force] [--list]';
 const LAUNCHERS = { chromium, webkit, firefox };
 const TYPES = [
   { label: 'vp8', mime: 'video/webm;codecs=vp8' },
@@ -102,22 +103,28 @@ async function supported(page) {
 
 async function main() {
   const { values, positionals } = parseArgs({
-    options: { browsers: { type: 'string', default: 'chromium,webkit' }, list: { type: 'boolean', default: false }, help: { type: 'boolean', default: false } },
+    options: { browsers: { type: 'string', default: 'chromium,webkit' }, force: { type: 'boolean', default: false }, list: { type: 'boolean', default: false }, help: { type: 'boolean', default: false } },
     allowPositionals: true,
     strict: true,
   });
   if (values.help) {
-    console.log('Usage: node scripts/fixtures/record-mediarecorder.mjs [outDir] [--browsers chromium,webkit,firefox] [--list]');
+    console.log(USAGE);
     return 0;
   }
-  const outDir = resolve(positionals[0] ?? join(HERE, '..', '..', 'fixtures', 'files'));
+  if (!values.list && positionals.length !== 1) {
+    console.error(`${USAGE}
+the output directory is required: the committed recordings are frozen, so record into another directory (or pass fixtures/files with --force to replace them on purpose)`);
+    return 2;
+  }
+  const outDir = values.list ? null : resolve(positionals[0]);
   const names = values.browsers.split(',').map((s) => s.trim()).filter(Boolean);
   const unknown = names.filter((n) => !LAUNCHERS[n]);
   if (unknown.length > 0) {
     console.error(`unknown browser: ${unknown.join(', ')} (known: ${Object.keys(LAUNCHERS).join(', ')})`);
     return 2;
   }
-  mkdirSync(outDir, { recursive: true });
+  if (outDir) mkdirSync(outDir, { recursive: true });
+  let refused = 0;
   const date = new Date().toISOString().slice(0, 10);
   for (const name of names) {
     const browser = await LAUNCHERS[name].launch({ headless: true });
@@ -145,7 +152,14 @@ async function main() {
           }
           written.add(file);
           const bytes = Buffer.from(r.base64, 'base64');
-          writeFileSync(join(outDir, file), bytes);
+          try {
+            writeFileSync(join(outDir, file), bytes, { flag: values.force ? 'w' : 'wx' });
+          } catch (e) {
+            if (e?.code !== 'EEXIST') throw e;
+            console.error(`${join(outDir, file)} exists, not overwritten (pass --force to replace it)`);
+            refused++;
+            continue;
+          }
           console.log(
             JSON.stringify({ file, browser: name, version, mime: type.mime, recordedMime: r.recordedMime, timesliceMs: timeslice || null, size: `${SETTINGS.width}x${SETTINGS.height}`, videoBitsPerSecond: SETTINGS.bitrate, drawn: r.drawn, chunks: r.chunks, ms: r.ms, bytes: bytes.length, date }),
           );
@@ -155,7 +169,7 @@ async function main() {
       await browser.close();
     }
   }
-  return 0;
+  return refused > 0 ? 1 : 0;
 }
 
 main().then(
