@@ -25,7 +25,7 @@ Every fixture has an ffprobe 8.1.1 reference in `fixtures/ref/`. `npm run compar
 The libraries run in five informational arms, so that a difference is not charged to a library when it comes from this package's adapter or from a different definition. The idiomatic arms use each library the way its documentation shows and report only the library's own fields; mediabunny's full arm scans every packet; the tuned arms are this package's adapters in `src/engines`, which run part of this package's code (the timeline statistics) and are the engines of the demo's Compare panel. Every mismatch of every arm gets one outcome:
 
 - **wrong**: a value that differs from ffprobe, and neither the arm's own definition nor another checked one explains it;
-- **definition differs**: the value follows the definition that the library documents or implements for the field, evaluated on the file and its reference. Each arm is checked only against its own definitions: for mediabunny, a float instead of the exact rational, `computeFrameRateMetrics()` replayed on the reference timestamps (its probe window, its deduplicated timestamps and the underlying rate it infers, whose whole frames it counts), `computeDuration()` as the end timestamp of the last packet, `getFirstTimestamp()` below zero under an edit list; for mp4box.js, the media and movie header durations of `getInfo()` and its moov sample count; for the tuned adapters, what the adapter code computes (the largest track end, `averagePacketRate` as frames over the presentation span); for every arm, a failure where ffprobe fails too;
+- **definition differs**: the value follows the definition that the library documents or implements for the field, evaluated on the file and its reference. Each arm is checked only against its own definitions: for mediabunny, a float instead of the exact rational, `computeFrameRateMetrics()` replayed on the reference timestamps (its probe window, its deduplicated timestamps and the underlying rate it infers, whose whole frames it counts), `computeDuration()` as the end timestamp of the last packet, `getFirstTimestamp()` below zero under an edit list; for mp4box.js, the media and movie header durations of `getInfo()` and its moov sample count; for the tuned adapters, what the adapter code computes (the largest track end, `averagePacketRate` as frames over the presentation span, mediabunny's `getDurationFromMetadata()` as the largest first timestamp plus media header duration of any track); for every arm, a failure where ffprobe fails too;
 - **unverified**: neither wrong nor a definition difference. Either the arm's own definition cannot be evaluated on the file (the long files' references keep no per-frame timestamps, an edit list discards packets that mediabunny reads, an audio track can end later than the video), or the value equals another quantity that the arm does not use for the field, such as the movie header duration from mediabunny, so the cause is not verified;
 - **not provided**: the arm returns no value for the field, or the field is not part of its recipe (mp4box.js returns no frame rate by design, and mediabunny's default recipe no frame count; the full scan's `probedPacketCount` counts as one);
 - **unsupported container**: the library does not read the container (mp4box.js and WebM or Matroska).
@@ -39,7 +39,7 @@ The libraries run in five informational arms, so that a difference is not charge
 | mp4box.js, tuned adapter | mp4box.js 2.4.1 | informational | 119 | 1449 | 1301 | 2 | 2 | 11 | 18 | 0 | 0 | 90 | 25 |
 | mediabunny, idiomatic | mediabunny 1.62.1 | informational | 119 | 1855 | 1314 | 0 | 0 | 13 | 99 | 9 | 184 | 0 | 236 |
 | mediabunny, full scan | mediabunny 1.62.1 | informational | 119 | 1855 | 1494 | 0 | 0 | 13 | 132 | 9 | 138 | 0 | 69 |
-| mediabunny, tuned adapter | mediabunny 1.62.1 | informational | 119 | 1883 | 1691 | 3 | 2 | 18 | 47 | 18 | 48 | 0 | 56 |
+| mediabunny, tuned adapter | mediabunny 1.62.1 | informational | 119 | 1883 | 1691 | 3 | 2 | 16 | 56 | 11 | 48 | 0 | 56 |
 
 - **own parsers**: analyze() of src/core, the engine this package ships.
 - **mp4box.js, idiomatic**: README recipe: createFile(), appendBuffer() of 1 MiB chunks at the offset it asks for until onReady, then its info fields (codec, video width and height, nb_samples, track and movie duration over timescale); no frame rate, by design.
@@ -65,7 +65,7 @@ The libraries run in five informational arms, so that a difference is not charge
 | mediabunny, full scan | ISO BMFF (MP4, MOV) | 83 | 1321 | 1128 | 9 | 75 | 5 | 80 | 0 |
 | mediabunny, full scan | Matroska, WebM | 32 | 530 | 362 | 4 | 57 | 4 | 58 | 0 |
 | mediabunny, full scan | not a video container | 4 | 4 | 4 | 0 | 0 | 0 | 0 | 0 |
-| mediabunny, tuned adapter | ISO BMFF (MP4, MOV) | 83 | 1349 | 1273 | 16 | 6 | 10 | 15 | 0 |
+| mediabunny, tuned adapter | ISO BMFF (MP4, MOV) | 83 | 1349 | 1273 | 14 | 15 | 3 | 15 | 0 |
 | mediabunny, tuned adapter | Matroska, WebM | 32 | 530 | 414 | 2 | 41 | 8 | 33 | 0 |
 | mediabunny, tuned adapter | not a video container | 4 | 4 | 4 | 0 | 0 | 0 | 0 | 0 |
 
@@ -73,14 +73,14 @@ The libraries run in five informational arms, so that a difference is not charge
 - mp4box.js, tuned adapter: wrong `formatDurationSec` 3, `durationSec` 2, `presentedFrames` 2, `startSec` 2, `codecName` 1, `frames` 1; definition differs `formatDurationSec` 17, `error` 1; unverified none.
 - mediabunny, idiomatic: wrong `isVfr` 6, `error` 2, `durationSec` 1, `formatDurationSec` 1, `maxFps` 1, `minFps` 1, `trackSelection` 1; definition differs `maxFps` 29, `minFps` 27, `avgFps` 21, `formatDurationSec` 9, `durationSec` 7, `isVfr` 2, `startSec` 2, `error` 1, `nominalFps` 1; unverified `formatDurationSec` 5, `avgFps` 2, `durationSec` 1, `minFps` 1.
 - mediabunny, full scan: wrong `isVfr` 3, `error` 2, `frames` 2, `avgFps.measured` 1, `durationSec` 1, `formatDurationSec` 1, `maxFps` 1, `minFps` 1, `trackSelection` 1; definition differs `avgFps.measured` 34, `maxFps` 28, `minFps` 25, `avgFps` 23, `formatDurationSec` 9, `durationSec` 7, `isVfr` 2, `startSec` 2, `error` 1, `nominalFps` 1; unverified `formatDurationSec` 5, `avgFps` 1, `avgFps.measured` 1, `durationSec` 1, `frames` 1.
-- mediabunny, tuned adapter: wrong `presentedFrames` 6, `error` 3, `durationSec` 2, `formatDurationSec` 2, `frames` 2, `avgFps.measured` 1, `codecName` 1, `trackSelection` 1; definition differs `avgFps.declared` 21, `avgFps.measured` 20, `avgFps` 4, `startSec` 2; unverified `formatDurationSec` 7, `avgFps.declared` 4, `avgFps.measured` 4, `durationSec` 2, `frames` 1.
+- mediabunny, tuned adapter: wrong `presentedFrames` 6, `error` 3, `durationSec` 2, `frames` 2, `avgFps.measured` 1, `codecName` 1, `trackSelection` 1; definition differs `avgFps.declared` 21, `avgFps.measured` 20, `formatDurationSec` 9, `avgFps` 4, `startSec` 2; unverified `avgFps.declared` 4, `avgFps.measured` 4, `durationSec` 2, `frames` 1.
 
 **Where the libraries win**, from the same reports:
 
 - A library arm is exact or within tolerance where the own parsers are not (all 119 fixtures, the 5 large local files included): `vp9_no_defaultduration.webm` `nominalFps`: exact (30000/1001) in `mediabunny-idiomatic` and `mediabunny-full`; own n/a (30000/1001 (snapped)): no declared rate: ffprobe derives r_frame_rate from packets; app nominal 30000/1001 is within 1% (informational); `late_30_to_60.mp4` `nominalFps`: exact (30/1 (exact)) in `mediabunny-idiomatic`; own n/a: not CFR: ffprobe derives r_frame_rate from heuristics (stages 2-4); `late_25_to_12.5.webm` `nominalFps`: exact (25/1) in `mediabunny-idiomatic`; own n/a: no declared rate: ffprobe derives r_frame_rate from packets; `big_1080p.mkv` `avgFps.measured`: exact (30/1) in `mediabunny-full`; own n/a: no exact scan (scan=probe): a measured average is not produced; `big_1080p.mkv` `frames`: exact (1800) in `mediabunny-full` and `mediabunny-tuned`; own n/a: no exact scan (scan=probe, provenance=none): the count is not a block count; `big_1080p.mkv` `presentedFrames`: exact (1800) in `mediabunny-tuned`; own n/a: no exact scan (scan=probe); `big_1080p.mkv` `startSec`: exact (0.000000) in `mediabunny-idiomatic` and `mediabunny-full` and `mediabunny-tuned`; own n/a (0.000000): no exact scan (scan=probe).
 - Fewer bytes read than the own parsers, on the committed files that both the arm and the own parsers open, then the large local files: mp4box.js, tuned adapter 56 of 76; mediabunny, idiomatic 8 of 107; mediabunny, full scan 6 of 107; mediabunny, tuned adapter 2 of 108.
 - Fewer reads than the own parsers, on the committed files that both the arm and the own parsers open, then the large local files: mediabunny, tuned adapter 0 of 108, and `big_1080p.mkv` 122 against 126.
-- Faster than the own parsers in Node (median of the runs; the library arms run each large file once), on the committed files that both the arm and the own parsers open, then the large local files: mp4box.js, idiomatic 10 of 76, and `long_vfr_1h_screenrec.mp4` 32.7 ms against 48.3 ms; mp4box.js, tuned adapter 7 of 76; mediabunny, idiomatic 4 of 107, and `long_vfr_1h_screenrec.mp4` 10.7 ms against 48.3 ms; mediabunny, full scan 9 of 107; mediabunny, tuned adapter 21 of 108.
+- Faster than the own parsers in Node (median of the runs; the library arms run each large file once), on the committed files that both the arm and the own parsers open, then the large local files: mp4box.js, idiomatic 10 of 76, and `long_vfr_1h_screenrec.mp4` 30.0 ms against 51.9 ms; mp4box.js, tuned adapter 9 of 76; mediabunny, idiomatic 6 of 107, and `long_vfr_1h_screenrec.mp4` 11.4 ms against 51.9 ms; mediabunny, full scan 14 of 107; mediabunny, tuned adapter 24 of 108.
 - Faster than the own parsers in Chrome headless shell 156 (mp4box.js, tuned adapter): 2 of 78 files warm; `long_vfr_1h_screenrec.mp4` 51.1 ms against 62.4 ms.
 - Faster than the own parsers in Chrome headless shell 156 (mediabunny, tuned adapter): 3 of 107 files warm.
 
@@ -257,20 +257,20 @@ Each cell is the arm's value and its verdict, or the outcome of a mismatch. The 
 
 | File | Arm | Average | Min FPS | Max FPS | VFR flag | Node ms |
 |---|---|---|---|---|---|---:|
-| `late_30_to_60.mp4` | own parsers | 360/11 (32.727), exact | 30/1 (30.000), exact | 60/1 (60.000), exact | true, exact | 0.45 |
-| `late_30_to_60.mp4` | mediabunny, idiomatic | 30/1 (30.000), definition differs | 30/1 (30.000), exact | 30/1 (30.000), definition differs | false, wrong | 1.27 |
-| `late_30_to_60.mp4` | mediabunny, full scan | 431940/13199 (32.725), definition differs | 30/1 (30.000), exact | 60/1 (60.000), exact | true, exact | 10.2 |
-| `late_30_to_60.mp4` | mediabunny, tuned adapter | 360/11 (32.727), exact | 30/1 (30.000), exact | 60/1 (60.000), exact | true, exact | 5.25 |
-| `late_30_to_60.mp4` | mp4box.js, tuned adapter | 360/11 (32.727), exact | 30/1 (30.000), exact | 60/1 (60.000), exact | true, exact | 1.32 |
-| `late_25_to_12.5.webm` | own parsers | 150000/6499 (23.080), exact | 25/2 (12.500), exact | 25/1 (25.000), exact | true, exact | 2.93 |
-| `late_25_to_12.5.webm` | mediabunny, idiomatic | 25/1 (25.000), n/a | 25/1 (25.000), definition differs | 25/1 (25.000), exact | false, wrong | 2.02 |
-| `late_25_to_12.5.webm` | mediabunny, full scan | 149975/6498 (23.080), definition differs | 25/2 (12.500), exact | 25/1 (25.000), exact | true, exact | 9.30 |
-| `late_25_to_12.5.webm` | mediabunny, tuned adapter | 25000/1083 (23.084), unverified | 25/2 (12.500), exact | 25/1 (25.000), exact | true, exact | 5.50 |
+| `late_30_to_60.mp4` | own parsers | 360/11 (32.727), exact | 30/1 (30.000), exact | 60/1 (60.000), exact | true, exact | 0.42 |
+| `late_30_to_60.mp4` | mediabunny, idiomatic | 30/1 (30.000), definition differs | 30/1 (30.000), exact | 30/1 (30.000), definition differs | false, wrong | 1.29 |
+| `late_30_to_60.mp4` | mediabunny, full scan | 431940/13199 (32.725), definition differs | 30/1 (30.000), exact | 60/1 (60.000), exact | true, exact | 10.1 |
+| `late_30_to_60.mp4` | mediabunny, tuned adapter | 360/11 (32.727), exact | 30/1 (30.000), exact | 60/1 (60.000), exact | true, exact | 5.01 |
+| `late_30_to_60.mp4` | mp4box.js, tuned adapter | 360/11 (32.727), exact | 30/1 (30.000), exact | 60/1 (60.000), exact | true, exact | 3.45 |
+| `late_25_to_12.5.webm` | own parsers | 150000/6499 (23.080), exact | 25/2 (12.500), exact | 25/1 (25.000), exact | true, exact | 2.86 |
+| `late_25_to_12.5.webm` | mediabunny, idiomatic | 25/1 (25.000), n/a | 25/1 (25.000), definition differs | 25/1 (25.000), exact | false, wrong | 1.99 |
+| `late_25_to_12.5.webm` | mediabunny, full scan | 149975/6498 (23.080), definition differs | 25/2 (12.500), exact | 25/1 (25.000), exact | true, exact | 9.78 |
+| `late_25_to_12.5.webm` | mediabunny, tuned adapter | 25000/1083 (23.084), unverified | 25/2 (12.500), exact | 25/1 (25.000), exact | true, exact | 6.19 |
 | `late_25_to_12.5.webm` | mp4box.js, tuned adapter | does not read the container |  |  |  |  |
-| `late_freeze_10s.mkv` | own parsers | 625/26 (24.038), exact | 25/251 (0.100), exact | 25/1 (25.000), exact | true, exact | 2.72 |
-| `late_freeze_10s.mkv` | mediabunny, idiomatic | 25/1 (25.000), n/a | 25/1 (25.000), definition differs | 25/1 (25.000), exact | false, wrong | 1.16 |
-| `late_freeze_10s.mkv` | mediabunny, full scan | 156225/6499 (24.038), definition differs | 25/251 (0.100), exact | 25/1 (25.000), exact | true, exact | 9.83 |
-| `late_freeze_10s.mkv` | mediabunny, tuned adapter | 625/26 (24.038), exact | 25/251 (0.100), exact | 25/1 (25.000), exact | true, exact | 10.3 |
+| `late_freeze_10s.mkv` | own parsers | 625/26 (24.038), exact | 25/251 (0.100), exact | 25/1 (25.000), exact | true, exact | 2.52 |
+| `late_freeze_10s.mkv` | mediabunny, idiomatic | 25/1 (25.000), n/a | 25/1 (25.000), definition differs | 25/1 (25.000), exact | false, wrong | 1.12 |
+| `late_freeze_10s.mkv` | mediabunny, full scan | 156225/6499 (24.038), definition differs | 25/251 (0.100), exact | 25/1 (25.000), exact | true, exact | 10.1 |
+| `late_freeze_10s.mkv` | mediabunny, tuned adapter | 625/26 (24.038), exact | 25/251 (0.100), exact | 25/1 (25.000), exact | true, exact | 5.90 |
 | `late_freeze_10s.mkv` | mp4box.js, tuned adapter | does not read the container |  |  |  |  |
 
 <!-- tables:late:end -->
@@ -291,21 +291,21 @@ Node: `npm run compare` (`analyze()` on `fs.openAsBlob`), median of 3 runs per f
 
 | File | What it is | Size | Duration | Frames | Reads | Bytes read | Node ms | Chrome headless shell 156 ms | Chrome headless shell 156 UI ms |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|
-| `av_h264_aac_faststart.mp4` | MP4, moov before mdat (faststart) | 101.4 KiB | 3 s | 90 | 1 | 101.4 KiB (100%) | 0.32 | 0.80 | 1.50 |
-| `av_h264_aac.mp4` | same file, moov at the end | 101.4 KiB | 3 s | 90 | 1 | 101.4 KiB (100%) | 0.37 | 0.80 | 1.40 |
-| `mp4_bf_elst.mp4` | MP4 with B-frames and an edit list | 35.8 KiB | 3.003 s | 90 | 1 | 35.8 KiB (100%) | 0.28 | 0.80 | 1.40 |
-| `fmp4_frag_duration.mp4` | fragmented MP4 | 117.2 KiB | 4.004 s | 120 | 1 | 117.2 KiB (100%) | 0.42 | 0.80 | 1.40 |
-| `frag_vfr_global_sidx.mp4` | fragmented VFR MP4 with a global sidx | 121.0 KiB | 4.967 s | 140 | 1 | 121.0 KiB (100%) | 0.52 | 0.90 | 1.60 |
-| `vfr_screenrec_ts1000.mp4` | VFR screen recording, timescale 1000 | 188.6 KiB | 6.004 s | 246 | 1 | 188.6 KiB (100%) | 0.89 | 1.10 | 2.00 |
-| `cfr_vp9_30.webm` | WebM, VP9 | 70.7 KiB | 3 s | 90 | 1 | 70.7 KiB (100%) | 0.50 | 0.70 | 1.40 |
-| `vp9_unknown_clusters.webm` | WebM with unknown-size clusters (live) | 71.9 KiB | - | 90 | 1 | 71.9 KiB (100%) | 0.39 | 0.80 | 1.50 |
-| `h264_vfr_remux.mkv` | Matroska, stream-copied VFR with BlockGroups | 200.0 KiB | 6 s | 260 | 1 | 200.0 KiB (100%) | 0.81 | 1.20 | 2.00 |
-| `corrupt_trunc_no_moov.mp4` | interrupted recording, no moov (error) | 85.6 KiB | - | - | 1 | 85.6 KiB (100%) | 0.26 | 0.70 | 1.10 |
-| `long_cfr_3h_60fps.mp4` | long CFR MP4, moov at the end | 12.42 MiB | 3 h | 648000 | 2 | 2.56 MiB (20.6%) | 4.75 | 3.50 | 4.20 |
-| `long_vfr_1h_screenrec.mp4` | long VFR screen recording MP4 | 3.76 MiB | 1 h | 133920 | 2 | 1.53 MiB (40.7%) | 48.3 | 62.4 | 63.8 |
+| `av_h264_aac_faststart.mp4` | MP4, moov before mdat (faststart) | 101.4 KiB | 3 s | 90 | 1 | 101.4 KiB (100%) | 0.35 | 0.80 | 1.50 |
+| `av_h264_aac.mp4` | same file, moov at the end | 101.4 KiB | 3 s | 90 | 1 | 101.4 KiB (100%) | 0.40 | 0.80 | 1.40 |
+| `mp4_bf_elst.mp4` | MP4 with B-frames and an edit list | 35.8 KiB | 3.003 s | 90 | 1 | 35.8 KiB (100%) | 0.27 | 0.80 | 1.40 |
+| `fmp4_frag_duration.mp4` | fragmented MP4 | 117.2 KiB | 4.004 s | 120 | 1 | 117.2 KiB (100%) | 0.48 | 0.80 | 1.40 |
+| `frag_vfr_global_sidx.mp4` | fragmented VFR MP4 with a global sidx | 121.0 KiB | 4.967 s | 140 | 1 | 121.0 KiB (100%) | 0.50 | 0.90 | 1.60 |
+| `vfr_screenrec_ts1000.mp4` | VFR screen recording, timescale 1000 | 188.6 KiB | 6.004 s | 246 | 1 | 188.6 KiB (100%) | 0.86 | 1.10 | 2.00 |
+| `cfr_vp9_30.webm` | WebM, VP9 | 70.7 KiB | 3 s | 90 | 1 | 70.7 KiB (100%) | 0.52 | 0.70 | 1.40 |
+| `vp9_unknown_clusters.webm` | WebM with unknown-size clusters (live) | 71.9 KiB | - | 90 | 1 | 71.9 KiB (100%) | 0.42 | 0.80 | 1.50 |
+| `h264_vfr_remux.mkv` | Matroska, stream-copied VFR with BlockGroups | 200.0 KiB | 6 s | 260 | 1 | 200.0 KiB (100%) | 0.78 | 1.20 | 2.00 |
+| `corrupt_trunc_no_moov.mp4` | interrupted recording, no moov (error) | 85.6 KiB | - | - | 1 | 85.6 KiB (100%) | 0.29 | 0.70 | 1.10 |
+| `long_cfr_3h_60fps.mp4` | long CFR MP4, moov at the end | 12.42 MiB | 3 h | 648000 | 2 | 2.56 MiB (20.6%) | 3.80 | 3.50 | 4.20 |
+| `long_vfr_1h_screenrec.mp4` | long VFR screen recording MP4 | 3.76 MiB | 1 h | 133920 | 2 | 1.53 MiB (40.7%) | 51.9 | 62.4 | 63.8 |
 | `big_1080p_moov_end.mp4` | 1080p MP4 of 1 min, moov at the end | 576.42 MiB | 1 min | 1800 | 2 | 75.0 KiB (0.01%) | 0.58 | 1.40 | 2.10 |
 | `big_1080p_faststart.mp4` | same file, faststart | 576.42 MiB | 1 min | 1800 | 1 | 64.0 KiB (0.01%) | 0.31 | 0.60 | 1.30 |
-| `big_1080p.mkv` | same stream in Matroska (auto mode) | 576.43 MiB | 1 min | - | 126 | 16.51 MiB (2.86%) | 87.9 | 110 | 111 |
+| `big_1080p.mkv` | same stream in Matroska (auto mode) | 576.43 MiB | 1 min | - | 126 | 16.51 MiB (2.86%) | 90.4 | 110 | 111 |
 | **all 114 committed fixtures** | median per file; bytes are totals | 12.12 MiB |  |  | 1 (max 1) | 12.12 MiB (100%) | 0.40 | 0.80 | 1.40 |
 
 - Cold start, Chrome headless shell 156: the app is ready 118 ms after navigation; 111 files picked at once on a fresh profile show all results after 281 ms (median of 248 ms over reloads, range 214 to 263 ms).
@@ -435,15 +435,15 @@ Node: `npm run compare` (`analyze()` on `fs.openAsBlob`), median of 3 runs per f
 |  | Own parsers (this repo) | mp4box.js 2.4.1 (tuned adapter) | mediabunny 1.62.1 (tuned adapter) | requestVideoFrameCallback (Chrome headless shell 156) |
 |---|---|---|---|---|
 | Containers | MP4, MOV, WebM, Matroska | MP4, MOV | MP4, MOV, WebM, Matroska | whatever the browser can play |
-| Checks vs ffprobe, all fixtures (own: verdicts; libraries: outcome of each non-match) | 1883 checks: 1815 exact, 1 known deviation, 0 mismatch | tuned: 1449 checks: 1301 exact, 11 wrong, 18 definition differs, 0 unverified, 0 not provided, 90 unsupported container; idiomatic: 1435 checks: 688 exact, 4 wrong, 30 definition differs, 2 unverified, 516 not provided, 90 unsupported container | tuned: 1883 checks: 1691 exact, 18 wrong, 47 definition differs, 18 unverified, 48 not provided, 0 unsupported container; idiomatic: 1855 checks: 1314 exact, 13 wrong, 99 definition differs, 9 unverified, 184 not provided, 0 unsupported container | no ffprobe-equivalent fields |
+| Checks vs ffprobe, all fixtures (own: verdicts; libraries: outcome of each non-match) | 1883 checks: 1815 exact, 1 known deviation, 0 mismatch | tuned: 1449 checks: 1301 exact, 11 wrong, 18 definition differs, 0 unverified, 0 not provided, 90 unsupported container; idiomatic: 1435 checks: 688 exact, 4 wrong, 30 definition differs, 2 unverified, 516 not provided, 90 unsupported container | tuned: 1883 checks: 1691 exact, 16 wrong, 56 definition differs, 11 unverified, 48 not provided, 0 unsupported container; idiomatic: 1855 checks: 1314 exact, 13 wrong, 99 definition differs, 9 unverified, 184 not provided, 0 unsupported container | no ffprobe-equivalent fields |
 | Frame-rate checks: own mismatches, library checks wrong | MP4: 0; MKV: 0 | MP4: 3 tuned, 1 idiomatic; MKV: not supported | MP4: 7 tuned, 4 idiomatic; MKV: 2 tuned, 4 idiomatic | 9 of 11 estimates equal ffprobe's average; VFR files off by -10.0% and +292.3%; 2 of 13 files did not play |
 | Bytes read, 79 committed MP4/MOV files | 8.25 MiB of 8.25 MiB (100%) | 4.97 MiB of 8.25 MiB (60.2%) | 7.88 MiB of 8.25 MiB (95.5%) | the media element streams the file |
 | Bytes read, 32 committed WebM/MKV files | 3.80 MiB of 3.80 MiB (100%) | not supported | 3.80 MiB of 3.80 MiB (100%) | the media element streams the file |
 | Reads per file, median / max | 1 / 1 | 2 / 3 | 1 / 5 | n/a |
-| Time per file, Node 24 (median; geometric mean vs own) | 0.40 ms | 0.60 ms (1.49x own) | 0.46 ms (1.18x own) | needs a browser |
+| Time per file, Node 24 (median; geometric mean vs own) | 0.40 ms | 0.60 ms (1.49x own) | 0.47 ms (1.18x own) | needs a browser |
 | Time per file, Chrome headless shell 156 (median; geometric mean vs own) | 0.80 ms | 1.30 ms (1.46x own) | 0.90 ms (1.26x own) | 2.01 s (max 8.88 s) |
-| 3 h CFR MP4, 12.42 MiB | 2 reads, 2.56 MiB; Node 4.75 ms, Chrome 3.50 ms | 3 reads, 2.56 MiB; Node 172 ms, Chrome 151 ms | 3 reads, 2.73 MiB; Node 629 ms, Chrome 422 ms | not measured |
-| 1 h VFR MP4, 3.76 MiB | 2 reads, 1.53 MiB; Node 48.3 ms, Chrome 62.4 ms | 3 reads, 1.53 MiB; Node 68.2 ms, Chrome 51.1 ms | 3 reads, 1.70 MiB; Node 178 ms, Chrome 117 ms | not measured |
+| 3 h CFR MP4, 12.42 MiB | 2 reads, 2.56 MiB; Node 3.80 ms, Chrome 3.50 ms | 3 reads, 2.56 MiB; Node 168 ms, Chrome 151 ms | 3 reads, 2.73 MiB; Node 648 ms, Chrome 422 ms | not measured |
+| 1 h VFR MP4, 3.76 MiB | 2 reads, 1.53 MiB; Node 51.9 ms, Chrome 62.4 ms | 3 reads, 1.53 MiB; Node 69.0 ms, Chrome 51.1 ms | 3 reads, 1.70 MiB; Node 166 ms, Chrome 117 ms | not measured |
 | gzip, loaded on demand | probe client 2.98 KB + worker entry 4.32 KB + statistics 4.29 KB + ISO BMFF 12.22 KB or Matroska 11.10 KB | 43.65 KB + 1.50 KB shared | 52.88 KB + 1.50 KB shared | 2.19 KB |
 | Main risk | own code to maintain; cases outside the corpus are flagged, not verified | last sample duration overridden; must be fed box by box; no Matroska | adapter: packet-rate average, edit-trimmed packets counted as presented; whole-cluster Matroska reads | needs a visible tab and a playable codec; wrong on VFR; seconds per file |
 
@@ -512,10 +512,10 @@ Below the single-read size the layout no longer changes the read count (faststar
 
 | File | Size | Reads | Bytes read | Node ms | Chrome ms |
 |---|---:|---:|---:|---:|---:|
-| `mov_nobf_faststart.mov` | 86.4 KiB | 1 | 86.4 KiB | 0.34 | 0.70 |
-| `mov_nobf_default.mov` | 86.4 KiB | 1 | 86.4 KiB | 0.45 | 0.80 |
-| `av_h264_aac_faststart.mp4` | 101.4 KiB | 1 | 101.4 KiB | 0.32 | 0.80 |
-| `av_h264_aac.mp4` | 101.4 KiB | 1 | 101.4 KiB | 0.37 | 0.80 |
+| `mov_nobf_faststart.mov` | 86.4 KiB | 1 | 86.4 KiB | 0.33 | 0.70 |
+| `mov_nobf_default.mov` | 86.4 KiB | 1 | 86.4 KiB | 0.36 | 0.80 |
+| `av_h264_aac_faststart.mp4` | 101.4 KiB | 1 | 101.4 KiB | 0.35 | 0.80 |
+| `av_h264_aac.mp4` | 101.4 KiB | 1 | 101.4 KiB | 0.40 | 0.80 |
 
 | Committed fixtures read in | Files | Median bytes read | Node ms (median) | Chrome ms (median) |
 |---|---:|---:|---:|---:|
@@ -571,14 +571,14 @@ The profile code is 1.84 KB gzip in the worker and the panel 0.94 KB on the main
 
 | File | Rate profile | Frames | Min to max FPS | Node ms | Chrome headless shell 156 ms |
 |---|---|---:|---|---:|---:|
-| `vfr_two_phase_5_200.mp4` | 2 steady segments, 5 fps for 4 s then 200 fps for 4 s; 1 rate change; uneven | 820 | 5.000 to 200.0 | 0.79 | 1.20 |
-| `vfr_two_phase_5_200.mkv` | the same stream in Matroska: the same 2 segments | 820 | 5.000 to 200.0 | 1.83 | 1.80 |
-| `vfr_freeze_2s.mp4` | 1 steady segment at 30 fps; 1 freeze of 2 s at 1.967 s; uneven | 120 | 0.500 to 30.000 | 0.39 | 0.90 |
-| `vfr_concat_10_30_60.mp4` | 3 steady segments at 10, 30 and 60 fps, 2 s each; 2 rate changes; uneven | 200 | 10.000 to 60.000 | 0.58 | 0.90 |
-| `vfr_screenrec_ts1000.mp4` | 1 steady segment at 60 fps; 2 gaps of about 1 s; uneven | 246 | 2.959 to 100.0 | 0.89 | 1.10 |
-| `vfr_pulldown_2_3.mp4` | 1 steady segment at 24 fps (a 2:3 cadence is not uneven) | 120 | 20.000 to 30.000 | 0.49 | 1.00 |
-| `cfr_h264_30.mp4` | none: all intervals equal, the chunk is not loaded | 90 | 30.000 to 30.000 | 0.37 | 0.80 |
-| `long_vfr_1h_screenrec.mp4` | 60 fps for 3598 s plus a 1.5 s variable tail; 1439 gaps (50 listed); uneven | 133920 | 2.941 to 100.0 | 48.3 | 62.4 |
+| `vfr_two_phase_5_200.mp4` | 2 steady segments, 5 fps for 4 s then 200 fps for 4 s; 1 rate change; uneven | 820 | 5.000 to 200.0 | 0.95 | 1.20 |
+| `vfr_two_phase_5_200.mkv` | the same stream in Matroska: the same 2 segments | 820 | 5.000 to 200.0 | 1.96 | 1.80 |
+| `vfr_freeze_2s.mp4` | 1 steady segment at 30 fps; 1 freeze of 2 s at 1.967 s; uneven | 120 | 0.500 to 30.000 | 0.41 | 0.90 |
+| `vfr_concat_10_30_60.mp4` | 3 steady segments at 10, 30 and 60 fps, 2 s each; 2 rate changes; uneven | 200 | 10.000 to 60.000 | 0.63 | 0.90 |
+| `vfr_screenrec_ts1000.mp4` | 1 steady segment at 60 fps; 2 gaps of about 1 s; uneven | 246 | 2.959 to 100.0 | 0.86 | 1.10 |
+| `vfr_pulldown_2_3.mp4` | 1 steady segment at 24 fps (a 2:3 cadence is not uneven) | 120 | 20.000 to 30.000 | 0.58 | 1.00 |
+| `cfr_h264_30.mp4` | none: all intervals equal, the chunk is not loaded | 90 | 30.000 to 30.000 | 0.41 | 0.80 |
+| `long_vfr_1h_screenrec.mp4` | 60 fps for 3598 s plus a 1.5 s variable tail; 1439 gaps (50 listed); uneven | 133920 | 2.941 to 100.0 | 51.9 | 62.4 |
 
 <!-- tables:profile:end -->
 

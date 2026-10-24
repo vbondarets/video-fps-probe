@@ -43,6 +43,7 @@ type DefinitionId =
   | 'mvhd'
   | 'mehd'
   | 'file-end'
+  | 'metadata-duration'
   | 'audio-end'
   | 'last-start';
 
@@ -60,7 +61,7 @@ const ARM_DEFINITIONS: Readonly<Record<string, readonly DefinitionId[]>> = {
   'mp4box-tuned': ['fails-like-ffprobe', 'file-end', 'audio-end'],
   'mediabunny-idiomatic': MEDIABUNNY_RECIPE,
   'mediabunny-full': MEDIABUNNY_RECIPE,
-  'mediabunny-tuned': ['fails-like-ffprobe', 'float', 'span-average', 'negative-start'],
+  'mediabunny-tuned': ['fails-like-ffprobe', 'float', 'span-average', 'negative-start', 'metadata-duration'],
 };
 
 const MEDIABUNNY_API: Partial<Record<DefinitionId, string>> = {
@@ -82,7 +83,11 @@ const ARM_API: Readonly<Record<string, Partial<Record<DefinitionId, string>>>> =
   'mp4box-tuned': { 'file-end': 'the adapter takes the largest track end', 'audio-end': 'the adapter takes the largest track end' },
   'mediabunny-idiomatic': MEDIABUNNY_API,
   'mediabunny-full': MEDIABUNNY_API,
-  'mediabunny-tuned': { 'span-average': 'computePacketStats().averagePacketRate', 'negative-start': 'the smallest packet timestamp of the adapter' },
+  'mediabunny-tuned': {
+    'span-average': 'computePacketStats().averagePacketRate',
+    'negative-start': 'the smallest packet timestamp of the adapter',
+    'metadata-duration': 'input.getDurationFromMetadata()',
+  },
 };
 
 const armKey = (arm: ArmSpec): string => (arm.library === 'own' ? 'own' : `${arm.library}-${arm.style}`);
@@ -332,6 +337,15 @@ const DEFINITIONS: readonly Definition[] = [
       return recipe && (ctx.ref?.audioCount ?? 0) > 0
         ? { unverified: 'input.computeDuration() takes the largest end timestamp of every track, audio included, and the reference keeps no audio packets, so its definition is not checked' }
         : null;
+    },
+  },
+  {
+    id: 'metadata-duration',
+    test: (ctx, c) => {
+      if (c.field !== 'formatDurationSec' || ctx.family !== 'isobmff') return null;
+      const starts = new Map(ctx.result.videoTracks.map((t) => [t.trackId, t.startSec ?? 0]));
+      const ends = (ctx.layout?.tracks ?? []).filter((t) => (t.mediaDurationSec ?? 0) > 0).map((t) => (t.mediaDurationSec ?? 0) + (starts.get(t.id) ?? 0));
+      return ends.length > 0 && nearSec(secondsOf(c), Math.max(...ends)) ? 'the largest first timestamp plus media header (mdhd) duration of any track' : null;
     },
   },
   {
