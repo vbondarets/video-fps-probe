@@ -135,12 +135,13 @@ run(request, { signal, timeoutMs, onProgress, engine })
   <-- progress   forwarded unless the job already settled
   <-- result | skipped | warmed   resolve, slot released, idle timer armed
   <-- error      reject: 'aborted' when aborted, else the code ('unknown-engine', 'protocol') or 'worker-failed'
+                 ('worker-failed' has reason 'load' when the reply carries it, else 'crash')
 ```
 
 - `size` is the `workers` option (default 1). Workers spawn on demand and terminate after `idleTimeoutMs` idle (default 30 s; 0 keeps them).
 - Timeout: reject `timeout` and terminate the worker at once; the next job spawns a new one.
 - Abort: a queued job is removed and rejected at once; a running job is rejected at once and its worker gets `cancel`, and the worker is terminated if it has not replied within `KILL_AFTER_MS` (1.5 s).
-- A worker `error` event rejects its job with `worker-failed` and drops the worker. A throwing `create()` rejects the job it was spawned for.
+- A worker `error` event rejects its job with `worker-failed` and drops the worker. Before the worker's first reply and without a message it is a load failure (`reason: 'load'`, the script did not load): while no worker of the pool has replied, the queued jobs are rejected with it too. Otherwise it is a crash (`reason: 'crash'`). A throwing `create()` rejects the job it was spawned for, with `reason: 'load'`.
 - `dispose()` terminates idle workers; `destroy()` rejects every queued and running job with `aborted` and terminates every worker.
 
 ## Protocol v1
@@ -157,12 +158,12 @@ type WorkerResponse = { v: 1; id: number } & (
   | { type: 'result'; result: FileResult }
   | { type: 'skipped'; reason: 'unsupported-container'; family: ContainerFamily | null }
   | { type: 'warmed' }
-  | { type: 'error'; message: string; aborted: boolean; code?: 'unknown-engine' | 'protocol' }
+  | { type: 'error'; message: string; aborted: boolean; code?: 'unknown-engine' | 'protocol'; reason?: 'load' }
 );
 ```
 
 - The `File` is cloned by reference, so no bytes are copied. `signal` and `onProgress` cannot cross the boundary; the worker builds them per job id.
-- A message with another `v`, a malformed analyze or warm request, or an unknown type gets `error` with code `protocol`. An engine the worker was not given gets `unknown-engine`.
+- A message with another `v`, a malformed analyze or warm request, or an unknown type gets `error` with code `protocol`. An engine the worker was not given gets `unknown-engine`. A lazy engine source, or the statistics chunk loaded next to it, that fails to load gets `error` with `reason: 'load'`.
 - For an engine with a `containers` list, the runtime sniffs the container family first and replies `skipped` for any other.
 - `progress` is sent at most once per 50 ms. Phases: `fragments` (ISO BMFF, every 64 moofs), `matroska-exact` (bytes after the first Cluster), `read` and `analyze` (mp4box), `packets` (mediabunny).
 - `warm` loads the listed engines and calls their `warm(containers)`; for own that loads the parser chunks of those containers.

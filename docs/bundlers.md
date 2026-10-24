@@ -160,6 +160,21 @@ export const probe = lazyProbeClient({ worker: { create: viaBlob, engines: ['own
 - Under a Content Security Policy, `worker-src` must allow `blob:` and `script-src` the CDN origin ([above](#content-security-policy)).
 - This recipe is documented, not tested in CI.
 
+## Deploy skew
+
+Bundlers name the worker files and every lazy chunk by a content hash, and many hosts (GitHub Pages among them) replace the whole site on every deploy. A tab opened before a deploy keeps running the old page, which still asks for the old names. Those files are gone, so the first file analysed after the deploy fails to load the probe code:
+
+- The probe client of a lazy stub: the stub rejects with the browser's dynamic-import error as it is (a `TypeError`, not a `ProbeError`), and `tryAnalyze` resolves `null`.
+- The worker script, a chunk the worker loads for an engine, or a main-thread chunk of the probe: `ProbeError('worker-failed')` with `reason: 'load'` ([Errors](api.md#errors)), and `tryAnalyze` resolves `null`. A worker script that returns 404 has the message `worker script failed to load; the app may have been redeployed`.
+
+A worker that started before the deploy keeps serving its jobs, but a parser or engine chunk it has not loaded yet is gone too: own reports that as `result.error` with the import error's message, a library engine as `reason: 'load'`. With the blob trampoline of the [CDN recipe](#scripts-on-a-cdn-origin), a missing standalone file is an uncaught `NetworkError` inside the worker, so it reports as `reason: 'crash'` with the browser's `importScripts` message.
+
+What helps, from the most to the least robust; they combine:
+
+- **Keep the old assets for a while.** Upload the new hashed files next to the old ones and delete files older than a day or so, instead of replacing the directory. A stale tab then keeps loading the files it knows. Hosts that swap the whole site at once, such as GitHub Pages, cannot do this.
+- **Reload on the error.** Treat a stub rejection that is not a `ProbeError`, and `e.reason === 'load'`, as a possible new deploy: fetch the page's HTML with `cache: 'no-store'`, compare its entry script with the running one, and offer a reload when they differ. Vite also dispatches `vite:preloadError` on `window` when a dynamic import of the host's own code fails.
+- **Load early.** Call `prewarm()` when the upload dialog opens or on the first interaction, so the probe client, the worker and the MP4 parser load before the user picks files. This narrows the window, but a tab that stays open across a deploy without using the probe still loads everything afterwards.
+
 ## SSR and the lazy main-thread chunks
 
 - Every entry except the standalone worker file imports in Node without side effects; `check-dist` imports each one in plain Node on every `npm pack` and in CI.
