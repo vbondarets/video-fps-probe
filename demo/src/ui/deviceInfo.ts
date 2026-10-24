@@ -213,6 +213,11 @@ export function entryChunk(): string | null {
   return src ? (src.split('/').pop()?.split('?')[0] ?? null) : null;
 }
 
+export function buildMeta(name: 'build-time' | 'build-commit'): string | null {
+  if (typeof document === 'undefined' || typeof document.querySelector !== 'function') return null;
+  return document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`)?.content || null;
+}
+
 export function buildExport(rows: readonly ExportRow[], settings: ExportSettings, env: Environment): ExportDocument {
   const results = rows.flatMap((row) => {
     if (!row.result) return [];
@@ -226,8 +231,8 @@ export function buildExport(rows: readonly ExportRow[], settings: ExportSettings
       name: 'video-fps-probe',
       version,
       build: entryChunk(),
-      buildTime: (import.meta.env.VITE_BUILD_TIME as string | undefined) || null,
-      commit: (import.meta.env.VITE_COMMIT as string | undefined) || null,
+      buildTime: buildMeta('build-time'),
+      commit: buildMeta('build-commit'),
     },
     environment: env,
     settings: { matroskaMode: settings.matroskaMode },

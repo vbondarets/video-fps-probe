@@ -5,6 +5,7 @@ import {
   EXPORT_FILE_NAME,
   EXPORT_SCHEMA,
   buildExport,
+  buildMeta,
   entryChunk,
   collectEnvironment,
   describeEnvironment,
@@ -323,6 +324,24 @@ describe('buildExport', () => {
       vi.unstubAllGlobals();
     }
     expect(entryChunk()).toBeNull();
+  });
+
+  it('reads the build time and commit from the meta tags of the page', () => {
+    const tags: Record<string, string> = { 'meta[name="build-time"]': '2026-10-24T07:42:13Z', 'meta[name="build-commit"]': 'faa8dd3' };
+    vi.stubGlobal('document', { querySelector: (selector: string) => (selector in tags ? { content: tags[selector] } : null) });
+    try {
+      expect(buildExport([], { matroskaMode: 'auto' }, env).app).toEqual({ name: 'video-fps-probe', version, build: null, buildTime: '2026-10-24T07:42:13Z', commit: 'faa8dd3' });
+      expect(buildMeta('build-commit')).toBe('faa8dd3');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+    vi.stubGlobal('document', { querySelector: () => ({ content: '' }) });
+    try {
+      expect(buildMeta('build-time')).toBeNull();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+    expect(buildMeta('build-time')).toBeNull();
   });
 
   it('wraps the results with schema, app, environment and settings in that order', () => {

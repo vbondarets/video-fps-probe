@@ -267,12 +267,12 @@ The demo in `demo/` is a React app that consumes the package through a custom wo
 
 | Chunk | Loaded | Raw | gzip -9 | brotli q11 | Budget (gzip) | Headroom | Status |
 |---|---|---:|---:|---:|---:|---:|---|
-| main (React, UI, store) | page load | 237.66 KB | **74.11 KB** | 64.16 KB | 75.00 KB | 0.90 KB | ok |
+| main (React, UI, store) | page load | 237.66 KB | **74.10 KB** | 64.09 KB | 75.00 KB | 0.90 KB | ok |
 | CSS | page load | 4.98 KB | **1.81 KB** | 1.53 KB | not budgeted | - | - |
-| probe client (lazy) | first file | 6.78 KB | **2.93 KB** | 2.71 KB | 3.50 KB | 0.57 KB | ok |
+| probe client (lazy) | first file | 6.78 KB | **2.92 KB** | 2.69 KB | 3.50 KB | 0.57 KB | ok |
 | probe fallback chain | first call with a fallback chain or a skipped engine | 1.01 KB | **0.64 KB** | 0.56 KB | not budgeted | - | - |
-| probe compare (agreement rules) | first probe.compare | 2.60 KB | **1.33 KB** | 1.21 KB | not budgeted | - | - |
-| in-thread engine runner | first main-thread engine run (rVFC) | 1.09 KB | **0.64 KB** | 0.58 KB | not budgeted | - | - |
+| probe compare (agreement rules) | first probe.compare | 2.60 KB | **1.32 KB** | 1.20 KB | not budgeted | - | - |
+| in-thread engine runner | first main-thread engine run (rVFC) | 1.09 KB | **0.64 KB** | 0.56 KB | not budgeted | - | - |
 | shared by the lazy client parts and rVFC (result builders, sniffing): `abort` | with the fallback chain, compare, rVFC or the own engine in this thread | 0.10 KB | **0.11 KB** | 0.09 KB | not budgeted | - | - |
 | shared by the lazy client parts and rVFC (result builders, sniffing): `result` | with the fallback chain, compare, rVFC or the own engine in this thread | 0.71 KB | **0.38 KB** | 0.33 KB | not budgeted | - | - |
 | shared by the lazy client parts and rVFC (result builders, sniffing): `sniff` | with the fallback chain, compare, rVFC or the own engine in this thread | 2.12 KB | **0.99 KB** | 0.89 KB | not budgeted | - | - |
@@ -287,16 +287,16 @@ The demo in `demo/` is a React app that consumes the package through a custom wo
 | Matroska parser | first WebM or MKV file, once per worker | 29.05 KB | **11.10 KB** | 10.07 KB | 12.00 KB | 0.90 KB | ok |
 | rate profile core (segments, anomalies, sparkline buckets) | first VFR timeline, once per worker | 3.35 KB | **1.84 KB** | 1.71 KB | 2.00 KB | 0.15 KB | ok |
 | rate profile panel (UI) | first card with a rate profile | 2.17 KB | **0.94 KB** | 0.85 KB | 1.50 KB | 0.56 KB | ok |
-| device info and JSON export | on idle after the first result, or the first export (footer device line, JSON export) | 4.83 KB | **2.24 KB** | 1.96 KB | not budgeted | - | - |
+| device info and JSON export | on idle after the first result, or the first export (footer device line, JSON export) | 5.02 KB | **2.29 KB** | 2.02 KB | not budgeted | - | - |
 | rVFC fallback | click on Run (approximate) | 4.24 KB | **2.19 KB** | 1.98 KB | 2.50 KB | 0.30 KB | ok |
 | Compare panel | first open of a Compare engines panel | 2.88 KB | **1.20 KB** | 1.09 KB | not budgeted | - | - |
 | mp4box.js engine | Compare engines on an MP4 or MOV card | 187.64 KB | **43.65 KB** | 37.29 KB | not budgeted | - | - |
 | mediabunny engine | Compare engines | 200.80 KB | **52.77 KB** | 44.43 KB | not budgeted | - | - |
 | shared by mp4box and mediabunny | with mp4box or mediabunny | 3.01 KB | **1.50 KB** | 1.35 KB | not budgeted | - | - |
-| initial: main + CSS + worker entry |  | 252.81 KB | **80.16 KB** | 69.57 KB | 85.00 KB | 4.84 KB | ok |
-| first MP4 analysis: initial + probe client + statistics + ISO BMFF parser |  | 300.56 KB | **99.59 KB** | 87.24 KB | 100.00 KB | 0.41 KB | ok |
-| first VFR MP4 analysis: first MP4 + rate profile core |  | 303.90 KB | **101.44 KB** | 88.95 KB | 101.50 KB | 0.06 KB | ok |
-| first Matroska analysis: initial + probe client + statistics + Matroska parser |  | 298.86 KB | **98.47 KB** | 86.27 KB | 100.00 KB | 1.53 KB | ok |
+| initial: main + CSS + worker entry |  | 252.81 KB | **80.15 KB** | 69.50 KB | 85.00 KB | 4.85 KB | ok |
+| first MP4 analysis: initial + probe client + statistics + ISO BMFF parser |  | 300.56 KB | **99.59 KB** | 87.15 KB | 100.00 KB | 0.41 KB | ok |
+| first VFR MP4 analysis: first MP4 + rate profile core |  | 303.90 KB | **101.44 KB** | 88.86 KB | 101.50 KB | 0.06 KB | ok |
+| first Matroska analysis: initial + probe client + statistics + Matroska parser |  | 298.86 KB | **98.47 KB** | 86.18 KB | 100.00 KB | 1.53 KB | ok |
 
 <!-- tables:bundle:end -->
 
@@ -356,7 +356,7 @@ Node: `npm run compare` (`analyze()` on `fs.openAsBlob`), median of 3 runs per f
 | Time per file, Chrome 155 (median; geometric mean vs own) | 1.50 ms | 1.60 ms (1.13x own) | 1.20 ms (0.91x own) | 1.94 s (max 4.84 s) |
 | 3 h CFR MP4, 12.42 MiB | 2 reads, 2.56 MiB; Node 3.54 ms, Chrome 4.10 ms | 3 reads, 2.56 MiB; Node 212 ms, Chrome 163 ms | 3 reads, 2.73 MiB; Node 802 ms, Chrome 495 ms | not measured |
 | 1 h VFR MP4, 3.76 MiB | 2 reads, 1.53 MiB; Node 55.4 ms, Chrome 70.4 ms | 3 reads, 1.53 MiB; Node 79.9 ms, Chrome 57.6 ms | 3 reads, 1.70 MiB; Node 208 ms, Chrome 131 ms | not measured |
-| gzip, loaded on demand | probe client 2.93 KB + worker entry 4.24 KB + statistics 4.29 KB + ISO BMFF 12.22 KB or Matroska 11.10 KB | 43.65 KB + 1.50 KB shared | 52.77 KB + 1.50 KB shared | 2.19 KB |
+| gzip, loaded on demand | probe client 2.92 KB + worker entry 4.24 KB + statistics 4.29 KB + ISO BMFF 12.22 KB or Matroska 11.10 KB | 43.65 KB + 1.50 KB shared | 52.77 KB + 1.50 KB shared | 2.19 KB |
 | Main risk | own code to maintain; cases outside the corpus are flagged, not verified | last sample duration overridden; must be fed box by box; no Matroska | packet-rate average, edit-list start trim ignored, whole-cluster Matroska reads | needs a visible tab and a playable codec; wrong on VFR; seconds per file |
 
 <!-- tables:approaches:end -->
