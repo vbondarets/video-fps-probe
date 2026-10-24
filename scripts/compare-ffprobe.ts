@@ -8,7 +8,7 @@ import { loadManifest, loadRef, fixturePath, type ManifestEntry } from '../tests
 import { openFixture } from '../tests/helpers/open-blob.ts';
 import { forFixture, loadDeviations } from './compare/deviations.ts';
 import { ARMS, ENGINE_ALIASES, ENGINE_NAMES, REPO_ROOT, loadEngine, resolveEngineName, type EngineHandle, type EngineName } from './compare/engines.ts';
-import { scanIsoBmffLayout } from './compare/layout.ts';
+import { scanIsoBmffLayout, scanMatroskaLayout } from './compare/layout.ts';
 import { classifyEvaluation, countOutcomes } from './compare/outcomes.ts';
 import { parseRef, type RefFile } from './compare/ref.ts';
 import {
@@ -21,9 +21,9 @@ import {
   type SkippedFixture,
   type StaleDeviation,
 } from './compare/report.ts';
-import { evaluate } from './compare/rules.ts';
+import { evaluate, noteContradictsLayout } from './compare/rules.ts';
 import { runSelfTest } from './compare/self-test.ts';
-import { OUTCOME_CLASSES } from './compare/types.ts';
+import { OUTCOME_CLASSES, type FileLayout } from './compare/types.ts';
 
 const DEVIATIONS_DIR = join(REPO_ROOT, 'fixtures', 'known-deviations');
 const DEFAULT_REPEAT = 3;
@@ -195,6 +195,8 @@ async function main(): Promise<number> {
     }
     return refCache.get(name) ?? null;
   };
+  const layoutCache = new Map<string, FileLayout | null>();
+  const harnessProblems = new Set<string>();
   const opts: AnalyzeOptions = { matroskaMode: mkvMode as MatroskaMode };
   const engineReports: EngineReport[] = [];
 
@@ -238,7 +240,14 @@ async function main(): Promise<number> {
       try {
         const info = { name: entry.name, container: entry.container, category: entry.category, expect: entry.expect, notes: entry.notes };
         const isIso = entry.container === 'mp4' || entry.container === 'mov';
-        const layout = isIso ? await scanIsoBmffLayout(path, opened.size).catch(() => null) : null;
+        const isMatroska = entry.container === 'webm' || entry.container === 'matroska';
+        if (!layoutCache.has(entry.name)) {
+          const scan = isIso ? scanIsoBmffLayout(path, opened.size) : isMatroska ? scanMatroskaLayout(path, opened.size) : Promise.resolve(null);
+          layoutCache.set(entry.name, await scan.catch(() => null));
+        }
+        const layout = layoutCache.get(entry.name) ?? null;
+        const contradiction = noteContradictsLayout(info, layout);
+        if (contradiction) harnessProblems.add(contradiction);
         const runs = engine.informational && isLarge(entry) ? 1 : repeat;
         const timed = await runTimed(engine, opened.blob, entry.name, opts, runs, engine.informational && !verbose);
         const result = timed.result;
@@ -253,7 +262,7 @@ async function main(): Promise<number> {
           expect: entry.expect,
           sizeBytes: opened.size,
           family: evaluation.family,
-          layout: layout ? { fragmented: layout.fragmented, hasSidx: layout.hasSidx } : null,
+          layout: isIso && layout ? { fragmented: layout.fragmented, hasSidx: layout.hasSidx } : null,
           io: {
             reads: result.io?.reads ?? 0,
             bytesRead,
@@ -320,6 +329,8 @@ async function main(): Promise<number> {
     console.log(`wrote ${join(outDir, `${stem}.md`)} and ${stem}.json`);
   }
 
+  for (const problem of harnessProblems) console.error(`HARNESS: ${problem}`);
+  if (harnessProblems.size > 0) return 2;
   const own = engineReports.find((e) => e.engine === 'own');
   if (own && !own.loadSkipped && own.counts.mismatch > 0) {
     console.error(`FAIL: ${own.counts.mismatch} unexpected mismatch(es) for the own engine in ${own.mismatchFixtures.length} fixture(s)`);

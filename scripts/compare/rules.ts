@@ -7,6 +7,7 @@ import {
   type ContainerFamily,
   type FieldName,
   type FileLayout,
+  type MatroskaLayoutTrack,
   type FixtureDeviations,
   type FixtureInfo,
   type Verdict,
@@ -363,14 +364,26 @@ function avgIsoMeasuredDraft(t: VideoTrackResult, s: RefStream): Draft {
   return { ...base, verdict: 'mismatch', app: fmtRatio(app), ffprobe: ffStr };
 }
 
-function avgMatroskaDeclaredDraft(t: VideoTrackResult, s: RefStream, info: FixtureInfo): Draft {
+export function matroskaTrackOf(layout: FileLayout | null | undefined, streams: readonly RefStream[], s: RefStream): MatroskaLayoutTrack | null {
+  const video = layout?.matroskaTracks?.filter((t) => t.type === 1) ?? [];
+  const i = streams.indexOf(s);
+  return i >= 0 && video.length === streams.length ? (video[i] ?? null) : null;
+}
+
+export function noteContradictsLayout(info: FixtureInfo, layout: FileLayout | null | undefined): string | null {
+  const video = layout?.matroskaTracks?.filter((t) => t.type === 1) ?? [];
+  if (!declaresNoDefaultDuration(info) || video.length === 0 || video.some((t) => t.defaultDurationNs === null)) return null;
+  return `the manifest note of ${info.name} says the file has no DefaultDuration, but every video track of the file has one`;
+}
+
+function avgMatroskaDeclaredDraft(t: VideoTrackResult, s: RefStream, info: FixtureInfo, mkv: MatroskaLayoutTrack | null): Draft {
   const base = trackBase('avgFps', 'declared', t, RULE.avgDeclared);
   const ff = parseRatio(s.avgFrameRate);
   const app = parseRatio(t.avgFpsFfprobe);
   if (!ff) return { ...base, verdict: 'n/a', app: t.avgFpsFfprobe, ffprobe: s.avgFrameRate, detail: 'unparseable ffprobe value' };
   if (!app) {
     if (isZeroRatio(ff)) return { ...base, verdict: 'exact', app: null, ffprobe: s.avgFrameRate, detail: 'no DefaultDuration: both report no declared rate' };
-    if (declaresNoDefaultDuration(info)) {
+    if (mkv ? mkv.defaultDurationNs === null : declaresNoDefaultDuration(info)) {
       return { ...base, verdict: 'n/a', app: null, ffprobe: s.avgFrameRate, detail: 'no DefaultDuration in this file; ffprobe estimates the rate from packets (cannot be reproduced)' };
     }
     return { ...base, verdict: 'mismatch', app: null, ffprobe: s.avgFrameRate, detail: 'the app reported no declared rate' };
@@ -546,6 +559,7 @@ function trackDrafts(
   layout: FileLayout | null | undefined,
   t: VideoTrackResult,
   s: RefStream,
+  mkv: MatroskaLayoutTrack | null,
 ): Draft[] {
   const out: Draft[] = [];
   out.push(compareExact('codecName', t, RULE.codecName, t.codecName, s.codecName));
@@ -555,7 +569,7 @@ function trackDrafts(
     out.push(avgIsoDraft(t, s, info, layout));
     out.push(avgIsoMeasuredDraft(t, s));
   } else {
-    out.push(avgMatroskaDeclaredDraft(t, s, info));
+    out.push(avgMatroskaDeclaredDraft(t, s, info, mkv));
     out.push(avgMatroskaMeasuredDraft(t, s, result));
   }
   out.push(family === 'isobmff' ? nominalIsoDraft(t, s) : nominalMatroskaDraft(t, s));
@@ -655,7 +669,7 @@ export function evaluate(input: EvaluateInput): Evaluation {
 
   for (const pair of pairs) {
     if (!pair.app || !pair.ref) continue;
-    const drafts = trackDrafts(family, info, result, layout, pair.app, pair.ref);
+    const drafts = trackDrafts(family, info, result, layout, pair.app, pair.ref, family === 'matroska' ? matroskaTrackOf(layout, ref.videoStreams, pair.ref) : null);
     tracks.push({
       trackId: pair.app.trackId,
       refIndex: pair.ref.index,

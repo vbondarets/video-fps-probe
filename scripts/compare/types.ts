@@ -70,6 +70,13 @@ export interface LayoutTrack {
   hasEditList: boolean;
 }
 
+export interface MatroskaLayoutTrack {
+  number: number | null;
+  type: number | null;
+  defaultDurationNs: number | null;
+  blockDurations: number;
+}
+
 export interface FileLayout {
   fragmented: boolean;
   hasSidx: boolean;
@@ -77,6 +84,7 @@ export interface FileLayout {
   movieDurationSec?: number | null;
   fragmentDurationSec?: number | null;
   tracks?: LayoutTrack[];
+  matroskaTracks?: MatroskaLayoutTrack[];
 }
 
 export type FixtureDeviations = Readonly<Record<string, string>>;

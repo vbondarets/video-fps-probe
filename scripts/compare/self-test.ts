@@ -6,7 +6,7 @@ import { ARMS } from './engines.ts';
 import { classifyEvaluation } from './outcomes.ts';
 import { loadManifest, loadRef } from '../../tests/helpers/fixtures.ts';
 import { parseRatio, parseRef, ticksToSec, type RefFile, type RefFps, type RefInstFps, type RefStream } from './ref.ts';
-import { evaluate, expectedPrimary, pairTracks, type EvaluateInput, type Evaluation } from './rules.ts';
+import { evaluate, expectedPrimary, noteContradictsLayout, pairTracks, type EvaluateInput, type Evaluation } from './rules.ts';
 import type { CheckResult, FileLayout, FixtureInfo } from './types.ts';
 
 function rat(num: number, den: number): Rational {
@@ -299,6 +299,13 @@ export function runSelfTest(): number {
     result: appResult([noDeclared], { container: 'webm', scan: 'exact' }),
   });
   expectEq('mkv without DefaultDuration: n/a', verdictOf(voided, 'avgFps.declared'), 'n/a');
+  const mkvLayout = (defaultDurationNs: number | null): FileLayout => ({ fragmented: false, hasSidx: false, topLevel: [], matroskaTracks: [{ number: 1, type: 1, defaultDurationNs, blockDurations: 0 }] });
+  const scannedNone = run({ info: MKV_INFO, ref: mkvRef, layout: mkvLayout(null), result: appResult([noDeclared], { container: 'webm', scan: 'exact' }) });
+  expectEq('mkv scanned without DefaultDuration, silent note: n/a', verdictOf(scannedNone, 'avgFps.declared'), 'n/a');
+  const scannedSome = run({ info: { ...MKV_INFO, notes: 'no DefaultDuration' }, ref: mkvRef, layout: mkvLayout(33366666), result: appResult([noDeclared], { container: 'webm', scan: 'exact' }) });
+  expectEq('mkv scanned with DefaultDuration, note says none: mismatch', verdictOf(scannedSome, 'avgFps.declared'), 'mismatch');
+  expectEq('mkv note against the scan: a harness problem', noteContradictsLayout({ ...MKV_INFO, notes: 'no DefaultDuration' }, mkvLayout(33366666)) !== null, true);
+  expectEq('mkv note that agrees with the scan: no problem', noteContradictsLayout({ ...MKV_INFO, notes: 'no DefaultDuration' }, mkvLayout(null)), null);
 
   const still = refStream({
     index: 0,
