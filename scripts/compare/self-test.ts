@@ -145,7 +145,7 @@ function oracleTrack(s: RefStream, trackId: number, matroska: boolean): VideoTra
     durationSec: !matroska && s.durationTs !== null ? ticksToSec(s.durationTs, s.timeBase) : null,
     startSec: s.startPts !== null ? ticksToSec(s.startPts, s.timeBase) : null,
     avgFps: matroska ? (measured ? { ...measured } : null) : avg && measured ? { ...measured } : avg,
-    avgFpsFfprobe: avg ? s.avgFrameRate : null,
+    avgFpsFfprobe: avg || (matroska && s.avgFrameRate === '0/0') ? s.avgFrameRate : null,
     rFpsFfprobe: matroska && r ? s.rFrameRate : null,
     nominalFps: !matroska && r && inst?.distinctDeltas === 1 ? { ...r, kind: 'exact' } : null,
     minFps: inst?.minFps ? { ...inst.minFps } : null,
@@ -316,6 +316,20 @@ export function runSelfTest(): number {
   const offEstimate = run({ info: MKV_INFO, ref: mkvRef, layout: mkvLayout(null), result: appResult([{ ...mkvTrack, avgFpsFfprobe: '0/0', rFpsFfprobe: '1000/1' }], { container: 'webm', scan: 'probe' }) });
   expectEq('mkv without DefaultDuration, estimate off: mismatch', verdictOf(offEstimate, 'avgFps.declared'), 'mismatch');
   expectEq('mkv without DefaultDuration, r_frame_rate estimate off: mismatch', verdictOf(offEstimate, 'nominalFps'), 'mismatch');
+  const zeroRef = refFile([{ ...mkvRef.videoStreams[0], avgFrameRate: '0/0', rFrameRate: '1000/1' }], { formatName: 'matroska,webm' });
+  const zeroRun = (avgFpsFfprobe: string | null, scan: FileResult['scan']) =>
+    run({ info: MKV_INFO, ref: zeroRef, layout: mkvLayout(null), result: appResult([{ ...mkvTrack, avgFpsFfprobe, rFpsFfprobe: avgFpsFfprobe && '1000/1' }], { container: 'webm', scan }) });
+  expectEq('mkv without DefaultDuration, ffprobe 0/0 and the same estimate: exact', verdictOf(zeroRun('0/0', 'exact'), 'avgFps.declared'), 'exact');
+  const zeroMissing = zeroRun(null, 'exact');
+  expectEq('mkv without DefaultDuration, ffprobe 0/0, blocks read, no estimate: mismatch', verdictOf(zeroMissing, 'avgFps.declared'), 'mismatch');
+  expectEq(
+    'mkv without DefaultDuration, ffprobe 0/0, no estimate: the detail names the 0/0',
+    all(zeroMissing).find((c) => c.id === 'avgFps.declared')?.detail,
+    'no DefaultDuration and blocks were read, but the app reported no estimate, not the 0/0 that ffprobe prints when its estimate finds no rate',
+  );
+  expectEq('mkv without DefaultDuration, ffprobe 0/0, probe scan, no estimate: mismatch', verdictOf(zeroRun(null, 'probe'), 'avgFps.declared'), 'mismatch');
+  expectEq('mkv without DefaultDuration, ffprobe 0/0, header mode: n/a', verdictOf(zeroRun(null, 'header'), 'avgFps.declared'), 'n/a');
+  expectEq('mkv with DefaultDuration, ffprobe 0/0, no declared rate: mismatch', verdictOf(run({ info: MKV_INFO, ref: zeroRef, layout: mkvLayout(33366666), result: appResult([noDeclared], { container: 'webm', scan: 'exact' }) }), 'avgFps.declared'), 'mismatch');
   const scannedSome = run({ info: { ...MKV_INFO, notes: 'no DefaultDuration' }, ref: mkvRef, layout: mkvLayout(33366666), result: appResult([noDeclared], { container: 'webm', scan: 'exact' }) });
   expectEq('mkv scanned with DefaultDuration, note says none: mismatch', verdictOf(scannedSome, 'avgFps.declared'), 'mismatch');
   expectEq('mkv note against the scan: a harness problem', noteContradictsLayout({ ...MKV_INFO, notes: 'no DefaultDuration' }, mkvLayout(33366666)) !== null, true);

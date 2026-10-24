@@ -387,12 +387,10 @@ function avgMatroskaDeclaredDraft(t: VideoTrackResult, s: RefStream, info: Fixtu
   const app = parseRatio(t.avgFpsFfprobe);
   if (!ff) return { ...base, verdict: 'n/a', app: t.avgFpsFfprobe, ffprobe: s.avgFrameRate, detail: 'unparseable ffprobe value' };
   if (!app) {
-    if (isZeroRatio(ff)) return { ...base, verdict: 'exact', app: null, ffprobe: s.avgFrameRate, detail: 'no DefaultDuration: both report no declared rate' };
-    if (lacksDefaultDuration(info, mkv)) {
-      if (result.scan === 'header') return { ...base, verdict: 'n/a', app: null, ffprobe: s.avgFrameRate, detail: 'no DefaultDuration: ffprobe estimates the rate from the first packets, which header mode does not read' };
-      return { ...base, verdict: 'mismatch', app: null, ffprobe: s.avgFrameRate, detail: 'no DefaultDuration and blocks were read, but the app reported no estimate' };
-    }
-    return { ...base, verdict: 'mismatch', app: null, ffprobe: s.avgFrameRate, detail: 'the app reported no declared rate' };
+    if (!lacksDefaultDuration(info, mkv)) return { ...base, verdict: 'mismatch', app: null, ffprobe: s.avgFrameRate, detail: 'the app reported no declared rate' };
+    if (result.scan === 'header') return { ...base, verdict: 'n/a', app: null, ffprobe: s.avgFrameRate, detail: 'no DefaultDuration: ffprobe estimates the rate from the first packets, which header mode does not read' };
+    const zero = isZeroRatio(ff) ? `, not the ${s.avgFrameRate} that ffprobe prints when its estimate finds no rate` : '';
+    return { ...base, verdict: 'mismatch', app: null, ffprobe: s.avgFrameRate, detail: `no DefaultDuration and blocks were read, but the app reported no estimate${zero}` };
   }
   return { ...base, verdict: sameRatio(app, ff) ? 'exact' : 'mismatch', app: fmtRatio(app), ffprobe: s.avgFrameRate };
 }
