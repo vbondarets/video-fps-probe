@@ -1122,7 +1122,7 @@ function reportTotalsBlock(inp: Inputs): string[] {
   ];
 }
 
-function staleBenchChunks(inp: Inputs): string[] {
+export function staleBenchChunks(inp: Inputs): string[] {
   const names = new Set(inp.size.chunks.map((c) => fileOf(c.file)));
   const hashes = new Set(inp.size.chunks.map((c) => c.hash).filter((h): h is string => !!h));
   const fetched = inp.bench.chrome.coldFirst.flatMap((c) => c.chunks.map((k) => ({ name: fileOf(k.path), hash: k.hash ?? null })));
