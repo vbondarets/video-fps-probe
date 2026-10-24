@@ -107,7 +107,7 @@ Engines cost nothing until imported. Importing a descriptor grows the critical p
 
 <!-- tables:accuracy-summary:start -->
 
-**0 mismatches against ffprobe 8.1.1** on the 126 committed fixtures: 2002 field checks, 1902 exact, 4 within tolerance, 9 known deviations with a recorded reason, 87 not applicable. The same comparison runs mp4box.js 2.4.1 and mediabunny 1.62.1 in 5 arms (their idiomatic recipes, mediabunny with a full scan, and this package's tuned adapters) and sorts each difference into wrong, definition differs, unverified, not provided or unsupported container; the [accuracy section](docs/benchmarks.md#accuracy-vs-ffprobe) has the outcomes and where the libraries win.
+**0 mismatches against ffprobe 8.1.1** on the 126 committed fixtures: 2002 field checks, 1902 exact, 13 within tolerance, 0 known deviations with a recorded reason, 87 not applicable. The same comparison runs mp4box.js 2.4.1 and mediabunny 1.62.1 in 5 arms (their idiomatic recipes, mediabunny with a full scan, and this package's tuned adapters) and sorts each difference into wrong, definition differs, unverified, not provided or unsupported container; the [accuracy section](docs/benchmarks.md#accuracy-vs-ffprobe) has the outcomes and where the libraries win.
 
 <!-- tables:accuracy-summary:end -->
 

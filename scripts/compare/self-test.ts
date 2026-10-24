@@ -306,6 +306,25 @@ export function runSelfTest(): number {
   expectEq('mkv scanned with DefaultDuration, note says none: mismatch', verdictOf(scannedSome, 'avgFps.declared'), 'mismatch');
   expectEq('mkv note against the scan: a harness problem', noteContradictsLayout({ ...MKV_INFO, notes: 'no DefaultDuration' }, mkvLayout(33366666)) !== null, true);
   expectEq('mkv note that agrees with the scan: no problem', noteContradictsLayout({ ...MKV_INFO, notes: 'no DefaultDuration' }, mkvLayout(null)), null);
+  const recRef = refFile(
+    [
+      refStream({
+        nbFrames: null,
+        durationTs: null,
+        timeBase: { num: 1, den: 1000 },
+        avgFrameRate: '60/1',
+        rFrameRate: '60/1',
+        packets: { ...refStream().packets!, avgFromPts: fps(41500, 1127), avgFromPtsFrames: 166, avgFromPtsSpanTicks: 4508, firstPts: 0, lastPts: 4492, lastDurationTicks: 16, medianDeltaTicks: 17 },
+      }),
+    ],
+    { formatName: 'matroska,webm' },
+  );
+  const recorded = (avgFps: Rational, layout: FileLayout) =>
+    verdictOf(run({ info: MKV_INFO, ref: recRef, layout, result: appResult([{ ...mkvTrack, avgFps, presentedFrames: 166 }], { container: 'webm', scan: 'exact' }) }), 'avgFps.measured');
+  expectEq('mkv unstored last duration, median delta: within-tol', recorded(rat(166000, 4509), mkvLayout(null)), 'within-tol');
+  expectEq('mkv unstored last duration, no last duration: mismatch', recorded(rat(83000, 2246), mkvLayout(null)), 'mismatch');
+  expectEq('mkv with DefaultDuration, median delta: mismatch', recorded(rat(166000, 4509), mkvLayout(16666666)), 'mismatch');
+  expectEq('mkv with BlockDurations, median delta: mismatch', recorded(rat(166000, 4509), { ...mkvLayout(null), matroskaTracks: [{ number: 1, type: 1, defaultDurationNs: null, blockDurations: 3 }] }), 'mismatch');
 
   const still = refStream({
     index: 0,

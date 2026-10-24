@@ -30,7 +30,7 @@ const RULE = {
   avgIso: 'avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly',
   avgIsoMeasured: 'Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration)',
   avgDeclared: 'Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists',
-  avgMeasured: 'Measured average must equal avgFromPts (integer-ms last duration) within 1e-9 relative',
+  avgMeasured: 'Measured average must equal avgFromPts (integer-ms last duration) within 1e-9 relative; within-tol when the file stores no duration for the last frame (no DefaultDuration, no BlockDuration) and the average is the frames over the timestamp span plus one median frame delta, which stands in for that duration, where ffprobe adds its own estimate',
   nominalIso: 'Exact vs r_frame_rate, only when the track is CFR (stage 1); otherwise skipped',
   nominalMatroska: 'Declared rate string must equal r_frame_rate exactly when DefaultDuration exists; otherwise skipped',
   framesIso: 'Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets',
@@ -397,7 +397,7 @@ function exactScan(t: VideoTrackResult, result: FileResult, field: 'avgFps' | 'f
   return p === 'exact' || p === 'computed';
 }
 
-function avgMatroskaMeasuredDraft(t: VideoTrackResult, s: RefStream, result: FileResult): Draft {
+function avgMatroskaMeasuredDraft(t: VideoTrackResult, s: RefStream, result: FileResult, mkv: MatroskaLayoutTrack | null): Draft {
   const base = trackBase('avgFps', 'measured', t, RULE.avgMeasured);
   const full = s.packets?.avgFromPts ?? null;
   const ffStr = fmtRatio(full);
@@ -408,8 +408,24 @@ function avgMatroskaMeasuredDraft(t: VideoTrackResult, s: RefStream, result: Fil
   if (!t.avgFps) return { ...base, verdict: 'mismatch', app: null, ffprobe: ffStr, detail: 'exact scan done but no average reported' };
   const same = sameRatio(t.avgFps, full);
   if (same) return { ...base, verdict: 'exact', app: fmtRatio(t.avgFps), ffprobe: ffStr };
-  const within = relDiff(t.avgFps.value, full.value) <= MEASURED_AVG_RELATIVE_TOLERANCE;
-  return { ...base, verdict: within ? 'within-tol' : 'mismatch', app: fmtRatio(t.avgFps), ffprobe: ffStr };
+  if (relDiff(t.avgFps.value, full.value) <= MEASURED_AVG_RELATIVE_TOLERANCE) return { ...base, verdict: 'within-tol', app: fmtRatio(t.avgFps), ffprobe: ffStr };
+  const p = s.packets;
+  const frames = t.presentedFrames;
+  const median = p?.medianDeltaTicks ?? null;
+  const unstored = mkv !== null && mkv.defaultDurationNs === null && mkv.blockDurations === 0;
+  if (unstored && frames !== null && frames === p?.avgFromPtsFrames && median !== null && p?.firstPts != null && p.lastPts != null) {
+    const spanTicks = p.lastPts - p.firstPts + median;
+    if (spanTicks > 0 && sameRatio(t.avgFps, { num: frames * s.timeBase.den, den: spanTicks * s.timeBase.num })) {
+      return {
+        ...base,
+        verdict: 'within-tol',
+        app: fmtRatio(t.avgFps),
+        ffprobe: ffStr,
+        detail: `the file stores no last frame duration: the app gives it the median delta (${median} ticks), ffprobe its estimate (${p.lastDurationTicks ?? '?'} ticks)`,
+      };
+    }
+  }
+  return { ...base, verdict: 'mismatch', app: fmtRatio(t.avgFps), ffprobe: ffStr };
 }
 
 export function declaresNoDefaultDuration(info: FixtureInfo): boolean {
@@ -570,7 +586,7 @@ function trackDrafts(
     out.push(avgIsoMeasuredDraft(t, s));
   } else {
     out.push(avgMatroskaDeclaredDraft(t, s, info, mkv));
-    out.push(avgMatroskaMeasuredDraft(t, s, result));
+    out.push(avgMatroskaMeasuredDraft(t, s, result, mkv));
   }
   out.push(family === 'isobmff' ? nominalIsoDraft(t, s) : nominalMatroskaDraft(t, s));
   out.push(family === 'isobmff' ? framesIsoDraft(t, s) : framesMatroskaDraft(t, s, result));

@@ -1,6 +1,7 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { scanMatroskaLayout } from '../../scripts/compare/layout.ts';
 import { analyze } from '../../src/core/analyze.ts';
 import { parseDurationTag } from '../../src/core/matroska/header.ts';
 import type { FileResult, MatroskaMode, Rational, VideoTrackResult } from '../../src/core/types.ts';
@@ -19,7 +20,7 @@ interface RefVideo {
   packets: number;
   duplicateTimestamps: number;
   instFpsExcludingTail: { distinctDeltas: number; minFps: RefRatio | null; maxFps: RefRatio | null } | null;
-  vfr: { isVfr: boolean } | null;
+  vfr: { isVfr: boolean; medianDeltaTicks: number } | null;
   avgFromPts: { frames: number; firstPts: number; lastPts: number; lastDurationTicks: number; spanTicks: number; fps: RefRatio } | null;
   lastPacketEnd: { ticks: number; seconds: number } | null;
 }
@@ -82,6 +83,19 @@ function ratioValue(s: string): number {
   return d === 0 ? 0 : n / d;
 }
 
+async function unstoredLastDurations(row: ManifestEntry): Promise<boolean[]> {
+  const path = fixturePath(row.name);
+  if (!path) throw new Error(`fixture missing: ${row.name}`);
+  const layout = await scanMatroskaLayout(path, statSync(path).size);
+  return (layout?.matroskaTracks ?? []).filter((t) => t.type === 1).map((t) => t.defaultDurationNs === null && t.blockDurations === 0);
+}
+
+function measuredSpanTicks(v: RefVideo, unstored: boolean): number | null {
+  const avg = v.avgFromPts;
+  if (!avg) return null;
+  return unstored && v.vfr ? avg.lastPts - avg.firstPts + v.vfr.medianDeltaTicks : avg.spanTicks;
+}
+
 async function run(row: ManifestEntry, mode: MatroskaMode): Promise<FileResult> {
   const path = fixturePath(row.name);
   if (!path) throw new Error(`fixture missing: ${row.name}`);
@@ -133,7 +147,7 @@ function checkDeclared(row: ManifestEntry, t: VideoTrackResult, s: ProbeStream):
   expect(explained, `ffprobe declares ${s.avg_frame_rate} but the app found no DefaultDuration`).toBe(true);
 }
 
-function checkExact(row: ManifestEntry, r: FileResult, ref: FixtureRef, streams: ProbeStream[]): void {
+function checkExact(row: ManifestEntry, r: FileResult, ref: FixtureRef, streams: ProbeStream[], unstored: readonly boolean[]): void {
   expect(r.scan).toBe(row.expect === 'no-video' ? 'header' : 'exact');
   streams.forEach((s, i) => {
     const t = r.videoTracks[i];
@@ -144,13 +158,12 @@ function checkExact(row: ManifestEntry, r: FileResult, ref: FixtureRef, streams:
     expect(t.presentedFrames).toBe(Number(s.nb_read_frames));
     expect(t.provenance.frames).toBe('computed');
     const avg = v.avgFromPts;
-    if (avg) {
+    const span = measuredSpanTicks(v, unstored[i] ?? false);
+    if (avg && span !== null) {
       expect(t.startSec).toBe(avg.firstPts / ts);
-      if (!deviation(row.name, 'avgFps.measured')) {
-        expect(t.avgFps, 'measured average').not.toBeNull();
-        expect(relDiff(t.avgFps?.value ?? 0, avg.fps.value)).toBeLessThanOrEqual(1e-9);
-        expect(t.durationSec).toBeCloseTo(avg.spanTicks / ts, 9);
-      }
+      expect(t.avgFps, 'measured average').not.toBeNull();
+      expect(relDiff(t.avgFps?.value ?? 0, (avg.frames * ts) / span)).toBeLessThanOrEqual(1e-9);
+      expect(t.durationSec).toBeCloseTo(span / ts, 9);
     }
     const inst = v.instFpsExcludingTail;
     expect(ratioString(t.minFps)).toBe(ratioString(inst?.minFps ?? null));
@@ -204,7 +217,7 @@ describe('Matroska fixtures', () => {
       const { ref, probe, streams } = load(row);
       const r = await run(row, mode);
       checkCommon(row, r, probe, streams);
-      if (mode === 'exact') checkExact(row, r, ref, streams);
+      if (mode === 'exact') checkExact(row, r, ref, streams, await unstoredLastDurations(row));
       else checkHeader(r, streams);
     });
   });
@@ -213,6 +226,7 @@ describe('Matroska fixtures', () => {
     it.each(ROWS.filter((r) => r.expect === 'ok').map((r) => [r.name, r] as const))('%s', async (_name, row) => {
       const { ref, probe, streams } = load(row);
       const r = await run(row, 'probe');
+      const unstored = await unstoredLastDurations(row);
       checkCommon(row, r, probe, streams);
       expect(r.scan).toBe('probe');
       streams.forEach((s, i) => {
@@ -228,9 +242,10 @@ describe('Matroska fixtures', () => {
         }
         if (v.vfr?.isVfr === false) expect(t.isVfr).toBe(false);
         const ts = ticksPerSecond(v.timeBase);
-        if (i === 0 && v.avgFromPts && !deviation(row.name, 'avgFps.measured')) {
+        const span = measuredSpanTicks(v, unstored[i] ?? false);
+        if (i === 0 && span !== null) {
           expect(t.provenance.durationSec).toBe('sampled');
-          expect(t.durationSec).toBeCloseTo(v.avgFromPts.spanTicks / ts, 9);
+          expect(t.durationSec).toBeCloseTo(span / ts, 9);
         }
       });
     });

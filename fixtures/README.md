@@ -205,5 +205,6 @@ and follows `docs/research.md` section 4.3. All times are integer ticks of `time
 Accepted differences between an engine and ffprobe live in `known-deviations/`, one JSON file per engine part
 (`own-isobmff.json`, `own-matroska.json`, optional files for the library engines). Each entry maps a fixture and a
 field to a plain reason; an entry that no longer matches is reported as stale. The format and the rules are in
-[known-deviations/README.md](known-deviations/README.md). The own engine has one entry today
-(`vfr_concat_10_30_60.webm` in `own-matroska.json`; `own-isobmff.json` is empty), listed in [docs/benchmarks.md](../docs/benchmarks.md#known-deviations).
+[known-deviations/README.md](known-deviations/README.md). The own engine has no entry today: both
+files are empty, and the last-frame difference of Matroska files that store no last frame duration is a rule of the
+comparison instead (within-tol, [benchmarks](../docs/benchmarks.md#browser-recordings-tier-r)).
