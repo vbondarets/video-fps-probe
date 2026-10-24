@@ -41,7 +41,7 @@ const MEDIABUNNY_FULL_FIELDS: ReadonlySet<FieldName> = new Set([...MEDIABUNNY_FI
 const BOTH: readonly ContainerFamily[] = ['isobmff', 'matroska'];
 
 export const ARMS: Readonly<Record<EngineName, ArmSpec>> = {
-  own: { library: 'own', style: 'own', families: BOTH, provides: null, picksPrimary: true, primaryOnly: false, recipe: 'this package: analyze() of src/core' },
+  own: { library: 'own', style: 'own', families: BOTH, provides: null, picksPrimary: true, primaryOnly: false, recipe: 'analyze() of src/core, the engine this package ships' },
   'mp4box-idiomatic': {
     library: 'mp4box',
     style: 'idiomatic',
@@ -125,7 +125,8 @@ export function findAnalyzeExport(mod: Record<string, unknown>, engine: string):
 }
 
 function libraryVersion(library: ArmLibrary): string | null {
-  const path = join(REPO_ROOT, library === 'own' ? '' : join('node_modules', library), 'package.json');
+  if (library === 'own') return null;
+  const path = join(REPO_ROOT, 'node_modules', library, 'package.json');
   return existsSync(path) ? ((JSON.parse(readFileSync(path, 'utf8')) as { version?: string }).version ?? null) : null;
 }
 

@@ -260,11 +260,15 @@ function groupSkipped(skipped: readonly SkippedFixture[]): string[] {
   });
 }
 
+function libraryLabel(e: EngineReport): string {
+  return e.arm.library === 'own' ? 'this package' : `${e.arm.library}${e.arm.version ? ` ${e.arm.version}` : ''}`;
+}
+
 function renderEngine(e: EngineReport): string[] {
   const out: string[] = [];
   out.push(`## ${e.engine}${e.informational ? ' (informational)' : ''}`);
   out.push('');
-  out.push(`${e.arm.library}${e.arm.version ? ` ${e.arm.version}` : ''}, ${e.arm.style}: ${e.arm.recipe}.`);
+  out.push(`${libraryLabel(e)}, ${e.arm.style}: ${e.arm.recipe}.`);
   out.push('');
   if (e.loadSkipped) {
     out.push(`Skipped: ${e.loadSkipped}.`);
@@ -354,7 +358,7 @@ export function renderMarkdown(report: AccuracyReport): string {
   out.push('|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|');
   for (const e of report.engines) {
     const role = e.informational ? 'informational' : 'gating';
-    const library = `${e.arm.library}${e.arm.version ? ` ${e.arm.version}` : ''}`;
+    const library = libraryLabel(e);
     if (e.loadSkipped) {
       out.push(`| ${e.engine} | ${library} | ${role} | - | - | - | - | - | - | - | - | skipped: ${esc(e.loadSkipped)} | - |`);
       continue;
