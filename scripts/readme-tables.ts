@@ -159,8 +159,8 @@ interface BenchReport {
     memoryGiB: number;
     node: string;
     displayHzOs: number[];
-    chrome: { product: string; gpu?: { videoDecode?: string | null } | null; rafHz?: number };
-    edge?: { product: string } | null;
+    chrome: { product: string; mode?: string | null; gpu?: { videoDecode?: string | null } | null; rafHz?: number };
+    edge?: { product: string; mode?: string | null } | null;
   };
 }
 
@@ -196,7 +196,7 @@ interface IntegrationReport {
   main: { batchFiles: number };
   cpu: { perFile: Record<string, { label: string; name: string; medianMs: number }> };
   chunks: Record<string, string | undefined>;
-  environment: { browser: string; date: string };
+  environment: { browser: string; mode?: string | null; date: string };
   model: {
     triggerGzip: number;
     initialIncreaseMeasuredPct: number;
@@ -510,15 +510,24 @@ function decimal(r: string | null | undefined): string {
   return v >= 100 ? v.toFixed(1) : v.toFixed(3);
 }
 
-const BROWSER_NAMES: Record<string, string> = { Edg: 'Edge', HeadlessChrome: 'Chrome headless shell' };
+const BROWSER_NAMES: Record<string, string> = { Edg: 'Edge' };
 
-function majorVersion(product: string): string {
-  const m = /^([A-Za-z]+)\/(\d+)/.exec(product);
-  return m ? `${BROWSER_NAMES[m[1]!] ?? m[1]} ${m[2]}` : product;
+interface BrowserEnv {
+  product: string;
+  mode?: string | null;
 }
 
-function headlessLabel(product: string): string {
-  const name = majorVersion(product);
+function majorVersion(env: BrowserEnv): string {
+  const m = /^(Headless)?([A-Za-z]+)\/(\d+)/.exec(env.product);
+  if (!m) return env.product;
+  const name = BROWSER_NAMES[m[2]!] ?? m[2];
+  if (env.mode?.startsWith('chrome-headless-shell')) return `${name} headless shell ${m[3]}`;
+  if (env.mode?.startsWith('headless=new')) return `${name} ${m[3]} (headless=new)`;
+  return m[1] ? `${name} ${m[3]} headless (mode not recorded)` : `${name} ${m[3]}`;
+}
+
+function headlessLabel(env: BrowserEnv): string {
+  const name = majorVersion(env);
   return name.includes('headless') ? name : `${name} headless`;
 }
 
@@ -594,7 +603,7 @@ function headline(inp: Inputs): string[] {
   const longDur = Number(findCheck(long.fileChecks, 'formatDurationSec')?.app ?? Number.NaN);
   const warm = Object.values(inp.bench.chrome.warm);
   const chromeLong = need(inp.bench.chrome.large['long_cfr_3h_60fps.mp4']?.['own'], 'chrome large own 3 h');
-  const browser = majorVersion(inp.bench.environment.chrome.product);
+  const browser = majorVersion(inp.bench.environment.chrome);
   const firstMp4 = need(inp.size.composites['firstMp4'], 'size composite firstMp4');
   const firstMkv = need(inp.size.composites['firstMatroska'], 'size composite firstMatroska');
   const { prof } = integrationModel(inp.integration);
@@ -622,12 +631,12 @@ function headline(inp: Inputs): string[] {
 function machine(inp: Inputs): string {
   const env = inp.bench.environment;
   const os = env.os.replace(/^Windows_NT [\d.]+ \((.+)\) x64$/, '$1');
-  return `${os}, ${env.cpu.replace(/\s+@.*$/, '').replace(/\(R\)|\(TM\)/g, '').replace(/\s+CPU$/, '').replace(/\s+/g, ' ')} (${env.logicalCores} threads), ${env.memoryGiB} GiB, Node ${env.node}, ${headlessLabel(env.chrome.product)}; ffprobe ${inp.acc.ffprobeVersions.join(', ').replace(/^ffprobe version /, '')}`;
+  return `${os}, ${env.cpu.replace(/\s+@.*$/, '').replace(/\(R\)|\(TM\)/g, '').replace(/\s+CPU$/, '').replace(/\s+/g, ' ')} (${env.logicalCores} threads), ${env.memoryGiB} GiB, Node ${env.node}, ${headlessLabel(env.chrome)}; ffprobe ${inp.acc.ffprobeVersions.join(', ').replace(/^ffprobe version /, '')}`;
 }
 
 function methodLine(inp: Inputs): string {
   const o = inp.bench.options;
-  const browser = majorVersion(inp.bench.environment.chrome.product);
+  const browser = majorVersion(inp.bench.environment.chrome);
   return `Node: \`npm run compare\` (\`analyze()\` on \`fs.openAsBlob\`), median of ${inp.acc.options.repeat} runs per file; library engines run the long files once. ${browser}: \`npm run bench\` on the built app, file picked through the real file input, median of ${o.reps} warm runs (own) or ${o.engineReps} runs (libraries, long files); "UI ms" runs from the input's change event to the rendered result. Times are worker-side \`io.ms\`.`;
 }
 
@@ -719,7 +728,7 @@ function approachesBlock(inp: Inputs): string[] {
   const rvEqual = rvEst.filter((r) => r.value !== null && Math.abs(r.value - r.refValue) <= 1e-9 * r.refValue);
   const rvVfr = rvEst.filter((r) => r.refVfr);
   const rvFailed = rv.filter((r) => r.estimate === null);
-  const browser = majorVersion(inp.bench.environment.chrome.product);
+  const browser = majorVersion(inp.bench.environment.chrome);
   const sz = inp.size;
 
   const outcomesText = (e: EngineReport) => {
@@ -908,7 +917,7 @@ function winsLines(inp: Inputs, engines: readonly EngineReport[]): string[] {
   compare((f) => io(f).bytesRead, fmtBytes, 'Fewer bytes read than the own parsers');
   compare((f) => io(f).reads, (v) => String(v), 'Fewer reads than the own parsers');
   compare((f) => io(f).ms, (v) => `${fmtMs(v)} ms`, 'Faster than the own parsers in Node (median of the runs; the library arms run each large file once)');
-  const browser = majorVersion(inp.bench.environment.chrome.product);
+  const browser = majorVersion(inp.bench.environment.chrome);
   for (const lib of ['mp4box', 'mediabunny']) {
     const names = Object.keys(inp.bench.chrome.warm).filter((n) => inp.bench.chrome.engines[n]?.[lib]);
     const faster = names.filter((n) => inp.bench.chrome.engines[n]![lib]!.medianMs < inp.bench.chrome.warm[n]!.medianMs);
@@ -1139,14 +1148,14 @@ function speedBlock(inp: Inputs): string[] {
   });
   const cb = inp.bench.chrome.coldBatch;
   const rb = inp.bench.chrome.reloadBatch;
-  const browser = majorVersion(inp.bench.environment.chrome.product);
+  const browser = majorVersion(inp.bench.environment.chrome);
   const edgeLine: string[] = [];
   if (inp.bench.edge && inp.bench.environment.edge) {
     const edgeWarm = inp.bench.edge.warm;
     const names = Object.keys(edgeWarm).filter((n) => warm[n]);
     const ratio = geomeanRatio(names.map((n) => [edgeWarm[n]!.medianMs, warm[n]!.medianMs] as const));
     edgeLine.push(
-      `- ${majorVersion(inp.bench.environment.edge.product)}, same warm run: median ${fmtMs(median(names.map((n) => edgeWarm[n]!.medianMs)))} ms per file, geometric mean ${fmtRatio(ratio)} of ${browser}.`,
+      `- ${majorVersion(inp.bench.environment.edge)}, same warm run: median ${fmtMs(median(names.map((n) => edgeWarm[n]!.medianMs)))} ms per file, geometric mean ${fmtRatio(ratio)} of ${browser}.`,
     );
   }
   const stale = staleBenchChunks(inp);
@@ -1215,7 +1224,7 @@ function ownFixtureRow(f: AccFixture, inp: Inputs): string {
 
 function accuracyBlock(inp: Inputs): string[] {
   const own = engine(inp.acc, 'own');
-  const browser = majorVersion(inp.bench.environment.chrome.product);
+  const browser = majorVersion(inp.bench.environment.chrome);
   return [
     `<details><summary>Own parsers: all ${own.fixtures.length} fixtures</summary>`,
     '',
@@ -1262,7 +1271,7 @@ function rvfcBlock(inp: Inputs): string[] {
   const decoding = chrome.gpu?.videoDecode === 'enabled' ? 'GPU decoding on' : `video decoding ${chrome.gpu?.videoDecode === 'disabled_software' ? 'in software' : (chrome.gpu?.videoDecode ?? 'unknown')}`;
   const frames = chrome.rafHz ? `, ${Math.round(chrome.rafHz)} Hz animation frames` : '';
   return [
-    `${headlessLabel(chrome.product)}, ${decoding}, display ${hz.length > 0 ? `${hz.join(', ')} Hz` : 'unknown'}${frames}.`,
+    `${headlessLabel(chrome)}, ${decoding}, display ${hz.length > 0 ? `${hz.join(', ')} Hz` : 'unknown'}${frames}.`,
     '',
     ...table(['File', 'ffprobe avg', 'rVFC estimate', 'Error', 'VFR ffprobe / rVFC', 'Confidence', 'Passes', 'Time'], 'llllllll', rows),
   ];
@@ -1284,7 +1293,7 @@ function corpusBlock(inp: Inputs): string[] {
 function profileBlock(inp: Inputs): string[] {
   const own = engine(inp.acc, 'own');
   const sz = inp.size;
-  const browser = majorVersion(inp.bench.environment.chrome.product);
+  const browser = majorVersion(inp.bench.environment.chrome);
   const vfr = need(sz.composites['firstVfrMp4'], 'size composite firstVfrMp4');
   const mp4 = need(sz.composites['firstMp4'], 'size composite firstMp4');
   const limit = sz.budgets.find((b) => b.key === 'firstVfrMp4');
@@ -1369,7 +1378,7 @@ function integrationBlock(inp: Inputs): string[] {
     : [];
   return [
     ...stale,
-    `Host model: an SPA with a ${fmtMB(ic.host.initialGzipBytes)} gzip initial load, ${headlessLabel(ic.environment.browser)}, local server with CDP network throttling; the probe is the real worker pool, worker entry and parser chunks. "Prewarmed" means the worker was started and the parser loaded before the pick. The trigger is an inline script and the glue the WorkerPool class bundled by the bench, so the sizes below are not those of the package entries: what an app that imports \`video-fps-probe/lazy\` adds is in [Package size](#package-size).`,
+    `Host model: an SPA with a ${fmtMB(ic.host.initialGzipBytes)} gzip initial load, ${headlessLabel({ product: ic.environment.browser, mode: ic.environment.mode })}, local server with CDP network throttling; the probe is the real worker pool, worker entry and parser chunks. "Prewarmed" means the worker was started and the parser loaded before the pick. The trigger is an inline script and the glue the WorkerPool class bundled by the bench, so the sizes below are not those of the package entries: what an app that imports \`video-fps-probe/lazy\` adds is in [Package size](#package-size).`,
     '',
     ...table(['', 'Lazy on the first pick', 'Lazy + prefetch when the upload dialog opens', 'Eager (in the critical bundle)'], 'llll', rows),
     '',
