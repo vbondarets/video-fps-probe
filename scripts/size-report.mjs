@@ -263,6 +263,7 @@ const LAZY_BY_NAME = [
   ['segments', /^segments[-.]/i],
   ['rateProfile', /^rateprofile[-.]/i],
   ['deviceInfo', /^deviceinfo[-.]/i],
+  ['samples', /^samples[-.]/i],
 ];
 const ENGINE_KINDS = new Set(['mp4box', 'mediabunny', 'engine-shared']);
 const CLIENT_LAZY_KINDS = new Set(['client-compare', 'client-fallback', 'client-inline', 'rvfc', 'client-shared']);

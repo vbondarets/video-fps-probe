@@ -331,6 +331,7 @@ const CHUNK_WHEN: Record<string, string> = {
   'parser-shared': 'with the first parser, in parallel, once per worker',
   rateProfile: 'first card with a rate profile',
   deviceInfo: 'on idle after the first result, or the first export (footer device line, JSON export)',
+  samples: 'click on Try sample files',
   lazy: 'first open of a Compare engines panel',
   mp4box: 'Compare engines on an MP4 or MOV card',
   mediabunny: 'Compare engines',
@@ -354,13 +355,14 @@ const CHUNK_NAME: Record<string, string> = {
   'parser-shared': 'shared by the parsers and engines (timeline statistics)',
   rateProfile: 'rate profile panel (UI)',
   deviceInfo: 'device info and JSON export',
+  samples: 'sample file loader',
   lazy: 'Compare panel',
   mp4box: 'mp4box.js engine',
   mediabunny: 'mediabunny engine',
   'engine-shared': 'shared by mp4box and mediabunny',
 };
 
-const CHUNK_ORDER = ['main', 'css', 'client', 'client-fallback', 'client-compare', 'client-inline', 'client-shared', 'inline-own', 'worker', 'parser-shared', 'isobmff', 'matroska', 'segments', 'rateProfile', 'deviceInfo', 'rvfc', 'lazy', 'mp4box', 'mediabunny', 'engine-shared'];
+const CHUNK_ORDER = ['main', 'css', 'client', 'client-fallback', 'client-compare', 'client-inline', 'client-shared', 'inline-own', 'worker', 'parser-shared', 'isobmff', 'matroska', 'segments', 'rateProfile', 'deviceInfo', 'samples', 'rvfc', 'lazy', 'mp4box', 'mediabunny', 'engine-shared'];
 
 const COMPOSITE_BUDGET: Record<string, string> = { initial: 'initial', firstMp4: 'firstMp4', firstVfrMp4: 'firstVfrMp4', firstMatroska: 'firstMkv' };
 

@@ -3,7 +3,6 @@ import type { MatroskaMode } from 'video-fps-probe';
 import { bytes, ms, PROVENANCE } from './ui/format.ts';
 import type { ExportAction, ExportOutcome } from './ui/deviceInfo.ts';
 import { Mark, ResultCard } from './ui/ResultCard.tsx';
-import { loadSamples } from './ui/samples.ts';
 import { addFiles, clearAll, exportJson, loadDevice, setMode, useStore } from './ui/store.ts';
 
 const MODES: MatroskaMode[] = ['auto', 'header', 'probe', 'exact'];
@@ -66,7 +65,9 @@ export default function App() {
 
   const samples = () => {
     setNotice('');
-    loadSamples().then(addFiles, (e: unknown) => setNotice(`Could not load samples: ${e instanceof Error ? e.message : String(e)}`));
+    import('./ui/samples.ts')
+      .then((m) => m.loadSamples())
+      .then(addFiles, (e: unknown) => setNotice(`Could not load samples: ${e instanceof Error ? e.message : String(e)}`));
   };
 
   const exportAs = (action: ExportAction) => {
