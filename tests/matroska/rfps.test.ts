@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { analyze } from '../../src/core/analyze.ts';
-import { av1TimingInfo, h264Unsupported } from '../../src/core/rfps.ts';
+import { av1TimingInfo, h264Sps } from '../../src/core/rfps.ts';
 import type { FileResult, MatroskaMode } from '../../src/core/types.ts';
 import { fixturePath, loadRef } from '../helpers/fixtures.ts';
 import { withFixture } from '../helpers/open-blob.ts';
@@ -55,7 +55,9 @@ async function rates(blob: Blob, mode: MatroskaMode = 'exact') {
   return { r: t.rFpsFfprobe, avg: t.avgFpsFfprobe, note: t.warnings.find((w) => w.startsWith('no DefaultDuration')) ?? null };
 }
 
-function sps(vui: ((u: (n: number, v: number) => void, ue: (v: number) => void) => void) | null, profile = 66): Uint8Array {
+type BitWriter = (u: (n: number, v: number) => void, ue: (v: number) => void) => void;
+
+function nal(header: number, write: BitWriter): Uint8Array {
   const bits: number[] = [];
   const u = (n: number, v: number): void => {
     for (let i = n - 1; i >= 0; i--) bits.push(Math.floor(v / 2 ** i) % 2);
@@ -65,21 +67,117 @@ function sps(vui: ((u: (n: number, v: number) => void, ue: (v: number) => void) 
     u(len - 1, 0);
     u(len, v + 1);
   };
-  u(8, profile);
-  u(8, 0xc0);
-  u(8, 30);
-  [0, 0, 2, 1].forEach(ue);
-  u(1, 0);
-  ue(19);
-  ue(14);
-  u(3, 0b110);
-  if (vui) vui(u, ue);
-  else u(1, 0);
+  write(u, ue);
   u(1, 1);
   while (bits.length % 8) bits.push(0);
-  const out = [0x67];
-  for (let i = 0; i < bits.length; i += 8) out.push(parseInt(bits.slice(i, i + 8).join(''), 2));
+  const out = [header];
+  for (let i = 0, zeros = 0; i < bits.length; i += 8) {
+    const byte = parseInt(bits.slice(i, i + 8).join(''), 2);
+    if (zeros >= 2 && byte <= 3) {
+      out.push(3);
+      zeros = 0;
+    }
+    out.push(byte);
+    zeros = byte ? 0 : zeros + 1;
+  }
   return Uint8Array.from(out);
+}
+
+const POC2: BitWriter = (_u, ue) => ue(2);
+const POC1: BitWriter = (u, ue) => {
+  ue(1);
+  u(1, 0);
+  ue(0);
+  ue(0);
+  ue(1);
+  ue(1);
+};
+const poc0 =
+  (lsbBits: number): BitWriter =>
+  (_u, ue) => {
+    ue(0);
+    ue(lsbBits - 4);
+  };
+
+function sps(vui: BitWriter | null, profile = 66, poc: BitWriter = POC2, fields = false): Uint8Array {
+  return nal(0x67, (u, ue) => {
+    u(8, profile);
+    u(8, 0xc0);
+    u(8, 30);
+    ue(0);
+    ue(0);
+    poc(u, ue);
+    ue(1);
+    u(1, 0);
+    ue(19);
+    ue(14);
+    u(1, fields ? 0 : 1);
+    if (fields) u(1, 0);
+    u(2, 0b10);
+    u(1, vui ? 1 : 0);
+    vui?.(u, ue);
+  });
+}
+
+const vui =
+  (timing: number, reorder: number): BitWriter =>
+  (u, ue) => {
+    u(4, 0);
+    u(1, timing);
+    if (timing) u(32 + 32 + 1, 0);
+    u(3, 0);
+    u(2, 0b11);
+    for (let i = 0; i < 4; i++) ue(0);
+    ue(reorder);
+    ue(reorder);
+  };
+
+const pps = (bottom = 0): Uint8Array =>
+  nal(0x68, (u, ue) => {
+    ue(0);
+    ue(0);
+    u(1, 0);
+    u(1, bottom);
+    ue(0);
+  });
+
+interface SliceSpec {
+  idr?: boolean;
+  ref?: boolean;
+  frameNum: number;
+  lsb?: number;
+  lsbBits?: number;
+}
+
+const slice = (x: SliceSpec): Uint8Array =>
+  nal((x.ref === false ? 0 : 0x60) | (x.idr ? 5 : 1), (u, ue) => {
+    ue(0);
+    ue(x.idr ? 7 : 5);
+    ue(0);
+    u(4, x.frameNum % 16);
+    if (x.idr) ue(0);
+    if (x.lsb !== undefined) u(x.lsbBits ?? 8, x.lsb % 2 ** (x.lsbBits ?? 8));
+  });
+
+const avcc = (spsNal: Uint8Array, ppsNal: Uint8Array): Uint8Array =>
+  concat([1, spsNal[1], spsNal[2], spsNal[3], 0xff, 0xe1, spsNal.length >> 8, spsNal.length & 0xff], spsNal, [1, ppsNal.length >> 8, ppsNal.length & 0xff], ppsNal);
+
+const lengthPrefixed = (...nals: Uint8Array[]): Uint8Array => concat(...nals.map((n) => concat([0, 0, 0, n.length], n)));
+const annexB = (...nals: Uint8Array[]): Uint8Array => concat(...nals.map((n) => concat([0, 0, 0, 1], n)));
+
+const avcTrack = (codecPrivate: Uint8Array | null): Uint8Array =>
+  el(ID.TrackEntry, concat(uint(ID.TrackNumber, 1), uint(ID.TrackUID, 1), uint(ID.TrackType, 1), str(ID.CodecID, 'V_MPEG4/ISO/AVC'), codecPrivate ? el(0x63a2, codecPrivate) : []));
+
+function avcFile(codecPrivate: Uint8Array | null, payloads: readonly Uint8Array[]): Blob {
+  const blocks = payloads.map((p, i) => el(ID.SimpleBlock, concat([0x81, ((i * 40) >> 8) & 0xff, (i * 40) & 0xff, i === 0 ? 0x80 : 0], p)));
+  return mkv([avcTrack(codecPrivate)], [cluster(0, blocks)]);
+}
+
+function avcSlices(n: number, lsbStep: number | null, skip: number | null = null): Uint8Array[] {
+  return Array.from({ length: n }, (_, i) => {
+    const k = skip !== null && i >= skip ? i + 1 : i;
+    return slice({ idr: i === 0, frameNum: k, lsb: lsbStep === null ? undefined : k * lsbStep });
+  });
 }
 
 describe('ffprobe frame rates of Matroska without DefaultDuration', () => {
@@ -125,27 +223,101 @@ describe('ffprobe frame rates of Matroska without DefaultDuration', () => {
     expect(await rates(mkv([...entries], [...clusters]))).toEqual({ r: null, avg: null, note: `no DefaultDuration: avg_frame_rate and r_frame_rate not reproduced (${reason})` });
   });
 
-  it('accepts a Baseline H.264 SPS without timing info, as Chrome writes it', () => {
-    expect(h264Unsupported(hex('67 42 c0 15 8c 68 14 19 79 e6 e0 21 a0 20 f0 88 46 a0'))).toBeNull();
-    expect(h264Unsupported(sps(null))).toBeNull();
+  it('reads a Baseline H.264 SPS without timing info, as Chrome writes it, whose bitstream_restriction fixes the reorder delay at 0', () => {
+    expect(h264Sps(hex('67 42 c0 15 8c 68 14 19 79 e6 e0 21 a0 20 f0 88 46 a0'))).toBeNull();
+    expect(h264Sps(sps(vui(0, 0)))).toBeNull();
+    expect(h264Sps(sps(null))).toEqual({ frameNumBits: 4, pocType: 2, pocLsbBits: 0 });
+    expect(h264Sps(sps(null, 66, poc0(6)))).toEqual({ frameNumBits: 4, pocType: 0, pocLsbBits: 6 });
   });
 
   it('rejects H.264 that sets a codec frame rate, reorders frames or is not Baseline', () => {
-    const vui = (timing: number, reorder: number) => (u: (n: number, v: number) => void, ue: (v: number) => void) => {
-      u(5, 0b10000);
-      u(1, timing);
-      if (timing) u(32 + 32 + 1, 0);
-      u(3, 0);
-      u(2, 0b11);
-      for (let i = 0; i < 4; i++) ue(0);
-      ue(reorder);
-      ue(reorder);
-    };
-    expect(h264Unsupported(sps(vui(0, 0)))).toBeNull();
-    expect(h264Unsupported(sps(vui(1, 0)))).toBe('H.264 timing info');
-    expect(h264Unsupported(sps(vui(0, 2)))).toBe('H.264 reordering');
-    expect(h264Unsupported(sps(null, 100))).toBe('H.264 profile 100');
-    expect(h264Unsupported(hex('67 42'))).toBe('bad H.264 SPS');
+    expect(h264Sps(sps(vui(1, 0)))).toBe('H.264 timing info');
+    expect(h264Sps(sps(vui(0, 2)))).toBe('H.264 reordering');
+    expect(h264Sps(sps(null, 100))).toBe('H.264 profile 100');
+    expect(h264Sps(hex('67 42'))).toBe('bad H.264 SPS');
+  });
+
+  describe('H.264 without bitstream_restriction, whose decoder delay FFmpeg raises on a POC step above 2', () => {
+    const POC0 = sps(null, 66, poc0(8));
+    const POC0_SHORT = sps(null, 66, poc0(4));
+    const OPEN = sps(null);
+    const lengthed = (slices: readonly Uint8Array[]): Uint8Array[] => slices.map((s) => lengthPrefixed(s));
+    const run = (spsNal: Uint8Array, slices: readonly Uint8Array[], ppsNal = pps()) => rates(avcFile(avcc(spsNal, ppsNal), lengthed(slices)));
+    const notReproduced = (reason: string) => ({ r: null, avg: null, note: `no DefaultDuration: avg_frame_rate and r_frame_rate not reproduced (${reason})` });
+    const ESTIMATED = { r: '25/1', avg: '25/1', note: estimated(48) };
+    const decoded = (specs: readonly SliceSpec[], lsbBits = 8): Uint8Array[] => [
+      ...specs.map((x) => slice({ lsbBits, ...x })),
+      ...Array.from({ length: 60 - specs.length }, (_, i) => slice({ frameNum: specs.length + i })),
+    ];
+
+    it.each([
+      ['POC type 0 in steps of 2', POC0, avcSlices(60, 2)],
+      ['POC type 0 in steps of 4 with bitstream_restriction', sps(vui(0, 0), 66, poc0(8)), avcSlices(60, 4)],
+      ['POC type 2 with consecutive frame_num', OPEN, avcSlices(60, null)],
+      ['POC type 2 with a frame_num gap after the 7 decoded packets', OPEN, avcSlices(60, null, 7)],
+      ['POC type 2 with a frame_num gap and bitstream_restriction', sps(vui(0, 0)), avcSlices(60, null, 2)],
+    ] as const)('estimates %s', async (_label, spsNal, slices) => {
+      expect(await run(spsNal, slices)).toEqual(ESTIMATED);
+    });
+
+    const fieldSlices = avcSlices(60, 2).map((_s, i) =>
+      nal(i ? 0x61 : 0x65, (u, ue) => {
+        ue(0);
+        ue(i ? 5 : 7);
+        ue(0);
+        u(4, i);
+        u(1, 1);
+      }),
+    );
+
+    it.each([
+      ['POC type 0 in steps of 4', POC0, avcSlices(60, 4), 'H.264 POC step 4'],
+      ['POC type 0 that falls back', POC0, avcSlices(60, 2).map((s, i) => (i === 5 ? slice({ frameNum: 5, lsb: 2 }) : s)), 'H.264 POC step -6'],
+      ['POC type 2 with a frame_num gap in the decoded packets', OPEN, avcSlices(60, null, 3), 'H.264 frame_num gap'],
+      ['POC type 1', sps(null, 66, POC1), avcSlices(60, null), 'H.264 pic_order_cnt_type 1'],
+      ['field coding', sps(null, 66, poc0(8), true), fieldSlices, 'H.264 field coding'],
+      ['a bottom field POC offset', POC0, avcSlices(60, 2), 'H.264 bottom field POC', pps(1)],
+      ['a packet without a slice', POC0, avcSlices(60, 2).map((s, i) => (i === 4 ? nal(0x06, (u) => u(8, 5)) : s)), 'no H.264 slice header'],
+      ['a slice header cut short', POC0, avcSlices(60, 2).map((s, i) => (i === 2 ? s.subarray(0, 2) : s)), 'bad H.264 PPS or slice header'],
+    ] as const)('reports no estimate for %s', async (_label, spsNal, slices, reason, ppsNal = pps()) => {
+      expect(await run(spsNal, slices, ppsNal)).toEqual(notReproduced(reason));
+    });
+
+    it('follows pic_order_cnt_lsb across its wrap, from a keyframe that is not an IDR', async () => {
+      const wrap = [10, 12, 14, 0, 2, 4, 6].map((lsb, frameNum) => ({ frameNum, lsb }));
+      expect(await run(POC0_SHORT, decoded(wrap, 4))).toEqual(ESTIMATED);
+      const back = [0, 14, 0, 2, 4, 6, 8].map((lsb, frameNum) => ({ idr: frameNum === 0, frameNum, lsb }));
+      expect(await run(POC0_SHORT, decoded(back, 4))).toEqual(notReproduced('H.264 POC step -2'));
+    });
+
+    it('restarts the POC at an IDR', async () => {
+      const specs = [0, 2, 40, 42, 44, 46, 48].map((lsb, i) => ({ idr: i === 0 || i === 2, frameNum: i < 2 ? i : i - 2, lsb }));
+      expect(await run(POC0, decoded(specs))).toEqual(ESTIMATED);
+    });
+
+    it('takes the msb of pic_order_cnt_lsb from reference pictures only, as the standard does', async () => {
+      const specs = [0, 2, 4, 6, 8, 10, 12].map((lsb, i) => ({ idr: i === 0, ref: i === 0 || i === 6, frameNum: i ? 1 : 0, lsb }));
+      expect(await run(POC0_SHORT, decoded(specs, 4))).toEqual(notReproduced('H.264 POC step -14'));
+    });
+
+    it('counts POC type 2 from frame_num, one below for a non-reference picture, across the frame_num wrap', async () => {
+      const nonRef = [0, 1, 1, 2, 3, 4, 5].map((frameNum, i) => ({ idr: i === 0, ref: i !== 1, frameNum }));
+      expect(await run(OPEN, decoded(nonRef))).toEqual(ESTIMATED);
+      expect(await run(OPEN, decoded([14, 15, 0, 1, 2, 3, 4].map((frameNum) => ({ frameNum }))))).toEqual(ESTIMATED);
+      const twoNonRef = [0, 1, 1, 1, 2, 3, 4].map((frameNum, i) => ({ idr: i === 0, ref: i !== 1 && i !== 2, frameNum }));
+      expect(await run(OPEN, decoded(twoNonRef))).toEqual(notReproduced('H.264 POC step 0'));
+    });
+
+    it('reads the SPS, the PPS and the slices of Annex B packets without CodecPrivate', async () => {
+      const inBand = (slices: readonly Uint8Array[]): Uint8Array[] => slices.map((s, i) => (i ? annexB(s) : annexB(POC0, pps(), s)));
+      expect(await rates(avcFile(null, inBand(avcSlices(60, 2))))).toEqual(ESTIMATED);
+      expect(await rates(avcFile(null, inBand(avcSlices(60, 4))))).toEqual(notReproduced('H.264 POC step 4'));
+    });
+
+    it('reads the SPS of CodecPrivate only up to its length', async () => {
+      const cp = concat([1, 66, 0xc0, 30, 0xff, 0xe1, 0, 3], POC0.subarray(0, 3), [1, 0, 0]);
+      expect(await rates(avcFile(cp, lengthed(avcSlices(60, 2))))).toEqual(notReproduced('bad H.264 SPS'));
+    });
   });
 
   it('reads the AV1 timing info flag of the sequence header', () => {

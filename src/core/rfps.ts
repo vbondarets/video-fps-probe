@@ -34,6 +34,8 @@ interface Stream {
 const STD = 399;
 const LIMIT = 5_000_000;
 const MAX_TS_PROBE = 50;
+const DECODED_BEFORE_DTS = 7;
+const PACKET_HEAD_BYTES = 1024;
 const AVC = 'V_MPEG4/ISO/AVC';
 const AV1 = 'V_AV1';
 
@@ -61,7 +63,7 @@ function opusSamples(toc: number, next: number): number {
   return count > 0 && frame * count <= 5760 ? frame * count : 0;
 }
 
-export function h264Unsupported(nal: Uint8Array): string | null {
+function rbsp(nal: Uint8Array): { u: (n: number) => number; ue: () => number } {
   const b: number[] = [];
   for (let i = 1, zeros = 0; i < nal.length; i++) {
     if (zeros >= 2 && nal[i] === 3) zeros = 0;
@@ -84,43 +86,143 @@ export function h264Unsupported(nal: Uint8Array): string | null {
     while (!u(1)) if (++z > 31) throw new RangeError();
     return 2 ** z - 1 + u(z);
   };
+  return { u, ue };
+}
+
+export interface H264Poc {
+  frameNumBits: number;
+  pocType: number;
+  pocLsbBits: number;
+}
+
+export function h264Sps(nal: Uint8Array): H264Poc | string | null {
+  const { u, ue } = rbsp(nal);
   try {
     const profile = u(8);
     if (profile !== 66) return `H.264 profile ${profile}`;
     u(16);
     ue();
-    ue();
-    const poc = ue();
-    if (poc === 0) ue();
-    if (poc === 1) {
+    const s: H264Poc = { frameNumBits: ue() + 4, pocType: ue(), pocLsbBits: 0 };
+    if (s.pocType === 0) s.pocLsbBits = ue() + 4;
+    if (s.pocType === 1) {
       u(1);
       ue();
       ue();
       for (let n = ue(); n > 0; n--) ue();
     }
+    if (s.frameNumBits > 16 || s.pocLsbBits > 16 || s.pocType > 2) return 'bad H.264 SPS';
     ue();
     u(1);
     ue();
     ue();
-    if (!u(1)) u(1);
+    const frameMbsOnly = u(1) || (u(1), 0);
     u(1);
     if (u(1)) for (let i = 0; i < 4; i++) ue();
-    if (!u(1)) return null;
-    if (u(1) && u(8) === 255) u(32);
-    if (u(1)) u(1);
-    if (u(1) && (u(4), u(1))) u(24);
-    if (u(1)) ue(), ue();
-    if (u(1)) return 'H.264 timing info';
-    if (u(1) || u(1) || u(1)) return 'H.264 HRD or pic_struct';
     if (u(1)) {
-      u(1);
-      for (let i = 0; i < 4; i++) ue();
-      if (ue()) return 'H.264 reordering';
+      if (u(1) && u(8) === 255) u(32);
+      if (u(1)) u(1);
+      if (u(1) && (u(4), u(1))) u(24);
+      if (u(1)) {
+        ue();
+        ue();
+      }
+      if (u(1)) return 'H.264 timing info';
+      if (u(1) || u(1) || u(1)) return 'H.264 HRD or pic_struct';
+      if (u(1)) {
+        u(1);
+        for (let i = 0; i < 4; i++) ue();
+        return ue() ? 'H.264 reordering' : null;
+      }
     }
-    return null;
+    return s.pocType === 1 ? 'H.264 pic_order_cnt_type 1' : frameMbsOnly ? s : 'H.264 field coding';
   } catch {
     return 'bad H.264 SPS';
   }
+}
+
+function nalUnits(data: Uint8Array, lengthSize: number): Uint8Array[] {
+  const out: Uint8Array[] = [];
+  if (lengthSize) {
+    for (let p = 0; p + lengthSize <= data.length; ) {
+      let n = 0;
+      for (const end = p + lengthSize; p < end; p++) n = n * 256 + data[p];
+      out.push(data.subarray(p, (p += n)));
+    }
+  } else {
+    for (let i = 0, start = -1; i <= data.length; i++) {
+      if (i < data.length && (data[i] || data[i + 1] || data[i + 2] !== 1)) continue;
+      if (start >= 0) out.push(data.subarray(start, i));
+      start = i + 3;
+      i += 2;
+    }
+  }
+  return out;
+}
+
+function h264Unsupported(cp: Uint8Array | null, packets: readonly Uint8Array[]): string | null {
+  const lengthSize = cp ? (cp[4] & 3) + 1 : 0;
+  const sets = cp ? [] : nalUnits(packets[0], 0);
+  if (cp) {
+    let p = 5;
+    for (const mask of [31, 255]) {
+      for (let left = cp[p++] & mask, n = 0; left-- > 0 && p + 2 <= cp.length; p += 2 + n) {
+        n = (cp[p] << 8) | cp[p + 1];
+        sets.push(cp.subarray(p + 2, p + 2 + n));
+      }
+    }
+  }
+  const type = (n: Uint8Array): number => n[0] & 31;
+  const sps = sets.find((n) => type(n) === 7);
+  const s = sps ? h264Sps(sps) : 'no H.264 SPS';
+  if (s === null || typeof s === 'string') return s;
+  const pps = sets.filter((n) => type(n) === 8);
+  if (!pps.length) return 'no H.264 PPS';
+  const frames = 2 ** s.frameNumBits;
+  let msb = 0;
+  let lsb = NaN;
+  let num = -1;
+  let offset = 0;
+  let last: number | null = null;
+  try {
+    for (const n of pps) {
+      const { u, ue } = rbsp(n);
+      ue();
+      ue();
+      u(1);
+      if (u(1) && !s.pocType) return 'H.264 bottom field POC';
+    }
+    for (const packet of packets) {
+      const nal = nalUnits(packet, lengthSize).find((n) => type(n) === 1 || type(n) === 5);
+      if (!nal) return 'no H.264 slice header';
+      const { u, ue } = rbsp(nal);
+      ue();
+      ue();
+      ue();
+      const frameNum = u(s.frameNumBits);
+      if (type(nal) === 5) {
+        ue();
+        msb = offset = 0;
+        lsb = NaN;
+        last = null;
+      } else if (num >= 0 && frameNum !== num && frameNum !== (num + 1) % frames) return 'H.264 frame_num gap';
+      else if (frameNum < num) offset += frames;
+      num = frameNum;
+      let poc = 2 * (offset + frameNum) - (nal[0] & 0x60 ? 0 : 1);
+      if (!s.pocType) {
+        const x = u(s.pocLsbBits);
+        const max = 2 ** s.pocLsbBits;
+        if (!(lsb >= 0)) lsb = x;
+        const m = x < lsb && lsb - x >= max / 2 ? msb + max : x > lsb && x - lsb > max / 2 ? msb - max : msb;
+        poc = m + x;
+        if (nal[0] & 0x60) [msb, lsb] = [m, x];
+      }
+      if (last !== null && poc - last !== 1 && poc - last !== 2) return `H.264 POC step ${poc - last}`;
+      last = poc;
+    }
+  } catch {
+    return 'bad H.264 PPS or slice header';
+  }
+  return null;
 }
 
 export function av1TimingInfo(obus: Uint8Array): boolean | null {
@@ -135,16 +237,13 @@ export function av1TimingInfo(obus: Uint8Array): boolean | null {
   return null;
 }
 
-function codecUnsupported(t: MkvTrack, payload: Uint8Array): string | null {
+function codecUnsupported(t: MkvTrack, packets: readonly Uint8Array[]): string | null {
   const cp = t.codecPrivate;
   if (t.codecId === AV1) {
-    const timing = av1TimingInfo(cp && cp.length > 4 ? cp.subarray(4) : payload);
+    const timing = av1TimingInfo(cp && cp.length > 4 ? cp.subarray(4) : packets[0]);
     return timing === null ? 'no AV1 sequence header' : timing ? 'AV1 timing info' : null;
   }
-  if (t.codecId !== AVC) return null;
-  if (cp) return cp.length > 8 && cp[5] & 31 ? h264Unsupported(cp.subarray(8)) : 'no H.264 SPS';
-  for (let i = 0; i + 3 < payload.length; i++) if (payload[i] + payload[i + 1] === 0 && payload[i + 2] === 1 && (payload[i + 3] & 31) === 7) return h264Unsupported(payload.subarray(i + 3));
-  return 'no H.264 SPS';
+  return t.codecId === AVC ? h264Unsupported(cp, packets) : null;
 }
 
 function setupUnsupported(h: MkvHeader): string | null {
@@ -187,8 +286,7 @@ export async function ffprobeRates(src: ByteSource, h: MkvHeader, start: number,
   let div = 0;
   let readSize = 0;
   let failed: string | null = null;
-  let firstAt = 0;
-  let firstSize = 0;
+  const heads: Array<[at: number, size: number]> = [];
   const st = walker.newScanState(h, src.size, h.tracks);
   st.onBlock = (t, blk, block, blockDuration) => {
     st.stop = true;
@@ -203,14 +301,10 @@ export async function ffprobeRates(src: ByteSource, h: MkvHeader, start: number,
       dur = Math.floor((opusSamples(src.buf[at - src.base], size > 1 ? src.buf[at + 1 - src.base] : 0) * s.tb.den) / (48000 * s.tb.num));
       if (!dur || size < 1) failed = 'a bad Opus packet';
     } else if (!dur && tb.num * 1000 > tb.den) dur = 1;
-    if (video && !v.nb) {
-      if (block.id === 0xa3 && !(blk.flags & 0x80)) failed = 'no keyframe first';
-      firstAt = at;
-      firstSize = Math.min(size, 1024);
-    }
+    if (video && !v.nb && block.id === 0xa3 && !(blk.flags & 0x80)) failed = 'no keyframe first';
     if (failed) return;
     readSize += size;
-    const dts = video && avc && v.nb < 7 ? null : t.pts[t.n - 1];
+    const dts = video && avc && v.nb < DECODED_BEFORE_DTS ? null : t.pts[t.n - 1];
     if (dts !== null && s.nb > 1) {
       if (s.last !== null && (s.last >= dts || (s.first !== null && s.lastIdx > s.firstIdx && Math.floor((dts - s.last) / 1000) > Math.floor((s.last - s.first) / (s.lastIdx - s.firstIdx))))) s.first = null;
       if (s.first === null) {
@@ -247,14 +341,19 @@ export async function ffprobeRates(src: ByteSource, h: MkvHeader, start: number,
     }
     if (video && dts !== null) lastDts = dts;
     if (dts !== null) s.seen = true;
+    if (video && v.nb < (avc ? DECODED_BEFORE_DTS : 1)) heads.push([at, Math.min(size, PACKET_HEAD_BYTES)]);
     s.nb++;
     st.stop = false;
   };
   await walker.scanSegment(src, st, start);
   if (failed) return failed;
   if (!v.nb || st.resyncs || st.truncated || st.missingClusterTs) return 'damaged first Clusters';
-  await src.load(firstAt, firstSize, firstSize);
-  const codec = codecUnsupported(track, src.buf.slice(firstAt - src.base, firstAt + firstSize - src.base));
+  const packets: Uint8Array[] = [];
+  for (const [at, size] of heads) {
+    await src.load(at, size, size);
+    packets.push(src.buf.slice(at - src.base, at + size - src.base));
+  }
+  const codec = codecUnsupported(track, packets);
   if (codec) return codec;
   let r: Tb | null = null;
   let avg: Tb | null = null;

@@ -30,13 +30,13 @@ Measured with Vite 8.3.5 on production builds installed from the packed tarball 
 
 | Fixture | Imports | Vite worker option | Critical path | First MP4, lazy | All own paths, lazy | Worker files |
 |---|---|---|---:|---:|---:|---|
-| default | `video-fps-probe/lazy` | format: 'es' | **0.67 KB** | 23.60 KB | 39.71 KB | own.worker (5 lazy chunks) |
-| zero-config | `video-fps-probe/lazy` | none, so Vite's default format: 'iife' | **0.67 KB** | 37.93 KB | 37.93 KB | own.worker (0 lazy chunks) |
-| iife-nosplit | `video-fps-probe/lazy` | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.67 KB** | 37.93 KB | 37.93 KB | own.worker (0 lazy chunks) |
-| custom | `video-fps-probe/client/lazy` + `video-fps-probe/worker-runtime` | format: 'es' | **0.67 KB** | 23.49 KB | 39.60 KB | fps.worker (5 lazy chunks) |
-| standalone-url | `video-fps-probe/client/lazy` + `video-fps-probe/standalone/own.worker.js?url` | none needed: the file is copied as an asset | **0.70 KB** | 37.75 KB | 37.75 KB | own.worker (0 lazy chunks) |
+| default | `video-fps-probe/lazy` | format: 'es' | **0.66 KB** | 23.60 KB | 40.34 KB | own.worker (5 lazy chunks) |
+| zero-config | `video-fps-probe/lazy` | none, so Vite's default format: 'iife' | **0.67 KB** | 38.55 KB | 38.55 KB | own.worker (0 lazy chunks) |
+| iife-nosplit | `video-fps-probe/lazy` | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.67 KB** | 38.55 KB | 38.55 KB | own.worker (0 lazy chunks) |
+| custom | `video-fps-probe/client/lazy` + `video-fps-probe/worker-runtime` | format: 'es' | **0.67 KB** | 23.49 KB | 40.23 KB | fps.worker (5 lazy chunks) |
+| standalone-url | `video-fps-probe/client/lazy` + `video-fps-probe/standalone/own.worker.js?url` | none needed: the file is copied as an asset | **0.70 KB** | 38.37 KB | 38.37 KB | own.worker (0 lazy chunks) |
 
-With format 'es' the own worker entry stays small and loads one parser per container; with 'iife' it is one file with both parsers. In Vite 8.3.5 the zero-config and iife-nosplit own workers are byte-identical: with format 'iife' Vite already inlines the worker's dynamic imports, so `codeSplitting: false` changes nothing for this package. Everything the default build emits outside the entry chunk is 79.18 KB, because it also holds the main-thread copies of the runtime and parsers ([SSR](#ssr-and-the-lazy-main-thread-chunks)). The full matrix, engines included, is in [benchmarks.md](benchmarks.md#package-size).
+With format 'es' the own worker entry stays small and loads one parser per container; with 'iife' it is one file with both parsers. In Vite 8.3.5 the zero-config and iife-nosplit own workers are byte-identical: with format 'iife' Vite already inlines the worker's dynamic imports, so `codeSplitting: false` changes nothing for this package. Everything the default build emits outside the entry chunk is 80.43 KB, because it also holds the main-thread copies of the runtime and parsers ([SSR](#ssr-and-the-lazy-main-thread-chunks)). The full matrix, engines included, is in [benchmarks.md](benchmarks.md#package-size).
 
 <!-- tables:vite:end -->
 
