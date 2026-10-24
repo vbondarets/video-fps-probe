@@ -247,7 +247,7 @@ The field-level table, with app and ffprobe values for every check of all three 
 
 ### Late rate changes (Tier L)
 
-The other committed fixtures have at most 820 frames, and every rate change in them falls inside mediabunny's default probe of 256 packets. Three generated files put the change after more than 5000 constant frames, far past it. Each is at most 1 MB, 64x36, and constant-rate for more than 5000 frames before it changes:
+The other committed fixtures have at most 820 frames, and every rate change in them falls inside mediabunny's default probe of 256 packets. Three generated files put the change after more than 5000 constant frames, far past it. Each is at most 1 MB, 64x36, and constant-rate for more than 5000 frames before it changes. This paragraph was corrected after the first run: as committed with the predictions, it said that mediabunny's probe and its full scan gave the same rates on every older fixture, which is false for the `vfr_two_phase_5_200` files (an average of 3400/69 from the probe against 4200/41 from the full scan).
 
 - `late_30_to_60.mp4`: H.264, 6000 frames at 30 fps (200 s), then 1200 frames at 60 fps (20 s); 7200 frames over 220 s, an average of 360/11 (32.727 fps).
 - `late_25_to_12.5.webm`: VP9, 5500 frames at 25 fps (220 s), then 500 frames at 12.5 fps (40 s); 6000 frames over 260 s (23.077 fps).
@@ -261,7 +261,7 @@ The other committed fixtures have at most 820 frames, and every rate change in t
 
 The results below are reported whatever they are, including a prediction that fails.
 
-**Results** (`npm run compare -- --with-large`, first run on 2026-10-24):
+**Results of the latest run** (`npm run compare -- --with-large`). The table is regenerated with every run, so it shows the current verdicts and timings; the first run, on 2026-10-24, is described below it.
 
 <!-- tables:late:start -->
 
@@ -287,8 +287,8 @@ Each cell is the arm's value and its verdict, or the outcome of a mismatch. The 
 
 <!-- tables:late:end -->
 
-1. **Own parsers: held, after one correction.** The first run had one own mismatch, `avgFps.declared` of `late_25_to_12.5.webm`: the file has no DefaultDuration, and the 25/1 that ffprobe prints as `avg_frame_rate` is its own estimate from the first packets. The manifest note had said the file declares 25 fps. With the note corrected, the existing rule for files without a DefaultDuration scores the check not applicable; the note was wrong, not the parser. Every other check was exact on the first run. The rate profiles find the changes at 200 s and 220 s; the freeze is a freeze anomaly of 10.04 s at 239.96 s inside one steady 25 fps segment, not a rate change.
-2. **mediabunny idiomatic: held for the values.** The averages are 30, 25 and 25 fps and the VFR flag is false on all three files, scored wrong each time. Only the MP4 average is scored (definition differs, its probe window); for WebM and Matroska the rules score a measured average only after a full scan, so those two averages are not applicable and are not counted against it. It reads the whole of these small files too, and its Node times are close to the own parsers, faster on some files (Node ms above).
+1. **Own parsers: failed on the first run (a wrong manifest note); holds after the note was corrected.** The first run had one own mismatch, `avgFps.declared` of `late_25_to_12.5.webm`, against the prediction of 0: the file has no DefaultDuration, and the 25/1 that ffprobe prints as `avg_frame_rate` is its own estimate from the first packets. The manifest note had said the file declares 25 fps, and the rule then took the absence of a DefaultDuration from the note. With the note corrected, that rule scored the check not applicable; the note was wrong, not the parser. The rule now reads the absence from the file itself, so a note can no longer change the verdict. Every other check was exact on the first run, The own parsers report no nominal rate on the MP4 and the WebM and no declared average on the WebM, and the rules never score a Matroska track duration, so 5 own checks on these files are not applicable rather than exact. The rate profiles find the changes at 200 s and 220 s; the freeze is a freeze anomaly of 10.04 s at 239.96 s inside one steady 25 fps segment, not a rate change.
+2. **mediabunny idiomatic: held for the values.** The averages are 30, 25 and 25 fps and the VFR flag is false on all three files, scored wrong each time. Its nominal rate on the MP4 and the WebM equals ffprobe's `r_frame_rate` (30/1 and 25/1) and is listed among the library wins above, but only because its probe saw just the constant head: its VFR flag on the same tracks is wrong. Only the MP4 average is scored (definition differs, its probe window); for WebM and Matroska the rules score a measured average only after a full scan, so those two averages are not applicable and are not counted against it. It reads the whole of these small files too, and its Node times are close to the own parsers, faster on some files (Node ms above).
 3. **mediabunny full scan: held.** The VFR flag is true, the minimum and maximum are exact, and the averages differ from ffprobe's only by its own definition (32.725 against 32.727 fps on the MP4). It is slower than the own parsers and the idiomatic arm on all three files, by several times.
 
 ffprobe's `avg_frame_rate` is not ground truth on these files: it reads 25/1 for both Matroska files, an estimate from the first packets for the WebM and the DefaultDuration for the MKV, while their averages are 23.08 and 24.04 fps. The measured averages above come from ffprobe's packet timestamps. mp4box.js (tuned adapter) is exact on the MP4 as well, and mediabunny's tuned adapter, which walks every packet, gets the VFR flag and the range right on all three.
@@ -698,7 +698,7 @@ Tested:
 
 ## Testing
 
-**Fixture corpus.** Synthetic files generated with ffmpeg 8.1.1 from lavfi test sources, so there is no third-party content. `fixtures/manifest.tsv` lists each file with its expected outcome:
+**Fixture corpus.** Mostly synthetic files generated with ffmpeg 8.1.1 from lavfi test sources, plus 12 MediaRecorder recordings made by this repository (CC0); there is no third-party content. `fixtures/manifest.tsv` lists each file with its expected outcome:
 
 <!-- tables:corpus:start -->
 
