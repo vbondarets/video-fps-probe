@@ -10,7 +10,7 @@ The measurements behind the [README](../README.md): accuracy against ffprobe, sp
 - **Reads.** Median 1 read per committed fixture, at most 1. The 3 h, 648000-frame MP4 (12.42 MiB) takes 2 reads and 2.56 MiB (20.6% of the file).
 - **Speed.** In Chrome headless shell 156, warm: median 0.90 ms per file in the worker and 1.70 ms from file pick to rendered result; the 3 h file takes 4.00 ms. A 604.42 MB 1080p MP4 with the moov at the end takes 2 reads (75.0 KiB) and 1.40 ms; the same stream in Matroska takes 121 ms in auto mode (126 reads; a probe, so no frame count until "Scan all frames").
 - **Size.** A default install (`video-fps-probe/lazy`) adds 0.66 KB gzip to a host app's critical path. Its first MP4 file loads 23.58 KB lazily when the host's Vite config sets `worker: { format: 'es' }`, and 35.11 KB with Vite's default worker format, 'iife', which builds the own worker as one file ([Package size](#package-size)). The demo page plus its first MP4 result loads 100.06 KB gzip (page, probe client, worker entry, shared statistics chunk, ISO BMFF parser); the first Matroska result 98.93 KB.
-- **Embedding.** In a host app with a 1.95 MB gzip initial load, prewarming the worker when the upload dialog opens makes the first result on fast 4G take 4.60 ms instead of 345 ms ([Embedding in an existing app](#embedding-in-an-existing-app)). Measured on an earlier build whose worker entry and parser chunks differ from the current ones, so these figures are not current.
+- **Embedding.** In a host app with a 1.95 MB gzip initial load, prewarming the worker when the upload dialog opens makes the first result on fast 4G take 4.30 ms instead of 349 ms ([Embedding in an existing app](#embedding-in-an-existing-app)).
 - **Same result in Node and Chrome.** 116 of 116 files give identical results field by field (timing excluded).
 - **Machine.** Windows 10 Pro, Intel Core i7-10700KF (16 threads), 32 GiB, Node v24.20.0, Chrome headless shell 156; ffprobe 8.1.1-full_build-www.gyan.dev.
 
@@ -353,21 +353,19 @@ Measured with `scripts/bench/integration.mjs` (details and formulas in [report/i
 
 <!-- tables:integration:start -->
 
-**Not current.** Measured on 2026-10-23 on an earlier build (worker entry `probe.worker-Cql5mTN_.js`). The worker entry and parser chunks of the current build differ (see [Demo bundle size](#demo-bundle-size)), so re-run `scripts/bench/integration.mjs` before quoting these sizes and timings.
-
-Host model: an SPA with a 1.95 MB gzip initial load, Chrome 155 headless, local server with CDP network throttling; the probe is the real worker pool, worker entry and parser chunks. "Prewarmed" means the worker was started and the parser loaded before the pick. The trigger is an inline script and the glue the WorkerPool class bundled by the bench, so the sizes below are not those of the package entries: what an app that imports `video-fps-probe/lazy` adds is in [Package size](#package-size).
+Host model: an SPA with a 1.95 MB gzip initial load, Chrome headless shell 156, local server with CDP network throttling; the probe is the real worker pool, worker entry and parser chunks. "Prewarmed" means the worker was started and the parser loaded before the pick. The trigger is an inline script and the glue the WorkerPool class bundled by the bench, so the sizes below are not those of the package entries: what an app that imports `video-fps-probe/lazy` adds is in [Package size](#package-size).
 
 |  | Lazy on the first pick | Lazy + prefetch when the upload dialog opens | Eager (in the critical bundle) |
 |---|---|---|---|
-| Critical path, gzip | 0.52 KB trigger (+0.027%) | same | 33.62 KB (+1.72%) |
-| Downloaded on use, gzip | 22.01 KB for the first MP4, 33.10 KB with both parsers | the same, when the dialog opens | nothing more |
-| First video, fast 4G (9 Mbps, 85 ms) | +343 ms once | 4.60 ms prewarmed, 13.1 ms HTTP-prefetched | 4.60 ms, plus 29.9 ms of transfer on every page load |
-| First video, slow 4G (1.6 Mbps, 150 ms) | +624 ms once | 4.60 ms prewarmed, 13.5 ms HTTP-prefetched | 4.60 ms, plus 168 ms of transfer on every page load |
-| First video, 3G (0.75 Mbps, 300 ms) | +1248 ms once | 4.60 ms prewarmed, 13.8 ms HTTP-prefetched | 4.60 ms, plus 359 ms of transfer on every page load |
-| Main thread | 0 long tasks, TBT 0.00 ms for 111 files at once; 2.32 ms of main-thread CPU for the first file | same | same, plus a worker started on every page load |
-| Memory (renderer private, probe share) | +5.28 MB after the first video, +17.28 MB idle after 111 | same, from the dialog open | +5.28 MB for every visitor |
+| Critical path, gzip | 0.52 KB trigger (+0.027%) | same | 33.95 KB (+1.74%) |
+| Downloaded on use, gzip | 22.34 KB for the first MP4, 33.43 KB with both parsers | the same, when the dialog opens | nothing more |
+| First video, fast 4G (9 Mbps, 85 ms) | +348 ms once | 4.30 ms prewarmed, 13.0 ms HTTP-prefetched | 4.30 ms, plus 30.2 ms of transfer on every page load |
+| First video, slow 4G (1.6 Mbps, 150 ms) | +627 ms once | 4.20 ms prewarmed, 13.2 ms HTTP-prefetched | 4.20 ms, plus 170 ms of transfer on every page load |
+| First video, 3G (0.75 Mbps, 300 ms) | +1244 ms once | 4.20 ms prewarmed, 13.4 ms HTTP-prefetched | 4.20 ms, plus 362 ms of transfer on every page load |
+| Main thread | 0 long tasks, TBT 0.00 ms for 111 files at once; 1.74 ms of main-thread CPU for the first file | same | same, plus a worker started on every page load |
+| Memory (renderer private, probe share) | +5.41 MB after the first video, +18.43 MB idle after 111 | same, from the dialog open | +5.41 MB for every visitor |
 
-Worker time per file after warm-up: `av_h264_aac_faststart.mp4` 0.90 ms, `av_h264_aac.mp4` 1.80 ms, `fmp4_cmaf.mp4` 1.60 ms, `vfr_concat_10_30_60.webm` 1.90 ms, `long_cfr_3h_60fps.mp4` 4.40 ms, `long_vfr_1h_screenrec.mp4` 41.3 ms.
+Worker time per file after warm-up: `av_h264_aac_faststart.mp4` 1.00 ms, `av_h264_aac.mp4` 0.90 ms, `fmp4_cmaf.mp4` 0.90 ms, `vfr_concat_10_30_60.webm` 1.20 ms, `long_cfr_3h_60fps.mp4` 3.90 ms, `long_vfr_1h_screenrec.mp4` 38.1 ms.
 
 <!-- tables:integration:end -->
 
