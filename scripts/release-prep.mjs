@@ -75,7 +75,7 @@ export function localDate(now = new Date()) {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
-const git = (...args) => execFileSync('git', args, { cwd: REPO_ROOT, encoding: 'utf8' }).trim();
+const git = (...args) => execFileSync('git', args, { cwd: REPO_ROOT, encoding: 'utf8' }).trimEnd();
 const statusLines = () => git('status', '--porcelain').split('\n').filter(Boolean);
 const pathOf = (statusLine) => statusLine.slice(3).replace(/^"|"$/g, '');
 const read = (rel) => readFileSync(join(REPO_ROOT, rel), 'utf8');
