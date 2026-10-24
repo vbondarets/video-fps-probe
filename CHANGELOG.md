@@ -2,7 +2,7 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follow semver with the [0.x policy](docs/api.md#versioning).
 
-## 0.1.0 - 2026-10-23
+## 0.1.0 - 2026-10-24
 
 First release; not on npm yet (`"private": true`).
 

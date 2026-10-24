@@ -1,9 +1,9 @@
 {
   "generator": "scripts/size-matrix.mjs",
   "unit": "KB = 1000 bytes; gzip level 9",
-  "tarball": "video-fps-probe-0.0.0.tgz",
+  "tarball": "video-fps-probe-0.1.0.tgz",
   "versions": {
-    "video-fps-probe": "0.0.0",
+    "video-fps-probe": "0.1.0",
     "vite": "8.3.5",
     "mp4box": "2.4.1",
     "mediabunny": "1.62.0"
