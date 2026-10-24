@@ -20,7 +20,14 @@ The accuracy figures (116 fixtures, 1832 checks), the Node and Chrome identity c
 
 ## Accuracy vs ffprobe
 
-Every fixture has an ffprobe 8.1.1 reference in `fixtures/ref/`. `npm run compare` checks the outcome, track selection, average, nominal rate, frames, presented frames, track and format duration, start, min, max, VFR flag, duplicates, codec and dimensions of every video track against it. Each check gets a verdict: exact, within-tol, known-deviation (differs for a recorded reason), mismatch or n/a. Only the own engine gates the run; the library engines are informational.
+Every fixture has an ffprobe 8.1.1 reference in `fixtures/ref/`. `npm run compare` checks the outcome, track selection, average, nominal rate, frames, presented frames, track and format duration, start, min, max, VFR flag, duplicates, codec and dimensions of every video track against it. Each check gets a verdict: exact, within-tol, known-deviation (differs for a recorded reason), mismatch or n/a. Only the own engine gates the run.
+
+The libraries run in five informational arms, so that a difference is not charged to a library when it comes from this package's adapter or from a different definition. The idiomatic arms use each library the way its documentation shows and report only the library's own fields; mediabunny's full arm scans every packet; the tuned arms are this package's adapters in `src/engines`, which run part of this package's code (the timeline statistics) and are the engines of the demo's Compare panel. Every mismatch of every arm gets one outcome:
+
+- **wrong**: a value that differs from ffprobe, and none of the checked definitions explains it;
+- **definition differs**: the value follows another definition, checked against the file and its reference: a float instead of the exact rational, the mean frame interval or the timestamp average instead of `avg_frame_rate`, an interval before the timestamps were rounded to the tick, the first packets that a default probe reads, the movie or media header duration, an end timestamp instead of a span, a failure where ffprobe fails too;
+- **not provided**: the arm returns no value for the field, or the field is not part of its recipe (mp4box.js returns no frame rate by design, and the mediabunny recipes no frame counts);
+- **unsupported container**: the library does not read the container (mp4box.js and WebM or Matroska).
 
 <!-- tables:engines:start -->
 
@@ -77,7 +84,9 @@ Every fixture has an ffprobe 8.1.1 reference in `fixtures/ref/`. `npm run compar
 
 <!-- tables:engines:end -->
 
-Frame-rate checks are `avgFps` (for Matroska its declared and measured variants), `nominalFps`, `frames`, `presentedFrames`, `minFps`, `maxFps`, `isVfr` and `duplicateTimestamps`. mp4box.js cannot open WebM or Matroska, which accounts for most of its mismatches. The fixture counts above include the 5 local large files that are not committed (see the note under the headline).
+Frame-rate checks are `avgFps` (for Matroska its declared and measured variants), `nominalFps`, `frames`, `presentedFrames`, `minFps`, `maxFps`, `isVfr` and `duplicateTimestamps`. The fixture counts above include the 5 local large files that are not committed (see the note under the headline). For the idiomatic and full mediabunny arms, reads are the read callbacks of its `BlobSource`, which streams the file in chunks, so their read counts are not `Blob.slice()` calls.
+
+The libraries also win where this corpus does not measure: mediabunny reads MPEG-TS, HLS and audio formats and takes URLs and streams as input, where this package reads MP4, MOV, WebM and Matroska from a `Blob`; mediabunny returns colour, HDR, codec string and audio details that this package does not; both libraries have far more users and releases (as documented on 2026-10-24).
 
 The table below shows the primary track of every fixture. Frames are app / ffprobe. For Matroska, the declared rate is what ffprobe prints and the measured average comes from the block timestamps. For files without a video track, the two average columns show the outcome instead.
 
@@ -369,7 +378,7 @@ These numbers come from one fast desktop. [report/average-user.md](../report/ave
 
 ## Approach comparison
 
-Four ways to get a frame rate in the browser, run on the same fixtures (requestVideoFrameCallback on a subset, because it plays each file). The library engines are adapters in `src/engines` that fill the same result shape from the samples each library parses, so the libraries are compared as parsers.
+Four ways to get a frame rate in the browser, run on the same fixtures (requestVideoFrameCallback on a subset, because it plays each file). The library columns are the tuned adapters in `src/engines`, which fill the same result shape from the samples each library parses, so the libraries are compared as parsers; the accuracy rows add the idiomatic arms.
 
 <!-- tables:approaches:start -->
 
@@ -395,8 +404,8 @@ Node: `npm run compare` (`analyze()` on `fs.openAsBlob`), median of 3 runs per f
 Risks in detail:
 
 - **Own parsers**: code to maintain. Behaviour outside the corpus (real recorder files, cmov, multi-segment edit lists) is flagged with a warning, not verified.
-- **mp4box.js**: MP4 and MOV only. It overrides the last sample duration with `mdhd.duration - last dts`, so the adapter takes durations from the stts box. It has to be fed box by box; a plain append loop reads the whole file.
-- **mediabunny**: its average is `averagePacketRate`, it ignores an edit list's start trim, it reads whole Matroska clusters, and its `packets()` iterator stalls on very long files (the adapter walks with `getNextPacket`). MPL-2.0 licence.
+- **mp4box.js**: MP4 and MOV only, and no frame rate in its info by design. It overrides the last sample duration with `mdhd.duration - last dts`, so the tuned adapter takes durations from the stts box. It has to be fed box by box; a plain append loop reads the whole file.
+- **mediabunny**: the tuned adapter's average is `averagePacketRate`; mediabunny ignores an edit list's start trim, reads whole Matroska clusters, and its `packets()` iterator stalls on very long files (the adapter walks with `getNextPacket`). `computeFrameRateMetrics()` returns floats and probes 256 packets by default; with `targetPacketCount: Infinity` it reads every packet, which takes more than a minute on the 3 h MP4 in Node ([report](../report/accuracy.md)). MPL-2.0 licence.
 - **requestVideoFrameCallback**: needs a visible foreground tab and a codec the browser can play. It sees only the frames of a short playback, so VFR averages are wrong, it takes seconds per file, and it depends on the display refresh rate.
 
 ### requestVideoFrameCallback fallback
@@ -674,7 +683,7 @@ npm run test:e2e                 # Playwright: the built app in Chromium, Firefo
 npm run test:package             # after build:lib: analyze() from dist/ equals src/ on every committed fixture, and every name docs/api.md gives an entry resolves from the packed tarball
 npm run typecheck                # tsc -b
 npm run lint                     # oxlint
-npm run compare                  # own, mp4box and mediabunny vs the ffprobe references, writes report/accuracy.*
+npm run compare                  # own and the five library arms vs the ffprobe references, writes report/accuracy.*
 npm run build:lib                # build the library to dist/ (tsc, worker URL and d.ts rewrites, standalone worker)
 npm run build                    # build the library, then type-check and build the demo to demo/dist/
 npm run check:package            # publint and check-dist on dist/: file whitelist, pack listing, worker literals, peer isolation
