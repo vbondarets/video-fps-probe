@@ -296,7 +296,7 @@ note late_25_to_12.5.webm webm vfr ok "late change in WebM (VP9): 5500 frames at
 "${FF[@]}" -f lavfi -i "testsrc2=size=64x36:rate=25:duration=250" -vf "settb=1/90000,setpts='(N+gt(N,5999)*250)*3600'" "${LATEV[@]}" "${VFR[@]}" -enc_time_base:v 1/90000 "${BX[@]}" -f matroska late_freeze_10s.mkv
 note late_freeze_10s.mkv matroska vfr ok "late freeze in Matroska (H.264): 25 fps, frame 5999 held 10.04 s at 239.96 s, then 250 more frames; 6250 frames over 260 s"
 
-# ---------- R. Browser recordings (Tier R): made by record-mediarecorder.mjs, not by this script; rows only ----------
+# ---------- R. Browser recordings (Tier R): made by record-mediarecorder.mjs, not by this script; rows, and a copy into another root ----------
 # Real MediaRecorder output of a canvas animation (rAF, a 0.6 s freeze, a 15 fps timer, rAF again), 320x180 at
 # 250 kbps, recorded once on 2026-10-24 in headless Chromium 156.0.8078.4 and committed as recorded (CC0).
 REC="Chromium 156 MediaRecorder"
@@ -312,6 +312,9 @@ note rec_chromium_h264.mp4 mp4 recorder ok "$REC video/mp4;codecs=avc1, one piec
 note rec_chromium_h264_sliced.mp4 mp4 recorder ok "$REC video/mp4;codecs=avc1, 250 ms timeslice: fragmented, mvhd duration 0, no mfra"
 note rec_chromium_vp9.mp4 mp4 recorder ok "$REC video/mp4 (recorded as video/mp4;codecs=vp9), one piece: fragmented (empty moov, moof mdat, mfra), mvhd duration set"
 note rec_chromium_vp9_sliced.mp4 mp4 recorder ok "$REC video/mp4 (recorded as video/mp4;codecs=vp9), 250 ms timeslice: fragmented, mvhd duration 0, no mfra"
+for f in $(awk -F'\t' '$3 == "recorder" { print $1 }' "$MANIFEST"); do
+  [[ -f "$f" ]] || cp "$HERE/../../fixtures/files/$f" "$f"
+done
 
 # ---------- L. Optional heavy files (manifest rows are always written, files only on request) ----------
 note_large long_cfr_3h_60fps.mp4 mp4 long ok "3 h x 60 fps = 648000 frames, 64x36, crf 51: 13 MB, moov 2.6 MB at the end (stsz 4 B/frame)"
