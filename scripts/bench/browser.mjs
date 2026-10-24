@@ -1,6 +1,7 @@
 import { spawn, execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { delimiter, join } from 'node:path';
+import { parseBrowserFlags } from './flags.mjs';
 
 const KNOWN = {
   chrome: {
@@ -211,7 +212,7 @@ export async function launchBrowser({ exe, profileDir, args = [], width = 1280, 
     '--mute-audio',
     '--autoplay-policy=no-user-gesture-required',
     ...args,
-    ...(process.env.BENCH_BROWSER_FLAGS ?? '').split(/\s+/).filter(Boolean),
+    ...parseBrowserFlags(process.env.BENCH_BROWSER_FLAGS),
     'about:blank',
   ];
   const child = spawn(exe, flags, { stdio: 'ignore', windowsHide: true, detached: process.platform !== 'win32' });
