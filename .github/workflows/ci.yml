@@ -72,6 +72,9 @@ jobs:
       - name: Check the generated doc tables against the reports
         run: node scripts/readme-tables.ts --check
 
+      - name: Check that the build stamp does not rename the demo chunks
+        run: npm run check:stable-chunks
+
   package:
     name: Package
     runs-on: ubuntu-latest

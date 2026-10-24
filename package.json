@@ -138,6 +138,7 @@
     "check:types": "npx --yes @arethetypeswrong/cli@0.18.5 --pack . --ignore-rules cjs-resolves-to-esm --exclude-entrypoints ./standalone/own.worker.js",
     "prepack": "npm run build:lib && node scripts/check-dist.mjs",
     "check:aliases": "node scripts/src-aliases.mjs --check",
+    "check:stable-chunks": "node scripts/check-stable-chunks.mjs",
     "typecheck": "tsc -b",
     "lint": "oxlint",
     "test": "vitest run",
