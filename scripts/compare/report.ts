@@ -62,7 +62,7 @@ export interface AccuracyReport {
 }
 
 export const OUTCOME_TEXT =
-  '**wrong** (the arm returns a value that differs from ffprobe, and none of the checked definitions explains it), **definition differs** (the value follows another documented definition, checked against the file: a float instead of the exact rational, the timestamp average instead of `avg_frame_rate`, the movie or media header duration), **not provided** (the arm returns no value for the field, or the field is not part of its recipe), **unsupported container** (the library does not read the container).';
+  '**wrong** (the arm returns a value that differs from ffprobe, and none of the checked definitions explains it), **definition differs** (the value follows another documented definition, checked against the file: a float instead of the exact rational, the timestamp average instead of `avg_frame_rate`, the movie or media header duration; a default probe window is named but not checked where the reference keeps no per-frame timestamps), **not provided** (the arm returns no value for the field, or the field is not part of its recipe), **unsupported container** (the library does not read the container).';
 
 export function esc(s: string | null | undefined): string {
   return (s ?? '').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');

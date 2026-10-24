@@ -378,6 +378,10 @@ export function runSelfTest(): number {
   expectEq('outcome: the last frame timestamp', outcomeOf('mediabunny-idiomatic', { info: MP4_INFO, ref: refFile([lastStart]), result: appResult([appTrack()], { formatDurationSec: 89089 / 30000 }) }, 'formatDurationSec'), 'definition-differs');
   expectEq('outcome: a frame count from the full scan', outcomeOf('mediabunny-full', { info: MP4_INFO, ref: cfrRef, result: appResult([appTrack({ frames: 91 })]) }, 'frames'), 'wrong');
   expectEq('outcome: no frame count in the default recipe', outcomeOf('mediabunny-idiomatic', { info: MP4_INFO, ref: cfrRef, result: appResult([appTrack({ frames: 91 })]) }, 'frames'), 'not-provided');
+  const longVfr = refStream({ avgFrameRate: '186/5', nbFrames: 133920, packets: { ...refStream().packets!, packets: 133920, presentedPackets: 133920, avgFromPts: fps(186, 5), ptsPresented: null } });
+  const sampledTrack = (warning: string) => appTrack({ avgFps: rat(10625, 296), avgFpsFfprobe: null, warnings: [warning] });
+  expectEq('outcome: a sampled rate the reference cannot check', outcomeOf('mediabunny-idiomatic', { info: MP4_INFO, ref: refFile([longVfr]), result: appResult([sampledTrack('computeFrameRateMetrics: 256 packets probed')]) }, 'avgFps'), 'definition-differs');
+  expectEq('outcome: a full scan rate the reference cannot check', outcomeOf('mediabunny-full', { info: MP4_INFO, ref: refFile([longVfr]), result: appResult([sampledTrack('computeFrameRateMetrics: 133920 packets probed')]) }, 'avgFps'), 'wrong');
   expectEq('outcome: the own engine is classified too', outcomeOf('own', { info: MP4_INFO, ref: cfrRef, result: appResult([appTrack({ frames: 91 })]) }, 'frames'), 'wrong');
 
   const problems: string[] = [];

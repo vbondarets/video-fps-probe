@@ -47,8 +47,12 @@ interface WindowRates {
   maxFps: number;
 }
 
+function probedPackets(track: VideoTrackResult | null): number {
+  return Number(track?.warnings.map((w) => PROBED.exec(w)?.[1]).find(Boolean) ?? Number.NaN);
+}
+
 function probeWindow(track: VideoTrackResult | null, s: RefStream): WindowRates | null {
-  const probed = Number(track?.warnings.map((w) => PROBED.exec(w)?.[1]).find(Boolean) ?? Number.NaN);
+  const probed = probedPackets(track);
   const pts = s.packets?.ptsPresented;
   if (!pts || !(probed >= 2) || probed >= pts.length) return null;
   const window = [...pts].sort((a, b) => a - b).slice(0, probed);
@@ -106,8 +110,12 @@ function rateDefinition(ctx: OutcomeContext, c: CheckResult, s: RefStream): stri
     if (ref !== null && Math.abs(1 / app - 1 / ref) < ticksToSec(1, s.timeBase) && Math.abs(app - ref) <= 1e-4 * ref) return 'within one timestamp tick of the reference interval: computed from floating-point seconds, not integer ticks';
   }
   if (c.field === 'avgFps' || c.field === 'minFps' || c.field === 'maxFps') {
-    const w = probeWindow(ctx.result.videoTracks.find((t) => t.trackId === c.trackId) ?? null, s);
+    const track = ctx.result.videoTracks.find((t) => t.trackId === c.trackId) ?? null;
+    const w = probeWindow(track, s);
     if (w && (near(app, w[c.field]) || (c.field === 'avgFps' && withinTick((w.packets - 1) / app, (w.packets - 1) / w.avgFps, s)))) return `computed over the first ${w.packets} of ${s.packets?.ptsPresented?.length ?? '?'} frames, which the recipe probes by default, not over the whole stream`;
+    const probed = probedPackets(track);
+    const frames = p?.packets ?? 0;
+    if (!p?.ptsPresented && probed >= 2 && probed < frames) return `computed over the first ${probed} of ${frames} frames, which the recipe probes by default; the reference keeps no per-frame timestamps for this file, so the window is not checked`;
   }
   return null;
 }
