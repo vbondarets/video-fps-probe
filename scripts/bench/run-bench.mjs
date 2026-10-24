@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,6 +7,7 @@ import { parseArgs } from 'node:util';
 import { AppPage } from './app.mjs';
 import { findBrowser, killAllBrowsers, launchBrowser } from './browser.mjs';
 import { commandLine, headlessMode, parseBrowserFlags } from './flags.mjs';
+import { chunkHash } from '../size-report.mjs';
 import { renderMarkdown } from './report.mjs';
 import { startServer } from './server.mjs';
 import { takeScreenshots } from './shots.mjs';
@@ -235,6 +236,11 @@ async function engineRuns(app, own, names, reps, engines = ['mp4box', 'mediabunn
   return out;
 }
 
+function distHash(path) {
+  const file = join(DIST, path.replace(/^\//, ''));
+  return existsSync(file) ? chunkHash(readFileSync(file)) : null;
+}
+
 async function coldFirst(app, server, pathOf, reps) {
   const out = [];
   for (const [name, label] of COLD_FIRST) {
@@ -264,7 +270,7 @@ async function coldFirst(app, server, pathOf, reps) {
       coldMs: m('coldMs'),
       warmWallMs: m('warmWallMs'),
       warmMs: m('warmMs'),
-      chunks: runs[0].chunks.map((c) => ({ path: c.path, bytes: c.bytes })),
+      chunks: runs[0].chunks.map((c) => ({ path: c.path, bytes: c.bytes, hash: distHash(c.path) })),
     });
   }
   return out;

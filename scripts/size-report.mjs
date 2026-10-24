@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
@@ -104,6 +104,13 @@ const USAGE = `Usage: node scripts/size-report.mjs [distDir=demo/dist] [--check]
 
 const kb = (n) => `${(n / KB).toFixed(2)} KB`;
 const posix = (p) => p.split('\\').join('/');
+
+const HASHED_SPECIFIER = /-[A-Za-z0-9_-]{8}(\.(?:js|css))/g;
+
+export function chunkHash(buf) {
+  const text = Buffer.isBuffer(buf) ? buf.toString('latin1') : String(buf);
+  return createHash('sha256').update(text.replace(HASHED_SPECIFIER, '$1'), 'latin1').digest('hex').slice(0, 16);
+}
 
 export function measure(buf) {
   return {
@@ -477,7 +484,10 @@ export function discover(distDir) {
 
 export function buildReport(distDir) {
   const { files, kinds, method, workerMethod, notes, entryDeps, workers, chains } = discover(distDir);
-  const chunks = files.map((file) => ({ file, kind: kinds.get(file), ...measure(readFileSync(join(distDir, file))) }));
+  const chunks = files.map((file) => {
+    const buf = readFileSync(join(distDir, file));
+    return { file, kind: kinds.get(file), ...measure(buf), hash: chunkHash(buf) };
+  });
   const byFile = new Map(chunks.map((c) => [c.file, c]));
   const ofKind = (wanted) => chunks.filter((c) => wanted.includes(c.kind));
   const totalOf = (list) => ({
@@ -939,6 +949,10 @@ function runSelfTest() {
     expectEq('rvfc absent is not a failure', statusOf(noWorker, 'rvfc'), 'not built');
     expectEq('segments absent is not a failure', statusOf(noWorker, 'segments'), 'not built');
     expectEq('first VFR MP4 analysis absent is not a failure', statusOf(noWorker, 'firstVfrMp4'), 'not built');
+    const code = 'const a=()=>import("./stats-PuFqh4kY.js");export{a};';
+    expectEq('chunk hash: a renamed import keeps the hash', chunkHash(Buffer.from(code)), chunkHash(Buffer.from(code.replace('PuFqh4kY', 'Ab_-1234'))));
+    expectEq('chunk hash: other code changes it', chunkHash(Buffer.from(code)) === chunkHash(Buffer.from(code.replace('a}', 'a as b}'))), false);
+    expectEq('chunk hash: recorded per chunk', fit.chunks.every((c) => /^[0-9a-f]{16}$/.test(c.hash)), true);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

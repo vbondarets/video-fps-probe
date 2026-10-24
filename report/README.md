@@ -39,7 +39,7 @@ Timings depend on the machine and on what else runs on it; verdicts, reads, byte
 ## size.md, size.json
 
 - Reads a production build (`npm run build` first). The page chunks come from `index.html`, the worker from its `Worker()` reference, the parser and engine chunks from the import graph.
-- Per chunk: raw bytes, gzip level 9 and brotli quality 11. KB means 1000 bytes.
+- Per chunk: raw bytes, gzip level 9 and brotli quality 11. KB means 1000 bytes. `hash` is a SHA-256 prefix of the chunk content with the hashed file names it imports reduced to their stems, so a chunk whose own code is unchanged keeps it when another chunk is renamed.
 - Budgets (`BUDGETS` in `scripts/size-report.mjs`) cover the main chunk, the worker entry, each parser chunk, the rate profile chunks (core and panel), the rVFC chunk, the initial load and the first MP4, first VFR MP4 and first Matroska analysis. `size.md` gives the reason for every limit.
 - `--check` exits 1 when a budget is exceeded or a required chunk is missing; CI runs it. `--self-test` checks chunk discovery on synthetic builds.
 
@@ -57,6 +57,7 @@ Timings depend on the machine and on what else runs on it; verdicts, reads, byte
 - Serves `demo/dist/` from `127.0.0.1` with `Cache-Control: no-store`, starts headless Chrome with a throwaway profile, and picks files through the app's real file input over the DevTools Protocol, so every `File` is disk-backed.
 - `ms` is the worker-side analysis time (`FileResult.io.ms`); `UI ms` runs from the input's change event to the rendered result.
 - Every own-engine result in Chrome is compared field by field with `analyze()` in Node on the same file; the script exits 1 when they differ and 2 on a harness error.
+- The first-file rows record the chunks each container fetched, with the same content `hash` as `size.json`. `readme-tables` marks the Chrome timings as not current when a fetched chunk's hash is not in the current build, or, for a report without hashes, when its file name is not.
 - Also writes the screenshots in `docs/screenshots/`.
 - `--filter <text>` writes `browser-bench.local.*` and skips the screenshots; `--skip warm,engines,large,cold-first,rvfc,edge,node,shots` drops sections; `--self-test` checks the helpers without a browser.
 - Only Chromium browsers are measured, on one desktop. Results (not timings) in Chromium, Firefox and WebKit are checked by the Playwright suite (`npm run test:e2e`).

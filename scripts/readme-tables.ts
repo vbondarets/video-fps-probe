@@ -89,6 +89,7 @@ interface Chunk {
   raw: number;
   gzip: number;
   brotli: number;
+  hash?: string;
 }
 
 interface SizeReport {
@@ -133,7 +134,7 @@ interface ColdFirst {
   label: string;
   coldWallMs: number;
   warmWallMs: number;
-  chunks: { path: string; bytes: number }[];
+  chunks: { path: string; bytes: number; hash?: string | null }[];
 }
 
 interface BenchReport {
@@ -1075,10 +1076,10 @@ function accuracySummaryBlock(inp: Inputs, doc: Doc): string[] {
 }
 
 function staleBenchChunks(inp: Inputs): string[] {
-  const current = new Map(inp.size.chunks.map((c) => [fileOf(c.file), c.raw]));
-  const sameCode = new Set(inp.size.chunks.map((c) => `${stemOf(c.file)}:${c.raw}`));
-  const fetched = inp.bench.chrome.coldFirst.flatMap((c) => c.chunks.map((k) => ({ name: fileOf(k.path), bytes: k.bytes })));
-  const stale = fetched.filter((k) => !current.has(k.name) && !sameCode.has(`${stemOf(k.name)}:${k.bytes}`)).map((k) => k.name);
+  const names = new Set(inp.size.chunks.map((c) => fileOf(c.file)));
+  const hashes = new Set(inp.size.chunks.map((c) => c.hash).filter((h): h is string => !!h));
+  const fetched = inp.bench.chrome.coldFirst.flatMap((c) => c.chunks.map((k) => ({ name: fileOf(k.path), hash: k.hash ?? null })));
+  const stale = fetched.filter((k) => (k.hash ? !hashes.has(k.hash) : !names.has(k.name))).map((k) => k.name);
   return [...new Set(stale)];
 }
 
