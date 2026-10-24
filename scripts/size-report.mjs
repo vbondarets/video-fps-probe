@@ -8,13 +8,15 @@ import { brotliCompressSync, constants, gzipSync } from 'node:zlib';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const KB = 1000;
+const DEMO_RESET =
+  'Re-set on 2026-10-24 to the measurement plus 3 percent, rounded up to 0.5 KB, when the owner decided that the demo size does not matter as long as the package stays tiny: the size promise of the package is the consumer size matrix (report/size-matrix.md), whose budgets did not change. The 3 percent still fails a regression of 2 to 3 KB here.';
 
 export const BUDGETS = {
   main: {
     label: 'main (React + UI)',
-    limit: 75 * KB,
+    limit: 77 * KB,
     required: true,
-    why: 'User-facing goal, unchanged. React and ReactDOM are about 67.5 KB gzip of it. Measured 73.86 KB at gzip -9 when the limit was reviewed, so there is little room: new UI code has to be lazy. The Vite build log prints a larger figure for the same chunk (its own gzip settings), which can exceed 75 KB; the budget is checked against the level 9 numbers of this script only.',
+    why: `Demo page only. React and ReactDOM are about 67.5 KB gzip of it. Measured 74.44 KB, 0.56 KB under the previous 75 KB limit. ${DEMO_RESET} The Vite build log prints a larger figure for the same chunk (its own gzip settings); the budget is checked against the level 9 numbers of this script only.`,
   },
   worker: {
     label: 'worker entry (core + glue)',
@@ -67,27 +69,27 @@ export const BUDGETS = {
   },
   initial: {
     label: 'initial (main + CSS + worker entry)',
-    limit: 85 * KB,
+    limit: 83 * KB,
     required: true,
-    why: 'User-facing goal, unchanged: the page, its styles and the worker entry, before any file is analysed. Nothing else loads without a user action: the device info chunk (footer line and JSON export) is fetched on idle after the first result, or by the first export, so it is in neither the initial row nor the first analysis rows. Measured 82.05 KB when set.',
+    why: `The demo page, its styles and the worker entry, before any file is analysed. Nothing else loads without a user action: the device info chunk (footer line and JSON export) is fetched on idle after the first result, or by the first export, so it is in neither the initial row nor the first analysis rows. Measured 80.49 KB; the previous limit was 85 KB. ${DEMO_RESET}`,
   },
   firstMp4: {
     label: 'first MP4 analysis (initial + client + ISO BMFF + shared chunks)',
-    limit: 100 * KB,
+    limit: 103 * KB,
     required: true,
-    why: 'User-facing promise: page plus first MP4 or MOV result stays under 100 KB gzip. Measured 93.99 KB when set. Counts the lazy probe client and the shared statistics chunk too, so the component limits (85 + 3.5 + 5 + 13.5 = 107 KB) add up to more than the promise and this can trip while every component is within its own limit.',
+    why: `The demo page plus the first MP4 or MOV result. Measured 99,995 bytes, 5 bytes under the previous 100 KB limit. ${DEMO_RESET} Counts the lazy probe client and the shared statistics chunk too, so the component limits (83 + 3.5 + 5 + 13.5 = 105 KB) add up to more than this limit and it can trip while every component is within its own limit.`,
   },
   firstVfrMp4: {
     label: 'first VFR MP4 analysis (initial + client + ISO BMFF + segments + shared chunks)',
-    limit: 102 * KB,
+    limit: 105 * KB,
     required: false,
-    why: 'User-facing promise: page plus the first MP4 or MOV result with unequal frame rates, which also fetches the rate profile chunk, stays under 100 KB gzip. Accepted by the owner on 2026-10-23 for the demo only: with the library probe client this row does not fit the promise without dropping designed features, so the limit is the measurement rounded up to 0.5 KB. The size promise of the package itself is the consumer size matrix, not this demo row. Measured 101.23 KB: main 74.11, CSS 1.81, worker entry 4.22, probe client 2.74, statistics 4.29, ISO BMFF 12.22 and segments 1.84. Before the package work it measured 97.84 KB: the probe client (engine routing, the worker pool, the rVFC descriptor and the fallback, compare and in-thread hooks) adds 2.74 KB while the main chunk lost 0.65 KB with the old module worker pool, and the statistics split out of the worker entry plus the versioned worker runtime add 1.15 KB. Dropping the module preload polyfill and moving the rVFC checks into its lazy chunk took 0.32 KB back. The first MP4 and first Matroska rows keep the 100 KB promise. With the lazy probe client and the shared statistics chunk, the component limits (85 + 3.5 + 5 + 13.5 + 2 = 109 KB) add up to more than this limit, so it can trip while every component is within its own limit. Raised from 101.5 KB to 102.0 KB on 2026-10-24 by the same rule, for the 0.2.0 fix of a tab left open across a redeploy: the load reason on the probe errors, the pool that waits for a live worker, the reload banner with its deploy check and the retry of a panel chunk that failed to load add 0.76 KB to the 101.23 KB of 0.1.0, and moving the sample file loader out of the main chunk took 0.15 KB back. Measured 101.84 KB. Not required: without a segments chunk the code lives elsewhere and the first MP4 analysis covers it.',
+    why: `The demo page plus the first MP4 or MOV result with unequal frame rates, which also fetches the rate profile chunk. Measured 101.84 KB; the previous limit was 102.0 KB, set by the owner's rule of 2026-10-23 for the demo only (the measurement rounded up to 0.5 KB). ${DEMO_RESET} With the lazy probe client and the shared statistics chunk, the component limits (83 + 3.5 + 5 + 13.5 + 2 = 107 KB) add up to more than this limit, so it can trip while every component is within its own limit. Not required: without a segments chunk the code lives elsewhere and the first MP4 analysis covers it.`,
   },
   firstMkv: {
     label: 'first Matroska analysis (initial + client + Matroska + shared chunks)',
-    limit: 100 * KB,
+    limit: 102 * KB,
     required: true,
-    why: 'User-facing promise: page plus first MKV or WebM result stays under 100 KB gzip. Measured 92.78 KB when set. Counts the lazy probe client and the shared statistics chunk too, so the component limits (85 + 3.5 + 5 + 12 = 105.5 KB) add up to more than the promise and this can trip while every component is within its own limit.',
+    why: `The demo page plus the first MKV or WebM result. Measured 98.87 KB; the previous limit was 100 KB. ${DEMO_RESET} Counts the lazy probe client and the shared statistics chunk too, so the component limits (83 + 3.5 + 5 + 12 = 103.5 KB) add up to more than this limit and it can trip while every component is within its own limit.`,
   },
 };
 
@@ -762,14 +764,25 @@ function runSelfTest() {
     expectEq('edge: initial over while main and worker are ok', statusOf(edgeInitial, 'initial'), 'over');
     expectEq('edge: main ok', statusOf(edgeInitial, 'main'), 'ok');
     expectEq('edge: worker ok', statusOf(edgeInitial, 'worker'), 'ok');
-    const edgeShared = buildReport(build('edge-shared', { main: limit('main') - 500, worker: limit('worker') - 500, isobmff: limit('isobmff') - 500, isobmffShared: 4_500, css: 3_600 }));
+    const nearInitial = (main, worker) => ({ main, worker, css: limit('initial') - main - worker - 800 });
+    const clientOver = (composite, lazy) => Math.min(limit('client') - 200, Math.max(0, limit(composite) - limit('initial') - lazy + 800));
+    const sharedLazy = limit('isobmff') - 500 + limit('parser-shared') - 500;
+    const edgeShared = buildReport(
+      build('edge-shared', { ...nearInitial(limit('main') - 500, limit('worker') - 500), isobmff: limit('isobmff') - 500, isobmffShared: limit('parser-shared') - 500, client: clientOver('firstMp4', sharedLazy) }),
+    );
     expectEq('edge: parser shared chunk counts toward the first MP4 analysis', statusOf(edgeShared, 'firstMp4'), 'over');
     expectEq('edge: parser budget still ok', statusOf(edgeShared, 'isobmff'), 'ok');
     expectEq('edge: shared chunk budget still ok', statusOf(edgeShared, 'parser-shared'), 'ok');
     expectEq('edge: initial still ok', statusOf(edgeShared, 'initial'), 'ok');
     expectEq('edge: first Matroska unaffected', statusOf(edgeShared, 'firstMkv'), 'ok');
     const edgeVfr = buildReport(
-      build('edge-vfr', { main: limit('main') - 1_500, worker: limit('worker') - 500, isobmff: limit('isobmff') - 500, segments: limit('segments') - 300, segmentsShared: 4_500, css: 6_000 }),
+      build('edge-vfr', {
+        ...nearInitial(limit('main') - 1_500, limit('worker') - 500),
+        isobmff: limit('isobmff') - 500,
+        segments: limit('segments') - 100,
+        segmentsShared: limit('parser-shared') - 300,
+        client: clientOver('firstVfrMp4', limit('isobmff') - 500 + limit('segments') - 100 + limit('parser-shared') - 300),
+      }),
     );
     expectEq('edge: segments shared chunk counts toward the first VFR MP4 analysis', statusOf(edgeVfr, 'firstVfrMp4'), 'over');
     expectEq('edge: segments budget still ok', statusOf(edgeVfr, 'segments'), 'ok');

@@ -267,7 +267,7 @@ The demo in `demo/` is a React app that consumes the package through a custom wo
 
 | Chunk | Loaded | Raw | gzip -9 | brotli q11 | Budget (gzip) | Headroom | Status |
 |---|---|---:|---:|---:|---:|---:|---|
-| main (React, UI, store) | page load | 238.72 KB | **74.44 KB** | 64.43 KB | 75.00 KB | 0.56 KB | ok |
+| main (React, UI, store) | page load | 238.72 KB | **74.44 KB** | 64.43 KB | 77.00 KB | 2.56 KB | ok |
 | CSS | page load | 4.98 KB | **1.81 KB** | 1.53 KB | not budgeted | - | - |
 | probe client (lazy) | first file | 6.92 KB | **2.99 KB** | 2.75 KB | 3.50 KB | 0.51 KB | ok |
 | probe fallback chain | first call with a fallback chain or a skipped engine | 1.01 KB | **0.64 KB** | 0.56 KB | not budgeted | - | - |
@@ -294,10 +294,10 @@ The demo in `demo/` is a React app that consumes the package through a custom wo
 | mp4box.js engine | Compare engines on an MP4 or MOV card | 187.64 KB | **43.65 KB** | 37.32 KB | not budgeted | - | - |
 | mediabunny engine | Compare engines | 200.80 KB | **52.77 KB** | 44.47 KB | not budgeted | - | - |
 | shared by mp4box and mediabunny | with mp4box or mediabunny | 3.01 KB | **1.50 KB** | 1.35 KB | not budgeted | - | - |
-| initial: main + CSS + worker entry |  | 253.88 KB | **80.49 KB** | 69.83 KB | 85.00 KB | 4.51 KB | ok |
-| first MP4 analysis: initial + probe client + statistics + ISO BMFF parser |  | 301.76 KB | **100.00 KB** | 87.50 KB | 100.00 KB | 0.01 KB | ok |
-| first VFR MP4 analysis: first MP4 + rate profile core |  | 305.11 KB | **101.84 KB** | 89.21 KB | 102.00 KB | 0.16 KB | ok |
-| first Matroska analysis: initial + probe client + statistics + Matroska parser |  | 300.06 KB | **98.87 KB** | 86.59 KB | 100.00 KB | 1.13 KB | ok |
+| initial: main + CSS + worker entry |  | 253.88 KB | **80.49 KB** | 69.83 KB | 83.00 KB | 2.51 KB | ok |
+| first MP4 analysis: initial + probe client + statistics + ISO BMFF parser |  | 301.76 KB | **100.00 KB** | 87.50 KB | 103.00 KB | 3.00 KB | ok |
+| first VFR MP4 analysis: first MP4 + rate profile core |  | 305.11 KB | **101.84 KB** | 89.21 KB | 105.00 KB | 3.16 KB | ok |
+| first Matroska analysis: initial + probe client + statistics + Matroska parser |  | 300.06 KB | **98.87 KB** | 86.59 KB | 102.00 KB | 3.13 KB | ok |
 
 <!-- tables:bundle:end -->
 
@@ -481,7 +481,7 @@ The thresholds are constants in `src/core/segments.ts` and `src/core/stats.ts`. 
 
 <!-- tables:profile:start -->
 
-The profile code is 1.84 KB gzip in the worker and the panel 0.94 KB on the main thread, both lazy. The first VFR MP4 loads 101.84 KB gzip, 1.84 KB more than a CFR one (budget 102.00 KB). Times are the whole analysis, profile included.
+The profile code is 1.84 KB gzip in the worker and the panel 0.94 KB on the main thread, both lazy. The first VFR MP4 loads 101.84 KB gzip, 1.84 KB more than a CFR one (budget 105.00 KB). Times are the whole analysis, profile included.
 
 | File | Rate profile | Frames | Min to max FPS | Node ms | Chrome 155 ms |
 |---|---|---:|---|---:|---:|
