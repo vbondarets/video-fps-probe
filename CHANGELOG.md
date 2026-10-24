@@ -6,17 +6,30 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ### Added
 
-- `ProbeError.reason` on every `worker-failed` the probe raises: `'load'` when code it needs did not load (the worker script, a chunk a worker loads for an engine, a main-thread chunk, or `new Worker()` threw), `'crash'` when it failed after loading. The code stays `worker-failed`. The worker protocol's `error` reply gets an optional `reason: 'load'`; the version stays 1 ([Errors](docs/api.md#errors)).
+- `ProbeError.reason` on every `worker-failed` the probe raises: `'load'` when code it needs did not load (the worker script, a chunk a worker loads for an engine or warms, a main-thread chunk, the probe client of a lazy stub, or `new Worker()` threw), `'crash'` when it failed after loading. The code stays `worker-failed`. The worker protocol's `error` reply gets an optional `reason: 'load'`; the version stays 1 ([Errors](docs/api.md#errors)).
 - [Deploy skew](docs/bundlers.md#deploy-skew): what a tab opened before a redeploy sees and how to recover.
+- Demo: when a file fails because code did not load, the page checks whether another build is deployed. If so, it shows one banner, "A new version of this page was deployed. Reload to continue.", with a Reload button, and the files read "Not analyzed."; if not, each file reads `Worker could not be loaded:` with the error.
 
 ### Fixed
 
-- A worker script that failed to load, for example a 404 in a tab opened before a redeploy, was reported as a bare `worker failed`. It now rejects with `reason: 'load'`, the message `worker script failed to load; the app may have been redeployed` and the error event as `cause`, and, while no worker of the pool has replied, it rejects the queued jobs once instead of fetching the script again for every queued file. The next call loads the worker again.
+- A worker script that failed to load, for example a 404 in a tab opened before a redeploy, was reported as a bare `worker failed`. It now rejects with `reason: 'load'`, the message `worker script failed to load or parse; the app may have been redeployed` and the error event as `cause`. While another worker of the pool is alive, the job waits for it and no further worker starts until the next call; when the failed worker was the last one, its job and the queued jobs reject once instead of fetching the script again for every queued file. The next call loads the worker again.
+- A lazy stub whose probe client chunk failed to load rejected with the browser's import error as it was. It now rejects with `ProbeError('worker-failed')`, `reason: 'load'` and that error as `cause`, so every rejection of a probe or a stub is a `ProbeError`; a `ProbeError` of the factory is passed through. Code that read a stub rejection without `instanceof ProbeError` as a load failure should read `e.reason === 'load'`.
+- A failed `warm` replied without `reason`, so a prewarm whose engine or parser chunk did not load was tagged `crash`. It now carries `reason: 'load'`.
 - Demo: the build time and commit moved from the bundle into meta tags of `index.html`, so a deploy without code changes no longer renames every lazy chunk and breaks the first file in tabs opened before it.
+- Demo: a rate profile or compare panel chunk that failed to load took the whole page down. The panel now stays empty and the page runs its deploy check, also for a parser chunk that a worker started before the deploy cannot import.
+- Demo: an error text above 100 characters was cut into a collapsed note, which hid the URL of a chunk that failed to load. The cut is at 200 characters now.
 
 ### Changed
 
-- The probe client grows by 0.18 KB gzip, so the first MP4 loads 23.46 KB instead of 23.26 KB in the default configuration; the critical path stays 0.67 KB.
+- `isAbortError` and `isTimeoutError` check the name and the code instead of `instanceof`, so a `ProbeError` from another copy of the package counts too. They moved to their own module, which keeps the critical path at 0.67 KB with the stub's load error added.
+- When the last worker of a pool fails to load, the queued jobs reject at once, a transient network error included; before, each queued job started a new worker. The next call retries.
+- `compare` reports a load failure of an engine as `crashed`, as before; `error.reason` now tells it apart from a crash.
+- The probe client grows by 0.22 KB gzip and the own worker entry by 0.03 KB, so the first MP4 loads 23.51 KB instead of 23.26 KB in the default configuration; the critical path stays 0.67 KB.
+- Demo: the sample file loader is a lazy chunk. The first VFR MP4 budget moved from 101.5 KB to 102.0 KB for the reload banner; the first MP4 loads 99.92 KB, under the 100 KB promise.
+
+### Not yet
+
+- Demo: no prewarm before the first file. Prewarming on load or on idle would move about 19.5 KB of lazy loads onto every page view, and a tab that sits unused across a deploy still needs the reload banner.
 
 ## 0.1.0 - 2026-10-24
 
