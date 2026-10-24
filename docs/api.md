@@ -212,7 +212,7 @@ interface EngineDescriptor<Id extends EngineId = EngineId> {
 
 The host of rvfc comes from the per-call `host`, else from `rvfc({ host })`. Without one, or without a DOM, it rejects (`worker-failed` and `unsupported-environment` respectively).
 
-- The peers are optional and never installed with the package: `npm install mp4box` or `npm install mediabunny` (or the yarn, pnpm or bun equivalent). Importing `video-fps-probe/mp4box` or `video-fps-probe/mediabunny` without its peer fails the build, because the peer cannot be resolved.
+- The peers are optional and npm does not install them with the package (verified for npm only; not verified for yarn, pnpm and bun): `npm install mp4box` or `npm install mediabunny` (or the yarn, pnpm or bun equivalent). Importing `video-fps-probe/mp4box` or `video-fps-probe/mediabunny` without its peer fails the build, because the peer cannot be resolved.
 - Engine ids are typed from what you register: `engine: 'mp4box'` without `mp4box()` is a type error, and `ProbeError('engine-not-registered')` at run time.
 
 ### Custom worker
