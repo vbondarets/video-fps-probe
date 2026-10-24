@@ -1376,6 +1376,41 @@ function lateBlock(inp: Inputs): string[] {
   ];
 }
 
+const PROBE_FIELDS: ReadonlyArray<readonly [id: string, label: string]> = [
+  ['avgFps', 'average'],
+  ['avgFps.measured', 'average'],
+  ['nominalFps', 'nominal rate'],
+  ['minFps', 'minimum'],
+  ['maxFps', 'maximum'],
+  ['isVfr', 'VFR flag'],
+];
+
+function rateText(app: string | null): string {
+  const raw = app?.replace(/ \(.*\)$/, '') ?? '';
+  return raw === '' ? 'none' : /^\d+\/\d+$/.test(raw) ? `${raw} (${decimal(raw)})` : raw;
+}
+
+export function probeFullBlock(inp: Inputs): string[] {
+  const probe = inp.acc.engines.find((e) => e.engine === 'mediabunny-idiomatic' && !e.loadSkipped);
+  const full = inp.acc.engines.find((e) => e.engine === 'mediabunny-full' && !e.loadSkipped);
+  if (!probe || !full) return ['- Not run: the mediabunny arms were skipped.'];
+  const lines: string[] = [];
+  for (const f of probe.fixtures) {
+    if (f.name.startsWith('late_')) continue;
+    const g = full.fixtures.find((x) => x.name === f.name);
+    const a = primaryOf(f)?.checks ?? [];
+    const b = g ? (primaryOf(g)?.checks ?? []) : [];
+    const parts = new Map<string, string>();
+    for (const [id, label] of PROBE_FIELDS) {
+      const x = rateText(findCheck(a, id)?.app ?? null);
+      const y = rateText(findCheck(b, id)?.app ?? null);
+      if (findCheck(a, id) && findCheck(b, id) && x !== y && !parts.has(label)) parts.set(label, `${label} ${x} from the probe, ${y} from the full scan`);
+    }
+    if (parts.size > 0) lines.push(`- \`${f.name}\`${isLarge(f, inp.manifest) ? ' (large, local)' : ''}: ${[...parts.values()].join('; ')}.`);
+  }
+  return lines.length > 0 ? lines : ['- None: the probe and the full scan agree on every other fixture.'];
+}
+
 function recorderBlock(inp: Inputs): string[] {
   const engines = inp.acc.engines.filter((e) => !e.loadSkipped);
   const rows = engines.map((e) => {
@@ -1515,6 +1550,7 @@ const BLOCKS: Record<string, (inp: Inputs, doc: Doc) => string[]> = {
   rvfc: rvfcBlock,
   corpus: corpusBlock,
   late: lateBlock,
+  'probe-full': probeFullBlock,
   recorder: recorderBlock,
   size: sizeBlock,
   'accuracy-summary': accuracySummaryBlock,
@@ -1524,7 +1560,7 @@ const BLOCKS: Record<string, (inp: Inputs, doc: Doc) => string[]> = {
 
 export const TARGETS: ReadonlyArray<{ path: string; blocks: readonly string[] }> = [
   { path: 'README.md', blocks: ['size', 'accuracy-summary'] },
-  { path: 'docs/benchmarks.md', blocks: ['headline', 'reads', 'profile', 'engines', 'accuracy', 'deviations', 'late', 'recorder', 'approaches', 'rvfc', 'speed', 'package', 'bundle', 'integration', 'corpus'] },
+  { path: 'docs/benchmarks.md', blocks: ['headline', 'reads', 'profile', 'engines', 'accuracy', 'deviations', 'probe-full', 'late', 'recorder', 'approaches', 'rvfc', 'speed', 'package', 'bundle', 'integration', 'corpus'] },
   { path: 'docs/bundlers.md', blocks: ['vite'] },
   { path: 'report/README.md', blocks: ['report-totals'] },
 ];

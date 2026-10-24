@@ -247,7 +247,20 @@ The field-level table, with app and ffprobe values for every check of all three 
 
 ### Late rate changes (Tier L)
 
-The other committed fixtures have at most 820 frames, and every rate change in them falls inside mediabunny's default probe of 256 packets. Three generated files put the change after more than 5000 constant frames, far past it. Each is at most 1 MB, 64x36, and constant-rate for more than 5000 frames before it changes. This paragraph was corrected after the first run: as committed with the predictions, it said that mediabunny's probe and its full scan gave the same rates on every older fixture, which is false for the `vfr_two_phase_5_200` files (an average of 3400/69 from the probe against 4200/41 from the full scan).
+The other committed fixtures have at most 820 frames, and every rate change in them falls inside mediabunny's default probe of 256 packets. Three generated files put the change after more than 5000 constant frames, far past it. Each is at most 1 MB, 64x36, and constant-rate for more than 5000 frames before it changes. This paragraph was corrected after the first run: as committed with the predictions, it said that mediabunny's probe and its full scan gave the same rates on every older fixture, which is false. Their primary-track average, nominal rate, minimum, maximum or VFR flag differ on these fixtures, generated from `report/accuracy.json` (the three late-change files are in the table below):
+
+<!-- tables:probe-full:start -->
+
+- `vfr_two_phase_5_200.mp4`: average 3400/69 (49.275) from the probe, 4200/41 (102.4) from the full scan.
+- `vfr_two_phase_5_200.webm`: average 3400/69 (49.275) from the probe, 4200/41 (102.4) from the full scan.
+- `vfr_two_phase_5_200.mkv`: average 3400/69 (49.275) from the probe, 4200/41 (102.4) from the full scan.
+- `h264_vfr_remux.mkv`: average 3060/71 (43.099) from the probe, 15540/359 (43.287) from the full scan.
+- `remux_cfr_120_ts16000.mp4`: average 120/1 (120.0) from the probe, 44875/374 (120.0) from the full scan.
+- `elst_trim_vfr_copy.mp4`: average 3400/69 (49.275) from the probe, 4200/41 (102.4) from the full scan.
+- `cfr_240_ts600.mp4`: average 91800/383 (239.7) from the probe, 172440/719 (239.8) from the full scan.
+- `long_vfr_1h_screenrec.mp4` (large, local): average 10625/296 (35.895) from the probe, 145712/3917 (37.200) from the full scan; minimum 500/169 (2.959) from the probe, 50/17 (2.941) from the full scan.
+
+<!-- tables:probe-full:end -->
 
 - `late_30_to_60.mp4`: H.264, 6000 frames at 30 fps (200 s), then 1200 frames at 60 fps (20 s); 7200 frames over 220 s, an average of 360/11 (32.727 fps).
 - `late_25_to_12.5.webm`: VP9, 5500 frames at 25 fps (220 s), then 500 frames at 12.5 fps (40 s); 6000 frames over 260 s (23.077 fps).

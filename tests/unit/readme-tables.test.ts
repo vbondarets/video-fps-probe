@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { staleBenchChunks, withinTolText } from '../../scripts/readme-tables.ts';
+import { probeFullBlock, staleBenchChunks, withinTolText } from '../../scripts/readme-tables.ts';
 
 type Inputs = Parameters<typeof staleBenchChunks>[0];
 
@@ -45,5 +45,28 @@ describe('readme-tables withinTolText', () => {
 
   it('adds nothing when no check is a definition difference by design', () => {
     expect(withinTolText([check('within-tol', 'spans differ by 499 ticks')] as Checks)).toBe('1 within tolerance');
+  });
+});
+
+describe('readme-tables probeFullBlock', () => {
+  type ProbeInputs = Parameters<typeof probeFullBlock>[0];
+  const fixture = (name: string, avg: string, vfr: string) => ({
+    name,
+    category: 'vfr',
+    tracks: [{ trackId: 1, refIndex: 0, primary: true, checks: [{ id: 'avgFps', field: 'avgFps', verdict: 'exact', app: avg, ffprobe: null }, { id: 'isVfr', field: 'isVfr', verdict: 'exact', app: vfr, ffprobe: null }] }],
+  });
+  const arms = (probe: ReturnType<typeof fixture>[], full: ReturnType<typeof fixture>[]) =>
+    ({
+      acc: { engines: [{ engine: 'mediabunny-idiomatic', loadSkipped: null, fixtures: probe }, { engine: 'mediabunny-full', loadSkipped: null, fixtures: full }] },
+      manifest: [{ name: 'a.mp4', committed: true }, { name: 'b.mp4', committed: false }, { name: 'late_x.mp4', committed: true }],
+    }) as unknown as ProbeInputs;
+
+  it('lists the fixtures whose probe and full scan rates differ, without the late-change files', () => {
+    const lines = probeFullBlock(arms([fixture('a.mp4', '30/1', 'false'), fixture('b.mp4', '25/1', 'true'), fixture('late_x.mp4', '30/1', 'false')], [fixture('a.mp4', '60/1', 'true'), fixture('b.mp4', '25/1', 'true'), fixture('late_x.mp4', '60/1', 'true')]));
+    expect(lines).toEqual(['- `a.mp4`: average 30/1 (30.000) from the probe, 60/1 (60.000) from the full scan; VFR flag false from the probe, true from the full scan.']);
+  });
+
+  it('says so when they agree everywhere', () => {
+    expect(probeFullBlock(arms([fixture('a.mp4', '30/1', 'false')], [fixture('a.mp4', '30/1 (exact)', 'false')]))).toEqual(['- None: the probe and the full scan agree on every other fixture.']);
   });
 });
