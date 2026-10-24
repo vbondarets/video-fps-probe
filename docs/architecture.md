@@ -309,7 +309,7 @@ interface ExportDocument {
 ```
 
 - `results` are the own `FileResult` objects in display order, each with a `compare` object when engine runs finished.
-- `build` is the file name of the page's hashed entry chunk (for example `index-uMRvdkcZ.js`), so exports from different devices show whether they ran the same deployed build. `buildTime` and `commit` come from the `VITE_BUILD_TIME` and `VITE_COMMIT` environment variables at build time (Vite exposes `VITE_*` variables) and are null when the build does not set them.
+- `build` is the file name of the page's hashed entry chunk (for example `index-uMRvdkcZ.js`), so exports from different devices show whether they ran the same deployed build. `buildTime` and `commit` come from the `VITE_BUILD_TIME` and `VITE_COMMIT` environment variables at build time and are null when the build does not set them. The demo's Vite config writes them into `index.html` as `build-time` and `build-commit` meta tags instead of the bundle: a value inlined into a chunk renamed that chunk, every chunk that imports it, and so every lazy chunk on each deploy, docs-only deploys included, which broke the first file in every tab opened before the deploy ([deploy skew](bundlers.md#deploy-skew)).
 - The copy path starts the clipboard write synchronously inside the click handler (Safari rejects a write after an `await`), which is why the chunk is preloaded on idle after the first result, before the export buttons matter.
 
 ## Scripts and data

@@ -59,7 +59,7 @@ The same setup, installed from the packed tarball instead of the source, is meas
 
 ## Deploying to GitHub Pages
 
-The demo is deployed from `main`; there is no separate demo branch. [pages.yml](../.github/workflows/pages.yml) runs `npm run build:demo` on every push to `main` (and on a manual run), with `VITE_BUILD_TIME` and `VITE_COMMIT` set so the JSON export names the build, and deploys `demo/dist/` through the GitHub Pages actions. The `github-pages` environment allows deployments from `main` only. [ci.yml](../.github/workflows/ci.yml) runs the same demo build, its size budgets and the e2e suite in Chromium, Firefox and WebKit on every push to `main` and every pull request against it. To roll back, re-run an earlier Pages workflow run: it builds and deploys that run's commit again.
+The demo is deployed from `main`; there is no separate demo branch. [pages.yml](../.github/workflows/pages.yml) runs `npm run build:demo` on every push to `main` (and on a manual run), with `VITE_BUILD_TIME` and `VITE_COMMIT` set so the JSON export names the build (they go into `index.html` as meta tags, not into the chunks, so a deploy without code changes keeps every chunk name), and deploys `demo/dist/` through the GitHub Pages actions. The `github-pages` environment allows deployments from `main` only. [ci.yml](../.github/workflows/ci.yml) runs the same demo build, its size budgets and the e2e suite in Chromium, Firefox and WebKit on every push to `main` and every pull request against it. To roll back, re-run an earlier Pages workflow run: it builds and deploys that run's commit again.
 
 First-time setup (done once for this repository):
 
