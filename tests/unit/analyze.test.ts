@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { analyze, firstReadAhead, type AnalyzerRegistry } from '../../src/core/analyze.ts';
+import { analyze, firstReadAhead, SINGLE_READ_MAX_BYTES, type AnalyzerRegistry } from '../../src/core/analyze.ts';
 import { resolveOptions } from '../../src/core/options.ts';
 import { emptyAnalysis, emptyTrack } from '../../src/core/result.ts';
 import type { ContainerAnalyzer } from '../../src/core/types.ts';
@@ -47,6 +47,36 @@ describe('first read', () => {
     expect(firstReadAhead(60_000, resolveOptions({ costModel: { perReadMs: 0 } }))).toBe(60_000);
     expect(firstReadAhead(500_000, resolveOptions({ readAhead: { head: 200_000 } }))).toBe(500_000);
     expect(firstReadAhead(500_000, resolveOptions({ costModel: { bytesPerMs: 100_000 } }))).toBe(65_536);
+  });
+
+  it('caps the single read at 1 MiB, whatever the cost model', () => {
+    expect(SINGLE_READ_MAX_BYTES).toBe(1_048_576);
+    const fast = resolveOptions({ costModel: { bytesPerMs: 1e8 } });
+    expect(firstReadAhead(SINGLE_READ_MAX_BYTES - 1, fast)).toBe(SINGLE_READ_MAX_BYTES - 1);
+    expect(firstReadAhead(SINGLE_READ_MAX_BYTES, fast)).toBe(65_536);
+    expect(firstReadAhead(13_023_277, fast)).toBe(65_536);
+    for (const costModel of [{ perReadMs: 1e6 }, { perReadMs: Infinity }, { bytesPerMs: Infinity }]) {
+      const opts = resolveOptions({ costModel });
+      expect(firstReadAhead(900_000, opts)).toBe(900_000);
+      expect(firstReadAhead(SINGLE_READ_MAX_BYTES, opts)).toBe(65_536);
+      expect(firstReadAhead(4_000_000_000, opts)).toBe(65_536);
+    }
+  });
+
+  it('keeps the first read at the head window for a negative or NaN cost product', () => {
+    for (const costModel of [{ perReadMs: Number.NaN }, { bytesPerMs: Number.NaN }, { perReadMs: -1 }, { bytesPerMs: -500_000 }, { perReadMs: 0, bytesPerMs: Infinity }]) {
+      const opts = resolveOptions({ costModel });
+      expect(firstReadAhead(200_000, opts)).toBe(65_536);
+      expect(firstReadAhead(4_000_000_000, opts)).toBe(65_536);
+      expect(firstReadAhead(60_000, opts)).toBeGreaterThanOrEqual(60_000);
+    }
+  });
+
+  it('keeps a head window above the cap as the first read', () => {
+    const opts = resolveOptions({ readAhead: { head: 2_000_000 } });
+    expect(firstReadAhead(1_500_000, opts)).toBe(1_500_000);
+    expect(firstReadAhead(2_000_000, opts)).toBe(2_000_000);
+    expect(firstReadAhead(3_000_000, opts)).toBe(2_000_000);
   });
 });
 

@@ -21,9 +21,12 @@ export const DEFAULT_ANALYZERS: Readonly<AnalyzerRegistry> = {
 
 const SNIFF_BYTES = 1024;
 
+export const SINGLE_READ_MAX_BYTES = 1024 * 1024;
+
 export function firstReadAhead(size: number, opts: ResolvedAnalyzeOptions): number {
   const { perReadMs, bytesPerMs } = opts.costModel;
-  return size - opts.readAhead.head < perReadMs * bytesPerMs ? size : opts.readAhead.head;
+  const head = opts.readAhead.head;
+  return size < Math.max(head, Math.min(head + perReadMs * bytesPerMs, SINGLE_READ_MAX_BYTES)) ? size : head;
 }
 
 export function isAbortError(e: unknown): boolean {
