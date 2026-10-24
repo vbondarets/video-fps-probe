@@ -139,6 +139,8 @@ function fileDefinition(ctx: OutcomeContext, c: CheckResult): string | null {
     s.startPts !== null && s.durationTs !== null ? ticksToSec(s.startPts + s.durationTs, s.timeBase) : null,
   ]);
   if (ends.some((e) => nearSec(app, e))) return 'the end timestamp of the last frame, not the duration from the start';
+  const lastStarts = (ctx.ref?.videoStreams ?? []).map((s) => (s.packets?.lastPts != null ? ticksToSec(s.packets.lastPts, s.timeBase) : null));
+  if (lastStarts.some((e) => nearSec(app, e))) return "the timestamp of the last frame, without that frame's duration; ffprobe reports the container duration";
   return null;
 }
 

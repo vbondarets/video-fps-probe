@@ -374,6 +374,8 @@ export function runSelfTest(): number {
   expectEq('outcome: another format duration', outcomeOf('mp4box-idiomatic', { info: MP4_INFO, ref: cfrRef, layout: movie, result: appResult([appTrack()], { formatDurationSec: 2.5 }) }, 'formatDurationSec'), 'wrong');
   expectEq('outcome: failing like ffprobe', outcomeOf('mediabunny-full', { info: MP4_INFO, ref: refFile([], { ok: false, stderr: ['error reading header'] }), result: appResult([], { error: 'internal error' }) }, 'error'), 'definition-differs');
   expectEq('outcome: VFR on a CFR fixture', outcomeOf('mediabunny-full', { info: MP4_INFO, ref: cfrRef, result: appResult([appTrack({ isVfr: true })]) }, 'isVfr'), 'wrong');
+  const lastStart = refStream({ packets: { ...refStream().packets!, firstPts: 0, lastPts: 89089 } });
+  expectEq('outcome: the last frame timestamp', outcomeOf('mediabunny-idiomatic', { info: MP4_INFO, ref: refFile([lastStart]), result: appResult([appTrack()], { formatDurationSec: 89089 / 30000 }) }, 'formatDurationSec'), 'definition-differs');
   expectEq('outcome: the own engine is classified too', outcomeOf('own', { info: MP4_INFO, ref: cfrRef, result: appResult([appTrack({ frames: 91 })]) }, 'frames'), 'wrong');
 
   const problems: string[] = [];
