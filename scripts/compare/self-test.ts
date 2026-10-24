@@ -368,20 +368,55 @@ export function runSelfTest(): number {
   expectEq('outcome: a float within 1e-6', outcomeOf('mediabunny-idiomatic', { info: MP4_INFO, ref: cfrRef, result: appResult([appTrack({ avgFps: rat(2997003, 100000), avgFpsFfprobe: null })]) }, 'avgFps'), 'definition-differs');
   expectEq('outcome: a different rate', outcomeOf('mediabunny-idiomatic', { info: MP4_INFO, ref: cfrRef, result: appResult([appTrack({ avgFps: rat(25, 1), avgFpsFfprobe: null })]) }, 'avgFps'), 'wrong');
   const span = refStream({ avgFrameRate: '100/3', packets: { ...refStream().packets!, avgFromPts: fps(100, 3), avgFromPtsFrames: 200, firstPts: 0, lastPts: 538500, avgFromPtsSpanTicks: 540000 }, timeBase: { num: 1, den: 90000 } });
-  expectEq('outcome: the mean frame interval', outcomeOf('mediabunny-idiomatic', { info: MP4_INFO, ref: refFile([span]), result: appResult([appTrack({ avgFps: rat(11940, 359), avgFpsFfprobe: null })]) }, 'avgFps'), 'definition-differs');
+  expectEq('outcome: the mean frame interval, not the arm definition', outcomeOf('mediabunny-idiomatic', { info: MP4_INFO, ref: refFile([span]), result: appResult([appTrack({ avgFps: rat(11940, 359), avgFpsFfprobe: null })]) }, 'avgFps'), 'unverified');
+  expectEq('outcome: the mean frame interval of the tuned average', outcomeOf('mediabunny-tuned', { info: MP4_INFO, ref: refFile([span]), result: appResult([appTrack({ avgFps: rat(11940, 359), avgFpsFfprobe: null })]) }, 'avgFps'), 'unverified');
+  const lattice = refStream({ timeBase: { num: 1, den: 1000 }, avgFrameRate: '4000/133', packets: { ...refStream().packets!, packets: 4, presentedPackets: 4, avgFromPts: fps(4000, 133), ptsPresented: [0, 33, 67, 100] } });
+  const metrics = (warning: string, avg: Rational) => appTrack({ avgFps: avg, avgFpsFfprobe: null, warnings: [warning] });
+  expectEq(
+    'outcome: frame rate metrics in whole frames of the underlying rate',
+    outcomeOf('mediabunny-full', { info: MP4_INFO, ref: refFile([lattice]), result: appResult([metrics('computeFrameRateMetrics: underlying 29.97002997002997, min 1, constant true, 4 packets probed', rat(30000, 1001))]) }, 'avgFps'),
+    'definition-differs',
+  );
+  expectEq(
+    'outcome: frame rate metrics from raw ticks',
+    outcomeOf('mediabunny-full', { info: MP4_INFO, ref: refFile([lattice]), result: appResult([metrics('computeFrameRateMetrics: underlying null, min 1, constant false, 4 packets probed', rat(30, 1))]) }, 'avgFps'),
+    'definition-differs',
+  );
+  expectEq(
+    'outcome: frame rate metrics that the file does not give',
+    outcomeOf('mediabunny-full', { info: MP4_INFO, ref: refFile([lattice]), result: appResult([metrics('computeFrameRateMetrics: underlying null, min 1, constant false, 4 packets probed', rat(1000, 1))]) }, 'avgFps'),
+    'wrong',
+  );
+  const trimmed = refStream({ packets: { ...refStream().packets!, discardedPackets: 5 } });
+  expectEq(
+    'outcome: frame rate metrics over packets the edit list discards',
+    outcomeOf('mediabunny-full', { info: MP4_INFO, ref: refFile([trimmed]), result: appResult([metrics('computeFrameRateMetrics: underlying null, min 1, constant false, 90 packets probed', rat(25, 1))]) }, 'avgFps'),
+    'unverified',
+  );
   const movie: FileLayout = { fragmented: false, hasSidx: false, topLevel: ['ftyp', 'moov', 'mdat'], movieDurationSec: 3.07, tracks: [] };
   expectEq('outcome: the movie header duration', outcomeOf('mp4box-idiomatic', { info: MP4_INFO, ref: cfrRef, layout: movie, result: appResult([appTrack()], { formatDurationSec: 3.07 }) }, 'formatDurationSec'), 'definition-differs');
+  expectEq('outcome: the movie header duration of an arm that does not read it', outcomeOf('mediabunny-idiomatic', { info: MP4_INFO, ref: cfrRef, layout: movie, result: appResult([appTrack()], { formatDurationSec: 3.07 }) }, 'formatDurationSec'), 'unverified');
+  const fragmentedMovie: FileLayout = { ...movie, fragmented: true, movieDurationSec: 0, fragmentDurationSec: 4.08 };
+  expectEq('outcome: the mehd fragment duration', outcomeOf('mp4box-idiomatic', { info: MP4_INFO, ref: cfrRef, layout: fragmentedMovie, result: appResult([appTrack()], { formatDurationSec: 4.08 }) }, 'formatDurationSec'), 'definition-differs');
   expectEq('outcome: another format duration', outcomeOf('mp4box-idiomatic', { info: MP4_INFO, ref: cfrRef, layout: movie, result: appResult([appTrack()], { formatDurationSec: 2.5 }) }, 'formatDurationSec'), 'wrong');
   expectEq('outcome: failing like ffprobe', outcomeOf('mediabunny-full', { info: MP4_INFO, ref: refFile([], { ok: false, stderr: ['error reading header'] }), result: appResult([], { error: 'internal error' }) }, 'error'), 'definition-differs');
   expectEq('outcome: VFR on a CFR fixture', outcomeOf('mediabunny-full', { info: MP4_INFO, ref: cfrRef, result: appResult([appTrack({ isVfr: true })]) }, 'isVfr'), 'wrong');
   const lastStart = refStream({ packets: { ...refStream().packets!, firstPts: 0, lastPts: 89089 } });
-  expectEq('outcome: the last frame timestamp', outcomeOf('mediabunny-idiomatic', { info: MP4_INFO, ref: refFile([lastStart]), result: appResult([appTrack()], { formatDurationSec: 89089 / 30000 }) }, 'formatDurationSec'), 'definition-differs');
+  expectEq('outcome: the last frame timestamp', outcomeOf('mediabunny-idiomatic', { info: MP4_INFO, ref: refFile([lastStart]), result: appResult([appTrack()], { formatDurationSec: 89089 / 30000 }) }, 'formatDurationSec'), 'unverified');
+  const ended = refStream({ packets: { ...refStream().packets!, lastPacketEndSec: 3.07 } });
+  expectEq('outcome: the end timestamp of computeDuration()', outcomeOf('mediabunny-idiomatic', { info: MP4_INFO, ref: refFile([ended]), result: appResult([appTrack({ durationSec: 3.07 })]) }, 'durationSec'), 'definition-differs');
+  expectEq('outcome: the end timestamp with an audio track', outcomeOf('mediabunny-idiomatic', { info: MP4_INFO, ref: refFile([ended], { audioCount: 1 }), result: appResult([appTrack()], { formatDurationSec: 3.5 }) }, 'formatDurationSec'), 'unverified');
   expectEq('outcome: a frame count from the full scan', outcomeOf('mediabunny-full', { info: MP4_INFO, ref: cfrRef, result: appResult([appTrack({ frames: 91 })]) }, 'frames'), 'wrong');
   expectEq('outcome: no frame count in the default recipe', outcomeOf('mediabunny-idiomatic', { info: MP4_INFO, ref: cfrRef, result: appResult([appTrack({ frames: 91 })]) }, 'frames'), 'not-provided');
   const longVfr = refStream({ avgFrameRate: '186/5', nbFrames: 133920, packets: { ...refStream().packets!, packets: 133920, presentedPackets: 133920, avgFromPts: fps(186, 5), ptsPresented: null } });
   const sampledTrack = (warning: string) => appTrack({ avgFps: rat(10625, 296), avgFpsFfprobe: null, warnings: [warning] });
-  expectEq('outcome: a sampled rate the reference cannot check', outcomeOf('mediabunny-idiomatic', { info: MP4_INFO, ref: refFile([longVfr]), result: appResult([sampledTrack('computeFrameRateMetrics: 256 packets probed')]) }, 'avgFps'), 'definition-differs');
-  expectEq('outcome: a full scan rate the reference cannot check', outcomeOf('mediabunny-full', { info: MP4_INFO, ref: refFile([longVfr]), result: appResult([sampledTrack('computeFrameRateMetrics: 133920 packets probed')]) }, 'avgFps'), 'wrong');
+  expectEq('outcome: a sampled rate the reference cannot check', outcomeOf('mediabunny-idiomatic', { info: MP4_INFO, ref: refFile([longVfr]), result: appResult([sampledTrack('computeFrameRateMetrics: underlying null, constant false, 256 packets probed')]) }, 'avgFps'), 'unverified');
+  const longSpan = refStream({ ...longVfr, packets: { ...longVfr.packets!, firstPts: 0, lastPts: 3600 * 30000 } });
+  expectEq(
+    'outcome: a full scan rate checked without per-frame timestamps',
+    outcomeOf('mediabunny-full', { info: MP4_INFO, ref: refFile([longSpan]), result: appResult([sampledTrack('computeFrameRateMetrics: underlying null, constant false, 133920 packets probed')]) }, 'avgFps'),
+    'wrong',
+  );
   expectEq('outcome: the own engine is classified too', outcomeOf('own', { info: MP4_INFO, ref: cfrRef, result: appResult([appTrack({ frames: 91 })]) }, 'frames'), 'wrong');
 
   const problems: string[] = [];

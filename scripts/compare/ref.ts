@@ -30,6 +30,7 @@ export interface RefPackets {
   firstPts?: number | null;
   lastPts?: number | null;
   lastPacketEndSec?: number | null;
+  discardedPackets?: number | null;
   ptsPresented?: number[] | null;
 }
 
@@ -137,6 +138,7 @@ function packetsOf(v: unknown): RefPackets | null {
     firstPts: numOrNull(rec(r.avgFromPts)?.firstPts),
     lastPts: numOrNull(rec(r.avgFromPts)?.lastPts),
     lastPacketEndSec: numOrNull(rec(r.lastPacketEnd)?.seconds),
+    discardedPackets: numOrNull(r.discardedPackets),
     ptsPresented: Array.isArray(r.ptsPresented) && r.ptsPresented.every((x) => typeof x === 'number') ? (r.ptsPresented as number[]) : null,
   };
 }

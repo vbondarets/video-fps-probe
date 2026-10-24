@@ -5,11 +5,11 @@ import { parseArgs } from 'node:util';
 
 type Verdict = 'exact' | 'within-tol' | 'known-deviation' | 'mismatch' | 'n/a';
 
-type Outcome = 'wrong' | 'definition-differs' | 'not-provided' | 'unsupported-container';
+type Outcome = 'wrong' | 'definition-differs' | 'unverified' | 'not-provided' | 'unsupported-container';
 
-const OUTCOMES: readonly Outcome[] = ['wrong', 'definition-differs', 'not-provided', 'unsupported-container'];
+const OUTCOMES: readonly Outcome[] = ['wrong', 'definition-differs', 'unverified', 'not-provided', 'unsupported-container'];
 
-const OUTCOME_LABEL: Record<Outcome, string> = { wrong: 'wrong', 'definition-differs': 'definition differs', 'not-provided': 'not provided', 'unsupported-container': 'unsupported container' };
+const OUTCOME_LABEL: Record<Outcome, string> = { wrong: 'wrong', 'definition-differs': 'definition differs', unverified: 'unverified', 'not-provided': 'not provided', 'unsupported-container': 'unsupported container' };
 
 interface Check {
   id: string;
@@ -828,13 +828,13 @@ function enginesBlock(inp: Inputs): string[] {
     return list.length === 0 ? 'none' : list.map(([id, n]) => `\`${id}\` ${n}`).join(', ');
   };
   return [
-    ...table(['Arm', 'Library', 'Role', 'Fixtures', 'Checks', 'exact', 'within-tol', 'known deviation', 'wrong', 'definition differs', 'not provided', 'unsupported container', 'n/a'], 'lllrrrrrrrrrr', summary),
+    ...table(['Arm', 'Library', 'Role', 'Fixtures', 'Checks', 'exact', 'within-tol', 'known deviation', ...OUTCOMES.map((k) => OUTCOME_LABEL[k]), 'n/a'], 'lllrrrrrrrrrrr', summary),
     '',
     ...engines.map((e) => `- **${label(e)}**: ${e.arm.recipe}.`),
     '',
-    ...table(['Arm', 'Files', 'Fixtures', 'Checks', 'exact', 'wrong', 'definition differs', 'not provided', 'unsupported container'], 'llrrrrrrr', byFamily),
+    ...table(['Arm', 'Files', 'Fixtures', 'Checks', 'exact', ...OUTCOMES.map((k) => OUTCOME_LABEL[k])], 'llrrrrrrrr', byFamily),
     '',
-    ...engines.filter((e) => e.informational).map((e) => `- ${label(e)}: wrong ${byField(e, 'wrong')}; definition differs ${byField(e, 'definition-differs')}.`),
+    ...engines.filter((e) => e.informational).map((e) => `- ${label(e)}: wrong ${byField(e, 'wrong')}; definition differs ${byField(e, 'definition-differs')}; unverified ${byField(e, 'unverified')}.`),
     '',
     '**Where the libraries win**, from the same reports:',
     '',
@@ -1034,7 +1034,7 @@ function accuracySummaryBlock(inp: Inputs, doc: Doc): string[] {
   const arms = inp.acc.engines.filter((e) => e.informational && !e.loadSkipped);
   const libraries = [...new Set(arms.map((e) => `${LIBRARY_LABEL[e.arm.library] ?? e.arm.library} ${e.arm.version ?? ''}`.trim()))];
   return [
-    `**${n('mismatch')} mismatches against ffprobe ${inp.acc.ffprobeVersions.map((s) => s.replace(/^ffprobe version /, '').replace(/-.*$/, '')).join(', ')}** on the ${fixtures.length} committed fixtures: ${checks.length} field checks, ${n('exact')} exact, ${n('within-tol')} within tolerance, ${n('known-deviation')} known deviation${n('known-deviation') === 1 ? '' : 's'} with a recorded reason, ${n('n/a')} not applicable. The same comparison runs ${libraries.join(' and ')} in ${arms.length} arms (their idiomatic recipes, mediabunny with a full scan, and this package's tuned adapters) and sorts each difference into wrong, definition differs, not provided or unsupported container; the [accuracy section](${doc.link('docs/benchmarks.md')}#accuracy-vs-ffprobe) has the outcomes and where the libraries win.`,
+    `**${n('mismatch')} mismatches against ffprobe ${inp.acc.ffprobeVersions.map((s) => s.replace(/^ffprobe version /, '').replace(/-.*$/, '')).join(', ')}** on the ${fixtures.length} committed fixtures: ${checks.length} field checks, ${n('exact')} exact, ${n('within-tol')} within tolerance, ${n('known-deviation')} known deviation${n('known-deviation') === 1 ? '' : 's'} with a recorded reason, ${n('n/a')} not applicable. The same comparison runs ${libraries.join(' and ')} in ${arms.length} arms (their idiomatic recipes, mediabunny with a full scan, and this package's tuned adapters) and sorts each difference into wrong, definition differs, unverified, not provided or unsupported container; the [accuracy section](${doc.link('docs/benchmarks.md')}#accuracy-vs-ffprobe) has the outcomes and where the libraries win.`,
   ];
 }
 

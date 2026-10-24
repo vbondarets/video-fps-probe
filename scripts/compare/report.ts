@@ -62,7 +62,7 @@ export interface AccuracyReport {
 }
 
 export const OUTCOME_TEXT =
-  '**wrong** (the arm returns a value that differs from ffprobe, and none of the checked definitions explains it), **definition differs** (the value follows another documented definition, checked against the file: a float instead of the exact rational, the timestamp average instead of `avg_frame_rate`, the movie or media header duration; a default probe window is named but not checked where the reference keeps no per-frame timestamps), **not provided** (the arm returns no value for the field, or the field is not part of its recipe), **unsupported container** (the library does not read the container).';
+  "**wrong** (the arm returns a value that differs from ffprobe, and neither the arm's own definition nor another checked one explains it), **definition differs** (the value follows the definition the library documents or implements for the field, evaluated on the file and its reference: a float instead of the exact rational, mediabunny's frame rate metrics over its probe window, the movie or media header duration that mp4box.js reports, an end timestamp instead of a span), **unverified** (the arm's own definition cannot be evaluated on the file, or the value equals another quantity that the arm does not use for the field; counted neither as wrong nor as a definition difference), **not provided** (the arm returns no value for the field, or the field is not part of its recipe), **unsupported container** (the library does not read the container).";
 
 export function esc(s: string | null | undefined): string {
   return (s ?? '').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
@@ -354,13 +354,13 @@ export function renderMarkdown(report: AccuracyReport): string {
   out.push('');
   out.push('## Summary');
   out.push('');
-  out.push('| Arm | Library | Role | Fixtures | Checks | exact | within-tol | known-deviation | wrong | definition differs | not provided | unsupported container | n/a |');
-  out.push('|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|');
+  out.push('| Arm | Library | Role | Fixtures | Checks | exact | within-tol | known-deviation | wrong | definition differs | unverified | not provided | unsupported container | n/a |');
+  out.push('|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|');
   for (const e of report.engines) {
     const role = e.informational ? 'informational' : 'gating';
     const library = libraryLabel(e);
     if (e.loadSkipped) {
-      out.push(`| ${e.engine} | ${library} | ${role} | - | - | - | - | - | - | - | - | skipped: ${esc(e.loadSkipped)} | - |`);
+      out.push(`| ${e.engine} | ${library} | ${role} | - | - | - | - | - | - | - | - | - | skipped: ${esc(e.loadSkipped)} | - |`);
       continue;
     }
     const total = VERDICTS.reduce((n, v) => n + e.counts[v], 0);

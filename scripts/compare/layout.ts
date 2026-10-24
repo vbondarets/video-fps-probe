@@ -64,17 +64,29 @@ function trackOf(buf: Buffer, trak: Child): LayoutTrack | null {
   };
 }
 
-async function readMoov(handle: FileHandle, offset: number, size: number): Promise<Pick<FileLayout, 'movieDurationSec' | 'tracks'>> {
+function fragmentDuration(buf: Buffer, moov: Child, timescale: number): number | null {
+  const mehd = find(buf, find(buf, moov, 'mvex'), 'mehd');
+  if (!mehd || timescale <= 0 || mehd.end - mehd.start < 8) return null;
+  const v1 = buf.readUInt8(mehd.start) === 1;
+  if (v1 && mehd.end - mehd.start < 12) return null;
+  return (v1 ? Number(buf.readBigUInt64BE(mehd.start + 4)) : buf.readUInt32BE(mehd.start + 4)) / timescale;
+}
+
+async function readMoov(handle: FileHandle, offset: number, size: number): Promise<Pick<FileLayout, 'movieDurationSec' | 'fragmentDurationSec' | 'tracks'>> {
   const buf = Buffer.alloc(size);
   await handle.read(buf, 0, size, offset);
   const top = children(buf, 0, size)[0];
-  if (!top || top.type !== 'moov') return { movieDurationSec: null, tracks: [] };
+  if (!top || top.type !== 'moov') return { movieDurationSec: null, fragmentDurationSec: null, tracks: [] };
   const movie = timing(buf, find(buf, top, 'mvhd'), 20, 12);
   const tracks = children(buf, top.start, top.end)
     .filter((c) => c.type === 'trak')
     .map((t) => trackOf(buf, t))
     .filter((t): t is LayoutTrack => t !== null);
-  return { movieDurationSec: movie && movie.timescale > 0 ? movie.duration / movie.timescale : null, tracks };
+  return {
+    movieDurationSec: movie && movie.timescale > 0 ? movie.duration / movie.timescale : null,
+    fragmentDurationSec: movie ? fragmentDuration(buf, top, movie.timescale) : null,
+    tracks,
+  };
 }
 
 export async function scanIsoBmffLayout(path: string, size: number): Promise<FileLayout | null> {
@@ -83,7 +95,7 @@ export async function scanIsoBmffLayout(path: string, size: number): Promise<Fil
     const head = Buffer.alloc(16);
     const types: string[] = [];
     const seen = new Set<string>();
-    let moov: Pick<FileLayout, 'movieDurationSec' | 'tracks'> = { movieDurationSec: null, tracks: [] };
+    let moov: Pick<FileLayout, 'movieDurationSec' | 'fragmentDurationSec' | 'tracks'> = { movieDurationSec: null, fragmentDurationSec: null, tracks: [] };
     let offset = 0;
     let boxes = 0;
     while (offset + 8 <= size && boxes < MAX_BOXES) {

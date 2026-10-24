@@ -2,9 +2,9 @@ export type Verdict = 'exact' | 'within-tol' | 'known-deviation' | 'mismatch' | 
 
 export const VERDICTS: readonly Verdict[] = ['exact', 'within-tol', 'known-deviation', 'mismatch', 'n/a'];
 
-export type OutcomeClass = 'wrong' | 'definition-differs' | 'not-provided' | 'unsupported-container';
+export type OutcomeClass = 'wrong' | 'definition-differs' | 'unverified' | 'not-provided' | 'unsupported-container';
 
-export const OUTCOME_CLASSES: readonly OutcomeClass[] = ['wrong', 'definition-differs', 'not-provided', 'unsupported-container'];
+export const OUTCOME_CLASSES: readonly OutcomeClass[] = ['wrong', 'definition-differs', 'unverified', 'not-provided', 'unsupported-container'];
 
 export const FIELD_NAMES = [
   'avgFps',
@@ -75,6 +75,7 @@ export interface FileLayout {
   hasSidx: boolean;
   topLevel: string[];
   movieDurationSec?: number | null;
+  fragmentDurationSec?: number | null;
   tracks?: LayoutTrack[];
 }
 
