@@ -103,7 +103,7 @@ test.describe('a tab opened before a redeploy', () => {
     await expect(page.getByRole('alert')).toHaveCount(0);
   });
 
-  test('names the import error on every file and shows no banner when the probe client chunk is missing but the page is unchanged', async ({ page }) => {
+  test('names the import error on every file and shows no banner when the probe client chunk is missing but the page is unchanged', async ({ page, browserName }) => {
     await openApp(page);
     const requests = await redeploy(page, '**/assets/probe-*.js', false);
     await dropFour(page);
@@ -112,6 +112,7 @@ test.describe('a tab opened before a redeploy', () => {
     for (const text of await errors.allInnerTexts()) {
       expect(text.startsWith(NOT_LOADED)).toBe(true);
       expect(text).toMatch(MODULE_LOAD_FAILURE);
+      if (browserName !== 'webkit') expect(text, 'the chunk URL is visible, not cut into a collapsed note').toMatch(/\/assets\/probe-[\w-]+\.js/);
     }
     await expect(page.getByRole('alert')).toHaveCount(0);
     await expect(page.getByRole('status').first()).toHaveText('4 files. Read 0 B of 0 B in 0.00 ms total.');

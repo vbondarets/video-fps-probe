@@ -172,7 +172,7 @@ function Progress({ row }: { row: Row }) {
 }
 
 function ErrorLine({ text }: { text: string }) {
-  return text.length <= 100 ? <p className="err">{text}</p> : <Notes kind="err" label={`${text.slice(0, 100)}...`} items={[text]} />;
+  return text.length <= 200 ? <p className="err">{text}</p> : <Notes kind="err" label={`${text.slice(0, 200)}...`} items={[text]} />;
 }
 
 export const ResultCard = memo(function ResultCard({ row }: { row: Row }) {
