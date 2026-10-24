@@ -296,7 +296,7 @@ The demo in `demo/` is a React app that consumes the package through a custom wo
 | shared by mp4box and mediabunny | with mp4box or mediabunny | 3.01 KB | **1.50 KB** | 1.35 KB | not budgeted | - | - |
 | initial: main + CSS + worker entry |  | 252.69 KB | **80.05 KB** | 69.43 KB | 85.00 KB | 4.95 KB | ok |
 | first MP4 analysis: initial + probe client + statistics + ISO BMFF parser |  | 300.54 KB | **99.53 KB** | 87.07 KB | 100.00 KB | 0.47 KB | ok |
-| first VFR MP4 analysis: first MP4 + rate profile core |  | 303.89 KB | **101.37 KB** | 88.78 KB | 101.50 KB | 0.13 KB | ok |
+| first VFR MP4 analysis: first MP4 + rate profile core |  | 303.89 KB | **101.37 KB** | 88.78 KB | 102.00 KB | 0.63 KB | ok |
 | first Matroska analysis: initial + probe client + statistics + Matroska parser |  | 298.84 KB | **98.40 KB** | 86.15 KB | 100.00 KB | 1.60 KB | ok |
 
 <!-- tables:bundle:end -->
@@ -481,7 +481,7 @@ The thresholds are constants in `src/core/segments.ts` and `src/core/stats.ts`. 
 
 <!-- tables:profile:start -->
 
-The profile code is 1.84 KB gzip in the worker and the panel 0.94 KB on the main thread, both lazy. The first VFR MP4 loads 101.37 KB gzip, 1.84 KB more than a CFR one (budget 101.50 KB). Times are the whole analysis, profile included.
+The profile code is 1.84 KB gzip in the worker and the panel 0.94 KB on the main thread, both lazy. The first VFR MP4 loads 101.37 KB gzip, 1.84 KB more than a CFR one (budget 102.00 KB). Times are the whole analysis, profile included.
 
 | File | Rate profile | Frames | Min to max FPS | Node ms | Chrome 155 ms |
 |---|---|---:|---|---:|---:|
