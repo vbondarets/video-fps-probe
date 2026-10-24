@@ -798,7 +798,7 @@ function approachesBlock(inp: Inputs): string[] {
       'Main risk',
       'own code to maintain; cases outside the corpus are flagged, not verified',
       'last sample duration overridden; must be fed box by box; no Matroska',
-      'packet-rate average, edit-list start trim ignored, whole-cluster Matroska reads',
+      'adapter: packet-rate average, edit-trimmed packets counted as presented; whole-cluster Matroska reads',
       'needs a visible tab and a playable codec; wrong on VFR; seconds per file',
     ]),
   ];
