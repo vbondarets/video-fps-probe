@@ -34,13 +34,14 @@ jobs:
         run: node scripts/fixtures/record-mediarecorder.mjs --browsers firefox --list
 
       - name: Record
+        shell: bash
         run: |
-          mkdir -p "$RUNNER_TEMP/recordings"
-          node scripts/fixtures/record-mediarecorder.mjs "$RUNNER_TEMP/recordings" --browsers firefox | tee "$RUNNER_TEMP/recordings/provenance.jsonl"
+          mkdir -p firefox-recordings
+          node scripts/fixtures/record-mediarecorder.mjs firefox-recordings --browsers firefox | tee firefox-recordings/provenance.jsonl
 
       - name: Upload the recordings
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: firefox-recordings
-          path: ${{ runner.temp }}/recordings
+          path: firefox-recordings
           if-no-files-found: error
