@@ -1,6 +1,7 @@
 import { DEFAULT_COST_MODEL, predictReadMs } from '../options.ts';
 import { avgFrameRate, reduceRational, toFfprobeString } from '../rational.ts';
 import type { BlobReader } from '../reader.ts';
+import type { FfprobeRates } from '../rfps.ts';
 import { emptyAnalysis, emptyTrack } from '../result.ts';
 import { analyzeTimeline, rateFromTicks, rateProfileOf, vfrTolerance, type ProfileJob, type TimelineStats } from '../stats.ts';
 import type { ContainerAnalysis, Provenance, ResolvedAnalyzeOptions, VideoTrackResult } from '../types.ts';
@@ -23,6 +24,8 @@ const MAX_CUE_FALLBACKS = 4;
 const MAX_BLOCK_BYTES = 0x10000000;
 const SAMPLED_IDS: ReadonlySet<number> = new Set([ID_TIMESTAMP, ID_VOID, ID_CRC32, ID_POSITION, ID_PREV_SIZE]);
 export const CPU_MS_PER_BLOCK = DEFAULT_COST_MODEL.perBlockMs;
+const NO_DD = 'no DefaultDuration: avg_frame_rate and r_frame_rate ';
+const NO_DEFAULT_DURATION = `${NO_DD}come from the first packets, which header mode does not read`;
 
 const CODECS =
   'V_AV1:av1 V_VP8:vp8 V_VP9:vp9 V_MPEG4/ISO/AVC:h264 V_MPEGH/ISO/HEVC:hevc V_MPEGI/ISO/VVC:vvc V_MPEG4/ISO/ASP:mpeg4 V_MPEG4/ISO/AP:mpeg4 ' +
@@ -100,7 +103,7 @@ function headerTrack(h: MkvHeader, t: MkvTrack): VideoTrackResult {
     r.nominalFps = { ...reduceRational(1_000_000_000, t.defaultDuration, 30000), kind: 'declared' };
     r.provenance.nominalFps = 'header';
     if (t.frameRate > 0 && t.defaultDuration === Math.trunc(1e9 / t.frameRate)) r.warnings.push(`DefaultDuration derived from Video FrameRate ${t.frameRate}`);
-  } else r.warnings.push('no DefaultDuration: ffprobe estimates avg_frame_rate, the app declares no rate');
+  } else r.warnings.push(NO_DEFAULT_DURATION);
   const tag = h.tagDurations.get(t.uid);
   if (tag !== undefined) {
     r.durationSec = tag;
@@ -211,6 +214,21 @@ export function planExactScan(region: number, est: ScanEstimate | null, opts: Re
   const reads = Math.ceil(est.large + est.smallBytes / SMALL_SCAN_WINDOW);
   const narrow = plan(SMALL_SCAN_WINDOW, reads, Math.min(region, reads * SMALL_SCAN_WINDOW));
   return narrow.ms < wide.ms ? narrow : wide;
+}
+
+async function ffprobeEstimate(src: ByteSource, h: MkvHeader, first: number): Promise<FfprobeRates | string> {
+  let rates: typeof import('../rfps.ts').ffprobeRates;
+  try {
+    rates = (await import('../rfps.ts')).ffprobeRates;
+  } catch {
+    return 'the estimate code did not load';
+  }
+  try {
+    return await rates(src, h, first, { newScanState, scanSegment });
+  } catch (e) {
+    src.reader.checkAbort();
+    return `the estimate failed: ${e instanceof Error ? e.message : String(e)}`;
+  }
 }
 
 async function exactScan(src: ByteSource, st: ScanState, start: number, opts: ResolvedAnalyzeOptions): Promise<void> {
@@ -393,6 +411,18 @@ export async function analyzeMatroska(reader: BlobReader, opts: ResolvedAnalyzeO
   if (mode === 'auto') {
     mode = plan.ms <= opts.exactBudgetMs ? 'exact' : 'probe';
     if (mode === 'probe') w.push(`exact block scan skipped: predicted ${plan.ms.toFixed(0)} ms exceeds the ${opts.exactBudgetMs} ms budget`);
+  }
+  const r0 = a.videoTracks[0];
+  if (!t0.defaultDuration) {
+    const est = await ffprobeEstimate(src, h, first);
+    if (typeof est !== 'string') {
+      r0.avgFpsFfprobe = est.avg;
+      r0.rFpsFfprobe = est.r;
+    }
+    r0.warnings[r0.warnings.indexOf(NO_DEFAULT_DURATION)] =
+      typeof est === 'string'
+        ? `${NO_DD}not reproduced (${est})`
+        : `${NO_DD}estimated like ffprobe from ${est.packets} video packets`;
   }
   if (mode === 'exact') {
     src.window = plan.window;

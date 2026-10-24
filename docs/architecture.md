@@ -28,6 +28,7 @@ tests/                             vitest suites, e2e, consumer fixtures and dis
 | `rational.ts` | Exact BigInt port of FFmpeg `av_reduce`, `avgFrameRate(ts, N, D)`, ffprobe-style `num/den` strings |
 | `stats.ts` | `analyzeTimeline`: container-independent timeline statistics (research 4.3). Input is run-length segments (MP4) or a PTS array (Matroska); output is average, presented frames, duplicates, tail exclusion, VFR rule, min/max, nominal and dominant rate, plus a deferred rate profile job when the frame intervals differ by more than 7.5%. `rateProfileOf(job)` loads `segments.ts` and runs the job |
 | `segments.ts` | `rateProfile`: CUSUM segmentation of the frame intervals, anomalies (rate change, freeze, gap, burst), the uneven flag, the summary line and the sparkline buckets. Lazy chunk, imported only by `rateProfileOf` |
+| `rfps.ts` | `ffprobeRates`: the `avg_frame_rate` and `r_frame_rate` that ffprobe estimates for a Matroska track without DefaultDuration, from the first packets of every track in file order (`avformat_find_stream_info` and `ff_rfps_calculate` of FFmpeg 8.1.1, re-implemented). Lazy chunk, imported only by the Matroska parser, which passes in its block walker ([implementation notes](implementation-notes.md#ffprobe-frame-rates-without-defaultduration-020)) |
 | `sniff.ts` | Container detection from the first bytes, never from the file name; names known non-video signatures in the error |
 | `options.ts` | Defaults and `resolveOptions`: read-ahead sizes (head 64 KiB, fragment 1 MiB, Matroska scan 1 MiB, tail 256 KiB), cost model (0.8 ms per read, 500 kB/ms, 0.0002 ms per block or laced frame), exact-scan budget (150 ms), expansion limit (5M samples, also the Matroska PTS array cap), `predictReadMs` |
 | `result.ts` | `emptyAnalysis()`, `emptyTrack()`, `primaryTrack()` shared by the parsers, engines, API and demo |
@@ -199,7 +200,7 @@ probe.analyze(file)
 
 **ISO BMFF.** Top-level walk: `ftyp`, then `moov` read exactly (a moov at the end costs one extra read of the remainder), `moof` windows with read-ahead and sidx or mfra prefetch, `mfra` stops the walk. Then the ffprobe header extent is emulated, each video track is built (rates, edit window, timeline segments into `analyzeTimeline`), the primary track is picked and the format duration is computed.
 
-**Matroska.** Stage A header (budget 5 reads and 1 MiB, with resync) gives tracks, DefaultDuration, Duration and tags. Mode `header` stops there. Otherwise the first Cluster is found, the block density is sampled and a scan plan is costed. `auto` runs the exact scan when the prediction is within the budget (150 ms by default) and the sampled probe otherwise. Exact walks every block header and feeds the PTS array to `analyzeTimeline`; probe samples clusters from Cues plus a tail scan and never reports an average.
+**Matroska.** Stage A header (budget 5 reads and 1 MiB, with resync) gives tracks, DefaultDuration, Duration and tags. Mode `header` stops there. Otherwise the first Cluster is found, the block density is sampled and a scan plan is costed. When the video track has no DefaultDuration, `rfps.ts` is loaded first and walks the first Clusters until ffprobe would stop, for the rates ffprobe estimates. `auto` runs the exact scan when the prediction is within the budget (150 ms by default) and the sampled probe otherwise. Exact walks every block header and feeds the PTS array to `analyzeTimeline`; probe samples clusters from Cues plus a tail scan and never reports an average.
 
 **Library engines.** mp4box and mediabunny run on their prebuilt worker (or a custom worker that serves them) through the same protocol; the runtime imports the engine on its first job and returns a `FileResult` tagged with its engine. rvfc runs on the main thread through `runInline` and plays the file in a visible host element; it has no IO counters.
 
@@ -214,6 +215,7 @@ probe.analyze(file)
 | statistics | `core/stats.ts` and what it shares | `import()` with each parser or engine, in parallel | first parser or engine, once per worker |
 | ISO BMFF, Matroska | `src/core/isobmff`, `src/core/matroska` | `import()` in `core/analyze.ts` | first file of that container, once per worker |
 | segments | `core/segments.ts` (rate profile) | `import()` in `stats.ts` | first track with unequal intervals, once per worker |
+| rfps | `core/rfps.ts` (ffprobe frame rate estimate) | `import()` in the Matroska parser | first Matroska track without DefaultDuration in probe or exact mode, once per worker |
 | mp4box, mediabunny | the library and its adapter | `import()` in the runtime | first job of that engine |
 | rVFC | `engines/rvfc.ts` | `import()` from the `rvfc()` descriptor, main thread | first rvfc run |
 | main-thread copies | runtime and parsers for the calling thread | `import()` in the inline route or the root `analyze()` | only inline, without `Worker`, or a root `analyze()` |

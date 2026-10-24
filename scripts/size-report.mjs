@@ -55,6 +55,12 @@ export const BUDGETS = {
     required: false,
     why: 'Segmentation, anomalies, uneven flag and sparkline buckets. Fetched by the worker only for a timeline with unequal frame rates (VFR), after the parser chunk. Measured 1.79 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB. Not required: when the chunk is merged into another one, that chunk budget catches the growth.',
   },
+  rfps: {
+    label: 'lazy ffprobe frame rate estimate (rfps)',
+    limit: 3.5 * KB,
+    required: false,
+    why: 'The ffprobe avg_frame_rate and r_frame_rate estimate for a Matroska or WebM file without DefaultDuration, fetched by the Matroska parser chunk only for such a file, in probe and exact mode. Measured 2.75 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB. Not required: a build whose Matroska files never need it still emits it, and when the chunk is merged into the parser, the Matroska budget catches the growth.',
+  },
   client: {
     label: 'lazy probe client',
     limit: 3.5 * KB,
@@ -84,6 +90,12 @@ export const BUDGETS = {
     limit: 105 * KB,
     required: false,
     why: `The demo page plus the first MP4 or MOV result with unequal frame rates, which also fetches the rate profile chunk. Measured 101.84 KB when set; the previous limit was 102.0 KB, set by the owner's rule of 2026-10-23 for the demo only (the measurement rounded up to 0.5 KB). ${DEMO_RESET} With the lazy probe client and the shared statistics chunk, the component limits (83 + 3.5 + 5 + 13.5 + 2 = 107 KB) add up to more than this limit, so it can trip while every component is within its own limit. Not required: without a segments chunk the code lives elsewhere and the first MP4 analysis covers it.`,
+  },
+  firstMkvEstimate: {
+    label: 'first Matroska analysis without DefaultDuration (initial + client + Matroska + rfps + shared chunks)',
+    limit: 105.5 * KB,
+    required: false,
+    why: 'The demo page plus the first MKV or WebM result of a file without DefaultDuration, such as a browser MediaRecorder recording, which also fetches the ffprobe frame rate estimate. Measured 102.06 KB when set; limit is the measurement plus 3 percent, rounded up to 0.5 KB, as for the other demo rows. Not required: without an rfps chunk the code lives in the Matroska chunk and the first Matroska analysis covers it.',
   },
   firstMkv: {
     label: 'first Matroska analysis (initial + client + Matroska + shared chunks)',
@@ -270,16 +282,17 @@ const LAZY_BY_NAME = [
   ['isobmff', /^isobmff[-.]/i],
   ['matroska', /^matroska[-.]/i],
   ['segments', /^segments[-.]/i],
+  ['rfps', /^rfps[-.]/i],
   ['rateProfile', /^rateprofile[-.]/i],
   ['deviceInfo', /^deviceinfo[-.]/i],
   ['samples', /^samples[-.]/i],
 ];
 const ENGINE_KINDS = new Set(['mp4box', 'mediabunny', 'engine-shared']);
 const CLIENT_LAZY_KINDS = new Set(['client-compare', 'client-fallback', 'client-inline', 'rvfc', 'client-shared']);
-const WORKER_ONLY_KINDS = new Set(['isobmff', 'matroska', 'segments', 'mp4box', 'mediabunny']);
-const PARSER_KINDS = new Set(['isobmff', 'matroska', 'segments', 'parser-shared']);
-const PATH_ENTRIES = ['isobmff', 'matroska', 'segments'];
-const CHAIN_KINDS = new Set(['isobmff', 'matroska', 'segments', 'mp4box', 'mediabunny']);
+const WORKER_ONLY_KINDS = new Set(['isobmff', 'matroska', 'segments', 'rfps', 'mp4box', 'mediabunny']);
+const PARSER_KINDS = new Set(['isobmff', 'matroska', 'segments', 'rfps', 'parser-shared']);
+const PATH_ENTRIES = ['isobmff', 'matroska', 'segments', 'rfps'];
+const CHAIN_KINDS = new Set(['isobmff', 'matroska', 'segments', 'rfps', 'mp4box', 'mediabunny']);
 const WORKER_BUDGETS = Object.entries(BUDGETS).filter(([, b]) => b.entry);
 
 export function workerBudgetOf(file) {
@@ -511,6 +524,7 @@ export function buildReport(distDir) {
   const firstMp4 = afterChunks(['isobmff']);
   const firstVfrMp4 = afterChunks(['isobmff', 'segments']);
   const firstMkv = afterChunks(['matroska']);
+  const firstMkvEstimate = afterChunks(['matroska', 'rfps']);
   const evaluate = (key, present, value, fileList) => {
     const { label, limit, required, why } = BUDGETS[key];
     let status = 'ok';
@@ -535,16 +549,18 @@ export function buildReport(distDir) {
     ofKindBudget('client', 'client'),
     ofKindBudget('rvfc', 'rvfc'),
     ofKindBudget('segments', 'segments'),
+    ofKindBudget('rfps', 'rfps'),
     ofKindBudget('rateProfile', 'rateProfile'),
     evaluate('initial', has('main'), initial.gzip, initial.files),
     evaluate('firstMp4', firstMp4.present, firstMp4.total.gzip, firstMp4.total.files),
     evaluate('firstVfrMp4', firstVfrMp4.present, firstVfrMp4.total.gzip, firstVfrMp4.total.files),
     evaluate('firstMkv', firstMkv.present, firstMkv.total.gzip, firstMkv.total.files),
+    evaluate('firstMkvEstimate', firstMkvEstimate.present, firstMkvEstimate.total.gzip, firstMkvEstimate.total.files),
   ];
   const failures = budgets.filter((b) => b.status === 'over' || b.status === 'missing').map((b) => `${b.label}: ${b.status}`);
   for (const w of workers) if (!workerBudgetOf(w)) failures.push(`unbudgeted worker ${w}`);
   failures.push(...chains);
-  const composites = { initial, firstMp4: firstMp4.total, firstVfrMp4: firstVfrMp4.total, firstMatroska: firstMkv.total };
+  const composites = { initial, firstMp4: firstMp4.total, firstVfrMp4: firstVfrMp4.total, firstMatroska: firstMkv.total, firstMatroskaEstimate: firstMkvEstimate.total };
   return { distDir, method, workerMethod, notes, chunks, initial, composites, budgets, chains, failures };
 }
 
@@ -586,6 +602,9 @@ export function renderMarkdown(report, label) {
     ['first MP4 analysis', 'initial + client chunk + ISO BMFF chunk + shared chunks', report.composites.firstMp4],
     ...(vfrBuilt ? [['first VFR MP4 analysis', 'initial + client chunk + ISO BMFF chunk + segments chunk + shared chunks', report.composites.firstVfrMp4]] : []),
     ['first Matroska analysis', 'initial + client chunk + Matroska chunk + shared chunks', report.composites.firstMatroska],
+    ...(report.budgets.find((b) => b.key === 'firstMkvEstimate')?.gzip != null
+      ? [['first Matroska analysis without DefaultDuration', 'initial + client chunk + Matroska chunk + rfps chunk + shared chunks', report.composites.firstMatroskaEstimate]]
+      : []),
   ];
   for (const [name, what, t] of rows) out.push(`| **${name}** | ${what} | ${kb(t.raw)} | ${kb(t.gzip)} | ${kb(t.brotli)} |`);
   out.push('');

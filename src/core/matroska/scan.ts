@@ -61,6 +61,8 @@ export interface ScanState {
   switchReads: number;
   largeWindow: number;
   warnings: string[];
+  onBlock?: (t: TrackScan, blk: BlockInfo, block: ElementHeader, blockDuration: number) => void;
+  stop?: boolean;
 }
 
 export type ScanFailure = 'invalid' | 'eof';
@@ -309,7 +311,7 @@ export async function walkCluster(src: ByteSource, st: ScanState, pos: number, m
   let p = c.dataStart;
   const fail = (error: ScanFailure): ClusterWalk => ({ next: p, videoBlocks, error });
   while (p < end) {
-    if (videoBlocks >= maxVideoBlocks) return { next: Math.min(end, p), videoBlocks, error: null };
+    if (videoBlocks >= maxVideoBlocks || st.stop) return { next: Math.min(end, p), videoBlocks, error: null };
     if (st.switchReads <= src.reader.reads) {
       src.window = st.largeWindow;
       st.switchReads = Infinity;
@@ -353,6 +355,7 @@ export async function walkCluster(src: ByteSource, st: ScanState, pos: number, m
           clusterTs = 0;
         }
         const t = addBlock(st, blk, clusterTs, duration);
+        if (t && st.onBlock) st.onBlock(t, blk, block, duration);
         if (t && t.track.type === 1) videoBlocks++;
       }
     }
@@ -378,7 +381,7 @@ export async function scanSegment(src: ByteSource, st: ScanState, start: number,
   let segEnd = h.segmentUnknownSize || h.segmentExtended ? Infinity : h.declaredEnd;
   let p = start;
   st.lastGood = start - 1;
-  for (;;) {
+  while (!st.stop) {
     src.reader.checkAbort();
     onStep?.(p, Math.min(size, segEnd));
     let error: ScanFailure | null = null;

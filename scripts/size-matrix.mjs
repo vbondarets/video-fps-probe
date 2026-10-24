@@ -22,8 +22,9 @@ export const BUDGETS = {
     { key: 'isobmff', limit: 13.5 * KB, why: `The own MP4 and MOV parser chunk of the own worker. Design estimate 13.5 KB; measured 12.21 KB. ${RESET}` },
     { key: 'matroska', limit: 12.5 * KB, why: `The own Matroska and WebM parser chunk of the own worker. Design estimate 12.0 KB; measured 11.14 KB. ${RESET}` },
     { key: 'segments', limit: 2.5 * KB, why: `The rate profile core of the own worker, fetched only for a timeline with unequal frame rates. Design estimate 2.0 KB; measured 1.84 KB. ${RESET}` },
+    { key: 'rfps', limit: 3.5 * KB, why: `The ffprobe frame rate estimate of the own worker, fetched by the Matroska parser only for a Matroska or WebM file without DefaultDuration, read in probe and exact mode. Measured 2.76 KB. ${RESET}` },
     { key: 'firstMp4', limit: 24 * KB, why: `${PROMISE} This row is the second half: everything the first MP4 or MOV file loads lazily, which is the probe client, the own worker entry, the statistics chunk (requested in parallel with the parser) and the ISO BMFF parser. Measured 23.26 KB. Measured plus 10 percent would be 26.0 KB, so the promise stays the limit instead: it is the tighter one and it is what the README states.` },
-    { key: 'allOwn', limit: 40 * KB, why: `Every own path: the probe client, the own worker entry, the statistics, both parsers and the rate profile core. Design estimate 37.0 KB; measured 36.24 KB. ${RESET}` },
+    { key: 'allOwn', limit: 40 * KB, why: `Every own path: the probe client, the own worker entry, the statistics, both parsers, the rate profile core and the ffprobe frame rate estimate. Design estimate 37.0 KB; measured 36.24 KB before the estimate was added. ${RESET}` },
     { key: 'lazyTotal', limit: 79.5 * KB, why: `Every JavaScript file the build emits outside the entry chunk, fetched or not: the probe client with its compare and fallback chunks, the own worker with its chunks, and the main-thread copies of the parsers, the statistics, the sniffer and the worker runtime. The default flavor keeps them as an in-thread own for environments without a Worker global (SSR, Node) and for worker: 'inline'; a root analyze(), not imported here, always runs in the calling thread on the same copies. A browser with a Worker global never fetches them otherwise, so the lazy totals above leave them out. This row bounds what the package adds to the deploy and the CDN. Measured 72.20 KB. ${RESET}` },
   ],
   'zero-config': [
@@ -76,6 +77,7 @@ export const BUDGETS = {
     { key: 'isobmff', limit: 13.5 * KB, why: `As in the default configuration. Measured 12.21 KB. ${RESET}` },
     { key: 'matroska', limit: 12.5 * KB, why: `As in the default configuration. Measured 11.14 KB. ${RESET}` },
     { key: 'segments', limit: 2.5 * KB, why: `As in the default configuration. Measured 1.84 KB. ${RESET}` },
+    { key: 'rfps', limit: 3.5 * KB, why: `As in the default configuration. Measured 2.76 KB. ${RESET}` },
     { key: 'firstMp4', limit: 24 * KB, why: 'Registering engines must not change what the first own analysis loads, so the 24 KB promise of the default configuration applies here too. Measured 23.31 KB.' },
     { key: 'allOwn', limit: 40 * KB, why: `As in the default configuration. Measured 36.29 KB. ${RESET}` },
     { key: 'engineShared', limit: 2 * KB, required: false, why: 'As in the mp4box and mediabunny configurations: each prebuilt engine worker serves one comparison engine, so no worker builds this chunk. The design estimate of 2.0 KB stays the limit.' },
@@ -107,6 +109,7 @@ const LABELS = {
   isobmff: 'ISO BMFF parser (in the own worker)',
   matroska: 'Matroska parser (in the own worker)',
   segments: 'rate profile core (in the own worker)',
+  rfps: 'ffprobe frame rate estimate (in the own worker)',
   firstMp4: 'first MP4 analysis, lazy total',
   allOwn: 'all own paths, lazy total',
   lazyTotal: 'emitted lazy total (every file outside the entry chunk)',
@@ -125,6 +128,7 @@ const CLASSES = [
   ['matroska', /video-fps-probe\/dist\/core\/matroska\//],
   ['stats', /video-fps-probe\/dist\/core\/stats\.js$/],
   ['segments', /video-fps-probe\/dist\/core\/segments\.js$/],
+  ['rfps', /video-fps-probe\/dist\/core\/rfps\.js$/],
   ['engineShared', /video-fps-probe\/dist\/engines\/(?:common|counting)\.js$/],
 ];
 
@@ -291,8 +295,9 @@ export function measureFixture(dir, fixture) {
     isobmff: ownWorker?.byClass.isobmff ? sum(ownWorker.byClass.isobmff) : null,
     matroska: ownWorker?.byClass.matroska ? sum(ownWorker.byClass.matroska) : null,
     segments: ownWorker?.byClass.segments ? sum(ownWorker.byClass.segments) : null,
+    rfps: ownWorker?.byClass.rfps ? sum(ownWorker.byClass.rfps) : null,
     firstMp4: ownWorker && !fixture.singleFileWorkers ? lazyTotal(['isobmff', 'stats']) : null,
-    allOwn: ownWorker && !fixture.singleFileWorkers ? lazyTotal(['isobmff', 'matroska', 'stats', 'segments']) : null,
+    allOwn: ownWorker && !fixture.singleFileWorkers ? lazyTotal(['isobmff', 'matroska', 'stats', 'segments', 'rfps']) : null,
     mp4box: engineChunk('mp4box'),
     mediabunny: engineChunk('mediabunny'),
     engineShared: engineShared > 0 ? engineShared : null,
@@ -400,7 +405,7 @@ export function renderMarkdown(matrix) {
   out.push(`| standalone worker file | video-fps-probe/standalone/own.worker.js | - | - | - | ${cell(matrix.standalone.gzip)} | ${cell(matrix.standalone.gzip)} | - | 1 file, no imports | ${matrix.standalone.status} |`);
   out.push('');
   out.push(
-    'First MP4: the probe client, the worker entry that serves own, the statistics chunk (requested in parallel with the parser) and the ISO BMFF parser. All own paths adds the Matroska parser and the rate profile core. A worker built as iife cannot split, so in zero-config and iife-nosplit the own worker is one file, as the standalone file is in standalone-url, and both columns are the client plus that file.',
+    'First MP4: the probe client, the worker entry that serves own, the statistics chunk (requested in parallel with the parser) and the ISO BMFF parser. All own paths adds the Matroska parser, the ffprobe frame rate estimate of a Matroska file without DefaultDuration and the rate profile core. A worker built as iife cannot split, so in zero-config and iife-nosplit the own worker is one file, as the standalone file is in standalone-url, and both columns are the client plus that file.',
   );
   out.push('');
   const same = sameOwnWorker(matrix, 'zero-config', 'iife-nosplit')

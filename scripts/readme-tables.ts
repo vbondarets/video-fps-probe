@@ -374,6 +374,7 @@ const CHUNK_NAME: Record<string, string> = {
   worker: 'worker entry (reader, sniffing, worker runtime)',
   isobmff: 'ISO BMFF parser',
   matroska: 'Matroska parser',
+  rfps: 'ffprobe frame rate estimate (Matroska without DefaultDuration)',
   rvfc: 'rVFC fallback',
   segments: 'rate profile core (segments, anomalies, sparkline buckets)',
   'parser-shared': 'shared by the parsers and engines (timeline statistics)',
@@ -386,17 +387,18 @@ const CHUNK_NAME: Record<string, string> = {
   'engine-shared': 'shared by mp4box and mediabunny',
 };
 
-const CHUNK_ORDER = ['main', 'css', 'client', 'client-fallback', 'client-compare', 'client-inline', 'client-shared', 'inline-own', 'worker', 'parser-shared', 'isobmff', 'matroska', 'segments', 'rateProfile', 'deviceInfo', 'samples', 'rvfc', 'lazy', 'mp4box', 'mediabunny', 'engine-shared'];
+const CHUNK_ORDER = ['main', 'css', 'client', 'client-fallback', 'client-compare', 'client-inline', 'client-shared', 'inline-own', 'worker', 'parser-shared', 'isobmff', 'matroska', 'rfps', 'segments', 'rateProfile', 'deviceInfo', 'samples', 'rvfc', 'lazy', 'mp4box', 'mediabunny', 'engine-shared'];
 
-const COMPOSITE_BUDGET: Record<string, string> = { initial: 'initial', firstMp4: 'firstMp4', firstVfrMp4: 'firstVfrMp4', firstMatroska: 'firstMkv' };
+const COMPOSITE_BUDGET: Record<string, string> = { initial: 'initial', firstMp4: 'firstMp4', firstVfrMp4: 'firstVfrMp4', firstMatroska: 'firstMkv', firstMatroskaEstimate: 'firstMkvEstimate' };
 
-const OPTIONAL_COMPOSITES = new Set(['firstVfrMp4']);
+const OPTIONAL_COMPOSITES = new Set(['firstVfrMp4', 'firstMatroskaEstimate']);
 
 const COMPOSITE_LABEL: Record<string, string> = {
   initial: 'initial: main + CSS + worker entry',
   firstMp4: 'first MP4 analysis: initial + probe client + statistics + ISO BMFF parser',
   firstVfrMp4: 'first VFR MP4 analysis: first MP4 + rate profile core',
   firstMatroska: 'first Matroska analysis: initial + probe client + statistics + Matroska parser',
+  firstMatroskaEstimate: 'first Matroska analysis without DefaultDuration: first Matroska + ffprobe frame rate estimate',
 };
 
 function fail(message: string): never {
@@ -617,6 +619,7 @@ function headline(inp: Inputs): string[] {
   const browser = majorVersion(inp.bench.environment.chrome);
   const firstMp4 = need(inp.size.composites['firstMp4'], 'size composite firstMp4');
   const firstMkv = need(inp.size.composites['firstMatroska'], 'size composite firstMatroska');
+  const firstMkvEstimate = inp.size.composites['firstMatroskaEstimate'];
   const { prof } = integrationModel(inp.integration);
   const fast = prof('fast4g');
   const bigFixture = own.fixtures.find((f) => f.name === 'big_1080p_moov_end.mp4');
@@ -632,7 +635,7 @@ function headline(inp: Inputs): string[] {
     `- **Accuracy.** The own parsers were checked against ffprobe 8.1.1 on ${own.fixtures.length} fixtures, ${own.fixtures.length - recorded} made with ffmpeg and ${recorded} MediaRecorder recordings from headless Chromium (${committed.length} committed, ${large.length} large local files; phone, camera, screen recorder, Firefox and Safari output is not in the corpus, see Limitations): ${checks} field checks, ${counts.exact} exact, ${withinTolText(own.fixtures.flatMap(checksOf))}, ${plural(counts['known-deviation'], 'known deviation')} with a recorded reason, ${plural(counts.mismatch, 'mismatch').replace(/hs$/, 'hes')}, ${counts['n/a']} not applicable.`,
     `- **Reads.** Median ${plural(median(reads), 'read')} per committed fixture, at most ${Math.max(...reads)}. The ${fmtDuration(longDur)}, ${longFrames}-frame MP4 (${fmtBytes(long.sizeBytes)}) takes ${io(long).reads} reads and ${fmtBytes(io(long).bytesRead)} (${fmtPct(io(long).percent)}% of the file).`,
     `- **Speed.** In ${browser}, warm: median ${fmtMs(median(warm.map((w) => w.medianMs)))} ms per file in the worker and ${fmtMs(median(warm.map((w) => w.medianWallMs)))} ms from file pick to rendered result; the ${fmtDuration(longDur)} file takes ${fmtMs(chromeLong.medianMs)} ms.${big}${staleBenchChunks(inp).length > 0 ? ' Measured on an earlier build, so these figures are not current ([Speed](#speed)).' : ''}`,
-    `- **Size.** A default install (\`video-fps-probe/lazy\`) adds ${fmtKB(matrixMetric(inp, 'default', 'trigger'))} gzip to a host app's critical path. Its first MP4 file loads ${fmtKB(matrixMetric(inp, 'default', 'firstMp4'))} lazily when the host's Vite config sets \`worker: { format: 'es' }\`, and ${fmtKB(matrixMetric(inp, 'zero-config', 'firstMp4'))} with Vite's default worker format, 'iife', which builds the own worker as one file ([Package size](#package-size)). The demo page plus its first MP4 result loads ${fmtKB(firstMp4.gzip)} gzip (page, ${kindGzip(inp.size, 'client') === null ? '' : 'probe client, '}worker entry, ${sharedParserGzip(inp.size) === null ? '' : 'shared statistics chunk, '}ISO BMFF parser); the first Matroska result ${fmtKB(firstMkv.gzip)}.`,
+    `- **Size.** A default install (\`video-fps-probe/lazy\`) adds ${fmtKB(matrixMetric(inp, 'default', 'trigger'))} gzip to a host app's critical path. Its first MP4 file loads ${fmtKB(matrixMetric(inp, 'default', 'firstMp4'))} lazily when the host's Vite config sets \`worker: { format: 'es' }\`, and ${fmtKB(matrixMetric(inp, 'zero-config', 'firstMp4'))} with Vite's default worker format, 'iife', which builds the own worker as one file ([Package size](#package-size)). The demo page plus its first MP4 result loads ${fmtKB(firstMp4.gzip)} gzip (page, ${kindGzip(inp.size, 'client') === null ? '' : 'probe client, '}worker entry, ${sharedParserGzip(inp.size) === null ? '' : 'shared statistics chunk, '}ISO BMFF parser); the first Matroska result ${fmtKB(firstMkv.gzip)}${firstMkvEstimate ? `, or ${fmtKB(firstMkvEstimate.gzip)} for a file without DefaultDuration, such as a MediaRecorder recording, which also loads the ffprobe frame rate estimate` : ''}.`,
     `- **Embedding.** In a host app with a ${fmtMB(inp.integration.host.initialGzipBytes)} gzip initial load, prewarming the worker when the upload dialog opens makes the first result on fast 4G take ${fmtMs(fast.prewarm.totalMs)} ms instead of ${fmtMs(fast.cold.totalMs)} ms ([Embedding in an existing app](#embedding-in-an-existing-app)).${integrationStale(inp) ? ` Measured on an earlier build whose worker entry and parser chunks differ from the current ones, so these figures are not current.` : ''}`,
     `- **Same result in Node and Chrome.** ${inp.bench.sanity.identical} of ${inp.bench.sanity.compared} files give identical results field by field (timing excluded).`,
     `- **Machine.** ${machine(inp)}.`,

@@ -160,7 +160,7 @@ Accepted by `CallOptions`, `defaults` and the root `analyze`. They cross the wor
 
 | Option | Default | Meaning |
 |---|---|---|
-| `matroskaMode` | `'auto'` | `'header'`: headers only; `'probe'`: sampled blocks (no frame count or average); `'exact'`: every block header; `'auto'`: exact when the predicted cost is within `exactBudgetMs`, else probe. A file below the single-read size (see `readAhead`) is read whole in the first read in every mode |
+| `matroskaMode` | `'auto'` | `'header'`: headers only (so no `avgFpsFfprobe` or `rFpsFfprobe` for a track without DefaultDuration); `'probe'`: sampled blocks and the first packets of a track without DefaultDuration (no frame count or average); `'exact'`: every block header; `'auto'`: exact when the predicted cost is within `exactBudgetMs`, else probe. A file below the single-read size (see `readAhead`) is read whole in the first read in every mode |
 | `exactBudgetMs` | `150` | budget for the predicted exact-scan cost in `auto` mode |
 | `readAhead` | `{ head: 65536, fragment: 1048576, matroskaScan: 1048576, tail: 262144 }` | read window sizes in bytes: the first read, ISO BMFF fragment read-ahead, Matroska scan windows, Matroska tail scan. A file smaller than `head + perReadMs x bytesPerMs` (465,536 bytes by default), at most 1 MiB or `head` when that is larger, is read whole in the first read |
 | `costModel` | `{ perReadMs: 0.8, bytesPerMs: 500000, perBlockMs: 0.0002 }` | the exact-scan cost prediction: `reads x perReadMs + bytes / bytesPerMs + blocks x perBlockMs`; `perReadMs x bytesPerMs` also sizes the single first read, up to the 1 MiB cap (`perReadMs: 0`, or a negative or NaN product, keeps the first read at `readAhead.head`) |
@@ -291,8 +291,8 @@ type ProbeResult = FileResult & {
 | `presentedFrames` | frames inside the first non-empty edit (ffprobe `nb_read_frames`); equals `frames` without an edit list |
 | `durationSec`, `startSec` | track duration and start |
 | `avgFps` | `Rational`: presented frames over the presentation span |
-| `avgFpsFfprobe` | the `avg_frame_rate` string ffprobe 8.1.1 prints, or null when it cannot be reproduced |
-| `rFpsFfprobe` | ffprobe's `r_frame_rate` when it can be reproduced (equal intervals), else null |
+| `avgFpsFfprobe` | the `avg_frame_rate` string ffprobe 8.1.1 prints, or null when it cannot be reproduced. Matroska and WebM: the declared rate when the track has a DefaultDuration; without one, the estimate ffprobe makes from the first packets, `0/0` when ffprobe prints that, reproduced in `matroskaMode` `probe`, `exact` and `auto` and null in `header` mode, which reads no block. Outside the reproduced cases it is null and a warning names the reason ([implementation notes](implementation-notes.md#ffprobe-frame-rates-without-defaultduration-020)) |
+| `rFpsFfprobe` | ffprobe's `r_frame_rate` when it can be reproduced, else null: MP4 and MOV with equal intervals; Matroska and WebM with a DefaultDuration between 5 and 1000 fps, or without a DefaultDuration the estimate described for `avgFpsFfprobe`, in the same modes |
 | `nominalFps` | `Rational & { kind: 'exact' \| 'snapped' \| 'declared' }`: the rate when every interval is equal, a standard rate when CFR timestamps jitter, or the declared Matroska rate |
 | `dominantFps` | `{ rate, share }` for a VFR track where one interval covers at least half of the frames; `share` counts frames |
 | `minFps`, `maxFps` | from the longest and the shortest frame interval |

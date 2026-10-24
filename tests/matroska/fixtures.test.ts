@@ -109,7 +109,7 @@ function load(row: ManifestEntry): { ref: FixtureRef; probe: Probe; streams: Pro
   return { ref, probe, streams: realVideo(probe) };
 }
 
-function checkCommon(row: ManifestEntry, r: FileResult, probe: Probe, streams: ProbeStream[]): void {
+function checkCommon(row: ManifestEntry, r: FileResult, probe: Probe, streams: ProbeStream[], mode: MatroskaMode): void {
   expect(r.error).toBeNull();
   expect(r.engine).toBe('own');
   expect(r.container).toBe(row.container);
@@ -127,11 +127,23 @@ function checkCommon(row: ManifestEntry, r: FileResult, probe: Probe, streams: P
     expect(t.codecName).toBe(s.codec_name);
     expect(t.width).toBe(s.width);
     expect(t.height).toBe(s.height);
-    checkDeclared(row, t, s);
+    checkDeclared(row, t, s, mode);
   });
 }
 
-function checkDeclared(row: ManifestEntry, t: VideoTrackResult, s: ProbeStream): void {
+function checkDeclared(row: ManifestEntry, t: VideoTrackResult, s: ProbeStream, mode: MatroskaMode): void {
+  const estimated = t.warnings.some((w) => w.startsWith('no DefaultDuration: avg_frame_rate and r_frame_rate estimated like ffprobe'));
+  if (t.nominalFps?.kind !== 'declared' && t.warnings.some((w) => w.startsWith('no DefaultDuration'))) {
+    if (mode === 'header') {
+      expect(t.avgFpsFfprobe).toBeNull();
+      expect(t.rFpsFfprobe).toBeNull();
+      return;
+    }
+    expect(estimated, t.warnings.join(' | ')).toBe(true);
+    expect(t.avgFpsFfprobe).toBe(s.avg_frame_rate);
+    expect(t.rFpsFfprobe).toBe(s.r_frame_rate);
+    return;
+  }
   if (t.avgFpsFfprobe !== null) {
     expect(t.avgFpsFfprobe).toBe(s.avg_frame_rate);
     const v = ratioValue(t.avgFpsFfprobe);
@@ -216,7 +228,7 @@ describe('Matroska fixtures', () => {
     it.each(ROWS.map((r) => [r.name, r] as const))('%s', async (_name, row) => {
       const { ref, probe, streams } = load(row);
       const r = await run(row, mode);
-      checkCommon(row, r, probe, streams);
+      checkCommon(row, r, probe, streams, mode);
       if (mode === 'exact') checkExact(row, r, ref, streams, await unstoredLastDurations(row));
       else checkHeader(r, streams);
     });
@@ -227,7 +239,7 @@ describe('Matroska fixtures', () => {
       const { ref, probe, streams } = load(row);
       const r = await run(row, 'probe');
       const unstored = await unstoredLastDurations(row);
-      checkCommon(row, r, probe, streams);
+      checkCommon(row, r, probe, streams, 'probe');
       expect(r.scan).toBe('probe');
       streams.forEach((s, i) => {
         const t = r.videoTracks[i];
