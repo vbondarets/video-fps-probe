@@ -1,10 +1,11 @@
-import { lazy, memo, Suspense, useRef, useState, type ReactNode } from 'react';
-import type { FileResult, Provenance, VideoTrackResult } from 'video-fps-probe';
+import { lazy, memo, Suspense, useRef, useState, type FC, type ReactNode } from 'react';
+import type { FileResult, Provenance, RateProfile, VideoTrackResult } from 'video-fps-probe';
 import { bytes, count, duration, fps, ms, primaryTrack, PROVENANCE, readPercent, share } from './format.ts';
 import { cancelRow, rescan, type Row } from './store.ts';
 
-const Compare = lazy(() => import('./Compare.tsx'));
-const RateProfileView = lazy(() => import('./RateProfile.tsx'));
+const Nothing = () => null;
+const Compare = lazy<FC<{ row: Row }>>(() => import('./Compare.tsx').catch(() => ({ default: Nothing })));
+const RateProfileView = lazy<FC<{ p: RateProfile }>>(() => import('./RateProfile.tsx').catch(() => ({ default: Nothing })));
 
 const SCAN_HELP = 'header: container headers only. probe: headers plus sampled blocks. exact: every block walked.';
 

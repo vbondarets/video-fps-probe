@@ -79,6 +79,21 @@ test.describe('a tab opened before a redeploy', () => {
     expect(requests.length).toBeGreaterThan(0);
   });
 
+  test('keeps the page and shows the reload banner when the rate profile or compare panel chunk is gone after a new build', async ({ page }) => {
+    await openApp(page);
+    await addFixtures(page, [MP4]);
+    const requests = await redeploy(page, '**/assets/{RateProfile,Compare}-*.js', true);
+    await addFixtures(page, ['vfr_two_phase_5_200.mp4']);
+    await expect(page.getByRole('alert')).toContainText(BANNER);
+    await expect(page.locator('article.card dl.grid')).toHaveCount(2);
+    await expect(page.locator('article.card section.rp')).toHaveCount(0);
+    await page.locator('article.card').first().locator('details.cmp > summary').click();
+    await expect(page.locator('article.card').first().locator('details.cmp')).toHaveAttribute('open', '');
+    await expect(page.locator('article.card')).toHaveCount(2);
+    expect(requests.some((url) => /RateProfile-/.test(url))).toBe(true);
+    expect(requests.some((url) => /Compare-/.test(url))).toBe(true);
+  });
+
   test('keeps the parser import error of a file when the page is unchanged', async ({ page }) => {
     await openApp(page);
     await addFixtures(page, [MP4]);

@@ -199,6 +199,8 @@ export function useStore(): State {
   );
 }
 
+window.addEventListener('vite:preloadError', () => void checkDeploy());
+
 window.__fpsProbe = {
   get results() {
     return state.rows.flatMap((r) => (r.result ? [r.result] : []));
