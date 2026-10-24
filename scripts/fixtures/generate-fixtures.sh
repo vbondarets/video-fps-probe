@@ -287,6 +287,15 @@ note cfr_240_ts600.mp4 mp4 cfr ok "240 fps at timescale 600 (QuickTime-like slow
 "${FF[@]}" -f lavfi -i "$(src 25 4 160x96)" -f lavfi -i "sine=frequency=440:sample_rate=48000:duration=4" -map 0:v -map 1:a -c:v libx264 -preset ultrafast -crf 30 -pix_fmt yuv420p -bf 2 -c:a aac -b:a 32k -movflags +frag_keyframe+empty_moov+global_sidx+dash fmp4_global_sidx_bframes.mp4
 note fmp4_global_sidx_bframes.mp4 mp4 fmp4 ok "plain ffmpeg DASH output with B-frames: global sidx with earliest_presentation_time 1024, ffprobe duration = ept + subsegment durations (4.08 s, format 4.16 s)"
 
+# ---------- N. Late rate changes (Tier L): constant for more than 5000 frames, then a change; 64x36, at most 1 MB ----------
+LATEV=(-c:v libx264 -preset ultrafast -crf 51 -pix_fmt yuv420p -g 300 -bf 0 -an -x264-params scenecut=0:keyint=300)
+"${FF[@]}" -f lavfi -i "testsrc2=size=64x36:rate=30:duration=200" -f lavfi -i "testsrc2=size=64x36:rate=60:duration=20" -filter_complex '[0:v][1:v]concat=n=2:v=1:a=0[v]' -map '[v]' "${LATEV[@]}" "${VFR[@]}" -video_track_timescale 90000 late_30_to_60.mp4
+note late_30_to_60.mp4 mp4 vfr ok "late change: 6000 frames at 30 fps (200 s), then 1200 at 60 fps (20 s); avg 360/11, the change is far past a 256-packet probe"
+"${FF[@]}" -f lavfi -i "testsrc2=size=64x36:rate=25:duration=220" -f lavfi -i "testsrc2=size=64x36:rate=12.5:duration=40" -filter_complex '[0:v][1:v]concat=n=2:v=1:a=0[v]' -map '[v]' -c:v libvpx-vp9 -deadline realtime -cpu-used 8 -crf 63 -b:v 0 -g 250 -an "${VFR[@]}" "${BX[@]}" late_25_to_12.5.webm
+note late_25_to_12.5.webm webm vfr ok "late change in WebM (VP9): 5500 frames at 25 fps (220 s), then 500 at 12.5 fps (40 s); 6000 frames over 260 s; no DefaultDuration, ffprobe estimates avg_frame_rate 25/1 from the first packets"
+"${FF[@]}" -f lavfi -i "testsrc2=size=64x36:rate=25:duration=250" -vf "settb=1/90000,setpts='(N+gt(N,5999)*250)*3600'" "${LATEV[@]}" "${VFR[@]}" -enc_time_base:v 1/90000 "${BX[@]}" -f matroska late_freeze_10s.mkv
+note late_freeze_10s.mkv matroska vfr ok "late freeze in Matroska (H.264): 25 fps, frame 5999 held 10.04 s at 239.96 s, then 250 more frames; 6250 frames over 260 s"
+
 # ---------- L. Optional heavy files (manifest rows are always written, files only on request) ----------
 note_large long_cfr_3h_60fps.mp4 mp4 long ok "3 h x 60 fps = 648000 frames, 64x36, crf 51: 13 MB, moov 2.6 MB at the end (stsz 4 B/frame)"
 note_large long_vfr_1h_screenrec.mp4 mp4 long ok "1 h VFR screen-recording-like: 133920 frames, stts has 124761 entries (~1 MB)"

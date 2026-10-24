@@ -2,13 +2,13 @@
 
 Synthetic test corpus for the FPS probe, built with ffmpeg 8.1.1 and measured with ffprobe 8.1.1.
 Every video is generated from lavfi test sources (`testsrc2`, `sine`), so there is no third-party
-content. 111 core fixtures (about 12.3 MB) are committed; six optional heavy ones are generated on demand.
+content. 114 core fixtures (about 12.7 MB) are committed; six optional heavy ones are generated on demand.
 
 ## Layout
 
 | Path | Content | Committed |
 | --- | --- | --- |
-| `files/` | the 111 core fixtures | yes |
+| `files/` | the 114 core fixtures | yes |
 | `large/` | optional `--with-long`, `--with-sparse` and `--with-big` files | no (git-ignored) |
 | `manifest.tsv` | one row per fixture, optional ones included | yes |
 | `ref/<file name>.ref.json` | ffprobe ground truth per fixture | yes |
@@ -63,7 +63,7 @@ lying `entry_count` by the box size and warns, while ffprobe fails on it (`ok: f
 | Category | Files | What it covers |
 | --- | --- | --- |
 | `cfr` | 23 | constant rates 23.976 to 240 fps, H.264 in MP4 and VP9 in WebM, exact rationals; two WebM files stream-copied to MP4 (timescale 16000, 1 ms grid) and 240 fps at timescale 600 |
-| `vfr` | 19 | variable rate made by concat, `setpts`, `select`, `mpdecimate`, `setts` (2:3 pulldown) and stream copy, in MP4, MOV, WebM, fragmented MP4 and Matroska, plus the four rate profile fixtures below, a first frame held 2 s with B-frames and a `-ss -c copy` trim of a VFR file |
+| `vfr` | 22 | variable rate made by concat, `setpts`, `select`, `mpdecimate`, `setts` (2:3 pulldown) and stream copy, in MP4, MOV, WebM, fragmented MP4 and Matroska, plus the four rate profile fixtures and the three late-change fixtures below, a first frame held 2 s with B-frames and a `-ss -c copy` trim of a VFR file |
 | `mov` | 11 | QuickTime and MP4 muxing variants, B-frames, edit lists (empty edit, trimmed start), faststart |
 | `fmp4` | 15 | fragmented MP4: `empty_moov`, `default_base_moof`, `global_sidx`, `dash`, `cmaf`, hybrid, DASH segments, plus two fragmented VFR files where ffprobe under-reads the fragments, a file with one fragment removed (tfdt gap) and plain DASH output with B-frames (global sidx with a non-zero earliest presentation time) |
 | `codec` | 9 | HEVC (`hvc1`, `hev1`, in Matroska), AV1, VP8, VP9, ProRes |
@@ -93,6 +93,18 @@ asserts their profiles, and their ffprobe references are checked like every othe
 | `vfr_freeze_2s.mp4` | 30 fps H.264 whose frame 59 is held for 2 s (`setpts` at time base 1/90000): 120 frames over 5.967 s | 1 steady 30 fps segment, 1 freeze of 2 s at 1.967 s, uneven |
 
 The commands are in section F of `scripts/fixtures/generate-fixtures.sh`.
+
+## Late-change fixtures (Tier L)
+
+Three `vfr` files, 64x36 and at most 1 MB each (443 KB together), stay constant for more than 5000 frames before the rate changes, far past a sampling probe such as mediabunny's default of 256 packets. They prove that a whole-file read sees what a sample misses; the predictions were committed in [docs/benchmarks.md](../docs/benchmarks.md#late-rate-changes-tier-l) before the comparison first ran on them. `tests/segments/fixtures.test.ts` asserts their profiles.
+
+| File | Built as | Expected profile |
+| --- | --- | --- |
+| `late_30_to_60.mp4` | `testsrc2` at 30 fps for 200 s concatenated with 60 fps for 20 s (6000 + 1200 frames), H.264 at CRF 51, `-fps_mode passthrough`, timescale 90000; average 360/11 | 2 steady segments (30 fps, 60 fps), 1 rate change at 200 s, uneven |
+| `late_25_to_12.5.webm` | 25 fps for 220 s concatenated with 12.5 fps for 40 s (5500 + 500 frames), VP9 at CRF 63 in WebM without a DefaultDuration (ffprobe's `avg_frame_rate` 25/1 is its estimate from the first packets) | 2 steady segments (25 fps, 12.5 fps), 1 rate change at 220 s, uneven |
+| `late_freeze_10s.mkv` | 25 fps H.264 in Matroska whose frame 5999 is held for 10.04 s (`setpts` at time base 1/90000): 6250 frames over 260 s | 1 steady 25 fps segment, 1 freeze of 10.04 s at 239.96 s |
+
+The commands are in section N of `scripts/fixtures/generate-fixtures.sh`.
 
 ## Optional files
 

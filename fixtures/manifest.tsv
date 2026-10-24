@@ -110,6 +110,9 @@ fmp4_missing_fragment.mp4	mp4	fmp4	ok	yes	fragmented 30 fps with the 3rd moof+md
 elst_trim_vfr_copy.mp4	mp4	vfr	ok	yes	vfr_two_phase_5_200.mp4 trimmed with -ss 0.95 -c copy: elst skips 5 stored frames, avg_frame_rate counts them	files/elst_trim_vfr_copy.mp4
 cfr_240_ts600.mp4	mp4	cfr	ok	yes	240 fps at timescale 600 (QuickTime-like slow motion): deltas alternate 3 and 2 ticks, nominal 240/1	files/cfr_240_ts600.mp4
 fmp4_global_sidx_bframes.mp4	mp4	fmp4	ok	yes	plain ffmpeg DASH output with B-frames: global sidx with earliest_presentation_time 1024, ffprobe duration = ept + subsegment durations (4.08 s, format 4.16 s)	files/fmp4_global_sidx_bframes.mp4
+late_30_to_60.mp4	mp4	vfr	ok	yes	late change: 6000 frames at 30 fps (200 s), then 1200 at 60 fps (20 s); avg 360/11, the change is far past a 256-packet probe	files/late_30_to_60.mp4
+late_25_to_12.5.webm	webm	vfr	ok	yes	late change in WebM (VP9): 5500 frames at 25 fps (220 s), then 500 at 12.5 fps (40 s); 6000 frames over 260 s; no DefaultDuration, ffprobe estimates avg_frame_rate 25/1 from the first packets	files/late_25_to_12.5.webm
+late_freeze_10s.mkv	matroska	vfr	ok	yes	late freeze in Matroska (H.264): 25 fps, frame 5999 held 10.04 s at 239.96 s, then 250 more frames; 6250 frames over 260 s	files/late_freeze_10s.mkv
 long_cfr_3h_60fps.mp4	mp4	long	ok	no	3 h x 60 fps = 648000 frames, 64x36, crf 51: 13 MB, moov 2.6 MB at the end (stsz 4 B/frame)	large/long_cfr_3h_60fps.mp4
 long_vfr_1h_screenrec.mp4	mp4	long	ok	no	1 h VFR screen-recording-like: 133920 frames, stts has 124761 entries (~1 MB)	large/long_vfr_1h_screenrec.mp4
 big_1080p_moov_end.mp4	mp4	big	ok	no	60 s of 1080p30 H.264 with film-grain noise, CRF 21 (604 MB), moov at the end: a phone-sized upload, measured in the browser	large/big_1080p_moov_end.mp4

@@ -1277,6 +1277,36 @@ function rvfcBlock(inp: Inputs): string[] {
   ];
 }
 
+const LATE_ARMS = ['own', 'mediabunny-idiomatic', 'mediabunny-full', 'mediabunny-tuned', 'mp4box-tuned'];
+
+function lateCell(c: Check | undefined): string {
+  if (!c) return '-';
+  const raw = c.app?.replace(/ \(.*\)$/, '') ?? '';
+  const value = raw === '' ? 'none' : /^\d+\/\d+$/.test(raw) ? `${raw} (${decimal(raw)})` : raw;
+  return `${value}, ${c.verdict === 'mismatch' && c.outcome ? OUTCOME_LABEL[c.outcome] : c.verdict}`;
+}
+
+function lateBlock(inp: Inputs): string[] {
+  const names = inp.manifest.filter((r) => r.committed && r.name.startsWith('late_')).map((r) => r.name);
+  const arms = LATE_ARMS.map((id) => inp.acc.engines.find((e) => e.engine === id)).filter((e): e is EngineReport => !!e && !e.loadSkipped);
+  const rows = names.flatMap((name) =>
+    arms.map((e) => {
+      const label = ENGINE_LABEL[e.engine] ?? e.engine;
+      const f = e.fixtures.find((x) => x.name === name);
+      if (!f) return row([`\`${name}\``, label, 'not run', '', '', '', '']);
+      if (!familiesOf(e).includes(familyOf(f))) return row([`\`${name}\``, label, 'does not read the container', '', '', '', '']);
+      const checks = primaryOf(f)?.checks ?? [];
+      const avg = findCheck(checks, f.family === 'matroska' ? 'avgFps.measured' : 'avgFps');
+      return row([`\`${name}\``, label, lateCell(avg), lateCell(findCheck(checks, 'minFps')), lateCell(findCheck(checks, 'maxFps')), lateCell(findCheck(checks, 'isVfr')), fmtMs(io(f).ms)]);
+    }),
+  );
+  return [
+    `Each cell is the arm's value and its verdict, or the outcome of a mismatch. The average is \`avgFps\` for MP4 and the measured average for Matroska, whose rule scores it only after a full scan. Node ms is the median of ${inp.acc.options.repeat} runs.`,
+    '',
+    ...table(['File', 'Arm', 'Average', 'Min FPS', 'Max FPS', 'VFR flag', 'Node ms'], 'llllllr', rows),
+  ];
+}
+
 function corpusBlock(inp: Inputs): string[] {
   const cats = new Map<string, ManifestRow[]>();
   for (const r of inp.manifest) cats.set(r.category, [...(cats.get(r.category) ?? []), r]);
@@ -1404,6 +1434,7 @@ const BLOCKS: Record<string, (inp: Inputs, doc: Doc) => string[]> = {
   deviations: deviationsBlock,
   rvfc: rvfcBlock,
   corpus: corpusBlock,
+  late: lateBlock,
   size: sizeBlock,
   'accuracy-summary': accuracySummaryBlock,
   vite: viteBlock,
@@ -1411,7 +1442,7 @@ const BLOCKS: Record<string, (inp: Inputs, doc: Doc) => string[]> = {
 
 export const TARGETS: ReadonlyArray<{ path: string; blocks: readonly string[] }> = [
   { path: 'README.md', blocks: ['size', 'accuracy-summary'] },
-  { path: 'docs/benchmarks.md', blocks: ['headline', 'reads', 'profile', 'engines', 'accuracy', 'deviations', 'approaches', 'rvfc', 'speed', 'package', 'bundle', 'integration', 'corpus'] },
+  { path: 'docs/benchmarks.md', blocks: ['headline', 'reads', 'profile', 'engines', 'accuracy', 'deviations', 'late', 'approaches', 'rvfc', 'speed', 'package', 'bundle', 'integration', 'corpus'] },
   { path: 'docs/bundlers.md', blocks: ['vite'] },
 ];
 

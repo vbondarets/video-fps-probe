@@ -81,6 +81,36 @@ describe('rate profile on fixtures', () => {
     expect(p.summary).toMatch(/; 1 freeze$/);
   });
 
+  it.each([
+    ['late_30_to_60.mp4', 6000, 30, 1200, 60, 200],
+    ['late_25_to_12.5.webm', 5500, 25, 500, 12.5, 220],
+  ] as const)('%s: a rate change after more than 5000 constant frames', async (name, firstFrames, firstFps, lastFrames, lastFps, atSec) => {
+    const { t, p } = await profile(name);
+    checkTiling(t, p);
+    expect(p.segments.map((s) => [s.kind, s.frames, s.fps])).toEqual([
+      ['steady', firstFrames, firstFps],
+      ['steady', lastFrames, lastFps],
+    ]);
+    expect(p.anomalies).toHaveLength(1);
+    expect(p.anomalies[0]).toMatchObject({ kind: 'rate-change', fromFps: firstFps, toFps: lastFps });
+    expect(p.anomalies[0].atSec).toBeCloseTo(atSec, 6);
+    expect(p.uneven).toBe(true);
+    expect(t.isVfr).toBe(true);
+  });
+
+  it('late_freeze_10s.mkv: one 10.04 s freeze after 5999 frames at 25 fps', async () => {
+    const { t, p } = await profile('late_freeze_10s.mkv');
+    checkTiling(t, p);
+    expect(p.segments).toHaveLength(1);
+    expect(p.segments[0]).toMatchObject({ kind: 'steady', fps: 25, frames: 6250 });
+    expect(p.anomalies).toHaveLength(1);
+    expect(p.anomalies[0].kind).toBe('freeze');
+    expect(p.anomalies[0].atSec).toBeCloseTo(239.96, 6);
+    expect(p.anomalies[0].durationSec).toBeCloseTo(10.04, 6);
+    expect(t.isVfr).toBe(true);
+    expect(p.summary).toMatch(/; 1 freeze$/);
+  });
+
   it('vfr_mpdecimate.mp4 and the screen recordings report their stalls instead of extra segments', async () => {
     const mp = await profile('vfr_mpdecimate.mp4');
     expect(mp.p.segments).toHaveLength(1);
@@ -151,7 +181,7 @@ describe('rate profile on fixtures', () => {
         cfr++;
       }
     }
-    expect(vfr).toBe(22);
+    expect(vfr).toBe(25);
     expect(cfr).toBe(0);
   });
 
