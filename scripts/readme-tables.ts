@@ -156,7 +156,7 @@ interface BenchReport {
     memoryGiB: number;
     node: string;
     displayHzOs: number[];
-    chrome: { product: string };
+    chrome: { product: string; gpu?: { videoDecode?: string | null } | null; rafHz?: number };
     edge?: { product: string } | null;
   };
 }
@@ -507,9 +507,16 @@ function decimal(r: string | null | undefined): string {
   return v >= 100 ? v.toFixed(1) : v.toFixed(3);
 }
 
+const BROWSER_NAMES: Record<string, string> = { Edg: 'Edge', HeadlessChrome: 'Chrome headless shell' };
+
 function majorVersion(product: string): string {
   const m = /^([A-Za-z]+)\/(\d+)/.exec(product);
-  return m ? `${m[1] === 'Edg' ? 'Edge' : m[1]} ${m[2]}` : product;
+  return m ? `${BROWSER_NAMES[m[1]!] ?? m[1]} ${m[2]}` : product;
+}
+
+function headlessLabel(product: string): string {
+  const name = majorVersion(product);
+  return name.includes('headless') ? name : `${name} headless`;
 }
 
 function checksOf(f: AccFixture): Check[] {
@@ -612,7 +619,7 @@ function headline(inp: Inputs): string[] {
 function machine(inp: Inputs): string {
   const env = inp.bench.environment;
   const os = env.os.replace(/^Windows_NT [\d.]+ \((.+)\) x64$/, '$1');
-  return `${os}, ${env.cpu.replace(/\s+@.*$/, '').replace(/\(R\)|\(TM\)/g, '').replace(/\s+CPU$/, '').replace(/\s+/g, ' ')} (${env.logicalCores} threads), ${env.memoryGiB} GiB, Node ${env.node}, ${majorVersion(env.chrome.product)} headless; ffprobe ${inp.acc.ffprobeVersions.join(', ').replace(/^ffprobe version /, '')}`;
+  return `${os}, ${env.cpu.replace(/\s+@.*$/, '').replace(/\(R\)|\(TM\)/g, '').replace(/\s+CPU$/, '').replace(/\s+/g, ' ')} (${env.logicalCores} threads), ${env.memoryGiB} GiB, Node ${env.node}, ${headlessLabel(env.chrome.product)}; ffprobe ${inp.acc.ffprobeVersions.join(', ').replace(/^ffprobe version /, '')}`;
 }
 
 function methodLine(inp: Inputs): string {
@@ -1212,8 +1219,11 @@ function rvfcBlock(inp: Inputs): string[] {
     ]);
   });
   const hz = inp.bench.environment.displayHzOs;
+  const chrome = inp.bench.environment.chrome;
+  const decoding = chrome.gpu?.videoDecode === 'enabled' ? 'GPU decoding on' : `video decoding ${chrome.gpu?.videoDecode === 'disabled_software' ? 'in software' : (chrome.gpu?.videoDecode ?? 'unknown')}`;
+  const frames = chrome.rafHz ? `, ${Math.round(chrome.rafHz)} Hz animation frames` : '';
   return [
-    `Headless ${majorVersion(inp.bench.environment.chrome.product)}, GPU decoding on, display ${hz.length > 0 ? `${hz.join(', ')} Hz` : 'unknown'}.`,
+    `${headlessLabel(chrome.product)}, ${decoding}, display ${hz.length > 0 ? `${hz.join(', ')} Hz` : 'unknown'}${frames}.`,
     '',
     ...table(['File', 'ffprobe avg', 'rVFC estimate', 'Error', 'VFR ffprobe / rVFC', 'Confidence', 'Passes', 'Time'], 'llllllll', rows),
   ];
@@ -1320,7 +1330,7 @@ function integrationBlock(inp: Inputs): string[] {
     : [];
   return [
     ...stale,
-    `Host model: an SPA with a ${fmtMB(ic.host.initialGzipBytes)} gzip initial load, ${majorVersion(ic.environment.browser)} headless, local server with CDP network throttling; the probe is the real worker pool, worker entry and parser chunks. "Prewarmed" means the worker was started and the parser loaded before the pick. The trigger is an inline script and the glue the WorkerPool class bundled by the bench, so the sizes below are not those of the package entries: what an app that imports \`video-fps-probe/lazy\` adds is in [Package size](#package-size).`,
+    `Host model: an SPA with a ${fmtMB(ic.host.initialGzipBytes)} gzip initial load, ${headlessLabel(ic.environment.browser)}, local server with CDP network throttling; the probe is the real worker pool, worker entry and parser chunks. "Prewarmed" means the worker was started and the parser loaded before the pick. The trigger is an inline script and the glue the WorkerPool class bundled by the bench, so the sizes below are not those of the package entries: what an app that imports \`video-fps-probe/lazy\` adds is in [Package size](#package-size).`,
     '',
     ...table(['', 'Lazy on the first pick', 'Lazy + prefetch when the upload dialog opens', 'Eager (in the critical bundle)'], 'llll', rows),
     '',
