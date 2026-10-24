@@ -1,7 +1,7 @@
 import type { FileResult, VideoTrackResult } from '../../src/core/types.ts';
 import type { ArmSpec } from './engines.ts';
 import { parseRatio, ticksToSec, type RefFile, type RefStream } from './ref.ts';
-import { expectedPrimary, pairTracks, type Evaluation } from './rules.ts';
+import { expectedPrimary, matroskaTrackOf, pairTracks, type Evaluation } from './rules.ts';
 import type { CheckResult, ContainerFamily, FileLayout, FixtureInfo, OutcomeClass } from './types.ts';
 
 export const DEFINITION_RELATIVE_TOLERANCE = 1e-6;
@@ -110,6 +110,14 @@ function trackOf(ctx: OutcomeContext, c: CheckResult): VideoTrackResult | null {
   return ctx.result.videoTracks.find((t) => t.trackId === c.trackId) ?? null;
 }
 
+const UNSTORED_LAST = 'the file stores no duration for the last frame (no DefaultDuration, no BlockDuration), so mediabunny gives it none';
+
+function storesNoLastDuration(ctx: OutcomeContext, s: RefStream): boolean {
+  if (ctx.family !== 'matroska' || !ctx.ref) return false;
+  const t = matroskaTrackOf(ctx.layout, ctx.ref.videoStreams, s);
+  return t !== null && t.defaultDurationNs === null && t.blockDurations === 0;
+}
+
 function sortedPts(s: RefStream): number[] | null {
   const pts = s.packets?.ptsPresented;
   return pts && pts.length > 1 ? [...pts].sort((a, b) => a - b) : null;
@@ -210,14 +218,16 @@ const DEFINITIONS: readonly Definition[] = [
   { id: 'frame-rate-metrics', test: frameRateMetrics },
   {
     id: 'span-average',
-    test: (_ctx, c, s) => {
+    test: (ctx, c, s) => {
       const app = rateOf(c.app);
       const p = s?.packets;
       const frames = p?.avgFromPtsFrames ?? null;
       if (!s || c.field !== 'avgFps' || app === null || !p || frames === null || frames < 1 || p.avgFromPtsSpanTicks == null || p.avgFromPtsSpanTicks <= 0) return null;
       const span = ticksToSec(p.avgFromPtsSpanTicks, s.timeBase);
       if (near(app, frames / span)) return 'frames over the presentation span, from the first timestamp to the end of the last frame';
-      return withinTick(frames / app, span, s) ? `frames over the presentation span; the span it implies is within one ${tickText(s)} tick of the file's` : null;
+      if (withinTick(frames / app, span, s)) return `frames over the presentation span; the span it implies is within one ${tickText(s)} tick of the file's`;
+      if (!storesNoLastDuration(ctx, s) || p.firstPts == null || p.lastPts == null || p.lastPts <= p.firstPts) return null;
+      return near(app, frames / ticksToSec(p.lastPts - p.firstPts, s.timeBase)) ? `frames over the presentation span, which ends at the last timestamp: ${UNSTORED_LAST}` : null;
     },
   },
   {
@@ -334,6 +344,11 @@ const DEFINITIONS: readonly Definition[] = [
       const ends = (ctx.ref?.videoStreams ?? []).flatMap((s) => [s.packets?.lastPacketEndSec ?? null, s.startPts !== null && s.durationTs !== null ? ticksToSec(s.startPts + s.durationTs, s.timeBase) : null]);
       if (ends.some((e) => nearSec(app, e))) return 'the end timestamp of the last frame, not the duration from the start';
       const recipe = ctx.arm.library === 'mediabunny' && ctx.arm.style !== 'tuned';
+      const video = ctx.ref?.videoStreams ?? [];
+      if (recipe && video.length > 0 && (ctx.ref?.audioCount ?? 0) === 0 && video.every((s) => storesNoLastDuration(ctx, s))) {
+        const lastStarts = video.map((s) => (s.packets?.lastPts != null ? ticksToSec(s.packets.lastPts, s.timeBase) : null));
+        if (lastStarts.some((e) => nearSec(app, e))) return `the end timestamp of the last frame, which is its timestamp: ${UNSTORED_LAST}`;
+      }
       return recipe && (ctx.ref?.audioCount ?? 0) > 0
         ? { unverified: 'input.computeDuration() takes the largest end timestamp of every track, audio included, and the reference keeps no audio packets, so its definition is not checked' }
         : null;

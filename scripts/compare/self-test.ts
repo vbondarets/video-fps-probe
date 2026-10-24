@@ -419,6 +419,13 @@ export function runSelfTest(): number {
     outcomeOf('mediabunny-full', { info: MP4_INFO, ref: refFile([trimmed]), result: appResult([metrics('computeFrameRateMetrics: underlying null, min 1, constant false, 90 packets probed', rat(25, 1))]) }, 'avgFps'),
     'unverified',
   );
+  const recEnd = refFile(recRef.videoStreams, { formatName: 'matroska,webm', formatDurationRaw: '4.492166', formatDurationSec: 4.492166 });
+  const recEndOf = (layout: FileLayout) => outcomeOf('mediabunny-idiomatic', { info: MKV_INFO, ref: recEnd, layout, result: appResult([mkvTrack], { container: 'webm', scan: 'exact', formatDurationSec: 4.492 }) }, 'formatDurationSec');
+  expectEq('outcome: computeDuration() at the last timestamp when the file stores no last duration', recEndOf(mkvLayout(null)), 'definition-differs');
+  expectEq('outcome: the last timestamp when the file stores the last duration', recEndOf(mkvLayout(16666666)), 'unverified');
+  const recRateOf = (layout: FileLayout) => outcomeOf('mediabunny-tuned', { info: MKV_INFO, ref: recRef, layout, result: appResult([{ ...mkvTrack, avgFps: rat(41500, 1123), presentedFrames: 166 }], { container: 'webm', scan: 'exact' }) }, 'avgFps.measured');
+  expectEq('outcome: the packet rate over a span that ends at the last timestamp', recRateOf(mkvLayout(null)), 'definition-differs');
+  expectEq('outcome: the span to the last timestamp when the file stores the last duration', recRateOf(mkvLayout(16666666)), 'unverified');
   const movie: FileLayout = { fragmented: false, hasSidx: false, topLevel: ['ftyp', 'moov', 'mdat'], movieDurationSec: 3.07, tracks: [] };
   expectEq('outcome: the movie header duration', outcomeOf('mp4box-idiomatic', { info: MP4_INFO, ref: cfrRef, layout: movie, result: appResult([appTrack()], { formatDurationSec: 3.07 }) }, 'formatDurationSec'), 'definition-differs');
   expectEq('outcome: the movie header duration of an arm that does not read it', outcomeOf('mediabunny-idiomatic', { info: MP4_INFO, ref: cfrRef, layout: movie, result: appResult([appTrack()], { formatDurationSec: 3.07 }) }, 'formatDurationSec'), 'unverified');
