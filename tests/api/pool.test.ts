@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProbeError } from '../../src/api/errors.ts';
-import { KILL_AFTER_MS, WorkerPool } from '../../src/client/pool.ts';
+import { KILL_AFTER_MS, LOAD_FAILED, WorkerPool } from '../../src/client/pool.ts';
 import { analyzeRequest, FakeWorker } from './fake-worker.ts';
 
 const flush = () => new Promise<void>((resolve) => setImmediate(resolve));
@@ -57,8 +57,9 @@ describe('WorkerPool', () => {
     w4.answer(4, { type: 'error', message: 'unsupported protocol version', aborted: false, code: 'protocol' });
     expect(await skipped).toMatchObject({ type: 'skipped', reason: 'unsupported-container' });
     await expect(unknown).rejects.toMatchObject({ name: 'ProbeError', code: 'unknown-engine', engine: 'mediabunny', message: 'unknown engine mediabunny' });
-    await expect(failed).rejects.toMatchObject({ code: 'worker-failed', engine: 'mp4box', message: 'Failed to fetch dynamically imported module' });
+    await expect(failed).rejects.toMatchObject({ code: 'worker-failed', engine: 'mp4box', message: 'Failed to fetch dynamically imported module', reason: 'crash' });
     await expect(protocol).rejects.toMatchObject({ code: 'protocol', engine: null });
+    expect(await unknown.catch((e: ProbeError) => e.reason)).toBeUndefined();
   });
 
   it('forwards progress for the running job only', async () => {
@@ -80,7 +81,7 @@ describe('WorkerPool', () => {
     const first = pool.run(analyzeRequest('a'), { engine: 'own' });
     const second = pool.run(analyzeRequest('b'));
     FakeWorker.instances[0].crash('script error');
-    await expect(first).rejects.toMatchObject({ code: 'worker-failed', engine: 'own', message: 'script error' });
+    await expect(first).rejects.toMatchObject({ code: 'worker-failed', engine: 'own', message: 'script error', reason: 'crash' });
     expect(FakeWorker.instances[0].terminated).toBe(true);
     expect(FakeWorker.instances).toHaveLength(2);
     FakeWorker.instances[1].answer(2);
@@ -95,7 +96,97 @@ describe('WorkerPool', () => {
     });
     const run = pool.run(analyzeRequest('a'), { engine: 'own' });
     await expect(run).rejects.toBeInstanceOf(ProbeError);
-    await expect(run).rejects.toMatchObject({ code: 'worker-failed', engine: 'own' });
+    await expect(run).rejects.toMatchObject({ code: 'worker-failed', engine: 'own', reason: 'load', message: 'Error: blocked by CSP' });
+  });
+
+  it('rejects the job and every queued job once with the load reason when the worker script fails to load, then spawns again on the next call', async () => {
+    FakeWorker.reset('manual');
+    const pool = new WorkerPool({ create: FakeWorker.create, idleTimeoutMs: 0 });
+    const runs = ['a', 'b', 'c'].map((n) => pool.run(analyzeRequest(n), { engine: 'own' }));
+    expect(FakeWorker.instances).toHaveLength(1);
+    FakeWorker.instances[0].failToLoad();
+    for (const run of runs) await expect(run).rejects.toMatchObject({ name: 'ProbeError', code: 'worker-failed', engine: 'own', reason: 'load', message: LOAD_FAILED });
+    expect(await runs[0].catch((e: ProbeError) => e.cause)).toBeInstanceOf(Event);
+    expect(FakeWorker.instances).toHaveLength(1);
+    expect(FakeWorker.instances[0].terminated).toBe(true);
+    expect(pool.workers).toBe(0);
+    const retry = pool.run(analyzeRequest('d'));
+    expect(FakeWorker.instances).toHaveLength(2);
+    FakeWorker.instances[1].answer(4);
+    expect(await retry).toMatchObject({ type: 'result', result: { name: 'd' } });
+  });
+
+  it('reports an error event without a message after the worker has answered as a crash, not a load failure', async () => {
+    FakeWorker.reset('manual');
+    const pool = new WorkerPool({ create: FakeWorker.create, idleTimeoutMs: 0 });
+    const first = pool.run(analyzeRequest('a'));
+    FakeWorker.instances[0].answer(1);
+    await first;
+    const second = pool.run(analyzeRequest('b'));
+    const third = pool.run(analyzeRequest('c'));
+    FakeWorker.instances[0].failToLoad();
+    await expect(second).rejects.toMatchObject({ code: 'worker-failed', reason: 'crash', message: 'worker failed' });
+    expect(FakeWorker.instances).toHaveLength(2);
+    FakeWorker.instances[1].answer(3);
+    expect(await third).toMatchObject({ type: 'result', result: { name: 'c' } });
+  });
+
+  it('rejects only the job of a worker that fails to load while another worker of the pool has answered, and the queue runs on', async () => {
+    FakeWorker.reset('manual');
+    const pool = new WorkerPool({ create: FakeWorker.create, size: 2, idleTimeoutMs: 0 });
+    const a = pool.run(analyzeRequest('a'));
+    const [w1] = FakeWorker.instances;
+    w1.answer(1, { type: 'progress', progress: { phase: 'moov', done: 0, total: 1 } });
+    const b = pool.run(analyzeRequest('b'));
+    const c = pool.run(analyzeRequest('c'));
+    const w2 = FakeWorker.instances[1];
+    w2.failToLoad();
+    await expect(b).rejects.toMatchObject({ code: 'worker-failed', reason: 'load', message: LOAD_FAILED });
+    expect(pool.workers).toBe(2);
+    const w3 = FakeWorker.instances[2];
+    expect(w3.pending.map((m) => m.id)).toEqual([3]);
+    w3.answer(3);
+    w1.answer(1);
+    expect((await Promise.all([a, c])).map((r) => r.type)).toEqual(['result', 'result']);
+  });
+
+  it('rejects the queue once when the first of several starting workers fails to load and spawns no worker for it', async () => {
+    FakeWorker.reset('manual');
+    const pool = new WorkerPool({ create: FakeWorker.create, size: 2, idleTimeoutMs: 0 });
+    const runs = ['a', 'b', 'c', 'd'].map((n) => pool.run(analyzeRequest(n)));
+    const [w1, w2] = FakeWorker.instances;
+    w1.failToLoad();
+    for (const run of [runs[0], runs[2], runs[3]]) await expect(run).rejects.toMatchObject({ code: 'worker-failed', reason: 'load' });
+    expect(FakeWorker.instances).toHaveLength(2);
+    expect(w2.pending.map((m) => m.id)).toEqual([2]);
+    w2.failToLoad();
+    await expect(runs[1]).rejects.toMatchObject({ code: 'worker-failed', reason: 'load' });
+    expect(FakeWorker.instances).toHaveLength(2);
+    expect(pool.workers).toBe(0);
+  });
+
+  it('settles an aborted job only once when its new worker then fails to load', async () => {
+    FakeWorker.reset('manual');
+    const pool = new WorkerPool({ create: FakeWorker.create, idleTimeoutMs: 0 });
+    const controller = new AbortController();
+    const onProgress = vi.fn();
+    const a = pool.run(analyzeRequest('a'), { signal: controller.signal, onProgress });
+    const b = pool.run(analyzeRequest('b'));
+    controller.abort();
+    await expect(a).rejects.toMatchObject({ code: 'aborted' });
+    FakeWorker.instances[0].failToLoad();
+    await expect(b).rejects.toMatchObject({ code: 'worker-failed', reason: 'load' });
+    expect(pool.workers).toBe(0);
+    expect(FakeWorker.instances).toHaveLength(1);
+  });
+
+  it('marks a worker that could not load the engine of a job with the load reason and keeps the worker', async () => {
+    FakeWorker.reset('manual');
+    const pool = new WorkerPool({ create: FakeWorker.create, idleTimeoutMs: 0 });
+    const run = pool.run(analyzeRequest('a'), { engine: 'mp4box' });
+    FakeWorker.instances[0].answer(1, { type: 'error', message: 'Failed to fetch dynamically imported module', aborted: false, reason: 'load' });
+    await expect(run).rejects.toMatchObject({ name: 'ProbeError', code: 'worker-failed', engine: 'mp4box', reason: 'load', message: 'Failed to fetch dynamically imported module' });
+    expect(FakeWorker.instances[0].terminated).toBe(false);
   });
 
   it('rejects an already aborted signal without spawning a worker', async () => {

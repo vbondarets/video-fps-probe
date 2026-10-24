@@ -1,4 +1,4 @@
-import { ProbeError, type ProbeErrorCode } from '../api/errors.ts';
+import { ProbeError } from '../api/errors.ts';
 import { containerFamily } from '../core/sniff.ts';
 import type { AnalyzeOptions, AnalyzeProgress, EngineId, FileResult } from '../core/types.ts';
 import type { ContainerFamily, EngineModule } from '../plugins/types.ts';
@@ -28,16 +28,18 @@ export function runInline(load: () => Promise<EngineModule>, file: Blob, name: s
       for (const s of signals) s?.removeEventListener('abort', onAbort);
       settle();
     };
-    const fail = (code: ProbeErrorCode, message: string, cause?: unknown) => {
+    const fail = (error: ProbeError) => {
       controller.abort();
-      finish(() => reject(new ProbeError(code, message, { engine, cause })));
+      finish(() => reject(error));
     };
-    const onAbort = () => fail('aborted', 'aborted', signals.find((s) => s?.aborted)?.reason);
+    const onAbort = () => fail(new ProbeError('aborted', 'aborted', { engine, cause: signals.find((s) => s?.aborted)?.reason }));
     if (signals.some((s) => s?.aborted)) return onAbort();
     for (const s of signals) s?.addEventListener('abort', onAbort);
-    if (timeoutMs > 0 && timeoutMs <= 2 ** 31 - 1) timer = setTimeout(() => fail('timeout', `timed out after ${timeoutMs} ms`), timeoutMs);
+    if (timeoutMs > 0 && timeoutMs <= 2 ** 31 - 1) timer = setTimeout(() => fail(new ProbeError('timeout', `timed out after ${timeoutMs} ms`, { engine })), timeoutMs);
+    let loading = true;
     (async (): Promise<InlineReply> => {
       const module = await load();
+      loading = false;
       if (module.containers !== 'any') {
         const family = await containerFamily(file);
         if (!family || !module.containers.includes(family)) return { type: 'skipped', reason: 'unsupported-container', family };
@@ -46,7 +48,7 @@ export function runInline(load: () => Promise<EngineModule>, file: Blob, name: s
       return { type: 'result', result: await module.run(file, name, opts) };
     })().then(
       (reply) => finish(() => resolve(reply)),
-      (e: unknown) => (e instanceof ProbeError ? finish(() => reject(e)) : fail('worker-failed', e instanceof Error ? e.message || e.name : String(e), e)),
+      (e: unknown) => (e instanceof ProbeError ? finish(() => reject(e)) : fail(Object.assign(new ProbeError('worker-failed', e instanceof Error ? e.message || e.name : String(e), { engine, cause: e }), { reason: loading ? ('load' as const) : ('crash' as const) }))),
     );
   });
 }

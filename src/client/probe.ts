@@ -3,7 +3,7 @@ import type { EngineId } from '../core/types.ts';
 import type { EngineDescriptor, EngineModule, WorkerEngineId } from '../plugins/types.ts';
 import type { WireOptions } from '../worker/protocol.ts';
 import type { InlineReply } from './inline.ts';
-import { WorkerPool } from './pool.ts';
+import { WorkerPool, workerFailed } from './pool.ts';
 import type { BaseOptions, CallOptions, ClientOptions, CustomWorker, IdOf, Probe, ProbeResult } from './types.ts';
 
 export interface CoreOptions extends BaseOptions<EngineId> {
@@ -42,7 +42,7 @@ export function createProbeCore(options: CoreOptions): Probe<EngineId> {
       const stop = () => reject(destroyed(engine));
       life.signal.addEventListener('abort', stop);
       if (life.signal.aborted) stop();
-      chunk.then(resolve, (e: unknown) => reject(new ProbeError('worker-failed', String(e), { engine, cause: e }))).finally(() => life.signal.removeEventListener('abort', stop));
+      chunk.then(resolve, (e: unknown) => reject(workerFailed(String(e), 'load', engine, e))).finally(() => life.signal.removeEventListener('abort', stop));
     });
 
   const poolOf = (kind: string, create: () => Worker): Route => ({

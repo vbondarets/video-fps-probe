@@ -108,7 +108,7 @@ describe('serveProbeWorker', () => {
     const self = serve({ own: ownEngine, mp4box: source as EngineSource });
     self.send({ v: 1, type: 'analyze', id: 1, file: new Blob([new Uint8Array(8)]), name: 'a.mp4', engine: 'mp4box', options: {} });
     const failed = await self.settled(1);
-    expect(failed).toMatchObject({ type: 'error', id: 1, aborted: false, message: 'Failed to fetch dynamically imported module' });
+    expect(failed).toMatchObject({ type: 'error', id: 1, aborted: false, message: 'Failed to fetch dynamically imported module', reason: 'load' });
     expect(failed).not.toHaveProperty('code');
     self.send({ v: 1, type: 'analyze', id: 2, file: new Blob([new Uint8Array(8)]), name: 'b.mp4', engine: 'mp4box', options: {} });
     expect(await self.settled(2)).toMatchObject({ type: 'result', result: { name: 'b.mp4' } });
@@ -116,6 +116,20 @@ describe('serveProbeWorker', () => {
     await self.settled(3);
     expect(source).toHaveBeenCalledTimes(2);
     expect(engine.calls).toEqual(['b.mp4', 'c.mp4']);
+  });
+
+  it('marks only a failed engine load with the load reason, not an engine that rejects after it loaded', async () => {
+    const rejecting: EngineModule = { containers: 'any', run: () => Promise.reject(new RangeError('bad sample table')) };
+    const self = serve({ own: ownEngine, mp4box: rejecting, mediabunny: async () => rejecting });
+    self.send({ v: 1, type: 'analyze', id: 1, file: new Blob([new Uint8Array(8)]), name: 'a.mp4', engine: 'mp4box', options: {} });
+    self.send({ v: 1, type: 'analyze', id: 2, file: new Blob([new Uint8Array(8)]), name: 'b.mp4', engine: 'mediabunny', options: {} });
+    for (const id of [1, 2]) {
+      const reply = await self.settled(id);
+      expect(reply).toMatchObject({ type: 'error', id, aborted: false, message: 'bad sample table' });
+      expect(reply).not.toHaveProperty('reason');
+    }
+    self.send({ v: 1, type: 'analyze', id: 3, file: new Blob([new Uint8Array(8)]), name: 'c.mp4', engine: 'constructor', options: {} });
+    expect(await self.settled(3)).not.toHaveProperty('reason');
   });
 
   it('replies unknown-engine for an engine this worker does not serve', async () => {

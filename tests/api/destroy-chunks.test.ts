@@ -96,7 +96,7 @@ describe('destroy while a lazy chunk loads', () => {
   it('still reports a chunk that fails to load before destroy as worker-failed', async () => {
     const createProbeClient = await loadProbe({ fallback: failedChunk() });
     const probe = createProbeClient({ worker: customWorker('own', 'mp4box') });
-    await expect(probe.analyze(mp4File(), { fallback: ['mp4box'] })).rejects.toMatchObject({ name: 'ProbeError', code: 'worker-failed' });
+    await expect(probe.analyze(mp4File(), { fallback: ['mp4box'] })).rejects.toMatchObject({ name: 'ProbeError', code: 'worker-failed', reason: 'load' });
     expect(await probe.tryAnalyze(mp4File(), { fallback: ['mp4box'] })).toBeNull();
   });
 

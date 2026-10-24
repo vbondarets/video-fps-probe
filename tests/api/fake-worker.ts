@@ -66,6 +66,10 @@ export class FakeWorker {
   crash(message = 'boom'): void {
     this.onerror?.({ message });
   }
+
+  failToLoad(): void {
+    this.onerror?.(new Event('error') as unknown as { message: string });
+  }
 }
 
 export const analyzeRequest = (name: string) => ({ type: 'analyze' as const, file: new Blob([new Uint8Array(8)]), name, engine: 'own' as const, options: {} });

@@ -66,9 +66,18 @@ describe('runInline', () => {
 
   it('maps an engine exception to worker-failed and passes a ProbeError through', async () => {
     const throwing = (e: unknown): EngineModule => ({ containers: 'any', run: async () => Promise.reject(e) });
-    await expect(runInline(async () => throwing(new TypeError('boom')), mp4File(), 'a.mp4', {}, { engine: 'rvfc', signals: [] })).rejects.toMatchObject({ name: 'ProbeError', code: 'worker-failed', engine: 'rvfc', message: 'boom' });
+    await expect(runInline(async () => throwing(new TypeError('boom')), mp4File(), 'a.mp4', {}, { engine: 'rvfc', signals: [] })).rejects.toMatchObject({ name: 'ProbeError', code: 'worker-failed', engine: 'rvfc', message: 'boom', reason: 'crash' });
     const environment = new ProbeError('unsupported-environment', 'needs a DOM', { engine: 'rvfc' });
     await expect(runInline(async () => throwing(environment), mp4File(), 'a.mp4', {}, { engine: 'rvfc', signals: [] })).rejects.toBe(environment);
-    await expect(runInline(() => Promise.reject(new Error('chunk failed')), mp4File(), 'a.mp4', {}, { engine: 'mp4box', signals: [] })).rejects.toMatchObject({ code: 'worker-failed', message: 'chunk failed' });
+    await expect(runInline(() => Promise.reject(new Error('chunk failed')), mp4File(), 'a.mp4', {}, { engine: 'mp4box', signals: [] })).rejects.toMatchObject({ code: 'worker-failed', message: 'chunk failed', reason: 'load' });
+  });
+
+  it('reports a module that fails to load as a load failure and an engine that throws after it loaded as a crash', async () => {
+    const chunk = new TypeError('Failed to fetch dynamically imported module: https://example.test/assets/rvfc-old.js');
+    const loadFailure = (await runInline(() => Promise.reject(chunk), mp4File(), 'a.mp4', {}, { engine: 'rvfc', signals: [] }).catch((e: unknown) => e)) as ProbeError;
+    expect(loadFailure).toMatchObject({ name: 'ProbeError', code: 'worker-failed', engine: 'rvfc', reason: 'load', message: chunk.message });
+    expect(loadFailure.cause).toBe(chunk);
+    const sniffing: EngineModule = { containers: ['isobmff'], run: async () => Promise.reject(new RangeError('bad sample table')) };
+    await expect(runInline(async () => sniffing, mp4File(), 'a.mp4', {}, { engine: 'mp4box', signals: [] })).rejects.toMatchObject({ code: 'worker-failed', reason: 'crash', message: 'bad sample table' });
   });
 });

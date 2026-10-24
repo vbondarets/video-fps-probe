@@ -77,11 +77,26 @@ describe('createProbeClient', () => {
   it('rejects infrastructure problems with ProbeError and tryAnalyze resolves null instead', async () => {
     FakeWorker.reset('reply', () => ({ type: 'error', message: 'Failed to fetch dynamically imported module', aborted: false }));
     const probe = createProbeClient({ worker: customWorker('own') });
-    await expect(probe.analyze(mp4File())).rejects.toMatchObject({ name: 'ProbeError', code: 'worker-failed', engine: 'own' });
+    await expect(probe.analyze(mp4File())).rejects.toMatchObject({ name: 'ProbeError', code: 'worker-failed', engine: 'own', reason: 'crash' });
     expect(await probe.tryAnalyze(mp4File())).toBeNull();
     expect(await probe.tryAnalyze(mp4File(), { engine: 'rvfc' as 'own' })).toBeNull();
     FakeWorker.reset();
     expect(await probe.tryAnalyze(mp4File('ok.mp4'))).toEqual(fakeResult('ok.mp4'));
+  });
+
+  it('rejects with the load reason when the worker script fails to load, tryAnalyze resolves null, and the next call starts a new worker', async () => {
+    FakeWorker.reset('manual');
+    const probe = createProbeClient({ worker: customWorker('own') });
+    const first = probe.analyze(mp4File('a.mp4'));
+    const second = probe.tryAnalyze(mp4File('b.mp4'));
+    await vi.waitFor(() => expect(FakeWorker.instances).toHaveLength(1));
+    FakeWorker.instances[0].failToLoad();
+    await expect(first).rejects.toMatchObject({ name: 'ProbeError', code: 'worker-failed', engine: 'own', reason: 'load' });
+    expect(await second).toBeNull();
+    expect(FakeWorker.instances).toHaveLength(1);
+    FakeWorker.reset();
+    expect(await probe.analyze(mp4File('c.mp4'))).toEqual(fakeResult('c.mp4'));
+    expect(FakeWorker.instances).toHaveLength(1);
   });
 
   it('rejects at once with aborted when the signal aborts', async () => {

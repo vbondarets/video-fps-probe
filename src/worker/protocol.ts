@@ -22,5 +22,5 @@ export type WorkerResponse = { v: typeof PROTOCOL_VERSION; id: number } & (
   | { type: 'result'; result: FileResult }
   | { type: 'skipped'; reason: SkipReason; family: ContainerFamily | null }
   | { type: 'warmed' }
-  | { type: 'error'; message: string; aborted: boolean; code?: WorkerErrorCode }
+  | { type: 'error'; message: string; aborted: boolean; code?: WorkerErrorCode; reason?: 'load' }
 );

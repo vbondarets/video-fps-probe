@@ -4,9 +4,13 @@ import { PROTOCOL_VERSION, type JobRequest, type WorkerRequest, type WorkerRespo
 
 export const KILL_AFTER_MS = 1500;
 export const DEFAULT_IDLE_TIMEOUT_MS = 30_000;
+export const LOAD_FAILED = 'worker script failed to load; the app may have been redeployed';
 const MAX_DELAY_MS = 2 ** 31 - 1;
 
 const delayOf = (ms = 0): number => (ms > 0 && ms <= MAX_DELAY_MS ? ms : 0);
+
+export const workerFailed = (message: string, reason: NonNullable<ProbeError['reason']>, engine?: EngineId | null, cause?: unknown): ProbeError =>
+  Object.assign(new ProbeError('worker-failed', message, { engine, cause }), { reason });
 
 export interface PoolOptions {
   create: () => Worker;
@@ -37,6 +41,7 @@ interface Job {
 interface Slot {
   worker: Worker;
   job: Job | null;
+  answered?: boolean;
   idle?: ReturnType<typeof setTimeout>;
 }
 
@@ -93,6 +98,10 @@ export class WorkerPool {
     this.#settle(job, new ProbeError(code, message, { engine: job.options.engine, cause }));
   }
 
+  #broken(job: Job, message: string, reason: NonNullable<ProbeError['reason']>, cause?: unknown): void {
+    this.#settle(job, workerFailed(message, reason, job.options.engine, cause));
+  }
+
   #abort(job: Job): void {
     this.#fail(job, 'aborted', 'aborted', job.options.signal?.reason);
     const queued = this.#queue.indexOf(job);
@@ -132,20 +141,25 @@ export class WorkerPool {
     const worker = this.#create();
     const slot: Slot = { worker, job: null };
     worker.onmessage = ({ data }: MessageEvent<WorkerResponse>) => {
+      slot.answered = true;
       const job = slot.job;
       if (job?.id !== data.id) return;
       if (data.type === 'progress') {
         if (!job.done) job.options.onProgress?.(data.progress);
         return;
       }
-      if (data.type === 'error') this.#fail(job, data.aborted ? 'aborted' : (data.code ?? 'worker-failed'), data.message);
-      else this.#settle(job, data);
+      if (data.type !== 'error') this.#settle(job, data);
+      else if (data.aborted || data.code) this.#fail(job, data.aborted ? 'aborted' : data.code!, data.message);
+      else this.#broken(job, data.message, data.reason ?? 'crash');
       this.#release(slot);
     };
     worker.onerror = (event) => {
-      const job = slot.job;
-      if (job) this.#fail(job, 'worker-failed', event.message || 'worker failed');
-      this.#kill(slot);
+      const load = !slot.answered && !event.message;
+      const failed = [slot.job];
+      this.#discard(slot);
+      if (load && !this.#slots.some((s) => s.answered)) failed.push(...this.#queue.splice(0));
+      for (const job of failed) if (job) this.#broken(job, load ? LOAD_FAILED : event.message || 'worker failed', load ? 'load' : 'crash', event);
+      this.#pump();
     };
     this.#slots.push(slot);
     return slot;
@@ -158,7 +172,7 @@ export class WorkerPool {
         try {
           slot = this.#spawn();
         } catch (e) {
-          this.#fail(this.#queue.shift()!, 'worker-failed', String(e), e);
+          this.#broken(this.#queue.shift()!, String(e), 'load', e);
           continue;
         }
       }

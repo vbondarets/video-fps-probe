@@ -17,6 +17,7 @@ export interface ProbeErrorOptions {
 export class ProbeError extends Error {
   readonly code: ProbeErrorCode;
   readonly engine: EngineId | null;
+  declare readonly reason?: 'load' | 'crash';
 
   constructor(code: ProbeErrorCode, message: string, options: ProbeErrorOptions = {}) {
     super(message, options.cause === undefined ? undefined : { cause: options.cause });

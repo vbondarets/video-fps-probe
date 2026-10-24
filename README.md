@@ -90,8 +90,8 @@ const results = await Promise.race([checks, late]); // null, or null entries: up
 
 | Host Vite config | Critical path | First MP4 | All own paths | Worker files |
 |---|---:|---:|---:|---:|
-| `worker: { format: 'es' }` (recommended) | **0.67 KB** | 23.26 KB | 36.24 KB | 1 |
-| none (Vite's default, 'iife') | **0.67 KB** | 34.77 KB | 34.77 KB | 1 |
+| `worker: { format: 'es' }` (recommended) | **0.67 KB** | 23.46 KB | 36.44 KB | 1 |
+| none (Vite's default, 'iife') | **0.67 KB** | 34.98 KB | 34.98 KB | 1 |
 
 An iife worker cannot split, so without the option the own worker is one file with both parsers:
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { isAbortError, isTimeoutError, ProbeError } from '../../src/api/errors.ts';
+import { workerFailed } from '../../src/client/pool.ts';
 
 describe('ProbeError', () => {
   it('carries a code, the engine and the cause', () => {
@@ -17,6 +18,17 @@ describe('ProbeError', () => {
     const e = new ProbeError('unsupported-environment', 'no Worker');
     expect(e.engine).toBeNull();
     expect('cause' in e).toBe(false);
+  });
+
+  it('sets no reason on a constructed error, and the load or crash reason on a worker failure', () => {
+    expect('reason' in new ProbeError('worker-failed', 'worker failed')).toBe(false);
+    const cause = new TypeError('Failed to fetch dynamically imported module');
+    const load = workerFailed('chunk failed', 'load', 'mp4box', cause);
+    expect(load).toBeInstanceOf(ProbeError);
+    expect(load).toMatchObject({ name: 'ProbeError', code: 'worker-failed', message: 'chunk failed', engine: 'mp4box', reason: 'load' });
+    expect(load.cause).toBe(cause);
+    expect(workerFailed('boom', 'crash')).toMatchObject({ code: 'worker-failed', engine: null, reason: 'crash' });
+    expect('cause' in workerFailed('boom', 'crash')).toBe(false);
   });
 });
 

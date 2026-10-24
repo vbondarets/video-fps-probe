@@ -43,7 +43,7 @@ export async function runChain(
       result = reply.type === 'result' ? reply.result : skippedResult(id, file, name, reply.family ?? null);
     } catch (e) {
       if (isAbortError(e)) throw e;
-      last = e instanceof ProbeError ? e : new ProbeError('worker-failed', String(e), { engine: id, cause: e });
+      last = e instanceof ProbeError ? e : Object.assign(new ProbeError('worker-failed', String(e), { engine: id, cause: e }), { reason: 'crash' as const });
       failures.push({ engine: id, error: last.message });
       continue;
     }

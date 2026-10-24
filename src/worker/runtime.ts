@@ -44,14 +44,15 @@ export function serveProbeWorker(engines: Partial<Record<WorkerEngineId, EngineS
     return module;
   };
 
-  const fail = (id: number, e: unknown, aborted = false) => {
+  const fail = (id: number, e: unknown, aborted = false, loading = false) => {
     const code = (e as { code?: unknown } | null)?.code;
+    const known = code === 'unknown-engine' || code === 'protocol';
     post({
       type: 'error',
       id,
       message: errorMessage(e),
       aborted: aborted || isAbortError(e),
-      ...((code === 'unknown-engine' || code === 'protocol') && { code }),
+      ...(known ? { code } : loading && { reason: 'load' as const }),
     });
   };
 
@@ -59,9 +60,11 @@ export function serveProbeWorker(engines: Partial<Record<WorkerEngineId, EngineS
     const controller = new AbortController();
     running.set(job.id, controller);
     let lastProgress = 0;
+    let loading = true;
     try {
       if (!(job.file instanceof Blob)) throw failure('malformed analyze request', 'protocol');
       const engine = await load(job.engine);
+      loading = false;
       if (engine.containers !== 'any') {
         const family = await containerFamily(job.file);
         if (!family || !engine.containers.includes(family)) return post({ type: 'skipped', id: job.id, reason: 'unsupported-container', family });
@@ -78,7 +81,7 @@ export function serveProbeWorker(engines: Partial<Record<WorkerEngineId, EngineS
       });
       post({ type: 'result', id: job.id, result });
     } catch (e) {
-      fail(job.id, e, controller.signal.aborted);
+      fail(job.id, e, controller.signal.aborted, loading);
     } finally {
       running.delete(job.id);
     }
