@@ -103,7 +103,7 @@ jobs:
       - name: Check the package types (attw)
         run: npm run check:types
 
-      - name: Check that dist analyzes every committed fixture like src
+      - name: Check dist parity and the api.md types against the packed tarball
         run: npm run test:package
 
   e2e:
