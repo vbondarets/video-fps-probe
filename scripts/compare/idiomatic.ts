@@ -65,8 +65,11 @@ async function mediabunnyTrack(track: InputVideoTrack, targetPacketCount: number
   if (nominal && constant) t.rFpsFfprobe = `${nominal.num}/${nominal.den}`;
   t.isVfr = !m.frameRateIsConstant;
   t.isStill = m.probedPacketCount <= 1;
-  const sampled = targetPacketCount === undefined ? 'sampled' : 'exact';
+  const full = targetPacketCount === Infinity;
+  if (full) t.frames = m.probedPacketCount;
+  const sampled = full ? 'exact' : 'sampled';
   Object.assign(t.provenance, { codec: 'header', dimensions: 'header', startSec: 'exact', durationSec: 'exact', avgFps: sampled, nominalFps: sampled, minFps: sampled, maxFps: sampled, isVfr: sampled });
+  if (full) t.provenance.frames = 'exact';
   t.warnings.push(
     `computeFrameRateMetrics: average ${m.averageFrameRate}, median ${m.medianFrameRate}, best guess ${m.bestGuessFrameRate}, underlying ${m.underlyingFrameRate}, min ${m.minFrameRate}, max ${m.maxFrameRate}, constant ${m.frameRateIsConstant}, ${m.probedPacketCount} packets probed`,
   );

@@ -37,6 +37,7 @@ export interface ArmInfo {
 
 const MP4BOX_FIELDS: ReadonlySet<FieldName> = new Set(['error', 'trackSelection', 'codecName', 'width', 'height', 'frames', 'durationSec', 'formatDurationSec']);
 const MEDIABUNNY_FIELDS: ReadonlySet<FieldName> = new Set(['error', 'trackSelection', 'codecName', 'width', 'height', 'avgFps', 'nominalFps', 'minFps', 'maxFps', 'isVfr', 'startSec', 'durationSec', 'formatDurationSec']);
+const MEDIABUNNY_FULL_FIELDS: ReadonlySet<FieldName> = new Set([...MEDIABUNNY_FIELDS, 'frames']);
 const BOTH: readonly ContainerFamily[] = ['isobmff', 'matroska'];
 
 export const ARMS: Readonly<Record<EngineName, ArmSpec>> = {
@@ -72,10 +73,10 @@ export const ARMS: Readonly<Record<EngineName, ArmSpec>> = {
     library: 'mediabunny',
     style: 'full',
     families: BOTH,
-    provides: MEDIABUNNY_FIELDS,
+    provides: MEDIABUNNY_FULL_FIELDS,
     picksPrimary: true,
     primaryOnly: true,
-    recipe: 'the idiomatic recipe with computeFrameRateMetrics({ targetPacketCount: Infinity })',
+    recipe: 'the idiomatic recipe with computeFrameRateMetrics({ targetPacketCount: Infinity }), its probedPacketCount as the frame count',
   },
   'mediabunny-tuned': {
     library: 'mediabunny',

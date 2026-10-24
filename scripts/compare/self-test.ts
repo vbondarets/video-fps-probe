@@ -376,6 +376,8 @@ export function runSelfTest(): number {
   expectEq('outcome: VFR on a CFR fixture', outcomeOf('mediabunny-full', { info: MP4_INFO, ref: cfrRef, result: appResult([appTrack({ isVfr: true })]) }, 'isVfr'), 'wrong');
   const lastStart = refStream({ packets: { ...refStream().packets!, firstPts: 0, lastPts: 89089 } });
   expectEq('outcome: the last frame timestamp', outcomeOf('mediabunny-idiomatic', { info: MP4_INFO, ref: refFile([lastStart]), result: appResult([appTrack()], { formatDurationSec: 89089 / 30000 }) }, 'formatDurationSec'), 'definition-differs');
+  expectEq('outcome: a frame count from the full scan', outcomeOf('mediabunny-full', { info: MP4_INFO, ref: cfrRef, result: appResult([appTrack({ frames: 91 })]) }, 'frames'), 'wrong');
+  expectEq('outcome: no frame count in the default recipe', outcomeOf('mediabunny-idiomatic', { info: MP4_INFO, ref: cfrRef, result: appResult([appTrack({ frames: 91 })]) }, 'frames'), 'not-provided');
   expectEq('outcome: the own engine is classified too', outcomeOf('own', { info: MP4_INFO, ref: cfrRef, result: appResult([appTrack({ frames: 91 })]) }, 'frames'), 'wrong');
 
   const problems: string[] = [];

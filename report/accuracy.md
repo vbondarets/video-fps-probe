@@ -14,7 +14,7 @@ Every mismatch has one outcome: **wrong** (the arm returns a value that differs 
 | mp4box-idiomatic | mp4box 2.4.1 | informational | 116 | 1412 | 679 | 0 | 0 | 5 | 31 | 510 | 84 | 103 |
 | mp4box-tuned | mp4box 2.4.1 | informational | 116 | 1426 | 1285 | 2 | 2 | 20 | 9 | 0 | 84 | 24 |
 | mediabunny-idiomatic | mediabunny 1.62.1 | informational | 116 | 1804 | 1284 | 0 | 0 | 23 | 90 | 181 | 0 | 226 |
-| mediabunny-full | mediabunny 1.62.1 | informational | 116 | 1804 | 1356 | 0 | 0 | 26 | 120 | 239 | 0 | 63 |
+| mediabunny-full | mediabunny 1.62.1 | informational | 116 | 1804 | 1458 | 0 | 0 | 28 | 121 | 134 | 0 | 63 |
 | mediabunny-tuned | mediabunny 1.62.1 | informational | 116 | 1832 | 1648 | 3 | 2 | 24 | 56 | 46 | 0 | 53 |
 
 ## own
@@ -25,124 +25,124 @@ own 0.1.0, own: this package: analyze() of src/core.
 
 | Fixture | Category | avg FPS (app, or app vs ffprobe) | frames | min..max FPS | Verdict | Reads | Bytes | % of file | ms |
 |---|---|---|---|---|---|---:|---:|---:|---:|
-| cfr_h264_23.976.mp4 | cfr | 24000/1001; measured 24000/1001 | 72 | 23.976..23.976 | all exact (17) | 1 | 71.9 KiB | 100 | 1.28 |
+| cfr_h264_23.976.mp4 | cfr | 24000/1001; measured 24000/1001 | 72 | 23.976..23.976 | all exact (17) | 1 | 71.9 KiB | 100 | 1.35 |
 | cfr_vp9_23.976.webm | cfr | 24000/1001; measured 36000/1501 | 72 | 23.810..24.390 | all exact (16) | 1 | 59.4 KiB | 100 | 1.08 |
-| cfr_h264_24.mp4 | cfr | 24/1; measured 24/1 | 72 | 24.000..24.000 | all exact (17) | 1 | 71.3 KiB | 100 | 0.48 |
-| cfr_vp9_24.webm | cfr | 24/1; measured 72000/2999 | 72 | 23.810..24.390 | all exact (16) | 1 | 59.2 KiB | 100 | 0.50 |
-| cfr_h264_25.mp4 | cfr | 25/1; measured 25/1 | 75 | 25.000..25.000 | all exact (17) | 1 | 69.7 KiB | 100 | 0.49 |
-| cfr_vp9_25.webm | cfr | 25/1; measured 25/1 | 75 | 25.000..25.000 | all exact (16) | 1 | 58.8 KiB | 100 | 0.60 |
-| cfr_h264_29.97.mp4 | cfr | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 86.4 KiB | 100 | 0.45 |
+| cfr_h264_24.mp4 | cfr | 24/1; measured 24/1 | 72 | 24.000..24.000 | all exact (17) | 1 | 71.3 KiB | 100 | 0.62 |
+| cfr_vp9_24.webm | cfr | 24/1; measured 72000/2999 | 72 | 23.810..24.390 | all exact (16) | 1 | 59.2 KiB | 100 | 0.58 |
+| cfr_h264_25.mp4 | cfr | 25/1; measured 25/1 | 75 | 25.000..25.000 | all exact (17) | 1 | 69.7 KiB | 100 | 0.43 |
+| cfr_vp9_25.webm | cfr | 25/1; measured 25/1 | 75 | 25.000..25.000 | all exact (16) | 1 | 58.8 KiB | 100 | 0.54 |
+| cfr_h264_29.97.mp4 | cfr | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 86.4 KiB | 100 | 0.40 |
 | cfr_vp9_29.97.webm | cfr | 30000/1001; measured 30000/1001 | 90 | 29.412..30.303 | all exact (16) | 1 | 72.0 KiB | 100 | 0.84 |
-| cfr_h264_30.mp4 | cfr | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 86.7 KiB | 100 | 0.35 |
-| cfr_vp9_30.webm | cfr | 30/1; measured 30/1 | 90 | 29.412..30.303 | all exact (16) | 1 | 70.7 KiB | 100 | 0.46 |
-| cfr_h264_50.mp4 | cfr | 50/1; measured 50/1 | 150 | 50.000..50.000 | all exact (17) | 1 | 110.0 KiB | 100 | 0.46 |
-| cfr_vp9_50.webm | cfr | 50/1; measured 50/1 | 150 | 50.000..50.000 | all exact (16) | 1 | 104.2 KiB | 100 | 0.66 |
-| cfr_h264_59.94.mp4 | cfr | 60000/1001; measured 60000/1001 | 180 | 59.940..59.940 | all exact (17) | 1 | 126.0 KiB | 100 | 0.41 |
-| cfr_vp9_59.94.webm | cfr | 19001/317; measured 90000/1501 | 180 | 58.824..62.500 | all exact (16) | 1 | 122.5 KiB | 100 | 0.52 |
-| cfr_h264_60.mp4 | cfr | 60/1; measured 60/1 | 180 | 60.000..60.000 | all exact (17) | 1 | 126.5 KiB | 100 | 0.47 |
-| cfr_vp9_60.webm | cfr | 60/1; measured 180000/2999 | 180 | 58.824..62.500 | all exact (16) | 1 | 121.3 KiB | 100 | 0.43 |
-| cfr_h264_120.mp4 | cfr | 120/1; measured 120/1 | 360 | 120.0..120.0 | all exact (17) | 1 | 185.2 KiB | 100 | 0.47 |
-| cfr_vp9_120.webm | cfr | 120/1; measured 120/1 | 360 | 111.1..125.0 | all exact (16) | 1 | 203.8 KiB | 100 | 0.77 |
-| cfr_h264_240.mp4 | cfr | 240/1; measured 240/1 | 720 | 240.0..240.0 | all exact (17) | 1 | 322.5 KiB | 100 | 0.68 |
-| cfr_vp9_240.webm | cfr | 240/1; measured 240/1 | 720 | 200.0..250.0 | all exact (16) | 1 | 355.4 KiB | 100 | 1.08 |
-| mov_nobf_default.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 86.4 KiB | 100 | 0.37 |
-| mov_nobf_faststart.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 86.4 KiB | 100 | 0.36 |
-| mov_bf_elst.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.7 KiB | 100 | 0.32 |
-| mov_bf_noelst.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.7 KiB | 100 | 0.42 |
+| cfr_h264_30.mp4 | cfr | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 86.7 KiB | 100 | 0.37 |
+| cfr_vp9_30.webm | cfr | 30/1; measured 30/1 | 90 | 29.412..30.303 | all exact (16) | 1 | 70.7 KiB | 100 | 0.51 |
+| cfr_h264_50.mp4 | cfr | 50/1; measured 50/1 | 150 | 50.000..50.000 | all exact (17) | 1 | 110.0 KiB | 100 | 0.42 |
+| cfr_vp9_50.webm | cfr | 50/1; measured 50/1 | 150 | 50.000..50.000 | all exact (16) | 1 | 104.2 KiB | 100 | 0.60 |
+| cfr_h264_59.94.mp4 | cfr | 60000/1001; measured 60000/1001 | 180 | 59.940..59.940 | all exact (17) | 1 | 126.0 KiB | 100 | 0.43 |
+| cfr_vp9_59.94.webm | cfr | 19001/317; measured 90000/1501 | 180 | 58.824..62.500 | all exact (16) | 1 | 122.5 KiB | 100 | 0.53 |
+| cfr_h264_60.mp4 | cfr | 60/1; measured 60/1 | 180 | 60.000..60.000 | all exact (17) | 1 | 126.5 KiB | 100 | 0.45 |
+| cfr_vp9_60.webm | cfr | 60/1; measured 180000/2999 | 180 | 58.824..62.500 | all exact (16) | 1 | 121.3 KiB | 100 | 0.44 |
+| cfr_h264_120.mp4 | cfr | 120/1; measured 120/1 | 360 | 120.0..120.0 | all exact (17) | 1 | 185.2 KiB | 100 | 0.43 |
+| cfr_vp9_120.webm | cfr | 120/1; measured 120/1 | 360 | 111.1..125.0 | all exact (16) | 1 | 203.8 KiB | 100 | 0.71 |
+| cfr_h264_240.mp4 | cfr | 240/1; measured 240/1 | 720 | 240.0..240.0 | all exact (17) | 1 | 322.5 KiB | 100 | 0.64 |
+| cfr_vp9_240.webm | cfr | 240/1; measured 240/1 | 720 | 200.0..250.0 | all exact (16) | 1 | 355.4 KiB | 100 | 1.14 |
+| mov_nobf_default.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 86.4 KiB | 100 | 0.34 |
+| mov_nobf_faststart.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 86.4 KiB | 100 | 0.34 |
+| mov_bf_elst.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.7 KiB | 100 | 0.36 |
+| mov_bf_noelst.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.7 KiB | 100 | 0.41 |
 | mov_bf_faststart.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.7 KiB | 100 | 0.29 |
-| mov_prores.mov | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 218.8 KiB | 100 | 0.52 |
-| mp4_bf_elst.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.8 KiB | 100 | 0.27 |
+| mov_prores.mov | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 218.8 KiB | 100 | 0.49 |
+| mp4_bf_elst.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.8 KiB | 100 | 0.28 |
 | mp4_bf_noelst.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.7 KiB | 100 | 0.30 |
-| mp4_bf_faststart.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.8 KiB | 100 | 0.28 |
-| mp4_elst_empty_offset.mp4 | mov | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 35.2 KiB | 100 | 0.28 |
-| mp4_elst_trim_start.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.8 KiB | 100 | 0.29 |
+| mp4_bf_faststart.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.8 KiB | 100 | 0.27 |
+| mp4_elst_empty_offset.mp4 | mov | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 35.2 KiB | 100 | 0.25 |
+| mp4_elst_trim_start.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.8 KiB | 100 | 0.27 |
 | mp4_elst_trim_output_seek.mp4 | mov | 30000/1001; measured 30000/1001 | 60 | 29.970..29.970 | all exact (17) | 1 | 25.1 KiB | 100 | 0.26 |
-| fmp4_keyframe_empty_moov.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 1 | 116.7 KiB | 100 | 0.42 |
+| fmp4_keyframe_empty_moov.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 1 | 116.7 KiB | 100 | 0.40 |
 | fmp4_default_base_moof.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 1 | 116.7 KiB | 100 | 0.37 |
-| fmp4_frag_duration.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 1 | 117.2 KiB | 100 | 0.47 |
+| fmp4_frag_duration.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 1 | 117.2 KiB | 100 | 0.41 |
 | fmp4_bframes.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 1 | 48.8 KiB | 100 | 0.32 |
-| fmp4_hybrid_no_empty_moov.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 1 | 116.7 KiB | 100 | 0.42 |
-| fmp4_cmaf.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 1 | 116.7 KiB | 100 | 0.42 |
-| fmp4_global_sidx.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 1 | 116.8 KiB | 100 | 0.48 |
-| fmp4_dash_flag.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 1 | 116.9 KiB | 100 | 0.42 |
-| mp4_hybrid_fragmented_finalized.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 1 | 117.9 KiB | 100 | 0.33 |
+| fmp4_hybrid_no_empty_moov.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 1 | 116.7 KiB | 100 | 0.39 |
+| fmp4_cmaf.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 1 | 116.7 KiB | 100 | 0.36 |
+| fmp4_global_sidx.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 1 | 116.8 KiB | 100 | 0.45 |
+| fmp4_dash_flag.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 1 | 116.9 KiB | 100 | 0.39 |
+| mp4_hybrid_fragmented_finalized.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 1 | 117.9 KiB | 100 | 0.35 |
 | fmp4_dash_single_file.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 1 | 116.8 KiB | 100 | 0.39 |
-| fmp4_dash_concat_segments.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 1 | 116.9 KiB | 100 | 0.43 |
-| hevc_hvc1.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 45.1 KiB | 100 | 0.32 |
-| hevc_hev1.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 45.1 KiB | 100 | 0.30 |
-| av1.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 20.8 KiB | 100 | 0.24 |
-| vp9.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 72.0 KiB | 100 | 0.34 |
-| vp9.webm | codec | 30000/1001; measured 30000/1001 | 90 | 29.412..30.303 | all exact (16) | 1 | 72.0 KiB | 100 | 0.37 |
-| vp8.webm | codec | 30000/1001; measured 30000/1001 | 90 | 29.412..30.303 | all exact (16) | 1 | 160.3 KiB | 100 | 0.48 |
-| av1.webm | codec | 30000/1001; measured 30000/1001 | 90 | 29.412..30.303 | all exact (16) | 1 | 21.2 KiB | 100 | 0.27 |
-| h264.mkv | matroska | 30000/1001; measured 30000/1001 | 90 | 29.412..30.303 | all exact (16) | 1 | 86.4 KiB | 100 | 0.43 |
-| hevc.mkv | codec | 30000/1001; measured 30000/1001 | 90 | 29.412..30.303 | all exact (16) | 1 | 44.3 KiB | 100 | 0.38 |
-| vp9_live.webm | live | 30000/1001; measured 30000/1001 | 90 | 29.412..30.303 | all exact (16) | 1 | 71.9 KiB | 100 | 0.54 |
-| vp9_pipe.webm | live | 30000/1001; measured 30000/1001 | 90 | 29.412..30.303 | all exact (16) | 1 | 71.9 KiB | 100 | 0.42 |
-| vp9_unknown_clusters.webm | live | 30000/1001; measured 30000/1001 | 90 | 29.412..30.303 | all exact (16) | 1 | 71.9 KiB | 100 | 0.47 |
-| vp9_no_defaultduration.webm | matroska | -; measured 30000/1001 | 90 | 29.412..30.303 | all exact (14) | 1 | 72.0 KiB | 100 | 0.44 |
-| vfr_concat_10_30_60.mp4 | vfr | 100/3; measured 100/3 | 200 | 10.000..60.000 | all exact (16) | 1 | 161.8 KiB | 100 | 0.66 |
-| vfr_concat_bframes.mp4 | vfr | 1200/37; measured 100/3 | 200 | 10.000..60.000 | all exact (16) | 1 | 66.7 KiB | 100 | 0.64 |
+| fmp4_dash_concat_segments.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 1 | 116.9 KiB | 100 | 0.38 |
+| hevc_hvc1.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 45.1 KiB | 100 | 0.30 |
+| hevc_hev1.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 45.1 KiB | 100 | 0.27 |
+| av1.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 20.8 KiB | 100 | 0.23 |
+| vp9.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 72.0 KiB | 100 | 0.32 |
+| vp9.webm | codec | 30000/1001; measured 30000/1001 | 90 | 29.412..30.303 | all exact (16) | 1 | 72.0 KiB | 100 | 0.41 |
+| vp8.webm | codec | 30000/1001; measured 30000/1001 | 90 | 29.412..30.303 | all exact (16) | 1 | 160.3 KiB | 100 | 0.49 |
+| av1.webm | codec | 30000/1001; measured 30000/1001 | 90 | 29.412..30.303 | all exact (16) | 1 | 21.2 KiB | 100 | 0.28 |
+| h264.mkv | matroska | 30000/1001; measured 30000/1001 | 90 | 29.412..30.303 | all exact (16) | 1 | 86.4 KiB | 100 | 0.37 |
+| hevc.mkv | codec | 30000/1001; measured 30000/1001 | 90 | 29.412..30.303 | all exact (16) | 1 | 44.3 KiB | 100 | 0.36 |
+| vp9_live.webm | live | 30000/1001; measured 30000/1001 | 90 | 29.412..30.303 | all exact (16) | 1 | 71.9 KiB | 100 | 0.50 |
+| vp9_pipe.webm | live | 30000/1001; measured 30000/1001 | 90 | 29.412..30.303 | all exact (16) | 1 | 71.9 KiB | 100 | 0.39 |
+| vp9_unknown_clusters.webm | live | 30000/1001; measured 30000/1001 | 90 | 29.412..30.303 | all exact (16) | 1 | 71.9 KiB | 100 | 0.39 |
+| vp9_no_defaultduration.webm | matroska | -; measured 30000/1001 | 90 | 29.412..30.303 | all exact (14) | 1 | 72.0 KiB | 100 | 0.39 |
+| vfr_concat_10_30_60.mp4 | vfr | 100/3; measured 100/3 | 200 | 10.000..60.000 | all exact (16) | 1 | 161.8 KiB | 100 | 0.55 |
+| vfr_concat_bframes.mp4 | vfr | 1200/37; measured 100/3 | 200 | 10.000..60.000 | all exact (16) | 1 | 66.7 KiB | 100 | 0.58 |
 | vfr_concat_10_30_60_ts1M.mp4 | vfr | 100/3; measured 100/3 | 200 | 10.000..60.002 | all exact (16) | 1 | 162.7 KiB | 100 | 0.74 |
-| vfr_concat_10_30_60.mov | vfr | 100/3; measured 100/3 | 200 | 10.000..60.000 | all exact (16) | 1 | 161.7 KiB | 100 | 0.49 |
-| vfr_concat_10_30_60.webm | vfr | -; measured 100/3 vs 3125/94 | 200 | 10.000..62.500 | known-deviation: avgFps.measured | 1 | 140.3 KiB | 100 | 0.63 |
-| vfr_concat_10_30_60_fmp4.mp4 | vfr | 100/3; measured 100/3 | 200 | 10.000..60.000 | all exact (16) | 1 | 162.8 KiB | 100 | 0.81 |
-| vfr_setpts_sine.mp4 | vfr | 13500000/445991; measured 13500000/445991 | 150 | 17.149..119.7 | all exact (16) | 1 | 142.2 KiB | 100 | 1.15 |
-| vfr_select_drop.mp4 | vfr | 36/1; measured 36/1 | 180 | 20.000..60.000 | all exact (16) | 1 | 152.1 KiB | 100 | 0.68 |
-| vfr_mpdecimate.mp4 | vfr | 182/9; measured 182/9 | 91 | 0.667..30.000 | all exact (16) | 1 | 87.0 KiB | 100 | 0.42 |
-| vfr_screenrec_ts1000.mp4 | vfr | 61500/1501; measured 61500/1501 | 246 | 2.959..100.0 | all exact (16) | 1 | 188.6 KiB | 100 | 0.90 |
-| vfr_screenrec_ts1000.webm | vfr | 60/1; measured 246000/5999 | 246 | 2.994..62.500 | all exact (16) | 1 | 181.7 KiB | 100 | 0.73 |
-| vfr_pulldown_2_3.mp4 | vfr | 24/1; measured 24/1 | 120 | 20.000..30.000 | all exact (16) | 1 | 122.8 KiB | 100 | 0.54 |
-| vfr_two_phase_5_200.mp4 | vfr | 205/2; measured 205/2 | 820 | 5.000..200.0 | all exact (16) | 1 | 411.3 KiB | 100 | 0.88 |
-| vfr_two_phase_5_200.webm | vfr | -; measured 205/2 | 820 | 5.000..200.0 | all exact (15) | 1 | 431.0 KiB | 100 | 1.30 |
-| vfr_two_phase_5_200.mkv | vfr | 205/2; measured 205/2 | 820 | 5.000..200.0 | all exact (16) | 1 | 421.5 KiB | 100 | 1.98 |
-| vfr_freeze_2s.mp4 | vfr | 3600/179; measured 3600/179 | 120 | 0.500..30.000 | all exact (16) | 1 | 117.0 KiB | 100 | 0.43 |
-| box64_mdat64_wide.mov | box64 | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 86.4 KiB | 100 | 0.34 |
-| box64_mdat64_free.mp4 | box64 | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 86.7 KiB | 100 | 0.32 |
-| box64_co64_mdat64.mp4 | box64 | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.8 KiB | 100 | 0.24 |
-| av_h264_aac.mp4 | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 101.4 KiB | 100 | 0.38 |
-| av_h264_aac_faststart.mp4 | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 101.4 KiB | 100 | 0.32 |
-| multi_video_2tracks.mp4 | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 299.9 KiB | 100 | 0.65 |
+| vfr_concat_10_30_60.mov | vfr | 100/3; measured 100/3 | 200 | 10.000..60.000 | all exact (16) | 1 | 161.7 KiB | 100 | 0.48 |
+| vfr_concat_10_30_60.webm | vfr | -; measured 100/3 vs 3125/94 | 200 | 10.000..62.500 | known-deviation: avgFps.measured | 1 | 140.3 KiB | 100 | 0.87 |
+| vfr_concat_10_30_60_fmp4.mp4 | vfr | 100/3; measured 100/3 | 200 | 10.000..60.000 | all exact (16) | 1 | 162.8 KiB | 100 | 0.77 |
+| vfr_setpts_sine.mp4 | vfr | 13500000/445991; measured 13500000/445991 | 150 | 17.149..119.7 | all exact (16) | 1 | 142.2 KiB | 100 | 1.05 |
+| vfr_select_drop.mp4 | vfr | 36/1; measured 36/1 | 180 | 20.000..60.000 | all exact (16) | 1 | 152.1 KiB | 100 | 0.67 |
+| vfr_mpdecimate.mp4 | vfr | 182/9; measured 182/9 | 91 | 0.667..30.000 | all exact (16) | 1 | 87.0 KiB | 100 | 0.49 |
+| vfr_screenrec_ts1000.mp4 | vfr | 61500/1501; measured 61500/1501 | 246 | 2.959..100.0 | all exact (16) | 1 | 188.6 KiB | 100 | 0.84 |
+| vfr_screenrec_ts1000.webm | vfr | 60/1; measured 246000/5999 | 246 | 2.994..62.500 | all exact (16) | 1 | 181.7 KiB | 100 | 0.61 |
+| vfr_pulldown_2_3.mp4 | vfr | 24/1; measured 24/1 | 120 | 20.000..30.000 | all exact (16) | 1 | 122.8 KiB | 100 | 0.51 |
+| vfr_two_phase_5_200.mp4 | vfr | 205/2; measured 205/2 | 820 | 5.000..200.0 | all exact (16) | 1 | 411.3 KiB | 100 | 0.84 |
+| vfr_two_phase_5_200.webm | vfr | -; measured 205/2 | 820 | 5.000..200.0 | all exact (15) | 1 | 431.0 KiB | 100 | 1.31 |
+| vfr_two_phase_5_200.mkv | vfr | 205/2; measured 205/2 | 820 | 5.000..200.0 | all exact (16) | 1 | 421.5 KiB | 100 | 1.86 |
+| vfr_freeze_2s.mp4 | vfr | 3600/179; measured 3600/179 | 120 | 0.500..30.000 | all exact (16) | 1 | 117.0 KiB | 100 | 0.42 |
+| box64_mdat64_wide.mov | box64 | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 86.4 KiB | 100 | 0.33 |
+| box64_mdat64_free.mp4 | box64 | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 86.7 KiB | 100 | 0.31 |
+| box64_co64_mdat64.mp4 | box64 | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.8 KiB | 100 | 0.25 |
+| av_h264_aac.mp4 | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 101.4 KiB | 100 | 0.37 |
+| av_h264_aac_faststart.mp4 | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 101.4 KiB | 100 | 0.34 |
+| multi_video_2tracks.mp4 | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 299.9 KiB | 100 | 0.60 |
 | multi_video_2tracks.mp4 (track 2) | multi | 24/1; measured 24/1 | 96 | 24.000..24.000 | all exact (14) |  |  |  |  |
-| still_image_track_first.mp4 | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 105.0 KiB | 100 | 0.40 |
+| still_image_track_first.mp4 | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 105.0 KiB | 100 | 0.37 |
 | still_image_track_first.mp4 (track 1) | multi | 25/1; measured 25/1 | 1 | none | all exact (13) |  |  |  |  |
 | cover_art_audio.m4a | cover | - | - | - | all exact (3) | 1 | 16.3 KiB | 100 | 0.19 |
-| cover_art_plus_video.mp4 | cover | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 103.5 KiB | 100 | 0.34 |
+| cover_art_plus_video.mp4 | cover | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 103.5 KiB | 100 | 0.33 |
 | audio_only.m4a | audio | - | - | - | all exact (3) | 1 | 13.3 KiB | 100 | 0.17 |
-| audio_only_aac.mp4 | audio | - | - | - | all exact (3) | 1 | 13.3 KiB | 100 | 0.16 |
-| audio_only_opus.webm | audio | - | - | - | all exact (3) | 1 | 13.5 KiB | 100 | 0.22 |
-| edge_single_frame.mp4 | edge | 30/1; measured 30/1 | 1 | none | all exact (16) | 1 | 4.0 KiB | 100 | 0.20 |
+| audio_only_aac.mp4 | audio | - | - | - | all exact (3) | 1 | 13.3 KiB | 100 | 0.19 |
+| audio_only_opus.webm | audio | - | - | - | all exact (3) | 1 | 13.5 KiB | 100 | 0.21 |
+| edge_single_frame.mp4 | edge | 30/1; measured 30/1 | 1 | none | all exact (16) | 1 | 4.0 KiB | 100 | 0.19 |
 | corrupt_empty_0byte.mp4 | corrupt | - | - | - | expected outcome (manifest) | 0 | 0 B | 0 | 0.00 |
-| corrupt_garbage_random.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 64.0 KiB | 100 | 0.23 |
+| corrupt_garbage_random.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 64.0 KiB | 100 | 0.19 |
 | corrupt_text_named.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 63 B | 100 | 0.15 |
-| corrupt_png_named.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 2.2 KiB | 100 | 0.14 |
-| corrupt_trunc_moov_partial.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 86.2 KiB | 100 | 0.34 |
-| corrupt_trunc_no_moov.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 85.6 KiB | 100 | 0.27 |
-| corrupt_trunc_mdat_faststart.mp4 | corrupt | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 60.8 KiB | 100 | 0.28 |
-| corrupt_fmp4_truncated_mid_fragment.mp4 | corrupt | 30000/1001; measured 30000/1001 | 73 | 29.970..29.970 | all exact (17) | 1 | 70.0 KiB | 100 | 0.34 |
-| box_mdat_size0.mp4 | box64 | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 101.4 KiB | 100 | 0.36 |
-| corrupt_stts_count_huge.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 86.7 KiB | 100 | 0.39 |
+| corrupt_png_named.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 2.2 KiB | 100 | 0.13 |
+| corrupt_trunc_moov_partial.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 86.2 KiB | 100 | 0.31 |
+| corrupt_trunc_no_moov.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 85.6 KiB | 100 | 0.26 |
+| corrupt_trunc_mdat_faststart.mp4 | corrupt | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 60.8 KiB | 100 | 0.30 |
+| corrupt_fmp4_truncated_mid_fragment.mp4 | corrupt | 30000/1001; measured 30000/1001 | 73 | 29.970..29.970 | all exact (17) | 1 | 70.0 KiB | 100 | 0.33 |
+| box_mdat_size0.mp4 | box64 | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 101.4 KiB | 100 | 0.34 |
+| corrupt_stts_count_huge.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 86.7 KiB | 100 | 0.32 |
 | sniff_webm_named_mp4.mp4 | sniff | 30000/1001; measured 30000/1001 | 90 | 29.412..30.303 | all exact (16) | 1 | 72.0 KiB | 100 | 0.38 |
-| sniff_mp4_named_webm.webm | sniff | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 86.7 KiB | 100 | 0.33 |
-| sniff_mp4_named_mkv.mkv | sniff | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 86.7 KiB | 100 | 0.33 |
-| frag_vfr_global_sidx.mp4 | fmp4 | 60/1; measured 4200/149 | 140 | 20.000..60.000 | all exact (16) | 1 | 121.0 KiB | 100 | 0.50 |
-| frag_vfr_dash.mp4 | fmp4 | 30/1; measured 4200/149 | 140 | 20.000..60.000 | all exact (16) | 1 | 121.2 KiB | 100 | 0.45 |
-| h264_vfr_remux.mkv | vfr | 130/3; measured 130/3 | 260 | 10.000..62.500 | all exact (16) | 1 | 200.0 KiB | 100 | 0.91 |
-| vp9_pipe_t10.webm | live | 30/1; measured 30/1 | 90 | 29.412..30.303 | all exact (16) | 1 | 70.6 KiB | 100 | 0.39 |
+| sniff_mp4_named_webm.webm | sniff | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 86.7 KiB | 100 | 0.31 |
+| sniff_mp4_named_mkv.mkv | sniff | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 86.7 KiB | 100 | 0.35 |
+| frag_vfr_global_sidx.mp4 | fmp4 | 60/1; measured 4200/149 | 140 | 20.000..60.000 | all exact (16) | 1 | 121.0 KiB | 100 | 0.49 |
+| frag_vfr_dash.mp4 | fmp4 | 30/1; measured 4200/149 | 140 | 20.000..60.000 | all exact (16) | 1 | 121.2 KiB | 100 | 0.40 |
+| h264_vfr_remux.mkv | vfr | 130/3; measured 130/3 | 260 | 10.000..62.500 | all exact (16) | 1 | 200.0 KiB | 100 | 0.78 |
+| vp9_pipe_t10.webm | live | 30/1; measured 30/1 | 90 | 29.412..30.303 | all exact (16) | 1 | 70.6 KiB | 100 | 0.36 |
 | vp9_opus_live_audiotail.webm | live | 30/1; measured 30/1 | 90 | 29.412..30.303 | all exact (16) | 1 | 98.7 KiB | 100 | 0.52 |
 | h264_25_cover.mkv | cover | 25/1; measured 25/1 | 75 | 25.000..25.000 | all exact (16) | 1 | 71.9 KiB | 100 | 0.37 |
-| remux_cfr_120_ts16000.mp4 | cfr | 120/1; measured 120/1 vs 1152000/9601 | 360 | 111.1..125.0 | within-tol: avgFps.measured | 1 | 204.7 KiB | 100 | 0.69 |
-| remux_cfr_29.97_ts16000.mp4 | cfr | 30000/1001; measured 30000/1001 vs 1440000/48053 | 90 | 29.412..30.303 | within-tol: avgFps.measured | 1 | 72.5 KiB | 100 | 0.34 |
-| start_freeze_bf.mp4 | vfr | 1125/67; measured 4500/209 | 150 | 0.500..30000.0 | all exact (16) | 1 | 118.2 KiB | 100 | 0.49 |
-| fmp4_missing_fragment.mp4 | fmp4 | 30/1; measured 25/1 | 150 | 0.968..30.000 | all exact (16) | 1 | 147.9 KiB | 100 | 0.57 |
-| elst_trim_vfr_copy.mp4 | vfr | 205/2; measured 815/7 | 820 | 5.000..200.0 | all exact (16) | 1 | 411.3 KiB | 100 | 0.89 |
-| cfr_240_ts600.mp4 | cfr | 288000/1201; measured 288000/1201 | 480 | 200.0..300.0 | all exact (16) | 1 | 93.1 KiB | 100 | 0.71 |
-| fmp4_global_sidx_bframes.mp4 | fmp4 | 25/1; measured 25/1 | 100 | 25.000..25.000 | all exact (17) | 1 | 97.7 KiB | 100 | 0.39 |
-| long_cfr_3h_60fps.mp4 | long | 60/1; measured 60/1 | 648000 | 60.000..60.000 | all exact (17) | 2 | 2.56 MiB | 20.6 | 3.79 |
-| long_vfr_1h_screenrec.mp4 | long | 186/5; measured 186/5 | 133920 | 2.941..100.0 | all exact (16) | 2 | 1.53 MiB | 40.7 | 50.3 |
-| big_1080p_moov_end.mp4 | big | 30/1; measured 30/1 | 1800 | 30.000..30.000 | all exact (17) | 2 | 75.0 KiB | 0.01 | 0.72 |
-| big_1080p_faststart.mp4 | big | 30/1; measured 30/1 | 1800 | 30.000..30.000 | all exact (17) | 1 | 64.0 KiB | 0.01 | 0.26 |
-| big_1080p.mkv | big | 30/1 | - | 29.412..30.303 | all exact (12) | 126 | 16.51 MiB | 2.86 | 89.4 |
+| remux_cfr_120_ts16000.mp4 | cfr | 120/1; measured 120/1 vs 1152000/9601 | 360 | 111.1..125.0 | within-tol: avgFps.measured | 1 | 204.7 KiB | 100 | 0.63 |
+| remux_cfr_29.97_ts16000.mp4 | cfr | 30000/1001; measured 30000/1001 vs 1440000/48053 | 90 | 29.412..30.303 | within-tol: avgFps.measured | 1 | 72.5 KiB | 100 | 0.37 |
+| start_freeze_bf.mp4 | vfr | 1125/67; measured 4500/209 | 150 | 0.500..30000.0 | all exact (16) | 1 | 118.2 KiB | 100 | 0.51 |
+| fmp4_missing_fragment.mp4 | fmp4 | 30/1; measured 25/1 | 150 | 0.968..30.000 | all exact (16) | 1 | 147.9 KiB | 100 | 0.56 |
+| elst_trim_vfr_copy.mp4 | vfr | 205/2; measured 815/7 | 820 | 5.000..200.0 | all exact (16) | 1 | 411.3 KiB | 100 | 0.93 |
+| cfr_240_ts600.mp4 | cfr | 288000/1201; measured 288000/1201 | 480 | 200.0..300.0 | all exact (16) | 1 | 93.1 KiB | 100 | 0.64 |
+| fmp4_global_sidx_bframes.mp4 | fmp4 | 25/1; measured 25/1 | 100 | 25.000..25.000 | all exact (17) | 1 | 97.7 KiB | 100 | 0.50 |
+| long_cfr_3h_60fps.mp4 | long | 60/1; measured 60/1 | 648000 | 60.000..60.000 | all exact (17) | 2 | 2.56 MiB | 20.6 | 3.64 |
+| long_vfr_1h_screenrec.mp4 | long | 186/5; measured 186/5 | 133920 | 2.941..100.0 | all exact (16) | 2 | 1.53 MiB | 40.7 | 50.5 |
+| big_1080p_moov_end.mp4 | big | 30/1; measured 30/1 | 1800 | 30.000..30.000 | all exact (17) | 2 | 75.0 KiB | 0.01 | 0.87 |
+| big_1080p_faststart.mp4 | big | 30/1; measured 30/1 | 1800 | 30.000..30.000 | all exact (17) | 1 | 64.0 KiB | 0.01 | 0.27 |
+| big_1080p.mkv | big | 30/1 | - | 29.412..30.303 | all exact (12) | 126 | 16.51 MiB | 2.86 | 89.0 |
 
 <details><summary>own: verdict per field</summary>
 
@@ -291,124 +291,124 @@ mp4box 2.4.1, idiomatic: README recipe: createFile(), appendBuffer() of 1 MiB ch
 
 | Fixture | Category | avg FPS (app, or app vs ffprobe) | frames | min..max FPS | Verdict | Reads | Bytes | % of file | ms |
 |---|---|---|---|---|---|---:|---:|---:|---:|
-| cfr_h264_23.976.mp4 | cfr | - vs 24000/1001 | 72 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 71.9 KiB | 100 | 0.77 |
-| cfr_vp9_23.976.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 59.4 KiB | 100 | 0.27 |
-| cfr_h264_24.mp4 | cfr | - vs 24/1 | 72 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 71.3 KiB | 100 | 0.75 |
-| cfr_vp9_24.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 59.2 KiB | 100 | 0.28 |
-| cfr_h264_25.mp4 | cfr | - vs 25/1 | 75 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 69.7 KiB | 100 | 0.72 |
-| cfr_vp9_25.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 58.8 KiB | 100 | 0.25 |
-| cfr_h264_29.97.mp4 | cfr | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 86.4 KiB | 100 | 0.60 |
-| cfr_vp9_29.97.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 72.0 KiB | 100 | 0.30 |
-| cfr_h264_30.mp4 | cfr | - vs 30/1 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 86.7 KiB | 100 | 0.56 |
-| cfr_vp9_30.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 70.7 KiB | 100 | 0.30 |
-| cfr_h264_50.mp4 | cfr | - vs 50/1 | 150 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 110.0 KiB | 100 | 0.63 |
+| cfr_h264_23.976.mp4 | cfr | - vs 24000/1001 | 72 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 71.9 KiB | 100 | 0.95 |
+| cfr_vp9_23.976.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 59.4 KiB | 100 | 0.28 |
+| cfr_h264_24.mp4 | cfr | - vs 24/1 | 72 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 71.3 KiB | 100 | 0.77 |
+| cfr_vp9_24.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 59.2 KiB | 100 | 0.23 |
+| cfr_h264_25.mp4 | cfr | - vs 25/1 | 75 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 69.7 KiB | 100 | 1.03 |
+| cfr_vp9_25.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 58.8 KiB | 100 | 0.28 |
+| cfr_h264_29.97.mp4 | cfr | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 86.4 KiB | 100 | 0.52 |
+| cfr_vp9_29.97.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 72.0 KiB | 100 | 0.31 |
+| cfr_h264_30.mp4 | cfr | - vs 30/1 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 86.7 KiB | 100 | 0.46 |
+| cfr_vp9_30.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 70.7 KiB | 100 | 0.26 |
+| cfr_h264_50.mp4 | cfr | - vs 50/1 | 150 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 110.0 KiB | 100 | 0.50 |
 | cfr_vp9_50.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 104.2 KiB | 100 | 0.31 |
-| cfr_h264_59.94.mp4 | cfr | - vs 60000/1001 | 180 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 126.0 KiB | 100 | 0.60 |
-| cfr_vp9_59.94.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 122.5 KiB | 100 | 0.33 |
-| cfr_h264_60.mp4 | cfr | - vs 60/1 | 180 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 126.5 KiB | 100 | 0.54 |
-| cfr_vp9_60.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 121.3 KiB | 100 | 0.33 |
-| cfr_h264_120.mp4 | cfr | - vs 120/1 | 360 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 185.2 KiB | 100 | 1.18 |
-| cfr_vp9_120.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 203.8 KiB | 100 | 0.54 |
-| cfr_h264_240.mp4 | cfr | - vs 240/1 | 720 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 322.5 KiB | 100 | 1.01 |
-| cfr_vp9_240.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 355.4 KiB | 100 | 0.77 |
-| mov_nobf_default.mov | mov | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 86.4 KiB | 100 | 0.53 |
-| mov_nobf_faststart.mov | mov | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 86.4 KiB | 100 | 0.51 |
-| mov_bf_elst.mov | mov | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 35.7 KiB | 100 | 0.42 |
-| mov_bf_noelst.mov | mov | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 35.7 KiB | 100 | 0.41 |
-| mov_bf_faststart.mov | mov | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 35.7 KiB | 100 | 0.38 |
-| mov_prores.mov | codec | - | - | - | mismatch: error, trackSelection | 1 | 218.8 KiB | 100 | 0.70 |
-| mp4_bf_elst.mp4 | mov | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 35.8 KiB | 100 | 0.42 |
+| cfr_h264_59.94.mp4 | cfr | - vs 60000/1001 | 180 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 126.0 KiB | 100 | 0.55 |
+| cfr_vp9_59.94.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 122.5 KiB | 100 | 0.29 |
+| cfr_h264_60.mp4 | cfr | - vs 60/1 | 180 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 126.5 KiB | 100 | 0.60 |
+| cfr_vp9_60.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 121.3 KiB | 100 | 0.32 |
+| cfr_h264_120.mp4 | cfr | - vs 120/1 | 360 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 185.2 KiB | 100 | 0.68 |
+| cfr_vp9_120.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 203.8 KiB | 100 | 0.49 |
+| cfr_h264_240.mp4 | cfr | - vs 240/1 | 720 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 322.5 KiB | 100 | 0.96 |
+| cfr_vp9_240.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 355.4 KiB | 100 | 0.68 |
+| mov_nobf_default.mov | mov | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 86.4 KiB | 100 | 0.83 |
+| mov_nobf_faststart.mov | mov | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 86.4 KiB | 100 | 0.47 |
+| mov_bf_elst.mov | mov | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 35.7 KiB | 100 | 0.39 |
+| mov_bf_noelst.mov | mov | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 35.7 KiB | 100 | 0.38 |
+| mov_bf_faststart.mov | mov | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 35.7 KiB | 100 | 0.36 |
+| mov_prores.mov | codec | - | - | - | mismatch: error, trackSelection | 1 | 218.8 KiB | 100 | 0.69 |
+| mp4_bf_elst.mp4 | mov | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 35.8 KiB | 100 | 0.45 |
 | mp4_bf_noelst.mp4 | mov | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 35.7 KiB | 100 | 0.43 |
-| mp4_bf_faststart.mp4 | mov | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 35.8 KiB | 100 | 0.44 |
-| mp4_elst_empty_offset.mp4 | mov | - vs 30/1 | 90 | none | mismatch: formatDurationSec, avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 35.2 KiB | 100 | 0.42 |
-| mp4_elst_trim_start.mp4 | mov | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 35.8 KiB | 100 | 0.34 |
-| mp4_elst_trim_output_seek.mp4 | mov | - vs 30000/1001 | 60 | none | mismatch: formatDurationSec, avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 25.1 KiB | 100 | 0.37 |
-| fmp4_keyframe_empty_moov.mp4 | fmp4 | - vs 30000/1001 | 120 | none | mismatch: avgFps, nominalFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 116.7 KiB | 100 | 0.62 |
-| fmp4_default_base_moof.mp4 | fmp4 | - vs 30000/1001 | 120 | none | mismatch: avgFps, nominalFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 116.7 KiB | 100 | 0.69 |
-| fmp4_frag_duration.mp4 | fmp4 | - vs 30000/1001 | 120 | none | mismatch: avgFps, nominalFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 117.2 KiB | 100 | 0.55 |
-| fmp4_bframes.mp4 | fmp4 | - vs 30000/1001 | 120 | none | mismatch: avgFps, nominalFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 48.8 KiB | 100 | 0.51 |
+| mp4_bf_faststart.mp4 | mov | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 35.8 KiB | 100 | 0.43 |
+| mp4_elst_empty_offset.mp4 | mov | - vs 30/1 | 90 | none | mismatch: formatDurationSec, avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 35.2 KiB | 100 | 0.39 |
+| mp4_elst_trim_start.mp4 | mov | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 35.8 KiB | 100 | 0.41 |
+| mp4_elst_trim_output_seek.mp4 | mov | - vs 30000/1001 | 60 | none | mismatch: formatDurationSec, avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 25.1 KiB | 100 | 0.38 |
+| fmp4_keyframe_empty_moov.mp4 | fmp4 | - vs 30000/1001 | 120 | none | mismatch: avgFps, nominalFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 116.7 KiB | 100 | 0.79 |
+| fmp4_default_base_moof.mp4 | fmp4 | - vs 30000/1001 | 120 | none | mismatch: avgFps, nominalFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 116.7 KiB | 100 | 0.67 |
+| fmp4_frag_duration.mp4 | fmp4 | - vs 30000/1001 | 120 | none | mismatch: avgFps, nominalFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 117.2 KiB | 100 | 0.57 |
+| fmp4_bframes.mp4 | fmp4 | - vs 30000/1001 | 120 | none | mismatch: avgFps, nominalFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 48.8 KiB | 100 | 0.50 |
 | fmp4_hybrid_no_empty_moov.mp4 | fmp4 | - vs 30000/1001 | 120 | none | mismatch: formatDurationSec, avgFps, nominalFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 116.7 KiB | 100 | 0.58 |
-| fmp4_cmaf.mp4 | fmp4 | - vs 30000/1001 | 120 | none | mismatch: avgFps, nominalFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 116.7 KiB | 100 | 0.62 |
-| fmp4_global_sidx.mp4 | fmp4 | - vs 30000/1001 | 120 | none | mismatch: avgFps, nominalFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 116.8 KiB | 100 | 0.71 |
-| fmp4_dash_flag.mp4 | fmp4 | - vs 30000/1001 | 120 | none | mismatch: avgFps, nominalFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 116.9 KiB | 100 | 0.66 |
-| mp4_hybrid_fragmented_finalized.mp4 | fmp4 | - vs 30000/1001 | 120 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 117.9 KiB | 100 | 0.55 |
-| fmp4_dash_single_file.mp4 | fmp4 | - vs 30000/1001 | 120 | none | mismatch: avgFps, nominalFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 116.8 KiB | 100 | 0.64 |
-| fmp4_dash_concat_segments.mp4 | fmp4 | - vs 30000/1001 | 120 | none | mismatch: avgFps, nominalFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 116.9 KiB | 100 | 0.65 |
-| hevc_hvc1.mp4 | codec | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 45.1 KiB | 100 | 0.45 |
-| hevc_hev1.mp4 | codec | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 45.1 KiB | 100 | 0.44 |
-| av1.mp4 | codec | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 20.8 KiB | 100 | 0.36 |
-| vp9.mp4 | codec | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 72.0 KiB | 100 | 0.46 |
-| vp9.webm | codec | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 72.0 KiB | 100 | 0.27 |
-| vp8.webm | codec | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 160.3 KiB | 100 | 0.41 |
-| av1.webm | codec | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 21.2 KiB | 100 | 0.15 |
-| h264.mkv | matroska | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 86.4 KiB | 100 | 0.27 |
-| hevc.mkv | codec | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 44.3 KiB | 100 | 0.22 |
-| vp9_live.webm | live | - | - | - | mismatch: error, trackSelection | 1 | 71.9 KiB | 100 | 0.34 |
+| fmp4_cmaf.mp4 | fmp4 | - vs 30000/1001 | 120 | none | mismatch: avgFps, nominalFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 116.7 KiB | 100 | 0.64 |
+| fmp4_global_sidx.mp4 | fmp4 | - vs 30000/1001 | 120 | none | mismatch: avgFps, nominalFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 116.8 KiB | 100 | 0.68 |
+| fmp4_dash_flag.mp4 | fmp4 | - vs 30000/1001 | 120 | none | mismatch: avgFps, nominalFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 116.9 KiB | 100 | 0.60 |
+| mp4_hybrid_fragmented_finalized.mp4 | fmp4 | - vs 30000/1001 | 120 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 117.9 KiB | 100 | 0.50 |
+| fmp4_dash_single_file.mp4 | fmp4 | - vs 30000/1001 | 120 | none | mismatch: avgFps, nominalFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 116.8 KiB | 100 | 0.58 |
+| fmp4_dash_concat_segments.mp4 | fmp4 | - vs 30000/1001 | 120 | none | mismatch: avgFps, nominalFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 116.9 KiB | 100 | 0.63 |
+| hevc_hvc1.mp4 | codec | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 45.1 KiB | 100 | 0.52 |
+| hevc_hev1.mp4 | codec | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 45.1 KiB | 100 | 0.47 |
+| av1.mp4 | codec | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 20.8 KiB | 100 | 0.38 |
+| vp9.mp4 | codec | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 72.0 KiB | 100 | 0.50 |
+| vp9.webm | codec | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 72.0 KiB | 100 | 0.26 |
+| vp8.webm | codec | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 160.3 KiB | 100 | 0.88 |
+| av1.webm | codec | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 21.2 KiB | 100 | 0.18 |
+| h264.mkv | matroska | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 86.4 KiB | 100 | 0.31 |
+| hevc.mkv | codec | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 44.3 KiB | 100 | 0.21 |
+| vp9_live.webm | live | - | - | - | mismatch: error, trackSelection | 1 | 71.9 KiB | 100 | 0.28 |
 | vp9_pipe.webm | live | - | - | - | mismatch: error, trackSelection | 1 | 71.9 KiB | 100 | 0.31 |
-| vp9_unknown_clusters.webm | live | - | - | - | mismatch: error, trackSelection | 1 | 71.9 KiB | 100 | 0.24 |
-| vp9_no_defaultduration.webm | matroska | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 72.0 KiB | 100 | 0.25 |
-| vfr_concat_10_30_60.mp4 | vfr | - vs 100/3 | 200 | none | mismatch: avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 161.8 KiB | 100 | 0.66 |
-| vfr_concat_bframes.mp4 | vfr | - vs 1200/37 | 200 | none | mismatch: avgFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 66.7 KiB | 100 | 0.56 |
-| vfr_concat_10_30_60_ts1M.mp4 | vfr | - vs 100/3 | 200 | none | mismatch: avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 162.7 KiB | 100 | 0.54 |
-| vfr_concat_10_30_60.mov | vfr | - vs 100/3 | 200 | none | mismatch: avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 161.7 KiB | 100 | 0.58 |
-| vfr_concat_10_30_60.webm | vfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 140.3 KiB | 100 | 0.42 |
-| vfr_concat_10_30_60_fmp4.mp4 | vfr | - vs 100/3 | 200 | none | mismatch: avgFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 162.8 KiB | 100 | 0.77 |
+| vp9_unknown_clusters.webm | live | - | - | - | mismatch: error, trackSelection | 1 | 71.9 KiB | 100 | 0.28 |
+| vp9_no_defaultduration.webm | matroska | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 72.0 KiB | 100 | 0.28 |
+| vfr_concat_10_30_60.mp4 | vfr | - vs 100/3 | 200 | none | mismatch: avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 161.8 KiB | 100 | 0.71 |
+| vfr_concat_bframes.mp4 | vfr | - vs 1200/37 | 200 | none | mismatch: avgFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 66.7 KiB | 100 | 0.54 |
+| vfr_concat_10_30_60_ts1M.mp4 | vfr | - vs 100/3 | 200 | none | mismatch: avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 162.7 KiB | 100 | 0.63 |
+| vfr_concat_10_30_60.mov | vfr | - vs 100/3 | 200 | none | mismatch: avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 161.7 KiB | 100 | 0.55 |
+| vfr_concat_10_30_60.webm | vfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 140.3 KiB | 100 | 0.38 |
+| vfr_concat_10_30_60_fmp4.mp4 | vfr | - vs 100/3 | 200 | none | mismatch: avgFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 162.8 KiB | 100 | 0.82 |
 | vfr_setpts_sine.mp4 | vfr | - vs 13500000/445991 | 150 | none | mismatch: formatDurationSec, avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 142.2 KiB | 100 | 0.59 |
-| vfr_select_drop.mp4 | vfr | - vs 36/1 | 180 | none | mismatch: avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 152.1 KiB | 100 | 0.51 |
-| vfr_mpdecimate.mp4 | vfr | - vs 182/9 | 91 | none | mismatch: avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 87.0 KiB | 100 | 0.45 |
-| vfr_screenrec_ts1000.mp4 | vfr | - vs 61500/1501 | 246 | none | mismatch: formatDurationSec, avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 188.6 KiB | 100 | 0.60 |
-| vfr_screenrec_ts1000.webm | vfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 181.7 KiB | 100 | 0.38 |
-| vfr_pulldown_2_3.mp4 | vfr | - vs 24/1 | 120 | none | mismatch: avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 122.8 KiB | 100 | 0.47 |
-| vfr_two_phase_5_200.mp4 | vfr | - vs 205/2 | 820 | none | mismatch: avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 411.3 KiB | 100 | 1.16 |
-| vfr_two_phase_5_200.webm | vfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 431.0 KiB | 100 | 0.86 |
-| vfr_two_phase_5_200.mkv | vfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 421.5 KiB | 100 | 0.81 |
-| vfr_freeze_2s.mp4 | vfr | - vs 3600/179 | 120 | none | mismatch: formatDurationSec, avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 117.0 KiB | 100 | 0.48 |
+| vfr_select_drop.mp4 | vfr | - vs 36/1 | 180 | none | mismatch: avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 152.1 KiB | 100 | 0.57 |
+| vfr_mpdecimate.mp4 | vfr | - vs 182/9 | 91 | none | mismatch: avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 87.0 KiB | 100 | 0.44 |
+| vfr_screenrec_ts1000.mp4 | vfr | - vs 61500/1501 | 246 | none | mismatch: formatDurationSec, avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 188.6 KiB | 100 | 0.65 |
+| vfr_screenrec_ts1000.webm | vfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 181.7 KiB | 100 | 0.43 |
+| vfr_pulldown_2_3.mp4 | vfr | - vs 24/1 | 120 | none | mismatch: avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 122.8 KiB | 100 | 0.51 |
+| vfr_two_phase_5_200.mp4 | vfr | - vs 205/2 | 820 | none | mismatch: avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 411.3 KiB | 100 | 1.03 |
+| vfr_two_phase_5_200.webm | vfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 431.0 KiB | 100 | 0.83 |
+| vfr_two_phase_5_200.mkv | vfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 421.5 KiB | 100 | 0.83 |
+| vfr_freeze_2s.mp4 | vfr | - vs 3600/179 | 120 | none | mismatch: formatDurationSec, avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 117.0 KiB | 100 | 0.47 |
 | box64_mdat64_wide.mov | box64 | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 86.4 KiB | 100 | 0.67 |
-| box64_mdat64_free.mp4 | box64 | - vs 30/1 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 86.7 KiB | 100 | 0.62 |
-| box64_co64_mdat64.mp4 | box64 | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 35.8 KiB | 100 | 0.56 |
-| av_h264_aac.mp4 | multi | - vs 30/1 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 101.4 KiB | 100 | 0.88 |
-| av_h264_aac_faststart.mp4 | multi | - vs 30/1 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 101.4 KiB | 100 | 0.80 |
-| multi_video_2tracks.mp4 | multi | - vs 30/1 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 299.9 KiB | 100 | 1.08 |
+| box64_mdat64_free.mp4 | box64 | - vs 30/1 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 86.7 KiB | 100 | 0.58 |
+| box64_co64_mdat64.mp4 | box64 | - vs 30000/1001 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 35.8 KiB | 100 | 0.44 |
+| av_h264_aac.mp4 | multi | - vs 30/1 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 101.4 KiB | 100 | 0.79 |
+| av_h264_aac_faststart.mp4 | multi | - vs 30/1 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 101.4 KiB | 100 | 0.78 |
+| multi_video_2tracks.mp4 | multi | - vs 30/1 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 299.9 KiB | 100 | 1.22 |
 | multi_video_2tracks.mp4 (track 2) | multi | - vs 24/1 | 96 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr |  |  |  |  |
-| still_image_track_first.mp4 | multi | - | 1 | none | mismatch: trackSelection, codecName, presentedFrames, startSec | 1 | 105.0 KiB | 100 | 0.77 |
+| still_image_track_first.mp4 | multi | - | 1 | none | mismatch: trackSelection, codecName, presentedFrames, startSec | 1 | 105.0 KiB | 100 | 0.85 |
 | still_image_track_first.mp4 (track 2) | multi | - vs 30/1 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr |  |  |  |  |
-| cover_art_audio.m4a | cover | - | - | - | all exact (3) | 1 | 16.3 KiB | 100 | 0.45 |
-| cover_art_plus_video.mp4 | cover | - vs 30/1 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 103.5 KiB | 100 | 0.59 |
-| audio_only.m4a | audio | - | - | - | all exact (3) | 1 | 13.3 KiB | 100 | 0.40 |
-| audio_only_aac.mp4 | audio | - | - | - | all exact (3) | 1 | 13.3 KiB | 100 | 0.44 |
-| audio_only_opus.webm | audio | - | - | - | mismatch: error | 1 | 13.5 KiB | 100 | 0.17 |
-| edge_single_frame.mp4 | edge | - | 1 | none | mismatch: formatDurationSec, presentedFrames, startSec | 1 | 4.0 KiB | 100 | 0.30 |
-| corrupt_empty_0byte.mp4 | corrupt | - | - | - | expected outcome (manifest) | 0 | 0 B | 0 | 0.00 |
-| corrupt_garbage_random.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 64.0 KiB | 100 | 0.24 |
-| corrupt_text_named.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 63 B | 100 | 0.17 |
-| corrupt_png_named.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 2.2 KiB | 100 | 0.14 |
-| corrupt_trunc_moov_partial.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 86.2 KiB | 100 | 0.39 |
-| corrupt_trunc_no_moov.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 85.6 KiB | 100 | 0.33 |
-| corrupt_trunc_mdat_faststart.mp4 | corrupt | - vs 30/1 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 60.8 KiB | 100 | 0.55 |
-| corrupt_fmp4_truncated_mid_fragment.mp4 | corrupt | - vs 30000/1001 | 90 vs 73 | none | mismatch: avgFps, nominalFps, frames, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 70.0 KiB | 100 | 0.61 |
-| box_mdat_size0.mp4 | box64 | - vs 30/1 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 101.4 KiB | 100 | 0.71 |
-| corrupt_stts_count_huge.mp4 | corrupt | - | - | - | mismatch: error | 1 | 86.7 KiB | 100 | 0.51 |
-| sniff_webm_named_mp4.mp4 | sniff | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 72.0 KiB | 100 | 0.29 |
-| sniff_mp4_named_webm.webm | sniff | - vs 30/1 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 86.7 KiB | 100 | 0.62 |
-| sniff_mp4_named_mkv.mkv | sniff | - vs 30/1 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 86.7 KiB | 100 | 0.54 |
-| frag_vfr_global_sidx.mp4 | fmp4 | - vs 60/1 | 140 | none | mismatch: avgFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 121.0 KiB | 100 | 0.95 |
-| frag_vfr_dash.mp4 | fmp4 | - vs 30/1 | 140 | none | mismatch: avgFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 121.2 KiB | 100 | 0.89 |
-| h264_vfr_remux.mkv | vfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 200.0 KiB | 100 | 0.53 |
-| vp9_pipe_t10.webm | live | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 70.6 KiB | 100 | 0.24 |
+| cover_art_audio.m4a | cover | - | - | - | all exact (3) | 1 | 16.3 KiB | 100 | 0.47 |
+| cover_art_plus_video.mp4 | cover | - vs 30/1 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 103.5 KiB | 100 | 0.67 |
+| audio_only.m4a | audio | - | - | - | all exact (3) | 1 | 13.3 KiB | 100 | 0.41 |
+| audio_only_aac.mp4 | audio | - | - | - | all exact (3) | 1 | 13.3 KiB | 100 | 0.42 |
+| audio_only_opus.webm | audio | - | - | - | mismatch: error | 1 | 13.5 KiB | 100 | 0.15 |
+| edge_single_frame.mp4 | edge | - | 1 | none | mismatch: formatDurationSec, presentedFrames, startSec | 1 | 4.0 KiB | 100 | 0.29 |
+| corrupt_empty_0byte.mp4 | corrupt | - | - | - | expected outcome (manifest) | 0 | 0 B | 0 | 0.01 |
+| corrupt_garbage_random.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 64.0 KiB | 100 | 0.20 |
+| corrupt_text_named.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 63 B | 100 | 0.14 |
+| corrupt_png_named.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 2.2 KiB | 100 | 0.13 |
+| corrupt_trunc_moov_partial.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 86.2 KiB | 100 | 0.32 |
+| corrupt_trunc_no_moov.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 85.6 KiB | 100 | 0.34 |
+| corrupt_trunc_mdat_faststart.mp4 | corrupt | - vs 30/1 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 60.8 KiB | 100 | 0.51 |
+| corrupt_fmp4_truncated_mid_fragment.mp4 | corrupt | - vs 30000/1001 | 90 vs 73 | none | mismatch: avgFps, nominalFps, frames, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 70.0 KiB | 100 | 0.58 |
+| box_mdat_size0.mp4 | box64 | - vs 30/1 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 101.4 KiB | 100 | 0.66 |
+| corrupt_stts_count_huge.mp4 | corrupt | - | - | - | mismatch: error | 1 | 86.7 KiB | 100 | 0.44 |
+| sniff_webm_named_mp4.mp4 | sniff | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 72.0 KiB | 100 | 0.30 |
+| sniff_mp4_named_webm.webm | sniff | - vs 30/1 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 86.7 KiB | 100 | 0.51 |
+| sniff_mp4_named_mkv.mkv | sniff | - vs 30/1 | 90 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 86.7 KiB | 100 | 0.50 |
+| frag_vfr_global_sidx.mp4 | fmp4 | - vs 60/1 | 140 | none | mismatch: avgFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 121.0 KiB | 100 | 0.68 |
+| frag_vfr_dash.mp4 | fmp4 | - vs 30/1 | 140 | none | mismatch: avgFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 121.2 KiB | 100 | 0.70 |
+| h264_vfr_remux.mkv | vfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 200.0 KiB | 100 | 0.49 |
+| vp9_pipe_t10.webm | live | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 70.6 KiB | 100 | 0.27 |
 | vp9_opus_live_audiotail.webm | live | - | - | - | mismatch: error, trackSelection | 1 | 98.7 KiB | 100 | 0.30 |
-| h264_25_cover.mkv | cover | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 71.9 KiB | 100 | 0.26 |
-| remux_cfr_120_ts16000.mp4 | cfr | - vs 120/1 | 360 | none | mismatch: avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 204.7 KiB | 100 | 0.88 |
-| remux_cfr_29.97_ts16000.mp4 | cfr | - vs 30000/1001 | 90 | none | mismatch: avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 72.5 KiB | 100 | 0.51 |
-| start_freeze_bf.mp4 | vfr | - vs 1125/67 | 150 | none | mismatch: formatDurationSec, avgFps, presentedFrames, startSec, minFps, maxFps, isVfr, duplicateTimestamps | 1 | 118.2 KiB | 100 | 0.42 |
-| fmp4_missing_fragment.mp4 | fmp4 | - vs 30/1 | 150 | none | mismatch: formatDurationSec, avgFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 147.9 KiB | 100 | 0.65 |
-| elst_trim_vfr_copy.mp4 | vfr | - vs 205/2 | 820 | none | mismatch: avgFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 411.3 KiB | 100 | 1.07 |
-| cfr_240_ts600.mp4 | cfr | - vs 288000/1201 | 480 | none | mismatch: formatDurationSec, avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 93.1 KiB | 100 | 0.50 |
-| fmp4_global_sidx_bframes.mp4 | fmp4 | - vs 25/1 | 100 | none | mismatch: formatDurationSec, avgFps, nominalFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 97.7 KiB | 100 | 0.76 |
-| long_cfr_3h_60fps.mp4 | long | - vs 60/1 | 648000 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 4 | 3.49 MiB | 28.1 | 203 |
-| long_vfr_1h_screenrec.mp4 | long | - vs 186/5 | 133920 | none | mismatch: formatDurationSec, avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 3 | 2.47 MiB | 65.7 | 36.1 |
-| big_1080p_moov_end.mp4 | big | - vs 30/1 | 1800 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 2 | 1.01 MiB | 0.18 | 3.31 |
-| big_1080p_faststart.mp4 | big | - vs 30/1 | 1800 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 1.00 MiB | 0.17 | 2.74 |
-| big_1080p.mkv | big | - | - | - | mismatch: error, trackSelection, formatDurationSec | 577 | 576.43 MiB | 100 | 1096 |
+| h264_25_cover.mkv | cover | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 71.9 KiB | 100 | 0.30 |
+| remux_cfr_120_ts16000.mp4 | cfr | - vs 120/1 | 360 | none | mismatch: avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 204.7 KiB | 100 | 0.90 |
+| remux_cfr_29.97_ts16000.mp4 | cfr | - vs 30000/1001 | 90 | none | mismatch: avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 72.5 KiB | 100 | 0.43 |
+| start_freeze_bf.mp4 | vfr | - vs 1125/67 | 150 | none | mismatch: formatDurationSec, avgFps, presentedFrames, startSec, minFps, maxFps, isVfr, duplicateTimestamps | 1 | 118.2 KiB | 100 | 0.43 |
+| fmp4_missing_fragment.mp4 | fmp4 | - vs 30/1 | 150 | none | mismatch: formatDurationSec, avgFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 147.9 KiB | 100 | 0.64 |
+| elst_trim_vfr_copy.mp4 | vfr | - vs 205/2 | 820 | none | mismatch: avgFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 411.3 KiB | 100 | 1.28 |
+| cfr_240_ts600.mp4 | cfr | - vs 288000/1201 | 480 | none | mismatch: formatDurationSec, avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 93.1 KiB | 100 | 0.52 |
+| fmp4_global_sidx_bframes.mp4 | fmp4 | - vs 25/1 | 100 | none | mismatch: formatDurationSec, avgFps, nominalFps, presentedFrames, durationSec, startSec, minFps, maxFps, isVfr | 1 | 97.7 KiB | 100 | 0.79 |
+| long_cfr_3h_60fps.mp4 | long | - vs 60/1 | 648000 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 4 | 3.49 MiB | 28.1 | 191 |
+| long_vfr_1h_screenrec.mp4 | long | - vs 186/5 | 133920 | none | mismatch: formatDurationSec, avgFps, presentedFrames, startSec, minFps, maxFps, isVfr | 3 | 2.47 MiB | 65.7 | 34.9 |
+| big_1080p_moov_end.mp4 | big | - vs 30/1 | 1800 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 2 | 1.01 MiB | 0.18 | 2.85 |
+| big_1080p_faststart.mp4 | big | - vs 30/1 | 1800 | none | mismatch: avgFps, nominalFps, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 1.00 MiB | 0.17 | 2.48 |
+| big_1080p.mkv | big | - | - | - | mismatch: error, trackSelection, formatDurationSec | 577 | 576.43 MiB | 100 | 1124 |
 
 <details><summary>mp4box-idiomatic: verdict per field</summary>
 
@@ -1184,123 +1184,123 @@ mp4box 2.4.1, tuned: this package's adapter (video-fps-probe/engines/mp4box): bo
 
 | Fixture | Category | avg FPS (app, or app vs ffprobe) | frames | min..max FPS | Verdict | Reads | Bytes | % of file | ms |
 |---|---|---|---|---|---|---:|---:|---:|---:|
-| cfr_h264_23.976.mp4 | cfr | 24000/1001; measured 24000/1001 | 72 | 23.976..23.976 | all exact (17) | 2 | 65.1 KiB | 90.5 | 2.69 |
-| cfr_vp9_23.976.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 59.4 KiB | 100 | 0.33 |
-| cfr_h264_24.mp4 | cfr | 24/1; measured 24/1 | 72 | 24.000..24.000 | all exact (17) | 2 | 65.1 KiB | 91.2 | 0.89 |
-| cfr_vp9_24.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 59.2 KiB | 100 | 0.28 |
-| cfr_h264_25.mp4 | cfr | 25/1; measured 25/1 | 75 | 25.000..25.000 | all exact (17) | 2 | 65.1 KiB | 93.4 | 0.78 |
-| cfr_vp9_25.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 58.8 KiB | 100 | 0.22 |
-| cfr_h264_29.97.mp4 | cfr | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 2 | 65.1 KiB | 75.4 | 0.75 |
-| cfr_vp9_29.97.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 88.9 | 0.25 |
-| cfr_h264_30.mp4 | cfr | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 2 | 65.1 KiB | 75.1 | 0.68 |
+| cfr_h264_23.976.mp4 | cfr | 24000/1001; measured 24000/1001 | 72 | 23.976..23.976 | all exact (17) | 2 | 65.1 KiB | 90.5 | 2.29 |
+| cfr_vp9_23.976.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 59.4 KiB | 100 | 0.27 |
+| cfr_h264_24.mp4 | cfr | 24/1; measured 24/1 | 72 | 24.000..24.000 | all exact (17) | 2 | 65.1 KiB | 91.2 | 0.80 |
+| cfr_vp9_24.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 59.2 KiB | 100 | 0.23 |
+| cfr_h264_25.mp4 | cfr | 25/1; measured 25/1 | 75 | 25.000..25.000 | all exact (17) | 2 | 65.1 KiB | 93.4 | 0.73 |
+| cfr_vp9_25.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 58.8 KiB | 100 | 0.19 |
+| cfr_h264_29.97.mp4 | cfr | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 2 | 65.1 KiB | 75.4 | 0.67 |
+| cfr_vp9_29.97.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 88.9 | 0.23 |
+| cfr_h264_30.mp4 | cfr | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 2 | 65.1 KiB | 75.1 | 0.64 |
 | cfr_vp9_30.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 90.5 | 0.19 |
-| cfr_h264_50.mp4 | cfr | 50/1; measured 50/1 | 150 | 50.000..50.000 | all exact (17) | 2 | 65.4 KiB | 59.4 | 0.62 |
-| cfr_vp9_50.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 61.4 | 0.19 |
-| cfr_h264_59.94.mp4 | cfr | 60000/1001; measured 60000/1001 | 180 | 59.940..59.940 | all exact (17) | 2 | 65.5 KiB | 52.0 | 0.67 |
-| cfr_vp9_59.94.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 52.2 | 0.22 |
-| cfr_h264_60.mp4 | cfr | 60/1; measured 60/1 | 180 | 60.000..60.000 | all exact (17) | 2 | 65.5 KiB | 51.8 | 0.70 |
-| cfr_vp9_60.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 52.8 | 0.27 |
-| cfr_h264_120.mp4 | cfr | 120/1; measured 120/1 | 360 | 120.0..120.0 | all exact (17) | 2 | 66.2 KiB | 35.8 | 0.72 |
-| cfr_vp9_120.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 31.4 | 0.23 |
-| cfr_h264_240.mp4 | cfr | 240/1; measured 240/1 | 720 | 240.0..240.0 | all exact (17) | 2 | 67.7 KiB | 21.0 | 0.65 |
+| cfr_h264_50.mp4 | cfr | 50/1; measured 50/1 | 150 | 50.000..50.000 | all exact (17) | 2 | 65.4 KiB | 59.4 | 0.61 |
+| cfr_vp9_50.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 61.4 | 0.18 |
+| cfr_h264_59.94.mp4 | cfr | 60000/1001; measured 60000/1001 | 180 | 59.940..59.940 | all exact (17) | 2 | 65.5 KiB | 52.0 | 0.64 |
+| cfr_vp9_59.94.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 52.2 | 0.23 |
+| cfr_h264_60.mp4 | cfr | 60/1; measured 60/1 | 180 | 60.000..60.000 | all exact (17) | 2 | 65.5 KiB | 51.8 | 0.63 |
+| cfr_vp9_60.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 52.8 | 0.22 |
+| cfr_h264_120.mp4 | cfr | 120/1; measured 120/1 | 360 | 120.0..120.0 | all exact (17) | 2 | 66.2 KiB | 35.8 | 0.67 |
+| cfr_vp9_120.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 31.4 | 0.19 |
+| cfr_h264_240.mp4 | cfr | 240/1; measured 240/1 | 720 | 240.0..240.0 | all exact (17) | 2 | 67.7 KiB | 21.0 | 0.75 |
 | cfr_vp9_240.webm | cfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 18.0 | 0.21 |
-| mov_nobf_default.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 2 | 65.1 KiB | 75.4 | 0.54 |
-| mov_nobf_faststart.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 64.0 KiB | 74.1 | 0.41 |
-| mov_bf_elst.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.7 KiB | 100 | 0.40 |
+| mov_nobf_default.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 2 | 65.1 KiB | 75.4 | 0.64 |
+| mov_nobf_faststart.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 64.0 KiB | 74.1 | 0.43 |
+| mov_bf_elst.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.7 KiB | 100 | 0.44 |
 | mov_bf_noelst.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 35.7 KiB | 100 | 0.43 |
-| mov_bf_faststart.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.7 KiB | 100 | 0.43 |
-| mov_prores.mov | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 2 | 65.0 KiB | 29.7 | 0.60 |
-| mp4_bf_elst.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.8 KiB | 100 | 0.43 |
-| mp4_bf_noelst.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 35.7 KiB | 100 | 0.47 |
-| mp4_bf_faststart.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.8 KiB | 100 | 0.45 |
-| mp4_elst_empty_offset.mp4 | mov | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: formatDurationSec | 1 | 35.2 KiB | 100 | 0.46 |
-| mp4_elst_trim_start.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: formatDurationSec, startSec | 1 | 35.8 KiB | 100 | 0.50 |
-| mp4_elst_trim_output_seek.mp4 | mov | 30000/1001; measured 30000/1001 | 60 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 25.1 KiB | 100 | 0.38 |
-| fmp4_keyframe_empty_moov.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 2 | 94.0 KiB | 80.6 | 0.77 |
-| fmp4_default_base_moof.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 2 | 94.0 KiB | 80.6 | 0.76 |
-| fmp4_frag_duration.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 2 | 108.7 KiB | 92.7 | 0.85 |
-| fmp4_bframes.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 48.8 KiB | 100 | 0.51 |
-| fmp4_hybrid_no_empty_moov.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 2 | 94.0 KiB | 80.6 | 0.68 |
-| fmp4_cmaf.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 2 | 94.0 KiB | 80.6 | 0.81 |
-| fmp4_global_sidx.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 2 | 94.0 KiB | 80.5 | 0.92 |
-| fmp4_dash_flag.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 2 | 94.1 KiB | 80.5 | 0.74 |
-| mp4_hybrid_fragmented_finalized.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 2 | 65.2 KiB | 55.4 | 0.56 |
-| fmp4_dash_single_file.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 2 | 94.0 KiB | 80.4 | 0.88 |
-| fmp4_dash_concat_segments.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 2 | 94.0 KiB | 80.4 | 0.86 |
-| hevc_hvc1.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 45.1 KiB | 100 | 0.51 |
-| hevc_hev1.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 45.1 KiB | 100 | 0.43 |
-| av1.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 20.8 KiB | 100 | 0.42 |
-| vp9.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 2 | 65.1 KiB | 90.4 | 0.61 |
-| vp9.webm | codec | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 88.9 | 0.17 |
-| vp8.webm | codec | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 39.9 | 0.17 |
-| av1.webm | codec | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 21.2 KiB | 100 | 0.17 |
-| h264.mkv | matroska | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 74.0 | 0.19 |
-| hevc.mkv | codec | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 44.3 KiB | 100 | 0.17 |
-| vp9_live.webm | live | - | - | - | mismatch: error, trackSelection | 1 | 64.0 KiB | 89.1 | 0.17 |
-| vp9_pipe.webm | live | - | - | - | mismatch: error, trackSelection | 1 | 64.0 KiB | 89.1 | 0.17 |
+| mov_bf_faststart.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.7 KiB | 100 | 0.42 |
+| mov_prores.mov | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 2 | 65.0 KiB | 29.7 | 0.54 |
+| mp4_bf_elst.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.8 KiB | 100 | 0.48 |
+| mp4_bf_noelst.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 35.7 KiB | 100 | 0.51 |
+| mp4_bf_faststart.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.8 KiB | 100 | 0.41 |
+| mp4_elst_empty_offset.mp4 | mov | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: formatDurationSec | 1 | 35.2 KiB | 100 | 0.44 |
+| mp4_elst_trim_start.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: formatDurationSec, startSec | 1 | 35.8 KiB | 100 | 0.44 |
+| mp4_elst_trim_output_seek.mp4 | mov | 30000/1001; measured 30000/1001 | 60 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 25.1 KiB | 100 | 0.46 |
+| fmp4_keyframe_empty_moov.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 2 | 94.0 KiB | 80.6 | 0.76 |
+| fmp4_default_base_moof.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 2 | 94.0 KiB | 80.6 | 0.71 |
+| fmp4_frag_duration.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 2 | 108.7 KiB | 92.7 | 0.86 |
+| fmp4_bframes.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 48.8 KiB | 100 | 0.49 |
+| fmp4_hybrid_no_empty_moov.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 2 | 94.0 KiB | 80.6 | 0.70 |
+| fmp4_cmaf.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 2 | 94.0 KiB | 80.6 | 0.76 |
+| fmp4_global_sidx.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 2 | 94.0 KiB | 80.5 | 0.83 |
+| fmp4_dash_flag.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 2 | 94.1 KiB | 80.5 | 0.77 |
+| mp4_hybrid_fragmented_finalized.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 2 | 65.2 KiB | 55.4 | 0.58 |
+| fmp4_dash_single_file.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 2 | 94.0 KiB | 80.4 | 0.80 |
+| fmp4_dash_concat_segments.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 2 | 94.0 KiB | 80.4 | 0.81 |
+| hevc_hvc1.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 45.1 KiB | 100 | 0.48 |
+| hevc_hev1.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 45.1 KiB | 100 | 0.42 |
+| av1.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 20.8 KiB | 100 | 0.34 |
+| vp9.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 2 | 65.1 KiB | 90.4 | 0.48 |
+| vp9.webm | codec | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 88.9 | 0.15 |
+| vp8.webm | codec | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 39.9 | 0.14 |
+| av1.webm | codec | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 21.2 KiB | 100 | 0.13 |
+| h264.mkv | matroska | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 74.0 | 0.14 |
+| hevc.mkv | codec | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 44.3 KiB | 100 | 0.14 |
+| vp9_live.webm | live | - | - | - | mismatch: error, trackSelection | 1 | 64.0 KiB | 89.1 | 0.15 |
+| vp9_pipe.webm | live | - | - | - | mismatch: error, trackSelection | 1 | 64.0 KiB | 89.1 | 0.15 |
 | vp9_unknown_clusters.webm | live | - | - | - | mismatch: error, trackSelection | 1 | 64.0 KiB | 89.1 | 0.18 |
-| vp9_no_defaultduration.webm | matroska | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 88.9 | 0.19 |
-| vfr_concat_10_30_60.mp4 | vfr | 100/3; measured 100/3 | 200 | 10.000..60.000 | all exact (16) | 2 | 65.6 KiB | 40.6 | 0.57 |
-| vfr_concat_bframes.mp4 | vfr | 1200/37; measured 100/3 | 200 | 10.000..60.000 | all exact (16) | 2 | 66.7 KiB | 100 | 0.69 |
-| vfr_concat_10_30_60_ts1M.mp4 | vfr | 100/3; measured 100/3 | 200 | 10.000..60.002 | all exact (16) | 2 | 66.5 KiB | 40.9 | 0.73 |
-| vfr_concat_10_30_60.mov | vfr | 100/3; measured 100/3 | 200 | 10.000..60.000 | all exact (16) | 2 | 65.6 KiB | 40.5 | 0.82 |
-| vfr_concat_10_30_60.webm | vfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 45.6 | 0.25 |
-| vfr_concat_10_30_60_fmp4.mp4 | vfr | 100/3; measured 100/3 | 200 | 10.000..60.000 | all exact (16) | 3 | 128.2 KiB | 78.7 | 1.00 |
-| vfr_setpts_sine.mp4 | vfr | 13500000/445991; measured 13500000/445991 | 150 | 17.149..119.7 | all exact (16) | 2 | 66.5 KiB | 46.8 | 0.79 |
-| vfr_select_drop.mp4 | vfr | 36/1; measured 36/1 | 180 | 20.000..60.000 | all exact (16) | 2 | 66.9 KiB | 44.0 | 0.85 |
-| vfr_mpdecimate.mp4 | vfr | 182/9; measured 182/9 | 91 | 0.667..30.000 | all exact (16) | 2 | 65.2 KiB | 74.9 | 0.52 |
-| vfr_screenrec_ts1000.mp4 | vfr | 61500/1501; measured 61500/1501 | 246 | 2.959..100.0 | mismatch: formatDurationSec | 2 | 67.6 KiB | 35.8 | 0.60 |
-| vfr_screenrec_ts1000.webm | vfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 35.2 | 0.18 |
-| vfr_pulldown_2_3.mp4 | vfr | 24/1; measured 24/1 | 120 | 20.000..30.000 | all exact (16) | 2 | 66.2 KiB | 53.9 | 0.59 |
-| vfr_two_phase_5_200.mp4 | vfr | 205/2; measured 205/2 | 820 | 5.000..200.0 | all exact (16) | 2 | 68.1 KiB | 16.6 | 0.61 |
-| vfr_two_phase_5_200.webm | vfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 14.8 | 0.18 |
-| vfr_two_phase_5_200.mkv | vfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 15.2 | 0.17 |
+| vp9_no_defaultduration.webm | matroska | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 88.9 | 0.15 |
+| vfr_concat_10_30_60.mp4 | vfr | 100/3; measured 100/3 | 200 | 10.000..60.000 | all exact (16) | 2 | 65.6 KiB | 40.6 | 0.55 |
+| vfr_concat_bframes.mp4 | vfr | 1200/37; measured 100/3 | 200 | 10.000..60.000 | all exact (16) | 2 | 66.7 KiB | 100 | 0.61 |
+| vfr_concat_10_30_60_ts1M.mp4 | vfr | 100/3; measured 100/3 | 200 | 10.000..60.002 | all exact (16) | 2 | 66.5 KiB | 40.9 | 0.55 |
+| vfr_concat_10_30_60.mov | vfr | 100/3; measured 100/3 | 200 | 10.000..60.000 | all exact (16) | 2 | 65.6 KiB | 40.5 | 0.50 |
+| vfr_concat_10_30_60.webm | vfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 45.6 | 0.15 |
+| vfr_concat_10_30_60_fmp4.mp4 | vfr | 100/3; measured 100/3 | 200 | 10.000..60.000 | all exact (16) | 3 | 128.2 KiB | 78.7 | 0.89 |
+| vfr_setpts_sine.mp4 | vfr | 13500000/445991; measured 13500000/445991 | 150 | 17.149..119.7 | all exact (16) | 2 | 66.5 KiB | 46.8 | 0.68 |
+| vfr_select_drop.mp4 | vfr | 36/1; measured 36/1 | 180 | 20.000..60.000 | all exact (16) | 2 | 66.9 KiB | 44.0 | 0.89 |
+| vfr_mpdecimate.mp4 | vfr | 182/9; measured 182/9 | 91 | 0.667..30.000 | all exact (16) | 2 | 65.2 KiB | 74.9 | 0.56 |
+| vfr_screenrec_ts1000.mp4 | vfr | 61500/1501; measured 61500/1501 | 246 | 2.959..100.0 | mismatch: formatDurationSec | 2 | 67.6 KiB | 35.8 | 0.73 |
+| vfr_screenrec_ts1000.webm | vfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 35.2 | 0.19 |
+| vfr_pulldown_2_3.mp4 | vfr | 24/1; measured 24/1 | 120 | 20.000..30.000 | all exact (16) | 2 | 66.2 KiB | 53.9 | 0.65 |
+| vfr_two_phase_5_200.mp4 | vfr | 205/2; measured 205/2 | 820 | 5.000..200.0 | all exact (16) | 2 | 68.1 KiB | 16.6 | 0.67 |
+| vfr_two_phase_5_200.webm | vfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 14.8 | 0.23 |
+| vfr_two_phase_5_200.mkv | vfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 15.2 | 0.20 |
 | vfr_freeze_2s.mp4 | vfr | 3600/179; measured 3600/179 | 120 | 0.500..30.000 | all exact (16) | 2 | 65.3 KiB | 55.8 | 0.55 |
-| box64_mdat64_wide.mov | box64 | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 2 | 65.1 KiB | 75.4 | 0.57 |
-| box64_mdat64_free.mp4 | box64 | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 2 | 65.1 KiB | 75.1 | 0.55 |
-| box64_co64_mdat64.mp4 | box64 | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.8 KiB | 100 | 0.43 |
-| av_h264_aac.mp4 | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: formatDurationSec | 2 | 67.8 KiB | 66.9 | 0.78 |
-| av_h264_aac_faststart.mp4 | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: formatDurationSec | 1 | 64.0 KiB | 63.1 | 0.55 |
-| multi_video_2tracks.mp4 | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 2 | 68.7 KiB | 22.9 | 0.91 |
+| box64_mdat64_wide.mov | box64 | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 2 | 65.1 KiB | 75.4 | 0.62 |
+| box64_mdat64_free.mp4 | box64 | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 2 | 65.1 KiB | 75.1 | 0.62 |
+| box64_co64_mdat64.mp4 | box64 | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.8 KiB | 100 | 0.39 |
+| av_h264_aac.mp4 | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: formatDurationSec | 2 | 67.8 KiB | 66.9 | 0.73 |
+| av_h264_aac_faststart.mp4 | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: formatDurationSec | 1 | 64.0 KiB | 63.1 | 0.51 |
+| multi_video_2tracks.mp4 | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 2 | 68.7 KiB | 22.9 | 0.74 |
 | multi_video_2tracks.mp4 (track 2) | multi | 24/1; measured 24/1 | 96 | 24.000..24.000 | all exact (14) |  |  |  |  |
-| still_image_track_first.mp4 | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: formatDurationSec | 2 | 68.4 KiB | 65.2 | 0.81 |
+| still_image_track_first.mp4 | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: formatDurationSec | 2 | 68.4 KiB | 65.2 | 0.90 |
 | still_image_track_first.mp4 (track 1) | multi | 25/1; measured 25/1 | 1 | none | mismatch: codecName |  |  |  |  |
-| cover_art_audio.m4a | cover | - | - | - | mismatch: formatDurationSec | 1 | 16.3 KiB | 100 | 0.39 |
-| cover_art_plus_video.mp4 | cover | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: formatDurationSec | 2 | 69.9 KiB | 67.6 | 0.64 |
-| audio_only.m4a | audio | - | - | - | mismatch: formatDurationSec | 1 | 13.3 KiB | 100 | 0.33 |
+| cover_art_audio.m4a | cover | - | - | - | mismatch: formatDurationSec | 1 | 16.3 KiB | 100 | 0.37 |
+| cover_art_plus_video.mp4 | cover | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: formatDurationSec | 2 | 69.9 KiB | 67.6 | 0.66 |
+| audio_only.m4a | audio | - | - | - | mismatch: formatDurationSec | 1 | 13.3 KiB | 100 | 0.35 |
 | audio_only_aac.mp4 | audio | - | - | - | mismatch: formatDurationSec | 1 | 13.3 KiB | 100 | 0.33 |
-| audio_only_opus.webm | audio | - | - | - | mismatch: error | 1 | 13.5 KiB | 100 | 0.14 |
-| edge_single_frame.mp4 | edge | 30/1; measured 30/1 | 1 | none | all exact (16) | 1 | 4.0 KiB | 100 | 0.34 |
+| audio_only_opus.webm | audio | - | - | - | mismatch: error | 1 | 13.5 KiB | 100 | 0.15 |
+| edge_single_frame.mp4 | edge | 30/1; measured 30/1 | 1 | none | all exact (16) | 1 | 4.0 KiB | 100 | 0.38 |
 | corrupt_empty_0byte.mp4 | corrupt | - | - | - | expected outcome (manifest) | 0 | 0 B | 0 | 0.00 |
-| corrupt_garbage_random.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 64.0 KiB | 100 | 0.16 |
-| corrupt_text_named.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 63 B | 100 | 0.15 |
-| corrupt_png_named.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 2.2 KiB | 100 | 0.13 |
+| corrupt_garbage_random.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 64.0 KiB | 100 | 0.22 |
+| corrupt_text_named.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 63 B | 100 | 0.13 |
+| corrupt_png_named.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 2.2 KiB | 100 | 0.14 |
 | corrupt_trunc_moov_partial.mp4 | corrupt | - | - | - | expected outcome (manifest) | 2 | 64.6 KiB | 74.9 | 0.42 |
-| corrupt_trunc_no_moov.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 64.0 KiB | 74.8 | 0.24 |
-| corrupt_trunc_mdat_faststart.mp4 | corrupt | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: formatDurationSec, presentedFrames | 1 | 60.8 KiB | 100 | 0.46 |
-| corrupt_fmp4_truncated_mid_fragment.mp4 | corrupt | 30000/1001; measured 30000/1001 | 90 vs 73 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 64.0 KiB | 91.4 | 0.66 |
-| box_mdat_size0.mp4 | box64 | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: formatDurationSec | 1 | 64.0 KiB | 63.1 | 0.73 |
-| corrupt_stts_count_huge.mp4 | corrupt | - | - | - | mismatch: error | 2 | 65.1 KiB | 75.1 | 0.53 |
-| sniff_webm_named_mp4.mp4 | sniff | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 88.9 | 0.19 |
-| sniff_mp4_named_webm.webm | sniff | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 2 | 65.1 KiB | 75.1 | 0.52 |
-| sniff_mp4_named_mkv.mkv | sniff | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 2 | 65.1 KiB | 75.1 | 0.53 |
-| frag_vfr_global_sidx.mp4 | fmp4 | 4200/149 vs 60/1; measured 4200/149 | 140 | 20.000..60.000 | known-deviation: avgFps | 2 | 117.9 KiB | 97.4 | 0.80 |
-| frag_vfr_dash.mp4 | fmp4 | 4200/149 vs 30/1; measured 4200/149 | 140 | 20.000..60.000 | known-deviation: avgFps | 2 | 118.0 KiB | 97.4 | 0.90 |
-| h264_vfr_remux.mkv | vfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 32.0 | 0.15 |
-| vp9_pipe_t10.webm | live | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 90.7 | 0.18 |
-| vp9_opus_live_audiotail.webm | live | - | - | - | mismatch: error, trackSelection | 1 | 64.0 KiB | 64.9 | 0.19 |
-| h264_25_cover.mkv | cover | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 89.0 | 0.17 |
-| remux_cfr_120_ts16000.mp4 | cfr | 120/1; measured 120/1 vs 1152000/9601 | 360 | 111.1..125.0 | within-tol: avgFps.measured | 2 | 68.1 KiB | 33.3 | 0.66 |
-| remux_cfr_29.97_ts16000.mp4 | cfr | 30000/1001; measured 30000/1001 vs 1440000/48053 | 90 | 29.412..30.303 | within-tol: avgFps.measured | 2 | 65.6 KiB | 90.5 | 0.59 |
-| start_freeze_bf.mp4 | vfr | 1125/67; measured 4500/209 | 150 | 0.500..30000.0 | all exact (16) | 2 | 66.7 KiB | 56.5 | 0.60 |
-| fmp4_missing_fragment.mp4 | fmp4 | 30/1; measured 25/1 | 150 | 0.968..30.000 | mismatch: formatDurationSec, durationSec | 2 | 125.7 KiB | 85.0 | 0.71 |
+| corrupt_trunc_no_moov.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 64.0 KiB | 74.8 | 0.26 |
+| corrupt_trunc_mdat_faststart.mp4 | corrupt | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: formatDurationSec, presentedFrames | 1 | 60.8 KiB | 100 | 0.50 |
+| corrupt_fmp4_truncated_mid_fragment.mp4 | corrupt | 30000/1001; measured 30000/1001 | 90 vs 73 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 64.0 KiB | 91.4 | 0.71 |
+| box_mdat_size0.mp4 | box64 | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: formatDurationSec | 1 | 64.0 KiB | 63.1 | 0.57 |
+| corrupt_stts_count_huge.mp4 | corrupt | - | - | - | mismatch: error | 2 | 65.1 KiB | 75.1 | 0.59 |
+| sniff_webm_named_mp4.mp4 | sniff | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 88.9 | 0.16 |
+| sniff_mp4_named_webm.webm | sniff | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 2 | 65.1 KiB | 75.1 | 0.54 |
+| sniff_mp4_named_mkv.mkv | sniff | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 2 | 65.1 KiB | 75.1 | 0.49 |
+| frag_vfr_global_sidx.mp4 | fmp4 | 4200/149 vs 60/1; measured 4200/149 | 140 | 20.000..60.000 | known-deviation: avgFps | 2 | 117.9 KiB | 97.4 | 0.79 |
+| frag_vfr_dash.mp4 | fmp4 | 4200/149 vs 30/1; measured 4200/149 | 140 | 20.000..60.000 | known-deviation: avgFps | 2 | 118.0 KiB | 97.4 | 0.83 |
+| h264_vfr_remux.mkv | vfr | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 32.0 | 0.18 |
+| vp9_pipe_t10.webm | live | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 90.7 | 0.15 |
+| vp9_opus_live_audiotail.webm | live | - | - | - | mismatch: error, trackSelection | 1 | 64.0 KiB | 64.9 | 0.15 |
+| h264_25_cover.mkv | cover | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 89.0 | 0.15 |
+| remux_cfr_120_ts16000.mp4 | cfr | 120/1; measured 120/1 vs 1152000/9601 | 360 | 111.1..125.0 | within-tol: avgFps.measured | 2 | 68.1 KiB | 33.3 | 0.71 |
+| remux_cfr_29.97_ts16000.mp4 | cfr | 30000/1001; measured 30000/1001 vs 1440000/48053 | 90 | 29.412..30.303 | within-tol: avgFps.measured | 2 | 65.6 KiB | 90.5 | 0.54 |
+| start_freeze_bf.mp4 | vfr | 1125/67; measured 4500/209 | 150 | 0.500..30000.0 | all exact (16) | 2 | 66.7 KiB | 56.5 | 0.54 |
+| fmp4_missing_fragment.mp4 | fmp4 | 30/1; measured 25/1 | 150 | 0.968..30.000 | mismatch: formatDurationSec, durationSec | 2 | 125.7 KiB | 85.0 | 0.65 |
 | elst_trim_vfr_copy.mp4 | vfr | 205/2; measured 815/7 | 820 | 5.000..200.0 | mismatch: formatDurationSec, startSec | 2 | 68.1 KiB | 16.6 | 0.62 |
-| cfr_240_ts600.mp4 | cfr | 288000/1201; measured 288000/1201 | 480 | 200.0..300.0 | all exact (16) | 2 | 70.4 KiB | 75.6 | 0.75 |
-| fmp4_global_sidx_bframes.mp4 | fmp4 | 25/1; measured 25/1 | 100 | 25.000..25.000 | mismatch: formatDurationSec, durationSec | 2 | 64.1 KiB | 65.6 | 0.68 |
-| long_cfr_3h_60fps.mp4 | long | 60/1; measured 60/1 | 648000 | 60.000..60.000 | all exact (17) | 3 | 2.56 MiB | 20.6 | 175 |
-| long_vfr_1h_screenrec.mp4 | long | 186/5; measured 186/5 | 133920 | 2.941..100.0 | mismatch: formatDurationSec | 3 | 1.53 MiB | 40.7 | 67.6 |
-| big_1080p_moov_end.mp4 | big | 30/1; measured 30/1 | 1800 | 30.000..30.000 | all exact (17) | 2 | 75.0 KiB | 0.01 | 1.09 |
-| big_1080p_faststart.mp4 | big | 30/1; measured 30/1 | 1800 | 30.000..30.000 | all exact (17) | 1 | 64.0 KiB | 0.01 | 0.71 |
+| cfr_240_ts600.mp4 | cfr | 288000/1201; measured 288000/1201 | 480 | 200.0..300.0 | all exact (16) | 2 | 70.4 KiB | 75.6 | 0.74 |
+| fmp4_global_sidx_bframes.mp4 | fmp4 | 25/1; measured 25/1 | 100 | 25.000..25.000 | mismatch: formatDurationSec, durationSec | 2 | 64.1 KiB | 65.6 | 0.87 |
+| long_cfr_3h_60fps.mp4 | long | 60/1; measured 60/1 | 648000 | 60.000..60.000 | all exact (17) | 3 | 2.56 MiB | 20.6 | 180 |
+| long_vfr_1h_screenrec.mp4 | long | 186/5; measured 186/5 | 133920 | 2.941..100.0 | mismatch: formatDurationSec | 3 | 1.53 MiB | 40.7 | 70.5 |
+| big_1080p_moov_end.mp4 | big | 30/1; measured 30/1 | 1800 | 30.000..30.000 | all exact (17) | 2 | 75.0 KiB | 0.01 | 0.94 |
+| big_1080p_faststart.mp4 | big | 30/1; measured 30/1 | 1800 | 30.000..30.000 | all exact (17) | 1 | 64.0 KiB | 0.01 | 0.56 |
 | big_1080p.mkv | big | - | - | - | mismatch: error, trackSelection, formatDurationSec | 1 | 64.0 KiB | 0.01 | 0.20 |
 
 <details><summary>mp4box-tuned: verdict per field</summary>
@@ -1564,122 +1564,122 @@ mediabunny 1.62.1, idiomatic: the README metadata recipe (Input + BlobSource, in
 
 | Fixture | Category | avg FPS (app, or app vs ffprobe) | frames | min..max FPS | Verdict | Reads | Bytes | % of file | ms |
 |---|---|---|---|---|---|---:|---:|---:|---:|
-| cfr_h264_23.976.mp4 | cfr | 24000/1001 | - vs 72 | 23.976..23.976 | mismatch: frames, presentedFrames | 2 | 71.9 KiB | 100 | 2.16 |
-| cfr_vp9_23.976.webm | cfr | - vs 24000/1001 | - | 23.976..23.976 | mismatch: avgFps.declared, minFps, maxFps | 1 | 59.4 KiB | 100 | 1.34 |
-| cfr_h264_24.mp4 | cfr | 24/1 | - vs 72 | 24.000..24.000 | mismatch: frames, presentedFrames | 2 | 71.3 KiB | 100 | 0.83 |
-| cfr_vp9_24.webm | cfr | - vs 24/1 | - | 24.000..24.000 | mismatch: avgFps.declared, minFps, maxFps | 1 | 59.2 KiB | 100 | 1.12 |
-| cfr_h264_25.mp4 | cfr | 25/1 | - vs 75 | 25.000..25.000 | mismatch: frames, presentedFrames | 2 | 69.7 KiB | 100 | 0.89 |
-| cfr_vp9_25.webm | cfr | - vs 25/1 | - | 25.000..25.000 | mismatch: avgFps.declared | 1 | 58.8 KiB | 100 | 0.67 |
-| cfr_h264_29.97.mp4 | cfr | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 86.4 KiB | 100 | 0.70 |
-| cfr_vp9_29.97.webm | cfr | - vs 30000/1001 | - | 29.970..29.970 | mismatch: avgFps.declared, minFps, maxFps | 2 | 72.0 KiB | 100 | 0.78 |
-| cfr_h264_30.mp4 | cfr | 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 2 | 86.7 KiB | 100 | 0.67 |
-| cfr_vp9_30.webm | cfr | - vs 30/1 | - | 30.000..30.000 | mismatch: avgFps.declared, minFps, maxFps | 2 | 70.7 KiB | 100 | 0.73 |
-| cfr_h264_50.mp4 | cfr | 50/1 | - vs 150 | 50.000..50.000 | mismatch: frames, presentedFrames | 2 | 110.0 KiB | 100 | 0.65 |
-| cfr_vp9_50.webm | cfr | - vs 50/1 | - | 50.000..50.000 | mismatch: avgFps.declared | 2 | 104.2 KiB | 100 | 0.87 |
-| cfr_h264_59.94.mp4 | cfr | 60000/1001 | - vs 180 | 59.940..59.940 | mismatch: frames, presentedFrames | 2 | 126.0 KiB | 100 | 0.69 |
-| cfr_vp9_59.94.webm | cfr | - vs 19001/317 | - | 59.940..59.940 | mismatch: avgFps.declared, nominalFps, minFps, maxFps | 2 | 122.5 KiB | 100 | 0.84 |
-| cfr_h264_60.mp4 | cfr | 60/1 | - vs 180 | 60.000..60.000 | mismatch: frames, presentedFrames | 2 | 126.5 KiB | 100 | 0.71 |
-| cfr_vp9_60.webm | cfr | - vs 60/1 | - | 60.000..60.000 | mismatch: avgFps.declared, minFps, maxFps | 2 | 121.3 KiB | 100 | 0.83 |
-| cfr_h264_120.mp4 | cfr | 120/1 | - vs 360 | 120.0..120.0 | mismatch: frames, presentedFrames | 3 | 185.2 KiB | 100 | 1.08 |
-| cfr_vp9_120.webm | cfr | - vs 120/1 | - | 120.0..120.0 | mismatch: avgFps.declared, minFps, maxFps | 4 | 203.8 KiB | 100 | 1.33 |
-| cfr_h264_240.mp4 | cfr | 240/1 | - vs 720 | 240.0..240.0 | mismatch: frames, presentedFrames | 6 | 322.5 KiB | 100 | 1.16 |
-| cfr_vp9_240.webm | cfr | - vs 240/1 | - | 240.0..240.0 | mismatch: avgFps.declared, minFps, maxFps | 6 | 355.4 KiB | 100 | 1.27 |
-| mov_nobf_default.mov | mov | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 86.4 KiB | 100 | 0.56 |
-| mov_nobf_faststart.mov | mov | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 64.0 KiB | 74.1 | 0.43 |
-| mov_bf_elst.mov | mov | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 35.7 KiB | 100 | 0.63 |
-| mov_bf_noelst.mov | mov | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: formatDurationSec, frames, presentedFrames, durationSec | 1 | 35.7 KiB | 100 | 0.57 |
+| cfr_h264_23.976.mp4 | cfr | 24000/1001 | - vs 72 | 23.976..23.976 | mismatch: frames, presentedFrames | 2 | 71.9 KiB | 100 | 1.48 |
+| cfr_vp9_23.976.webm | cfr | - vs 24000/1001 | - | 23.976..23.976 | mismatch: avgFps.declared, minFps, maxFps | 1 | 59.4 KiB | 100 | 1.39 |
+| cfr_h264_24.mp4 | cfr | 24/1 | - vs 72 | 24.000..24.000 | mismatch: frames, presentedFrames | 2 | 71.3 KiB | 100 | 1.00 |
+| cfr_vp9_24.webm | cfr | - vs 24/1 | - | 24.000..24.000 | mismatch: avgFps.declared, minFps, maxFps | 1 | 59.2 KiB | 100 | 1.11 |
+| cfr_h264_25.mp4 | cfr | 25/1 | - vs 75 | 25.000..25.000 | mismatch: frames, presentedFrames | 2 | 69.7 KiB | 100 | 0.81 |
+| cfr_vp9_25.webm | cfr | - vs 25/1 | - | 25.000..25.000 | mismatch: avgFps.declared | 1 | 58.8 KiB | 100 | 0.71 |
+| cfr_h264_29.97.mp4 | cfr | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 86.4 KiB | 100 | 0.77 |
+| cfr_vp9_29.97.webm | cfr | - vs 30000/1001 | - | 29.970..29.970 | mismatch: avgFps.declared, minFps, maxFps | 2 | 72.0 KiB | 100 | 0.88 |
+| cfr_h264_30.mp4 | cfr | 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 2 | 86.7 KiB | 100 | 0.63 |
+| cfr_vp9_30.webm | cfr | - vs 30/1 | - | 30.000..30.000 | mismatch: avgFps.declared, minFps, maxFps | 2 | 70.7 KiB | 100 | 0.77 |
+| cfr_h264_50.mp4 | cfr | 50/1 | - vs 150 | 50.000..50.000 | mismatch: frames, presentedFrames | 2 | 110.0 KiB | 100 | 0.69 |
+| cfr_vp9_50.webm | cfr | - vs 50/1 | - | 50.000..50.000 | mismatch: avgFps.declared | 2 | 104.2 KiB | 100 | 0.92 |
+| cfr_h264_59.94.mp4 | cfr | 60000/1001 | - vs 180 | 59.940..59.940 | mismatch: frames, presentedFrames | 2 | 126.0 KiB | 100 | 0.72 |
+| cfr_vp9_59.94.webm | cfr | - vs 19001/317 | - | 59.940..59.940 | mismatch: avgFps.declared, nominalFps, minFps, maxFps | 2 | 122.5 KiB | 100 | 0.86 |
+| cfr_h264_60.mp4 | cfr | 60/1 | - vs 180 | 60.000..60.000 | mismatch: frames, presentedFrames | 2 | 126.5 KiB | 100 | 0.82 |
+| cfr_vp9_60.webm | cfr | - vs 60/1 | - | 60.000..60.000 | mismatch: avgFps.declared, minFps, maxFps | 2 | 121.3 KiB | 100 | 1.19 |
+| cfr_h264_120.mp4 | cfr | 120/1 | - vs 360 | 120.0..120.0 | mismatch: frames, presentedFrames | 3 | 185.2 KiB | 100 | 1.16 |
+| cfr_vp9_120.webm | cfr | - vs 120/1 | - | 120.0..120.0 | mismatch: avgFps.declared, minFps, maxFps | 4 | 203.8 KiB | 100 | 1.47 |
+| cfr_h264_240.mp4 | cfr | 240/1 | - vs 720 | 240.0..240.0 | mismatch: frames, presentedFrames | 6 | 322.5 KiB | 100 | 1.35 |
+| cfr_vp9_240.webm | cfr | - vs 240/1 | - | 240.0..240.0 | mismatch: avgFps.declared, minFps, maxFps | 6 | 355.4 KiB | 100 | 1.43 |
+| mov_nobf_default.mov | mov | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 86.4 KiB | 100 | 0.58 |
+| mov_nobf_faststart.mov | mov | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 64.0 KiB | 74.1 | 0.45 |
+| mov_bf_elst.mov | mov | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 35.7 KiB | 100 | 0.65 |
+| mov_bf_noelst.mov | mov | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: formatDurationSec, frames, presentedFrames, durationSec | 1 | 35.7 KiB | 100 | 0.55 |
 | mov_bf_faststart.mov | mov | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 35.7 KiB | 100 | 0.50 |
-| mov_prores.mov | codec | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 4 | 218.8 KiB | 100 | 0.69 |
-| mp4_bf_elst.mp4 | mov | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 35.8 KiB | 100 | 0.50 |
+| mov_prores.mov | codec | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 4 | 218.8 KiB | 100 | 0.71 |
+| mp4_bf_elst.mp4 | mov | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 35.8 KiB | 100 | 0.48 |
 | mp4_bf_noelst.mp4 | mov | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: formatDurationSec, frames, presentedFrames, durationSec | 1 | 35.7 KiB | 100 | 0.51 |
-| mp4_bf_faststart.mp4 | mov | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 35.8 KiB | 100 | 0.48 |
-| mp4_elst_empty_offset.mp4 | mov | 30/1 | - vs 90 | 30.000..30.000 | mismatch: formatDurationSec, frames, presentedFrames, durationSec | 1 | 35.2 KiB | 100 | 0.47 |
-| mp4_elst_trim_start.mp4 | mov | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames, startSec | 1 | 35.8 KiB | 100 | 0.51 |
-| mp4_elst_trim_output_seek.mp4 | mov | 30000/1001 | - vs 60 | 29.970..29.970 | mismatch: formatDurationSec, frames, presentedFrames, durationSec | 1 | 25.1 KiB | 100 | 0.43 |
-| fmp4_keyframe_empty_moov.mp4 | fmp4 | 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 116.7 KiB | 100 | 1.01 |
-| fmp4_default_base_moof.mp4 | fmp4 | 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 116.7 KiB | 100 | 0.87 |
+| mp4_bf_faststart.mp4 | mov | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 35.8 KiB | 100 | 0.53 |
+| mp4_elst_empty_offset.mp4 | mov | 30/1 | - vs 90 | 30.000..30.000 | mismatch: formatDurationSec, frames, presentedFrames, durationSec | 1 | 35.2 KiB | 100 | 0.54 |
+| mp4_elst_trim_start.mp4 | mov | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames, startSec | 1 | 35.8 KiB | 100 | 0.53 |
+| mp4_elst_trim_output_seek.mp4 | mov | 30000/1001 | - vs 60 | 29.970..29.970 | mismatch: formatDurationSec, frames, presentedFrames, durationSec | 1 | 25.1 KiB | 100 | 0.45 |
+| fmp4_keyframe_empty_moov.mp4 | fmp4 | 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 116.7 KiB | 100 | 1.10 |
+| fmp4_default_base_moof.mp4 | fmp4 | 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 116.7 KiB | 100 | 0.89 |
 | fmp4_frag_duration.mp4 | fmp4 | 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 117.2 KiB | 100 | 0.85 |
-| fmp4_bframes.mp4 | fmp4 | 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: formatDurationSec, frames, presentedFrames, durationSec | 1 | 48.8 KiB | 100 | 0.67 |
-| fmp4_hybrid_no_empty_moov.mp4 | fmp4 | 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: formatDurationSec, frames, presentedFrames, durationSec | 2 | 116.7 KiB | 100 | 0.55 |
-| fmp4_cmaf.mp4 | fmp4 | 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 116.7 KiB | 100 | 0.77 |
+| fmp4_bframes.mp4 | fmp4 | 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: formatDurationSec, frames, presentedFrames, durationSec | 1 | 48.8 KiB | 100 | 0.73 |
+| fmp4_hybrid_no_empty_moov.mp4 | fmp4 | 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: formatDurationSec, frames, presentedFrames, durationSec | 2 | 116.7 KiB | 100 | 0.58 |
+| fmp4_cmaf.mp4 | fmp4 | 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 116.7 KiB | 100 | 0.81 |
 | fmp4_global_sidx.mp4 | fmp4 | 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 116.8 KiB | 100 | 0.76 |
-| fmp4_dash_flag.mp4 | fmp4 | 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 116.9 KiB | 100 | 0.82 |
-| mp4_hybrid_fragmented_finalized.mp4 | fmp4 | 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 117.9 KiB | 100 | 0.66 |
+| fmp4_dash_flag.mp4 | fmp4 | 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 116.9 KiB | 100 | 0.80 |
+| mp4_hybrid_fragmented_finalized.mp4 | fmp4 | 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 117.9 KiB | 100 | 0.68 |
 | fmp4_dash_single_file.mp4 | fmp4 | 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 116.8 KiB | 100 | 0.75 |
-| fmp4_dash_concat_segments.mp4 | fmp4 | 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 116.9 KiB | 100 | 0.82 |
+| fmp4_dash_concat_segments.mp4 | fmp4 | 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 116.9 KiB | 100 | 0.83 |
 | hevc_hvc1.mp4 | codec | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 45.1 KiB | 100 | 0.62 |
-| hevc_hev1.mp4 | codec | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 45.1 KiB | 100 | 0.58 |
-| av1.mp4 | codec | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 20.8 KiB | 100 | 0.86 |
-| vp9.mp4 | codec | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 72.0 KiB | 100 | 0.57 |
-| vp9.webm | codec | - vs 30000/1001 | - | 29.970..29.970 | mismatch: avgFps.declared, minFps, maxFps | 2 | 72.0 KiB | 100 | 0.69 |
-| vp8.webm | codec | - vs 30000/1001 | - | 29.970..29.970 | mismatch: avgFps.declared, minFps, maxFps | 3 | 160.3 KiB | 100 | 0.97 |
-| av1.webm | codec | - vs 30000/1001 | - | 29.970..29.970 | mismatch: avgFps.declared, minFps, maxFps | 1 | 21.2 KiB | 100 | 0.62 |
-| h264.mkv | matroska | - vs 30000/1001 | - | 29.970..29.970 | mismatch: avgFps.declared, minFps, maxFps | 2 | 86.4 KiB | 100 | 0.84 |
-| hevc.mkv | codec | - vs 30000/1001 | - | 29.970..29.970 | mismatch: avgFps.declared, minFps, maxFps | 1 | 44.3 KiB | 100 | 0.65 |
-| vp9_live.webm | live | - vs 30000/1001 | - | 29.970..29.970 | mismatch: avgFps.declared, minFps, maxFps | 2 | 71.9 KiB | 100 | 0.97 |
-| vp9_pipe.webm | live | - vs 30000/1001 | - | 29.970..29.970 | mismatch: avgFps.declared, minFps, maxFps | 2 | 71.9 KiB | 100 | 0.73 |
-| vp9_unknown_clusters.webm | live | - vs 30000/1001 | - | 1000.0..1000.0 | mismatch: avgFps.declared, minFps, maxFps | 1 | 64.0 KiB | 89.1 | 0.31 |
-| vp9_no_defaultduration.webm | matroska | - | - | 29.970..29.970 | mismatch: formatDurationSec, minFps, maxFps | 2 | 72.0 KiB | 100 | 0.67 |
-| vfr_concat_10_30_60.mp4 | vfr | 11940/359 vs 100/3 | - vs 200 | 10.000..60.000 | mismatch: avgFps, frames, presentedFrames | 3 | 161.8 KiB | 100 | 0.95 |
-| vfr_concat_bframes.mp4 | vfr | 11940/359 vs 1200/37 | - vs 200 | 10.000..60.000 | mismatch: avgFps, frames, presentedFrames | 2 | 66.7 KiB | 100 | 0.89 |
-| vfr_concat_10_30_60_ts1M.mp4 | vfr | 11940/359 vs 100/3 | - vs 200 | 10.000..60.000 | mismatch: avgFps, frames, presentedFrames, maxFps | 3 | 162.7 KiB | 100 | 0.94 |
-| vfr_concat_10_30_60.mov | vfr | 11940/359 vs 100/3 | - vs 200 | 10.000..60.000 | mismatch: avgFps, frames, presentedFrames | 3 | 161.7 KiB | 100 | 0.77 |
-| vfr_concat_10_30_60.webm | vfr | - | - | 10.000..60.000 | mismatch: formatDurationSec, maxFps | 3 | 140.3 KiB | 100 | 0.88 |
-| vfr_concat_10_30_60_fmp4.mp4 | vfr | 11940/359 vs 100/3 | - vs 200 | 10.000..60.000 | mismatch: avgFps, frames, presentedFrames | 3 | 162.8 KiB | 100 | 1.03 |
-| vfr_setpts_sine.mp4 | vfr | 446777/14759 vs 13500000/445991 | - vs 150 | 17.149..119.7 | mismatch: avgFps, frames, presentedFrames | 3 | 142.2 KiB | 100 | 0.85 |
-| vfr_select_drop.mp4 | vfr | 10740/299 vs 36/1 | - vs 180 | 20.000..60.000 | mismatch: avgFps, frames, presentedFrames | 3 | 152.1 KiB | 100 | 0.87 |
-| vfr_mpdecimate.mp4 | vfr | 1350/67 vs 182/9 | - vs 91 | 0.667..30.000 | mismatch: avgFps, frames, presentedFrames | 2 | 87.0 KiB | 100 | 0.60 |
-| vfr_screenrec_ts1000.mp4 | vfr | 172077/4205 vs 61500/1501 | - vs 246 | 2.959..100.0 | mismatch: formatDurationSec, avgFps, frames, presentedFrames, durationSec | 3 | 188.6 KiB | 100 | 1.18 |
-| vfr_screenrec_ts1000.webm | vfr | - vs 60/1 | - | 3.000..60.000 | mismatch: avgFps.declared, minFps, maxFps | 3 | 181.7 KiB | 100 | 1.06 |
-| vfr_pulldown_2_3.mp4 | vfr | 2380/99 vs 24/1 | - vs 120 | 20.000..30.000 | mismatch: avgFps, frames, presentedFrames | 2 | 122.8 KiB | 100 | 0.59 |
-| vfr_two_phase_5_200.mp4 | vfr | 3400/69 vs 205/2 | - vs 820 | 5.000..200.0 | mismatch: avgFps, frames, presentedFrames | 4 | 219.3 KiB | 53.3 | 1.12 |
-| vfr_two_phase_5_200.webm | vfr | - | - | 5.000..200.0 | mismatch: formatDurationSec | 5 | 303.0 KiB | 70.3 | 1.58 |
-| vfr_two_phase_5_200.mkv | vfr | - vs 205/2 | - | 5.000..200.0 | mismatch: avgFps.declared | 5 | 293.5 KiB | 69.6 | 2.24 |
-| vfr_freeze_2s.mp4 | vfr | 1785/89 vs 3600/179 | - vs 120 | 0.500..30.000 | mismatch: avgFps, frames, presentedFrames | 2 | 117.0 KiB | 100 | 0.58 |
-| box64_mdat64_wide.mov | box64 | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 86.4 KiB | 100 | 0.51 |
+| hevc_hev1.mp4 | codec | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 45.1 KiB | 100 | 0.59 |
+| av1.mp4 | codec | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 20.8 KiB | 100 | 0.56 |
+| vp9.mp4 | codec | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 72.0 KiB | 100 | 0.58 |
+| vp9.webm | codec | - vs 30000/1001 | - | 29.970..29.970 | mismatch: avgFps.declared, minFps, maxFps | 2 | 72.0 KiB | 100 | 0.70 |
+| vp8.webm | codec | - vs 30000/1001 | - | 29.970..29.970 | mismatch: avgFps.declared, minFps, maxFps | 3 | 160.3 KiB | 100 | 0.99 |
+| av1.webm | codec | - vs 30000/1001 | - | 29.970..29.970 | mismatch: avgFps.declared, minFps, maxFps | 1 | 21.2 KiB | 100 | 0.66 |
+| h264.mkv | matroska | - vs 30000/1001 | - | 29.970..29.970 | mismatch: avgFps.declared, minFps, maxFps | 2 | 86.4 KiB | 100 | 0.82 |
+| hevc.mkv | codec | - vs 30000/1001 | - | 29.970..29.970 | mismatch: avgFps.declared, minFps, maxFps | 1 | 44.3 KiB | 100 | 0.66 |
+| vp9_live.webm | live | - vs 30000/1001 | - | 29.970..29.970 | mismatch: avgFps.declared, minFps, maxFps | 2 | 71.9 KiB | 100 | 1.00 |
+| vp9_pipe.webm | live | - vs 30000/1001 | - | 29.970..29.970 | mismatch: avgFps.declared, minFps, maxFps | 2 | 71.9 KiB | 100 | 0.81 |
+| vp9_unknown_clusters.webm | live | - vs 30000/1001 | - | 1000.0..1000.0 | mismatch: avgFps.declared, minFps, maxFps | 1 | 64.0 KiB | 89.1 | 0.32 |
+| vp9_no_defaultduration.webm | matroska | - | - | 29.970..29.970 | mismatch: formatDurationSec, minFps, maxFps | 2 | 72.0 KiB | 100 | 0.68 |
+| vfr_concat_10_30_60.mp4 | vfr | 11940/359 vs 100/3 | - vs 200 | 10.000..60.000 | mismatch: avgFps, frames, presentedFrames | 3 | 161.8 KiB | 100 | 0.85 |
+| vfr_concat_bframes.mp4 | vfr | 11940/359 vs 1200/37 | - vs 200 | 10.000..60.000 | mismatch: avgFps, frames, presentedFrames | 2 | 66.7 KiB | 100 | 0.98 |
+| vfr_concat_10_30_60_ts1M.mp4 | vfr | 11940/359 vs 100/3 | - vs 200 | 10.000..60.000 | mismatch: avgFps, frames, presentedFrames, maxFps | 3 | 162.7 KiB | 100 | 1.03 |
+| vfr_concat_10_30_60.mov | vfr | 11940/359 vs 100/3 | - vs 200 | 10.000..60.000 | mismatch: avgFps, frames, presentedFrames | 3 | 161.7 KiB | 100 | 0.78 |
+| vfr_concat_10_30_60.webm | vfr | - | - | 10.000..60.000 | mismatch: formatDurationSec, maxFps | 3 | 140.3 KiB | 100 | 1.00 |
+| vfr_concat_10_30_60_fmp4.mp4 | vfr | 11940/359 vs 100/3 | - vs 200 | 10.000..60.000 | mismatch: avgFps, frames, presentedFrames | 3 | 162.8 KiB | 100 | 0.98 |
+| vfr_setpts_sine.mp4 | vfr | 446777/14759 vs 13500000/445991 | - vs 150 | 17.149..119.7 | mismatch: avgFps, frames, presentedFrames | 3 | 142.2 KiB | 100 | 0.77 |
+| vfr_select_drop.mp4 | vfr | 10740/299 vs 36/1 | - vs 180 | 20.000..60.000 | mismatch: avgFps, frames, presentedFrames | 3 | 152.1 KiB | 100 | 0.84 |
+| vfr_mpdecimate.mp4 | vfr | 1350/67 vs 182/9 | - vs 91 | 0.667..30.000 | mismatch: avgFps, frames, presentedFrames | 2 | 87.0 KiB | 100 | 0.54 |
+| vfr_screenrec_ts1000.mp4 | vfr | 172077/4205 vs 61500/1501 | - vs 246 | 2.959..100.0 | mismatch: formatDurationSec, avgFps, frames, presentedFrames, durationSec | 3 | 188.6 KiB | 100 | 1.13 |
+| vfr_screenrec_ts1000.webm | vfr | - vs 60/1 | - | 3.000..60.000 | mismatch: avgFps.declared, minFps, maxFps | 3 | 181.7 KiB | 100 | 1.28 |
+| vfr_pulldown_2_3.mp4 | vfr | 2380/99 vs 24/1 | - vs 120 | 20.000..30.000 | mismatch: avgFps, frames, presentedFrames | 2 | 122.8 KiB | 100 | 0.72 |
+| vfr_two_phase_5_200.mp4 | vfr | 3400/69 vs 205/2 | - vs 820 | 5.000..200.0 | mismatch: avgFps, frames, presentedFrames | 4 | 219.3 KiB | 53.3 | 1.02 |
+| vfr_two_phase_5_200.webm | vfr | - | - | 5.000..200.0 | mismatch: formatDurationSec | 5 | 303.0 KiB | 70.3 | 1.44 |
+| vfr_two_phase_5_200.mkv | vfr | - vs 205/2 | - | 5.000..200.0 | mismatch: avgFps.declared | 5 | 293.5 KiB | 69.6 | 2.27 |
+| vfr_freeze_2s.mp4 | vfr | 1785/89 vs 3600/179 | - vs 120 | 0.500..30.000 | mismatch: avgFps, frames, presentedFrames | 2 | 117.0 KiB | 100 | 0.63 |
+| box64_mdat64_wide.mov | box64 | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 86.4 KiB | 100 | 0.54 |
 | box64_mdat64_free.mp4 | box64 | 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 2 | 86.7 KiB | 100 | 0.52 |
-| box64_co64_mdat64.mp4 | box64 | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 35.8 KiB | 100 | 0.48 |
-| av_h264_aac.mp4 | multi | 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 2 | 101.4 KiB | 100 | 0.68 |
-| av_h264_aac_faststart.mp4 | multi | 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 1 | 64.0 KiB | 63.1 | 0.53 |
-| multi_video_2tracks.mp4 | multi | 30/1 | - vs 90 | 30.000..30.000 | mismatch: trackSelection, frames, presentedFrames | 5 | 299.9 KiB | 100 | 0.94 |
-| still_image_track_first.mp4 | multi | 12800/1 vs 25/1 | - vs 1 | 12800.0..12800.0 | mismatch: trackSelection, codecName, avgFps, frames, presentedFrames, minFps, maxFps, isVfr | 2 | 105.0 KiB | 100 | 0.51 |
-| cover_art_audio.m4a | cover | - | - | - | all exact (3) | 1 | 16.3 KiB | 100 | 0.28 |
-| cover_art_plus_video.mp4 | cover | 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 2 | 103.5 KiB | 100 | 0.62 |
+| box64_co64_mdat64.mp4 | box64 | 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 35.8 KiB | 100 | 0.52 |
+| av_h264_aac.mp4 | multi | 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 2 | 101.4 KiB | 100 | 0.84 |
+| av_h264_aac_faststart.mp4 | multi | 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 1 | 64.0 KiB | 63.1 | 0.55 |
+| multi_video_2tracks.mp4 | multi | 30/1 | - vs 90 | 30.000..30.000 | mismatch: trackSelection, frames, presentedFrames | 5 | 299.9 KiB | 100 | 0.98 |
+| still_image_track_first.mp4 | multi | 12800/1 vs 25/1 | - vs 1 | 12800.0..12800.0 | mismatch: trackSelection, codecName, avgFps, frames, presentedFrames, minFps, maxFps, isVfr | 2 | 105.0 KiB | 100 | 0.52 |
+| cover_art_audio.m4a | cover | - | - | - | all exact (3) | 1 | 16.3 KiB | 100 | 0.27 |
+| cover_art_plus_video.mp4 | cover | 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 2 | 103.5 KiB | 100 | 0.66 |
 | audio_only.m4a | audio | - | - | - | all exact (3) | 1 | 13.3 KiB | 100 | 0.27 |
-| audio_only_aac.mp4 | audio | - | - | - | all exact (3) | 1 | 13.3 KiB | 100 | 0.26 |
-| audio_only_opus.webm | audio | - | - | - | all exact (3) | 1 | 13.5 KiB | 100 | 0.40 |
-| edge_single_frame.mp4 | edge | 15360/1 vs 30/1 | - vs 1 | 15360.0..15360.0 | mismatch: avgFps, frames, presentedFrames, minFps, maxFps, isVfr | 1 | 4.0 KiB | 100 | 0.27 |
+| audio_only_aac.mp4 | audio | - | - | - | all exact (3) | 1 | 13.3 KiB | 100 | 0.28 |
+| audio_only_opus.webm | audio | - | - | - | all exact (3) | 1 | 13.5 KiB | 100 | 0.42 |
+| edge_single_frame.mp4 | edge | 15360/1 vs 30/1 | - vs 1 | 15360.0..15360.0 | mismatch: avgFps, frames, presentedFrames, minFps, maxFps, isVfr | 1 | 4.0 KiB | 100 | 0.29 |
 | corrupt_empty_0byte.mp4 | corrupt | - | - | - | expected outcome (manifest) | 0 | 0 B | 0 | 0.04 |
 | corrupt_garbage_random.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 64.0 KiB | 100 | 0.36 |
-| corrupt_text_named.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 63 B | 100 | 0.21 |
-| corrupt_png_named.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 2.2 KiB | 100 | 0.23 |
-| corrupt_trunc_moov_partial.mp4 | corrupt | - | - | - | mismatch: error | 2 | 86.2 KiB | 100 | 0.30 |
-| corrupt_trunc_no_moov.mp4 | corrupt | - | - | - | mismatch: error | 1 | 64.0 KiB | 74.8 | 0.21 |
-| corrupt_trunc_mdat_faststart.mp4 | corrupt | 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 1 | 60.8 KiB | 100 | 0.54 |
-| corrupt_fmp4_truncated_mid_fragment.mp4 | corrupt | 30000/1001 | - vs 73 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 70.0 KiB | 100 | 0.68 |
-| box_mdat_size0.mp4 | box64 | 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 1 | 64.0 KiB | 63.1 | 0.50 |
-| corrupt_stts_count_huge.mp4 | corrupt | - | - | - | mismatch: error | 2 | 86.7 KiB | 100 | 0.64 |
-| sniff_webm_named_mp4.mp4 | sniff | - vs 30000/1001 | - | 29.970..29.970 | mismatch: avgFps.declared, minFps, maxFps | 2 | 72.0 KiB | 100 | 0.76 |
-| sniff_mp4_named_webm.webm | sniff | 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 2 | 86.7 KiB | 100 | 0.73 |
-| sniff_mp4_named_mkv.mkv | sniff | 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 2 | 86.7 KiB | 100 | 0.64 |
-| frag_vfr_global_sidx.mp4 | fmp4 | 2780/99 vs 60/1 | - vs 140 | 20.000..60.000 | mismatch: avgFps, frames, presentedFrames | 2 | 121.0 KiB | 100 | 0.82 |
-| frag_vfr_dash.mp4 | fmp4 | 2780/99 vs 30/1 | - vs 140 | 20.000..60.000 | mismatch: avgFps, frames, presentedFrames | 2 | 121.2 KiB | 100 | 0.77 |
+| corrupt_text_named.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 63 B | 100 | 0.22 |
+| corrupt_png_named.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 2.2 KiB | 100 | 0.22 |
+| corrupt_trunc_moov_partial.mp4 | corrupt | - | - | - | mismatch: error | 2 | 86.2 KiB | 100 | 0.31 |
+| corrupt_trunc_no_moov.mp4 | corrupt | - | - | - | mismatch: error | 1 | 64.0 KiB | 74.8 | 0.20 |
+| corrupt_trunc_mdat_faststart.mp4 | corrupt | 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 1 | 60.8 KiB | 100 | 0.57 |
+| corrupt_fmp4_truncated_mid_fragment.mp4 | corrupt | 30000/1001 | - vs 73 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 70.0 KiB | 100 | 0.54 |
+| box_mdat_size0.mp4 | box64 | 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 1 | 64.0 KiB | 63.1 | 0.51 |
+| corrupt_stts_count_huge.mp4 | corrupt | - | - | - | mismatch: error | 2 | 86.7 KiB | 100 | 0.65 |
+| sniff_webm_named_mp4.mp4 | sniff | - vs 30000/1001 | - | 29.970..29.970 | mismatch: avgFps.declared, minFps, maxFps | 2 | 72.0 KiB | 100 | 0.84 |
+| sniff_mp4_named_webm.webm | sniff | 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 2 | 86.7 KiB | 100 | 0.69 |
+| sniff_mp4_named_mkv.mkv | sniff | 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 2 | 86.7 KiB | 100 | 0.66 |
+| frag_vfr_global_sidx.mp4 | fmp4 | 2780/99 vs 60/1 | - vs 140 | 20.000..60.000 | mismatch: avgFps, frames, presentedFrames | 2 | 121.0 KiB | 100 | 0.80 |
+| frag_vfr_dash.mp4 | fmp4 | 2780/99 vs 30/1 | - vs 140 | 20.000..60.000 | mismatch: avgFps, frames, presentedFrames | 2 | 121.2 KiB | 100 | 0.82 |
 | h264_vfr_remux.mkv | vfr | - vs 130/3 | - | 10.000..60.000 | mismatch: avgFps.declared, maxFps | 4 | 200.0 KiB | 100 | 1.30 |
-| vp9_pipe_t10.webm | live | - vs 30/1 | - | 30.000..30.000 | mismatch: formatDurationSec, avgFps.declared, minFps, maxFps | 2 | 70.6 KiB | 100 | 0.57 |
-| vp9_opus_live_audiotail.webm | live | - vs 30/1 | - | 30.000..30.000 | mismatch: avgFps.declared, minFps, maxFps | 2 | 98.7 KiB | 100 | 0.78 |
-| h264_25_cover.mkv | cover | - vs 25/1 | - | 25.000..25.000 | mismatch: avgFps.declared | 2 | 71.9 KiB | 100 | 0.80 |
-| remux_cfr_120_ts16000.mp4 | cfr | 120/1 | - vs 360 | 111.1..125.0 | mismatch: frames, presentedFrames, isVfr | 4 | 204.7 KiB | 100 | 1.06 |
-| remux_cfr_29.97_ts16000.mp4 | cfr | 8900/297 vs 30000/1001 | - vs 90 | 29.412..30.303 | mismatch: avgFps, frames, presentedFrames, isVfr | 2 | 72.5 KiB | 100 | 0.53 |
+| vp9_pipe_t10.webm | live | - vs 30/1 | - | 30.000..30.000 | mismatch: formatDurationSec, avgFps.declared, minFps, maxFps | 2 | 70.6 KiB | 100 | 0.64 |
+| vp9_opus_live_audiotail.webm | live | - vs 30/1 | - | 30.000..30.000 | mismatch: avgFps.declared, minFps, maxFps | 2 | 98.7 KiB | 100 | 0.84 |
+| h264_25_cover.mkv | cover | - vs 25/1 | - | 25.000..25.000 | mismatch: avgFps.declared | 2 | 71.9 KiB | 100 | 0.72 |
+| remux_cfr_120_ts16000.mp4 | cfr | 120/1 | - vs 360 | 111.1..125.0 | mismatch: frames, presentedFrames, isVfr | 4 | 204.7 KiB | 100 | 1.07 |
+| remux_cfr_29.97_ts16000.mp4 | cfr | 8900/297 vs 30000/1001 | - vs 90 | 29.412..30.303 | mismatch: avgFps, frames, presentedFrames, isVfr | 2 | 72.5 KiB | 100 | 0.54 |
 | start_freeze_bf.mp4 | vfr | 279999/13517 vs 1125/67 | - vs 150 | 0.500..30.000 | mismatch: avgFps, frames, presentedFrames, minFps, maxFps, duplicateTimestamps | 2 | 118.2 KiB | 100 | 0.98 |
-| fmp4_missing_fragment.mp4 | fmp4 | 4470/179 vs 30/1 | - vs 150 | 0.968..30.000 | mismatch: formatDurationSec, avgFps, frames, presentedFrames, durationSec | 3 | 147.9 KiB | 100 | 1.19 |
-| elst_trim_vfr_copy.mp4 | vfr | 3400/69 vs 205/2 | - vs 820 | 5.000..200.0 | mismatch: avgFps, frames, presentedFrames, startSec | 4 | 219.3 KiB | 53.3 | 1.25 |
-| cfr_240_ts600.mp4 | cfr | 91800/383 vs 288000/1201 | - vs 480 | 180.0..360.0 | mismatch: avgFps, frames, presentedFrames, minFps, maxFps, isVfr | 2 | 93.1 KiB | 100 | 0.97 |
-| fmp4_global_sidx_bframes.mp4 | fmp4 | 25/1 | - vs 100 | 25.000..25.000 | mismatch: formatDurationSec, frames, presentedFrames | 2 | 97.7 KiB | 100 | 0.83 |
-| long_cfr_3h_60fps.mp4 | long | 60/1 | - vs 648000 | 60.000..60.000 | mismatch: frames, presentedFrames | 44 | 2.73 MiB | 22.0 | 34.1 |
-| long_vfr_1h_screenrec.mp4 | long | 10625/296 vs 186/5 | - vs 133920 | 2.959..100.0 | mismatch: formatDurationSec, avgFps, frames, presentedFrames, durationSec, minFps | 28 | 1.70 MiB | 45.1 | 11.2 |
-| big_1080p_moov_end.mp4 | big | 30/1 | - vs 1800 | 30.000..30.000 | mismatch: frames, presentedFrames | 4 | 239.8 KiB | 0.04 | 1.31 |
-| big_1080p_faststart.mp4 | big | 30/1 | - vs 1800 | 30.000..30.000 | mismatch: frames, presentedFrames | 1 | 64.0 KiB | 0.01 | 0.81 |
-| big_1080p.mkv | big | - vs 30/1 | - | 30.000..30.000 | mismatch: avgFps.declared, minFps, maxFps | 1759 | 106.49 MiB | 18.5 | 192 |
+| fmp4_missing_fragment.mp4 | fmp4 | 4470/179 vs 30/1 | - vs 150 | 0.968..30.000 | mismatch: formatDurationSec, avgFps, frames, presentedFrames, durationSec | 3 | 147.9 KiB | 100 | 1.17 |
+| elst_trim_vfr_copy.mp4 | vfr | 3400/69 vs 205/2 | - vs 820 | 5.000..200.0 | mismatch: avgFps, frames, presentedFrames, startSec | 4 | 219.3 KiB | 53.3 | 1.27 |
+| cfr_240_ts600.mp4 | cfr | 91800/383 vs 288000/1201 | - vs 480 | 180.0..360.0 | mismatch: avgFps, frames, presentedFrames, minFps, maxFps, isVfr | 2 | 93.1 KiB | 100 | 1.01 |
+| fmp4_global_sidx_bframes.mp4 | fmp4 | 25/1 | - vs 100 | 25.000..25.000 | mismatch: formatDurationSec, frames, presentedFrames | 2 | 97.7 KiB | 100 | 0.86 |
+| long_cfr_3h_60fps.mp4 | long | 60/1 | - vs 648000 | 60.000..60.000 | mismatch: frames, presentedFrames | 44 | 2.73 MiB | 22.0 | 34.3 |
+| long_vfr_1h_screenrec.mp4 | long | 10625/296 vs 186/5 | - vs 133920 | 2.959..100.0 | mismatch: formatDurationSec, avgFps, frames, presentedFrames, durationSec, minFps | 28 | 1.70 MiB | 45.1 | 10.8 |
+| big_1080p_moov_end.mp4 | big | 30/1 | - vs 1800 | 30.000..30.000 | mismatch: frames, presentedFrames | 4 | 239.8 KiB | 0.04 | 1.14 |
+| big_1080p_faststart.mp4 | big | 30/1 | - vs 1800 | 30.000..30.000 | mismatch: frames, presentedFrames | 1 | 64.0 KiB | 0.01 | 0.76 |
+| big_1080p.mkv | big | - vs 30/1 | - | 30.000..30.000 | mismatch: avgFps.declared, minFps, maxFps | 1759 | 106.49 MiB | 18.5 | 212 |
 
 <details><summary>mediabunny-idiomatic: verdict per field</summary>
 
@@ -2111,128 +2111,128 @@ Skipped fixtures:
 
 ## mediabunny-full (informational)
 
-mediabunny 1.62.1, full: the idiomatic recipe with computeFrameRateMetrics({ targetPacketCount: Infinity }).
+mediabunny 1.62.1, full: the idiomatic recipe with computeFrameRateMetrics({ targetPacketCount: Infinity }), its probedPacketCount as the frame count.
 
 116 fixtures run, 1 skipped, no known-deviation file.
 
 | Fixture | Category | avg FPS (app, or app vs ffprobe) | frames | min..max FPS | Verdict | Reads | Bytes | % of file | ms |
 |---|---|---|---|---|---|---:|---:|---:|---:|
-| cfr_h264_23.976.mp4 | cfr | 24000/1001; measured 24000/1001 | - vs 72 | 23.976..23.976 | mismatch: frames, presentedFrames | 2 | 71.9 KiB | 100 | 0.53 |
-| cfr_vp9_23.976.webm | cfr | - vs 24000/1001; measured 24000/1001 vs 36000/1501 | - vs 72 | 23.976..23.976 | mismatch: avgFps.declared, avgFps.measured, frames, presentedFrames, minFps, maxFps | 1 | 59.4 KiB | 100 | 0.54 |
-| cfr_h264_24.mp4 | cfr | 24/1; measured 24/1 | - vs 72 | 24.000..24.000 | mismatch: frames, presentedFrames | 2 | 71.3 KiB | 100 | 0.51 |
-| cfr_vp9_24.webm | cfr | - vs 24/1; measured 24/1 vs 72000/2999 | - vs 72 | 24.000..24.000 | mismatch: avgFps.declared, avgFps.measured, frames, presentedFrames, minFps, maxFps | 1 | 59.2 KiB | 100 | 0.53 |
-| cfr_h264_25.mp4 | cfr | 25/1; measured 25/1 | - vs 75 | 25.000..25.000 | mismatch: frames, presentedFrames | 2 | 69.7 KiB | 100 | 0.52 |
-| cfr_vp9_25.webm | cfr | - vs 25/1; measured 25/1 | - vs 75 | 25.000..25.000 | mismatch: avgFps.declared, frames, presentedFrames | 1 | 58.8 KiB | 100 | 0.49 |
-| cfr_h264_29.97.mp4 | cfr | 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 86.4 KiB | 100 | 0.53 |
-| cfr_vp9_29.97.webm | cfr | - vs 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: avgFps.declared, frames, presentedFrames, minFps, maxFps | 2 | 72.0 KiB | 100 | 0.70 |
-| cfr_h264_30.mp4 | cfr | 30/1; measured 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 2 | 86.7 KiB | 100 | 0.53 |
-| cfr_vp9_30.webm | cfr | - vs 30/1; measured 30/1 | - vs 90 | 30.000..30.000 | mismatch: avgFps.declared, frames, presentedFrames, minFps, maxFps | 2 | 70.7 KiB | 100 | 0.71 |
-| cfr_h264_50.mp4 | cfr | 50/1; measured 50/1 | - vs 150 | 50.000..50.000 | mismatch: frames, presentedFrames | 2 | 110.0 KiB | 100 | 0.85 |
-| cfr_vp9_50.webm | cfr | - vs 50/1; measured 50/1 | - vs 150 | 50.000..50.000 | mismatch: avgFps.declared, frames, presentedFrames | 2 | 104.2 KiB | 100 | 0.73 |
-| cfr_h264_59.94.mp4 | cfr | 60000/1001; measured 60000/1001 | - vs 180 | 59.940..59.940 | mismatch: frames, presentedFrames | 2 | 126.0 KiB | 100 | 0.66 |
-| cfr_vp9_59.94.webm | cfr | - vs 19001/317; measured 60000/1001 vs 90000/1501 | - vs 180 | 59.940..59.940 | mismatch: avgFps.declared, avgFps.measured, nominalFps, frames, presentedFrames, minFps, maxFps | 2 | 122.5 KiB | 100 | 1.31 |
-| cfr_h264_60.mp4 | cfr | 60/1; measured 60/1 | - vs 180 | 60.000..60.000 | mismatch: frames, presentedFrames | 2 | 126.5 KiB | 100 | 0.97 |
-| cfr_vp9_60.webm | cfr | - vs 60/1; measured 60/1 vs 180000/2999 | - vs 180 | 60.000..60.000 | mismatch: avgFps.declared, avgFps.measured, frames, presentedFrames, minFps, maxFps | 2 | 121.3 KiB | 100 | 0.83 |
-| cfr_h264_120.mp4 | cfr | 120/1; measured 120/1 | - vs 360 | 120.0..120.0 | mismatch: frames, presentedFrames | 3 | 185.2 KiB | 100 | 1.23 |
-| cfr_vp9_120.webm | cfr | - vs 120/1; measured 120/1 | - vs 360 | 120.0..120.0 | mismatch: avgFps.declared, frames, presentedFrames, minFps, maxFps | 4 | 203.8 KiB | 100 | 1.62 |
-| cfr_h264_240.mp4 | cfr | 240/1; measured 240/1 | - vs 720 | 240.0..240.0 | mismatch: frames, presentedFrames | 6 | 322.5 KiB | 100 | 1.87 |
-| cfr_vp9_240.webm | cfr | - vs 240/1; measured 240/1 | - vs 720 | 240.0..240.0 | mismatch: avgFps.declared, frames, presentedFrames, minFps, maxFps | 6 | 355.4 KiB | 100 | 2.20 |
-| mov_nobf_default.mov | mov | 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 86.4 KiB | 100 | 0.53 |
-| mov_nobf_faststart.mov | mov | 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 64.0 KiB | 74.1 | 0.42 |
-| mov_bf_elst.mov | mov | 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 35.7 KiB | 100 | 0.46 |
-| mov_bf_noelst.mov | mov | 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: formatDurationSec, frames, presentedFrames, durationSec | 1 | 35.7 KiB | 100 | 0.50 |
-| mov_bf_faststart.mov | mov | 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 35.7 KiB | 100 | 0.46 |
-| mov_prores.mov | codec | 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 4 | 218.8 KiB | 100 | 0.66 |
-| mp4_bf_elst.mp4 | mov | 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 35.8 KiB | 100 | 0.50 |
-| mp4_bf_noelst.mp4 | mov | 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: formatDurationSec, frames, presentedFrames, durationSec | 1 | 35.7 KiB | 100 | 0.55 |
-| mp4_bf_faststart.mp4 | mov | 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 35.8 KiB | 100 | 0.48 |
-| mp4_elst_empty_offset.mp4 | mov | 30/1; measured 30/1 | - vs 90 | 30.000..30.000 | mismatch: formatDurationSec, frames, presentedFrames, durationSec | 1 | 35.2 KiB | 100 | 0.45 |
-| mp4_elst_trim_start.mp4 | mov | 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames, startSec | 1 | 35.8 KiB | 100 | 0.46 |
-| mp4_elst_trim_output_seek.mp4 | mov | 30000/1001; measured 30000/1001 | - vs 60 | 29.970..29.970 | mismatch: formatDurationSec, frames, presentedFrames, durationSec | 1 | 25.1 KiB | 100 | 0.39 |
-| fmp4_keyframe_empty_moov.mp4 | fmp4 | 30000/1001; measured 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 116.7 KiB | 100 | 0.70 |
-| fmp4_default_base_moof.mp4 | fmp4 | 30000/1001; measured 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 116.7 KiB | 100 | 0.65 |
-| fmp4_frag_duration.mp4 | fmp4 | 30000/1001; measured 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 117.2 KiB | 100 | 0.76 |
-| fmp4_bframes.mp4 | fmp4 | 30000/1001; measured 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: formatDurationSec, frames, presentedFrames, durationSec | 1 | 48.8 KiB | 100 | 0.62 |
-| fmp4_hybrid_no_empty_moov.mp4 | fmp4 | 30000/1001; measured 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: formatDurationSec, frames, presentedFrames, durationSec | 2 | 116.7 KiB | 100 | 0.42 |
-| fmp4_cmaf.mp4 | fmp4 | 30000/1001; measured 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 116.7 KiB | 100 | 0.63 |
-| fmp4_global_sidx.mp4 | fmp4 | 30000/1001; measured 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 116.8 KiB | 100 | 0.68 |
-| fmp4_dash_flag.mp4 | fmp4 | 30000/1001; measured 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 116.9 KiB | 100 | 0.68 |
-| mp4_hybrid_fragmented_finalized.mp4 | fmp4 | 30000/1001; measured 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 117.9 KiB | 100 | 0.54 |
-| fmp4_dash_single_file.mp4 | fmp4 | 30000/1001; measured 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 116.8 KiB | 100 | 0.70 |
-| fmp4_dash_concat_segments.mp4 | fmp4 | 30000/1001; measured 30000/1001 | - vs 120 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 116.9 KiB | 100 | 0.70 |
-| hevc_hvc1.mp4 | codec | 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 45.1 KiB | 100 | 0.49 |
-| hevc_hev1.mp4 | codec | 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 45.1 KiB | 100 | 0.48 |
-| av1.mp4 | codec | 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 20.8 KiB | 100 | 0.39 |
-| vp9.mp4 | codec | 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 72.0 KiB | 100 | 0.45 |
-| vp9.webm | codec | - vs 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: avgFps.declared, frames, presentedFrames, minFps, maxFps | 2 | 72.0 KiB | 100 | 0.57 |
-| vp8.webm | codec | - vs 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: avgFps.declared, frames, presentedFrames, minFps, maxFps | 3 | 160.3 KiB | 100 | 0.70 |
-| av1.webm | codec | - vs 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: avgFps.declared, frames, presentedFrames, minFps, maxFps | 1 | 21.2 KiB | 100 | 0.45 |
-| h264.mkv | matroska | - vs 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: avgFps.declared, frames, presentedFrames, minFps, maxFps | 2 | 86.4 KiB | 100 | 0.56 |
-| hevc.mkv | codec | - vs 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: avgFps.declared, frames, presentedFrames, minFps, maxFps | 1 | 44.3 KiB | 100 | 0.49 |
-| vp9_live.webm | live | - vs 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: avgFps.declared, frames, presentedFrames, minFps, maxFps | 2 | 71.9 KiB | 100 | 0.60 |
-| vp9_pipe.webm | live | - vs 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: avgFps.declared, frames, presentedFrames, minFps, maxFps | 2 | 71.9 KiB | 100 | 0.59 |
-| vp9_unknown_clusters.webm | live | - vs 30000/1001; measured 1000/1 vs 30000/1001 | - vs 90 | 1000.0..1000.0 | mismatch: avgFps.declared, avgFps.measured, frames, presentedFrames, minFps, maxFps | 1 | 64.0 KiB | 89.1 | 0.25 |
-| vp9_no_defaultduration.webm | matroska | -; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: formatDurationSec, frames, presentedFrames, minFps, maxFps | 2 | 72.0 KiB | 100 | 0.57 |
-| vfr_concat_10_30_60.mp4 | vfr | 11940/359 vs 100/3; measured 11940/359 vs 100/3 | - vs 200 | 10.000..60.000 | mismatch: avgFps, avgFps.measured, frames, presentedFrames | 3 | 161.8 KiB | 100 | 0.70 |
-| vfr_concat_bframes.mp4 | vfr | 11940/359 vs 1200/37; measured 11940/359 vs 100/3 | - vs 200 | 10.000..60.000 | mismatch: avgFps, avgFps.measured, frames, presentedFrames | 2 | 66.7 KiB | 100 | 0.81 |
-| vfr_concat_10_30_60_ts1M.mp4 | vfr | 11940/359 vs 100/3; measured 11940/359 vs 100/3 | - vs 200 | 10.000..60.000 | mismatch: avgFps, avgFps.measured, frames, presentedFrames, maxFps | 3 | 162.7 KiB | 100 | 0.79 |
-| vfr_concat_10_30_60.mov | vfr | 11940/359 vs 100/3; measured 11940/359 vs 100/3 | - vs 200 | 10.000..60.000 | mismatch: avgFps, avgFps.measured, frames, presentedFrames | 3 | 161.7 KiB | 100 | 0.74 |
-| vfr_concat_10_30_60.webm | vfr | -; measured 11940/359 vs 3125/94 | - vs 200 | 10.000..60.000 | mismatch: formatDurationSec, avgFps.measured, frames, presentedFrames, maxFps | 3 | 140.3 KiB | 100 | 0.90 |
-| vfr_concat_10_30_60_fmp4.mp4 | vfr | 11940/359 vs 100/3; measured 11940/359 vs 100/3 | - vs 200 | 10.000..60.000 | mismatch: avgFps, avgFps.measured, frames, presentedFrames | 3 | 162.8 KiB | 100 | 0.86 |
-| vfr_setpts_sine.mp4 | vfr | 446777/14759 vs 13500000/445991; measured 446777/14759 vs 13500000/445991 | - vs 150 | 17.149..119.7 | mismatch: avgFps, avgFps.measured, frames, presentedFrames | 3 | 142.2 KiB | 100 | 0.66 |
-| vfr_select_drop.mp4 | vfr | 10740/299 vs 36/1; measured 10740/299 vs 36/1 | - vs 180 | 20.000..60.000 | mismatch: avgFps, avgFps.measured, frames, presentedFrames | 3 | 152.1 KiB | 100 | 0.68 |
-| vfr_mpdecimate.mp4 | vfr | 1350/67 vs 182/9; measured 1350/67 vs 182/9 | - vs 91 | 0.667..30.000 | mismatch: avgFps, avgFps.measured, frames, presentedFrames | 2 | 87.0 KiB | 100 | 0.45 |
-| vfr_screenrec_ts1000.mp4 | vfr | 172077/4205 vs 61500/1501; measured 172077/4205 vs 61500/1501 | - vs 246 | 2.959..100.0 | mismatch: formatDurationSec, avgFps, avgFps.measured, frames, presentedFrames, durationSec | 3 | 188.6 KiB | 100 | 0.84 |
-| vfr_screenrec_ts1000.webm | vfr | - vs 60/1; measured 14700/359 vs 246000/5999 | - vs 246 | 3.000..60.000 | mismatch: avgFps.declared, avgFps.measured, frames, presentedFrames, minFps, maxFps | 3 | 181.7 KiB | 100 | 1.00 |
-| vfr_pulldown_2_3.mp4 | vfr | 2380/99 vs 24/1; measured 2380/99 vs 24/1 | - vs 120 | 20.000..30.000 | mismatch: avgFps, avgFps.measured, frames, presentedFrames | 2 | 122.8 KiB | 100 | 0.52 |
-| vfr_two_phase_5_200.mp4 | vfr | 4200/41 vs 205/2; measured 4200/41 vs 205/2 | - vs 820 | 5.000..200.0 | mismatch: avgFps, avgFps.measured, frames, presentedFrames | 4 | 219.3 KiB | 53.3 | 1.53 |
-| vfr_two_phase_5_200.webm | vfr | -; measured 4200/41 vs 205/2 | - vs 820 | 5.000..200.0 | mismatch: formatDurationSec, avgFps.measured, frames, presentedFrames | 7 | 431.0 KiB | 100 | 2.33 |
-| vfr_two_phase_5_200.mkv | vfr | - vs 205/2; measured 4200/41 vs 205/2 | - vs 820 | 5.000..200.0 | mismatch: avgFps.declared, avgFps.measured, frames, presentedFrames | 7 | 421.5 KiB | 100 | 2.88 |
-| vfr_freeze_2s.mp4 | vfr | 1785/89 vs 3600/179; measured 1785/89 vs 3600/179 | - vs 120 | 0.500..30.000 | mismatch: avgFps, avgFps.measured, frames, presentedFrames | 2 | 117.0 KiB | 100 | 0.53 |
-| box64_mdat64_wide.mov | box64 | 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 86.4 KiB | 100 | 0.50 |
-| box64_mdat64_free.mp4 | box64 | 30/1; measured 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 2 | 86.7 KiB | 100 | 0.47 |
-| box64_co64_mdat64.mp4 | box64 | 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: frames, presentedFrames | 1 | 35.8 KiB | 100 | 0.43 |
-| av_h264_aac.mp4 | multi | 30/1; measured 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 2 | 101.4 KiB | 100 | 0.51 |
-| av_h264_aac_faststart.mp4 | multi | 30/1; measured 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 1 | 64.0 KiB | 63.1 | 0.43 |
-| multi_video_2tracks.mp4 | multi | 30/1; measured 30/1 | - vs 90 | 30.000..30.000 | mismatch: trackSelection, frames, presentedFrames | 5 | 299.9 KiB | 100 | 0.74 |
-| still_image_track_first.mp4 | multi | 12800/1 vs 25/1; measured 12800/1 vs 25/1 | - vs 1 | 12800.0..12800.0 | mismatch: trackSelection, codecName, avgFps, avgFps.measured, frames, presentedFrames, minFps, maxFps, isVfr | 2 | 105.0 KiB | 100 | 0.41 |
-| cover_art_audio.m4a | cover | - | - | - | all exact (3) | 1 | 16.3 KiB | 100 | 0.22 |
-| cover_art_plus_video.mp4 | cover | 30/1; measured 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 2 | 103.5 KiB | 100 | 0.58 |
-| audio_only.m4a | audio | - | - | - | all exact (3) | 1 | 13.3 KiB | 100 | 0.21 |
-| audio_only_aac.mp4 | audio | - | - | - | all exact (3) | 1 | 13.3 KiB | 100 | 0.21 |
+| cfr_h264_23.976.mp4 | cfr | 24000/1001; measured 24000/1001 | 72 | 23.976..23.976 | mismatch: presentedFrames | 2 | 71.9 KiB | 100 | 0.56 |
+| cfr_vp9_23.976.webm | cfr | - vs 24000/1001; measured 24000/1001 vs 36000/1501 | 72 | 23.976..23.976 | mismatch: avgFps.declared, avgFps.measured, presentedFrames, minFps, maxFps | 1 | 59.4 KiB | 100 | 0.52 |
+| cfr_h264_24.mp4 | cfr | 24/1; measured 24/1 | 72 | 24.000..24.000 | mismatch: presentedFrames | 2 | 71.3 KiB | 100 | 0.52 |
+| cfr_vp9_24.webm | cfr | - vs 24/1; measured 24/1 vs 72000/2999 | 72 | 24.000..24.000 | mismatch: avgFps.declared, avgFps.measured, presentedFrames, minFps, maxFps | 1 | 59.2 KiB | 100 | 0.50 |
+| cfr_h264_25.mp4 | cfr | 25/1; measured 25/1 | 75 | 25.000..25.000 | mismatch: presentedFrames | 2 | 69.7 KiB | 100 | 0.56 |
+| cfr_vp9_25.webm | cfr | - vs 25/1; measured 25/1 | 75 | 25.000..25.000 | mismatch: avgFps.declared, presentedFrames | 1 | 58.8 KiB | 100 | 0.57 |
+| cfr_h264_29.97.mp4 | cfr | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: presentedFrames | 2 | 86.4 KiB | 100 | 0.55 |
+| cfr_vp9_29.97.webm | cfr | - vs 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: avgFps.declared, presentedFrames, minFps, maxFps | 2 | 72.0 KiB | 100 | 0.70 |
+| cfr_h264_30.mp4 | cfr | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: presentedFrames | 2 | 86.7 KiB | 100 | 0.58 |
+| cfr_vp9_30.webm | cfr | - vs 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: avgFps.declared, presentedFrames, minFps, maxFps | 2 | 70.7 KiB | 100 | 0.70 |
+| cfr_h264_50.mp4 | cfr | 50/1; measured 50/1 | 150 | 50.000..50.000 | mismatch: presentedFrames | 2 | 110.0 KiB | 100 | 0.67 |
+| cfr_vp9_50.webm | cfr | - vs 50/1; measured 50/1 | 150 | 50.000..50.000 | mismatch: avgFps.declared, presentedFrames | 2 | 104.2 KiB | 100 | 0.74 |
+| cfr_h264_59.94.mp4 | cfr | 60000/1001; measured 60000/1001 | 180 | 59.940..59.940 | mismatch: presentedFrames | 2 | 126.0 KiB | 100 | 0.66 |
+| cfr_vp9_59.94.webm | cfr | - vs 19001/317; measured 60000/1001 vs 90000/1501 | 180 | 59.940..59.940 | mismatch: avgFps.declared, avgFps.measured, nominalFps, presentedFrames, minFps, maxFps | 2 | 122.5 KiB | 100 | 1.32 |
+| cfr_h264_60.mp4 | cfr | 60/1; measured 60/1 | 180 | 60.000..60.000 | mismatch: presentedFrames | 2 | 126.5 KiB | 100 | 1.09 |
+| cfr_vp9_60.webm | cfr | - vs 60/1; measured 60/1 vs 180000/2999 | 180 | 60.000..60.000 | mismatch: avgFps.declared, avgFps.measured, presentedFrames, minFps, maxFps | 2 | 121.3 KiB | 100 | 0.96 |
+| cfr_h264_120.mp4 | cfr | 120/1; measured 120/1 | 360 | 120.0..120.0 | mismatch: presentedFrames | 3 | 185.2 KiB | 100 | 1.00 |
+| cfr_vp9_120.webm | cfr | - vs 120/1; measured 120/1 | 360 | 120.0..120.0 | mismatch: avgFps.declared, presentedFrames, minFps, maxFps | 4 | 203.8 KiB | 100 | 1.32 |
+| cfr_h264_240.mp4 | cfr | 240/1; measured 240/1 | 720 | 240.0..240.0 | mismatch: presentedFrames | 6 | 322.5 KiB | 100 | 1.71 |
+| cfr_vp9_240.webm | cfr | - vs 240/1; measured 240/1 | 720 | 240.0..240.0 | mismatch: avgFps.declared, presentedFrames, minFps, maxFps | 6 | 355.4 KiB | 100 | 2.14 |
+| mov_nobf_default.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: presentedFrames | 2 | 86.4 KiB | 100 | 0.65 |
+| mov_nobf_faststart.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: presentedFrames | 1 | 64.0 KiB | 74.1 | 0.39 |
+| mov_bf_elst.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: presentedFrames | 1 | 35.7 KiB | 100 | 0.48 |
+| mov_bf_noelst.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: formatDurationSec, presentedFrames, durationSec | 1 | 35.7 KiB | 100 | 0.47 |
+| mov_bf_faststart.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: presentedFrames | 1 | 35.7 KiB | 100 | 0.49 |
+| mov_prores.mov | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: presentedFrames | 4 | 218.8 KiB | 100 | 0.62 |
+| mp4_bf_elst.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: presentedFrames | 1 | 35.8 KiB | 100 | 0.48 |
+| mp4_bf_noelst.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: formatDurationSec, presentedFrames, durationSec | 1 | 35.7 KiB | 100 | 0.46 |
+| mp4_bf_faststart.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: presentedFrames | 1 | 35.8 KiB | 100 | 0.44 |
+| mp4_elst_empty_offset.mp4 | mov | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: formatDurationSec, presentedFrames, durationSec | 1 | 35.2 KiB | 100 | 0.44 |
+| mp4_elst_trim_start.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: presentedFrames, startSec | 1 | 35.8 KiB | 100 | 0.44 |
+| mp4_elst_trim_output_seek.mp4 | mov | 30000/1001; measured 30000/1001 | 60 | 29.970..29.970 | mismatch: formatDurationSec, presentedFrames, durationSec | 1 | 25.1 KiB | 100 | 0.37 |
+| fmp4_keyframe_empty_moov.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: presentedFrames | 2 | 116.7 KiB | 100 | 0.67 |
+| fmp4_default_base_moof.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: presentedFrames | 2 | 116.7 KiB | 100 | 0.74 |
+| fmp4_frag_duration.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: presentedFrames | 2 | 117.2 KiB | 100 | 0.65 |
+| fmp4_bframes.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: formatDurationSec, presentedFrames, durationSec | 1 | 48.8 KiB | 100 | 0.55 |
+| fmp4_hybrid_no_empty_moov.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 30 vs 120 | 29.970..29.970 | mismatch: formatDurationSec, frames, presentedFrames, durationSec | 2 | 116.7 KiB | 100 | 0.41 |
+| fmp4_cmaf.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: presentedFrames | 2 | 116.7 KiB | 100 | 0.67 |
+| fmp4_global_sidx.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: presentedFrames | 2 | 116.8 KiB | 100 | 0.63 |
+| fmp4_dash_flag.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: presentedFrames | 2 | 116.9 KiB | 100 | 0.64 |
+| mp4_hybrid_fragmented_finalized.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: presentedFrames | 2 | 117.9 KiB | 100 | 0.52 |
+| fmp4_dash_single_file.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: presentedFrames | 2 | 116.8 KiB | 100 | 0.67 |
+| fmp4_dash_concat_segments.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: presentedFrames | 2 | 116.9 KiB | 100 | 0.65 |
+| hevc_hvc1.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: presentedFrames | 1 | 45.1 KiB | 100 | 0.51 |
+| hevc_hev1.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: presentedFrames | 1 | 45.1 KiB | 100 | 0.46 |
+| av1.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: presentedFrames | 1 | 20.8 KiB | 100 | 0.39 |
+| vp9.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: presentedFrames | 2 | 72.0 KiB | 100 | 0.53 |
+| vp9.webm | codec | - vs 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: avgFps.declared, presentedFrames, minFps, maxFps | 2 | 72.0 KiB | 100 | 0.62 |
+| vp8.webm | codec | - vs 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: avgFps.declared, presentedFrames, minFps, maxFps | 3 | 160.3 KiB | 100 | 0.69 |
+| av1.webm | codec | - vs 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: avgFps.declared, presentedFrames, minFps, maxFps | 1 | 21.2 KiB | 100 | 0.44 |
+| h264.mkv | matroska | - vs 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: avgFps.declared, presentedFrames, minFps, maxFps | 2 | 86.4 KiB | 100 | 0.59 |
+| hevc.mkv | codec | - vs 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: avgFps.declared, presentedFrames, minFps, maxFps | 1 | 44.3 KiB | 100 | 0.50 |
+| vp9_live.webm | live | - vs 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: avgFps.declared, presentedFrames, minFps, maxFps | 2 | 71.9 KiB | 100 | 0.61 |
+| vp9_pipe.webm | live | - vs 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: avgFps.declared, presentedFrames, minFps, maxFps | 2 | 71.9 KiB | 100 | 0.60 |
+| vp9_unknown_clusters.webm | live | - vs 30000/1001; measured 1000/1 vs 30000/1001 | 0 vs 90 | 1000.0..1000.0 | mismatch: avgFps.declared, avgFps.measured, frames, presentedFrames, minFps, maxFps | 1 | 64.0 KiB | 89.1 | 0.27 |
+| vp9_no_defaultduration.webm | matroska | -; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: formatDurationSec, presentedFrames, minFps, maxFps | 2 | 72.0 KiB | 100 | 0.59 |
+| vfr_concat_10_30_60.mp4 | vfr | 11940/359 vs 100/3; measured 11940/359 vs 100/3 | 200 | 10.000..60.000 | mismatch: avgFps, avgFps.measured, presentedFrames | 3 | 161.8 KiB | 100 | 0.73 |
+| vfr_concat_bframes.mp4 | vfr | 11940/359 vs 1200/37; measured 11940/359 vs 100/3 | 200 | 10.000..60.000 | mismatch: avgFps, avgFps.measured, presentedFrames | 2 | 66.7 KiB | 100 | 0.86 |
+| vfr_concat_10_30_60_ts1M.mp4 | vfr | 11940/359 vs 100/3; measured 11940/359 vs 100/3 | 200 | 10.000..60.000 | mismatch: avgFps, avgFps.measured, presentedFrames, maxFps | 3 | 162.7 KiB | 100 | 0.74 |
+| vfr_concat_10_30_60.mov | vfr | 11940/359 vs 100/3; measured 11940/359 vs 100/3 | 200 | 10.000..60.000 | mismatch: avgFps, avgFps.measured, presentedFrames | 3 | 161.7 KiB | 100 | 0.68 |
+| vfr_concat_10_30_60.webm | vfr | -; measured 11940/359 vs 3125/94 | 200 | 10.000..60.000 | mismatch: formatDurationSec, avgFps.measured, presentedFrames, maxFps | 3 | 140.3 KiB | 100 | 0.95 |
+| vfr_concat_10_30_60_fmp4.mp4 | vfr | 11940/359 vs 100/3; measured 11940/359 vs 100/3 | 200 | 10.000..60.000 | mismatch: avgFps, avgFps.measured, presentedFrames | 3 | 162.8 KiB | 100 | 0.84 |
+| vfr_setpts_sine.mp4 | vfr | 446777/14759 vs 13500000/445991; measured 446777/14759 vs 13500000/445991 | 150 | 17.149..119.7 | mismatch: avgFps, avgFps.measured, presentedFrames | 3 | 142.2 KiB | 100 | 0.68 |
+| vfr_select_drop.mp4 | vfr | 10740/299 vs 36/1; measured 10740/299 vs 36/1 | 180 | 20.000..60.000 | mismatch: avgFps, avgFps.measured, presentedFrames | 3 | 152.1 KiB | 100 | 0.72 |
+| vfr_mpdecimate.mp4 | vfr | 1350/67 vs 182/9; measured 1350/67 vs 182/9 | 91 | 0.667..30.000 | mismatch: avgFps, avgFps.measured, presentedFrames | 2 | 87.0 KiB | 100 | 0.49 |
+| vfr_screenrec_ts1000.mp4 | vfr | 172077/4205 vs 61500/1501; measured 172077/4205 vs 61500/1501 | 246 | 2.959..100.0 | mismatch: formatDurationSec, avgFps, avgFps.measured, presentedFrames, durationSec | 3 | 188.6 KiB | 100 | 0.89 |
+| vfr_screenrec_ts1000.webm | vfr | - vs 60/1; measured 14700/359 vs 246000/5999 | 246 | 3.000..60.000 | mismatch: avgFps.declared, avgFps.measured, presentedFrames, minFps, maxFps | 3 | 181.7 KiB | 100 | 0.95 |
+| vfr_pulldown_2_3.mp4 | vfr | 2380/99 vs 24/1; measured 2380/99 vs 24/1 | 120 | 20.000..30.000 | mismatch: avgFps, avgFps.measured, presentedFrames | 2 | 122.8 KiB | 100 | 0.59 |
+| vfr_two_phase_5_200.mp4 | vfr | 4200/41 vs 205/2; measured 4200/41 vs 205/2 | 820 | 5.000..200.0 | mismatch: avgFps, avgFps.measured, presentedFrames | 4 | 219.3 KiB | 53.3 | 1.62 |
+| vfr_two_phase_5_200.webm | vfr | -; measured 4200/41 vs 205/2 | 820 | 5.000..200.0 | mismatch: formatDurationSec, avgFps.measured, presentedFrames | 7 | 431.0 KiB | 100 | 2.38 |
+| vfr_two_phase_5_200.mkv | vfr | - vs 205/2; measured 4200/41 vs 205/2 | 820 | 5.000..200.0 | mismatch: avgFps.declared, avgFps.measured, presentedFrames | 7 | 421.5 KiB | 100 | 2.65 |
+| vfr_freeze_2s.mp4 | vfr | 1785/89 vs 3600/179; measured 1785/89 vs 3600/179 | 120 | 0.500..30.000 | mismatch: avgFps, avgFps.measured, presentedFrames | 2 | 117.0 KiB | 100 | 0.70 |
+| box64_mdat64_wide.mov | box64 | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: presentedFrames | 2 | 86.4 KiB | 100 | 0.48 |
+| box64_mdat64_free.mp4 | box64 | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: presentedFrames | 2 | 86.7 KiB | 100 | 0.49 |
+| box64_co64_mdat64.mp4 | box64 | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: presentedFrames | 1 | 35.8 KiB | 100 | 0.44 |
+| av_h264_aac.mp4 | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: presentedFrames | 2 | 101.4 KiB | 100 | 0.51 |
+| av_h264_aac_faststart.mp4 | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: presentedFrames | 1 | 64.0 KiB | 63.1 | 0.44 |
+| multi_video_2tracks.mp4 | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: trackSelection, presentedFrames | 5 | 299.9 KiB | 100 | 0.80 |
+| still_image_track_first.mp4 | multi | 12800/1 vs 25/1; measured 12800/1 vs 25/1 | 1 | 12800.0..12800.0 | mismatch: trackSelection, codecName, avgFps, avgFps.measured, presentedFrames, minFps, maxFps, isVfr | 2 | 105.0 KiB | 100 | 0.46 |
+| cover_art_audio.m4a | cover | - | - | - | all exact (3) | 1 | 16.3 KiB | 100 | 0.23 |
+| cover_art_plus_video.mp4 | cover | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: presentedFrames | 2 | 103.5 KiB | 100 | 0.57 |
+| audio_only.m4a | audio | - | - | - | all exact (3) | 1 | 13.3 KiB | 100 | 0.23 |
+| audio_only_aac.mp4 | audio | - | - | - | all exact (3) | 1 | 13.3 KiB | 100 | 0.23 |
 | audio_only_opus.webm | audio | - | - | - | all exact (3) | 1 | 13.5 KiB | 100 | 0.26 |
-| edge_single_frame.mp4 | edge | 15360/1 vs 30/1; measured 15360/1 vs 30/1 | - vs 1 | 15360.0..15360.0 | mismatch: avgFps, avgFps.measured, frames, presentedFrames, minFps, maxFps, isVfr | 1 | 4.0 KiB | 100 | 0.27 |
-| corrupt_empty_0byte.mp4 | corrupt | - | - | - | expected outcome (manifest) | 0 | 0 B | 0 | 0.03 |
-| corrupt_garbage_random.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 64.0 KiB | 100 | 0.31 |
-| corrupt_text_named.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 63 B | 100 | 0.20 |
-| corrupt_png_named.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 2.2 KiB | 100 | 0.22 |
+| edge_single_frame.mp4 | edge | 15360/1 vs 30/1; measured 15360/1 vs 30/1 | 1 | 15360.0..15360.0 | mismatch: avgFps, avgFps.measured, presentedFrames, minFps, maxFps, isVfr | 1 | 4.0 KiB | 100 | 0.26 |
+| corrupt_empty_0byte.mp4 | corrupt | - | - | - | expected outcome (manifest) | 0 | 0 B | 0 | 0.02 |
+| corrupt_garbage_random.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 64.0 KiB | 100 | 0.27 |
+| corrupt_text_named.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 63 B | 100 | 0.19 |
+| corrupt_png_named.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 2.2 KiB | 100 | 0.21 |
 | corrupt_trunc_moov_partial.mp4 | corrupt | - | - | - | mismatch: error | 2 | 86.2 KiB | 100 | 0.27 |
-| corrupt_trunc_no_moov.mp4 | corrupt | - | - | - | mismatch: error | 1 | 64.0 KiB | 74.8 | 0.17 |
-| corrupt_trunc_mdat_faststart.mp4 | corrupt | 30/1; measured 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 1 | 60.8 KiB | 100 | 0.55 |
-| corrupt_fmp4_truncated_mid_fragment.mp4 | corrupt | 30000/1001; measured 30000/1001 | - vs 73 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 70.0 KiB | 100 | 0.57 |
-| box_mdat_size0.mp4 | box64 | 30/1; measured 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 1 | 64.0 KiB | 63.1 | 0.48 |
-| corrupt_stts_count_huge.mp4 | corrupt | - | - | - | mismatch: error | 2 | 86.7 KiB | 100 | 0.43 |
-| sniff_webm_named_mp4.mp4 | sniff | - vs 30000/1001; measured 30000/1001 | - vs 90 | 29.970..29.970 | mismatch: avgFps.declared, frames, presentedFrames, minFps, maxFps | 2 | 72.0 KiB | 100 | 0.58 |
-| sniff_mp4_named_webm.webm | sniff | 30/1; measured 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 2 | 86.7 KiB | 100 | 0.54 |
-| sniff_mp4_named_mkv.mkv | sniff | 30/1; measured 30/1 | - vs 90 | 30.000..30.000 | mismatch: frames, presentedFrames | 2 | 86.7 KiB | 100 | 0.52 |
-| frag_vfr_global_sidx.mp4 | fmp4 | 2780/99 vs 60/1; measured 2780/99 vs 4200/149 | - vs 140 | 20.000..60.000 | mismatch: avgFps, avgFps.measured, frames, presentedFrames | 2 | 121.0 KiB | 100 | 0.68 |
-| frag_vfr_dash.mp4 | fmp4 | 2780/99 vs 30/1; measured 2780/99 vs 4200/149 | - vs 140 | 20.000..60.000 | mismatch: avgFps, avgFps.measured, frames, presentedFrames | 2 | 121.2 KiB | 100 | 0.63 |
-| h264_vfr_remux.mkv | vfr | - vs 130/3; measured 15540/359 vs 130/3 | - vs 260 | 10.000..60.000 | mismatch: avgFps.declared, avgFps.measured, frames, presentedFrames, maxFps | 4 | 200.0 KiB | 100 | 1.02 |
-| vp9_pipe_t10.webm | live | - vs 30/1; measured 30/1 | - vs 90 | 30.000..30.000 | mismatch: formatDurationSec, avgFps.declared, frames, presentedFrames, minFps, maxFps | 2 | 70.6 KiB | 100 | 0.53 |
-| vp9_opus_live_audiotail.webm | live | - vs 30/1; measured 30/1 | - vs 90 | 30.000..30.000 | mismatch: avgFps.declared, frames, presentedFrames, minFps, maxFps | 2 | 98.7 KiB | 100 | 0.71 |
-| h264_25_cover.mkv | cover | - vs 25/1; measured 25/1 | - vs 75 | 25.000..25.000 | mismatch: avgFps.declared, frames, presentedFrames | 2 | 71.9 KiB | 100 | 0.49 |
-| remux_cfr_120_ts16000.mp4 | cfr | 44875/374 vs 120/1; measured 44875/374 vs 1152000/9601 | - vs 360 | 111.1..125.0 | mismatch: avgFps, avgFps.measured, frames, presentedFrames, isVfr | 4 | 204.7 KiB | 100 | 1.06 |
-| remux_cfr_29.97_ts16000.mp4 | cfr | 8900/297 vs 30000/1001; measured 8900/297 vs 1440000/48053 | - vs 90 | 29.412..30.303 | mismatch: avgFps, avgFps.measured, frames, presentedFrames, isVfr | 2 | 72.5 KiB | 100 | 0.69 |
-| start_freeze_bf.mp4 | vfr | 279999/13517 vs 1125/67; measured 279999/13517 vs 4500/209 | - vs 150 | 0.500..30.000 | mismatch: avgFps, avgFps.measured, frames, presentedFrames, minFps, maxFps, duplicateTimestamps | 2 | 118.2 KiB | 100 | 0.73 |
-| fmp4_missing_fragment.mp4 | fmp4 | 4470/179 vs 30/1; measured 4470/179 vs 25/1 | - vs 150 | 0.968..30.000 | mismatch: formatDurationSec, avgFps, avgFps.measured, frames, presentedFrames, durationSec | 3 | 147.9 KiB | 100 | 0.81 |
-| elst_trim_vfr_copy.mp4 | vfr | 4200/41 vs 205/2; measured 4200/41 vs 815/7 | - vs 820 | 5.000..200.0 | mismatch: avgFps, avgFps.measured, frames, presentedFrames, startSec | 4 | 219.3 KiB | 53.3 | 1.65 |
-| cfr_240_ts600.mp4 | cfr | 172440/719 vs 288000/1201; measured 172440/719 vs 288000/1201 | - vs 480 | 180.0..360.0 | mismatch: avgFps, avgFps.measured, frames, presentedFrames, minFps, maxFps, isVfr | 2 | 93.1 KiB | 100 | 1.08 |
-| fmp4_global_sidx_bframes.mp4 | fmp4 | 25/1; measured 25/1 | - vs 100 | 25.000..25.000 | mismatch: formatDurationSec, frames, presentedFrames | 2 | 97.7 KiB | 100 | 0.54 |
-| long_cfr_3h_60fps.mp4 | long | 60/1; measured 60/1 | - vs 648000 | 60.000..60.000 | mismatch: frames, presentedFrames | 44 | 2.73 MiB | 22.0 | 91133 |
-| long_vfr_1h_screenrec.mp4 | long | 145712/3917 vs 186/5; measured 145712/3917 vs 186/5 | - vs 133920 | 2.941..100.0 | mismatch: formatDurationSec, avgFps, avgFps.measured, frames, presentedFrames, durationSec | 28 | 1.70 MiB | 45.1 | 281 |
-| big_1080p_moov_end.mp4 | big | 30/1; measured 30/1 | - vs 1800 | 30.000..30.000 | mismatch: frames, presentedFrames | 4 | 239.8 KiB | 0.04 | 2.77 |
-| big_1080p_faststart.mp4 | big | 30/1; measured 30/1 | - vs 1800 | 30.000..30.000 | mismatch: frames, presentedFrames | 1 | 64.0 KiB | 0.01 | 2.46 |
-| big_1080p.mkv | big | - vs 30/1; measured 30/1 | - vs 1800 | 30.000..30.000 | mismatch: avgFps.declared, frames, presentedFrames, minFps, maxFps | 9587 | 576.43 MiB | 100 | 975 |
+| corrupt_trunc_no_moov.mp4 | corrupt | - | - | - | mismatch: error | 1 | 64.0 KiB | 74.8 | 0.18 |
+| corrupt_trunc_mdat_faststart.mp4 | corrupt | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: presentedFrames | 1 | 60.8 KiB | 100 | 0.49 |
+| corrupt_fmp4_truncated_mid_fragment.mp4 | corrupt | 30000/1001; measured 30000/1001 | 90 vs 73 | 29.970..29.970 | mismatch: frames, presentedFrames | 2 | 70.0 KiB | 100 | 0.54 |
+| box_mdat_size0.mp4 | box64 | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: presentedFrames | 1 | 64.0 KiB | 63.1 | 0.47 |
+| corrupt_stts_count_huge.mp4 | corrupt | - | - | - | mismatch: error | 2 | 86.7 KiB | 100 | 0.41 |
+| sniff_webm_named_mp4.mp4 | sniff | - vs 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: avgFps.declared, presentedFrames, minFps, maxFps | 2 | 72.0 KiB | 100 | 0.59 |
+| sniff_mp4_named_webm.webm | sniff | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: presentedFrames | 2 | 86.7 KiB | 100 | 0.57 |
+| sniff_mp4_named_mkv.mkv | sniff | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: presentedFrames | 2 | 86.7 KiB | 100 | 0.47 |
+| frag_vfr_global_sidx.mp4 | fmp4 | 2780/99 vs 60/1; measured 2780/99 vs 4200/149 | 140 | 20.000..60.000 | mismatch: avgFps, avgFps.measured, presentedFrames | 2 | 121.0 KiB | 100 | 0.68 |
+| frag_vfr_dash.mp4 | fmp4 | 2780/99 vs 30/1; measured 2780/99 vs 4200/149 | 140 | 20.000..60.000 | mismatch: avgFps, avgFps.measured, presentedFrames | 2 | 121.2 KiB | 100 | 0.70 |
+| h264_vfr_remux.mkv | vfr | - vs 130/3; measured 15540/359 vs 130/3 | 260 | 10.000..60.000 | mismatch: avgFps.declared, avgFps.measured, presentedFrames, maxFps | 4 | 200.0 KiB | 100 | 1.12 |
+| vp9_pipe_t10.webm | live | - vs 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: formatDurationSec, avgFps.declared, presentedFrames, minFps, maxFps | 2 | 70.6 KiB | 100 | 0.59 |
+| vp9_opus_live_audiotail.webm | live | - vs 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: avgFps.declared, presentedFrames, minFps, maxFps | 2 | 98.7 KiB | 100 | 0.80 |
+| h264_25_cover.mkv | cover | - vs 25/1; measured 25/1 | 75 | 25.000..25.000 | mismatch: avgFps.declared, presentedFrames | 2 | 71.9 KiB | 100 | 0.61 |
+| remux_cfr_120_ts16000.mp4 | cfr | 44875/374 vs 120/1; measured 44875/374 vs 1152000/9601 | 360 | 111.1..125.0 | mismatch: avgFps, avgFps.measured, presentedFrames, isVfr | 4 | 204.7 KiB | 100 | 1.08 |
+| remux_cfr_29.97_ts16000.mp4 | cfr | 8900/297 vs 30000/1001; measured 8900/297 vs 1440000/48053 | 90 | 29.412..30.303 | mismatch: avgFps, avgFps.measured, presentedFrames, isVfr | 2 | 72.5 KiB | 100 | 0.50 |
+| start_freeze_bf.mp4 | vfr | 279999/13517 vs 1125/67; measured 279999/13517 vs 4500/209 | 150 | 0.500..30.000 | mismatch: avgFps, avgFps.measured, presentedFrames, minFps, maxFps, duplicateTimestamps | 2 | 118.2 KiB | 100 | 0.69 |
+| fmp4_missing_fragment.mp4 | fmp4 | 4470/179 vs 30/1; measured 4470/179 vs 25/1 | 150 | 0.968..30.000 | mismatch: formatDurationSec, avgFps, avgFps.measured, presentedFrames, durationSec | 3 | 147.9 KiB | 100 | 0.78 |
+| elst_trim_vfr_copy.mp4 | vfr | 4200/41 vs 205/2; measured 4200/41 vs 815/7 | 820 | 5.000..200.0 | mismatch: avgFps, avgFps.measured, presentedFrames, startSec | 4 | 219.3 KiB | 53.3 | 1.66 |
+| cfr_240_ts600.mp4 | cfr | 172440/719 vs 288000/1201; measured 172440/719 vs 288000/1201 | 480 | 180.0..360.0 | mismatch: avgFps, avgFps.measured, presentedFrames, minFps, maxFps, isVfr | 2 | 93.1 KiB | 100 | 1.09 |
+| fmp4_global_sidx_bframes.mp4 | fmp4 | 25/1; measured 25/1 | 100 | 25.000..25.000 | mismatch: formatDurationSec, presentedFrames | 2 | 97.7 KiB | 100 | 0.73 |
+| long_cfr_3h_60fps.mp4 | long | 60/1; measured 60/1 | 648000 | 60.000..60.000 | mismatch: presentedFrames | 44 | 2.73 MiB | 22.0 | 79476 |
+| long_vfr_1h_screenrec.mp4 | long | 145712/3917 vs 186/5; measured 145712/3917 vs 186/5 | 133920 | 2.941..100.0 | mismatch: formatDurationSec, avgFps, avgFps.measured, presentedFrames, durationSec | 28 | 1.70 MiB | 45.1 | 309 |
+| big_1080p_moov_end.mp4 | big | 30/1; measured 30/1 | 1800 | 30.000..30.000 | mismatch: presentedFrames | 4 | 239.8 KiB | 0.04 | 2.96 |
+| big_1080p_faststart.mp4 | big | 30/1; measured 30/1 | 1800 | 30.000..30.000 | mismatch: presentedFrames | 1 | 64.0 KiB | 0.01 | 2.48 |
+| big_1080p.mkv | big | - vs 30/1; measured 30/1 | 1800 | 30.000..30.000 | mismatch: avgFps.declared, presentedFrames, minFps, maxFps | 9587 | 576.43 MiB | 100 | 948 |
 
 <details><summary>mediabunny-full: verdict per field</summary>
 
@@ -2240,122 +2240,122 @@ Legend: `=` exact, `~` within-tol, `K` known-deviation, `X` mismatch, `.` n/a, b
 
 | Fixture | err | sel | avg | nom | frm | prs | dur | srt | fmt | min | max | vfr | dup | cod | w | h |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| cfr_h264_23.976.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| cfr_vp9_23.976.webm | = | = | X | = | X | X | . | = | = | X | X | = | = | = | = | = |
-| cfr_h264_24.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| cfr_vp9_24.webm | = | = | X | = | X | X | . | = | = | X | X | = | = | = | = | = |
-| cfr_h264_25.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| cfr_vp9_25.webm | = | = | X | = | X | X | . | = | = | = | = | = | = | = | = | = |
-| cfr_h264_29.97.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| cfr_vp9_29.97.webm | = | = | X | = | X | X | . | = | = | X | X | = | = | = | = | = |
-| cfr_h264_30.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| cfr_vp9_30.webm | = | = | X | = | X | X | . | = | = | X | X | = | = | = | = | = |
-| cfr_h264_50.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| cfr_vp9_50.webm | = | = | X | = | X | X | . | = | = | = | = | = | = | = | = | = |
-| cfr_h264_59.94.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| cfr_vp9_59.94.webm | = | = | X | X | X | X | . | = | = | X | X | = | = | = | = | = |
-| cfr_h264_60.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| cfr_vp9_60.webm | = | = | X | = | X | X | . | = | = | X | X | = | = | = | = | = |
-| cfr_h264_120.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| cfr_vp9_120.webm | = | = | X | = | X | X | . | = | = | X | X | = | = | = | = | = |
-| cfr_h264_240.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| cfr_vp9_240.webm | = | = | X | = | X | X | . | = | = | X | X | = | = | = | = | = |
-| mov_nobf_default.mov | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| mov_nobf_faststart.mov | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| mov_bf_elst.mov | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| mov_bf_noelst.mov | = | = | = | = | X | X | X | = | X | = | = | = | = | = | = | = |
-| mov_bf_faststart.mov | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| mov_prores.mov | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| mp4_bf_elst.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| mp4_bf_noelst.mp4 | = | = | = | = | X | X | X | = | X | = | = | = | = | = | = | = |
-| mp4_bf_faststart.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| mp4_elst_empty_offset.mp4 | = | = | = | = | X | X | X | = | X | = | = | = | = | = | = | = |
-| mp4_elst_trim_start.mp4 | = | = | = | = | X | X | = | X | = | = | = | = | = | = | = | = |
-| mp4_elst_trim_output_seek.mp4 | = | = | = | = | X | X | X | = | X | = | = | = | = | = | = | = |
-| fmp4_keyframe_empty_moov.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| fmp4_default_base_moof.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| fmp4_frag_duration.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| fmp4_bframes.mp4 | = | = | = | = | X | X | X | = | X | = | = | = | = | = | = | = |
+| cfr_h264_23.976.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| cfr_vp9_23.976.webm | = | = | X | = | = | X | . | = | = | X | X | = | = | = | = | = |
+| cfr_h264_24.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| cfr_vp9_24.webm | = | = | X | = | = | X | . | = | = | X | X | = | = | = | = | = |
+| cfr_h264_25.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| cfr_vp9_25.webm | = | = | X | = | = | X | . | = | = | = | = | = | = | = | = | = |
+| cfr_h264_29.97.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| cfr_vp9_29.97.webm | = | = | X | = | = | X | . | = | = | X | X | = | = | = | = | = |
+| cfr_h264_30.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| cfr_vp9_30.webm | = | = | X | = | = | X | . | = | = | X | X | = | = | = | = | = |
+| cfr_h264_50.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| cfr_vp9_50.webm | = | = | X | = | = | X | . | = | = | = | = | = | = | = | = | = |
+| cfr_h264_59.94.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| cfr_vp9_59.94.webm | = | = | X | X | = | X | . | = | = | X | X | = | = | = | = | = |
+| cfr_h264_60.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| cfr_vp9_60.webm | = | = | X | = | = | X | . | = | = | X | X | = | = | = | = | = |
+| cfr_h264_120.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| cfr_vp9_120.webm | = | = | X | = | = | X | . | = | = | X | X | = | = | = | = | = |
+| cfr_h264_240.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| cfr_vp9_240.webm | = | = | X | = | = | X | . | = | = | X | X | = | = | = | = | = |
+| mov_nobf_default.mov | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| mov_nobf_faststart.mov | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| mov_bf_elst.mov | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| mov_bf_noelst.mov | = | = | = | = | = | X | X | = | X | = | = | = | = | = | = | = |
+| mov_bf_faststart.mov | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| mov_prores.mov | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| mp4_bf_elst.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| mp4_bf_noelst.mp4 | = | = | = | = | = | X | X | = | X | = | = | = | = | = | = | = |
+| mp4_bf_faststart.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| mp4_elst_empty_offset.mp4 | = | = | = | = | = | X | X | = | X | = | = | = | = | = | = | = |
+| mp4_elst_trim_start.mp4 | = | = | = | = | = | X | = | X | = | = | = | = | = | = | = | = |
+| mp4_elst_trim_output_seek.mp4 | = | = | = | = | = | X | X | = | X | = | = | = | = | = | = | = |
+| fmp4_keyframe_empty_moov.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| fmp4_default_base_moof.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| fmp4_frag_duration.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| fmp4_bframes.mp4 | = | = | = | = | = | X | X | = | X | = | = | = | = | = | = | = |
 | fmp4_hybrid_no_empty_moov.mp4 | = | = | = | = | X | X | X | = | X | = | = | = | = | = | = | = |
-| fmp4_cmaf.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| fmp4_global_sidx.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| fmp4_dash_flag.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| mp4_hybrid_fragmented_finalized.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| fmp4_dash_single_file.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| fmp4_dash_concat_segments.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| hevc_hvc1.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| hevc_hev1.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| av1.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| vp9.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| vp9.webm | = | = | X | = | X | X | . | = | = | X | X | = | = | = | = | = |
-| vp8.webm | = | = | X | = | X | X | . | = | = | X | X | = | = | = | = | = |
-| av1.webm | = | = | X | = | X | X | . | = | = | X | X | = | = | = | = | = |
-| h264.mkv | = | = | X | = | X | X | . | = | = | X | X | = | = | = | = | = |
-| hevc.mkv | = | = | X | = | X | X | . | = | = | X | X | = | = | = | = | = |
-| vp9_live.webm | = | = | X | = | X | X | . | = | . | X | X | = | = | = | = | = |
-| vp9_pipe.webm | = | = | X | = | X | X | . | = | . | X | X | = | = | = | = | = |
+| fmp4_cmaf.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| fmp4_global_sidx.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| fmp4_dash_flag.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| mp4_hybrid_fragmented_finalized.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| fmp4_dash_single_file.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| fmp4_dash_concat_segments.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| hevc_hvc1.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| hevc_hev1.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| av1.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| vp9.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| vp9.webm | = | = | X | = | = | X | . | = | = | X | X | = | = | = | = | = |
+| vp8.webm | = | = | X | = | = | X | . | = | = | X | X | = | = | = | = | = |
+| av1.webm | = | = | X | = | = | X | . | = | = | X | X | = | = | = | = | = |
+| h264.mkv | = | = | X | = | = | X | . | = | = | X | X | = | = | = | = | = |
+| hevc.mkv | = | = | X | = | = | X | . | = | = | X | X | = | = | = | = | = |
+| vp9_live.webm | = | = | X | = | = | X | . | = | . | X | X | = | = | = | = | = |
+| vp9_pipe.webm | = | = | X | = | = | X | . | = | . | X | X | = | = | = | = | = |
 | vp9_unknown_clusters.webm | = | = | X | . | X | X | . | = | . | X | X | = | = | = | = | = |
-| vp9_no_defaultduration.webm | = | = | = | = | X | X | . | = | X | X | X | = | = | = | = | = |
-| vfr_concat_10_30_60.mp4 | = | = | X | . | X | X | = | = | = | = | = | = | = | = | = | = |
-| vfr_concat_bframes.mp4 | = | = | X | . | X | X | = | = | = | = | = | = | = | = | = | = |
-| vfr_concat_10_30_60_ts1M.mp4 | = | = | X | . | X | X | = | = | = | = | X | = | = | = | = | = |
-| vfr_concat_10_30_60.mov | = | = | X | . | X | X | = | = | = | = | = | = | = | = | = | = |
-| vfr_concat_10_30_60.webm | = | = | X | . | X | X | . | = | X | = | X | = | = | = | = | = |
-| vfr_concat_10_30_60_fmp4.mp4 | = | = | X | . | X | X | = | = | = | = | = | = | = | = | = | = |
-| vfr_setpts_sine.mp4 | = | = | X | . | X | X | = | = | = | = | = | = | = | = | = | = |
-| vfr_select_drop.mp4 | = | = | X | . | X | X | = | = | = | = | = | = | = | = | = | = |
-| vfr_mpdecimate.mp4 | = | = | X | . | X | X | = | = | = | = | = | = | = | = | = | = |
-| vfr_screenrec_ts1000.mp4 | = | = | X | . | X | X | X | = | X | = | = | = | = | = | = | = |
-| vfr_screenrec_ts1000.webm | = | = | X | . | X | X | . | = | = | X | X | = | = | = | = | = |
-| vfr_pulldown_2_3.mp4 | = | = | X | . | X | X | = | = | = | = | = | = | = | = | = | = |
-| vfr_two_phase_5_200.mp4 | = | = | X | . | X | X | = | = | = | = | = | = | = | = | = | = |
-| vfr_two_phase_5_200.webm | = | = | X | . | X | X | . | = | X | = | = | = | = | = | = | = |
-| vfr_two_phase_5_200.mkv | = | = | X | . | X | X | . | = | = | = | = | = | = | = | = | = |
-| vfr_freeze_2s.mp4 | = | = | X | . | X | X | = | = | = | = | = | = | = | = | = | = |
-| box64_mdat64_wide.mov | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| box64_mdat64_free.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| box64_co64_mdat64.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| av_h264_aac.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| av_h264_aac_faststart.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| multi_video_2tracks.mp4 | = | X | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| still_image_track_first.mp4 | = | X | X | . | X | X | = | = | = | X | X | X | = | X | = | = |
+| vp9_no_defaultduration.webm | = | = | = | = | = | X | . | = | X | X | X | = | = | = | = | = |
+| vfr_concat_10_30_60.mp4 | = | = | X | . | = | X | = | = | = | = | = | = | = | = | = | = |
+| vfr_concat_bframes.mp4 | = | = | X | . | = | X | = | = | = | = | = | = | = | = | = | = |
+| vfr_concat_10_30_60_ts1M.mp4 | = | = | X | . | = | X | = | = | = | = | X | = | = | = | = | = |
+| vfr_concat_10_30_60.mov | = | = | X | . | = | X | = | = | = | = | = | = | = | = | = | = |
+| vfr_concat_10_30_60.webm | = | = | X | . | = | X | . | = | X | = | X | = | = | = | = | = |
+| vfr_concat_10_30_60_fmp4.mp4 | = | = | X | . | = | X | = | = | = | = | = | = | = | = | = | = |
+| vfr_setpts_sine.mp4 | = | = | X | . | = | X | = | = | = | = | = | = | = | = | = | = |
+| vfr_select_drop.mp4 | = | = | X | . | = | X | = | = | = | = | = | = | = | = | = | = |
+| vfr_mpdecimate.mp4 | = | = | X | . | = | X | = | = | = | = | = | = | = | = | = | = |
+| vfr_screenrec_ts1000.mp4 | = | = | X | . | = | X | X | = | X | = | = | = | = | = | = | = |
+| vfr_screenrec_ts1000.webm | = | = | X | . | = | X | . | = | = | X | X | = | = | = | = | = |
+| vfr_pulldown_2_3.mp4 | = | = | X | . | = | X | = | = | = | = | = | = | = | = | = | = |
+| vfr_two_phase_5_200.mp4 | = | = | X | . | = | X | = | = | = | = | = | = | = | = | = | = |
+| vfr_two_phase_5_200.webm | = | = | X | . | = | X | . | = | X | = | = | = | = | = | = | = |
+| vfr_two_phase_5_200.mkv | = | = | X | . | = | X | . | = | = | = | = | = | = | = | = | = |
+| vfr_freeze_2s.mp4 | = | = | X | . | = | X | = | = | = | = | = | = | = | = | = | = |
+| box64_mdat64_wide.mov | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| box64_mdat64_free.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| box64_co64_mdat64.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| av_h264_aac.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| av_h264_aac_faststart.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| multi_video_2tracks.mp4 | = | X | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| still_image_track_first.mp4 | = | X | X | . | = | X | = | = | = | X | X | X | = | X | = | = |
 | cover_art_audio.m4a | = | = |   |   |   |   |   |   | = |   |   |   |   |   |   |   |
-| cover_art_plus_video.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
+| cover_art_plus_video.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
 | audio_only.m4a | = | = |   |   |   |   |   |   | = |   |   |   |   |   |   |   |
 | audio_only_aac.mp4 | = | = |   |   |   |   |   |   | = |   |   |   |   |   |   |   |
 | audio_only_opus.webm | = | = |   |   |   |   |   |   | = |   |   |   |   |   |   |   |
-| edge_single_frame.mp4 | = | = | X | . | X | X | = | = | = | X | X | X | = | = | = | = |
+| edge_single_frame.mp4 | = | = | X | . | = | X | = | = | = | X | X | X | = | = | = | = |
 | corrupt_empty_0byte.mp4 | = |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |
 | corrupt_garbage_random.mp4 | = |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |
 | corrupt_text_named.mp4 | = |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |
 | corrupt_png_named.mp4 | = |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |
 | corrupt_trunc_moov_partial.mp4 | X |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |
 | corrupt_trunc_no_moov.mp4 | X |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |
-| corrupt_trunc_mdat_faststart.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
+| corrupt_trunc_mdat_faststart.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
 | corrupt_fmp4_truncated_mid_fragment.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| box_mdat_size0.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
+| box_mdat_size0.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
 | corrupt_stts_count_huge.mp4 | X |   |   |   |   |   |   |   |   |   |   |   |   |   |   |   |
-| sniff_webm_named_mp4.mp4 | = | = | X | = | X | X | . | = | = | X | X | = | = | = | = | = |
-| sniff_mp4_named_webm.webm | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| sniff_mp4_named_mkv.mkv | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| frag_vfr_global_sidx.mp4 | = | = | X | . | X | X | = | = | = | = | = | = | = | = | = | = |
-| frag_vfr_dash.mp4 | = | = | X | . | X | X | = | = | = | = | = | = | = | = | = | = |
-| h264_vfr_remux.mkv | = | = | X | . | X | X | . | = | = | = | X | = | = | = | = | = |
-| vp9_pipe_t10.webm | = | = | X | = | X | X | . | = | X | X | X | = | = | = | = | = |
-| vp9_opus_live_audiotail.webm | = | = | X | = | X | X | . | = | . | X | X | = | = | = | = | = |
-| h264_25_cover.mkv | = | = | X | = | X | X | . | = | = | = | = | = | = | = | = | = |
-| remux_cfr_120_ts16000.mp4 | = | = | X | . | X | X | = | = | = | = | = | X | = | = | = | = |
-| remux_cfr_29.97_ts16000.mp4 | = | = | X | . | X | X | = | = | = | = | = | X | = | = | = | = |
-| start_freeze_bf.mp4 | = | = | X | . | X | X | = | = | = | X | X | = | X | = | = | = |
-| fmp4_missing_fragment.mp4 | = | = | X | . | X | X | X | = | X | = | = | = | = | = | = | = |
-| elst_trim_vfr_copy.mp4 | = | = | X | . | X | X | = | X | = | = | = | = | = | = | = | = |
-| cfr_240_ts600.mp4 | = | = | X | . | X | X | = | = | = | X | X | X | = | = | = | = |
-| fmp4_global_sidx_bframes.mp4 | = | = | = | = | X | X | = | = | X | = | = | = | = | = | = | = |
-| long_cfr_3h_60fps.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| long_vfr_1h_screenrec.mp4 | = | = | X | . | X | X | X | = | X | = | = | = | = | = | = | = |
-| big_1080p_moov_end.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| big_1080p_faststart.mp4 | = | = | = | = | X | X | = | = | = | = | = | = | = | = | = | = |
-| big_1080p.mkv | = | = | X | = | X | X | . | = | = | X | X | = | = | = | = | = |
+| sniff_webm_named_mp4.mp4 | = | = | X | = | = | X | . | = | = | X | X | = | = | = | = | = |
+| sniff_mp4_named_webm.webm | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| sniff_mp4_named_mkv.mkv | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| frag_vfr_global_sidx.mp4 | = | = | X | . | = | X | = | = | = | = | = | = | = | = | = | = |
+| frag_vfr_dash.mp4 | = | = | X | . | = | X | = | = | = | = | = | = | = | = | = | = |
+| h264_vfr_remux.mkv | = | = | X | . | = | X | . | = | = | = | X | = | = | = | = | = |
+| vp9_pipe_t10.webm | = | = | X | = | = | X | . | = | X | X | X | = | = | = | = | = |
+| vp9_opus_live_audiotail.webm | = | = | X | = | = | X | . | = | . | X | X | = | = | = | = | = |
+| h264_25_cover.mkv | = | = | X | = | = | X | . | = | = | = | = | = | = | = | = | = |
+| remux_cfr_120_ts16000.mp4 | = | = | X | . | = | X | = | = | = | = | = | X | = | = | = | = |
+| remux_cfr_29.97_ts16000.mp4 | = | = | X | . | = | X | = | = | = | = | = | X | = | = | = | = |
+| start_freeze_bf.mp4 | = | = | X | . | = | X | = | = | = | X | X | = | X | = | = | = |
+| fmp4_missing_fragment.mp4 | = | = | X | . | = | X | X | = | X | = | = | = | = | = | = | = |
+| elst_trim_vfr_copy.mp4 | = | = | X | . | = | X | = | X | = | = | = | = | = | = | = | = |
+| cfr_240_ts600.mp4 | = | = | X | . | = | X | = | = | = | X | X | X | = | = | = | = |
+| fmp4_global_sidx_bframes.mp4 | = | = | = | = | = | X | = | = | X | = | = | = | = | = | = | = |
+| long_cfr_3h_60fps.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| long_vfr_1h_screenrec.mp4 | = | = | X | . | = | X | X | = | X | = | = | = | = | = | = | = |
+| big_1080p_moov_end.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| big_1080p_faststart.mp4 | = | = | = | = | = | X | = | = | = | = | = | = | = | = | = | = |
+| big_1080p.mkv | = | = | X | = | = | X | . | = | = | X | X | = | = | = | = | = |
 
 </details>
 
@@ -2363,349 +2363,256 @@ Legend: `=` exact, `~` within-tol, `K` known-deviation, `X` mismatch, `.` n/a, b
 
 | Fixture | Field | App | ffprobe | Verdict or outcome | Reason or rule |
 |---|---|---|---|---|---|
-| cfr_h264_23.976.mp4 | frames | - | 72 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | cfr_h264_23.976.mp4 | presentedFrames | - | 72 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | cfr_vp9_23.976.webm | avgFps.declared | - | 24000/1001 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
 | cfr_vp9_23.976.webm | avgFps.measured | 24000/1001 | 36000/1501 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span); the span it implies is within one 1/1000 s tick of the file's. rule: Measured average must equal avgFromPts (integer-ms last duration) within 1e-9 relative |
-| cfr_vp9_23.976.webm | frames | - | 72 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | cfr_vp9_23.976.webm | presentedFrames | - | 72 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | cfr_vp9_23.976.webm | minFps | 24000/1001 | 500/21 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference minimum |
 | cfr_vp9_23.976.webm | maxFps | 24000/1001 | 1000/41 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference maximum |
-| cfr_h264_24.mp4 | frames | - | 72 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | cfr_h264_24.mp4 | presentedFrames | - | 72 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | cfr_vp9_24.webm | avgFps.declared | - | 24/1 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
 | cfr_vp9_24.webm | avgFps.measured | 24/1 | 72000/2999 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span); the span it implies is within one 1/1000 s tick of the file's. rule: Measured average must equal avgFromPts (integer-ms last duration) within 1e-9 relative |
-| cfr_vp9_24.webm | frames | - | 72 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | cfr_vp9_24.webm | presentedFrames | - | 72 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | cfr_vp9_24.webm | minFps | 24/1 | 500/21 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference minimum |
 | cfr_vp9_24.webm | maxFps | 24/1 | 1000/41 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference maximum |
-| cfr_h264_25.mp4 | frames | - | 75 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | cfr_h264_25.mp4 | presentedFrames | - | 75 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | cfr_vp9_25.webm | avgFps.declared | - | 25/1 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
-| cfr_vp9_25.webm | frames | - | 75 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | cfr_vp9_25.webm | presentedFrames | - | 75 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
-| cfr_h264_29.97.mp4 | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | cfr_h264_29.97.mp4 | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | cfr_vp9_29.97.webm | avgFps.declared | - | 30000/1001 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
-| cfr_vp9_29.97.webm | frames | - | 90 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | cfr_vp9_29.97.webm | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | cfr_vp9_29.97.webm | minFps | 30000/1001 | 500/17 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference minimum |
 | cfr_vp9_29.97.webm | maxFps | 30000/1001 | 1000/33 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference maximum |
-| cfr_h264_30.mp4 | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | cfr_h264_30.mp4 | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | cfr_vp9_30.webm | avgFps.declared | - | 30/1 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
-| cfr_vp9_30.webm | frames | - | 90 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | cfr_vp9_30.webm | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | cfr_vp9_30.webm | minFps | 30/1 | 500/17 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference minimum |
 | cfr_vp9_30.webm | maxFps | 30/1 | 1000/33 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference maximum |
-| cfr_h264_50.mp4 | frames | - | 150 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | cfr_h264_50.mp4 | presentedFrames | - | 150 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | cfr_vp9_50.webm | avgFps.declared | - | 50/1 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
-| cfr_vp9_50.webm | frames | - | 150 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | cfr_vp9_50.webm | presentedFrames | - | 150 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
-| cfr_h264_59.94.mp4 | frames | - | 180 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | cfr_h264_59.94.mp4 | presentedFrames | - | 180 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | cfr_vp9_59.94.webm | avgFps.declared | - | 19001/317 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
 | cfr_vp9_59.94.webm | avgFps.measured | 60000/1001 | 90000/1501 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span); the span it implies is within one 1/1000 s tick of the file's. rule: Measured average must equal avgFromPts (integer-ms last duration) within 1e-9 relative |
 | cfr_vp9_59.94.webm | nominalFps | 60000/1001 | 19001/317 | definition-differs | a floating-point rate equal to ffprobe's 19001/317 within 0.000001 relative, not the exact rational. rule: Declared rate string must equal r_frame_rate exactly when DefaultDuration exists; otherwise skipped |
-| cfr_vp9_59.94.webm | frames | - | 180 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | cfr_vp9_59.94.webm | presentedFrames | - | 180 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | cfr_vp9_59.94.webm | minFps | 60000/1001 | 1000/17 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference minimum |
 | cfr_vp9_59.94.webm | maxFps | 60000/1001 | 125/2 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference maximum |
-| cfr_h264_60.mp4 | frames | - | 180 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | cfr_h264_60.mp4 | presentedFrames | - | 180 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | cfr_vp9_60.webm | avgFps.declared | - | 60/1 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
 | cfr_vp9_60.webm | avgFps.measured | 60/1 | 180000/2999 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span); the span it implies is within one 1/1000 s tick of the file's. rule: Measured average must equal avgFromPts (integer-ms last duration) within 1e-9 relative |
-| cfr_vp9_60.webm | frames | - | 180 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | cfr_vp9_60.webm | presentedFrames | - | 180 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | cfr_vp9_60.webm | minFps | 60/1 | 1000/17 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference minimum |
 | cfr_vp9_60.webm | maxFps | 60/1 | 125/2 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference maximum |
-| cfr_h264_120.mp4 | frames | - | 360 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | cfr_h264_120.mp4 | presentedFrames | - | 360 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | cfr_vp9_120.webm | avgFps.declared | - | 120/1 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
-| cfr_vp9_120.webm | frames | - | 360 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | cfr_vp9_120.webm | presentedFrames | - | 360 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | cfr_vp9_120.webm | minFps | 120/1 | 1000/9 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference minimum |
 | cfr_vp9_120.webm | maxFps | 120/1 | 125/1 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference maximum |
-| cfr_h264_240.mp4 | frames | - | 720 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | cfr_h264_240.mp4 | presentedFrames | - | 720 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | cfr_vp9_240.webm | avgFps.declared | - | 240/1 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
-| cfr_vp9_240.webm | frames | - | 720 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | cfr_vp9_240.webm | presentedFrames | - | 720 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | cfr_vp9_240.webm | minFps | 240/1 | 200/1 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference minimum |
 | cfr_vp9_240.webm | maxFps | 240/1 | 250/1 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference maximum |
-| mov_nobf_default.mov | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | mov_nobf_default.mov | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
-| mov_nobf_faststart.mov | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | mov_nobf_faststart.mov | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
-| mov_bf_elst.mov | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | mov_bf_elst.mov | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | mov_bf_noelst.mov | formatDurationSec | 3.069733 | 3.003000 | definition-differs | the end timestamp of the last frame, not the duration from the start. rule: format.duration within 1e-6 s; skipped when subtitle or data tracks exist |
-| mov_bf_noelst.mov | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | mov_bf_noelst.mov | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | mov_bf_noelst.mov | durationSec | 3.069733 | 3.003000 | definition-differs | the end timestamp of the last frame, not the span from the first. difference 0.066733 s. rule: Exact vs duration_ts x time_base; fragmented with sidx: within max(1 frame, abs(start_time)) |
-| mov_bf_faststart.mov | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | mov_bf_faststart.mov | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
-| mov_prores.mov | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | mov_prores.mov | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
-| mp4_bf_elst.mp4 | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | mp4_bf_elst.mp4 | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | mp4_bf_noelst.mp4 | formatDurationSec | 3.069733 | 3.003000 | definition-differs | the end timestamp of the last frame, not the duration from the start. rule: format.duration within 1e-6 s; skipped when subtitle or data tracks exist |
-| mp4_bf_noelst.mp4 | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | mp4_bf_noelst.mp4 | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | mp4_bf_noelst.mp4 | durationSec | 3.069733 | 3.003000 | definition-differs | the end timestamp of the last frame, not the span from the first. difference 0.066733 s. rule: Exact vs duration_ts x time_base; fragmented with sidx: within max(1 frame, abs(start_time)) |
-| mp4_bf_faststart.mp4 | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | mp4_bf_faststart.mp4 | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | mp4_elst_empty_offset.mp4 | formatDurationSec | 4.000000 | 3.000000 | definition-differs | the movie header (mvhd) duration; ffprobe derives the format duration from the streams. rule: format.duration within 1e-6 s; skipped when subtitle or data tracks exist |
-| mp4_elst_empty_offset.mp4 | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | mp4_elst_empty_offset.mp4 | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | mp4_elst_empty_offset.mp4 | durationSec | 4.000000 | 3.000000 | definition-differs | the end timestamp of the last frame, not the span from the first. difference 1.000000 s. rule: Exact vs duration_ts x time_base; fragmented with sidx: within max(1 frame, abs(start_time)) |
-| mp4_elst_trim_start.mp4 | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | mp4_elst_trim_start.mp4 | presentedFrames | - | 69 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | mp4_elst_trim_start.mp4 | startSec | -0.700000 | 0.000000 | definition-differs | the first packet's timestamp, which the edit list moves below zero; ffprobe starts at the first presented frame. rule: Exact vs start_pts x time_base |
 | mp4_elst_trim_output_seek.mp4 | formatDurationSec | 2.303000 | 2.002000 | definition-differs | the movie header (mvhd) duration; ffprobe derives the format duration from the streams. rule: format.duration within 1e-6 s; skipped when subtitle or data tracks exist |
-| mp4_elst_trim_output_seek.mp4 | frames | - | 60 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | mp4_elst_trim_output_seek.mp4 | presentedFrames | - | 60 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | mp4_elst_trim_output_seek.mp4 | durationSec | 2.303000 | 2.002000 | definition-differs | the end timestamp of the last frame, not the span from the first. difference 0.301000 s. rule: Exact vs duration_ts x time_base; fragmented with sidx: within max(1 frame, abs(start_time)) |
-| fmp4_keyframe_empty_moov.mp4 | frames | - | 120 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | fmp4_keyframe_empty_moov.mp4 | presentedFrames | - | 120 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
-| fmp4_default_base_moof.mp4 | frames | - | 120 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | fmp4_default_base_moof.mp4 | presentedFrames | - | 120 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
-| fmp4_frag_duration.mp4 | frames | - | 120 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | fmp4_frag_duration.mp4 | presentedFrames | - | 120 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | fmp4_bframes.mp4 | formatDurationSec | 4.070733 | 4.004000 | definition-differs | the end timestamp of the last frame, not the duration from the start. rule: format.duration within 1e-6 s; skipped when subtitle or data tracks exist |
-| fmp4_bframes.mp4 | frames | - | 120 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | fmp4_bframes.mp4 | presentedFrames | - | 120 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | fmp4_bframes.mp4 | durationSec | 4.070733 | 4.004000 | definition-differs | the end timestamp of the last frame, not the span from the first. difference 0.066733 s. rule: Exact vs duration_ts x time_base; fragmented with sidx: within max(1 frame, abs(start_time)) |
 | fmp4_hybrid_no_empty_moov.mp4 | formatDurationSec | 1.001000 | 4.004000 | definition-differs | the movie header (mvhd) duration; ffprobe derives the format duration from the streams. rule: format.duration within 1e-6 s; skipped when subtitle or data tracks exist |
-| fmp4_hybrid_no_empty_moov.mp4 | frames | - | 120 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
+| fmp4_hybrid_no_empty_moov.mp4 | frames | 30 | 120 | definition-differs | the samples of the moov only; the fragments are not counted. hybrid fragmented: moov count 30, total 120. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | fmp4_hybrid_no_empty_moov.mp4 | presentedFrames | - | 120 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | fmp4_hybrid_no_empty_moov.mp4 | durationSec | 1.001000 | 4.004000 | definition-differs | the media header (mdhd) duration, before the edit list and the fragments. difference 3.003000 s. rule: Exact vs duration_ts x time_base; fragmented with sidx: within max(1 frame, abs(start_time)) |
-| fmp4_cmaf.mp4 | frames | - | 120 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | fmp4_cmaf.mp4 | presentedFrames | - | 120 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
-| fmp4_global_sidx.mp4 | frames | - | 120 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | fmp4_global_sidx.mp4 | presentedFrames | - | 120 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
-| fmp4_dash_flag.mp4 | frames | - | 120 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | fmp4_dash_flag.mp4 | presentedFrames | - | 120 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
-| mp4_hybrid_fragmented_finalized.mp4 | frames | - | 120 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | mp4_hybrid_fragmented_finalized.mp4 | presentedFrames | - | 120 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
-| fmp4_dash_single_file.mp4 | frames | - | 120 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | fmp4_dash_single_file.mp4 | presentedFrames | - | 120 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
-| fmp4_dash_concat_segments.mp4 | frames | - | 120 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | fmp4_dash_concat_segments.mp4 | presentedFrames | - | 120 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
-| hevc_hvc1.mp4 | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | hevc_hvc1.mp4 | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
-| hevc_hev1.mp4 | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | hevc_hev1.mp4 | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
-| av1.mp4 | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | av1.mp4 | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
-| vp9.mp4 | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | vp9.mp4 | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | vp9.webm | avgFps.declared | - | 30000/1001 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
-| vp9.webm | frames | - | 90 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | vp9.webm | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | vp9.webm | minFps | 30000/1001 | 500/17 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference minimum |
 | vp9.webm | maxFps | 30000/1001 | 1000/33 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference maximum |
 | vp8.webm | avgFps.declared | - | 30000/1001 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
-| vp8.webm | frames | - | 90 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | vp8.webm | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | vp8.webm | minFps | 30000/1001 | 500/17 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference minimum |
 | vp8.webm | maxFps | 30000/1001 | 1000/33 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference maximum |
 | av1.webm | avgFps.declared | - | 30000/1001 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
-| av1.webm | frames | - | 90 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | av1.webm | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | av1.webm | minFps | 30000/1001 | 500/17 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference minimum |
 | av1.webm | maxFps | 30000/1001 | 1000/33 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference maximum |
 | h264.mkv | avgFps.declared | - | 30000/1001 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
-| h264.mkv | frames | - | 90 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | h264.mkv | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | h264.mkv | minFps | 30000/1001 | 500/17 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference minimum |
 | h264.mkv | maxFps | 30000/1001 | 1000/33 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference maximum |
 | hevc.mkv | avgFps.declared | - | 30000/1001 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
-| hevc.mkv | frames | - | 90 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | hevc.mkv | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | hevc.mkv | minFps | 30000/1001 | 500/17 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference minimum |
 | hevc.mkv | maxFps | 30000/1001 | 1000/33 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference maximum |
 | vp9_live.webm | avgFps.declared | - | 30000/1001 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
-| vp9_live.webm | frames | - | 90 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | vp9_live.webm | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | vp9_live.webm | minFps | 30000/1001 | 500/17 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference minimum |
 | vp9_live.webm | maxFps | 30000/1001 | 1000/33 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference maximum |
 | vp9_pipe.webm | avgFps.declared | - | 30000/1001 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
-| vp9_pipe.webm | frames | - | 90 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | vp9_pipe.webm | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | vp9_pipe.webm | minFps | 30000/1001 | 500/17 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference minimum |
 | vp9_pipe.webm | maxFps | 30000/1001 | 1000/33 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference maximum |
 | vp9_unknown_clusters.webm | avgFps.declared | - | 30000/1001 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
 | vp9_unknown_clusters.webm | avgFps.measured | 1000/1 | 30000/1001 | wrong | differs from ffprobe, and none of the checked definitions explains it. rule: Measured average must equal avgFromPts (integer-ms last duration) within 1e-9 relative |
-| vp9_unknown_clusters.webm | frames | - | 90 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
+| vp9_unknown_clusters.webm | frames | 0 | 90 | wrong | differs from ffprobe, and none of the checked definitions explains it. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | vp9_unknown_clusters.webm | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | vp9_unknown_clusters.webm | minFps | 1000/1 | 500/17 | wrong | differs from ffprobe, and none of the checked definitions explains it. rule: Exact rational vs the tail-excluded reference minimum |
 | vp9_unknown_clusters.webm | maxFps | 1000/1 | 1000/33 | wrong | differs from ffprobe, and none of the checked definitions explains it. rule: Exact rational vs the tail-excluded reference maximum |
 | vp9_no_defaultduration.webm | formatDurationSec | 2.970000 | 3.003000 | definition-differs | the timestamp of the last frame, without that frame's duration; ffprobe reports the container duration. rule: Exact vs format.duration when Info Duration exists; ffprobe N/A is not compared |
-| vp9_no_defaultduration.webm | frames | - | 90 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | vp9_no_defaultduration.webm | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | vp9_no_defaultduration.webm | minFps | 30000/1001 | 500/17 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference minimum |
 | vp9_no_defaultduration.webm | maxFps | 30000/1001 | 1000/33 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference maximum |
 | vfr_concat_10_30_60.mp4 | avgFps | 11940/359 | 100/3 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly |
 | vfr_concat_10_30_60.mp4 | avgFps.measured | 11940/359 | 100/3 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration) |
-| vfr_concat_10_30_60.mp4 | frames | - | 200 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | vfr_concat_10_30_60.mp4 | presentedFrames | - | 200 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | vfr_concat_bframes.mp4 | avgFps | 11940/359 | 1200/37 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly |
 | vfr_concat_bframes.mp4 | avgFps.measured | 11940/359 | 100/3 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration) |
-| vfr_concat_bframes.mp4 | frames | - | 200 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | vfr_concat_bframes.mp4 | presentedFrames | - | 200 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | vfr_concat_10_30_60_ts1M.mp4 | avgFps | 11940/359 | 100/3 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly |
 | vfr_concat_10_30_60_ts1M.mp4 | avgFps.measured | 11940/359 | 100/3 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration) |
-| vfr_concat_10_30_60_ts1M.mp4 | frames | - | 200 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | vfr_concat_10_30_60_ts1M.mp4 | presentedFrames | - | 200 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | vfr_concat_10_30_60_ts1M.mp4 | maxFps | 60/1 | 500000/8333 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference maximum |
 | vfr_concat_10_30_60.mov | avgFps | 11940/359 | 100/3 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly |
 | vfr_concat_10_30_60.mov | avgFps.measured | 11940/359 | 100/3 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration) |
-| vfr_concat_10_30_60.mov | frames | - | 200 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | vfr_concat_10_30_60.mov | presentedFrames | - | 200 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | vfr_concat_10_30_60.webm | formatDurationSec | 5.983000 | 6.000000 | definition-differs | the timestamp of the last frame, without that frame's duration; ffprobe reports the container duration. rule: Exact vs format.duration when Info Duration exists; ffprobe N/A is not compared |
 | vfr_concat_10_30_60.webm | avgFps.measured | 11940/359 | 3125/94 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span); the span it implies is within one 1/1000 s tick of the file's. rule: Measured average must equal avgFromPts (integer-ms last duration) within 1e-9 relative |
-| vfr_concat_10_30_60.webm | frames | - | 200 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | vfr_concat_10_30_60.webm | presentedFrames | - | 200 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | vfr_concat_10_30_60.webm | maxFps | 60/1 | 125/2 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference maximum |
 | vfr_concat_10_30_60_fmp4.mp4 | avgFps | 11940/359 | 100/3 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly |
 | vfr_concat_10_30_60_fmp4.mp4 | avgFps.measured | 11940/359 | 100/3 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration) |
-| vfr_concat_10_30_60_fmp4.mp4 | frames | - | 200 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | vfr_concat_10_30_60_fmp4.mp4 | presentedFrames | - | 200 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | vfr_setpts_sine.mp4 | avgFps | 446777/14759 | 13500000/445991 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly |
 | vfr_setpts_sine.mp4 | avgFps.measured | 446777/14759 | 13500000/445991 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration) |
-| vfr_setpts_sine.mp4 | frames | - | 150 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | vfr_setpts_sine.mp4 | presentedFrames | - | 150 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | vfr_select_drop.mp4 | avgFps | 10740/299 | 36/1 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly |
 | vfr_select_drop.mp4 | avgFps.measured | 10740/299 | 36/1 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration) |
-| vfr_select_drop.mp4 | frames | - | 180 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | vfr_select_drop.mp4 | presentedFrames | - | 180 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | vfr_mpdecimate.mp4 | avgFps | 1350/67 | 182/9 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly |
 | vfr_mpdecimate.mp4 | avgFps.measured | 1350/67 | 182/9 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration) |
-| vfr_mpdecimate.mp4 | frames | - | 91 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | vfr_mpdecimate.mp4 | presentedFrames | - | 91 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | vfr_screenrec_ts1000.mp4 | formatDurationSec | 6.005000 | 6.004000 | definition-differs | the movie header (mvhd) duration; ffprobe derives the format duration from the streams. rule: format.duration within 1e-6 s; skipped when subtitle or data tracks exist |
 | vfr_screenrec_ts1000.mp4 | avgFps | 172077/4205 | 61500/1501 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly |
 | vfr_screenrec_ts1000.mp4 | avgFps.measured | 172077/4205 | 61500/1501 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration) |
-| vfr_screenrec_ts1000.mp4 | frames | - | 246 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | vfr_screenrec_ts1000.mp4 | presentedFrames | - | 246 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | vfr_screenrec_ts1000.mp4 | durationSec | 6.005000 | 6.004000 | definition-differs | the end timestamp of the last frame, not the span from the first. difference 0.001000 s. rule: Exact vs duration_ts x time_base; fragmented with sidx: within max(1 frame, abs(start_time)) |
 | vfr_screenrec_ts1000.webm | avgFps.declared | - | 60/1 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
 | vfr_screenrec_ts1000.webm | avgFps.measured | 14700/359 | 246000/5999 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span); the span it implies is within one 1/1000 s tick of the file's. rule: Measured average must equal avgFromPts (integer-ms last duration) within 1e-9 relative |
-| vfr_screenrec_ts1000.webm | frames | - | 246 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | vfr_screenrec_ts1000.webm | presentedFrames | - | 246 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | vfr_screenrec_ts1000.webm | minFps | 3/1 | 500/167 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference minimum |
 | vfr_screenrec_ts1000.webm | maxFps | 60/1 | 125/2 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference maximum |
 | vfr_pulldown_2_3.mp4 | avgFps | 2380/99 | 24/1 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly |
 | vfr_pulldown_2_3.mp4 | avgFps.measured | 2380/99 | 24/1 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration) |
-| vfr_pulldown_2_3.mp4 | frames | - | 120 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | vfr_pulldown_2_3.mp4 | presentedFrames | - | 120 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | vfr_two_phase_5_200.mp4 | avgFps | 4200/41 | 205/2 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly |
 | vfr_two_phase_5_200.mp4 | avgFps.measured | 4200/41 | 205/2 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration) |
-| vfr_two_phase_5_200.mp4 | frames | - | 820 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | vfr_two_phase_5_200.mp4 | presentedFrames | - | 820 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | vfr_two_phase_5_200.webm | formatDurationSec | 7.995000 | 8.000000 | definition-differs | the timestamp of the last frame, without that frame's duration; ffprobe reports the container duration. rule: Exact vs format.duration when Info Duration exists; ffprobe N/A is not compared |
 | vfr_two_phase_5_200.webm | avgFps.measured | 4200/41 | 205/2 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: Measured average must equal avgFromPts (integer-ms last duration) within 1e-9 relative |
-| vfr_two_phase_5_200.webm | frames | - | 820 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | vfr_two_phase_5_200.webm | presentedFrames | - | 820 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | vfr_two_phase_5_200.mkv | avgFps.declared | - | 205/2 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
 | vfr_two_phase_5_200.mkv | avgFps.measured | 4200/41 | 205/2 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: Measured average must equal avgFromPts (integer-ms last duration) within 1e-9 relative |
-| vfr_two_phase_5_200.mkv | frames | - | 820 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | vfr_two_phase_5_200.mkv | presentedFrames | - | 820 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | vfr_freeze_2s.mp4 | avgFps | 1785/89 | 3600/179 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly |
 | vfr_freeze_2s.mp4 | avgFps.measured | 1785/89 | 3600/179 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration) |
-| vfr_freeze_2s.mp4 | frames | - | 120 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | vfr_freeze_2s.mp4 | presentedFrames | - | 120 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
-| box64_mdat64_wide.mov | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | box64_mdat64_wide.mov | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
-| box64_mdat64_free.mp4 | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | box64_mdat64_free.mp4 | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
-| box64_co64_mdat64.mp4 | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | box64_co64_mdat64.mp4 | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
-| av_h264_aac.mp4 | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | av_h264_aac.mp4 | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
-| av_h264_aac_faststart.mp4 | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | av_h264_aac_faststart.mp4 | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | multi_video_2tracks.mp4 | trackSelection | track 1 of 1: h264 160x90 | stream 0 of 2: h264 160x90 | not-provided | the recipe returns the primary video track only. app lists 1 video tracks, ffprobe 2. rule: Same real video tracks and primary track as ffprobe (attached_pic excluded; MP4/MOV: enabled tracks only) |
-| multi_video_2tracks.mp4 | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | multi_video_2tracks.mp4 | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | still_image_track_first.mp4 | trackSelection | track 1 of 1:  64x64 | stream 1 of 2: h264 160x90 | wrong | app lists 1 video tracks, ffprobe 2; app primary track is not the expected stream. app lists 1 video tracks, ffprobe 2; app primary track is not the expected stream. rule: Same real video tracks and primary track as ffprobe (attached_pic excluded; MP4/MOV: enabled tracks only) |
 | still_image_track_first.mp4 | codecName |  | mjpeg | not-provided | the arm returned no value. rule: Exact vs codec_name |
 | still_image_track_first.mp4 | avgFps | 12800/1 | 25/1 | wrong | differs from ffprobe, and none of the checked definitions explains it. rule: avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly |
 | still_image_track_first.mp4 | avgFps.measured | 12800/1 | 25/1 | wrong | differs from ffprobe, and none of the checked definitions explains it. rule: Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration) |
-| still_image_track_first.mp4 | frames | - | 1 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | still_image_track_first.mp4 | presentedFrames | - | 1 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | still_image_track_first.mp4 | minFps | 12800/1 | - | wrong | differs from ffprobe, and none of the checked definitions explains it. rule: Exact rational vs the tail-excluded reference minimum |
 | still_image_track_first.mp4 | maxFps | 12800/1 | - | wrong | differs from ffprobe, and none of the checked definitions explains it. rule: Exact rational vs the tail-excluded reference maximum |
 | still_image_track_first.mp4 | isVfr | false | - | definition-differs | one frame has no interval: the arm reports a constant rate, the reference no flag. rule: Equal to the reference VFR flag (shared rule, tolerance max(1 tick, 0.5% of the median delta)) |
-| cover_art_plus_video.mp4 | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | cover_art_plus_video.mp4 | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | edge_single_frame.mp4 | avgFps | 15360/1 | 30/1 | wrong | differs from ffprobe, and none of the checked definitions explains it. rule: avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly |
 | edge_single_frame.mp4 | avgFps.measured | 15360/1 | 30/1 | wrong | differs from ffprobe, and none of the checked definitions explains it. rule: Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration) |
-| edge_single_frame.mp4 | frames | - | 1 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | edge_single_frame.mp4 | presentedFrames | - | 1 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | edge_single_frame.mp4 | minFps | 15360/1 | - | wrong | differs from ffprobe, and none of the checked definitions explains it. rule: Exact rational vs the tail-excluded reference minimum |
 | edge_single_frame.mp4 | maxFps | 15360/1 | - | wrong | differs from ffprobe, and none of the checked definitions explains it. rule: Exact rational vs the tail-excluded reference maximum |
 | edge_single_frame.mp4 | isVfr | false | - | definition-differs | one frame has no interval: the arm reports a constant rate, the reference no flag. rule: Equal to the reference VFR flag (shared rule, tolerance max(1 tick, 0.5% of the median delta)) |
 | corrupt_trunc_moov_partial.mp4 | error | ok, 0 video tracks | fails: error reading header | wrong | differs from ffprobe, and none of the checked definitions explains it. rule: Outcome equals the manifest expectation (manifest expect=error) |
 | corrupt_trunc_no_moov.mp4 | error | ok, 0 video tracks | fails: moov atom not found | wrong | differs from ffprobe, and none of the checked definitions explains it. rule: Outcome equals the manifest expectation (manifest expect=error) |
-| corrupt_trunc_mdat_faststart.mp4 | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | corrupt_trunc_mdat_faststart.mp4 | presentedFrames | - | 53 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
-| corrupt_fmp4_truncated_mid_fragment.mp4 | frames | - | 73 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
+| corrupt_fmp4_truncated_mid_fragment.mp4 | frames | 90 | 73 | wrong | differs from ffprobe, and none of the checked definitions explains it. fragmented: nb_frames is N/A, compared with nb_read_packets. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | corrupt_fmp4_truncated_mid_fragment.mp4 | presentedFrames | - | 72 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
-| box_mdat_size0.mp4 | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | box_mdat_size0.mp4 | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | corrupt_stts_count_huge.mp4 | error | error: Tried reading [88712, 88716), but slice is [88047, 88712). This is likely an internal error, please report it alongside the file that caused it. | fails: error reading header | definition-differs | fails to open the file, as ffprobe does; this package reads what the file holds. rule: Outcome equals the manifest expectation (manifest expect=ok) |
 | sniff_webm_named_mp4.mp4 | avgFps.declared | - | 30000/1001 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
-| sniff_webm_named_mp4.mp4 | frames | - | 90 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | sniff_webm_named_mp4.mp4 | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | sniff_webm_named_mp4.mp4 | minFps | 30000/1001 | 500/17 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference minimum |
 | sniff_webm_named_mp4.mp4 | maxFps | 30000/1001 | 1000/33 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference maximum |
-| sniff_mp4_named_webm.webm | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | sniff_mp4_named_webm.webm | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
-| sniff_mp4_named_mkv.mkv | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | sniff_mp4_named_mkv.mkv | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | frag_vfr_global_sidx.mp4 | avgFps | 2780/99 | 60/1 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly |
 | frag_vfr_global_sidx.mp4 | avgFps.measured | 2780/99 | 4200/149 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration) |
-| frag_vfr_global_sidx.mp4 | frames | - | 140 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | frag_vfr_global_sidx.mp4 | presentedFrames | - | 140 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | frag_vfr_dash.mp4 | avgFps | 2780/99 | 30/1 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly |
 | frag_vfr_dash.mp4 | avgFps.measured | 2780/99 | 4200/149 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration) |
-| frag_vfr_dash.mp4 | frames | - | 140 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | frag_vfr_dash.mp4 | presentedFrames | - | 140 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | h264_vfr_remux.mkv | avgFps.declared | - | 130/3 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
 | h264_vfr_remux.mkv | avgFps.measured | 15540/359 | 130/3 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span); the span it implies is within one 1/1000 s tick of the file's. rule: Measured average must equal avgFromPts (integer-ms last duration) within 1e-9 relative |
-| h264_vfr_remux.mkv | frames | - | 260 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | h264_vfr_remux.mkv | presentedFrames | - | 260 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | h264_vfr_remux.mkv | maxFps | 60/1 | 125/2 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference maximum |
 | vp9_pipe_t10.webm | formatDurationSec | 3.000000 | 10.000000 | definition-differs | the end timestamp of the last frame, not the duration from the start. rule: Exact vs format.duration when Info Duration exists; ffprobe N/A is not compared |
 | vp9_pipe_t10.webm | avgFps.declared | - | 30/1 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
-| vp9_pipe_t10.webm | frames | - | 90 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | vp9_pipe_t10.webm | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | vp9_pipe_t10.webm | minFps | 30/1 | 500/17 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference minimum |
 | vp9_pipe_t10.webm | maxFps | 30/1 | 1000/33 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference maximum |
 | vp9_opus_live_audiotail.webm | avgFps.declared | - | 30/1 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
-| vp9_opus_live_audiotail.webm | frames | - | 90 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | vp9_opus_live_audiotail.webm | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | vp9_opus_live_audiotail.webm | minFps | 30/1 | 500/17 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference minimum |
 | vp9_opus_live_audiotail.webm | maxFps | 30/1 | 1000/33 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference maximum |
 | h264_25_cover.mkv | avgFps.declared | - | 25/1 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
-| h264_25_cover.mkv | frames | - | 75 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | h264_25_cover.mkv | presentedFrames | - | 75 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | remux_cfr_120_ts16000.mp4 | avgFps | 44875/374 | 120/1 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly |
 | remux_cfr_120_ts16000.mp4 | avgFps.measured | 44875/374 | 1152000/9601 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration) |
-| remux_cfr_120_ts16000.mp4 | frames | - | 360 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | remux_cfr_120_ts16000.mp4 | presentedFrames | - | 360 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | remux_cfr_120_ts16000.mp4 | isVfr | true | false | wrong | differs from ffprobe, and none of the checked definitions explains it. rule: Equal to the reference VFR flag (shared rule, tolerance max(1 tick, 0.5% of the median delta)) |
 | remux_cfr_29.97_ts16000.mp4 | avgFps | 8900/297 | 30000/1001 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly |
 | remux_cfr_29.97_ts16000.mp4 | avgFps.measured | 8900/297 | 1440000/48053 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration) |
-| remux_cfr_29.97_ts16000.mp4 | frames | - | 90 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | remux_cfr_29.97_ts16000.mp4 | presentedFrames | - | 90 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | remux_cfr_29.97_ts16000.mp4 | isVfr | true | false | wrong | differs from ffprobe, and none of the checked definitions explains it. rule: Equal to the reference VFR flag (shared rule, tolerance max(1 tick, 0.5% of the median delta)) |
 | start_freeze_bf.mp4 | avgFps | 279999/13517 | 1125/67 | wrong | differs from ffprobe, and none of the checked definitions explains it. rule: avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly |
 | start_freeze_bf.mp4 | avgFps.measured | 279999/13517 | 4500/209 | wrong | differs from ffprobe, and none of the checked definitions explains it. rule: Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration) |
-| start_freeze_bf.mp4 | frames | - | 150 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | start_freeze_bf.mp4 | presentedFrames | - | 150 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | start_freeze_bf.mp4 | minFps | 34999/69997 | 1/2 | definition-differs | within one timestamp tick of the reference interval: computed from floating-point seconds, not integer ticks. rule: Exact rational vs the tail-excluded reference minimum |
 | start_freeze_bf.mp4 | maxFps | 210003/7000 | 30000/1 | wrong | differs from ffprobe, and none of the checked definitions explains it. rule: Exact rational vs the tail-excluded reference maximum |
@@ -2713,38 +2620,29 @@ Legend: `=` exact, `~` within-tol, `K` known-deviation, `X` mismatch, `.` n/a, b
 | fmp4_missing_fragment.mp4 | formatDurationSec | 5.000000 | 6.000000 | wrong | differs from ffprobe, and none of the checked definitions explains it. rule: format.duration within 1e-6 s; skipped when subtitle or data tracks exist |
 | fmp4_missing_fragment.mp4 | avgFps | 4470/179 | 30/1 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly |
 | fmp4_missing_fragment.mp4 | avgFps.measured | 4470/179 | 25/1 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration) |
-| fmp4_missing_fragment.mp4 | frames | - | 150 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | fmp4_missing_fragment.mp4 | presentedFrames | - | 150 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | fmp4_missing_fragment.mp4 | durationSec | 5.000000 | 6.000000 | wrong | differs from ffprobe, and none of the checked definitions explains it. difference 1.000000 s. rule: Exact vs duration_ts x time_base; fragmented with sidx: within max(1 frame, abs(start_time)) |
 | elst_trim_vfr_copy.mp4 | avgFps | 4200/41 | 205/2 | wrong | differs from ffprobe, and none of the checked definitions explains it. rule: avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly |
 | elst_trim_vfr_copy.mp4 | avgFps.measured | 4200/41 | 815/7 | wrong | differs from ffprobe, and none of the checked definitions explains it. rule: Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration) |
-| elst_trim_vfr_copy.mp4 | frames | - | 820 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | elst_trim_vfr_copy.mp4 | presentedFrames | - | 815 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | elst_trim_vfr_copy.mp4 | startSec | -0.950000 | 0.000000 | definition-differs | the first packet's timestamp, which the edit list moves below zero; ffprobe starts at the first presented frame. rule: Exact vs start_pts x time_base |
 | cfr_240_ts600.mp4 | avgFps | 172440/719 | 288000/1201 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span); the span it implies is within one 1/600 s tick of the file's. rule: avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly |
 | cfr_240_ts600.mp4 | avgFps.measured | 172440/719 | 288000/1201 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span); the span it implies is within one 1/600 s tick of the file's. rule: Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration) |
-| cfr_240_ts600.mp4 | frames | - | 480 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | cfr_240_ts600.mp4 | presentedFrames | - | 480 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | cfr_240_ts600.mp4 | minFps | 180/1 | 200/1 | wrong | differs from ffprobe, and none of the checked definitions explains it. rule: Exact rational vs the tail-excluded reference minimum |
 | cfr_240_ts600.mp4 | maxFps | 360/1 | 300/1 | wrong | differs from ffprobe, and none of the checked definitions explains it. rule: Exact rational vs the tail-excluded reference maximum |
 | cfr_240_ts600.mp4 | isVfr | true | false | wrong | differs from ffprobe, and none of the checked definitions explains it. rule: Equal to the reference VFR flag (shared rule, tolerance max(1 tick, 0.5% of the median delta)) |
 | fmp4_global_sidx_bframes.mp4 | formatDurationSec | 4.080000 | 4.160000 | definition-differs | the end timestamp of the last frame, not the duration from the start. rule: format.duration within 1e-6 s; skipped when subtitle or data tracks exist |
-| fmp4_global_sidx_bframes.mp4 | frames | - | 100 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | fmp4_global_sidx_bframes.mp4 | presentedFrames | - | 100 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
-| long_cfr_3h_60fps.mp4 | frames | - | 648000 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | long_cfr_3h_60fps.mp4 | presentedFrames | - | 648000 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | long_vfr_1h_screenrec.mp4 | formatDurationSec | 3600.001000 | 3600.000000 | definition-differs | the movie header (mvhd) duration; ffprobe derives the format duration from the streams. rule: format.duration within 1e-6 s; skipped when subtitle or data tracks exist |
 | long_vfr_1h_screenrec.mp4 | avgFps | 145712/3917 | 186/5 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly |
 | long_vfr_1h_screenrec.mp4 | avgFps.measured | 145712/3917 | 186/5 | definition-differs | the mean frame interval ((frames - 1) over the timestamp span), not ffprobe avg_frame_rate (frames over the duration). rule: Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration) |
-| long_vfr_1h_screenrec.mp4 | frames | - | 133920 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | long_vfr_1h_screenrec.mp4 | presentedFrames | - | 133920 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | long_vfr_1h_screenrec.mp4 | durationSec | 3600.001000 | 3600.000000 | definition-differs | the end timestamp of the last frame, not the span from the first. difference 0.001000 s. rule: Exact vs duration_ts x time_base; fragmented with sidx: within max(1 frame, abs(start_time)) |
-| big_1080p_moov_end.mp4 | frames | - | 1800 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | big_1080p_moov_end.mp4 | presentedFrames | - | 1800 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
-| big_1080p_faststart.mp4 | frames | - | 1800 | not-provided | not part of the arm's recipe. the app reported no frame count. rule: Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets |
 | big_1080p_faststart.mp4 | presentedFrames | - | 1800 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames |
 | big_1080p.mkv | avgFps.declared | - | 30/1 | not-provided | the arm returned no value. the app reported no declared rate. rule: Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists |
-| big_1080p.mkv | frames | - | 1800 | not-provided | not part of the arm's recipe. exact scan done but no frame count reported. rule: Exact vs nb_read_packets (ffprobe prints nb_frames N/A) |
 | big_1080p.mkv | presentedFrames | - | 1800 | not-provided | not part of the arm's recipe. the app reported no presented frame count. rule: Exact vs nb_read_frames (equals the block count) |
 | big_1080p.mkv | minFps | 30/1 | 500/17 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference minimum |
 | big_1080p.mkv | maxFps | 30/1 | 1000/33 | definition-differs | the frame interval before the timestamps were rounded to the 1/1000 s tick (both roundings occur in the file); the reference takes the rounded intervals. rule: Exact rational vs the tail-excluded reference maximum |
@@ -2761,124 +2659,124 @@ mediabunny 1.62.1, tuned: this package's adapter (video-fps-probe/engines/mediab
 
 | Fixture | Category | avg FPS (app, or app vs ffprobe) | frames | min..max FPS | Verdict | Reads | Bytes | % of file | ms |
 |---|---|---|---|---|---|---:|---:|---:|---:|
-| cfr_h264_23.976.mp4 | cfr | 24000/1001; measured 24000/1001 | 72 | 23.976..23.976 | all exact (17) | 1 | 71.9 KiB | 100 | 0.62 |
-| cfr_vp9_23.976.webm | cfr | 147323/6144 vs 24000/1001; measured 147323/6144 vs 36000/1501 | 72 | 23.810..24.390 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 59.4 KiB | 100 | 0.48 |
-| cfr_h264_24.mp4 | cfr | 24/1; measured 24/1 | 72 | 24.000..24.000 | all exact (17) | 1 | 71.3 KiB | 100 | 0.51 |
-| cfr_vp9_24.webm | cfr | 206999/8624 vs 24/1; measured 206999/8624 vs 72000/2999 | 72 | 23.810..24.390 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 59.2 KiB | 100 | 0.44 |
-| cfr_h264_25.mp4 | cfr | 25/1; measured 25/1 | 75 | 25.000..25.000 | all exact (17) | 1 | 69.7 KiB | 100 | 0.44 |
-| cfr_vp9_25.webm | cfr | 25/1; measured 25/1 | 75 | 25.000..25.000 | all exact (16) | 1 | 58.8 KiB | 100 | 0.42 |
-| cfr_h264_29.97.mp4 | cfr | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 86.4 KiB | 100 | 0.45 |
-| cfr_vp9_29.97.webm | cfr | 179109/5977 vs 30000/1001; measured 179109/5977 vs 30000/1001 | 90 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 72.0 KiB | 100 | 0.50 |
-| cfr_h264_30.mp4 | cfr | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 86.7 KiB | 100 | 0.45 |
-| cfr_vp9_30.webm | cfr | 261001/8701 vs 30/1; measured 261001/8701 vs 30/1 | 90 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 70.7 KiB | 100 | 0.52 |
-| cfr_h264_50.mp4 | cfr | 50/1; measured 50/1 | 150 | 50.000..50.000 | all exact (17) | 1 | 110.0 KiB | 100 | 0.48 |
+| cfr_h264_23.976.mp4 | cfr | 24000/1001; measured 24000/1001 | 72 | 23.976..23.976 | all exact (17) | 1 | 71.9 KiB | 100 | 2.00 |
+| cfr_vp9_23.976.webm | cfr | 147323/6144 vs 24000/1001; measured 147323/6144 vs 36000/1501 | 72 | 23.810..24.390 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 59.4 KiB | 100 | 0.66 |
+| cfr_h264_24.mp4 | cfr | 24/1; measured 24/1 | 72 | 24.000..24.000 | all exact (17) | 1 | 71.3 KiB | 100 | 0.55 |
+| cfr_vp9_24.webm | cfr | 206999/8624 vs 24/1; measured 206999/8624 vs 72000/2999 | 72 | 23.810..24.390 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 59.2 KiB | 100 | 0.46 |
+| cfr_h264_25.mp4 | cfr | 25/1; measured 25/1 | 75 | 25.000..25.000 | all exact (17) | 1 | 69.7 KiB | 100 | 0.50 |
+| cfr_vp9_25.webm | cfr | 25/1; measured 25/1 | 75 | 25.000..25.000 | all exact (16) | 1 | 58.8 KiB | 100 | 0.44 |
+| cfr_h264_29.97.mp4 | cfr | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 86.4 KiB | 100 | 0.51 |
+| cfr_vp9_29.97.webm | cfr | 179109/5977 vs 30000/1001; measured 179109/5977 vs 30000/1001 | 90 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 72.0 KiB | 100 | 0.55 |
+| cfr_h264_30.mp4 | cfr | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 86.7 KiB | 100 | 0.55 |
+| cfr_vp9_30.webm | cfr | 261001/8701 vs 30/1; measured 261001/8701 vs 30/1 | 90 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 70.7 KiB | 100 | 0.60 |
+| cfr_h264_50.mp4 | cfr | 50/1; measured 50/1 | 150 | 50.000..50.000 | all exact (17) | 1 | 110.0 KiB | 100 | 0.54 |
 | cfr_vp9_50.webm | cfr | 50/1; measured 50/1 | 150 | 50.000..50.000 | all exact (16) | 1 | 104.2 KiB | 100 | 0.59 |
-| cfr_h264_59.94.mp4 | cfr | 60000/1001; measured 60000/1001 | 180 | 59.940..59.940 | all exact (17) | 1 | 126.0 KiB | 100 | 0.49 |
-| cfr_vp9_59.94.webm | cfr | 249317/4159 vs 19001/317; measured 249317/4159 vs 90000/1501 | 180 | 58.824..62.500 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 122.5 KiB | 100 | 0.60 |
-| cfr_h264_60.mp4 | cfr | 60/1; measured 60/1 | 180 | 60.000..60.000 | all exact (17) | 1 | 126.5 KiB | 100 | 0.49 |
+| cfr_h264_59.94.mp4 | cfr | 60000/1001; measured 60000/1001 | 180 | 59.940..59.940 | all exact (17) | 1 | 126.0 KiB | 100 | 0.56 |
+| cfr_vp9_59.94.webm | cfr | 249317/4159 vs 19001/317; measured 249317/4159 vs 90000/1501 | 180 | 58.824..62.500 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 122.5 KiB | 100 | 0.67 |
+| cfr_h264_60.mp4 | cfr | 60/1; measured 60/1 | 180 | 60.000..60.000 | all exact (17) | 1 | 126.5 KiB | 100 | 0.53 |
 | cfr_vp9_60.webm | cfr | 521998/8699 vs 60/1; measured 521998/8699 vs 180000/2999 | 180 | 58.824..62.500 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 121.3 KiB | 100 | 0.56 |
-| cfr_h264_120.mp4 | cfr | 120/1; measured 120/1 | 360 | 120.0..120.0 | all exact (17) | 2 | 185.2 KiB | 100 | 0.79 |
-| cfr_vp9_120.webm | cfr | 1062002/8851 vs 120/1; measured 1062002/8851 vs 120/1 | 360 | 111.1..125.0 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 2 | 203.8 KiB | 100 | 0.99 |
-| cfr_h264_240.mp4 | cfr | 240/1; measured 240/1 | 720 | 240.0..240.0 | all exact (17) | 2 | 322.5 KiB | 100 | 2.41 |
-| cfr_vp9_240.webm | cfr | 4014017/16726 vs 240/1; measured 4014017/16726 vs 240/1 | 720 | 200.0..250.0 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 2 | 355.4 KiB | 100 | 1.73 |
-| mov_nobf_default.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 86.4 KiB | 100 | 0.52 |
-| mov_nobf_faststart.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 86.4 KiB | 100 | 0.45 |
-| mov_bf_elst.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.7 KiB | 100 | 0.37 |
-| mov_bf_noelst.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 35.7 KiB | 100 | 0.38 |
-| mov_bf_faststart.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.7 KiB | 100 | 0.38 |
-| mov_prores.mov | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 2 | 218.8 KiB | 100 | 0.81 |
-| mp4_bf_elst.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.8 KiB | 100 | 0.40 |
-| mp4_bf_noelst.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 35.7 KiB | 100 | 0.37 |
-| mp4_bf_faststart.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.8 KiB | 100 | 0.37 |
-| mp4_elst_empty_offset.mp4 | mov | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: formatDurationSec | 1 | 35.2 KiB | 100 | 0.38 |
-| mp4_elst_trim_start.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: formatDurationSec, presentedFrames, durationSec, startSec | 1 | 35.8 KiB | 100 | 0.36 |
-| mp4_elst_trim_output_seek.mp4 | mov | 30000/1001; measured 30000/1001 | 60 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 25.1 KiB | 100 | 0.33 |
-| fmp4_keyframe_empty_moov.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 116.7 KiB | 100 | 0.54 |
-| fmp4_default_base_moof.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 116.7 KiB | 100 | 0.51 |
-| fmp4_frag_duration.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 117.2 KiB | 100 | 0.46 |
-| fmp4_bframes.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 48.8 KiB | 100 | 0.41 |
-| fmp4_hybrid_no_empty_moov.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 30 vs 120 | 29.970..29.970 | mismatch: formatDurationSec, frames, presentedFrames, durationSec | 1 | 116.7 KiB | 100 | 0.44 |
-| fmp4_cmaf.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 116.7 KiB | 100 | 0.54 |
-| fmp4_global_sidx.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 116.8 KiB | 100 | 0.52 |
-| fmp4_dash_flag.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 116.9 KiB | 100 | 0.47 |
-| mp4_hybrid_fragmented_finalized.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 1 | 117.9 KiB | 100 | 0.49 |
-| fmp4_dash_single_file.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 116.8 KiB | 100 | 0.52 |
-| fmp4_dash_concat_segments.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 116.9 KiB | 100 | 0.54 |
-| hevc_hvc1.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 45.1 KiB | 100 | 0.35 |
-| hevc_hev1.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 45.1 KiB | 100 | 0.35 |
+| cfr_h264_120.mp4 | cfr | 120/1; measured 120/1 | 360 | 120.0..120.0 | all exact (17) | 2 | 185.2 KiB | 100 | 0.78 |
+| cfr_vp9_120.webm | cfr | 1062002/8851 vs 120/1; measured 1062002/8851 vs 120/1 | 360 | 111.1..125.0 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 2 | 203.8 KiB | 100 | 1.02 |
+| cfr_h264_240.mp4 | cfr | 240/1; measured 240/1 | 720 | 240.0..240.0 | all exact (17) | 2 | 322.5 KiB | 100 | 1.24 |
+| cfr_vp9_240.webm | cfr | 4014017/16726 vs 240/1; measured 4014017/16726 vs 240/1 | 720 | 200.0..250.0 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 2 | 355.4 KiB | 100 | 1.55 |
+| mov_nobf_default.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 86.4 KiB | 100 | 0.44 |
+| mov_nobf_faststart.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 86.4 KiB | 100 | 0.41 |
+| mov_bf_elst.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.7 KiB | 100 | 0.42 |
+| mov_bf_noelst.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 35.7 KiB | 100 | 0.43 |
+| mov_bf_faststart.mov | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.7 KiB | 100 | 0.41 |
+| mov_prores.mov | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 2 | 218.8 KiB | 100 | 0.67 |
+| mp4_bf_elst.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.8 KiB | 100 | 0.38 |
+| mp4_bf_noelst.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 35.7 KiB | 100 | 0.39 |
+| mp4_bf_faststart.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.8 KiB | 100 | 0.38 |
+| mp4_elst_empty_offset.mp4 | mov | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: formatDurationSec | 1 | 35.2 KiB | 100 | 0.37 |
+| mp4_elst_trim_start.mp4 | mov | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | mismatch: formatDurationSec, presentedFrames, durationSec, startSec | 1 | 35.8 KiB | 100 | 0.35 |
+| mp4_elst_trim_output_seek.mp4 | mov | 30000/1001; measured 30000/1001 | 60 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 25.1 KiB | 100 | 0.35 |
+| fmp4_keyframe_empty_moov.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 116.7 KiB | 100 | 0.63 |
+| fmp4_default_base_moof.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 116.7 KiB | 100 | 0.57 |
+| fmp4_frag_duration.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 117.2 KiB | 100 | 0.61 |
+| fmp4_bframes.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 48.8 KiB | 100 | 0.45 |
+| fmp4_hybrid_no_empty_moov.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 30 vs 120 | 29.970..29.970 | mismatch: formatDurationSec, frames, presentedFrames, durationSec | 1 | 116.7 KiB | 100 | 0.47 |
+| fmp4_cmaf.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 116.7 KiB | 100 | 0.55 |
+| fmp4_global_sidx.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 116.8 KiB | 100 | 0.58 |
+| fmp4_dash_flag.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 116.9 KiB | 100 | 0.54 |
+| mp4_hybrid_fragmented_finalized.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | all exact (17) | 1 | 117.9 KiB | 100 | 0.44 |
+| fmp4_dash_single_file.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 116.8 KiB | 100 | 0.46 |
+| fmp4_dash_concat_segments.mp4 | fmp4 | 30000/1001; measured 30000/1001 | 120 | 29.970..29.970 | mismatch: formatDurationSec | 1 | 116.9 KiB | 100 | 0.46 |
+| hevc_hvc1.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 45.1 KiB | 100 | 0.36 |
+| hevc_hev1.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 45.1 KiB | 100 | 0.34 |
 | av1.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 20.8 KiB | 100 | 0.35 |
-| vp9.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 72.0 KiB | 100 | 0.42 |
-| vp9.webm | codec | 179109/5977 vs 30000/1001; measured 179109/5977 vs 30000/1001 | 90 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 72.0 KiB | 100 | 0.45 |
-| vp8.webm | codec | 179109/5977 vs 30000/1001; measured 179109/5977 vs 30000/1001 | 90 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 2 | 160.3 KiB | 100 | 0.69 |
-| av1.webm | codec | 179109/5977 vs 30000/1001; measured 179109/5977 vs 30000/1001 | 90 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 21.2 KiB | 100 | 0.36 |
-| h264.mkv | matroska | 179109/5977 vs 30000/1001; measured 179109/5977 vs 30000/1001 | 90 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 86.4 KiB | 100 | 0.51 |
-| hevc.mkv | codec | 179109/5977 vs 30000/1001; measured 179109/5977 vs 30000/1001 | 90 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 44.3 KiB | 100 | 0.42 |
+| vp9.mp4 | codec | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 72.0 KiB | 100 | 0.39 |
+| vp9.webm | codec | 179109/5977 vs 30000/1001; measured 179109/5977 vs 30000/1001 | 90 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 72.0 KiB | 100 | 0.47 |
+| vp8.webm | codec | 179109/5977 vs 30000/1001; measured 179109/5977 vs 30000/1001 | 90 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 2 | 160.3 KiB | 100 | 0.60 |
+| av1.webm | codec | 179109/5977 vs 30000/1001; measured 179109/5977 vs 30000/1001 | 90 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 21.2 KiB | 100 | 0.35 |
+| h264.mkv | matroska | 179109/5977 vs 30000/1001; measured 179109/5977 vs 30000/1001 | 90 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 86.4 KiB | 100 | 0.45 |
+| hevc.mkv | codec | 179109/5977 vs 30000/1001; measured 179109/5977 vs 30000/1001 | 90 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 44.3 KiB | 100 | 0.39 |
 | vp9_live.webm | live | 179109/5977 vs 30000/1001; measured 179109/5977 vs 30000/1001 | 90 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 71.9 KiB | 100 | 0.43 |
-| vp9_pipe.webm | live | 179109/5977 vs 30000/1001; measured 179109/5977 vs 30000/1001 | 90 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 71.9 KiB | 100 | 0.46 |
-| vp9_unknown_clusters.webm | live | - vs 30000/1001; measured - vs 30000/1001 | 0 vs 90 | none | mismatch: avgFps.declared, avgFps.measured, frames, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 71.9 KiB | 100 | 0.35 |
+| vp9_pipe.webm | live | 179109/5977 vs 30000/1001; measured 179109/5977 vs 30000/1001 | 90 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 71.9 KiB | 100 | 0.40 |
+| vp9_unknown_clusters.webm | live | - vs 30000/1001; measured - vs 30000/1001 | 0 vs 90 | none | mismatch: avgFps.declared, avgFps.measured, frames, presentedFrames, startSec, minFps, maxFps, isVfr | 1 | 71.9 KiB | 100 | 0.34 |
 | vp9_no_defaultduration.webm | matroska | 1000/33 vs 30000/1001; measured 1000/33 vs 30000/1001 | 90 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 72.0 KiB | 100 | 0.46 |
 | vfr_concat_10_30_60.mp4 | vfr | 100/3; measured 100/3 | 200 | 10.000..60.000 | all exact (16) | 2 | 161.8 KiB | 100 | 0.70 |
-| vfr_concat_bframes.mp4 | vfr | 100/3 vs 1200/37; measured 100/3 | 200 | 10.000..60.000 | mismatch: formatDurationSec, avgFps | 1 | 66.7 KiB | 100 | 0.57 |
+| vfr_concat_bframes.mp4 | vfr | 100/3 vs 1200/37; measured 100/3 | 200 | 10.000..60.000 | mismatch: formatDurationSec, avgFps | 1 | 66.7 KiB | 100 | 0.54 |
 | vfr_concat_10_30_60_ts1M.mp4 | vfr | 100/3; measured 100/3 | 200 | 10.000..60.002 | all exact (16) | 2 | 162.7 KiB | 100 | 0.72 |
-| vfr_concat_10_30_60.mov | vfr | 100/3; measured 100/3 | 200 | 10.000..60.000 | all exact (16) | 2 | 161.7 KiB | 100 | 0.72 |
-| vfr_concat_10_30_60.webm | vfr | 200000/5983 vs 0/0; measured 200000/5983 vs 3125/94 | 200 | 10.000..62.500 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 2 | 140.3 KiB | 100 | 0.74 |
-| vfr_concat_10_30_60_fmp4.mp4 | vfr | 100/3; measured 100/3 | 200 | 10.000..60.000 | mismatch: formatDurationSec | 2 | 162.8 KiB | 100 | 0.76 |
-| vfr_setpts_sine.mp4 | vfr | 164667/5440 vs 13500000/445991; measured 164667/5440 vs 13500000/445991 | 150 | 17.149..119.7 | mismatch: avgFps; within-tol: avgFps.measured | 2 | 142.2 KiB | 100 | 0.73 |
-| vfr_select_drop.mp4 | vfr | 36/1; measured 36/1 | 180 | 20.000..60.000 | all exact (16) | 2 | 152.1 KiB | 100 | 0.89 |
-| vfr_mpdecimate.mp4 | vfr | 182/9; measured 182/9 | 91 | 0.667..30.000 | all exact (16) | 1 | 87.0 KiB | 100 | 0.51 |
-| vfr_screenrec_ts1000.mp4 | vfr | 61500/1501; measured 61500/1501 | 246 | 2.959..100.0 | mismatch: formatDurationSec | 2 | 188.6 KiB | 100 | 0.82 |
-| vfr_screenrec_ts1000.webm | vfr | 18000/439 vs 60/1; measured 18000/439 vs 246000/5999 | 246 | 2.994..62.500 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 2 | 181.7 KiB | 100 | 0.90 |
-| vfr_pulldown_2_3.mp4 | vfr | 24/1; measured 24/1 | 120 | 20.000..30.000 | all exact (16) | 1 | 122.8 KiB | 100 | 0.54 |
-| vfr_two_phase_5_200.mp4 | vfr | 205/2; measured 205/2 | 820 | 5.000..200.0 | all exact (16) | 2 | 219.3 KiB | 53.3 | 1.21 |
-| vfr_two_phase_5_200.webm | vfr | 4000/39 vs 0/0; measured 4000/39 vs 205/2 | 820 | 5.000..200.0 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 5 | 431.0 KiB | 100 | 2.20 |
-| vfr_two_phase_5_200.mkv | vfr | 205/2; measured 205/2 | 820 | 5.000..200.0 | mismatch: nominalFps | 5 | 421.5 KiB | 100 | 2.23 |
+| vfr_concat_10_30_60.mov | vfr | 100/3; measured 100/3 | 200 | 10.000..60.000 | all exact (16) | 2 | 161.7 KiB | 100 | 0.69 |
+| vfr_concat_10_30_60.webm | vfr | 200000/5983 vs 0/0; measured 200000/5983 vs 3125/94 | 200 | 10.000..62.500 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 2 | 140.3 KiB | 100 | 0.70 |
+| vfr_concat_10_30_60_fmp4.mp4 | vfr | 100/3; measured 100/3 | 200 | 10.000..60.000 | mismatch: formatDurationSec | 2 | 162.8 KiB | 100 | 0.73 |
+| vfr_setpts_sine.mp4 | vfr | 164667/5440 vs 13500000/445991; measured 164667/5440 vs 13500000/445991 | 150 | 17.149..119.7 | mismatch: avgFps; within-tol: avgFps.measured | 2 | 142.2 KiB | 100 | 0.67 |
+| vfr_select_drop.mp4 | vfr | 36/1; measured 36/1 | 180 | 20.000..60.000 | all exact (16) | 2 | 152.1 KiB | 100 | 0.80 |
+| vfr_mpdecimate.mp4 | vfr | 182/9; measured 182/9 | 91 | 0.667..30.000 | all exact (16) | 1 | 87.0 KiB | 100 | 0.42 |
+| vfr_screenrec_ts1000.mp4 | vfr | 61500/1501; measured 61500/1501 | 246 | 2.959..100.0 | mismatch: formatDurationSec | 2 | 188.6 KiB | 100 | 0.69 |
+| vfr_screenrec_ts1000.webm | vfr | 18000/439 vs 60/1; measured 18000/439 vs 246000/5999 | 246 | 2.994..62.500 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 2 | 181.7 KiB | 100 | 0.81 |
+| vfr_pulldown_2_3.mp4 | vfr | 24/1; measured 24/1 | 120 | 20.000..30.000 | all exact (16) | 1 | 122.8 KiB | 100 | 0.44 |
+| vfr_two_phase_5_200.mp4 | vfr | 205/2; measured 205/2 | 820 | 5.000..200.0 | all exact (16) | 2 | 219.3 KiB | 53.3 | 1.09 |
+| vfr_two_phase_5_200.webm | vfr | 4000/39 vs 0/0; measured 4000/39 vs 205/2 | 820 | 5.000..200.0 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 5 | 431.0 KiB | 100 | 1.97 |
+| vfr_two_phase_5_200.mkv | vfr | 205/2; measured 205/2 | 820 | 5.000..200.0 | mismatch: nominalFps | 5 | 421.5 KiB | 100 | 2.22 |
 | vfr_freeze_2s.mp4 | vfr | 3600/179; measured 3600/179 | 120 | 0.500..30.000 | all exact (16) | 1 | 117.0 KiB | 100 | 0.43 |
-| box64_mdat64_wide.mov | box64 | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 86.4 KiB | 100 | 0.40 |
-| box64_mdat64_free.mp4 | box64 | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 86.7 KiB | 100 | 0.40 |
-| box64_co64_mdat64.mp4 | box64 | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.8 KiB | 100 | 0.33 |
-| av_h264_aac.mp4 | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 101.4 KiB | 100 | 0.49 |
-| av_h264_aac_faststart.mp4 | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 101.4 KiB | 100 | 0.43 |
-| multi_video_2tracks.mp4 | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 2 | 299.9 KiB | 100 | 0.88 |
+| box64_mdat64_wide.mov | box64 | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 86.4 KiB | 100 | 0.47 |
+| box64_mdat64_free.mp4 | box64 | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 86.7 KiB | 100 | 0.50 |
+| box64_co64_mdat64.mp4 | box64 | 30000/1001; measured 30000/1001 | 90 | 29.970..29.970 | all exact (17) | 1 | 35.8 KiB | 100 | 0.34 |
+| av_h264_aac.mp4 | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 101.4 KiB | 100 | 0.44 |
+| av_h264_aac_faststart.mp4 | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 101.4 KiB | 100 | 0.49 |
+| multi_video_2tracks.mp4 | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 2 | 299.9 KiB | 100 | 0.75 |
 | multi_video_2tracks.mp4 (track 2) | multi | 24/1; measured 24/1 | 96 | 24.000..24.000 | all exact (14) |  |  |  |  |
-| still_image_track_first.mp4 | multi | 25/1; measured 25/1 | 1 | none | mismatch: trackSelection, codecName | 1 | 105.0 KiB | 100 | 0.49 |
+| still_image_track_first.mp4 | multi | 25/1; measured 25/1 | 1 | none | mismatch: trackSelection, codecName | 1 | 105.0 KiB | 100 | 0.45 |
 | still_image_track_first.mp4 (track 2) | multi | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (14) |  |  |  |  |
-| cover_art_audio.m4a | cover | - | - | - | all exact (3) | 1 | 16.3 KiB | 100 | 0.24 |
-| cover_art_plus_video.mp4 | cover | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 103.5 KiB | 100 | 0.45 |
-| audio_only.m4a | audio | - | - | - | all exact (3) | 1 | 13.3 KiB | 100 | 0.24 |
-| audio_only_aac.mp4 | audio | - | - | - | all exact (3) | 1 | 13.3 KiB | 100 | 0.23 |
-| audio_only_opus.webm | audio | - | - | - | all exact (3) | 1 | 13.5 KiB | 100 | 0.23 |
-| edge_single_frame.mp4 | edge | 30/1; measured 30/1 | 1 | none | all exact (16) | 1 | 4.0 KiB | 100 | 0.26 |
+| cover_art_audio.m4a | cover | - | - | - | all exact (3) | 1 | 16.3 KiB | 100 | 0.22 |
+| cover_art_plus_video.mp4 | cover | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 103.5 KiB | 100 | 0.40 |
+| audio_only.m4a | audio | - | - | - | all exact (3) | 1 | 13.3 KiB | 100 | 0.20 |
+| audio_only_aac.mp4 | audio | - | - | - | all exact (3) | 1 | 13.3 KiB | 100 | 0.20 |
+| audio_only_opus.webm | audio | - | - | - | all exact (3) | 1 | 13.5 KiB | 100 | 0.22 |
+| edge_single_frame.mp4 | edge | 30/1; measured 30/1 | 1 | none | all exact (16) | 1 | 4.0 KiB | 100 | 0.23 |
 | corrupt_empty_0byte.mp4 | corrupt | - | - | - | expected outcome (manifest) | 0 | 0 B | 0 | 0.00 |
-| corrupt_garbage_random.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 64.0 KiB | 100 | 0.24 |
-| corrupt_text_named.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 63 B | 100 | 0.20 |
-| corrupt_png_named.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 2.2 KiB | 100 | 0.20 |
-| corrupt_trunc_moov_partial.mp4 | corrupt | - | - | - | mismatch: error | 1 | 86.2 KiB | 100 | 0.32 |
-| corrupt_trunc_no_moov.mp4 | corrupt | - | - | - | mismatch: error | 1 | 85.6 KiB | 100 | 0.32 |
-| corrupt_trunc_mdat_faststart.mp4 | corrupt | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: presentedFrames | 1 | 60.8 KiB | 100 | 0.40 |
-| corrupt_fmp4_truncated_mid_fragment.mp4 | corrupt | 30000/1001; measured 30000/1001 | 90 vs 73 | 29.970..29.970 | mismatch: formatDurationSec, frames, presentedFrames | 1 | 70.0 KiB | 100 | 0.51 |
-| box_mdat_size0.mp4 | box64 | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 101.4 KiB | 100 | 0.50 |
-| corrupt_stts_count_huge.mp4 | corrupt | - | - | - | mismatch: error | 1 | 86.7 KiB | 100 | 0.68 |
-| sniff_webm_named_mp4.mp4 | sniff | 179109/5977 vs 30000/1001; measured 179109/5977 vs 30000/1001 | 90 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 72.0 KiB | 100 | 0.50 |
-| sniff_mp4_named_webm.webm | sniff | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 86.7 KiB | 100 | 0.48 |
-| sniff_mp4_named_mkv.mkv | sniff | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 86.7 KiB | 100 | 0.64 |
-| frag_vfr_global_sidx.mp4 | fmp4 | 4200/149 vs 60/1; measured 4200/149 | 140 | 20.000..60.000 | mismatch: formatDurationSec; known-deviation: avgFps | 1 | 121.0 KiB | 100 | 0.53 |
-| frag_vfr_dash.mp4 | fmp4 | 4200/149 vs 30/1; measured 4200/149 | 140 | 20.000..60.000 | mismatch: formatDurationSec; known-deviation: avgFps | 1 | 121.2 KiB | 100 | 0.53 |
-| h264_vfr_remux.mkv | vfr | 130/3; measured 130/3 | 260 | 10.000..62.500 | mismatch: nominalFps | 2 | 200.0 KiB | 100 | 1.11 |
-| vp9_pipe_t10.webm | live | 261001/8701 vs 30/1; measured 261001/8701 vs 30/1 | 90 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 70.6 KiB | 100 | 0.43 |
-| vp9_opus_live_audiotail.webm | live | 261001/8701 vs 30/1; measured 261001/8701 vs 30/1 | 90 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 98.7 KiB | 100 | 0.59 |
-| h264_25_cover.mkv | cover | 25/1; measured 25/1 | 75 | 25.000..25.000 | all exact (16) | 1 | 71.9 KiB | 100 | 0.46 |
+| corrupt_garbage_random.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 64.0 KiB | 100 | 0.19 |
+| corrupt_text_named.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 63 B | 100 | 0.16 |
+| corrupt_png_named.mp4 | corrupt | - | - | - | expected outcome (manifest) | 1 | 2.2 KiB | 100 | 0.16 |
+| corrupt_trunc_moov_partial.mp4 | corrupt | - | - | - | mismatch: error | 1 | 86.2 KiB | 100 | 0.22 |
+| corrupt_trunc_no_moov.mp4 | corrupt | - | - | - | mismatch: error | 1 | 85.6 KiB | 100 | 0.23 |
+| corrupt_trunc_mdat_faststart.mp4 | corrupt | 30/1; measured 30/1 | 90 | 30.000..30.000 | mismatch: presentedFrames | 1 | 60.8 KiB | 100 | 0.46 |
+| corrupt_fmp4_truncated_mid_fragment.mp4 | corrupt | 30000/1001; measured 30000/1001 | 90 vs 73 | 29.970..29.970 | mismatch: formatDurationSec, frames, presentedFrames | 1 | 70.0 KiB | 100 | 0.45 |
+| box_mdat_size0.mp4 | box64 | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 101.4 KiB | 100 | 0.40 |
+| corrupt_stts_count_huge.mp4 | corrupt | - | - | - | mismatch: error | 1 | 86.7 KiB | 100 | 0.63 |
+| sniff_webm_named_mp4.mp4 | sniff | 179109/5977 vs 30000/1001; measured 179109/5977 vs 30000/1001 | 90 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 72.0 KiB | 100 | 0.42 |
+| sniff_mp4_named_webm.webm | sniff | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 86.7 KiB | 100 | 0.37 |
+| sniff_mp4_named_mkv.mkv | sniff | 30/1; measured 30/1 | 90 | 30.000..30.000 | all exact (17) | 1 | 86.7 KiB | 100 | 0.36 |
+| frag_vfr_global_sidx.mp4 | fmp4 | 4200/149 vs 60/1; measured 4200/149 | 140 | 20.000..60.000 | mismatch: formatDurationSec; known-deviation: avgFps | 1 | 121.0 KiB | 100 | 0.46 |
+| frag_vfr_dash.mp4 | fmp4 | 4200/149 vs 30/1; measured 4200/149 | 140 | 20.000..60.000 | mismatch: formatDurationSec; known-deviation: avgFps | 1 | 121.2 KiB | 100 | 0.46 |
+| h264_vfr_remux.mkv | vfr | 130/3; measured 130/3 | 260 | 10.000..62.500 | mismatch: nominalFps | 2 | 200.0 KiB | 100 | 0.88 |
+| vp9_pipe_t10.webm | live | 261001/8701 vs 30/1; measured 261001/8701 vs 30/1 | 90 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 70.6 KiB | 100 | 0.42 |
+| vp9_opus_live_audiotail.webm | live | 261001/8701 vs 30/1; measured 261001/8701 vs 30/1 | 90 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 1 | 98.7 KiB | 100 | 0.52 |
+| h264_25_cover.mkv | cover | 25/1; measured 25/1 | 75 | 25.000..25.000 | all exact (16) | 1 | 71.9 KiB | 100 | 0.48 |
 | remux_cfr_120_ts16000.mp4 | cfr | 120/1; measured 120/1 vs 1152000/9601 | 360 | 111.1..125.0 | within-tol: avgFps.measured | 2 | 204.7 KiB | 100 | 0.81 |
-| remux_cfr_29.97_ts16000.mp4 | cfr | 30000/1001; measured 30000/1001 vs 1440000/48053 | 90 | 29.412..30.303 | within-tol: avgFps.measured | 1 | 72.5 KiB | 100 | 0.42 |
-| start_freeze_bf.mp4 | vfr | 4500/209 vs 1125/67; measured 4500/209 | 150 | 0.500..30000.0 | mismatch: avgFps | 1 | 118.2 KiB | 100 | 0.56 |
+| remux_cfr_29.97_ts16000.mp4 | cfr | 30000/1001; measured 30000/1001 vs 1440000/48053 | 90 | 29.412..30.303 | within-tol: avgFps.measured | 1 | 72.5 KiB | 100 | 0.41 |
+| start_freeze_bf.mp4 | vfr | 4500/209 vs 1125/67; measured 4500/209 | 150 | 0.500..30000.0 | mismatch: avgFps | 1 | 118.2 KiB | 100 | 0.47 |
 | fmp4_missing_fragment.mp4 | fmp4 | 25/1 vs 30/1; measured 25/1 | 150 | 0.968..30.000 | mismatch: formatDurationSec, avgFps | 2 | 147.9 KiB | 100 | 0.70 |
-| elst_trim_vfr_copy.mp4 | vfr | 205/2; measured 205/2 vs 815/7 | 820 | 5.000..200.0 | mismatch: avgFps.measured, presentedFrames, durationSec, startSec | 2 | 219.3 KiB | 53.3 | 1.04 |
-| cfr_240_ts600.mp4 | cfr | 288000/1201; measured 288000/1201 | 480 | 200.0..300.0 | all exact (16) | 1 | 93.1 KiB | 100 | 0.67 |
-| fmp4_global_sidx_bframes.mp4 | fmp4 | 25/1; measured 25/1 | 100 | 25.000..25.000 | mismatch: formatDurationSec, durationSec | 1 | 97.7 KiB | 100 | 0.46 |
-| long_cfr_3h_60fps.mp4 | long | 60/1; measured 60/1 | 648000 | 60.000..60.000 | all exact (17) | 3 | 2.73 MiB | 22.0 | 675 |
-| long_vfr_1h_screenrec.mp4 | long | 186/5; measured 186/5 | 133920 | 2.941..100.0 | mismatch: formatDurationSec | 3 | 1.70 MiB | 45.1 | 167 |
-| big_1080p_moov_end.mp4 | big | 30/1; measured 30/1 | 1800 | 30.000..30.000 | all exact (17) | 2 | 239.8 KiB | 0.04 | 1.94 |
-| big_1080p_faststart.mp4 | big | 30/1; measured 30/1 | 1800 | 30.000..30.000 | all exact (17) | 1 | 128.0 KiB | 0.02 | 1.61 |
-| big_1080p.mkv | big | 179999/6000 vs 30/1; measured 179999/6000 vs 30/1 | 1800 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 122 | 576.43 MiB | 100 | 969 |
+| elst_trim_vfr_copy.mp4 | vfr | 205/2; measured 205/2 vs 815/7 | 820 | 5.000..200.0 | mismatch: avgFps.measured, presentedFrames, durationSec, startSec | 2 | 219.3 KiB | 53.3 | 1.05 |
+| cfr_240_ts600.mp4 | cfr | 288000/1201; measured 288000/1201 | 480 | 200.0..300.0 | all exact (16) | 1 | 93.1 KiB | 100 | 0.68 |
+| fmp4_global_sidx_bframes.mp4 | fmp4 | 25/1; measured 25/1 | 100 | 25.000..25.000 | mismatch: formatDurationSec, durationSec | 1 | 97.7 KiB | 100 | 0.47 |
+| long_cfr_3h_60fps.mp4 | long | 60/1; measured 60/1 | 648000 | 60.000..60.000 | all exact (17) | 3 | 2.73 MiB | 22.0 | 735 |
+| long_vfr_1h_screenrec.mp4 | long | 186/5; measured 186/5 | 133920 | 2.941..100.0 | mismatch: formatDurationSec | 3 | 1.70 MiB | 45.1 | 172 |
+| big_1080p_moov_end.mp4 | big | 30/1; measured 30/1 | 1800 | 30.000..30.000 | all exact (17) | 2 | 239.8 KiB | 0.04 | 1.93 |
+| big_1080p_faststart.mp4 | big | 30/1; measured 30/1 | 1800 | 30.000..30.000 | all exact (17) | 1 | 128.0 KiB | 0.02 | 1.55 |
+| big_1080p.mkv | big | 179999/6000 vs 30/1; measured 179999/6000 vs 30/1 | 1800 | 29.412..30.303 | mismatch: avgFps.declared, avgFps.measured, nominalFps | 122 | 576.43 MiB | 100 | 953 |
 
 <details><summary>mediabunny-tuned: verdict per field</summary>
 
