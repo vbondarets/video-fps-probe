@@ -230,6 +230,22 @@ The field-level table, with app and ffprobe values for every check of all three 
 
 <!-- tables:deviations:end -->
 
+### Late rate changes (Tier L)
+
+Every other fixture has at most 820 frames, so mediabunny's default 256-packet probe and its full scan gave the same rates on them. Three generated files test a rate change after the probe window. Each is at most 1 MB, 64x36, and constant-rate for more than 5000 frames before it changes:
+
+- `late_30_to_60.mp4`: H.264, 6000 frames at 30 fps (200 s), then 1200 frames at 60 fps (20 s); 7200 frames over 220 s, an average of 360/11 (32.727 fps).
+- `late_25_to_12.5.webm`: VP9, 5500 frames at 25 fps (220 s), then 500 frames at 12.5 fps (40 s); 6000 frames over 260 s (23.077 fps).
+- `late_freeze_10s.mkv`: H.264 in Matroska at 25 fps, frame 5999 held for 10.04 s, then 250 more frames; 6250 frames over 260 s (24.038 fps).
+
+**Predictions, committed before the comparison first ran on these files (2026-10-24):**
+
+1. Own parsers: every check exact against ffprobe 8.1.1 (0 mismatches), the VFR flag true on all three, and a rate profile with the change at about 200 s, 220 s and 240 s.
+2. mediabunny idiomatic (`computeFrameRateMetrics()` with its default of 256 packets) misreports both: an average equal to the first rate (30, 25 and 25 fps) and `frameRateIsConstant` true, so a VFR flag of false on all three. The average counts as definition differs (the probe window is its documented definition), the VFR flag as wrong.
+3. mediabunny full scan (`targetPacketCount: Infinity`) is correct: the VFR flag true, an average that differs from ffprobe's only by its own definition (the distinct timestamps less one over their span), and the minimum and maximum over the whole stream. It is slower than the idiomatic arm and than the own parsers.
+
+The results below are reported whatever they are, including a prediction that fails.
+
 ## Speed
 
 Own parsers on representative files and the long local files.
