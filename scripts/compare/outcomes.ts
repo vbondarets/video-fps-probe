@@ -7,6 +7,7 @@ import type { CheckResult, ContainerFamily, FileLayout, FixtureInfo, OutcomeClas
 export const DEFINITION_RELATIVE_TOLERANCE = 1e-6;
 export const DEFINITION_SECONDS_TOLERANCE = 1e-6;
 const PROBED = /(\d+) packets probed/;
+const FAMILY_NAMES: Readonly<Record<ContainerFamily, string>> = { isobmff: 'MP4 and MOV', matroska: 'WebM and Matroska' };
 
 export interface OutcomeContext {
   arm: ArmSpec;
@@ -157,7 +158,7 @@ function selectionOutcome(ctx: OutcomeContext): Outcome | null {
 
 export function classify(ctx: OutcomeContext, c: CheckResult, stream: RefStream | null): Outcome {
   const { arm, family } = ctx;
-  if (family && !arm.families.includes(family)) return { outcome: 'unsupported-container', why: `the library reads ${arm.families.join(' and ')} only` };
+  if (family && !arm.families.includes(family)) return { outcome: 'unsupported-container', why: `the library reads ${arm.families.map((f) => FAMILY_NAMES[f]).join(', ')} only` };
   if (arm.provides && !arm.provides.has(c.field)) return { outcome: 'not-provided', why: "not part of the arm's recipe" };
   if (c.field === 'trackSelection') return selectionOutcome(ctx) ?? { outcome: 'wrong', why: c.detail ?? 'a different track selection' };
   if ((c.app === null || c.app === '') && c.field !== 'error') return { outcome: 'not-provided', why: 'the arm returned no value' };
