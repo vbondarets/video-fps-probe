@@ -80,6 +80,15 @@ describe('analyzeWithMp4box on representative fixtures', () => {
     expect(result.videoTracks[0].frames).toBe(120);
   });
 
+  it('ends a fragmented track at the tfdt timeline, not at the sum of the trun durations', async () => {
+    for (const name of ['rec_chromium_h264.mp4', 'rec_chromium_vp9.mp4', 'rec_chromium_h264_sliced.mp4']) {
+      const { result } = await run(name);
+      const ref = loadRef(name)!;
+      expect(result.videoTracks[0].durationSec).toBeCloseTo(Number(ref.videos![0].duration), 6);
+      expect(result.formatDurationSec).toBeCloseTo(Number(ref.format!.duration), 6);
+    }
+  });
+
   it('reports the native view next to the exact one', async () => {
     const { result } = await run('mov_bf_elst.mov');
     const native = result.mp4box!.tracks[0];

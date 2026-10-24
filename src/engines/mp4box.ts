@@ -203,6 +203,24 @@ function buildSegments(trak: Trak, moov: Moov, moofs: readonly Moof[]): Timeline
   return segments;
 }
 
+function segmentTicks(d: TimelineSegment['durations']): number {
+  let n = 0;
+  if ('counts' in d) for (let i = 0; i < d.counts.length; i++) n += d.counts[i] * d.deltas[i];
+  else for (let i = 0; i < d.length; i++) n += d[i];
+  return n;
+}
+
+function trackEndTicks(segments: readonly TimelineSegment[]): number {
+  let end = 0;
+  let max = 0;
+  for (const s of segments) {
+    if (s.baseDts !== undefined && s.baseDts !== null) end = s.baseDts;
+    end += segmentTicks(s.durations);
+    if (end > max) max = end;
+  }
+  return max;
+}
+
 function sumCounts(counts: ArrayLike<number> | undefined): number {
   let n = 0;
   if (counts) for (let i = 0; i < counts.length; i++) n += counts[i];
@@ -287,7 +305,7 @@ function buildTrack(
     track.provenance.startSec = 'header';
   }
   const fragmented = moofs.length > 0;
-  let ticks = edit.window && edit.window.end !== Infinity ? edit.window.end - edit.window.start : stats.durationSum;
+  let ticks = edit.window && edit.window.end !== Infinity ? edit.window.end - edit.window.start : fragmented ? trackEndTicks(segments) : stats.durationSum;
   if (!fragmented) {
     if (mdhd.duration > 0) ticks = Math.min(ticks, mdhd.duration);
     if (stats.durationSum > 0) ticks = Math.min(ticks, stats.durationSum);
