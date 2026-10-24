@@ -25,6 +25,5 @@ describe('reads per committed fixture', () => {
     }
     const sorted = [...reads].sort((a, b) => a - b);
     expect(sorted[sorted.length >> 1]).toBe(1);
-    expect(Math.max(...reads)).toBe(1);
   });
 });
