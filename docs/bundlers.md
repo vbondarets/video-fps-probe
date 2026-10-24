@@ -30,13 +30,13 @@ Measured with Vite 8.3.5 on production builds installed from the packed tarball 
 
 | Fixture | Imports | Vite worker option | Critical path | First MP4, lazy | All own paths, lazy | Worker files |
 |---|---|---|---:|---:|---:|---|
-| default | `video-fps-probe/lazy` | format: 'es' | **0.67 KB** | 23.49 KB | 36.47 KB | own.worker (4 lazy chunks) |
+| default | `video-fps-probe/lazy` | format: 'es' | **0.67 KB** | 23.50 KB | 36.48 KB | own.worker (4 lazy chunks) |
 | zero-config | `video-fps-probe/lazy` | none, so Vite's default format: 'iife' | **0.67 KB** | 35.01 KB | 35.01 KB | own.worker (0 lazy chunks) |
 | iife-nosplit | `video-fps-probe/lazy` | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.67 KB** | 35.01 KB | 35.01 KB | own.worker (0 lazy chunks) |
 | custom | `video-fps-probe/client/lazy` + `video-fps-probe/worker-runtime` | format: 'es' | **0.67 KB** | 23.39 KB | 36.37 KB | fps.worker (4 lazy chunks) |
 | standalone-url | `video-fps-probe/client/lazy` + `video-fps-probe/standalone/own.worker.js?url` | none needed: the file is copied as an asset | **0.70 KB** | 34.84 KB | 34.84 KB | own.worker (0 lazy chunks) |
 
-With format 'es' the own worker entry stays small and loads one parser per container; with 'iife' it is one file with both parsers. In Vite 8.3.5 the zero-config and iife-nosplit own workers are byte-identical: with format 'iife' Vite already inlines the worker's dynamic imports, so `codeSplitting: false` changes nothing for this package. Everything the default build emits outside the entry chunk is 72.59 KB, because it also holds the main-thread copies of the runtime and parsers ([SSR](#ssr-and-the-lazy-main-thread-chunks)). The full matrix, engines included, is in [benchmarks.md](benchmarks.md#package-size).
+With format 'es' the own worker entry stays small and loads one parser per container; with 'iife' it is one file with both parsers. In Vite 8.3.5 the zero-config and iife-nosplit own workers are byte-identical: with format 'iife' Vite already inlines the worker's dynamic imports, so `codeSplitting: false` changes nothing for this package. Everything the default build emits outside the entry chunk is 72.61 KB, because it also holds the main-thread copies of the runtime and parsers ([SSR](#ssr-and-the-lazy-main-thread-chunks)). The full matrix, engines included, is in [benchmarks.md](benchmarks.md#package-size).
 
 <!-- tables:vite:end -->
 
@@ -164,7 +164,7 @@ export const probe = lazyProbeClient({ worker: { create: viaBlob, engines: ['own
 
 Bundlers name the worker files and every lazy chunk by a content hash, and many hosts (GitHub Pages among them) replace the whole site on every deploy. A tab opened before a deploy keeps running the old page, which still asks for the old names. Those files are gone, so the first file analysed after the deploy fails to load the probe code:
 
-- The probe client of a lazy stub, the worker script, a chunk the worker loads for an engine, or a main-thread chunk of the probe: `ProbeError('worker-failed')` with `reason: 'load'` ([Errors](api.md#errors)), and `tryAnalyze` resolves `null`. For a main-thread chunk the message is the browser's dynamic-import error, which is also the `cause`. A worker script that returns 404 has the message `worker script failed to load; the app may have been redeployed`.
+- The probe client of a lazy stub, the worker script, a chunk the worker loads for an engine, or a main-thread chunk of the probe: `ProbeError('worker-failed')` with `reason: 'load'` ([Errors](api.md#errors)), and `tryAnalyze` resolves `null`. For a main-thread chunk the message is the browser's dynamic-import error, which is also the `cause`. A worker script that returns 404 has the message `worker script failed to load or parse; the app may have been redeployed`.
 
 A worker that started before the deploy keeps serving its jobs, but a parser or engine chunk it has not loaded yet is gone too: own reports that as `result.error` with the import error's message, a library engine as `reason: 'load'`. With the blob trampoline of the [CDN recipe](#scripts-on-a-cdn-origin), a missing standalone file is an uncaught `NetworkError` inside the worker, so it reports as `reason: 'crash'` with the browser's `importScripts` message.
 

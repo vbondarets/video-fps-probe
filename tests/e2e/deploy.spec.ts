@@ -5,7 +5,7 @@ import { fixtureFile, openApp, waitSettled } from './support.ts';
 const MP4 = 'cfr_h264_30.mp4';
 const WEBM = 'cfr_vp9_30.webm';
 const MODULE_LOAD_FAILURE = /dynamically imported module|Importing a module script failed|error loading dynamically imported module/i;
-const WORKER_LOAD_FAILURE = 'worker script failed to load; the app may have been redeployed';
+const WORKER_LOAD_FAILURE = 'worker script failed to load or parse; the app may have been redeployed';
 
 async function dropFour(page: Page): Promise<void> {
   const mp4 = await readFile(fixtureFile(MP4));

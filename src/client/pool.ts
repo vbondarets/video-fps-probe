@@ -4,7 +4,7 @@ import { PROTOCOL_VERSION, type JobRequest, type WorkerRequest, type WorkerRespo
 
 export const KILL_AFTER_MS = 1500;
 export const DEFAULT_IDLE_TIMEOUT_MS = 30_000;
-export const LOAD_FAILED = 'worker script failed to load; the app may have been redeployed';
+export const LOAD_FAILED = 'worker script failed to load or parse; the app may have been redeployed';
 const MAX_DELAY_MS = 2 ** 31 - 1;
 
 const delayOf = (ms = 0): number => (ms > 0 && ms <= MAX_DELAY_MS ? ms : 0);
