@@ -7,7 +7,8 @@
 #   --with-sparse  adds a 4.5 GB sparse MP4 (co64 + 64-bit mdat, ~87 KB of real disk on NTFS/ext4/APFS)
 #   --with-big     adds three 1080p files of 604 MB each (MP4 moov at the end, MP4 faststart, Matroska), ~1.8 GB of disk
 # The manifest always lists every fixture, including the optional ones (committed=no).
-# All data is synthetic (lavfi testsrc2/sine). Run from Git Bash on Windows, or bash on Linux/macOS.
+# Generated data is synthetic (lavfi testsrc2/sine); the browser recordings (category recorder) are copied from
+# fixtures/files, not generated. Run from Git Bash on Windows, or bash on Linux/macOS.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

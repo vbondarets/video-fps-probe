@@ -1126,7 +1126,16 @@ function accuracySummaryBlock(inp: Inputs, doc: Doc): string[] {
   const libraries = [...new Set(arms.map((e) => `${LIBRARY_LABEL[e.arm.library] ?? e.arm.library} ${e.arm.version ?? ''}`.trim()))];
   return [
     `**${n('mismatch')} mismatches against ffprobe ${inp.acc.ffprobeVersions.map((s) => s.replace(/^ffprobe version /, '').replace(/-.*$/, '')).join(', ')}** on the ${fixtures.length} committed fixtures: ${checks.length} field checks, ${n('exact')} exact, ${withinTolText(checks)}, ${n('known-deviation')} known deviation${n('known-deviation') === 1 ? '' : 's'} with a recorded reason, ${n('n/a')} not applicable. The same comparison runs ${libraries.join(' and ')} in ${arms.length} arms (their idiomatic recipes, mediabunny with a full scan, and this package's tuned adapters) and sorts each difference into wrong, definition differs, unverified, not provided or unsupported container; the [accuracy section](${doc.link('docs/benchmarks.md')}#accuracy-vs-ffprobe) has the outcomes and where the libraries win.`,
+    '',
+    corpusLine(fixtures, doc),
   ];
+}
+
+function corpusLine(committed: readonly AccFixture[], doc: Doc): string {
+  const recorded = committed.filter((f) => f.category === 'recorder').length;
+  const made = committed.length - recorded;
+  const recordings = recorded > 0 ? ` and ${recorded} are real MediaRecorder recordings from headless Chromium, committed as recorded` : '';
+  return `Of the ${committed.length} committed fixtures, ${made} are synthetic files made with ffmpeg${recordings}; per-engine tables, speed and method: [docs/benchmarks.md](${doc.link('docs/benchmarks.md')}).`;
 }
 
 const LARGE_FLAG: Record<string, string> = { long: '--with-long', big: '--with-big', sparse: '--with-sparse' };

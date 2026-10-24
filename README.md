@@ -109,9 +109,9 @@ Engines cost nothing until imported. Importing a descriptor grows the critical p
 
 **0 mismatches against ffprobe 8.1.1** on the 126 committed fixtures: 2002 field checks, 1902 exact, 13 within tolerance (9 of them a definition difference by design: the measured average of a Matroska file that stores no duration for its last frame, which avgFps gives the median interval and ffprobe its own estimate), 0 known deviations with a recorded reason, 87 not applicable. The same comparison runs mp4box.js 2.4.1 and mediabunny 1.62.1 in 5 arms (their idiomatic recipes, mediabunny with a full scan, and this package's tuned adapters) and sorts each difference into wrong, definition differs, unverified, not provided or unsupported container; the [accuracy section](docs/benchmarks.md#accuracy-vs-ffprobe) has the outcomes and where the libraries win.
 
-<!-- tables:accuracy-summary:end -->
+Of the 126 committed fixtures, 114 are synthetic files made with ffmpeg and 12 are real MediaRecorder recordings from headless Chromium, committed as recorded; per-engine tables, speed and method: [docs/benchmarks.md](docs/benchmarks.md).
 
-Synthetic fixtures made with ffmpeg; per-engine tables, speed and method: [docs/benchmarks.md](docs/benchmarks.md).
+<!-- tables:accuracy-summary:end -->
 
 ## Browser support
 
