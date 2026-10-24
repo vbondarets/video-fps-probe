@@ -16,7 +16,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 - A lazy stub whose probe client chunk failed to load rejected with the browser's import error as it was. It now rejects with `ProbeError('worker-failed')`, `reason: 'load'` and that error as `cause`, so every rejection of a probe or a stub is a `ProbeError`; a `ProbeError` of the factory is passed through. Code that read a stub rejection without `instanceof ProbeError` as a load failure should read `e.reason === 'load'`.
 - A failed `warm` replied without `reason`, so a prewarm whose engine or parser chunk did not load was tagged `crash`. It now carries `reason: 'load'`.
 - Demo: the build time and commit moved from the bundle into meta tags of `index.html`, so a deploy without code changes no longer renames every lazy chunk and breaks the first file in tabs opened before it. CI builds the demo twice with different stamps and fails when a file other than `index.html` differs (`npm run check:stable-chunks`).
-- Demo: a rate profile or compare panel chunk that failed to load took the whole page down. The panel now stays empty and the page runs its deploy check, also for a parser chunk that a worker started before the deploy cannot import.
+- Demo: a rate profile or compare panel chunk that failed to load took the whole page down. The panel now reads "Panel failed to load." with a Retry button that imports the chunk again, so a transient network error does not leave the panels empty for the rest of the session, and the page runs its deploy check, also for a parser chunk that a worker started before the deploy cannot import.
 - Demo: an error text above 100 characters was cut into a collapsed note, which hid the URL of a chunk that failed to load. The cut is at 200 characters now.
 
 ### Changed
@@ -25,7 +25,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 - When the last worker of a pool fails to load, the queued jobs reject at once, a transient network error included; before, each queued job started a new worker. The next call retries. A worker that throws at the top level, before its first reply, counts as a load failure too.
 - `compare` reports a load failure of an engine as `crashed`, as before; `error.reason` now tells it apart from a crash.
 - The probe client grows by 0.24 KB gzip and the own worker entry by 0.03 KB, so the first MP4 loads 23.53 KB instead of 23.26 KB in the default configuration; the critical path stays 0.67 KB.
-- Demo: the sample file loader is a lazy chunk. The first VFR MP4 budget moved from 101.5 KB to 102.0 KB for the reload banner; the first MP4 loads 99.94 KB, under the 100 KB promise.
+- Demo: the sample file loader is a lazy chunk. The first VFR MP4 budget moved from 101.5 KB to 102.0 KB for the reload banner; the first MP4 loads 99,995 bytes, 5 bytes under the 100 KB promise.
 
 ### Not yet
 

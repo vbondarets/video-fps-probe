@@ -8,6 +8,8 @@ const NOT_LOADED = 'Worker could not be loaded: ';
 const MODULE_LOAD_FAILURE = /dynamically imported module|Importing a module script failed|error loading dynamically imported module/i;
 const WORKER_LOAD_FAILURE = 'worker script failed to load or parse; the app may have been redeployed';
 const BANNER = 'A new version of this page was deployed. Reload to continue.';
+const PANEL_FAILED = 'Panel failed to load.';
+const VFR_MP4 = 'vfr_two_phase_5_200.mp4';
 
 async function dropFour(page: Page): Promise<void> {
   const mp4 = await readFile(fixtureFile(MP4));
@@ -83,15 +85,43 @@ test.describe('a tab opened before a redeploy', () => {
     await openApp(page);
     await addFixtures(page, [MP4]);
     const requests = await redeploy(page, '**/assets/{RateProfile,Compare}-*.js', true);
-    await addFixtures(page, ['vfr_two_phase_5_200.mp4']);
+    await addFixtures(page, [VFR_MP4]);
     await expect(page.getByRole('alert')).toContainText(BANNER);
     await expect(page.locator('article.card dl.grid')).toHaveCount(2);
     await expect(page.locator('article.card section.rp')).toHaveCount(0);
+    const card = page.locator('article.card', { hasText: VFR_MP4 });
+    await expect(card.getByText(PANEL_FAILED)).toBeVisible();
     await page.locator('article.card').first().locator('details.cmp > summary').click();
     await expect(page.locator('article.card').first().locator('details.cmp')).toHaveAttribute('open', '');
+    await expect(page.locator('article.card').first().locator('details.cmp')).toContainText(PANEL_FAILED);
     await expect(page.locator('article.card')).toHaveCount(2);
     expect(requests.some((url) => /RateProfile-/.test(url))).toBe(true);
     expect(requests.some((url) => /Compare-/.test(url))).toBe(true);
+  });
+
+  test('loads a rate profile or compare panel chunk again on Retry after a network failure', async ({ page }) => {
+    await openApp(page);
+    const requests: string[] = [];
+    let failing = true;
+    await page.context().route('**/assets/{RateProfile,Compare}-*.js', (route) => {
+      requests.push(route.request().url());
+      return failing ? route.abort('failed') : route.fallback();
+    });
+    await addFixtures(page, [VFR_MP4]);
+    const card = page.locator('article.card', { hasText: VFR_MP4 });
+    await expect(card.getByText(PANEL_FAILED)).toBeVisible();
+    await card.locator('details.cmp > summary').click();
+    const compare = card.locator('details.cmp');
+    await expect(compare).toContainText(PANEL_FAILED);
+    expect(requests.some((url) => /RateProfile-/.test(url))).toBe(true);
+    expect(requests.some((url) => /Compare-/.test(url))).toBe(true);
+    failing = false;
+    await compare.getByRole('button', { name: 'Retry' }).click();
+    await expect(compare.locator('.cmp-body')).toBeVisible();
+    await card.getByRole('button', { name: 'Retry' }).click();
+    await expect(card.locator('section.rp')).toHaveCount(1);
+    await expect(card.getByText(PANEL_FAILED)).toHaveCount(0);
+    await expect(page.getByRole('alert')).toHaveCount(0);
   });
 
   test('keeps the parser import error of a file when the page is unchanged', async ({ page }) => {

@@ -1,11 +1,38 @@
-import { lazy, memo, Suspense, useRef, useState, type FC, type ReactNode } from 'react';
+import { memo, useEffect, useRef, useState, type FC, type ReactNode } from 'react';
 import type { FileResult, Provenance, RateProfile, VideoTrackResult } from 'video-fps-probe';
 import { bytes, count, duration, fps, ms, primaryTrack, PROVENANCE, readPercent, share } from './format.ts';
 import { cancelRow, rescan, type Row } from './store.ts';
 
-const Nothing = () => null;
-const Compare = lazy<FC<{ row: Row }>>(() => import('./Compare.tsx').catch(() => ({ default: Nothing })));
-const RateProfileView = lazy<FC<{ p: RateProfile }>>(() => import('./RateProfile.tsx').catch(() => ({ default: Nothing })));
+function retryable<P extends object>(load: () => Promise<{ default: FC<P> }>, fallback?: ReactNode): FC<P> {
+  let Panel: FC<P> | undefined;
+  const Retryable = (props: P) => {
+    const [failed, setFailed] = useState<boolean>();
+    useEffect(() => {
+      if (Panel || failed) return;
+      load().then(
+        (m) => {
+          Panel = m.default;
+          setFailed(false);
+        },
+        () => setFailed(true),
+      );
+    }, [failed]);
+    if (Panel) return <Panel {...props} />;
+    if (!failed) return fallback;
+    return (
+      <p className="mut">
+        {'Panel failed to load. '}
+        <button type="button" onClick={() => setFailed(undefined)}>
+          Retry
+        </button>
+      </p>
+    );
+  };
+  return Retryable;
+}
+
+const Compare = retryable<{ row: Row }>(() => import('./Compare.tsx'), <p className="mut">Loading...</p>);
+const RateProfileView = retryable<{ p: RateProfile }>(() => import('./RateProfile.tsx'));
 
 const SCAN_HELP = 'header: container headers only. probe: headers plus sampled blocks. exact: every block walked.';
 
@@ -136,14 +163,6 @@ function TrackCells({ t, r }: { t: VideoTrackResult; r: FileResult }) {
   );
 }
 
-function Profile({ t }: { t: VideoTrackResult }) {
-  return t.rateProfile ? (
-    <Suspense fallback={null}>
-      <RateProfileView p={t.rateProfile} />
-    </Suspense>
-  ) : null;
-}
-
 function Notes({ kind, label, items }: { kind: 'warn' | 'err'; label: string; items: string[] }) {
   if (items.length === 0) return null;
   return (
@@ -216,7 +235,7 @@ export const ResultCard = memo(function ResultCard({ row }: { row: Row }) {
           )}
         </dl>
       )}
-      {t && <Profile t={t} />}
+      {t?.rateProfile && <RateProfileView p={t.rateProfile} />}
       {busy && <Progress row={row} />}
       {r && t && mkv && r.scan !== 'exact' && !busy && (
         <p className="act">
@@ -241,7 +260,7 @@ export const ResultCard = memo(function ResultCard({ row }: { row: Row }) {
               <dl className="grid">
                 <TrackCells t={x} r={r!} />
               </dl>
-              <Profile t={x} />
+              {x.rateProfile && <RateProfileView p={x.rateProfile} />}
             </section>
           ))}
         </details>
@@ -250,11 +269,7 @@ export const ResultCard = memo(function ResultCard({ row }: { row: Row }) {
       {r && (
         <details className="cmp" onToggle={(e) => setOpen(e.currentTarget.open)}>
           <summary>Compare engines</summary>
-          {open && (
-            <Suspense fallback={<p className="mut">Loading...</p>}>
-              <Compare row={row} />
-            </Suspense>
-          )}
+          {open && <Compare row={row} />}
         </details>
       )}
     </article>

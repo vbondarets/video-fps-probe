@@ -289,7 +289,7 @@ max > min x 1.075 ? ProfileJob : null  --> after the track result is built:
 ```
 
 - The job is a closure over the timeline's delta source: run-length stts runs for MP4 (no per-frame array on the fast path), the sorted PTS for Matroska. Nothing is computed for CFR tracks, and a failed import leaves `rateProfile` null instead of failing the file.
-- `RateProfile` is plain data (segments, anomalies, buckets, flags and a summary string), so it crosses the worker boundary and lands in the JSON export unchanged. The demo card shows the `uneven` badge from `rateProfile.uneven` and renders the panel through `React.lazy`.
+- `RateProfile` is plain data (segments, anomalies, buckets, flags and a summary string), so it crosses the worker boundary and lands in the JSON export unchanged. The demo card shows the `uneven` badge from `rateProfile.uneven` and renders the panel from a lazy chunk; a chunk that fails to load shows a Retry button that imports it again.
 - The algorithm, its thresholds and its known gaps are in [implementation-notes.md section 11](implementation-notes.md#11-rate-profile).
 
 ## Demo JSON export
