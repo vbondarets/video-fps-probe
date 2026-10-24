@@ -699,7 +699,7 @@ node scripts/readme-tables.ts    # refresh the generated blocks of README.md and
 
 - `npm run compare -- --with-large` also runs every local file in `fixtures/large` that is present (made by `npm run fixtures:generate -- --with-long`, `--with-big` or `--with-sparse`).
 - `npm run size -- --check` exits 1 when a budget is exceeded; CI runs it.
-- `npm run bench` needs a built `demo/dist/` and Chrome (or `CHROME_PATH`); Edge is added when installed.
+- `npm run bench` needs a built `demo/dist/` and Chrome (or `CHROME_PATH`); Edge is added when installed. `BENCH_BROWSER_FLAGS` adds flags to every browser it starts, for example `--no-sandbox` for Playwright's `chrome-headless-shell`.
 - `npm run test:e2e` needs the Playwright browsers once: `npx playwright install chromium firefox webkit`. See [Testing](#testing).
 
 Fixtures need ffmpeg and ffprobe **8.1.1** on PATH (Git Bash on Windows, bash on Linux and macOS):

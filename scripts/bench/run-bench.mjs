@@ -53,7 +53,8 @@ headless Chrome with a throwaway profile in .bench/, drives the file input over 
   --help
 
 Chrome comes from CHROME_PATH or the standard install locations; Edge (EDGE_PATH or the
-standard locations) is used for the warm own-engine run when installed.
+standard locations) is used for the warm own-engine run when installed. BENCH_BROWSER_FLAGS adds
+flags to every browser, for example --no-sandbox for Playwright's chrome-headless-shell.
 Build first: npm run build.
 `;
 

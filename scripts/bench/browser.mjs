@@ -211,6 +211,7 @@ export async function launchBrowser({ exe, profileDir, args = [], width = 1280, 
     '--mute-audio',
     '--autoplay-policy=no-user-gesture-required',
     ...args,
+    ...(process.env.BENCH_BROWSER_FLAGS ?? '').split(/s+/).filter(Boolean),
     'about:blank',
   ];
   const child = spawn(exe, flags, { stdio: 'ignore', windowsHide: true, detached: process.platform !== 'win32' });
