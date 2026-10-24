@@ -66,7 +66,7 @@ tests/                             vitest suites, e2e, consumer fixtures and dis
 | `counting.ts` | `CountingBlob`: wraps a blob to count reads and unique bytes for library engines; timing helpers |
 | `common.ts` | Helpers shared by the engines (`applyStats`, `approxRational`, `ffprobeRotation`, `codecNameFromFourcc`, `newResult`) |
 | `mp4box.ts` | `analyzeWithMp4box`: mp4box 2.4.1 fed box by box; durations from the parsed stts, never from the last sample |
-| `mediabunny.ts` | `analyzeWithMediabunny`: mediabunny 1.62.0 over a `CustomSource`; native `averagePacketRate` kept as the average |
+| `mediabunny.ts` | `analyzeWithMediabunny`: mediabunny 1.62.1 over a `CustomSource`; native `averagePacketRate` kept as the average |
 | `rvfc.ts` | `estimateWithRvfc`: `requestVideoFrameCallback` playback estimate, main thread only; `hosted(host)` is the engine module the `rvfc()` descriptor loads |
 
 Each engine module exports `run` and `containers` (the `EngineModule` contract). Engines import `src/core` pieces (types, reader, rational, result, sniff, stats, options) but never `analyze.ts` or `index.ts`, so they do not pull in the own parsers. `mp4box.ts` and `mediabunny.ts` are the only modules that import a peer, and only `import()` reaches them.

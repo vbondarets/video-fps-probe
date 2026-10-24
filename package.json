@@ -110,8 +110,8 @@
     "./package.json": "./package.json"
   },
   "peerDependencies": {
-    "mp4box": "^2.4.1",
-    "mediabunny": "^1.62.0"
+    "mediabunny": "^1.62.0",
+    "mp4box": "^2.4.1"
   },
   "peerDependenciesMeta": {
     "mp4box": {
@@ -164,7 +164,7 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.2",
-    "mediabunny": "1.62.0",
+    "mediabunny": "1.62.1",
     "mp4box": "2.4.1",
     "oxlint": "1.88.0",
     "publint": "0.3.25",

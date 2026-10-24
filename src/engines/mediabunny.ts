@@ -11,7 +11,7 @@ import { applyStats, approxRational, codecNameFromFourcc, errorMessage, isAbort,
 import { CountingBlob, elapsed, now } from './counting.ts';
 import type { MediabunnyNative, MediabunnyResult, MediabunnyTrackNative } from './types.ts';
 
-export const MEDIABUNNY_VERSION = '1.62.0';
+export const MEDIABUNNY_VERSION = '1.62.1';
 
 const CODEC_NAMES: Readonly<Record<string, string>> = {
   avc: 'h264',

@@ -742,7 +742,7 @@ function approachesBlock(inp: Inputs): string[] {
   const rvMs = rvEst.map((r) => r.ms);
   const rvVfrText = rvVfr.map((r) => `${r.errorPct !== null && r.errorPct > 0 ? '+' : ''}${(r.errorPct ?? 0).toFixed(1)}%`).join(' and ');
 
-  const header = ['', 'Own parsers (this repo)', 'mp4box.js 2.4.1', 'mediabunny 1.62.0', `requestVideoFrameCallback (${browser})`];
+  const header = ['', 'Own parsers (this repo)', `mp4box.js ${inp.matrix.versions['mp4box'] ?? ''}`, `mediabunny ${inp.matrix.versions['mediabunny'] ?? ''}`, `requestVideoFrameCallback (${browser})`];
   const rows = [
     row(['Containers', 'MP4, MOV, WebM, Matroska', 'MP4, MOV', 'MP4, MOV, WebM, Matroska', 'whatever the browser can play']),
     row(['Checks vs ffprobe, all fixtures', ...all.map(accuracyCell), 'no ffprobe-equivalent fields']),

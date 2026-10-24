@@ -1,6 +1,6 @@
 # Package size matrix
 
-What the package adds to a Vite 8.3.5 app in each configuration, measured by `scripts/size-matrix.mjs` on production builds of the consumer fixtures in `tests/consumers/fixtures/`. Each fixture installs the packed tarball (video-fps-probe-0.1.0.tgz) with mp4box 2.4.1 and mediabunny 1.62.0 into a directory outside the repository, so nothing resolves to the source tree. KB means 1000 bytes; every size is gzip level 9 per file, and totals are sums of files.
+What the package adds to a Vite 8.3.5 app in each configuration, measured by `scripts/size-matrix.mjs` on production builds of the consumer fixtures in `tests/consumers/fixtures/`. Each fixture installs the packed tarball (video-fps-probe-0.1.0.tgz) with mp4box 2.4.1 and mediabunny 1.62.1 into a directory outside the repository, so nothing resolves to the source tree. KB means 1000 bytes; every size is gzip level 9 per file, and totals are sums of files.
 
 The critical path is the package code inside the host entry chunk, cut out of the entry chunk by its hidden sourcemap: what a host pays before any file is picked. Vite adds its preload helper to the entry chunk of any app with a dynamic import; it is listed and budgeted separately because a host that already code-splits has it anyway. Everything else loads lazily, on the first file or the first engine run.
 
@@ -12,9 +12,9 @@ The critical path is the package code inside the host entry chunk, cut out of th
 | zero-config | video-fps-probe/lazy | none, so Vite's default format: 'iife' | **0.67 KB** | 1.40 KB | 35.11 KB | 35.11 KB | - | 1 (own.worker) | ok |
 | custom | video-fps-probe/client/lazy + video-fps-probe/worker-runtime (host worker serving own) | format: 'es' | **0.67 KB** | 1.46 KB | 23.48 KB | 36.46 KB | - | 1 (fps.worker) | ok |
 | mp4box | video-fps-probe/lazy + video-fps-probe/mp4box | format: 'es' | **0.89 KB** | 1.74 KB | 23.61 KB | 36.60 KB | mp4box 44.77 KB | 2 (mp4box.worker, own.worker) | ok |
-| mediabunny | video-fps-probe/lazy + video-fps-probe/mediabunny | format: 'es' | **0.90 KB** | 1.75 KB | 23.61 KB | 36.60 KB | mediabunny 53.87 KB | 2 (mediabunny.worker, own.worker) | ok |
+| mediabunny | video-fps-probe/lazy + video-fps-probe/mediabunny | format: 'es' | **0.89 KB** | 1.74 KB | 23.62 KB | 36.60 KB | mediabunny 53.97 KB | 2 (mediabunny.worker, own.worker) | ok |
 | rvfc | video-fps-probe/lazy + video-fps-probe/rvfc | format: 'es' | **0.77 KB** | 1.58 KB | 23.60 KB | 36.58 KB | rVFC 2.19 KB | 1 (own.worker) | ok |
-| all | video-fps-probe/lazy + video-fps-probe/mp4box + video-fps-probe/mediabunny + video-fps-probe/rvfc | format: 'es' | **1.01 KB** | 1.92 KB | 23.63 KB | 36.61 KB | mp4box 44.77 KB, mediabunny 53.87 KB, rVFC 2.19 KB | 3 (mediabunny.worker, mp4box.worker, own.worker) | ok |
+| all | video-fps-probe/lazy + video-fps-probe/mp4box + video-fps-probe/mediabunny + video-fps-probe/rvfc | format: 'es' | **1.01 KB** | 1.92 KB | 23.63 KB | 36.61 KB | mp4box 44.77 KB, mediabunny 53.97 KB, rVFC 2.19 KB | 3 (mediabunny.worker, mp4box.worker, own.worker) | ok |
 | standalone-url | video-fps-probe/client/lazy + video-fps-probe/standalone/own.worker.js?url (classic worker from the standalone file) | none needed: the file is copied as an asset | **0.70 KB** | 1.45 KB | 34.94 KB | 34.94 KB | - | 1 (own.worker) | ok |
 | iife-nosplit | video-fps-probe/lazy | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.67 KB** | 1.40 KB | 35.11 KB | 35.11 KB | - | 1 (own.worker) | ok |
 | standalone worker file | video-fps-probe/standalone/own.worker.js | - | - | - | 32.14 KB | 32.14 KB | - | 1 file, no imports | ok |
@@ -54,12 +54,12 @@ The host's worker option decides the first MP4: 23.58 KB with `worker: { format:
 | mp4box | mp4box engine chunk | 49.50 KB | 44.77 KB | 4.72 KB | ok |
 | mp4box | shared engine chunk | 2.00 KB | - | - | not built |
 | mp4box | emitted lazy total (every file outside the entry chunk) | 216.00 KB | 196.58 KB | 19.42 KB | ok |
-| mediabunny | critical path (package code in the entry chunk) | 1.00 KB | 0.90 KB | 0.10 KB | ok |
-| mediabunny | entry chunk with the preload helper | 2.00 KB | 1.75 KB | 0.25 KB | ok |
-| mediabunny | mediabunny.worker entry | 5.00 KB | 4.20 KB | 0.80 KB | ok |
-| mediabunny | mediabunny engine chunk | 59.50 KB | 53.87 KB | 5.63 KB | ok |
+| mediabunny | critical path (package code in the entry chunk) | 1.00 KB | 0.89 KB | 0.11 KB | ok |
+| mediabunny | entry chunk with the preload helper | 2.00 KB | 1.74 KB | 0.26 KB | ok |
+| mediabunny | mediabunny.worker entry | 5.00 KB | 4.21 KB | 0.79 KB | ok |
+| mediabunny | mediabunny engine chunk | 59.50 KB | 53.97 KB | 5.53 KB | ok |
 | mediabunny | shared engine chunk | 2.00 KB | - | - | not built |
-| mediabunny | emitted lazy total (every file outside the entry chunk) | 234.50 KB | 213.54 KB | 20.96 KB | ok |
+| mediabunny | emitted lazy total (every file outside the entry chunk) | 234.50 KB | 213.75 KB | 20.75 KB | ok |
 | rvfc | critical path (package code in the entry chunk) | 1.00 KB | 0.77 KB | 0.23 KB | ok |
 | rvfc | entry chunk with the preload helper | 2.00 KB | 1.58 KB | 0.42 KB | ok |
 | rvfc | rVFC engine (main thread) | 2.50 KB | 2.19 KB | 0.31 KB | ok |
@@ -69,9 +69,9 @@ The host's worker option decides the first MP4: 23.58 KB with `worker: { format:
 | all | probe client (lazy) | 3.00 KB | 2.95 KB | 0.05 KB | ok |
 | all | own.worker entry | 4.50 KB | 4.17 KB | 0.33 KB | ok |
 | all | mp4box.worker entry | 5.00 KB | 4.31 KB | 0.69 KB | ok |
-| all | mediabunny.worker entry | 5.00 KB | 4.20 KB | 0.80 KB | ok |
+| all | mediabunny.worker entry | 5.00 KB | 4.21 KB | 0.79 KB | ok |
 | all | mp4box engine chunk | 49.50 KB | 44.77 KB | 4.72 KB | ok |
-| all | mediabunny engine chunk | 59.50 KB | 53.87 KB | 5.63 KB | ok |
+| all | mediabunny engine chunk | 59.50 KB | 53.97 KB | 5.53 KB | ok |
 | all | rVFC engine (main thread) | 2.50 KB | 2.19 KB | 0.31 KB | ok |
 | all | ISO BMFF parser (in the own worker) | 13.50 KB | 12.21 KB | 1.29 KB | ok |
 | all | Matroska parser (in the own worker) | 12.50 KB | 11.14 KB | 1.36 KB | ok |
@@ -80,7 +80,7 @@ The host's worker option decides the first MP4: 23.58 KB with `worker: { format:
 | all | all own paths, lazy total | 40.00 KB | 36.61 KB | 3.39 KB | ok |
 | all | shared engine chunk | 2.00 KB | - | - | not built |
 | all | shared engine chunk (main thread, inline mode) | 2.00 KB | 1.51 KB | 0.49 KB | ok |
-| all | emitted lazy total (every file outside the entry chunk) | 372.50 KB | 338.94 KB | 33.56 KB | ok |
+| all | emitted lazy total (every file outside the entry chunk) | 372.50 KB | 339.13 KB | 33.37 KB | ok |
 | standalone-url | critical path (package code in the entry chunk) | 1.00 KB | 0.70 KB | 0.30 KB | ok |
 | standalone-url | entry chunk with the preload helper | 2.00 KB | 1.45 KB | 0.55 KB | ok |
 | standalone-url | probe client (lazy) | 3.00 KB | 2.80 KB | 0.20 KB | ok |
@@ -255,7 +255,7 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | mediabunny | assets/abort.js | page | shared | 0.11 KB |
 | mediabunny | assets/compare.js | page | shared | 1.32 KB |
 | mediabunny | assets/fallback.js | page | shared | 0.73 KB |
-| mediabunny | assets/index.js | page | shared | 1.75 KB |
+| mediabunny | assets/index.js | page | shared | 1.74 KB |
 | mediabunny | assets/inline.js | page | shared | 0.63 KB |
 | mediabunny | assets/isobmff.js | own.worker | isobmff | 12.21 KB |
 | mediabunny | assets/isobmff.js | page | isobmff | 12.23 KB |
@@ -263,20 +263,20 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | mediabunny | assets/matroska.js | mediabunny.worker | matroska | 11.14 KB |
 | mediabunny | assets/matroska.js | page | matroska | 11.19 KB |
 | mediabunny | assets/matroska.js | own.worker | matroska | 11.14 KB |
-| mediabunny | assets/mediabunny.js | mediabunny.worker | mediabunny | 53.87 KB |
-| mediabunny | assets/mediabunny.js | page | mediabunny | 52.94 KB |
-| mediabunny | assets/mediabunny.worker.js | mediabunny.worker | shared | 4.20 KB |
+| mediabunny | assets/mediabunny.js | mediabunny.worker | mediabunny | 53.97 KB |
+| mediabunny | assets/mediabunny.js | page | mediabunny | 53.04 KB |
+| mediabunny | assets/mediabunny.worker.js | mediabunny.worker | shared | 4.21 KB |
 | mediabunny | assets/options.js | page | shared | 0.37 KB |
 | mediabunny | assets/own.worker.js | own.worker | shared | 4.17 KB |
-| mediabunny | assets/probe.js | page | shared | 2.93 KB |
+| mediabunny | assets/probe.js | page | shared | 2.94 KB |
 | mediabunny | assets/result.js | page | shared | 0.38 KB |
 | mediabunny | assets/runtime.js | page | shared | 2.29 KB |
+| mediabunny | assets/segments.js | page | segments | 1.84 KB |
 | mediabunny | assets/segments.js | own.worker | segments | 1.84 KB |
 | mediabunny | assets/segments.js | mediabunny.worker | segments | 1.84 KB |
-| mediabunny | assets/segments.js | page | segments | 1.84 KB |
 | mediabunny | assets/sniff.js | page | shared | 0.99 KB |
-| mediabunny | assets/stats.js | page | stats | 4.34 KB |
 | mediabunny | assets/stats.js | mediabunny.worker | stats | 4.31 KB |
+| mediabunny | assets/stats.js | page | stats | 4.34 KB |
 | mediabunny | assets/stats.js | own.worker | stats | 4.30 KB |
 | rvfc | assets/abort.js | page | shared | 0.11 KB |
 | rvfc | assets/compare.js | page | shared | 1.32 KB |
@@ -298,24 +298,24 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | rvfc | assets/stats.js | page | stats | 4.33 KB |
 | rvfc | assets/stats.js | own.worker | stats | 4.30 KB |
 | all | assets/abort.js | page | shared | 0.11 KB |
-| all | assets/compare.js | page | shared | 1.33 KB |
+| all | assets/compare.js | page | shared | 1.32 KB |
 | all | assets/counting.js | page | engineShared | 1.51 KB |
 | all | assets/fallback.js | page | shared | 0.73 KB |
 | all | assets/index.js | page | shared | 1.92 KB |
-| all | assets/inline.js | page | shared | 0.63 KB |
+| all | assets/inline.js | page | shared | 0.64 KB |
 | all | assets/isobmff.js | own.worker | isobmff | 12.21 KB |
 | all | assets/isobmff.js | mp4box.worker | isobmff | 12.26 KB |
 | all | assets/isobmff.js | page | isobmff | 12.22 KB |
 | all | assets/isobmff.js | mediabunny.worker | isobmff | 12.21 KB |
-| all | assets/matroska.js | page | matroska | 11.19 KB |
 | all | assets/matroska.js | mediabunny.worker | matroska | 11.14 KB |
 | all | assets/matroska.js | own.worker | matroska | 11.14 KB |
+| all | assets/matroska.js | page | matroska | 11.19 KB |
 | all | assets/matroska.js | mp4box.worker | matroska | 11.13 KB |
-| all | assets/mediabunny.js | mediabunny.worker | mediabunny | 53.87 KB |
-| all | assets/mediabunny.js | page | mediabunny | 51.97 KB |
-| all | assets/mediabunny.worker.js | mediabunny.worker | shared | 4.20 KB |
-| all | assets/mp4box.js | page | mp4box | 43.75 KB |
+| all | assets/mediabunny.js | mediabunny.worker | mediabunny | 53.97 KB |
+| all | assets/mediabunny.js | page | mediabunny | 52.06 KB |
+| all | assets/mediabunny.worker.js | mediabunny.worker | shared | 4.21 KB |
 | all | assets/mp4box.js | mp4box.worker | mp4box | 44.77 KB |
+| all | assets/mp4box.js | page | mp4box | 43.74 KB |
 | all | assets/mp4box.worker.js | mp4box.worker | shared | 4.31 KB |
 | all | assets/options.js | page | shared | 0.37 KB |
 | all | assets/own.worker.js | own.worker | shared | 4.17 KB |
@@ -324,15 +324,15 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | all | assets/result.js | page | shared | 0.38 KB |
 | all | assets/runtime.js | page | shared | 1.11 KB |
 | all | assets/rvfc.js | page | rvfc | 2.19 KB |
-| all | assets/segments.js | page | segments | 1.84 KB |
 | all | assets/segments.js | own.worker | segments | 1.84 KB |
 | all | assets/segments.js | mp4box.worker | segments | 1.84 KB |
+| all | assets/segments.js | page | segments | 1.84 KB |
 | all | assets/segments.js | mediabunny.worker | segments | 1.84 KB |
 | all | assets/sniff.js | page | shared | 0.99 KB |
 | all | assets/stats.js | mediabunny.worker | stats | 4.31 KB |
 | all | assets/stats.js | own.worker | stats | 4.30 KB |
-| all | assets/stats.js | mp4box.worker | stats | 4.31 KB |
 | all | assets/stats.js | page | stats | 4.34 KB |
+| all | assets/stats.js | mp4box.worker | stats | 4.31 KB |
 | standalone-url | assets/compare.js | page | shared | 1.33 KB |
 | standalone-url | assets/fallback.js | page | shared | 0.73 KB |
 | standalone-url | assets/index.js | page | shared | 1.45 KB |

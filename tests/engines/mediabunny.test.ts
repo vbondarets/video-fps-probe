@@ -50,7 +50,7 @@ describe('analyzeWithMediabunny on representative fixtures', () => {
     expect(result.error).toBeNull();
     expect(result.videoTracks.length).toBeGreaterThan(0);
     expectExact(compareToRef(result, loadRef(name)!), fields);
-    expect(result.mediabunny?.version).toBe('1.62.0');
+    expect(result.mediabunny?.version).toBe('1.62.1');
     expect(result.mediabunny?.tracks[0].packetCount).toBe(result.videoTracks[0].frames);
     expect(result.videoTracks[0].warnings.some((w) => w.startsWith('mediabunny native:'))).toBe(true);
   });
