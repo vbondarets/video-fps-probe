@@ -79,7 +79,7 @@ describe('the types and values docs/api.md names', () => {
 
   beforeAll(() => {
     dir = mkdtempSync(join(tmpdir(), 'api-types-'));
-    const [{ filename }] = JSON.parse(execSync(`npm pack --ignore-scripts --json --pack-destination "${dir}"`, { cwd: REPO_ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })) as { filename: string }[];
+    const [{ filename }] = JSON.parse(execSync(`npm pack --ignore-scripts --json --pack-destination "${dir}"`, { cwd: REPO_ROOT, env: { ...process.env, npm_config_update_notifier: 'false' }, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })) as { filename: string }[];
     execFileSync('tar', ['-xzf', filename!], { cwd: dir, stdio: 'ignore' });
     mkdirSync(join(dir, 'node_modules'));
     renameSync(join(dir, 'package'), join(dir, 'node_modules', PACKAGE));

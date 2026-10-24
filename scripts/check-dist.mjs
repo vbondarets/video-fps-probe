@@ -120,7 +120,7 @@ function closure(edges, start, { dynamic }) {
 }
 
 function packListing() {
-  const out = execSync('npm pack --dry-run --json --ignore-scripts', { cwd: REPO_ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  const out = execSync('npm pack --dry-run --json --ignore-scripts', { cwd: REPO_ROOT, env: { ...process.env, npm_config_update_notifier: 'false' }, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   const [pack] = JSON.parse(out);
   return pack;
 }

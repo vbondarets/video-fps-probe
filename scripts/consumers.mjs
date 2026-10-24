@@ -9,6 +9,7 @@ import { parseArgs } from 'node:util';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SOURCES = join(REPO_ROOT, 'tests', 'consumers', 'fixtures');
 const INSTALLED = ['vite', 'mp4box', 'mediabunny', 'react', 'react-dom'];
+const NPM_ENV = { ...process.env, npm_config_update_notifier: 'false' };
 
 const ES = "format: 'es'";
 
@@ -75,9 +76,9 @@ export function setup(dir) {
   const manifest = JSON.parse(readFileSync(join(REPO_ROOT, 'package.json'), 'utf8'));
   mkdirSync(dir, { recursive: true });
   for (const f of readdirSync(dir)) if (f.endsWith('.tgz')) rmSync(join(dir, f));
-  execSync('npm run build:lib', { cwd: REPO_ROOT, stdio: 'inherit' });
+  execSync('npm run build:lib', { cwd: REPO_ROOT, env: NPM_ENV, stdio: 'inherit' });
   execFileSync(process.execPath, [join(REPO_ROOT, 'scripts', 'check-dist.mjs')], { cwd: REPO_ROOT, stdio: 'inherit' });
-  const out = execSync(`npm pack --ignore-scripts --json --pack-destination "${dir}"`, { cwd: REPO_ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
+  const out = execSync(`npm pack --ignore-scripts --json --pack-destination "${dir}"`, { cwd: REPO_ROOT, env: NPM_ENV, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
   const [{ filename }] = JSON.parse(out);
   const dependencies = { 'video-fps-probe': `file:./${filename}` };
   for (const name of INSTALLED) {
@@ -92,7 +93,7 @@ export function setup(dir) {
   try {
     if (userconfig) writeFileSync(join(userconfig, '.npmrc'), '');
     const mode = userconfig ? `--offline --userconfig "${join(userconfig, '.npmrc')}"` : '--prefer-offline';
-    execSync(`npm install ${mode} --no-audit --no-fund --no-package-lock`, { cwd: dir, stdio: 'inherit' });
+    execSync(`npm install ${mode} --no-audit --no-fund --no-package-lock`, { cwd: dir, env: NPM_ENV, stdio: 'inherit' });
   } finally {
     if (userconfig) rmSync(userconfig, { recursive: true, force: true });
   }
@@ -171,7 +172,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   else {
     console.error('Usage: node scripts/consumers.mjs setup|build|serve [--dir <consumers dir>] [--only <fixture,...>] [--port <n>]');
     console.error('CONSUMERS_OFFLINE=1 isolates only the npm install step of setup: it installs from the npm cache only (npm install --offline) with an empty npmrc as --userconfig.');
-    console.error("Not isolated: npm run build:lib, the npm pack --dry-run of check-dist and npm pack run with your npm config, any token included. They fetch no packages, but npm's update check can contact the registry unless update-notifier is false.");
+    console.error("Not isolated: npm run build:lib, the npm pack --dry-run of check-dist and npm pack run with your npm config, any token included. They fetch no packages and the script runs them with npm_config_update_notifier=false, so npm's update check does not contact the registry. An outer npm run consumers:setup is not covered: set update-notifier=false for it.");
     process.exitCode = 2;
   }
 }
