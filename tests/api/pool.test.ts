@@ -131,38 +131,88 @@ describe('WorkerPool', () => {
     expect(await third).toMatchObject({ type: 'result', result: { name: 'c' } });
   });
 
-  it('rejects only the job of a worker that fails to load while another worker of the pool has answered, and the queue runs on', async () => {
+  it('runs the job of a worker that fails to load on a live worker of the pool, spawns no other worker for the queue and spawns again on the next call', async () => {
     FakeWorker.reset('manual');
     const pool = new WorkerPool({ create: FakeWorker.create, size: 2, idleTimeoutMs: 0 });
     const a = pool.run(analyzeRequest('a'));
     const [w1] = FakeWorker.instances;
     w1.answer(1, { type: 'progress', progress: { phase: 'moov', done: 0, total: 1 } });
-    const b = pool.run(analyzeRequest('b'));
+    const b = pool.run(analyzeRequest('b'), { timeoutMs: 1000 });
     const c = pool.run(analyzeRequest('c'));
     const w2 = FakeWorker.instances[1];
+    expect(w2.pending.map((m) => m.id)).toEqual([2]);
     w2.failToLoad();
-    await expect(b).rejects.toMatchObject({ code: 'worker-failed', reason: 'load', message: LOAD_FAILED });
-    expect(pool.workers).toBe(2);
+    expect(pool.workers).toBe(1);
+    expect(FakeWorker.instances).toHaveLength(2);
+    w1.answer(1);
+    expect((await a).type).toBe('result');
+    expect(w1.pending.map((m) => m.id)).toEqual([1, 2]);
+    expect(FakeWorker.instances).toHaveLength(2);
+    const d = pool.run(analyzeRequest('d'));
+    expect(FakeWorker.instances).toHaveLength(3);
     const w3 = FakeWorker.instances[2];
     expect(w3.pending.map((m) => m.id)).toEqual([3]);
+    w1.answer(2);
     w3.answer(3);
-    w1.answer(1);
-    expect((await Promise.all([a, c])).map((r) => r.type)).toEqual(['result', 'result']);
+    expect(await b).toMatchObject({ type: 'result', result: { name: 'b' } });
+    expect(await c).toMatchObject({ type: 'result', result: { name: 'c' } });
+    expect(w1.pending.map((m) => m.id)).toEqual([1, 2, 4]);
+    w1.answer(4);
+    expect(await d).toMatchObject({ type: 'result', result: { name: 'd' } });
   });
 
-  it('rejects the queue once when the first of several starting workers fails to load and spawns no worker for it', async () => {
+  it('waits for a sibling that is still starting when one worker fails to load, and rejects the queue once only when the last one fails too', async () => {
     FakeWorker.reset('manual');
     const pool = new WorkerPool({ create: FakeWorker.create, size: 2, idleTimeoutMs: 0 });
     const runs = ['a', 'b', 'c', 'd'].map((n) => pool.run(analyzeRequest(n)));
+    const settled = runs.map(() => false);
+    runs.forEach((run, i) => run.then(() => (settled[i] = true), () => (settled[i] = true)));
     const [w1, w2] = FakeWorker.instances;
     w1.failToLoad();
-    for (const run of [runs[0], runs[2], runs[3]]) await expect(run).rejects.toMatchObject({ code: 'worker-failed', reason: 'load' });
+    await flush();
+    expect(settled).toEqual([false, false, false, false]);
     expect(FakeWorker.instances).toHaveLength(2);
+    expect(pool.workers).toBe(1);
     expect(w2.pending.map((m) => m.id)).toEqual([2]);
     w2.failToLoad();
-    await expect(runs[1]).rejects.toMatchObject({ code: 'worker-failed', reason: 'load' });
+    for (const run of runs) await expect(run).rejects.toMatchObject({ code: 'worker-failed', reason: 'load', message: LOAD_FAILED });
     expect(FakeWorker.instances).toHaveLength(2);
     expect(pool.workers).toBe(0);
+  });
+
+  it('restarts the timeout of a job moved back to the queue when its worker failed to load, once a live worker takes it', async () => {
+    vi.useFakeTimers();
+    FakeWorker.reset('manual');
+    const pool = new WorkerPool({ create: FakeWorker.create, size: 2, idleTimeoutMs: 0 });
+    const a = pool.run(analyzeRequest('a'));
+    const [w1] = FakeWorker.instances;
+    w1.answer(1, { type: 'progress', progress: { phase: 'moov', done: 0, total: 1 } });
+    const b = pool.run(analyzeRequest('b'), { timeoutMs: 1000 });
+    const outcome = b.then(() => 'resolved', (e: ProbeError) => e.code);
+    FakeWorker.instances[1].failToLoad();
+    await vi.advanceTimersByTimeAsync(1500);
+    w1.answer(1);
+    await a;
+    expect(w1.pending.map((m) => m.id)).toEqual([1, 2]);
+    await vi.advanceTimersByTimeAsync(999);
+    expect(w1.terminated).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(await outcome).toBe('timeout');
+    expect(w1.terminated).toBe(true);
+  });
+
+  it('runs the whole queue on a sibling that loads after another worker failed to load', async () => {
+    FakeWorker.reset('manual');
+    const pool = new WorkerPool({ create: FakeWorker.create, size: 2, idleTimeoutMs: 0 });
+    const runs = ['a', 'b', 'c'].map((n) => pool.run(analyzeRequest(n)));
+    const [w1, w2] = FakeWorker.instances;
+    w1.failToLoad();
+    w2.answer(2);
+    w2.answer(1);
+    w2.answer(3);
+    expect((await Promise.all(runs)).map((r) => (r.type === 'result' ? r.result.name : r.type))).toEqual(['a', 'b', 'c']);
+    expect(w2.pending.map((m) => m.id)).toEqual([2, 1, 3]);
+    expect(FakeWorker.instances).toHaveLength(2);
   });
 
   it('settles an aborted job only once when its new worker then fails to load', async () => {

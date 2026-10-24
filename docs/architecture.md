@@ -141,7 +141,7 @@ run(request, { signal, timeoutMs, onProgress, engine })
 - `size` is the `workers` option (default 1). Workers spawn on demand and terminate after `idleTimeoutMs` idle (default 30 s; 0 keeps them).
 - Timeout: reject `timeout` and terminate the worker at once; the next job spawns a new one.
 - Abort: a queued job is removed and rejected at once; a running job is rejected at once and its worker gets `cancel`, and the worker is terminated if it has not replied within `KILL_AFTER_MS` (1.5 s).
-- A worker `error` event rejects its job with `worker-failed` and drops the worker. Before the worker's first reply and without a message it is a load failure (`reason: 'load'`, the script did not load): while no worker of the pool has replied, the queued jobs are rejected with it too. Otherwise it is a crash (`reason: 'crash'`). A throwing `create()` rejects the job it was spawned for, with `reason: 'load'`.
+- A worker `error` event rejects its job with `worker-failed` and drops the worker. Before the worker's first reply and without a message it is a load failure (`reason: 'load'`, the script did not load): while another worker of the pool is alive, the job goes back to the front of the queue and the pool spawns no more workers until the next `run`; with no worker left, the job and every queued job are rejected with it. Otherwise it is a crash (`reason: 'crash'`). A throwing `create()` rejects the job it was spawned for, with `reason: 'load'`.
 - `dispose()` terminates idle workers; `destroy()` rejects every queued and running job with `aborted` and terminates every worker.
 
 ## Protocol v1

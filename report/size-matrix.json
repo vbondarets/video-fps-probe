@@ -20,20 +20,20 @@
         "own"
       ],
       "metrics": {
-        "entry": 1395,
-        "trigger": 666,
-        "client": 2840,
+        "entry": 1394,
+        "trigger": 665,
+        "client": 2874,
         "isobmff": 12205,
         "matroska": 11137,
         "segments": 1844,
-        "firstMp4": 23455,
-        "allOwn": 36436,
+        "firstMp4": 23489,
+        "allOwn": 36470,
         "mp4box": null,
         "mediabunny": null,
         "engineShared": null,
         "rvfc": null,
         "pageEngineShared": null,
-        "lazyTotal": 72570
+        "lazyTotal": 72592
       },
       "workers": [
         {
@@ -45,32 +45,32 @@
       ],
       "files": [
         {
-          "file": "assets/compare-bK7ktCBe.js",
-          "gzip": 1326,
+          "file": "assets/compare-CIakZFg2.js",
+          "gzip": 1324,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/fallback-Bdkhzhj_.js",
-          "gzip": 734,
+          "file": "assets/fallback-BJ1gDDnk.js",
+          "gzip": 731,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/index-CbRyxX62.js",
-          "gzip": 1395,
+          "file": "assets/index-Cmicc1qE.js",
+          "gzip": 1394,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-UxusxbIu.js",
-          "gzip": 635,
+          "file": "assets/inline-n0PNdx4G.js",
+          "gzip": 631,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/isobmff-D5lh38zE.js",
-          "gzip": 12233,
+          "file": "assets/isobmff-B_v5JSEC.js",
+          "gzip": 12232,
           "worker": null,
           "class": "isobmff"
         },
@@ -87,8 +87,8 @@
           "class": "matroska"
         },
         {
-          "file": "assets/matroska-onQ9Jul8.js",
-          "gzip": 11190,
+          "file": "assets/matroska-cVXRjfMo.js",
+          "gzip": 11189,
           "worker": null,
           "class": "matroska"
         },
@@ -99,8 +99,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/probe-BltB146x.js",
-          "gzip": 2840,
+          "file": "assets/probe-KPJvHgpD.js",
+          "gzip": 2874,
           "worker": null,
           "class": "shared"
         },
@@ -111,21 +111,21 @@
           "class": "shared"
         },
         {
-          "file": "assets/runtime-Ce3woPd_.js",
-          "gzip": 2469,
+          "file": "assets/runtime-Cftmn5Va.js",
+          "gzip": 2470,
           "worker": null,
           "class": "shared"
+        },
+        {
+          "file": "assets/segments-CW6oYknX.js",
+          "gzip": 1845,
+          "worker": null,
+          "class": "segments"
         },
         {
           "file": "assets/segments-DMNUvi-V.js",
           "gzip": 1844,
           "worker": "own.worker",
-          "class": "segments"
-        },
-        {
-          "file": "assets/segments-DVEptTVC.js",
-          "gzip": 1845,
-          "worker": null,
           "class": "segments"
         },
         {
@@ -141,8 +141,8 @@
           "class": "stats"
         },
         {
-          "file": "assets/stats-hsyzTK92.js",
-          "gzip": 4332,
+          "file": "assets/stats-DUjDSayQ.js",
+          "gzip": 4330,
           "worker": null,
           "class": "stats"
         }
@@ -159,8 +159,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 1000,
-          "gzip": 666,
-          "headroom": 334,
+          "gzip": 665,
+          "headroom": 335,
           "status": "ok",
           "why": "User-facing promise of the package, accepted by the owner on 2026-10-23 when the demo budget moved to 101.5 KB: the default configuration adds at most 1 KB to the critical path and the first MP4 loads at most 24 KB lazily. This row is the first half: the package code in the host entry chunk (the lazyProbe stub, ProbeError and the engine list), cut out of the entry chunk by its sourcemap. Vite's preload helper is not counted here, because every Vite app with a dynamic import already has it; the entry chunk row counts it. Design estimate 1.0 KB; measured 0.67 KB, and measured plus 10 percent rounded up to 0.5 KB is also 1.0 KB."
         },
@@ -168,8 +168,8 @@
           "key": "entry",
           "label": "entry chunk with the preload helper",
           "limit": 2000,
-          "gzip": 1395,
-          "headroom": 605,
+          "gzip": 1394,
+          "headroom": 606,
           "status": "ok",
           "why": "The whole host entry chunk: the package code of the critical path row, Vite's preload helper, which Vite adds to the entry chunk of any app with a dynamic import, and the one line of host code. The critical path row stays the package promise; this row also catches what the package makes Vite add next to its code, such as a longer preload dependency list per dynamic import. Measured 1.40 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -177,8 +177,8 @@
           "key": "client",
           "label": "probe client (lazy)",
           "limit": 3000,
-          "gzip": 2840,
-          "headroom": 160,
+          "gzip": 2874,
+          "headroom": 126,
           "status": "ok",
           "why": "The probe client fetched on the first file: createProbe, engine routing, the worker pool and the own descriptor with the worker literal. Design estimate 3.5 KB; measured 2.67 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -222,8 +222,8 @@
           "key": "firstMp4",
           "label": "first MP4 analysis, lazy total",
           "limit": 24000,
-          "gzip": 23455,
-          "headroom": 545,
+          "gzip": 23489,
+          "headroom": 511,
           "status": "ok",
           "why": "User-facing promise of the package, accepted by the owner on 2026-10-23 when the demo budget moved to 101.5 KB: the default configuration adds at most 1 KB to the critical path and the first MP4 loads at most 24 KB lazily. This row is the second half: everything the first MP4 or MOV file loads lazily, which is the probe client, the own worker entry, the statistics chunk (requested in parallel with the parser) and the ISO BMFF parser. Measured 23.26 KB. Measured plus 10 percent would be 26.0 KB, so the promise stays the limit instead: it is the tighter one and it is what the README states."
         },
@@ -231,8 +231,8 @@
           "key": "allOwn",
           "label": "all own paths, lazy total",
           "limit": 40000,
-          "gzip": 36436,
-          "headroom": 3564,
+          "gzip": 36470,
+          "headroom": 3530,
           "status": "ok",
           "why": "Every own path: the probe client, the own worker entry, the statistics, both parsers and the rate profile core. Design estimate 37.0 KB; measured 36.24 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -240,8 +240,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 79500,
-          "gzip": 72570,
-          "headroom": 6930,
+          "gzip": 72592,
+          "headroom": 6908,
           "status": "ok",
           "why": "Every JavaScript file the build emits outside the entry chunk, fetched or not: the probe client with its compare and fallback chunks, the own worker with its chunks, and the main-thread copies of the parsers, the statistics, the sniffer and the worker runtime. The default flavor keeps them as an in-thread own for environments without a Worker global (SSR, Node) and for worker: 'inline'; a root analyze(), not imported here, always runs in the calling thread on the same copies. A browser with a Worker global never fetches them otherwise, so the lazy totals above leave them out. This row bounds what the package adds to the deploy and the CDN. Measured 72.20 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         }
@@ -259,20 +259,20 @@
         "own"
       ],
       "metrics": {
-        "entry": 1393,
-        "trigger": 663,
-        "client": 2845,
+        "entry": 1396,
+        "trigger": 666,
+        "client": 2876,
         "isobmff": null,
         "matroska": null,
         "segments": null,
-        "firstMp4": 34976,
-        "allOwn": 34976,
+        "firstMp4": 35007,
+        "allOwn": 35007,
         "mp4box": null,
         "mediabunny": null,
         "engineShared": null,
         "rvfc": null,
         "pageEngineShared": null,
-        "lazyTotal": 71121
+        "lazyTotal": 71134
       },
       "workers": [
         {
@@ -284,38 +284,38 @@
       ],
       "files": [
         {
-          "file": "assets/compare-D27vqrhw.js",
-          "gzip": 1327,
+          "file": "assets/compare-B5LhmI_y.js",
+          "gzip": 1325,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/fallback-D0TV4JPW.js",
-          "gzip": 736,
+          "file": "assets/fallback-DFj0AXnG.js",
+          "gzip": 734,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/index-BW_9TZMN.js",
-          "gzip": 1393,
+          "file": "assets/index-DmrSULqM.js",
+          "gzip": 1396,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-DBTVvta7.js",
-          "gzip": 637,
+          "file": "assets/inline-B_VdcSU_.js",
+          "gzip": 633,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/isobmff-BRWbrmmT.js",
-          "gzip": 12235,
+          "file": "assets/isobmff-CRU79pxn.js",
+          "gzip": 12232,
           "worker": null,
           "class": "isobmff"
         },
         {
-          "file": "assets/matroska-exyuhs5Z.js",
-          "gzip": 11191,
+          "file": "assets/matroska-CLRdmz-7.js",
+          "gzip": 11189,
           "worker": null,
           "class": "matroska"
         },
@@ -326,8 +326,8 @@
           "class": "isobmff"
         },
         {
-          "file": "assets/probe-nHSchArI.js",
-          "gzip": 2845,
+          "file": "assets/probe-jmdF3q28.js",
+          "gzip": 2876,
           "worker": null,
           "class": "shared"
         },
@@ -338,14 +338,14 @@
           "class": "shared"
         },
         {
-          "file": "assets/runtime-DEGIHp7O.js",
-          "gzip": 2470,
+          "file": "assets/runtime-ewFdQYgA.js",
+          "gzip": 2468,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/segments-D_g1H7yV.js",
-          "gzip": 1845,
+          "file": "assets/segments-DPz_oC6U.js",
+          "gzip": 1843,
           "worker": null,
           "class": "segments"
         },
@@ -356,8 +356,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/stats-Bz_BGDc9.js",
-          "gzip": 4334,
+          "file": "assets/stats-C6otiFou.js",
+          "gzip": 4333,
           "worker": null,
           "class": "stats"
         }
@@ -374,8 +374,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 1000,
-          "gzip": 663,
-          "headroom": 337,
+          "gzip": 666,
+          "headroom": 334,
           "status": "ok",
           "why": "As in the default configuration: the worker option does not change the entry chunk. Measured 0.67 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -383,8 +383,8 @@
           "key": "entry",
           "label": "entry chunk with the preload helper",
           "limit": 2000,
-          "gzip": 1393,
-          "headroom": 607,
+          "gzip": 1396,
+          "headroom": 604,
           "status": "ok",
           "why": "As in the default configuration: the worker option does not change the entry chunk. Measured 1.40 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -401,8 +401,8 @@
           "key": "firstMp4",
           "label": "first MP4 analysis, lazy total",
           "limit": 38500,
-          "gzip": 34976,
-          "headroom": 3524,
+          "gzip": 35007,
+          "headroom": 3493,
           "status": "ok",
           "why": "What the first MP4 loads in a Vite 8 app that keeps the default worker format: the probe client and the one-file own worker. The 24 KB of the default configuration needs worker.format 'es' in the host's Vite config. Measured 34.77 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -410,8 +410,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 78000,
-          "gzip": 71121,
-          "headroom": 6879,
+          "gzip": 71134,
+          "headroom": 6866,
           "status": "ok",
           "why": "As in the default configuration, with the one-file own worker instead of the worker entry and its chunks. Measured 70.75 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         }
@@ -431,19 +431,19 @@
       ],
       "metrics": {
         "entry": 1460,
-        "trigger": 669,
-        "client": 2733,
+        "trigger": 670,
+        "client": 2769,
         "isobmff": 12205,
         "matroska": 11137,
         "segments": 1844,
-        "firstMp4": 23352,
-        "allOwn": 36333,
+        "firstMp4": 23388,
+        "allOwn": 36369,
         "mp4box": null,
         "mediabunny": null,
         "engineShared": null,
         "rvfc": null,
         "pageEngineShared": null,
-        "lazyTotal": 72462
+        "lazyTotal": 72508
       },
       "workers": [
         {
@@ -455,13 +455,13 @@
       ],
       "files": [
         {
-          "file": "assets/compare-DVRaDtL8.js",
-          "gzip": 1324,
+          "file": "assets/compare-CXr5-xXu.js",
+          "gzip": 1329,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/fallback-Cd-Omiau.js",
+          "file": "assets/fallback-D8IoQZeS.js",
           "gzip": 734,
           "worker": null,
           "class": "shared"
@@ -473,22 +473,16 @@
           "class": "shared"
         },
         {
-          "file": "assets/index-3vf6OjDJ.js",
+          "file": "assets/index-D7GU4bZQ.js",
           "gzip": 1460,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-CG7KErbO.js",
-          "gzip": 633,
+          "file": "assets/inline-D-bNroWN.js",
+          "gzip": 636,
           "worker": null,
           "class": "shared"
-        },
-        {
-          "file": "assets/isobmff-C651S0FF.js",
-          "gzip": 12231,
-          "worker": null,
-          "class": "isobmff"
         },
         {
           "file": "assets/isobmff-CLXCBrfP.js",
@@ -497,20 +491,26 @@
           "class": "isobmff"
         },
         {
+          "file": "assets/isobmff-CrLbCHks.js",
+          "gzip": 12232,
+          "worker": null,
+          "class": "isobmff"
+        },
+        {
+          "file": "assets/matroska-4vXzgd6I.js",
+          "gzip": 11189,
+          "worker": null,
+          "class": "matroska"
+        },
+        {
           "file": "assets/matroska-BsnCvZdQ.js",
           "gzip": 11137,
           "worker": "fps.worker",
           "class": "matroska"
         },
         {
-          "file": "assets/matroska-CNLp1JKo.js",
-          "gzip": 11189,
-          "worker": null,
-          "class": "matroska"
-        },
-        {
-          "file": "assets/probe-CeyDbFDU.js",
-          "gzip": 2733,
+          "file": "assets/probe-BS0XwgWx.js",
+          "gzip": 2769,
           "worker": null,
           "class": "shared"
         },
@@ -521,21 +521,21 @@
           "class": "shared"
         },
         {
-          "file": "assets/runtime-Bvodn4lq.js",
+          "file": "assets/runtime-DfltA1N6.js",
           "gzip": 2471,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/segments-S5ZxERVM.js",
+          "file": "assets/segments-DlkVUQJZ.js",
           "gzip": 1844,
-          "worker": "fps.worker",
+          "worker": null,
           "class": "segments"
         },
         {
-          "file": "assets/segments-uHrU_1Z2.js",
+          "file": "assets/segments-S5ZxERVM.js",
           "gzip": 1844,
-          "worker": null,
+          "worker": "fps.worker",
           "class": "segments"
         },
         {
@@ -545,15 +545,15 @@
           "class": "shared"
         },
         {
-          "file": "assets/stats-7mq8pqrf.js",
-          "gzip": 4333,
-          "worker": null,
-          "class": "stats"
-        },
-        {
           "file": "assets/stats-CzBn0rGd.js",
           "gzip": 4305,
           "worker": "fps.worker",
+          "class": "stats"
+        },
+        {
+          "file": "assets/stats-p-0-TZhJ.js",
+          "gzip": 4334,
+          "worker": null,
           "class": "stats"
         }
       ],
@@ -570,8 +570,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 1000,
-          "gzip": 669,
-          "headroom": 331,
+          "gzip": 670,
+          "headroom": 330,
           "status": "ok",
           "why": "The lazyProbeClient stub in the host entry chunk. The host's worker literal is host code and is not counted. Design estimate 1.0 KB; measured 0.68 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -588,8 +588,8 @@
           "key": "client",
           "label": "probe client (lazy)",
           "limit": 3000,
-          "gzip": 2733,
-          "headroom": 267,
+          "gzip": 2769,
+          "headroom": 231,
           "status": "ok",
           "why": "The probe client fetched on the first file, without the own descriptor and its worker literal, which the host replaces with its own worker. Measured 2.56 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -606,8 +606,8 @@
           "key": "firstMp4",
           "label": "first MP4 analysis, lazy total",
           "limit": 24000,
-          "gzip": 23352,
-          "headroom": 648,
+          "gzip": 23388,
+          "headroom": 612,
           "status": "ok",
           "why": "A host worker that serves own holds the same code as the prebuilt own worker, so the 24 KB promise of the default configuration applies to the first MP4 here too. Measured 23.15 KB."
         },
@@ -615,8 +615,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 79500,
-          "gzip": 72462,
-          "headroom": 7038,
+          "gzip": 72508,
+          "headroom": 6992,
           "status": "ok",
           "why": "As in the default configuration, with the host worker instead of the prebuilt own worker. In the client flavor the main-thread copies are there for worker: 'inline' and for environments without a Worker global, where own runs in the calling thread; a browser with a Worker global never fetches them otherwise. Measured 72.11 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         }
@@ -636,20 +636,20 @@
         "mp4box"
       ],
       "metrics": {
-        "entry": 1741,
-        "trigger": 889,
-        "client": 2879,
+        "entry": 1742,
+        "trigger": 892,
+        "client": 2911,
         "isobmff": 12205,
         "matroska": 11137,
         "segments": 1844,
-        "firstMp4": 23494,
-        "allOwn": 36475,
+        "firstMp4": 23526,
+        "allOwn": 36507,
         "mp4box": 44775,
         "mediabunny": null,
         "engineShared": null,
         "rvfc": null,
         "pageEngineShared": null,
-        "lazyTotal": 196324
+        "lazyTotal": 196351
       },
       "workers": [
         {
@@ -667,26 +667,26 @@
       ],
       "files": [
         {
-          "file": "assets/compare-D2LVMdb7.js",
+          "file": "assets/compare-CDCLcguS.js",
           "gzip": 1325,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/fallback-DnZY2oA5.js",
-          "gzip": 733,
+          "file": "assets/fallback-BfiRUN-0.js",
+          "gzip": 732,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/index-CYvkJ7ns.js",
-          "gzip": 1741,
+          "file": "assets/index-Bn2CTFfc.js",
+          "gzip": 1742,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-FUnfk2Hc.js",
-          "gzip": 634,
+          "file": "assets/inline-QwPRrTPZ.js",
+          "gzip": 631,
           "worker": null,
           "class": "shared"
         },
@@ -697,15 +697,15 @@
           "class": "isobmff"
         },
         {
-          "file": "assets/isobmff-DVkIZF9J.js",
-          "gzip": 12223,
-          "worker": null,
-          "class": "isobmff"
-        },
-        {
           "file": "assets/isobmff-DcXPf1YV.js",
           "gzip": 12205,
           "worker": "own.worker",
+          "class": "isobmff"
+        },
+        {
+          "file": "assets/isobmff-or143I0M.js",
+          "gzip": 12223,
+          "worker": null,
           "class": "isobmff"
         },
         {
@@ -721,8 +721,8 @@
           "class": "matroska"
         },
         {
-          "file": "assets/matroska-DdCXShuW.js",
-          "gzip": 11185,
+          "file": "assets/matroska-YgAQpvhz.js",
+          "gzip": 11186,
           "worker": null,
           "class": "matroska"
         },
@@ -733,7 +733,7 @@
           "class": "mp4box"
         },
         {
-          "file": "assets/mp4box-Ci_PUbwe.js",
+          "file": "assets/mp4box-D5CrJNpo.js",
           "gzip": 44782,
           "worker": null,
           "class": "mp4box"
@@ -757,8 +757,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/probe-D-RtAptj.js",
-          "gzip": 2879,
+          "file": "assets/probe-FE-iZAp8.js",
+          "gzip": 2911,
           "worker": null,
           "class": "shared"
         },
@@ -775,16 +775,10 @@
           "class": "shared"
         },
         {
-          "file": "assets/runtime-BGfbMkd8.js",
-          "gzip": 1045,
+          "file": "assets/runtime-Dx0SuoQF.js",
+          "gzip": 1044,
           "worker": null,
           "class": "shared"
-        },
-        {
-          "file": "assets/segments-BP9ewxE7.js",
-          "gzip": 1846,
-          "worker": null,
-          "class": "segments"
         },
         {
           "file": "assets/segments-DDJvYsmI.js",
@@ -799,13 +793,19 @@
           "class": "segments"
         },
         {
+          "file": "assets/segments-DMjRFl4w.js",
+          "gzip": 1845,
+          "worker": null,
+          "class": "segments"
+        },
+        {
           "file": "assets/sniff-DecauIFI.js",
           "gzip": 989,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/stats-9OOZrgX4.js",
+          "file": "assets/stats-BLFeMX8V.js",
           "gzip": 4334,
           "worker": null,
           "class": "stats"
@@ -833,8 +833,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 1000,
-          "gzip": 889,
-          "headroom": 111,
+          "gzip": 892,
+          "headroom": 108,
           "status": "ok",
           "why": "The default trigger plus the mp4box descriptor and its worker literal. Design estimate the default plus 0.5 KB; measured 0.90 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -842,8 +842,8 @@
           "key": "entry",
           "label": "entry chunk with the preload helper",
           "limit": 2000,
-          "gzip": 1741,
-          "headroom": 259,
+          "gzip": 1742,
+          "headroom": 258,
           "status": "ok",
           "why": "The trigger of this configuration plus Vite's preload helper. Measured 1.75 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -878,8 +878,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 216000,
-          "gzip": 196324,
-          "headroom": 19676,
+          "gzip": 196351,
+          "headroom": 19649,
           "status": "ok",
           "why": "As in the default configuration plus the mp4box worker, which carries its own copies of the own parsers because it also serves own, and the main-thread copy of the mp4box engine, which runs in the calling thread only with worker: 'inline' or without a Worker global. Measured 195.93 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         }
@@ -900,19 +900,19 @@
       ],
       "metrics": {
         "entry": 1744,
-        "trigger": 895,
-        "client": 2877,
+        "trigger": 894,
+        "client": 2909,
         "isobmff": 12205,
         "matroska": 11137,
         "segments": 1844,
-        "firstMp4": 23492,
-        "allOwn": 36473,
+        "firstMp4": 23524,
+        "allOwn": 36505,
         "mp4box": null,
         "mediabunny": 53865,
         "engineShared": null,
         "rvfc": null,
         "pageEngineShared": null,
-        "lazyTotal": 213297
+        "lazyTotal": 213325
       },
       "workers": [
         {
@@ -936,25 +936,25 @@
           "class": "shared"
         },
         {
-          "file": "assets/compare-DazO9jwP.js",
-          "gzip": 1326,
+          "file": "assets/compare-wvI6n3Vu.js",
+          "gzip": 1324,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/fallback-CZF_jTJA.js",
-          "gzip": 733,
+          "file": "assets/fallback-CmhFdN3n.js",
+          "gzip": 734,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/index-BCqP_PcZ.js",
+          "file": "assets/index-g4zMO8Lb.js",
           "gzip": 1744,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-eQ0EMPzq.js",
+          "file": "assets/inline-C5VUSJTK.js",
           "gzip": 634,
           "worker": null,
           "class": "shared"
@@ -966,15 +966,15 @@
           "class": "isobmff"
         },
         {
-          "file": "assets/isobmff-DZe_C3b7.js",
-          "gzip": 12235,
-          "worker": null,
-          "class": "isobmff"
-        },
-        {
           "file": "assets/isobmff-DcXPf1YV.js",
           "gzip": 12205,
           "worker": "own.worker",
+          "class": "isobmff"
+        },
+        {
+          "file": "assets/isobmff-DeRVIbBt.js",
+          "gzip": 12234,
+          "worker": null,
           "class": "isobmff"
         },
         {
@@ -990,21 +990,21 @@
           "class": "matroska"
         },
         {
-          "file": "assets/matroska-CPqwV7p9.js",
-          "gzip": 11187,
+          "file": "assets/matroska-DQwmWEJF.js",
+          "gzip": 11188,
           "worker": null,
           "class": "matroska"
+        },
+        {
+          "file": "assets/mediabunny-B6Zt8ofZ.js",
+          "gzip": 52944,
+          "worker": null,
+          "class": "mediabunny"
         },
         {
           "file": "assets/mediabunny-C1ConQpV.js",
           "gzip": 53865,
           "worker": "mediabunny.worker",
-          "class": "mediabunny"
-        },
-        {
-          "file": "assets/mediabunny-glq1PMEO.js",
-          "gzip": 52944,
-          "worker": null,
           "class": "mediabunny"
         },
         {
@@ -1026,8 +1026,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/probe-COlUgimN.js",
-          "gzip": 2877,
+          "file": "assets/probe-BaPnb4_8.js",
+          "gzip": 2909,
           "worker": null,
           "class": "shared"
         },
@@ -1038,10 +1038,16 @@
           "class": "shared"
         },
         {
-          "file": "assets/runtime-C3QOKskQ.js",
-          "gzip": 2216,
+          "file": "assets/runtime-C1RlLxRX.js",
+          "gzip": 2215,
           "worker": null,
           "class": "shared"
+        },
+        {
+          "file": "assets/segments-CLlRGPXI.js",
+          "gzip": 1844,
+          "worker": null,
+          "class": "segments"
         },
         {
           "file": "assets/segments-CxKCaZbM.js",
@@ -1053,12 +1059,6 @@
           "file": "assets/segments-DMNUvi-V.js",
           "gzip": 1844,
           "worker": "own.worker",
-          "class": "segments"
-        },
-        {
-          "file": "assets/segments-VC0_GGWD.js",
-          "gzip": 1846,
-          "worker": null,
           "class": "segments"
         },
         {
@@ -1080,7 +1080,7 @@
           "class": "stats"
         },
         {
-          "file": "assets/stats-Cmy92GLZ.js",
+          "file": "assets/stats-DzKVTtyq.js",
           "gzip": 4339,
           "worker": null,
           "class": "stats"
@@ -1096,8 +1096,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 1000,
-          "gzip": 895,
-          "headroom": 105,
+          "gzip": 894,
+          "headroom": 106,
           "status": "ok",
           "why": "The default trigger plus the mediabunny descriptor and its worker literal. Design estimate the default plus 0.5 KB; measured 0.90 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -1141,8 +1141,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 234500,
-          "gzip": 213297,
-          "headroom": 21203,
+          "gzip": 213325,
+          "headroom": 21175,
           "status": "ok",
           "why": "As in the mp4box configuration, with the mediabunny worker and engine. Measured 212.89 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         }
@@ -1162,20 +1162,20 @@
         "rvfc"
       ],
       "metrics": {
-        "entry": 1583,
-        "trigger": 767,
-        "client": 2855,
+        "entry": 1582,
+        "trigger": 766,
+        "client": 2893,
         "isobmff": 12205,
         "matroska": 11137,
         "segments": 1844,
-        "firstMp4": 23470,
-        "allOwn": 36451,
+        "firstMp4": 23508,
+        "allOwn": 36489,
         "mp4box": null,
         "mediabunny": null,
         "engineShared": null,
         "rvfc": 2191,
         "pageEngineShared": null,
-        "lazyTotal": 74862
+        "lazyTotal": 74908
       },
       "workers": [
         {
@@ -1193,32 +1193,32 @@
           "class": "shared"
         },
         {
-          "file": "assets/compare-CDRdEPnc.js",
-          "gzip": 1324,
+          "file": "assets/compare-BvJvZr3i.js",
+          "gzip": 1323,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/fallback-_cvpHqRV.js",
-          "gzip": 731,
+          "file": "assets/fallback-Dz-UM7Df.js",
+          "gzip": 732,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/index-BBoFsTmn.js",
-          "gzip": 1583,
+          "file": "assets/index-Dm5uscAU.js",
+          "gzip": 1582,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-FhTbGnj3.js",
-          "gzip": 631,
+          "file": "assets/inline-DOjR7kiE.js",
+          "gzip": 633,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/isobmff-D2agwOG-.js",
-          "gzip": 12233,
+          "file": "assets/isobmff-BuXo17Bn.js",
+          "gzip": 12234,
           "worker": null,
           "class": "isobmff"
         },
@@ -1229,8 +1229,8 @@
           "class": "isobmff"
         },
         {
-          "file": "assets/matroska-BjhNSvRQ.js",
-          "gzip": 11190,
+          "file": "assets/matroska-49IE_P9N.js",
+          "gzip": 11192,
           "worker": null,
           "class": "matroska"
         },
@@ -1247,8 +1247,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/probe-BamC4xqi.js",
-          "gzip": 2855,
+          "file": "assets/probe-BvSbVpd6.js",
+          "gzip": 2893,
           "worker": null,
           "class": "shared"
         },
@@ -1259,19 +1259,19 @@
           "class": "shared"
         },
         {
-          "file": "assets/runtime-BEzbclSa.js",
-          "gzip": 2456,
+          "file": "assets/runtime-CPK3SvYk.js",
+          "gzip": 2458,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/rvfc-DIx5SPGZ.js",
+          "file": "assets/rvfc-JOfxLlQi.js",
           "gzip": 2191,
           "worker": null,
           "class": "rvfc"
         },
         {
-          "file": "assets/segments-Ct98Cm1c.js",
+          "file": "assets/segments-BmucItcB.js",
           "gzip": 1845,
           "worker": null,
           "class": "segments"
@@ -1295,8 +1295,8 @@
           "class": "stats"
         },
         {
-          "file": "assets/stats-vGXvvFDC.js",
-          "gzip": 4331,
+          "file": "assets/stats-CeXDYz2V.js",
+          "gzip": 4332,
           "worker": null,
           "class": "stats"
         }
@@ -1312,8 +1312,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 1000,
-          "gzip": 767,
-          "headroom": 233,
+          "gzip": 766,
+          "headroom": 234,
           "status": "ok",
           "why": "The default trigger plus the rvfc descriptor, which has no worker literal. Measured 0.77 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -1321,8 +1321,8 @@
           "key": "entry",
           "label": "entry chunk with the preload helper",
           "limit": 2000,
-          "gzip": 1583,
-          "headroom": 417,
+          "gzip": 1582,
+          "headroom": 418,
           "status": "ok",
           "why": "The trigger of this configuration plus Vite's preload helper. Measured 1.59 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -1339,8 +1339,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 82000,
-          "gzip": 74862,
-          "headroom": 7138,
+          "gzip": 74908,
+          "headroom": 7092,
           "status": "ok",
           "why": "As in the default configuration plus the main-thread rVFC engine. Measured 74.52 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         }
@@ -1364,20 +1364,20 @@
         "rvfc"
       ],
       "metrics": {
-        "entry": 1913,
+        "entry": 1915,
         "trigger": 1012,
-        "client": 2890,
+        "client": 2924,
         "isobmff": 12205,
         "matroska": 11137,
         "segments": 1844,
-        "firstMp4": 23505,
-        "allOwn": 36486,
+        "firstMp4": 23539,
+        "allOwn": 36520,
         "mp4box": 44775,
         "mediabunny": 53865,
         "engineShared": null,
-        "rvfc": 2193,
-        "pageEngineShared": 1508,
-        "lazyTotal": 338601
+        "rvfc": 2192,
+        "pageEngineShared": 1509,
+        "lazyTotal": 338643
       },
       "workers": [
         {
@@ -1407,32 +1407,32 @@
           "class": "shared"
         },
         {
-          "file": "assets/compare-CvZfOtqm.js",
-          "gzip": 1325,
+          "file": "assets/compare-DYkm_WM2.js",
+          "gzip": 1326,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/counting-Cvy5D5Jr.js",
-          "gzip": 1508,
+          "file": "assets/counting-BjlKJGMA.js",
+          "gzip": 1509,
           "worker": null,
           "class": "engineShared"
         },
         {
-          "file": "assets/fallback-BlDoPtZd.js",
+          "file": "assets/fallback-BtS07XcM.js",
           "gzip": 735,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/index-CVk7V5oM.js",
-          "gzip": 1913,
+          "file": "assets/index-MUVt36uW.js",
+          "gzip": 1915,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-CP711izK.js",
-          "gzip": 634,
+          "file": "assets/inline-g6saHGE0.js",
+          "gzip": 635,
           "worker": null,
           "class": "shared"
         },
@@ -1443,8 +1443,8 @@
           "class": "isobmff"
         },
         {
-          "file": "assets/isobmff-CC3pVRor.js",
-          "gzip": 12222,
+          "file": "assets/isobmff-BqINNDB_.js",
+          "gzip": 12223,
           "worker": null,
           "class": "isobmff"
         },
@@ -1467,8 +1467,8 @@
           "class": "matroska"
         },
         {
-          "file": "assets/matroska-C6xKZXnA.js",
-          "gzip": 11186,
+          "file": "assets/matroska-BooBNnsJ.js",
+          "gzip": 11187,
           "worker": null,
           "class": "matroska"
         },
@@ -1491,8 +1491,8 @@
           "class": "mediabunny"
         },
         {
-          "file": "assets/mediabunny-DJq2tDdJ.js",
-          "gzip": 51967,
+          "file": "assets/mediabunny-C2HrlyGz.js",
+          "gzip": 51969,
           "worker": null,
           "class": "mediabunny"
         },
@@ -1509,7 +1509,7 @@
           "class": "mp4box"
         },
         {
-          "file": "assets/mp4box-CCm8cnln.js",
+          "file": "assets/mp4box-BWxHLlDl.js",
           "gzip": 43744,
           "worker": null,
           "class": "mp4box"
@@ -1533,8 +1533,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/probe-DR5xeP4f.js",
-          "gzip": 2890,
+          "file": "assets/probe-DS99WfxH.js",
+          "gzip": 2924,
           "worker": null,
           "class": "shared"
         },
@@ -1551,14 +1551,14 @@
           "class": "shared"
         },
         {
-          "file": "assets/runtime-CTERGBPm.js",
-          "gzip": 1059,
+          "file": "assets/runtime-BcmWd914.js",
+          "gzip": 1061,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/rvfc-BgIkfBP3.js",
-          "gzip": 2193,
+          "file": "assets/rvfc-Ba4vm_Y8.js",
+          "gzip": 2192,
           "worker": null,
           "class": "rvfc"
         },
@@ -1581,8 +1581,8 @@
           "class": "segments"
         },
         {
-          "file": "assets/segments-cWLj6o6d.js",
-          "gzip": 1845,
+          "file": "assets/segments-KjL65Cj_.js",
+          "gzip": 1844,
           "worker": null,
           "class": "segments"
         },
@@ -1605,15 +1605,15 @@
           "class": "stats"
         },
         {
-          "file": "assets/stats-ClZKfv6a.js",
-          "gzip": 4339,
-          "worker": null,
-          "class": "stats"
-        },
-        {
           "file": "assets/stats-H4b0Y-Ny.js",
           "gzip": 4309,
           "worker": "mp4box.worker",
+          "class": "stats"
+        },
+        {
+          "file": "assets/stats-mZpjQYHt.js",
+          "gzip": 4340,
+          "worker": null,
           "class": "stats"
         }
       ],
@@ -1634,8 +1634,8 @@
           "key": "entry",
           "label": "entry chunk with the preload helper",
           "limit": 2500,
-          "gzip": 1913,
-          "headroom": 587,
+          "gzip": 1915,
+          "headroom": 585,
           "status": "ok",
           "why": "The trigger of this configuration plus Vite's preload helper. Measured 1.92 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -1643,8 +1643,8 @@
           "key": "client",
           "label": "probe client (lazy)",
           "limit": 3000,
-          "gzip": 2890,
-          "headroom": 110,
+          "gzip": 2924,
+          "headroom": 76,
           "status": "ok",
           "why": "As in the default configuration. Measured 2.71 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -1697,8 +1697,8 @@
           "key": "rvfc",
           "label": "rVFC engine (main thread)",
           "limit": 2500,
-          "gzip": 2193,
-          "headroom": 307,
+          "gzip": 2192,
+          "headroom": 308,
           "status": "ok",
           "why": "As in the rvfc configuration. Measured 2.19 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -1733,8 +1733,8 @@
           "key": "firstMp4",
           "label": "first MP4 analysis, lazy total",
           "limit": 24000,
-          "gzip": 23505,
-          "headroom": 495,
+          "gzip": 23539,
+          "headroom": 461,
           "status": "ok",
           "why": "Registering engines must not change what the first own analysis loads, so the 24 KB promise of the default configuration applies here too. Measured 23.31 KB."
         },
@@ -1742,8 +1742,8 @@
           "key": "allOwn",
           "label": "all own paths, lazy total",
           "limit": 40000,
-          "gzip": 36486,
-          "headroom": 3514,
+          "gzip": 36520,
+          "headroom": 3480,
           "status": "ok",
           "why": "As in the default configuration. Measured 36.29 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -1760,8 +1760,8 @@
           "key": "pageEngineShared",
           "label": "shared engine chunk (main thread, inline mode)",
           "limit": 2000,
-          "gzip": 1508,
-          "headroom": 492,
+          "gzip": 1509,
+          "headroom": 491,
           "status": "ok",
           "why": "The counting code mp4box and mediabunny share, which becomes a main-thread chunk of its own when both are registered. It loads only when an engine runs in this thread (worker: 'inline', SSR, no Worker global). Measured 1.51 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -1769,8 +1769,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 372500,
-          "gzip": 338601,
-          "headroom": 33899,
+          "gzip": 338643,
+          "headroom": 33857,
           "status": "ok",
           "why": "Every worker with its own copies of the own parsers, the main-thread copies of every engine and the shared engine chunk, which run in the calling thread only with worker: 'inline' or without a Worker global (rVFC always runs there). Measured 338.19 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         }
@@ -1789,20 +1789,20 @@
         "own"
       ],
       "metrics": {
-        "entry": 1449,
-        "trigger": 703,
-        "client": 2732,
+        "entry": 1447,
+        "trigger": 704,
+        "client": 2771,
         "isobmff": null,
         "matroska": null,
         "segments": null,
-        "firstMp4": 34796,
-        "allOwn": 34796,
+        "firstMp4": 34835,
+        "allOwn": 34835,
         "mp4box": null,
         "mediabunny": null,
         "engineShared": null,
         "rvfc": null,
         "pageEngineShared": null,
-        "lazyTotal": 70928
+        "lazyTotal": 70964
       },
       "workers": [
         {
@@ -1814,37 +1814,37 @@
       ],
       "files": [
         {
-          "file": "assets/compare-Dxt2tBg_.js",
-          "gzip": 1329,
+          "file": "assets/compare-B7qYOybT.js",
+          "gzip": 1326,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/fallback-CKKo-Rzi.js",
+          "file": "assets/fallback-6CUGI9ke.js",
           "gzip": 733,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/index-BEXJe_cw.js",
-          "gzip": 1449,
+          "file": "assets/index-CNg6AU7a.js",
+          "gzip": 1447,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-C-KvXnOZ.js",
-          "gzip": 634,
+          "file": "assets/inline-DtLtD6Zp.js",
+          "gzip": 635,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/isobmff-B3MCVdwt.js",
+          "file": "assets/isobmff-B5nNAVtM.js",
           "gzip": 12232,
           "worker": null,
           "class": "isobmff"
         },
         {
-          "file": "assets/matroska-BUZm3ysq.js",
+          "file": "assets/matroska-PU-Lxlux.js",
           "gzip": 11189,
           "worker": null,
           "class": "matroska"
@@ -1856,8 +1856,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/probe-DZRrKxjq.js",
-          "gzip": 2732,
+          "file": "assets/probe-dG1fEp7f.js",
+          "gzip": 2771,
           "worker": null,
           "class": "shared"
         },
@@ -1868,14 +1868,14 @@
           "class": "shared"
         },
         {
-          "file": "assets/runtime-iJOhn1gC.js",
-          "gzip": 2470,
+          "file": "assets/runtime-Cywx-QtU.js",
+          "gzip": 2468,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/segments-sJpM0y90.js",
-          "gzip": 1844,
+          "file": "assets/segments-CERzxiNY.js",
+          "gzip": 1843,
           "worker": null,
           "class": "segments"
         },
@@ -1886,8 +1886,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/stats-Dj3riNJh.js",
-          "gzip": 4331,
+          "file": "assets/stats-D_rn6Vok.js",
+          "gzip": 4333,
           "worker": null,
           "class": "stats"
         }
@@ -1905,8 +1905,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 1000,
-          "gzip": 703,
-          "headroom": 297,
+          "gzip": 704,
+          "headroom": 296,
           "status": "ok",
           "why": "The lazyProbeClient stub in the host entry chunk, as in the custom configuration. The asset URL of the standalone file is host code and is not counted. Measured 0.71 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -1914,8 +1914,8 @@
           "key": "entry",
           "label": "entry chunk with the preload helper",
           "limit": 2000,
-          "gzip": 1449,
-          "headroom": 551,
+          "gzip": 1447,
+          "headroom": 553,
           "status": "ok",
           "why": "The lazyProbeClient stub, Vite's preload helper and the host's asset URL of the standalone file. Measured 1.46 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -1923,8 +1923,8 @@
           "key": "client",
           "label": "probe client (lazy)",
           "limit": 3000,
-          "gzip": 2732,
-          "headroom": 268,
+          "gzip": 2771,
+          "headroom": 229,
           "status": "ok",
           "why": "As in the custom configuration. Measured 2.56 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -1941,8 +1941,8 @@
           "key": "firstMp4",
           "label": "first MP4 analysis, lazy total",
           "limit": 38500,
-          "gzip": 34796,
-          "headroom": 3704,
+          "gzip": 34835,
+          "headroom": 3665,
           "status": "ok",
           "why": "What the first MP4 loads with the standalone worker: the probe client and the one-file worker. It suits a host whose workers must stay classic scripts. Measured 34.60 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -1950,8 +1950,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 78000,
-          "gzip": 70928,
-          "headroom": 7072,
+          "gzip": 70964,
+          "headroom": 7036,
           "status": "ok",
           "why": "As in the custom configuration, with the standalone file as the worker. Measured 70.56 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         }
@@ -1969,20 +1969,20 @@
         "own"
       ],
       "metrics": {
-        "entry": 1393,
-        "trigger": 663,
-        "client": 2845,
+        "entry": 1396,
+        "trigger": 666,
+        "client": 2876,
         "isobmff": null,
         "matroska": null,
         "segments": null,
-        "firstMp4": 34976,
-        "allOwn": 34976,
+        "firstMp4": 35007,
+        "allOwn": 35007,
         "mp4box": null,
         "mediabunny": null,
         "engineShared": null,
         "rvfc": null,
         "pageEngineShared": null,
-        "lazyTotal": 71121
+        "lazyTotal": 71134
       },
       "workers": [
         {
@@ -1994,38 +1994,38 @@
       ],
       "files": [
         {
-          "file": "assets/compare-D27vqrhw.js",
-          "gzip": 1327,
+          "file": "assets/compare-B5LhmI_y.js",
+          "gzip": 1325,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/fallback-D0TV4JPW.js",
-          "gzip": 736,
+          "file": "assets/fallback-DFj0AXnG.js",
+          "gzip": 734,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/index-BW_9TZMN.js",
-          "gzip": 1393,
+          "file": "assets/index-DmrSULqM.js",
+          "gzip": 1396,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-DBTVvta7.js",
-          "gzip": 637,
+          "file": "assets/inline-B_VdcSU_.js",
+          "gzip": 633,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/isobmff-BRWbrmmT.js",
-          "gzip": 12235,
+          "file": "assets/isobmff-CRU79pxn.js",
+          "gzip": 12232,
           "worker": null,
           "class": "isobmff"
         },
         {
-          "file": "assets/matroska-exyuhs5Z.js",
-          "gzip": 11191,
+          "file": "assets/matroska-CLRdmz-7.js",
+          "gzip": 11189,
           "worker": null,
           "class": "matroska"
         },
@@ -2036,8 +2036,8 @@
           "class": "isobmff"
         },
         {
-          "file": "assets/probe-nHSchArI.js",
-          "gzip": 2845,
+          "file": "assets/probe-jmdF3q28.js",
+          "gzip": 2876,
           "worker": null,
           "class": "shared"
         },
@@ -2048,14 +2048,14 @@
           "class": "shared"
         },
         {
-          "file": "assets/runtime-DEGIHp7O.js",
-          "gzip": 2470,
+          "file": "assets/runtime-ewFdQYgA.js",
+          "gzip": 2468,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/segments-D_g1H7yV.js",
-          "gzip": 1845,
+          "file": "assets/segments-DPz_oC6U.js",
+          "gzip": 1843,
           "worker": null,
           "class": "segments"
         },
@@ -2066,8 +2066,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/stats-Bz_BGDc9.js",
-          "gzip": 4334,
+          "file": "assets/stats-C6otiFou.js",
+          "gzip": 4333,
           "worker": null,
           "class": "stats"
         }
@@ -2083,8 +2083,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 1000,
-          "gzip": 663,
-          "headroom": 337,
+          "gzip": 666,
+          "headroom": 334,
           "status": "ok",
           "why": "As in the default configuration. Measured 0.67 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -2092,8 +2092,8 @@
           "key": "entry",
           "label": "entry chunk with the preload helper",
           "limit": 2000,
-          "gzip": 1393,
-          "headroom": 607,
+          "gzip": 1396,
+          "headroom": 604,
           "status": "ok",
           "why": "As in the default configuration. Measured 1.40 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -2110,8 +2110,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 78000,
-          "gzip": 71121,
-          "headroom": 6879,
+          "gzip": 71134,
+          "headroom": 6866,
           "status": "ok",
           "why": "As in the zero-config configuration. Measured 70.75 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         }

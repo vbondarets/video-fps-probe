@@ -52,11 +52,12 @@ export class WorkerPool {
   readonly #slots: Slot[] = [];
   readonly #queue: Job[] = [];
   #nextId = 1;
+  #cap: number;
 
   constructor(options: PoolOptions) {
     this.#create = options.create;
     const size = options.size ?? 1;
-    this.#size = Number.isFinite(size) && size >= 1 ? Math.floor(size) : 1;
+    this.#cap = this.#size = Number.isFinite(size) && size >= 1 ? Math.floor(size) : 1;
     this.#idleMs = delayOf(options.idleTimeoutMs ?? DEFAULT_IDLE_TIMEOUT_MS);
   }
 
@@ -71,6 +72,7 @@ export class WorkerPool {
       const job: Job = { id: this.#nextId++, request, options, resolve, reject, detach: () => signal?.removeEventListener('abort', onAbort) };
       if (signal?.aborted) return this.#fail(job, 'aborted', 'aborted', signal.reason);
       signal?.addEventListener('abort', onAbort);
+      this.#cap = this.#size;
       this.#queue.push(job);
       this.#pump();
     });
@@ -155,10 +157,19 @@ export class WorkerPool {
     };
     worker.onerror = (event) => {
       const load = !slot.answered && !event.message;
-      const failed = [slot.job];
+      const job = slot.job;
       this.#discard(slot);
-      if (load && !this.#slots.some((s) => s.answered)) failed.push(...this.#queue.splice(0));
-      for (const job of failed) if (job) this.#broken(job, load ? LOAD_FAILED : event.message || 'worker failed', load ? 'load' : 'crash', event);
+      if (load && this.#slots.length > 0) {
+        this.#cap = this.#slots.length;
+        if (job && !job.done) {
+          clearTimeout(job.timer);
+          this.#queue.unshift(job);
+        }
+      } else {
+        for (const failed of load ? [job, ...this.#queue.splice(0)] : [job]) {
+          if (failed) this.#broken(failed, load ? LOAD_FAILED : event.message || 'worker failed', load ? 'load' : 'crash', event);
+        }
+      }
       this.#pump();
     };
     this.#slots.push(slot);
@@ -168,7 +179,7 @@ export class WorkerPool {
   #pump(): void {
     while (this.#queue.length > 0) {
       let slot = this.#slots.find((s) => !s.job);
-      if (!slot && this.#slots.length < this.#size) {
+      if (!slot && this.#slots.length < this.#cap) {
         try {
           slot = this.#spawn();
         } catch (e) {
