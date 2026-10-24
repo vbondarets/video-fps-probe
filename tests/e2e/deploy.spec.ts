@@ -57,8 +57,7 @@ test.describe('a tab opened before a redeploy', () => {
     await expect(page.locator('article.card dl.grid')).toHaveCount(4);
   });
 
-  test('shows the reload banner when a new build replaced the worker script', async ({ page, browserName }) => {
-    test.skip(browserName === 'firefox', 'the load classification relies on the error event of a missing worker script, verified in Chromium and WebKit only');
+  test('shows the reload banner when a new build replaced the worker script', async ({ page }) => {
     await openApp(page);
     const requests = await redeploy(page, '**/assets/probe.worker-*.js', true);
     await dropFour(page);
@@ -99,7 +98,8 @@ test.describe('a tab opened before a redeploy', () => {
     expect(requests.some((url) => /Compare-/.test(url))).toBe(true);
   });
 
-  test('loads a rate profile or compare panel chunk again on Retry after a network failure', async ({ page }) => {
+  test('loads a rate profile or compare panel chunk again on Retry after a network failure', async ({ page, browserName }) => {
+    test.skip(browserName === 'firefox', 'Firefox keeps a failed module fetch in its module map (the HTML rule before whatwg/html#10327), so import() of the same chunk fails again without a request until the page reloads');
     await openApp(page);
     const requests: string[] = [];
     let failing = true;
@@ -139,10 +139,11 @@ test.describe('a tab opened before a redeploy', () => {
     await dropFour(page);
     const errors = page.locator('article.card .err');
     await expect(errors).toHaveCount(4);
+    await expect(page.locator('article.card p.err'), 'every error text is shown whole, not cut into a collapsed note').toHaveCount(4);
     for (const text of await errors.allInnerTexts()) {
       expect(text.startsWith(NOT_LOADED)).toBe(true);
       expect(text).toMatch(MODULE_LOAD_FAILURE);
-      if (browserName !== 'webkit') expect(text, 'the chunk URL is visible, not cut into a collapsed note').toMatch(/\/assets\/probe-[\w-]+\.js/);
+      if (browserName === 'chromium') expect(text, 'Chromium names the chunk URL in the import error').toMatch(/\/assets\/probe-[\w-]+\.js/);
     }
     await expect(page.getByRole('alert')).toHaveCount(0);
     await expect(page.getByRole('status').first()).toHaveText('4 files. Read 0 B of 0 B in 0.00 ms total.');
@@ -154,18 +155,21 @@ test.describe('a tab opened before a redeploy', () => {
     await expect(page.locator('article.card dl.grid')).toHaveCount(4);
   });
 
-  test('names a worker script that failed to load, fetches it at most once per pool slot, and retries on the next drop', async ({ page, browserName }) => {
-    test.skip(browserName === 'firefox', 'the load classification relies on the error event of a missing worker script, verified in Chromium and WebKit only');
+  test('names a worker script that failed to load, fetches it at most once per pool slot, and retries on the next drop', async ({ page }) => {
     await openApp(page);
     const requests = await redeploy(page, '**/assets/probe.worker-*.js', false);
     await dropFour(page);
-    await expect(page.locator('article.card p.err')).toHaveText(Array(4).fill(`${NOT_LOADED}${WORKER_LOAD_FAILURE}`));
+    const errors = page.locator('article.card .err');
+    await expect(errors).toHaveCount(4);
+    for (const text of await errors.allInnerTexts()) {
+      expect(text.startsWith(`${NOT_LOADED}${WORKER_LOAD_FAILURE}`), 'the browser error text, if any, follows the load message').toBe(true);
+    }
     await expect(page.getByRole('alert')).toHaveCount(0);
     expect(requests.length).toBeGreaterThan(0);
     expect(requests.length).toBeLessThanOrEqual(2);
     await page.context().unrouteAll({ behavior: 'wait' });
     await dropFour(page);
     await expect(page.locator('article.card dl.grid')).toHaveCount(4);
-    await expect(page.locator('article.card p.err')).toHaveCount(4);
+    await expect(errors).toHaveCount(4);
   });
 });
