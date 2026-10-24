@@ -8,7 +8,7 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const NPM_ENV = { ...process.env, npm_config_update_notifier: 'false' };
 const UNRELEASED = '## Unreleased';
 const BUMPED = ['package.json', 'package-lock.json'];
-export const GENERATED = ['CHANGELOG.md', 'report/size.md', 'report/size.json', 'report/size-matrix.md', 'report/size-matrix.json', 'README.md', 'docs/benchmarks.md', 'docs/bundlers.md'];
+export const GENERATED = ['CHANGELOG.md', 'report/size.md', 'report/size.json', 'report/size-matrix.md', 'report/size-matrix.json', 'README.md', 'docs/benchmarks.md', 'docs/bundlers.md', 'report/README.md'];
 
 const USAGE = `Usage: node scripts/release-prep.mjs [--preversion | --notes <version>]
 

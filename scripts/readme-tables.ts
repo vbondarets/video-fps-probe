@@ -1086,6 +1086,30 @@ function accuracySummaryBlock(inp: Inputs, doc: Doc): string[] {
   ];
 }
 
+const LARGE_FLAG: Record<string, string> = { long: '--with-long', big: '--with-big', sparse: '--with-sparse' };
+
+function reportTotalsBlock(inp: Inputs): string[] {
+  const own = engine(inp.acc, 'own');
+  const total = ownTotals(own);
+  const large = own.fixtures.filter((f) => isLarge(f, inp.manifest));
+  const committed = own.fixtures.filter((f) => !isLarge(f, inp.manifest));
+  const checks = committed.flatMap(checksOf);
+  const n = (v: Verdict): number => checks.filter((c) => c.verdict === v).length;
+  const byFlag = new Map<string, number>();
+  for (const f of large) {
+    const flag = LARGE_FLAG[f.category] ?? f.category;
+    byFlag.set(flag, (byFlag.get(flag) ?? 0) + 1);
+  }
+  const made = [...byFlag.entries()].map(([flag, count]) => `${count} from \`${flag}\``).join(', ');
+  const scope =
+    large.length > 0
+      ? `the ${committed.length} committed ones plus ${large.length} local files of \`fixtures/large\` that are not committed (${made}). Their own-engine totals (${total.checks} checks, ${total.counts.exact} exact) therefore include those ${large.length} files`
+      : `the ${committed.length} committed ones and no local file of \`fixtures/large\``;
+  return [
+    `The committed \`accuracy.md\` and \`accuracy.json\` cover ${own.fixtures.length} fixtures: ${scope}. On the committed corpus alone, \`npm run compare -- --no-write\` gives the own engine ${checks.length} checks: ${n('exact')} exact, ${n('within-tol')} within-tol, ${n('known-deviation')} known-deviation, ${n('mismatch')} mismatch and ${n('n/a')} n/a.`,
+  ];
+}
+
 function staleBenchChunks(inp: Inputs): string[] {
   const names = new Set(inp.size.chunks.map((c) => fileOf(c.file)));
   const hashes = new Set(inp.size.chunks.map((c) => c.hash).filter((h): h is string => !!h));
@@ -1451,6 +1475,7 @@ const BLOCKS: Record<string, (inp: Inputs, doc: Doc) => string[]> = {
   recorder: recorderBlock,
   size: sizeBlock,
   'accuracy-summary': accuracySummaryBlock,
+  'report-totals': reportTotalsBlock,
   vite: viteBlock,
 };
 
@@ -1458,6 +1483,7 @@ export const TARGETS: ReadonlyArray<{ path: string; blocks: readonly string[] }>
   { path: 'README.md', blocks: ['size', 'accuracy-summary'] },
   { path: 'docs/benchmarks.md', blocks: ['headline', 'reads', 'profile', 'engines', 'accuracy', 'deviations', 'late', 'recorder', 'approaches', 'rvfc', 'speed', 'package', 'bundle', 'integration', 'corpus'] },
   { path: 'docs/bundlers.md', blocks: ['vite'] },
+  { path: 'report/README.md', blocks: ['report-totals'] },
 ];
 
 export function renderBlocks(inp: Inputs, path: string, names: readonly string[]): Record<string, string> {

@@ -27,7 +27,7 @@ gh release create v0.2.0 --title 0.2.0 --notes "$(node scripts/release-prep.mjs 
    - moves the CHANGELOG Unreleased section under `## X.Y.Z - YYYY-MM-DD` (today, local clock) and leaves an empty `## Unreleased` heading. Text between `## Unreleased` and its first `###` heading is an intro about the coming release ("These changes go into 0.2.0 ..."): it is dropped, not moved, and printed, so the released section starts at its first `###` heading. A note that readers of the released version need, such as a migration step, belongs under a `###` heading. A section without any `###` heading moves whole;
    - rebuilds the demo and rewrites `report/size.*` with the budget check;
    - packs the new tarball, installs the consumer fixtures from the npm cache only (`CONSUMERS_OFFLINE=1`), builds them and rewrites `report/size-matrix.*` with the budget check;
-   - regenerates the tables of the README, `docs/benchmarks.md` and `docs/bundlers.md`;
+   - regenerates the tables of the README, `docs/benchmarks.md`, `docs/bundlers.md` and `report/README.md`;
    - stages exactly the files that changed, and fails when the run changed any other file.
 4. **npm** commits the bump with the staged files and tags it.
 

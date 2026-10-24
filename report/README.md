@@ -33,8 +33,13 @@ Timings depend on the machine and on what else runs on it; verdicts, reads, byte
 - `io` per fixture: reads, unique bytes read, percent of the file and the median `analyze()` time in Node over `--repeat` runs (library engines run the long files once).
 - JSON: `engines[].fixtures[]` with `io`, `fileChecks` and `tracks[].checks` (`id`, `verdict`, `app`, `ffprobe`, optional `deviation`, `outcome` and `outcomeWhy`); `engines[].arm` names the library, its version and the recipe, and `engines[].outcomes` counts the outcomes; `rules` maps `<family>:<check>` to the rule text.
 - `--with-large` adds the local files in `fixtures/large` (generated with `npm run fixtures:generate -- --with-long`, not committed). The generated tables need the two long files, so regenerate with this flag.
-- The committed `accuracy.md` and `accuracy.json` cover 131 fixtures: the 126 committed ones plus 5 local files of `fixtures/large` that are not committed (the two `--with-long` files and the three `--with-big` 1080p files). Its own-engine totals (1832 checks, 1769 exact) therefore include those 5 files. On the committed corpus alone, `npm run compare -- --no-write` gives the own engine 1747 checks: 1690 exact, 2 within-tol, 1 known-deviation, 0 mismatch and 54 n/a.
 - `--filter <text>` writes `accuracy.local.*` (git-ignored) instead; `--mkv-mode header|probe|exact|auto` sets the Matroska scan mode; `--self-test` checks the comparison rules.
+
+<!-- tables:report-totals:start -->
+
+The committed `accuracy.md` and `accuracy.json` cover 131 fixtures: the 126 committed ones plus 5 local files of `fixtures/large` that are not committed (2 from `--with-long`, 3 from `--with-big`). Their own-engine totals (2087 checks, 1981 exact) therefore include those 5 files. On the committed corpus alone, `npm run compare -- --no-write` gives the own engine 2002 checks: 1902 exact, 4 within-tol, 9 known-deviation, 0 mismatch and 87 n/a.
+
+<!-- tables:report-totals:end -->
 
 ## size.md, size.json
 
@@ -76,4 +81,4 @@ Not generated. It combines the measured numbers of `integration-cost.md` and `br
 
 ## Generated tables
 
-`node scripts/readme-tables.ts` rewrites the sections between `<!-- tables:<name>:start -->` and `<!-- tables:<name>:end -->` from `accuracy.json`, `size.json`, `size-matrix.json`, `browser-bench.json`, `integration-cost.json` and `fixtures/manifest.tsv`. Each section lives in exactly one file (`TARGETS` in the script): `size` and `accuracy-summary` in the README; `headline`, `reads`, `profile`, `engines`, `accuracy`, `deviations`, `approaches`, `rvfc`, `speed`, `package`, `bundle`, `integration` and `corpus` in `docs/benchmarks.md`; `vite` in `docs/bundlers.md`. Running it twice changes nothing. It stops with an error when a marker or a value it needs is missing, for example when the accuracy report was generated without `--with-large`.
+`node scripts/readme-tables.ts` rewrites the sections between `<!-- tables:<name>:start -->` and `<!-- tables:<name>:end -->` from `accuracy.json`, `size.json`, `size-matrix.json`, `browser-bench.json`, `integration-cost.json` and `fixtures/manifest.tsv`. Each section lives in exactly one file (`TARGETS` in the script): `size` and `accuracy-summary` in the README; `headline`, `reads`, `profile`, `engines`, `accuracy`, `deviations`, `late`, `recorder`, `approaches`, `rvfc`, `speed`, `package`, `bundle`, `integration` and `corpus` in `docs/benchmarks.md`; `vite` in `docs/bundlers.md`; `report-totals`, the totals paragraph of the accuracy section above, in this file. Running it twice changes nothing. It stops with an error when a marker or a value it needs is missing, for example when the accuracy report was generated without `--with-large`.
