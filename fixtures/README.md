@@ -1,14 +1,15 @@
 # Fixtures
 
-Synthetic test corpus for the FPS probe, built with ffmpeg 8.1.1 and measured with ffprobe 8.1.1.
-Every video is generated from lavfi test sources (`testsrc2`, `sine`), so there is no third-party
-content. 114 core fixtures (about 12.7 MB) are committed; six optional heavy ones are generated on demand.
+Test corpus for the FPS probe, measured with ffprobe 8.1.1. 114 videos are built with ffmpeg 8.1.1 from lavfi
+test sources (`testsrc2`, `sine`), and 12 are real MediaRecorder recordings of a canvas animation made by this
+repository in headless Chromium, so there is no third-party content. 126 core fixtures (about 13.6 MB) are
+committed; six optional heavy ones are generated on demand.
 
 ## Layout
 
 | Path | Content | Committed |
 | --- | --- | --- |
-| `files/` | the 114 core fixtures | yes |
+| `files/` | the 126 core fixtures | yes |
 | `large/` | optional `--with-long`, `--with-sparse` and `--with-big` files | no (git-ignored) |
 | `manifest.tsv` | one row per fixture, optional ones included | yes |
 | `ref/<file name>.ref.json` | ffprobe ground truth per fixture | yes |
@@ -76,6 +77,7 @@ lying `entry_count` by the box size and warns, while ffprobe fails on it (`ok: f
 | `edge` | 1 | a single video sample |
 | `corrupt` | 9 | empty, garbage, text, a PNG, truncated at different places, a lying `stts` count |
 | `sniff` | 3 | real containers under the wrong extension |
+| `recorder` | 12 | MediaRecorder output of headless Chromium 156: WebM VP8, VP9 and AV1, Matroska H.264, fragmented MP4 H.264 and VP9, each in one piece and with a 250 ms timeslice (below) |
 | `long` | 2 | optional: 3 h CFR at 60 fps (648,000 frames, 13 MB) and 1 h VFR screen recording (133,920 frames, 3.9 MB) |
 | `sparse` | 1 | optional: 4.5 GB logical MP4 with `co64` offsets above 2^32 |
 | `big` | 3 | optional: 60 s of 1080p30 H.264 (604 MB) with the moov at the end, the same with faststart, and the same stream in Matroska, for browser timing of a realistic upload |
@@ -105,6 +107,34 @@ Three `vfr` files, 64x36 and at most 1 MB each (443 KB together), stay constant 
 | `late_freeze_10s.mkv` | 25 fps H.264 in Matroska whose frame 5999 is held for 10.04 s (`setpts` at time base 1/90000): 6250 frames over 260 s | 1 steady 25 fps segment, 1 freeze of 10.04 s at 239.96 s |
 
 The commands are in section N of `scripts/fixtures/generate-fixtures.sh`.
+
+## Browser recordings (Tier R)
+
+Twelve `recorder` files are real browser output, not ffmpeg output. `scripts/fixtures/record-mediarecorder.mjs` drew a canvas animation (a frame counter, a moving square and a changing background) and recorded it with `canvas.captureStream()` and MediaRecorder:
+
+- Browser: Playwright's headless Chromium 156.0.8078.4 (`chromium.launch({ headless: true })`, the headless shell), on Windows 10, recorded on 2026-10-24.
+- Pacing: drawn on `requestAnimationFrame` for 1.5 s, paused for 0.6 s, drawn by a 15 fps `setInterval` until 3.6 s and on `requestAnimationFrame` again until 4.5 s. The drawing is the same in every run; the timestamps are what the browser recorded.
+- Settings: 320x180, `videoBitsPerSecond` 250000, each type once without a timeslice and once with `start(250)`.
+- Licence: CC0. The animation and the files were made by this repository, with no third-party content.
+
+| File | Requested type | Recorded type | Timeslice | Frames drawn | Size |
+| --- | --- | --- | --- | ---: | ---: |
+| `rec_chromium_vp8.webm` | `video/webm;codecs=vp8` | `video/webm;codecs=vp8` | none | 166 | 86.9 KiB |
+| `rec_chromium_vp8_sliced.webm` | `video/webm;codecs=vp8` | `video/webm;codecs=vp8` | 250 ms (15 chunks) | 166 | 86.2 KiB |
+| `rec_chromium_vp9.webm` | `video/webm;codecs=vp9` | `video/webm;codecs=vp9` | none | 166 | 55.0 KiB |
+| `rec_chromium_vp9_sliced.webm` | `video/webm;codecs=vp9` | `video/webm;codecs=vp9` | 250 ms (15 chunks) | 165 | 54.1 KiB |
+| `rec_chromium_av1.webm` | `video/webm;codecs=av1` | `video/webm;codecs=av01` | none | 166 | 73.8 KiB |
+| `rec_chromium_av1_sliced.webm` | `video/webm;codecs=av1` | `video/webm;codecs=av01` | 250 ms (15 chunks) | 166 | 73.8 KiB |
+| `rec_chromium_h264.mkv` | `video/webm;codecs=h264` | `video/x-matroska;codecs=avc1` | none | 166 | 84.5 KiB |
+| `rec_chromium_h264_sliced.mkv` | `video/webm;codecs=h264` | `video/x-matroska;codecs=avc1` | 250 ms (15 chunks) | 166 | 84.3 KiB |
+| `rec_chromium_h264.mp4` | `video/mp4;codecs=avc1` | `video/mp4;codecs=avc1` | none | 165 | 85.2 KiB |
+| `rec_chromium_h264_sliced.mp4` | `video/mp4;codecs=avc1` | `video/mp4;codecs=avc1` | 250 ms (7 chunks) | 166 | 85.4 KiB |
+| `rec_chromium_vp9.mp4` | `video/mp4` | `video/mp4;codecs=vp9` | none | 166 | 49.1 KiB |
+| `rec_chromium_vp9_sliced.mp4` | `video/mp4` | `video/mp4;codecs=vp9` | 250 ms (2 chunks) | 166 | 50.7 KiB |
+
+WebM and Matroska recorded in one piece have a sized Segment, a Duration at or 1 ms after the last frame's timestamp (so the last frame gets almost no duration) and Cues; with a timeslice the Segment and Clusters have unknown sizes and there is no Duration and no Cues. None has a DefaultDuration. The MP4 files are fragmented (an empty moov, then moof and mdat pairs); in one piece Chromium adds an `mfra` and sets the mvhd duration, with a timeslice the mvhd duration stays 0. `video/webm;codecs=h264` records as `video/x-matroska;codecs=avc1` (DocType `matroska`) and plain `video/mp4` as VP9 in MP4, so the files are named after the type recorded.
+
+The recordings are not byte-reproducible, so they are committed as recorded and frozen: a new recording is a new file, not a replacement. The generator only writes their manifest rows (section R). Playwright's WebKit 27.2 on Windows has no MediaRecorder, and its Firefox does not start on the maintainer machine; the manual workflow `.github/workflows/record-firefox.yml` records Firefox on Ubuntu and uploads the files as an artifact, to be reviewed before they are committed.
 
 ## Optional files
 

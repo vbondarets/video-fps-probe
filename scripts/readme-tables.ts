@@ -324,7 +324,8 @@ const CATEGORY_TEXT: Record<string, string> = {
   fmp4: 'fragmented MP4: empty moov, default-base-is-moof, CMAF, DASH, sidx, hybrid',
   codec: 'HEVC (hvc1, hev1), AV1, VP8, VP9 and ProRes in MP4, MOV, WebM and Matroska',
   live: 'WebM from live, pipe and MediaRecorder-like muxing: unknown sizes, no Duration or Cues, a false Duration, an audio-only tail',
-  vfr: 'VFR from concatenation, non-linear setpts, frame dropping, mpdecimate, screen recording, pulldown, a 5/200 fps two-phase file and a 2 s freeze, also with B-frames, fragmented, in MOV, WebM and Matroska',
+  vfr: 'VFR from concatenation, non-linear setpts, frame dropping, mpdecimate, screen recording, pulldown, a 5/200 fps two-phase file, a 2 s freeze and changes after more than 5000 constant frames, also with B-frames, fragmented, in MOV, WebM and Matroska',
+  recorder: 'MediaRecorder output of headless Chromium 156: WebM VP8, VP9 and AV1, Matroska H.264, fragmented MP4 H.264 and VP9, each in one piece and with a 250 ms timeslice',
   box64: '64-bit mdat headers, co64 chunk offsets, an mdat with size 0',
   multi: 'video plus audio, two video tracks, a still image track before the video',
   cover: 'cover art in M4A, MP4 and Matroska',
@@ -597,6 +598,7 @@ function headline(inp: Inputs): string[] {
   const { checks, counts } = ownTotals(own);
   const committed = own.fixtures.filter((f) => !isLarge(f, inp.manifest));
   const large = own.fixtures.filter((f) => isLarge(f, inp.manifest));
+  const recorded = own.fixtures.filter((f) => f.category === 'recorder').length;
   const reads = committed.map((f) => io(f).reads);
   const long = fixture(own, 'long_cfr_3h_60fps.mp4');
   const longFrames = findCheck(primaryOf(long)?.checks ?? [], 'frames')?.app ?? '-';
@@ -618,7 +620,7 @@ function headline(inp: Inputs): string[] {
       : '';
   const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? '' : 's'}`;
   return [
-    `- **Accuracy.** The own parsers were checked against ffprobe 8.1.1 on ${own.fixtures.length} synthetic fixtures made with ffmpeg (${committed.length} committed, ${large.length} large local files; real recorder output is not in the corpus, see Limitations): ${checks} field checks, ${counts.exact} exact, ${counts['within-tol']} within tolerance, ${plural(counts['known-deviation'], 'known deviation')} with a recorded reason, ${plural(counts.mismatch, 'mismatch').replace(/hs$/, 'hes')}, ${counts['n/a']} not applicable.`,
+    `- **Accuracy.** The own parsers were checked against ffprobe 8.1.1 on ${own.fixtures.length} fixtures, ${own.fixtures.length - recorded} made with ffmpeg and ${recorded} MediaRecorder recordings from headless Chromium (${committed.length} committed, ${large.length} large local files; phone, camera, screen recorder, Firefox and Safari output is not in the corpus, see Limitations): ${checks} field checks, ${counts.exact} exact, ${counts['within-tol']} within tolerance, ${plural(counts['known-deviation'], 'known deviation')} with a recorded reason, ${plural(counts.mismatch, 'mismatch').replace(/hs$/, 'hes')}, ${counts['n/a']} not applicable.`,
     `- **Reads.** Median ${plural(median(reads), 'read')} per committed fixture, at most ${Math.max(...reads)}. The ${fmtDuration(longDur)}, ${longFrames}-frame MP4 (${fmtBytes(long.sizeBytes)}) takes ${io(long).reads} reads and ${fmtBytes(io(long).bytesRead)} (${fmtPct(io(long).percent)}% of the file).`,
     `- **Speed.** In ${browser}, warm: median ${fmtMs(median(warm.map((w) => w.medianMs)))} ms per file in the worker and ${fmtMs(median(warm.map((w) => w.medianWallMs)))} ms from file pick to rendered result; the ${fmtDuration(longDur)} file takes ${fmtMs(chromeLong.medianMs)} ms.${big}${staleBenchChunks(inp).length > 0 ? ' Measured on an earlier build, so these figures are not current ([Speed](#speed)).' : ''}`,
     `- **Size.** A default install (\`video-fps-probe/lazy\`) adds ${fmtKB(matrixMetric(inp, 'default', 'trigger'))} gzip to a host app's critical path. Its first MP4 file loads ${fmtKB(matrixMetric(inp, 'default', 'firstMp4'))} lazily when the host's Vite config sets \`worker: { format: 'es' }\`, and ${fmtKB(matrixMetric(inp, 'zero-config', 'firstMp4'))} with Vite's default worker format, 'iife', which builds the own worker as one file ([Package size](#package-size)). The demo page plus its first MP4 result loads ${fmtKB(firstMp4.gzip)} gzip (page, ${kindGzip(inp.size, 'client') === null ? '' : 'probe client, '}worker entry, ${sharedParserGzip(inp.size) === null ? '' : 'shared statistics chunk, '}ISO BMFF parser); the first Matroska result ${fmtKB(firstMkv.gzip)}.`,
@@ -1307,6 +1309,17 @@ function lateBlock(inp: Inputs): string[] {
   ];
 }
 
+function recorderBlock(inp: Inputs): string[] {
+  const engines = inp.acc.engines.filter((e) => !e.loadSkipped);
+  const rows = engines.map((e) => {
+    const fixtures = e.fixtures.filter((f) => f.category === 'recorder');
+    const checks = fixtures.flatMap(checksOf);
+    const n = (v: Verdict) => checks.filter((c) => c.verdict === v).length;
+    return row([ENGINE_LABEL[e.engine] ?? e.engine, fixtures.length, checks.length, n('exact'), n('within-tol'), n('known-deviation'), ...OUTCOMES.map((k) => checks.filter((c) => c.outcome === k).length), n('n/a')]);
+  });
+  return table(['Arm', 'Recordings', 'Checks', 'exact', 'within-tol', 'known deviation', ...OUTCOMES.map((k) => OUTCOME_LABEL[k]), 'n/a'], 'lrrrrrrrrrrr', rows);
+}
+
 function corpusBlock(inp: Inputs): string[] {
   const cats = new Map<string, ManifestRow[]>();
   for (const r of inp.manifest) cats.set(r.category, [...(cats.get(r.category) ?? []), r]);
@@ -1435,6 +1448,7 @@ const BLOCKS: Record<string, (inp: Inputs, doc: Doc) => string[]> = {
   rvfc: rvfcBlock,
   corpus: corpusBlock,
   late: lateBlock,
+  recorder: recorderBlock,
   size: sizeBlock,
   'accuracy-summary': accuracySummaryBlock,
   vite: viteBlock,
@@ -1442,7 +1456,7 @@ const BLOCKS: Record<string, (inp: Inputs, doc: Doc) => string[]> = {
 
 export const TARGETS: ReadonlyArray<{ path: string; blocks: readonly string[] }> = [
   { path: 'README.md', blocks: ['size', 'accuracy-summary'] },
-  { path: 'docs/benchmarks.md', blocks: ['headline', 'reads', 'profile', 'engines', 'accuracy', 'deviations', 'late', 'approaches', 'rvfc', 'speed', 'package', 'bundle', 'integration', 'corpus'] },
+  { path: 'docs/benchmarks.md', blocks: ['headline', 'reads', 'profile', 'engines', 'accuracy', 'deviations', 'late', 'recorder', 'approaches', 'rvfc', 'speed', 'package', 'bundle', 'integration', 'corpus'] },
   { path: 'docs/bundlers.md', blocks: ['vite'] },
 ];
 

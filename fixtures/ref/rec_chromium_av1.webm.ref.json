@@ -1,0 +1,267 @@
+{
+  "schema": 1,
+  "file": "rec_chromium_av1.webm",
+  "bytes": 75543,
+  "ffprobeVersion": "ffprobe version 8.1.1-full_build-www.gyan.dev Copyright (c) 2007-2026 the FFmpeg developers",
+  "countFrames": true,
+  "ok": true,
+  "exitCode": 0,
+  "stderr": [],
+  "probeExit": 0,
+  "probeErr": null,
+  "probe": {
+    "streams": [
+      {
+        "index": 0,
+        "codec_name": "av1",
+        "codec_long_name": "Alliance for Open Media AV1",
+        "profile": "Main",
+        "codec_type": "video",
+        "codec_tag_string": "[0][0][0][0]",
+        "codec_tag": "0x0000",
+        "mime_codec_string": "av01.0.09M.08",
+        "width": 320,
+        "height": 180,
+        "coded_width": 320,
+        "coded_height": 180,
+        "has_b_frames": 0,
+        "sample_aspect_ratio": "1:1",
+        "display_aspect_ratio": "16:9",
+        "pix_fmt": "yuv420p",
+        "level": 0,
+        "color_range": "pc",
+        "color_space": "bt709",
+        "color_transfer": "iec61966-2-1",
+        "color_primaries": "bt709",
+        "chroma_location": "unspecified",
+        "field_order": "unknown",
+        "refs": 1,
+        "id": "N/A",
+        "r_frame_rate": "60/1",
+        "avg_frame_rate": "60/1",
+        "time_base": "1/1000",
+        "start_pts": 0,
+        "start_time": "0.000000",
+        "duration_ts": "N/A",
+        "duration": "N/A",
+        "bit_rate": "N/A",
+        "max_bit_rate": "N/A",
+        "bits_per_raw_sample": "N/A",
+        "nb_frames": "N/A",
+        "nb_read_frames": "166",
+        "nb_read_packets": "166",
+        "extradata_size": 4,
+        "disposition": {
+          "default": 1,
+          "dub": 0,
+          "original": 0,
+          "comment": 0,
+          "lyrics": 0,
+          "karaoke": 0,
+          "forced": 0,
+          "hearing_impaired": 0,
+          "visual_impaired": 0,
+          "clean_effects": 0,
+          "attached_pic": 0,
+          "timed_thumbnails": 0,
+          "non_diegetic": 0,
+          "captions": 0,
+          "descriptions": 0,
+          "metadata": 0,
+          "dependent": 0,
+          "still_image": 0,
+          "multilayer": 0
+        },
+        "tags": {
+          "language": "eng",
+          "alpha_mode": "1"
+        }
+      }
+    ],
+    "format": {
+      "filename": "rec_chromium_av1.webm",
+      "nb_streams": 1,
+      "nb_programs": 0,
+      "nb_stream_groups": 0,
+      "format_name": "matroska,webm",
+      "format_long_name": "Matroska / WebM",
+      "start_time": "0.000000",
+      "duration": "4.492030",
+      "size": "75543",
+      "bit_rate": "134536",
+      "probe_score": 100,
+      "tags": {
+        "encoder": "Chrome"
+      }
+    }
+  },
+  "format": {
+    "format_name": "matroska,webm",
+    "duration": "4.492030",
+    "size": "75543",
+    "bit_rate": "134536",
+    "nb_streams": 1,
+    "start_time": "0.000000"
+  },
+  "streams": [
+    {
+      "index": 0,
+      "codec_type": "video",
+      "codec_name": "av1",
+      "attachedPic": false
+    }
+  ],
+  "attachedPicStreams": [],
+  "videoStreams": [
+    {
+      "index": 0,
+      "codecName": "av1",
+      "width": 320,
+      "height": 180,
+      "timeBase": "1/1000",
+      "packets": 166,
+      "presentedPackets": 166,
+      "discardedPackets": 0,
+      "keyframes": 2,
+      "ptsPresented": [0, 10, 26, 42, 59, 75, 92, 109, 126, 142, 159, 175, 192, 209, 227, 242, 260, 276, 292, 309, 326, 342, 359, 375, 392, 409, 425, 443, 459, 476, 492, 509, 526, 543, 558, 576, 592, 609, 625, 642, 660, 675, 692, 709, 726, 743, 759, 776, 792, 809, 826, 842, 858, 876, 893, 909, 925, 941, 959, 977, 993, 1009, 1026, 1042, 1059, 1075, 1092, 1109, 1126, 1142, 1159, 1175, 1192, 1209, 1226, 1242, 1258, 1276, 1292, 1309, 1325, 1342, 1359, 1375, 1393, 1408, 1425, 1442, 1459, 1475, 1492, 2186, 2242, 2311, 2388, 2441, 2506, 2572, 2639, 2705, 2771, 2836, 2903, 2969, 3034, 3113, 3167, 3232, 3298, 3365, 3431, 3497, 3563, 3628, 3642, 3660, 3675, 3692, 3709, 3725, 3742, 3759, 3777, 3792, 3810, 3826, 3842, 3859, 3875, 3892, 3908, 3926, 3942, 3959, 3975, 3992, 4009, 4025, 4041, 4059, 4075, 4092, 4108, 4126, 4143, 4159, 4175, 4192, 4209, 4226, 4242, 4258, 4276, 4292, 4309, 4326, 4342, 4358, 4375, 4392, 4408, 4425, 4442, 4459, 4475, 4492],
+      "deltas": [10, 16, 16, 17, 16, 17, 17, 17, 16, 17, 16, 17, 17, 18, 15, 18, 16, 16, 17, 17, 16, 17, 16, 17, 17, 16, 18, 16, 17, 16, 17, 17, 17, 15, 18, 16, 17, 16, 17, 18, 15, 17, 17, 17, 17, 16, 17, 16, 17, 17, 16, 16, 18, 17, 16, 16, 16, 18, 18, 16, 16, 17, 16, 17, 16, 17, 17, 17, 16, 17, 16, 17, 17, 17, 16, 16, 18, 16, 17, 16, 17, 17, 16, 18, 15, 17, 17, 17, 16, 17, 694, 56, 69, 77, 53, 65, 66, 67, 66, 66, 65, 67, 66, 65, 79, 54, 65, 66, 67, 66, 66, 66, 65, 14, 18, 15, 17, 17, 16, 17, 17, 18, 15, 18, 16, 16, 17, 16, 17, 16, 18, 16, 17, 16, 17, 17, 16, 16, 18, 16, 17, 16, 18, 17, 16, 16, 17, 17, 17, 16, 16, 18, 16, 17, 17, 16, 16, 17, 17, 16, 17, 17, 17, 16, 17],
+      "deltasExcludingTail": [10, 16, 16, 17, 16, 17, 17, 17, 16, 17, 16, 17, 17, 18, 15, 18, 16, 16, 17, 17, 16, 17, 16, 17, 17, 16, 18, 16, 17, 16, 17, 17, 17, 15, 18, 16, 17, 16, 17, 18, 15, 17, 17, 17, 17, 16, 17, 16, 17, 17, 16, 16, 18, 17, 16, 16, 16, 18, 18, 16, 16, 17, 16, 17, 16, 17, 17, 17, 16, 17, 16, 17, 17, 17, 16, 16, 18, 16, 17, 16, 17, 17, 16, 18, 15, 17, 17, 17, 16, 17, 694, 56, 69, 77, 53, 65, 66, 67, 66, 66, 65, 67, 66, 65, 79, 54, 65, 66, 67, 66, 66, 66, 65, 14, 18, 15, 17, 17, 16, 17, 17, 18, 15, 18, 16, 16, 17, 16, 17, 16, 18, 16, 17, 16, 17, 17, 16, 16, 18, 16, 17, 16, 18, 17, 16, 16, 17, 17, 17, 16, 16, 18, 16, 17, 17, 16, 16, 17, 17, 16, 17, 17, 17, 16],
+      "arraysOmitted": false,
+      "duplicateTimestamps": 0,
+      "reorderDepth": 0,
+      "tailDropped": 1,
+      "deltaHistogramAll": {
+        "10": 1,
+        "14": 1,
+        "15": 6,
+        "16": 53,
+        "17": 64,
+        "18": 17,
+        "53": 1,
+        "54": 1,
+        "56": 1,
+        "65": 5,
+        "66": 8,
+        "67": 3,
+        "69": 1,
+        "77": 1,
+        "79": 1,
+        "694": 1
+      },
+      "deltaHistogramExcludingTail": {
+        "10": 1,
+        "14": 1,
+        "15": 6,
+        "16": 53,
+        "17": 63,
+        "18": 17,
+        "53": 1,
+        "54": 1,
+        "56": 1,
+        "65": 5,
+        "66": 8,
+        "67": 3,
+        "69": 1,
+        "77": 1,
+        "79": 1,
+        "694": 1
+      },
+      "instFpsAll": {
+        "count": 165,
+        "minDeltaTicks": 10,
+        "maxDeltaTicks": 694,
+        "distinctDeltas": 16,
+        "minFps": {
+          "num": 500,
+          "den": 347,
+          "value": 1.440922190201729
+        },
+        "maxFps": {
+          "num": 100,
+          "den": 1,
+          "value": 100
+        }
+      },
+      "instFpsExcludingTail": {
+        "count": 164,
+        "minDeltaTicks": 10,
+        "maxDeltaTicks": 694,
+        "distinctDeltas": 16,
+        "minFps": {
+          "num": 500,
+          "den": 347,
+          "value": 1.440922190201729
+        },
+        "maxFps": {
+          "num": 100,
+          "den": 1,
+          "value": 100
+        }
+      },
+      "vfr": {
+        "isVfr": true,
+        "medianDeltaTicks": 17,
+        "toleranceTicks": 1,
+        "vfrRatio": 69.4
+      },
+      "avgFromPts": {
+        "frames": 166,
+        "firstPts": 0,
+        "lastPts": 4492,
+        "lastDurationTicks": 16,
+        "spanTicks": 4508,
+        "fps": {
+          "num": 41500,
+          "den": 1127,
+          "value": 36.82342502218279
+        }
+      },
+      "lastPacketEnd": {
+        "ticks": 4508,
+        "seconds": 4.508
+      }
+    }
+  ],
+  "videos": [
+    {
+      "index": 0,
+      "codec_name": "av1",
+      "profile": "Main",
+      "codec_tag_string": "[0][0][0][0]",
+      "width": 320,
+      "height": 180,
+      "avg_frame_rate": "60/1",
+      "r_frame_rate": "60/1",
+      "avg_fps": 60,
+      "r_fps": 60,
+      "nb_frames": null,
+      "nb_read_frames": "166",
+      "duration": null,
+      "start_time": "0.000000",
+      "time_base": "1/1000",
+      "has_b_frames": 0,
+      "packets": {
+        "packets": 166,
+        "keyframes": 2,
+        "discardedPackets": 0,
+        "ptsDeltaMinTicks": 10,
+        "ptsDeltaMaxTicks": 694,
+        "distinctDeltas": 16,
+        "minInstFps": 1.4409221902017293,
+        "maxInstFps": 100,
+        "zeroDeltas": 0,
+        "ptsFirstSec": 0,
+        "ptsLastSec": 4.492,
+        "avgFpsFromPts": 36.82342502218279,
+        "avgFpsFromSpan": 36.73196794300979,
+        "durMinTicks": 16,
+        "durMaxTicks": 16,
+        "vfrByDeltaRatio": true,
+        "minInstFpsByDur": 62.5,
+        "maxInstFpsByDur": 62.5,
+        "minInstFpsByDts": 1.4409221902017293,
+        "maxInstFpsByDts": 100
+      }
+    }
+  ]
+}

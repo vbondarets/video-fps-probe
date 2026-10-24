@@ -111,6 +111,23 @@ describe('rate profile on fixtures', () => {
     expect(p.summary).toMatch(/; 1 freeze$/);
   });
 
+  it('every MediaRecorder recording shows the pacing it was recorded with: rAF, a 0.6 s freeze, a 15 fps timer, rAF', async () => {
+    const recordings = okRows.filter((r) => r.category === 'recorder').map((r) => r.name);
+    expect(recordings.length).toBeGreaterThanOrEqual(12);
+    for (const name of recordings) {
+      const { t, p } = await profile(name);
+      checkTiling(t, p);
+      expect(t.isVfr, name).toBe(true);
+      expect(p.segments.map((s) => s.kind), name).toEqual(['steady', 'steady', 'steady']);
+      p.segments.forEach((s, i) => expect(Math.abs(s.fps - [60, 15, 60][i]), `${name} segment ${i}`).toBeLessThan(1.5));
+      const freezes = p.anomalies.filter((a) => a.kind === 'freeze');
+      expect(freezes, name).toHaveLength(1);
+      expect(Math.abs(freezes[0].atSec - 1.5), name).toBeLessThan(0.1);
+      expect(Math.abs((freezes[0].durationSec ?? 0) - 0.69), name).toBeLessThan(0.1);
+      expect(p.anomalies.filter((a) => a.kind === 'rate-change').map((a) => Math.round(a.atSec * 10) / 10), name).toEqual([1.5, 3.6]);
+    }
+  });
+
   it('vfr_mpdecimate.mp4 and the screen recordings report their stalls instead of extra segments', async () => {
     const mp = await profile('vfr_mpdecimate.mp4');
     expect(mp.p.segments).toHaveLength(1);
@@ -181,7 +198,7 @@ describe('rate profile on fixtures', () => {
         cfr++;
       }
     }
-    expect(vfr).toBe(25);
+    expect(vfr).toBe(37);
     expect(cfr).toBe(0);
   });
 
