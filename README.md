@@ -80,7 +80,7 @@ const checks = Promise.all(files.map((f) => probe.tryAnalyze(f, { timeoutMs: 300
 const results = await Promise.race([checks, late]); // null, or null entries: upload without the check
 ```
 
-`tryAnalyze` resolves `null` where `analyze` rejects. `timeoutMs` counts per job once a worker takes it and the signal cancels queued and running jobs, but neither covers main-thread chunk downloads: hence `prewarm()` and the race. A probe rejects only with a `ProbeError`; a lazy stub whose chunk fails to load rejects with the raw import error. [Details](docs/api.md#cancellation-and-failing-open).
+`tryAnalyze` resolves `null` where `analyze` rejects. `timeoutMs` counts per job once a worker takes it and the signal cancels queued and running jobs, but neither covers main-thread chunk downloads: hence `prewarm()` and the race. A probe and a lazy stub reject only with a `ProbeError`; code that did not load, such as a chunk that is gone after a redeploy, has `reason: 'load'`. [Details](docs/api.md#cancellation-and-failing-open).
 
 ## Size
 
