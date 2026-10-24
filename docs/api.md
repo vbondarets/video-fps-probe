@@ -424,7 +424,7 @@ Every rejection of a probe or a lazy stub is a `ProbeError`. The guards check th
 
 ## Worker protocol
 
-Messages carry `v: 1` (`PROTOCOL_VERSION`). Requests are `analyze { id, file, name, engine, options }`, `warm { id, engines, containers }` and `cancel { id }`; responses are `progress` (at most every 50 ms), `result`, `skipped { reason, family }`, `warmed` and `error { message, aborted, code?, reason? }`, where `reason: 'load'` marks an engine module that failed to load (an optional field: a client that does not know it reads the error as a crash). The protocol is internal: the client and the worker must come from the same package version, and a mismatch is reported as `protocol`. A breaking protocol change bumps the version and is a major release.
+Messages carry `v: 1` (`PROTOCOL_VERSION`). Requests are `analyze { id, file, name, engine, options }`, `warm { id, engines, containers }` and `cancel { id }`; responses are `progress` (at most every 50 ms), `result`, `skipped { reason, family }`, `warmed` and `error { message, aborted, code?, reason? }`, where `reason: 'load'` marks an engine module that failed to load, and any failed `warm`, which only loads code (an optional field: a client that does not know it reads the error as a crash). The protocol is internal: the client and the worker must come from the same package version, and a mismatch is reported as `protocol`. A breaking protocol change bumps the version and is a major release.
 
 ## Versioning
 

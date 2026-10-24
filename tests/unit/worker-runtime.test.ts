@@ -132,6 +132,20 @@ describe('serveProbeWorker', () => {
     expect(await self.settled(3)).not.toHaveProperty('reason');
   });
 
+  it('marks a failed warm with the load reason, whether the engine module or the code it warms did not load', async () => {
+    const source = vi.fn<() => Promise<EngineModule>>().mockRejectedValue(new Error('Failed to fetch dynamically imported module'));
+    const cold: EngineModule = { ...fakeEngine('any'), warm: () => Promise.reject(new TypeError('error loading dynamically imported module')) };
+    const self = serve({ own: cold, mp4box: source as EngineSource });
+    self.send({ v: 1, type: 'warm', id: 1, engines: ['mp4box'], containers: ['isobmff'] });
+    expect(await self.settled(1)).toMatchObject({ type: 'error', id: 1, aborted: false, message: 'Failed to fetch dynamically imported module', reason: 'load' });
+    self.send({ v: 1, type: 'warm', id: 2, engines: ['own'], containers: ['isobmff'] });
+    expect(await self.settled(2)).toMatchObject({ type: 'error', id: 2, aborted: false, message: 'error loading dynamically imported module', reason: 'load' });
+    self.send({ v: 1, type: 'warm', id: 3, engines: ['mediabunny'], containers: [] });
+    const unknown = await self.settled(3);
+    expect(unknown).toMatchObject({ type: 'error', code: 'unknown-engine' });
+    expect(unknown).not.toHaveProperty('reason');
+  });
+
   it('replies unknown-engine for an engine this worker does not serve', async () => {
     const self = serve({ own: ownEngine });
     self.send({ v: 1, type: 'analyze', id: 4, file: new Blob([new Uint8Array(8)]), name: 'a.mp4', engine: 'mp4box', options: {} });

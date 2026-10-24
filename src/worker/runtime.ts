@@ -93,7 +93,7 @@ export function serveProbeWorker(engines: Partial<Record<WorkerEngineId, EngineS
       await Promise.all(job.engines.map(async (id) => (await load(id)).warm?.(job.containers)));
       post({ type: 'warmed', id: job.id });
     } catch (e) {
-      fail(job.id, e);
+      fail(job.id, e, false, true);
     }
   };
 

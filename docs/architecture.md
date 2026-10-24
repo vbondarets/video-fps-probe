@@ -166,7 +166,7 @@ type WorkerResponse = { v: 1; id: number } & (
 - A message with another `v`, a malformed analyze or warm request, or an unknown type gets `error` with code `protocol`. An engine the worker was not given gets `unknown-engine`. A lazy engine source, or the statistics chunk loaded next to it, that fails to load gets `error` with `reason: 'load'`.
 - For an engine with a `containers` list, the runtime sniffs the container family first and replies `skipped` for any other.
 - `progress` is sent at most once per 50 ms. Phases: `fragments` (ISO BMFF, every 64 moofs), `matroska-exact` (bytes after the first Cluster), `read` and `analyze` (mp4box), `packets` (mediabunny).
-- `warm` loads the listed engines and calls their `warm(containers)`; for own that loads the parser chunks of those containers.
+- `warm` loads the listed engines and calls their `warm(containers)`; for own that loads the parser chunks of those containers. A failed `warm` replies `error` with `reason: 'load'` unless it has a `code`.
 
 ## Lazy stubs
 
