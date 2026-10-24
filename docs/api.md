@@ -160,7 +160,7 @@ Accepted by `CallOptions`, `defaults` and the root `analyze`. They cross the wor
 
 | Option | Default | Meaning |
 |---|---|---|
-| `matroskaMode` | `'auto'` | `'header'`: headers only; `'probe'`: sampled blocks (no frame count or average); `'exact'`: every block header; `'auto'`: exact when the predicted cost is within `exactBudgetMs`, else probe |
+| `matroskaMode` | `'auto'` | `'header'`: headers only; `'probe'`: sampled blocks (no frame count or average); `'exact'`: every block header; `'auto'`: exact when the predicted cost is within `exactBudgetMs`, else probe. A file below the single-read size (see `readAhead`) is read whole in the first read in every mode |
 | `exactBudgetMs` | `150` | budget for the predicted exact-scan cost in `auto` mode |
 | `readAhead` | `{ head: 65536, fragment: 1048576, matroskaScan: 1048576, tail: 262144 }` | read window sizes in bytes: the first read, ISO BMFF fragment read-ahead, Matroska scan windows, Matroska tail scan. A file smaller than `head + perReadMs x bytesPerMs` (465,536 bytes by default), at most 1 MiB or `head` when that is larger, is read whole in the first read |
 | `costModel` | `{ perReadMs: 0.8, bytesPerMs: 500000, perBlockMs: 0.0002 }` | the exact-scan cost prediction: `reads x perReadMs + bytes / bytesPerMs + blocks x perBlockMs`; `perReadMs x bytesPerMs` also sizes the single first read, up to the 1 MiB cap (`perReadMs: 0`, or a negative or NaN product, keeps the first read at `readAhead.head`) |

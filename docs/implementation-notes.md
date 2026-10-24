@@ -66,7 +66,7 @@ What the implementation decided and learned, relative to [research.md](research.
 ## 3. Matroska
 
 - **Primary track** is the first TrackType 1 entry. `trackId` is the TrackNumber. Audio-only files return `error: null`, no tracks and the warning `no video track`.
-- **Modes.** `header` reads only the head window and Stage A; `probe` adds sampled blocks; `exact` walks every block; `auto` picks exact or probe from a cost prediction. `scan` records the depth reached.
+- **Modes.** `header` reads only the head window and Stage A; `probe` adds sampled blocks; `exact` walks every block; `auto` picks exact or probe from a cost prediction. `scan` records the depth reached. Below the single-read size (section 1) the first read is the whole file in every mode, so the mode then changes the parsing work, not the bytes read.
 - **Header (Stage A).** Budget is 5 reads and 1 MiB, checked against bytes already fetched plus the next read, including the Segment search. It follows SeekHead (and a chained one) for Info, Tracks and Tags.
   - Resync: only level-1 IDs, Void and CRC-32 are accepted. Anything else triggers a search from just after the last good element. An element that claims to end beyond EOF is parsed as far as it goes. A damaged Segment ID falls back to the first valid level-1 element. A Segment size above 2^53 or too small is read to EOF with a warning. Cluster discovery falls back to up to 4 Cues positions.
   - A Tracks element above the cap is read entry by entry, skipping children above 64 KiB such as CodecPrivate.
