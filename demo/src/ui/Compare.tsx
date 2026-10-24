@@ -5,7 +5,7 @@ import { autoCompare, registerHost, runCompare, type CompareEngine, type Row } f
 
 type Column = 'own' | CompareEngine;
 
-const LABEL: Record<Column, string> = { own: 'own parser', mp4box: 'mp4box', mediabunny: 'mediabunny', rvfc: 'rVFC' };
+const LABEL: Record<Column, string> = { own: 'own parser', mp4box: 'mp4box (tuned adapter)', mediabunny: 'mediabunny (tuned adapter)', rvfc: 'rVFC' };
 
 const METRICS: [string, (t: VideoTrackResult, r: FileResult) => string][] = [
   ['Average FPS', (t) => fps(t.avgFps)],

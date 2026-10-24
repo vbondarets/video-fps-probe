@@ -26,7 +26,7 @@ Each file gets a card with:
 - Bytes read, number of reads and analysis time. For Matroska also the scan depth (header, probe or exact) and a "Scan all frames" button.
 - A provenance mark on each value (header, exact, sampled, estimated, computed) and warnings in plain words.
 - All video tracks of the file, primary track first.
-- A **Compare engines** panel that runs the same file through mp4box.js and mediabunny and, on request, a playback estimate with `requestVideoFrameCallback`.
+- A **Compare engines** panel that runs the same file through mp4box.js and mediabunny, labelled as tuned adapters because they are this package's adapters over each library ([benchmarks](../docs/benchmarks.md#accuracy-vs-ffprobe)), and, on request, a playback estimate with `requestVideoFrameCallback`.
 
 Many files can be dropped at once (two workers, cancel per file). The toolbar sets the Matroska scan mode and downloads or copies all results as JSON. The export carries the build (`app.build`, the hashed entry chunk of the page) and an `environment` block (browser, OS, CPU threads, screen, time zone) so results from different devices and deploys can be compared; the footer shows the same device line. Light and dark themes follow the system, and the layout works at phone width (360 px with the Compare panel open is an e2e check).
 
