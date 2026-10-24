@@ -61,7 +61,7 @@ export interface ScanState {
   switchReads: number;
   largeWindow: number;
   warnings: string[];
-  onBlock?: (t: TrackScan, blk: BlockInfo, block: ElementHeader, blockDuration: number) => void;
+  onBlock?: (blk: BlockInfo, clusterTs: number, blockDuration: number, block: ElementHeader) => void;
   stop?: boolean;
 }
 
@@ -355,7 +355,7 @@ export async function walkCluster(src: ByteSource, st: ScanState, pos: number, m
           clusterTs = 0;
         }
         const t = addBlock(st, blk, clusterTs, duration);
-        if (t && st.onBlock) st.onBlock(t, blk, block, duration);
+        st.onBlock?.(blk, clusterTs, duration, block);
         if (t && t.track.type === 1) videoBlocks++;
       }
     }

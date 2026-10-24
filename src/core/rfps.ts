@@ -1,11 +1,12 @@
 import { avReduce, INT_MAX } from './rational.ts';
 import type { MkvHeader, MkvTrack } from './matroska/header.ts';
-import type { newScanState, scanSegment } from './matroska/scan.ts';
+import type { ElementHeader } from './matroska/ebml.ts';
+import type { addBlock, BlockInfo, newScanState, ScanState, TrackScan } from './matroska/scan.ts';
 import type { ByteSource } from './matroska/source.ts';
 
 export interface BlockWalker {
   newScanState: typeof newScanState;
-  scanSegment: typeof scanSegment;
+  addBlock: typeof addBlock;
 }
 
 export interface FfprobeRates {
@@ -260,7 +261,7 @@ function setupUnsupported(h: MkvHeader): string | null {
   return null;
 }
 
-export async function ffprobeRates(src: ByteSource, h: MkvHeader, start: number, walker: BlockWalker): Promise<FfprobeRates | string> {
+export function attachEstimate(src: ByteSource, h: MkvHeader, walker: BlockWalker, walk: ScanState, stop = false): (() => Promise<FfprobeRates | string>) | string {
   const setup = setupUnsupported(h);
   if (setup) return setup;
   const streams = new Map<number, Stream>();
@@ -286,11 +287,14 @@ export async function ffprobeRates(src: ByteSource, h: MkvHeader, start: number,
   let div = 0;
   let readSize = 0;
   let failed: string | null = null;
-  const heads: Array<[at: number, size: number]> = [];
-  const st = walker.newScanState(h, src.size, h.tracks);
-  st.onBlock = (t, blk, block, blockDuration) => {
-    st.stop = true;
-    if (readSize >= LIMIT || (v.nb && count >= framecount && [...streams.values()].every((s) => s.seen || s.nb >= MAX_TS_PROBE))) return;
+  let thrown: [unknown] | null = null;
+  let damaged: number | boolean | null = null;
+  const damage = (): number | boolean => walk.resyncs || walk.truncated || walk.missingClusterTs;
+  const heads: Array<Uint8Array | [at: number, size: number]> = [];
+  const own = walker.newScanState(h, src.size, h.tracks);
+  const accept = (blk: BlockInfo, clusterTs: number, blockDuration: number, block: ElementHeader): boolean => {
+    const t = walker.addBlock(own, blk, clusterTs, blockDuration) as TrackScan;
+    if (readSize >= LIMIT || (v.nb && count >= framecount && [...streams.values()].every((s) => s.seen || s.nb >= MAX_TS_PROBE))) return false;
     const s = streams.get(t.track.number) as Stream;
     const at = block.dataStart + Math.clz32(src.buf[block.dataStart - src.base]) - 20;
     const size = block.dataStart + block.size - at;
@@ -302,7 +306,7 @@ export async function ffprobeRates(src: ByteSource, h: MkvHeader, start: number,
       if (!dur || size < 1) failed = 'a bad Opus packet';
     } else if (!dur && tb.num * 1000 > tb.den) dur = 1;
     if (video && !v.nb && block.id === 0xa3 && !(blk.flags & 0x80)) failed = 'no keyframe first';
-    if (failed) return;
+    if (failed) return false;
     readSize += size;
     const dts = video && avc && v.nb < DECODED_BEFORE_DTS ? null : t.pts[t.n - 1];
     if (dts !== null && s.nb > 1) {
@@ -317,7 +321,7 @@ export async function ffprobeRates(src: ByteSource, h: MkvHeader, start: number,
     if (s.nb > 1) {
       let us = toUs(s.cid, s.tb);
       if (!us && s.nb > 30 && s.first !== null && s.last !== null) us = toUs(s.last - s.first, s.tb);
-      if (us >= LIMIT) return;
+      if (us >= LIMIT) return false;
       if (dur > 0) {
         s.cid += dur;
         s.durs++;
@@ -341,53 +345,65 @@ export async function ffprobeRates(src: ByteSource, h: MkvHeader, start: number,
     }
     if (video && dts !== null) lastDts = dts;
     if (dts !== null) s.seen = true;
-    if (video && v.nb < (avc ? DECODED_BEFORE_DTS : 1)) heads.push([at, Math.min(size, PACKET_HEAD_BYTES)]);
+    if (video && v.nb < (avc ? DECODED_BEFORE_DTS : 1)) {
+      const n = Math.min(size, PACKET_HEAD_BYTES);
+      heads.push(src.has(at, n) ? src.buf.slice(at - src.base, at + n - src.base) : [at, n]);
+    }
     s.nb++;
-    st.stop = false;
+    return true;
   };
-  await walker.scanSegment(src, st, start);
-  if (failed) return failed;
-  if (!v.nb || st.resyncs || st.truncated || st.missingClusterTs) return 'damaged first Clusters';
-  const packets: Uint8Array[] = [];
-  for (const [at, size] of heads) {
-    await src.load(at, size, size);
-    packets.push(src.buf.slice(at - src.base, at + size - src.base));
-  }
-  const codec = codecUnsupported(track, packets);
-  if (codec) return codec;
-  let r: Tb | null = null;
-  let avg: Tb | null = null;
-  if (unreliable && count > 15 && div > Math.max(1, Math.floor(tb.den / (500 * tb.num)))) r = avReduce(tb.den, BigInt(tb.num) * BigInt(div), INT_MAX);
-  if (count > 1 && !r && unreliable) {
-    let num = 0;
-    let best = 0.01;
-    for (let j = 0; j < STD; j++) {
-      const f = stdRate(j);
-      if ((v.cid ? v.cid * tbd < 11511.5 / f : f < 12012) || (tbd * sum) / count < (1001 * 12.0 * 0.8) / f) continue;
-      for (let k = 0; k < 2; k++) {
-        const e = variance(k, j);
-        if (e < best && best > 0.000000001) {
-          best = e;
-          num = f;
+  walk.onBlock = (blk, clusterTs, blockDuration, block) => {
+    if (damaged !== null) return;
+    try {
+      if (accept(blk, clusterTs, blockDuration, block)) return;
+    } catch (e) {
+      thrown = [e];
+    }
+    damaged = damage();
+    if (stop) walk.stop = true;
+  };
+  return async () => {
+    if (thrown) throw thrown[0];
+    if (failed) return failed;
+    if (!v.nb || (damaged ?? damage())) return 'damaged first Clusters';
+    const packets: Uint8Array[] = [];
+    for (const x of heads) packets.push(x instanceof Uint8Array ? x : (await src.load(x[0], x[1], x[1]), src.buf.slice(x[0] - src.base, x[0] + x[1] - src.base)));
+    const codec = codecUnsupported(track, packets);
+    if (codec) return codec;
+    let r: Tb | null = null;
+    let avg: Tb | null = null;
+    if (unreliable && count > 15 && div > Math.max(1, Math.floor(tb.den / (500 * tb.num)))) r = avReduce(tb.den, BigInt(tb.num) * BigInt(div), INT_MAX);
+    if (count > 1 && !r && unreliable) {
+      let num = 0;
+      let best = 0.01;
+      for (let j = 0; j < STD; j++) {
+        const f = stdRate(j);
+        if ((v.cid ? v.cid * tbd < 11511.5 / f : f < 12012) || (tbd * sum) / count < (1001 * 12.0 * 0.8) / f) continue;
+        for (let k = 0; k < 2; k++) {
+          const e = variance(k, j);
+          if (e < best && best > 0.000000001) {
+            best = e;
+            num = f;
+          }
         }
       }
+      if (num && num / 12012 < 1.01 * (tb.den / tb.num)) r = avReduce(num, 12012, INT_MAX);
     }
-    if (num && num / 12012 < 1.01 * (tb.den / tb.num)) r = avReduce(num, 12012, INT_MAX);
-  }
-  if (r && sum && v.cid <= 0 && count > 2 && Math.abs(1.0 / ((r.num / r.den) * tbd) - sum / count) <= 1.0) avg = r;
-  if (v.durs && !avg && v.cid) {
-    avg = avReduce(BigInt(v.durs) * BigInt(tb.den), BigInt(v.cid) * BigInt(tb.num), 60000);
-    let best = 0.01;
-    let fps = 0;
-    for (let j = 0; j < STD; j++) {
-      const e = Math.abs(avg.num / avg.den / (stdRate(j) / 12012) - 1);
-      if (e < best) {
-        best = e;
-        fps = stdRate(j);
+    if (r && sum && v.cid <= 0 && count > 2 && Math.abs(1.0 / ((r.num / r.den) * tbd) - sum / count) <= 1.0) avg = r;
+    if (v.durs && !avg && v.cid) {
+      avg = avReduce(BigInt(v.durs) * BigInt(tb.den), BigInt(v.cid) * BigInt(tb.num), 60000);
+      let best = 0.01;
+      let fps = 0;
+      for (let j = 0; j < STD; j++) {
+        const e = Math.abs(avg.num / avg.den / (stdRate(j) / 12012) - 1);
+        if (e < best) {
+          best = e;
+          fps = stdRate(j);
+        }
       }
+      if (fps) avg = avReduce(fps, 12012, INT_MAX);
     }
-    if (fps) avg = avReduce(fps, 12012, INT_MAX);
-  }
-  r ??= { num: tb.den, den: tb.num };
-  return { avg: avg ? `${avg.num}/${avg.den}` : '0/0', r: `${r.num}/${r.den}`, packets: v.nb };
+    r ??= { num: tb.den, den: tb.num };
+    return { avg: avg ? `${avg.num}/${avg.den}` : '0/0', r: `${r.num}/${r.den}`, packets: v.nb };
+  };
 }

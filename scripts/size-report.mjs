@@ -57,9 +57,9 @@ export const BUDGETS = {
   },
   rfps: {
     label: 'lazy ffprobe frame rate estimate (rfps)',
-    limit: 3.5 * KB,
+    limit: 4 * KB,
     required: false,
-    why: 'The ffprobe avg_frame_rate and r_frame_rate estimate for a Matroska or WebM file without DefaultDuration, fetched by the Matroska parser chunk only for such a file, in probe and exact mode. Measured 2.75 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB. Not required: a build whose Matroska files never need it still emits it, and when the chunk is merged into the parser, the Matroska budget catches the growth.',
+    why: 'The ffprobe avg_frame_rate and r_frame_rate estimate for a Matroska or WebM file without DefaultDuration, fetched by the Matroska parser chunk only for such a file, in probe and exact mode. Measured 2.75 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB. Raised from 3.5 KB to 4.0 KB in 0.2.0 by the same rule, measured 3.52 KB, when the estimate began to read the H.264 slice headers that decide the decoder delay and to ride the block walk of the exact scan instead of a walk of its own. Not required: a build whose Matroska files never need it still emits it, and when the chunk is merged into the parser, the Matroska budget catches the growth.',
   },
   client: {
     label: 'lazy probe client',

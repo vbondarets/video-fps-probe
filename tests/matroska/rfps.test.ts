@@ -4,7 +4,7 @@ import { av1TimingInfo, h264Sps } from '../../src/core/rfps.ts';
 import type { FileResult, MatroskaMode } from '../../src/core/types.ts';
 import { fixturePath, loadRef } from '../helpers/fixtures.ts';
 import { withFixture } from '../helpers/open-blob.ts';
-import { cluster, concat, ebmlHeader, el, file, ID, info, segment, simpleBlock, str, trackEntry, uint, type TrackSpec } from './ebml-builder.ts';
+import { cfrClusters, cluster, concat, ebmlHeader, el, file, ID, info, segment, simpleBlock, str, trackEntry, uint, type TrackSpec } from './ebml-builder.ts';
 
 const VERIFIED: ReadonlyArray<readonly [name: string, r: string, avg: string, packets: number]> = [
   ['rec_chromium_vp8.webm', '60000/1001', '60000/1001', 41],
@@ -200,6 +200,15 @@ describe('ffprobe frame rates of Matroska without DefaultDuration', () => {
 
   it('takes r_frame_rate from the timestamp gcd and avg_frame_rate from it when the mean interval agrees', async () => {
     expect(await rates(mkv([trackEntry(VP9)], videoClusters(60, 40)))).toEqual({ r: '25/1', avg: '25/1', note: estimated(41) });
+  });
+
+  it.each(['exact', 'auto'] as const)('rides the block walk of the %s scan instead of reading the first Clusters again', async (mode) => {
+    const big = (t: TrackSpec): Blob => mkv([trackEntry(t)], cfrClusters({ frames: 150, periodMs: 40, payload: 20_000 }));
+    const scan = (blob: Blob) => analyze(blob, 'x.webm', { matroskaMode: mode });
+    const [estimatedRun, declared] = await Promise.all([scan(big(VP9)), scan(big({ ...VP9, defaultDuration: 40_000_000 }))]);
+    expect([estimatedRun.scan, estimatedRun.videoTracks[0].avgFpsFfprobe]).toEqual(['exact', '25/1']);
+    expect(estimatedRun.videoTracks[0].warnings).toContain(estimated(41));
+    expect(estimatedRun.io).toMatchObject({ reads: declared.io.reads, bytesRead: declared.io.bytesRead });
   });
 
   it('keeps reading until every Opus track has a block, then stops', async () => {

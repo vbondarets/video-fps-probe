@@ -7,7 +7,7 @@ import { analyzeTimeline, rateFromTicks, rateProfileOf, vfrTolerance, type Profi
 import type { ContainerAnalysis, Provenance, ResolvedAnalyzeOptions, VideoTrackResult } from '../types.ts';
 import { ID_BLOCK, ID_BLOCK_GROUP, ID_CLUSTER, ID_CRC32, ID_CUES, ID_POSITION, ID_PREV_SIZE, ID_SIMPLE_BLOCK, ID_TIMESTAMP, ID_VOID, readHeader, UNKNOWN_SIZE } from './ebml.ts';
 import { parseMaster, readMatroskaHeader, type MkvHeader, type MkvTrack } from './header.ts';
-import { findLastClusters, newScanState, parseBlockHeader, scanSegment, walkCluster, type ScanState, type TrackScan } from './scan.ts';
+import { addBlock, findLastClusters, newScanState, parseBlockHeader, scanSegment, walkCluster, type ScanState, type TrackScan } from './scan.ts';
 import { ByteSource, findClusterForward } from './source.ts';
 
 export const LARGE_FRAME_BYTES = 32 * 1024;
@@ -216,15 +216,19 @@ export function planExactScan(region: number, est: ScanEstimate | null, opts: Re
   return narrow.ms < wide.ms ? narrow : wide;
 }
 
-async function ffprobeEstimate(src: ByteSource, h: MkvHeader, first: number): Promise<FfprobeRates | string> {
-  let rates: typeof import('../rfps.ts').ffprobeRates;
+const WALKER = { newScanState, addBlock };
+
+async function loadEstimate(): Promise<typeof import('../rfps.ts') | string> {
   try {
-    rates = (await import('../rfps.ts')).ffprobeRates;
+    return await import('../rfps.ts');
   } catch {
     return 'the estimate code did not load';
   }
+}
+
+async function settle(src: ByteSource, run: () => Promise<FfprobeRates | string>): Promise<FfprobeRates | string> {
   try {
-    return await rates(src, h, first, { newScanState, scanSegment });
+    return await run();
   } catch (e) {
     src.reader.checkAbort();
     return `the estimate failed: ${e instanceof Error ? e.message : String(e)}`;
@@ -413,8 +417,8 @@ export async function analyzeMatroska(reader: BlobReader, opts: ResolvedAnalyzeO
     if (mode === 'probe') w.push(`exact block scan skipped: predicted ${plan.ms.toFixed(0)} ms exceeds the ${opts.exactBudgetMs} ms budget`);
   }
   const r0 = a.videoTracks[0];
-  if (!t0.defaultDuration) {
-    const est = await ffprobeEstimate(src, h, first);
+  const estimate = t0.defaultDuration ? null : await loadEstimate();
+  const note = (est: FfprobeRates | string): void => {
     if (typeof est !== 'string') {
       r0.avgFpsFfprobe = est.avg;
       r0.rFpsFfprobe = est.r;
@@ -423,7 +427,7 @@ export async function analyzeMatroska(reader: BlobReader, opts: ResolvedAnalyzeO
       typeof est === 'string'
         ? `${NO_DD}not reproduced (${est})`
         : `${NO_DD}estimated like ffprobe from ${est.packets} video packets`;
-  }
+  };
   if (mode === 'exact') {
     src.window = plan.window;
     const st = newScanState(h, src.size, video, opts.maxExpandedSamples);
@@ -431,7 +435,9 @@ export async function analyzeMatroska(reader: BlobReader, opts: ResolvedAnalyzeO
       st.switchReads = reader.reads + 2 * plan.reads + 16;
       st.largeWindow = opts.readAhead.matroskaScan;
     }
+    const finish = typeof estimate === 'object' && estimate ? estimate.attachEstimate(src, h, WALKER, st) : estimate;
     await exactScan(src, st, first, opts);
+    if (finish !== null) note(typeof finish === 'function' ? await settle(src, finish) : finish);
     a.scan = 'exact';
     w.push(...st.warnings);
     if (st.truncated) w.push('truncated file: the last Cluster or block ends beyond EOF');
@@ -442,6 +448,11 @@ export async function analyzeMatroska(reader: BlobReader, opts: ResolvedAnalyzeO
       r.rateProfile = await rateProfileOf(applyExact(r, st.tracks.get(t.number) as TrackScan));
     }
     return a;
+  }
+  if (estimate !== null) {
+    const walk = newScanState(h, src.size, []);
+    const finish = typeof estimate === 'string' ? estimate : estimate.attachEstimate(src, h, WALKER, walk, true);
+    note(typeof finish === 'string' ? finish : await settle(src, () => scanSegment(src, walk, first).then(finish)));
   }
   src.window = plan.window === SMALL_SCAN_WINDOW ? SMALL_SCAN_WINDOW : opts.readAhead.head;
   await probeScan(src, h, video, a.videoTracks, first, opts, w);
