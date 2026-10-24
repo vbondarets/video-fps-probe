@@ -19,9 +19,11 @@ With npm a git dependency gets no code: `prepack` builds `dist/`, and npm does n
 
 ```
 git clone https://github.com/vbondarets/video-fps-probe.git && cd video-fps-probe
-npm ci && npm pack   # builds and checks dist/, writes the tarball and prints its name last
-cd ../your-app && npm install ../video-fps-probe/video-fps-probe-<version>.tgz   # the name npm pack printed
+npm ci && TGZ="$PWD/$(npm pack | tail -n 1)"   # builds and checks dist/, writes the tarball, keeps its path
+cd ../your-app && npm install "$TGZ"
 ```
+
+In PowerShell: `$tgz = Join-Path $PWD (npm pack | Select-Object -Last 1)`, then `cd ../your-app; npm install $tgz`.
 
 ## Quick start
 
