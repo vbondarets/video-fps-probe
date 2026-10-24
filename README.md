@@ -1,6 +1,6 @@
 # video-fps-probe
 
-Frame rate, frame count, VFR detection and a rate profile for MP4, MOV, WebM and MKV files, read from the container headers in a Web Worker. Nothing is decoded and nothing leaves the browser, and the values are ffprobe-exact on the test corpus. ESM only, no runtime dependencies, types included.
+Frame rate, frame count, VFR detection and a rate profile for MP4, MOV, WebM and MKV files, read from the container headers in a Web Worker. Nothing is decoded and nothing leaves the browser, and the values match ffprobe 8.1.1 on the test corpus (0 mismatches). ESM only, no runtime dependencies, types included.
 
 **[Live demo](https://vbondarets.github.io/video-fps-probe/)** · [API](docs/api.md) · [Bundlers](docs/bundlers.md) · [Benchmarks](docs/benchmarks.md) · [Architecture](docs/architecture.md) · [Changelog](CHANGELOG.md)
 
