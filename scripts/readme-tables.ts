@@ -593,6 +593,15 @@ function ownTotals(e: EngineReport): { checks: number; counts: Record<Verdict, n
   return { checks: counts.exact + counts['within-tol'] + counts['known-deviation'] + counts.mismatch + counts['n/a'], counts };
 }
 
+const BY_DESIGN = 'definition difference by design';
+
+export function withinTolText(checks: readonly Check[]): string {
+  const within = checks.filter((c) => c.verdict === 'within-tol');
+  const byDesign = within.filter((c) => c.detail?.startsWith(BY_DESIGN)).length;
+  const why = byDesign > 0 ? ` (${byDesign} of them a definition difference by design: the measured average of a Matroska file that stores no duration for its last frame, which avgFps gives the median interval and ffprobe its own estimate)` : '';
+  return `${within.length} within tolerance${why}`;
+}
+
 function headline(inp: Inputs): string[] {
   const own = engine(inp.acc, 'own');
   const { checks, counts } = ownTotals(own);
@@ -620,7 +629,7 @@ function headline(inp: Inputs): string[] {
       : '';
   const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? '' : 's'}`;
   return [
-    `- **Accuracy.** The own parsers were checked against ffprobe 8.1.1 on ${own.fixtures.length} fixtures, ${own.fixtures.length - recorded} made with ffmpeg and ${recorded} MediaRecorder recordings from headless Chromium (${committed.length} committed, ${large.length} large local files; phone, camera, screen recorder, Firefox and Safari output is not in the corpus, see Limitations): ${checks} field checks, ${counts.exact} exact, ${counts['within-tol']} within tolerance, ${plural(counts['known-deviation'], 'known deviation')} with a recorded reason, ${plural(counts.mismatch, 'mismatch').replace(/hs$/, 'hes')}, ${counts['n/a']} not applicable.`,
+    `- **Accuracy.** The own parsers were checked against ffprobe 8.1.1 on ${own.fixtures.length} fixtures, ${own.fixtures.length - recorded} made with ffmpeg and ${recorded} MediaRecorder recordings from headless Chromium (${committed.length} committed, ${large.length} large local files; phone, camera, screen recorder, Firefox and Safari output is not in the corpus, see Limitations): ${checks} field checks, ${counts.exact} exact, ${withinTolText(own.fixtures.flatMap(checksOf))}, ${plural(counts['known-deviation'], 'known deviation')} with a recorded reason, ${plural(counts.mismatch, 'mismatch').replace(/hs$/, 'hes')}, ${counts['n/a']} not applicable.`,
     `- **Reads.** Median ${plural(median(reads), 'read')} per committed fixture, at most ${Math.max(...reads)}. The ${fmtDuration(longDur)}, ${longFrames}-frame MP4 (${fmtBytes(long.sizeBytes)}) takes ${io(long).reads} reads and ${fmtBytes(io(long).bytesRead)} (${fmtPct(io(long).percent)}% of the file).`,
     `- **Speed.** In ${browser}, warm: median ${fmtMs(median(warm.map((w) => w.medianMs)))} ms per file in the worker and ${fmtMs(median(warm.map((w) => w.medianWallMs)))} ms from file pick to rendered result; the ${fmtDuration(longDur)} file takes ${fmtMs(chromeLong.medianMs)} ms.${big}${staleBenchChunks(inp).length > 0 ? ' Measured on an earlier build, so these figures are not current ([Speed](#speed)).' : ''}`,
     `- **Size.** A default install (\`video-fps-probe/lazy\`) adds ${fmtKB(matrixMetric(inp, 'default', 'trigger'))} gzip to a host app's critical path. Its first MP4 file loads ${fmtKB(matrixMetric(inp, 'default', 'firstMp4'))} lazily when the host's Vite config sets \`worker: { format: 'es' }\`, and ${fmtKB(matrixMetric(inp, 'zero-config', 'firstMp4'))} with Vite's default worker format, 'iife', which builds the own worker as one file ([Package size](#package-size)). The demo page plus its first MP4 result loads ${fmtKB(firstMp4.gzip)} gzip (page, ${kindGzip(inp.size, 'client') === null ? '' : 'probe client, '}worker entry, ${sharedParserGzip(inp.size) === null ? '' : 'shared statistics chunk, '}ISO BMFF parser); the first Matroska result ${fmtKB(firstMkv.gzip)}.`,
@@ -1094,7 +1103,7 @@ function accuracySummaryBlock(inp: Inputs, doc: Doc): string[] {
   const arms = inp.acc.engines.filter((e) => e.informational && !e.loadSkipped);
   const libraries = [...new Set(arms.map((e) => `${LIBRARY_LABEL[e.arm.library] ?? e.arm.library} ${e.arm.version ?? ''}`.trim()))];
   return [
-    `**${n('mismatch')} mismatches against ffprobe ${inp.acc.ffprobeVersions.map((s) => s.replace(/^ffprobe version /, '').replace(/-.*$/, '')).join(', ')}** on the ${fixtures.length} committed fixtures: ${checks.length} field checks, ${n('exact')} exact, ${n('within-tol')} within tolerance, ${n('known-deviation')} known deviation${n('known-deviation') === 1 ? '' : 's'} with a recorded reason, ${n('n/a')} not applicable. The same comparison runs ${libraries.join(' and ')} in ${arms.length} arms (their idiomatic recipes, mediabunny with a full scan, and this package's tuned adapters) and sorts each difference into wrong, definition differs, unverified, not provided or unsupported container; the [accuracy section](${doc.link('docs/benchmarks.md')}#accuracy-vs-ffprobe) has the outcomes and where the libraries win.`,
+    `**${n('mismatch')} mismatches against ffprobe ${inp.acc.ffprobeVersions.map((s) => s.replace(/^ffprobe version /, '').replace(/-.*$/, '')).join(', ')}** on the ${fixtures.length} committed fixtures: ${checks.length} field checks, ${n('exact')} exact, ${withinTolText(checks)}, ${n('known-deviation')} known deviation${n('known-deviation') === 1 ? '' : 's'} with a recorded reason, ${n('n/a')} not applicable. The same comparison runs ${libraries.join(' and ')} in ${arms.length} arms (their idiomatic recipes, mediabunny with a full scan, and this package's tuned adapters) and sorts each difference into wrong, definition differs, unverified, not provided or unsupported container; the [accuracy section](${doc.link('docs/benchmarks.md')}#accuracy-vs-ffprobe) has the outcomes and where the libraries win.`,
   ];
 }
 

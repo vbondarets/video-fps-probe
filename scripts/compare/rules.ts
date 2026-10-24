@@ -17,6 +17,7 @@ export const EXACT_SECONDS_EPSILON = 1e-9;
 export const FORMAT_DURATION_TOLERANCE_SECONDS = 1e-6;
 export const MEASURED_AVG_RELATIVE_TOLERANCE = 1e-9;
 export const NOMINAL_INFORMATIONAL_TOLERANCE = 0.01;
+export const BY_DESIGN = 'definition difference by design';
 
 export const SIDX_UNDER_READ_REASON =
   'ffprobe computes avg_frame_rate from the fragments it reads while opening the file (global sidx: the first fragment, per-fragment sidx: all but the last); the app reports the full-file average N x ts / sum(durations) (research 2.1 header extent)';
@@ -30,7 +31,7 @@ const RULE = {
   avgIso: 'avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly',
   avgIsoMeasured: 'Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration)',
   avgDeclared: 'Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists',
-  avgMeasured: 'Measured average must equal avgFromPts (integer-ms last duration) within 1e-9 relative; within-tol when the file stores no duration for the last frame (no DefaultDuration, no BlockDuration) and the average is the frames over the timestamp span plus one median frame delta, which stands in for that duration, where ffprobe adds its own estimate',
+  avgMeasured: 'Measured average must equal avgFromPts (integer-ms last duration) within 1e-9 relative; within-tol, as a definition difference by design, when the file stores no duration for the last frame (no DefaultDuration, no BlockDuration) and the average is exactly the frames over the timestamp span plus one median frame delta: avgFps gives that frame the median interval, ffprobe its own estimate, and ffprobe parity is avgFpsFfprobe',
   nominalIso: 'Exact vs r_frame_rate, only when the track is CFR (stage 1); otherwise skipped',
   nominalMatroska: 'Declared rate string must equal r_frame_rate exactly when DefaultDuration exists; otherwise skipped',
   framesIso: 'Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets',
@@ -421,7 +422,7 @@ function avgMatroskaMeasuredDraft(t: VideoTrackResult, s: RefStream, result: Fil
         verdict: 'within-tol',
         app: fmtRatio(t.avgFps),
         ffprobe: ffStr,
-        detail: `the file stores no last frame duration: the app gives it the median delta (${median} ticks), ffprobe its estimate (${p.lastDurationTicks ?? '?'} ticks)`,
+        detail: `${BY_DESIGN}: the file stores no last frame duration; avgFps gives it the median delta (${median} ticks), ffprobe its estimate (${p.lastDurationTicks ?? '?'} ticks)`,
       };
     }
   }

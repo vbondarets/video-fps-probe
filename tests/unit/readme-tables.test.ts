@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { staleBenchChunks } from '../../scripts/readme-tables.ts';
+import { staleBenchChunks, withinTolText } from '../../scripts/readme-tables.ts';
 
 type Inputs = Parameters<typeof staleBenchChunks>[0];
 
@@ -31,5 +31,19 @@ describe('readme-tables staleBenchChunks', () => {
       { path: '/assets/main-OLDNAME1.js', hash: 'cccc' },
     ];
     expect(staleBenchChunks(inputs([{ file: 'assets/main-NEWNAME1.js', hash: 'dddd' }], fetched))).toEqual(['main-OLDNAME1.js']);
+  });
+});
+
+describe('readme-tables withinTolText', () => {
+  type Checks = Parameters<typeof withinTolText>[0];
+  const check = (verdict: string, detail: string | null) => ({ id: 'avgFps.measured', field: 'avgFps', verdict, app: null, ffprobe: null, detail });
+
+  it('names the within-tolerance checks that are a definition difference by design', () => {
+    const checks = [check('within-tol', 'definition difference by design: the file stores no last frame duration'), check('within-tol', 'spans differ by 499 ticks'), check('exact', null)] as Checks;
+    expect(withinTolText(checks)).toMatch(/^2 within tolerance \(1 of them a definition difference by design: /);
+  });
+
+  it('adds nothing when no check is a definition difference by design', () => {
+    expect(withinTolText([check('within-tol', 'spans differ by 499 ticks')] as Checks)).toBe('1 within tolerance');
   });
 });
