@@ -88,7 +88,7 @@ export async function analyzeMediabunnyRecipe(blob: BlobLike, name: string, targ
     const format = await input.getFormat();
     result.container = containerOf(format);
     result.audioTrackCount = (await input.getAudioTracks()).length;
-    result.formatDurationSec = await input.getDurationFromMetadata();
+    result.formatDurationSec = await input.computeDuration();
     const primary = await input.getPrimaryVideoTrack();
     if (primary) {
       result.videoTracks = [await mediabunnyTrack(primary, targetPacketCount)];

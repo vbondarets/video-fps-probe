@@ -66,7 +66,7 @@ export const ARMS: Readonly<Record<EngineName, ArmSpec>> = {
     provides: MEDIABUNNY_FIELDS,
     picksPrimary: true,
     primaryOnly: true,
-    recipe: 'Input + BlobSource, getPrimaryVideoTrack(), computeFrameRateMetrics() with its defaults (256 packets); mediabunny fields only',
+    recipe: 'the README metadata recipe (Input + BlobSource, input.computeDuration(), getPrimaryVideoTrack()), then the track computeDuration() and computeFrameRateMetrics() with its defaults (256 packets); mediabunny fields only',
   },
   'mediabunny-full': {
     library: 'mediabunny',
