@@ -27,6 +27,10 @@ export interface RefPackets {
   avgFromPtsSpanTicks: number | null;
   lastDurationTicks: number | null;
   medianDeltaTicks: number | null;
+  firstPts?: number | null;
+  lastPts?: number | null;
+  lastPacketEndSec?: number | null;
+  ptsPresented?: number[] | null;
 }
 
 export interface RefStream {
@@ -130,6 +134,10 @@ function packetsOf(v: unknown): RefPackets | null {
     avgFromPtsSpanTicks: numOrNull(rec(r.avgFromPts)?.spanTicks),
     lastDurationTicks: numOrNull(rec(r.avgFromPts)?.lastDurationTicks),
     medianDeltaTicks: vfr ? numOrNull(vfr.medianDeltaTicks) : null,
+    firstPts: numOrNull(rec(r.avgFromPts)?.firstPts),
+    lastPts: numOrNull(rec(r.avgFromPts)?.lastPts),
+    lastPacketEndSec: numOrNull(rec(r.lastPacketEnd)?.seconds),
+    ptsPresented: Array.isArray(r.ptsPresented) && r.ptsPresented.every((x) => typeof x === 'number') ? (r.ptsPresented as number[]) : null,
   };
 }
 

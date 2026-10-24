@@ -1,5 +1,6 @@
+import type { ArmInfo } from './engines.ts';
 import { countVerdicts, type TrackEvaluation } from './rules.ts';
-import { VERDICTS, type CheckResult, type ContainerFamily, type FieldName, type Verdict } from './types.ts';
+import { OUTCOME_CLASSES, VERDICTS, type CheckResult, type ContainerFamily, type FieldName, type OutcomeClass, type Verdict } from './types.ts';
 
 export interface FixtureIo {
   reads: number;
@@ -39,6 +40,7 @@ export interface StaleDeviation {
 export interface EngineReport {
   engine: string;
   informational: boolean;
+  arm: ArmInfo;
   loadSkipped: string | null;
   fixtures: FixtureReport[];
   skipped: SkippedFixture[];
@@ -46,6 +48,7 @@ export interface EngineReport {
   deviationProblems: string[];
   staleDeviations: StaleDeviation[];
   counts: Record<Verdict, number>;
+  outcomes: Record<OutcomeClass, number>;
   mismatchFixtures: string[];
 }
 
@@ -57,6 +60,9 @@ export interface AccuracyReport {
   options: { engines: string[]; withLarge: boolean; filter: string | null; repeat: number; matroskaMode: string };
   engines: EngineReport[];
 }
+
+export const OUTCOME_TEXT =
+  '**wrong** (the arm returns a value that differs from ffprobe, and none of the checked definitions explains it), **definition differs** (the value follows another documented definition, checked against the file: a float instead of the exact rational, the timestamp average instead of `avg_frame_rate`, the movie or media header duration), **not provided** (the arm returns no value for the field, or the field is not part of its recipe), **unsupported container** (the library does not read the container).';
 
 export function esc(s: string | null | undefined): string {
   return (s ?? '').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
@@ -178,8 +184,8 @@ function exceptionRows(f: FixtureReport): string[] {
     const label = track === null || f.tracks.length < 2 ? f.name : `${f.name} (track ${track})`;
     let why: string;
     if (c.verdict === 'known-deviation') why = `${c.deviationSource === 'built-in' ? '[built-in] ' : ''}${c.deviation ?? ''}`;
-    else why = [c.detail, c.verdict === 'mismatch' ? `rule: ${c.rule}` : null].filter(Boolean).join('. ');
-    rows.push(`| ${esc(label)} | ${c.id} | ${esc(c.app ?? '-')} | ${esc(c.ffprobe ?? '-')} | ${c.verdict} | ${esc(why)} |`);
+    else why = [c.outcomeWhy, c.detail, c.verdict === 'mismatch' ? `rule: ${c.rule}` : null].filter(Boolean).join('. ');
+    rows.push(`| ${esc(label)} | ${c.id} | ${esc(c.app ?? '-')} | ${esc(c.ffprobe ?? '-')} | ${c.outcome ?? c.verdict} | ${esc(why)} |`);
   };
   for (const c of f.fileChecks) emit(c, null);
   for (const t of f.tracks) for (const c of t.checks) emit(c, t.trackId);
@@ -258,6 +264,8 @@ function renderEngine(e: EngineReport): string[] {
   const out: string[] = [];
   out.push(`## ${e.engine}${e.informational ? ' (informational)' : ''}`);
   out.push('');
+  out.push(`${e.arm.library}${e.arm.version ? ` ${e.arm.version}` : ''}, ${e.arm.style}: ${e.arm.recipe}.`);
+  out.push('');
   if (e.loadSkipped) {
     out.push(`Skipped: ${e.loadSkipped}.`);
     out.push('');
@@ -277,7 +285,7 @@ function renderEngine(e: EngineReport): string[] {
   if (exceptions.length > 0) {
     out.push(`### ${e.engine}: deviations and mismatches`);
     out.push('');
-    out.push('| Fixture | Field | App | ffprobe | Verdict | Reason or rule |');
+    out.push('| Fixture | Field | App | ffprobe | Verdict or outcome | Reason or rule |');
     out.push('|---|---|---|---|---|---|');
     out.push(...exceptions);
     out.push('');
@@ -338,19 +346,22 @@ export function renderMarkdown(report: AccuracyReport): string {
   out.push('');
   out.push('Verdicts: **exact** (equal under the research 6.4 rule), **within-tol** (inside the stated tolerance), **known-deviation** (differs from ffprobe, with a recorded reason), **mismatch** (unexpected), **n/a** (the rule does not apply). Only the `own` engine fails the run on a mismatch; library engines are informational.');
   out.push('');
+  out.push(`Every mismatch has one outcome: ${OUTCOME_TEXT}`);
+  out.push('');
   out.push('## Summary');
   out.push('');
-  out.push('| Engine | Role | Fixtures | Checks | exact | within-tol | known-deviation | mismatch | n/a | Fixtures with a mismatch |');
-  out.push('|---|---|---:|---:|---:|---:|---:|---:|---:|---:|');
+  out.push('| Arm | Library | Role | Fixtures | Checks | exact | within-tol | known-deviation | wrong | definition differs | not provided | unsupported container | n/a |');
+  out.push('|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|');
   for (const e of report.engines) {
     const role = e.informational ? 'informational' : 'gating';
+    const library = `${e.arm.library}${e.arm.version ? ` ${e.arm.version}` : ''}`;
     if (e.loadSkipped) {
-      out.push(`| ${e.engine} | ${role} | - | - | - | - | - | - | - | skipped: ${esc(e.loadSkipped)} |`);
+      out.push(`| ${e.engine} | ${library} | ${role} | - | - | - | - | - | - | - | - | skipped: ${esc(e.loadSkipped)} | - |`);
       continue;
     }
     const total = VERDICTS.reduce((n, v) => n + e.counts[v], 0);
     out.push(
-      `| ${e.engine} | ${role} | ${e.fixtures.length} | ${total} | ${e.counts.exact} | ${e.counts['within-tol']} | ${e.counts['known-deviation']} | ${e.counts.mismatch} | ${e.counts['n/a']} | ${e.mismatchFixtures.length} |`,
+      `| ${e.engine} | ${library} | ${role} | ${e.fixtures.length} | ${total} | ${e.counts.exact} | ${e.counts['within-tol']} | ${e.counts['known-deviation']} | ${OUTCOME_CLASSES.map((k) => e.outcomes[k]).join(' | ')} | ${e.counts['n/a']} |`,
     );
   }
   out.push('');

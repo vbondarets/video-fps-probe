@@ -2,6 +2,10 @@ export type Verdict = 'exact' | 'within-tol' | 'known-deviation' | 'mismatch' | 
 
 export const VERDICTS: readonly Verdict[] = ['exact', 'within-tol', 'known-deviation', 'mismatch', 'n/a'];
 
+export type OutcomeClass = 'wrong' | 'definition-differs' | 'not-provided' | 'unsupported-container';
+
+export const OUTCOME_CLASSES: readonly OutcomeClass[] = ['wrong', 'definition-differs', 'not-provided', 'unsupported-container'];
+
 export const FIELD_NAMES = [
   'avgFps',
   'nominalFps',
@@ -46,6 +50,8 @@ export interface CheckResult {
   detail: string | null;
   deviation: string | null;
   deviationSource: DeviationSource | null;
+  outcome?: OutcomeClass;
+  outcomeWhy?: string;
 }
 
 export interface FixtureInfo {
@@ -56,10 +62,20 @@ export interface FixtureInfo {
   notes: string;
 }
 
+export interface LayoutTrack {
+  id: number;
+  handler: string | null;
+  mediaDurationSec: number | null;
+  samples: number | null;
+  hasEditList: boolean;
+}
+
 export interface FileLayout {
   fragmented: boolean;
   hasSidx: boolean;
   topLevel: string[];
+  movieDurationSec?: number | null;
+  tracks?: LayoutTrack[];
 }
 
 export type FixtureDeviations = Readonly<Record<string, string>>;

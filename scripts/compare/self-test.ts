@@ -2,6 +2,8 @@ import { avReduce } from '../../src/core/rational.ts';
 import { emptyAnalysis, emptyTrack } from '../../src/core/result.ts';
 import type { FileResult, Rational, VideoTrackResult } from '../../src/core/types.ts';
 import { parseDeviations } from './deviations.ts';
+import { ARMS } from './engines.ts';
+import { classifyEvaluation } from './outcomes.ts';
 import { loadManifest, loadRef } from '../../tests/helpers/fixtures.ts';
 import { parseRatio, parseRef, ticksToSec, type RefFile, type RefFps, type RefInstFps, type RefStream } from './ref.ts';
 import { evaluate, expectedPrimary, pairTracks, type EvaluateInput, type Evaluation } from './rules.ts';
@@ -353,6 +355,26 @@ export function runSelfTest(): number {
   expectEq('engine that throws is a mismatch even when an error is expected', verdictOf(thrown, 'error'), 'mismatch');
   const noVideo = run({ info: { ...MP4_INFO, expect: 'no-video' }, ref: refFile([]), result: appResult([], { primaryTrackId: null }) });
   expectEq('expect no-video: exact', verdictOf(noVideo, 'error'), 'exact');
+
+  const outcomeOf = (arm: keyof typeof ARMS, input: Pick<EvaluateInput, 'info' | 'ref' | 'result'> & { layout?: FileLayout }, id: string): string => {
+    const e = run(input);
+    classifyEvaluation({ arm: ARMS[arm], info: input.info, ref: input.ref, result: input.result, layout: input.layout ?? null, family: e.family }, e);
+    return all(e).find((c) => c.id === id)?.outcome ?? 'none';
+  };
+  const cfrRef = refFile([refStream()]);
+  expectEq('outcome: an unread container', outcomeOf('mp4box-tuned', { info: MKV_INFO, ref: cfrRef, result: appResult([], { error: 'unsupported by mp4box' }) }, 'error'), 'unsupported-container');
+  expectEq('outcome: a field outside the recipe', outcomeOf('mp4box-idiomatic', { info: MP4_INFO, ref: cfrRef, result: appResult([appTrack({ avgFps: null, avgFpsFfprobe: null })]) }, 'avgFps'), 'not-provided');
+  expectEq('outcome: no value', outcomeOf('mediabunny-tuned', { info: MP4_INFO, ref: cfrRef, result: appResult([appTrack({ frames: null })]) }, 'frames'), 'not-provided');
+  expectEq('outcome: a float within 1e-6', outcomeOf('mediabunny-idiomatic', { info: MP4_INFO, ref: cfrRef, result: appResult([appTrack({ avgFps: rat(2997003, 100000), avgFpsFfprobe: null })]) }, 'avgFps'), 'definition-differs');
+  expectEq('outcome: a different rate', outcomeOf('mediabunny-idiomatic', { info: MP4_INFO, ref: cfrRef, result: appResult([appTrack({ avgFps: rat(25, 1), avgFpsFfprobe: null })]) }, 'avgFps'), 'wrong');
+  const span = refStream({ avgFrameRate: '100/3', packets: { ...refStream().packets!, avgFromPts: fps(100, 3), avgFromPtsFrames: 200, firstPts: 0, lastPts: 538500, avgFromPtsSpanTicks: 540000 }, timeBase: { num: 1, den: 90000 } });
+  expectEq('outcome: the mean frame interval', outcomeOf('mediabunny-idiomatic', { info: MP4_INFO, ref: refFile([span]), result: appResult([appTrack({ avgFps: rat(11940, 359), avgFpsFfprobe: null })]) }, 'avgFps'), 'definition-differs');
+  const movie: FileLayout = { fragmented: false, hasSidx: false, topLevel: ['ftyp', 'moov', 'mdat'], movieDurationSec: 3.07, tracks: [] };
+  expectEq('outcome: the movie header duration', outcomeOf('mp4box-idiomatic', { info: MP4_INFO, ref: cfrRef, layout: movie, result: appResult([appTrack()], { formatDurationSec: 3.07 }) }, 'formatDurationSec'), 'definition-differs');
+  expectEq('outcome: another format duration', outcomeOf('mp4box-idiomatic', { info: MP4_INFO, ref: cfrRef, layout: movie, result: appResult([appTrack()], { formatDurationSec: 2.5 }) }, 'formatDurationSec'), 'wrong');
+  expectEq('outcome: failing like ffprobe', outcomeOf('mediabunny-full', { info: MP4_INFO, ref: refFile([], { ok: false, stderr: ['error reading header'] }), result: appResult([], { error: 'internal error' }) }, 'error'), 'definition-differs');
+  expectEq('outcome: VFR on a CFR fixture', outcomeOf('mediabunny-full', { info: MP4_INFO, ref: cfrRef, result: appResult([appTrack({ isVfr: true })]) }, 'isVfr'), 'wrong');
+  expectEq('outcome: the own engine is classified too', outcomeOf('own', { info: MP4_INFO, ref: cfrRef, result: appResult([appTrack({ frames: 91 })]) }, 'frames'), 'wrong');
 
   const problems: string[] = [];
   const parsed = new Map<string, Record<string, string>>();

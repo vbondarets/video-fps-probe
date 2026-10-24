@@ -5,6 +5,12 @@ import { parseArgs } from 'node:util';
 
 type Verdict = 'exact' | 'within-tol' | 'known-deviation' | 'mismatch' | 'n/a';
 
+type Outcome = 'wrong' | 'definition-differs' | 'not-provided' | 'unsupported-container';
+
+const OUTCOMES: readonly Outcome[] = ['wrong', 'definition-differs', 'not-provided', 'unsupported-container'];
+
+const OUTCOME_LABEL: Record<Outcome, string> = { wrong: 'wrong', 'definition-differs': 'definition differs', 'not-provided': 'not provided', 'unsupported-container': 'unsupported container' };
+
 interface Check {
   id: string;
   field: string;
@@ -12,6 +18,7 @@ interface Check {
   app: string | null;
   ffprobe: string | null;
   deviation?: string;
+  outcome?: Outcome;
 }
 
 interface TrackEval {
@@ -43,6 +50,8 @@ interface AccFixture {
 interface EngineReport {
   engine: string;
   informational: boolean;
+  arm: { library: string; style: string; version: string | null; recipe: string };
+  outcomes: Record<Outcome, number>;
   loadSkipped: string | null;
   fixtures: AccFixture[];
   skipped: { name: string; reason: string }[];
@@ -247,13 +256,24 @@ const FRAME_RATE_FIELDS = new Set([
 
 const FAMILY_LABEL: Record<string, string> = { isobmff: 'ISO BMFF (MP4, MOV)', matroska: 'Matroska, WebM', none: 'not a video container' };
 
-const ENGINE_LABEL: Record<string, string> = { own: 'own parsers', mp4box: 'mp4box.js', mediabunny: 'mediabunny' };
+const ENGINE_LABEL: Record<string, string> = {
+  own: 'own parsers',
+  'mp4box-idiomatic': 'mp4box.js, idiomatic',
+  'mp4box-tuned': 'mp4box.js, tuned adapter',
+  'mediabunny-idiomatic': 'mediabunny, idiomatic',
+  'mediabunny-full': 'mediabunny, full scan',
+  'mediabunny-tuned': 'mediabunny, tuned adapter',
+};
 
-const ENGINE_FAMILIES: Record<string, readonly string[]> = {
+const LIBRARY_FAMILIES: Record<string, readonly string[]> = {
   own: ['isobmff', 'matroska', 'none'],
   mp4box: ['isobmff'],
   mediabunny: ['isobmff', 'matroska'],
 };
+
+const familiesOf = (e: EngineReport): readonly string[] => LIBRARY_FAMILIES[e.arm.library] ?? [];
+
+const LIBRARY_LABEL: Record<string, string> = { mp4box: 'mp4box.js', mediabunny: 'mediabunny' };
 
 const SPEED_FILES: ReadonlyArray<readonly [string, string]> = [
   ['av_h264_aac_faststart.mp4', 'MP4, moov before mdat (faststart)'],
@@ -654,9 +674,11 @@ function engineStats(e: EngineReport, family: string): EngineStats {
 }
 
 function supported(e: EngineReport, manifest: readonly ManifestRow[]): AccFixture[] {
-  const fams = ENGINE_FAMILIES[e.engine] ?? [];
+  const fams = familiesOf(e);
   return e.fixtures.filter((f) => fams.includes(familyOf(f)) && !isLarge(f, manifest));
 }
+
+const benchKey = (e: EngineReport): string => (e.engine === 'own' ? 'own' : e.arm.library);
 
 function benchMs(inp: Inputs, eng: string, name: string): Timed | undefined {
   return eng === 'own' ? inp.bench.chrome.warm[name] : inp.bench.chrome.engines[name]?.[eng];
@@ -678,7 +700,8 @@ function chunkGzip(size: SizeReport, kind: string): number {
 
 function approachesBlock(inp: Inputs): string[] {
   const own = engine(inp.acc, 'own');
-  const libs = ['mp4box', 'mediabunny'].map((n) => engine(inp.acc, n));
+  const libs = ['mp4box-tuned', 'mediabunny-tuned'].map((n) => engine(inp.acc, n));
+  const idiomatic = (e: EngineReport): EngineReport => engine(inp.acc, `${e.arm.library}-idiomatic`);
   const all = [own, ...libs];
   const ownByName = new Map(own.fixtures.map((f) => [f.name, f]));
   const rv = inp.bench.chrome.rvfc.rows;
@@ -689,24 +712,27 @@ function approachesBlock(inp: Inputs): string[] {
   const browser = majorVersion(inp.bench.environment.chrome.product);
   const sz = inp.size;
 
-  const accuracyCell = (e: EngineReport) => {
+  const outcomesText = (e: EngineReport) => {
     const { checks, counts } = ownTotals(e);
-    const unsupported = ['isobmff', 'matroska']
-      .filter((fam) => !(ENGINE_FAMILIES[e.engine] ?? []).includes(fam))
-      .reduce((n, fam) => n + engineStats(e, fam).checks.filter((c) => c.verdict === 'mismatch').length, 0);
-    const note = unsupported > 0 ? ` (${unsupported} of them on WebM/MKV files it cannot open)` : '';
-    return `${checks} checks: ${counts.exact} exact, ${counts['known-deviation']} known deviation, ${counts.mismatch} mismatch${note}`;
+    return `${checks} checks: ${counts.exact} exact, ${OUTCOMES.map((k) => `${e.outcomes[k]} ${OUTCOME_LABEL[k]}`).join(', ')}`;
   };
+  const accuracyCell = (e: EngineReport) => {
+    if (e.engine !== 'own') return `tuned: ${outcomesText(e)}; idiomatic: ${outcomesText(idiomatic(e))}`;
+    const { checks, counts } = ownTotals(e);
+    return `${checks} checks: ${counts.exact} exact, ${counts['known-deviation']} known deviation, ${counts.mismatch} mismatch`;
+  };
+  const fpsCount = (e: EngineReport, fam: string) =>
+    engineStats(e, fam).checks.filter((c) => FRAME_RATE_FIELDS.has(c.id) && (e.engine === 'own' ? c.verdict === 'mismatch' : c.outcome === 'wrong')).length;
   const fpsCell = (e: EngineReport) =>
     ['isobmff', 'matroska']
       .map((fam) => {
-        if (!(ENGINE_FAMILIES[e.engine] ?? []).includes(fam)) return `${fam === 'isobmff' ? 'MP4' : 'MKV'}: not supported`;
-        const s = engineStats(e, fam);
-        return `${fam === 'isobmff' ? 'MP4' : 'MKV'}: ${s.fpsMismatch}`;
+        const label = fam === 'isobmff' ? 'MP4' : 'MKV';
+        if (!familiesOf(e).includes(fam)) return `${label}: not supported`;
+        return e.engine === 'own' ? `${label}: ${fpsCount(e, fam)}` : `${label}: ${fpsCount(e, fam)} tuned, ${fpsCount(idiomatic(e), fam)} idiomatic`;
       })
-      .join(', ');
+      .join('; ');
   const bytesCell = (e: EngineReport, fam: string) => {
-    if (!(ENGINE_FAMILIES[e.engine] ?? []).includes(fam)) return 'not supported';
+    if (!familiesOf(e).includes(fam)) return 'not supported';
     const list = e.fixtures.filter((f) => familyOf(f) === fam && !isLarge(f, inp.manifest));
     const read = list.reduce((s, f) => s + io(f).bytesRead, 0);
     const total = list.reduce((s, f) => s + f.sizeBytes, 0);
@@ -724,15 +750,15 @@ function approachesBlock(inp: Inputs): string[] {
     return `${fmtMs(ms)} ms (${fmtRatio(ratio)} own)`;
   };
   const chromeCell = (e: EngineReport) => {
-    const names = Object.keys(inp.bench.chrome.warm).filter((n) => benchMs(inp, e.engine, n) !== undefined);
-    const ms = median(names.map((n) => benchMs(inp, e.engine, n)!.medianMs));
+    const names = Object.keys(inp.bench.chrome.warm).filter((n) => benchMs(inp, benchKey(e), n) !== undefined);
+    const ms = median(names.map((n) => benchMs(inp, benchKey(e), n)!.medianMs));
     if (e.engine === 'own') return `${fmtMs(ms)} ms`;
-    const ratio = geomeanRatio(names.map((n) => [benchMs(inp, e.engine, n)!.medianMs, need(inp.bench.chrome.warm[n], `chrome warm ${n}`).medianMs] as const));
+    const ratio = geomeanRatio(names.map((n) => [benchMs(inp, benchKey(e), n)!.medianMs, need(inp.bench.chrome.warm[n], `chrome warm ${n}`).medianMs] as const));
     return `${fmtMs(ms)} ms (${fmtRatio(ratio)} own)`;
   };
   const largeCell = (e: EngineReport, name: string) => {
     const f = fixture(e, name);
-    const c = need(inp.bench.chrome.large[name]?.[e.engine], `chrome large ${e.engine} ${name}`);
+    const c = need(inp.bench.chrome.large[name]?.[benchKey(e)], `chrome large ${e.engine} ${name}`);
     return `${io(f).reads} reads, ${fmtBytes(io(f).bytesRead)}; Node ${fmtMs(io(f).ms)} ms, Chrome ${fmtMs(c.medianMs)} ms`;
   };
   const longCfr = fixture(own, 'long_cfr_3h_60fps.mp4');
@@ -742,11 +768,11 @@ function approachesBlock(inp: Inputs): string[] {
   const rvMs = rvEst.map((r) => r.ms);
   const rvVfrText = rvVfr.map((r) => `${r.errorPct !== null && r.errorPct > 0 ? '+' : ''}${(r.errorPct ?? 0).toFixed(1)}%`).join(' and ');
 
-  const header = ['', 'Own parsers (this repo)', `mp4box.js ${inp.matrix.versions['mp4box'] ?? ''}`, `mediabunny ${inp.matrix.versions['mediabunny'] ?? ''}`, `requestVideoFrameCallback (${browser})`];
+  const header = ['', 'Own parsers (this repo)', `mp4box.js ${inp.matrix.versions['mp4box'] ?? ''} (tuned adapter)`, `mediabunny ${inp.matrix.versions['mediabunny'] ?? ''} (tuned adapter)`, `requestVideoFrameCallback (${browser})`];
   const rows = [
     row(['Containers', 'MP4, MOV, WebM, Matroska', 'MP4, MOV', 'MP4, MOV, WebM, Matroska', 'whatever the browser can play']),
-    row(['Checks vs ffprobe, all fixtures', ...all.map(accuracyCell), 'no ffprobe-equivalent fields']),
-    row(['Frame-rate field mismatches', ...all.map(fpsCell), `${rvEqual.length} of ${rvEst.length} estimates equal ffprobe's average; VFR files off by ${rvVfrText}; ${rvFailed.length} of ${rv.length} files did not play`]),
+    row(['Checks vs ffprobe, all fixtures (own: verdicts; libraries: outcome of each non-match)', ...all.map(accuracyCell), 'no ffprobe-equivalent fields']),
+    row(['Frame-rate checks: own mismatches, library checks wrong', ...all.map(fpsCell), `${rvEqual.length} of ${rvEst.length} estimates equal ffprobe's average; VFR files off by ${rvVfrText}; ${rvFailed.length} of ${rv.length} files did not play`]),
     row([`Bytes read, ${engineStats(own, 'isobmff').fixtures.filter((f) => !isLarge(f, inp.manifest)).length} committed MP4/MOV files`, ...all.map((e) => bytesCell(e, 'isobmff')), 'the media element streams the file']),
     row([`Bytes read, ${engineStats(own, 'matroska').fixtures.length} committed WebM/MKV files`, ...all.map((e) => bytesCell(e, 'matroska')), 'the media element streams the file']),
     row(['Reads per file, median / max', ...all.map(readsCell), 'n/a']),
@@ -774,54 +800,82 @@ function approachesBlock(inp: Inputs): string[] {
 
 function enginesBlock(inp: Inputs): string[] {
   const engines = inp.acc.engines.filter((e) => !e.loadSkipped);
+  const label = (e: EngineReport): string => ENGINE_LABEL[e.engine] ?? e.engine;
+  const library = (e: EngineReport): string => (e.engine === 'own' ? 'this package' : `${LIBRARY_LABEL[e.arm.library] ?? e.arm.library} ${e.arm.version ?? ''}`.trim());
   const summary = engines.map((e) => {
     const { checks, counts } = ownTotals(e);
-    return row([
-      ENGINE_LABEL[e.engine] ?? e.engine,
-      e.informational ? 'informational' : 'gating',
-      e.fixtures.length,
-      checks,
-      counts.exact,
-      counts['within-tol'],
-      counts['known-deviation'],
-      counts.mismatch,
-      counts['n/a'],
-      e.mismatchFixtures.length,
-    ]);
+    return row([label(e), library(e), e.informational ? 'informational' : 'gating', e.fixtures.length, checks, counts.exact, counts['within-tol'], counts['known-deviation'], ...OUTCOMES.map((k) => e.outcomes[k]), counts['n/a']]);
   });
   const byFamily = engines.flatMap((e) =>
     ['isobmff', 'matroska', 'none']
       .filter((fam) => e.fixtures.some((f) => familyOf(f) === fam))
       .map((fam) => {
         const s = engineStats(e, fam);
-        const supportedHere = fam === 'none' || (ENGINE_FAMILIES[e.engine] ?? []).includes(fam);
-        return row([
-          ENGINE_LABEL[e.engine] ?? e.engine,
-          FAMILY_LABEL[fam] ?? fam,
-          s.fixtures.length,
-          s.checks.length,
-          s.fpsMismatch,
-          s.otherMismatch,
-          s.mismatchFixtures,
-          supportedHere ? '' : 'container not supported by the library',
-        ]);
+        return row([label(e), FAMILY_LABEL[fam] ?? fam, s.fixtures.length, s.checks.length, s.checks.filter((c) => c.verdict === 'exact').length, ...OUTCOMES.map((k) => s.checks.filter((c) => c.outcome === k).length)]);
       }),
   );
-  const fieldLines = engines
-    .filter((e) => e.informational)
-    .map((e) => {
-      const counts = new Map<string, number>();
-      for (const c of e.fixtures.flatMap(checksOf)) if (c.verdict === 'mismatch') counts.set(c.id, (counts.get(c.id) ?? 0) + 1);
-      const list = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-      return `- ${ENGINE_LABEL[e.engine] ?? e.engine} mismatches by field: ${list.map(([id, n]) => `\`${id}\` ${n}`).join(', ')}.`;
-    });
+  const byField = (e: EngineReport, k: Outcome): string => {
+    const counts = new Map<string, number>();
+    for (const c of e.fixtures.flatMap(checksOf)) if (c.outcome === k) counts.set(c.id, (counts.get(c.id) ?? 0) + 1);
+    const list = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    return list.length === 0 ? 'none' : list.map(([id, n]) => `\`${id}\` ${n}`).join(', ');
+  };
   return [
-    ...table(['Engine', 'Role', 'Fixtures', 'Checks', 'exact', 'within-tol', 'known-deviation', 'mismatch', 'n/a', 'Fixtures with a mismatch'], 'llrrrrrrrr', summary),
+    ...table(['Arm', 'Library', 'Role', 'Fixtures', 'Checks', 'exact', 'within-tol', 'known deviation', 'wrong', 'definition differs', 'not provided', 'unsupported container', 'n/a'], 'lllrrrrrrrrrr', summary),
     '',
-    ...table(['Engine', 'Files', 'Fixtures', 'Checks', 'Frame-rate mismatches', 'Other mismatches', 'Fixtures with a mismatch', 'Note'], 'llrrrrrl', byFamily),
+    ...engines.map((e) => `- **${label(e)}**: ${e.arm.recipe}.`),
     '',
-    ...fieldLines,
+    ...table(['Arm', 'Files', 'Fixtures', 'Checks', 'exact', 'wrong', 'definition differs', 'not provided', 'unsupported container'], 'llrrrrrrr', byFamily),
+    '',
+    ...engines.filter((e) => e.informational).map((e) => `- ${label(e)}: wrong ${byField(e, 'wrong')}; definition differs ${byField(e, 'definition-differs')}.`),
+    '',
+    '**Where the libraries win**, from the same reports:',
+    '',
+    ...winsLines(inp, engines),
   ];
+}
+
+function winsLines(inp: Inputs, engines: readonly EngineReport[]): string[] {
+  const own = engine(inp.acc, 'own');
+  const ownByName = new Map(own.fixtures.map((f) => [f.name, f]));
+  const label = (e: EngineReport): string => ENGINE_LABEL[e.engine] ?? e.engine;
+  const arms = engines.filter((e) => e.informational);
+  const out: string[] = [];
+  const accuracy: string[] = [];
+  for (const f of own.fixtures) {
+    for (const c of checksOf(f)) {
+      if (c.verdict === 'exact' || c.verdict === 'n/a' || c.verdict === 'mismatch') continue;
+      const exact = arms.filter((e) => {
+        const theirs = e.fixtures.find((x) => x.name === f.name);
+        return !!theirs && checksOf(theirs).some((x) => x.id === c.id && x.verdict === 'exact');
+      });
+      if (exact.length > 0) accuracy.push(`\`${f.name}\` \`${c.id}\` (own: ${c.verdict}; exact: ${exact.map(label).join(', ')})`);
+    }
+  }
+  out.push(accuracy.length > 0 ? `- Exact where the own parsers are within tolerance or a known deviation: ${accuracy.join('; ')}.` : '- No check where a library arm is exact and the own parsers are not.');
+  const compare = (pick: (f: AccFixture) => number, what: string) => {
+    const parts = arms.flatMap((e) => {
+      const files = supported(e, inp.manifest).filter((f) => f.io && !f.appError && ownByName.get(f.name)?.io);
+      const fewer = files.filter((f) => pick(f) < pick(ownByName.get(f.name)!)).length;
+      return fewer > 0 ? [`${label(e)} ${fewer} of ${files.length}`] : [];
+    });
+    if (parts.length > 0) out.push(`- ${what}, on the committed files each arm opens: ${parts.join('; ')}.`);
+  };
+  compare((f) => io(f).bytesRead, 'Fewer bytes read than the own parsers');
+  compare((f) => io(f).reads, 'Fewer reads than the own parsers');
+  compare((f) => io(f).ms, 'Faster than the own parsers in Node (median of the runs)');
+  const browser = majorVersion(inp.bench.environment.chrome.product);
+  for (const lib of ['mp4box', 'mediabunny']) {
+    const names = Object.keys(inp.bench.chrome.warm).filter((n) => inp.bench.chrome.engines[n]?.[lib]);
+    const faster = names.filter((n) => inp.bench.chrome.engines[n]![lib]!.medianMs < inp.bench.chrome.warm[n]!.medianMs);
+    const large = Object.entries(inp.bench.chrome.large)
+      .filter(([, byEngine]) => byEngine[lib] && byEngine['own'] && byEngine[lib]!.medianMs < byEngine['own']!.medianMs)
+      .map(([name, byEngine]) => `\`${name}\` ${fmtMs(byEngine[lib]!.medianMs)} ms against ${fmtMs(byEngine['own']!.medianMs)} ms`);
+    if (faster.length > 0 || large.length > 0) {
+      out.push(`- Faster than the own parsers in ${browser} (${LIBRARY_LABEL[lib]}, tuned adapter): ${faster.length} of ${names.length} files warm${large.length > 0 ? `; ${large.join(', ')}` : ''}.`);
+    }
+  }
+  return out;
 }
 
 const fileOf = (path: string): string => path.split('/').pop() ?? path;
@@ -966,29 +1020,14 @@ function viteBlock(inp: Inputs, doc: Doc): string[] {
   ];
 }
 
-function accuracySummaryBlock(inp: Inputs): string[] {
-  const committed = (e: EngineReport): AccFixture[] => e.fixtures.filter((f) => !isLarge(f, inp.manifest));
-  const tally = (e: EngineReport) => {
-    const fixtures = committed(e);
-    const checks = fixtures.flatMap(checksOf);
-    const n = (v: Verdict): number => checks.filter((c) => c.verdict === v).length;
-    return { fixtures: fixtures.length, checks: checks.length, n, mismatchFixtures: fixtures.filter((f) => checksOf(f).some((c) => c.verdict === 'mismatch')).length };
-  };
-  const own = tally(engine(inp.acc, 'own'));
-  const others = inp.acc.engines
-    .filter((e) => e.engine !== 'own' && !e.loadSkipped)
-    .map((e) => {
-      const t = tally(e);
-      const missing = (['isobmff', 'matroska'] as const).filter((fam) => !(ENGINE_FAMILIES[e.engine] ?? []).includes(fam));
-      const unsupported = committed(e)
-        .filter((f) => f.family !== null && missing.includes(f.family))
-        .flatMap(checksOf)
-        .filter((c) => c.verdict === 'mismatch').length;
-      const files = missing.map((fam) => (fam === 'isobmff' ? 'MP4 and MOV' : 'WebM and Matroska')).join(' or ');
-      return `${ENGINE_LABEL[e.engine] ?? e.engine} has ${t.n('mismatch')} mismatches on ${t.mismatchFixtures} fixtures${unsupported > 0 ? ` (${unsupported} of them on ${files} files it cannot open)` : ''}`;
-    });
+function accuracySummaryBlock(inp: Inputs, doc: Doc): string[] {
+  const fixtures = engine(inp.acc, 'own').fixtures.filter((f) => !isLarge(f, inp.manifest));
+  const checks = fixtures.flatMap(checksOf);
+  const n = (v: Verdict): number => checks.filter((c) => c.verdict === v).length;
+  const arms = inp.acc.engines.filter((e) => e.informational && !e.loadSkipped);
+  const libraries = [...new Set(arms.map((e) => `${LIBRARY_LABEL[e.arm.library] ?? e.arm.library} ${e.arm.version ?? ''}`.trim()))];
   return [
-    `**${own.n('mismatch')} mismatches against ffprobe ${inp.acc.ffprobeVersions.map((s) => s.replace(/^ffprobe version /, '').replace(/-.*$/, '')).join(', ')}** on the ${own.fixtures} committed fixtures: ${own.checks} field checks, ${own.n('exact')} exact, ${own.n('within-tol')} within tolerance, ${own.n('known-deviation')} known deviation${own.n('known-deviation') === 1 ? '' : 's'} with a recorded reason, ${own.n('n/a')} not applicable. On the same fixtures ${others.join(' and ')}.`,
+    `**${n('mismatch')} mismatches against ffprobe ${inp.acc.ffprobeVersions.map((s) => s.replace(/^ffprobe version /, '').replace(/-.*$/, '')).join(', ')}** on the ${fixtures.length} committed fixtures: ${checks.length} field checks, ${n('exact')} exact, ${n('within-tol')} within tolerance, ${n('known-deviation')} known deviation${n('known-deviation') === 1 ? '' : 's'} with a recorded reason, ${n('n/a')} not applicable. The same comparison runs ${libraries.join(' and ')} in ${arms.length} arms (their idiomatic recipes, mediabunny with a full scan, and this package's tuned adapters) and sorts each difference into wrong, definition differs, not provided or unsupported container; the [accuracy section](${doc.link('docs/benchmarks.md')}#accuracy-vs-ffprobe) has the outcomes and where the libraries win.`,
   ];
 }
 

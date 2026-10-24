@@ -7,8 +7,9 @@ import type { AnalyzeOptions, FileResult, MatroskaMode } from '../src/core/types
 import { loadManifest, loadRef, fixturePath, type ManifestEntry } from '../tests/helpers/fixtures.ts';
 import { openFixture } from '../tests/helpers/open-blob.ts';
 import { forFixture, loadDeviations } from './compare/deviations.ts';
-import { ENGINE_NAMES, REPO_ROOT, isEngineName, loadEngine, type EngineHandle, type EngineName } from './compare/engines.ts';
+import { ARMS, ENGINE_ALIASES, ENGINE_NAMES, REPO_ROOT, loadEngine, resolveEngineName, type EngineHandle, type EngineName } from './compare/engines.ts';
 import { scanIsoBmffLayout } from './compare/layout.ts';
+import { classifyEvaluation, countOutcomes } from './compare/outcomes.ts';
 import { parseRef, type RefFile } from './compare/ref.ts';
 import {
   renderMarkdown,
@@ -22,6 +23,7 @@ import {
 } from './compare/report.ts';
 import { evaluate } from './compare/rules.ts';
 import { runSelfTest } from './compare/self-test.ts';
+import { OUTCOME_CLASSES } from './compare/types.ts';
 
 const DEVIATIONS_DIR = join(REPO_ROOT, 'fixtures', 'known-deviations');
 const DEFAULT_REPEAT = 3;
@@ -29,7 +31,8 @@ const MATROSKA_MODES: readonly string[] = ['header', 'probe', 'exact', 'auto'];
 
 const USAGE = `Usage: node scripts/compare-ffprobe.ts [options]
 
-  --engines <list>       comma separated: ${ENGINE_NAMES.join(',')} (default: all, missing engines are skipped)
+  --engines <list>       comma separated arms: ${ENGINE_NAMES.join(',')} (default: all, missing engines are skipped;
+                         ${Object.entries(ENGINE_ALIASES).map(([a, n]) => `${a} means ${n}`).join(', ')})
   --with-large           also run fixtures/large (long and sparse files) when present
   --filter <substring>   only fixtures whose name contains the substring (writes accuracy.local.* instead)
   --repeat <n>           runs per fixture for the median timing (default ${DEFAULT_REPEAT})
@@ -109,18 +112,19 @@ function isLarge(entry: ManifestEntry): boolean {
 function printSummary(report: AccuracyReport): void {
   for (const e of report.engines) {
     if (e.loadSkipped) {
-      console.log(`${e.engine.padEnd(11)} skipped: ${e.loadSkipped}`);
+      console.log(`${e.engine.padEnd(20)} skipped: ${e.loadSkipped}`);
       continue;
     }
     const c = e.counts;
     console.log(
-      `${e.engine.padEnd(11)} fixtures ${String(e.fixtures.length).padStart(3)}  exact ${c.exact}  within-tol ${c['within-tol']}  known-deviation ${c['known-deviation']}  mismatch ${c.mismatch}  n/a ${c['n/a']}${e.informational ? '  (informational)' : ''}`,
+      `${e.engine.padEnd(20)} fixtures ${String(e.fixtures.length).padStart(3)}  exact ${c.exact}  within-tol ${c['within-tol']}  known-deviation ${c['known-deviation']}  mismatch ${c.mismatch}  n/a ${c['n/a']}${e.informational ? '  (informational)' : ''}`,
     );
+    if (c.mismatch > 0) console.log(`${''.padEnd(20)} mismatches by outcome: ${OUTCOME_CLASSES.map((k) => `${k} ${e.outcomes[k]}`).join(', ')}`);
     if (e.mismatchFixtures.length > 0) {
       const shown = e.mismatchFixtures.slice(0, 12).join(', ');
-      console.log(`            mismatch in ${e.mismatchFixtures.length} fixture(s): ${shown}${e.mismatchFixtures.length > 12 ? ', ...' : ''}`);
+      console.log(`${''.padEnd(20)} mismatch in ${e.mismatchFixtures.length} fixture(s): ${shown}${e.mismatchFixtures.length > 12 ? ', ...' : ''}`);
     }
-    for (const p of e.deviationProblems) console.log(`            deviation file problem: ${p}`);
+    for (const p of e.deviationProblems) console.log(`${''.padEnd(20)} deviation file problem: ${p}`);
   }
 }
 
@@ -148,10 +152,11 @@ async function main(): Promise<number> {
 
   const engineNames: EngineName[] = [];
   for (const raw of (values.engines ?? ENGINE_NAMES.join(',')).split(',')) {
-    const n = raw.trim();
-    if (!n) continue;
-    if (!isEngineName(n)) {
-      console.error(`unknown engine "${n}" (known: ${ENGINE_NAMES.join(', ')})`);
+    const typed = raw.trim();
+    if (!typed) continue;
+    const n = resolveEngineName(typed);
+    if (!n) {
+      console.error(`unknown engine "${typed}" (known: ${[...ENGINE_NAMES, ...Object.keys(ENGINE_ALIASES)].join(', ')})`);
       return 2;
     }
     if (!engineNames.includes(n)) engineNames.push(n);
@@ -199,6 +204,7 @@ async function main(): Promise<number> {
       engineReports.push({
         engine: engineName,
         informational: engineName !== 'own',
+        arm: { library: ARMS[engineName].library, style: ARMS[engineName].style, version: null, recipe: ARMS[engineName].recipe },
         loadSkipped,
         fixtures: [],
         skipped: [],
@@ -206,6 +212,7 @@ async function main(): Promise<number> {
         deviationProblems: [],
         staleDeviations: [],
         counts: { exact: 0, 'within-tol': 0, 'known-deviation': 0, mismatch: 0, 'n/a': 0 },
+        outcomes: countOutcomes([]),
         mismatchFixtures: [],
       });
       continue;
@@ -236,6 +243,7 @@ async function main(): Promise<number> {
         const timed = await runTimed(engine, opened.blob, entry.name, opts, runs, engine.informational && !verbose);
         const result = timed.result;
         const evaluation = evaluate({ info, ref, result, layout, threw: timed.threw, deviations: forFixture(deviations, entry.name) });
+        classifyEvaluation({ arm: ARMS[engineName], info, ref, result, layout, family: evaluation.family }, evaluation);
         for (const key of evaluation.unusedDeviationKeys) stale.push({ fixture: entry.name, key });
         const bytesRead = result.io?.bytesRead ?? 0;
         fixtures.push({
@@ -276,6 +284,7 @@ async function main(): Promise<number> {
     engineReports.push({
       engine: engineName,
       informational: engine.informational,
+      arm: engine.arm,
       loadSkipped: null,
       fixtures,
       skipped,
@@ -283,6 +292,7 @@ async function main(): Promise<number> {
       deviationProblems: problems,
       staleDeviations: stale,
       counts,
+      outcomes: countOutcomes(fixtures.flatMap((f) => [...f.fileChecks, ...f.tracks.flatMap((t) => t.checks)])),
       mismatchFixtures,
     });
   }
