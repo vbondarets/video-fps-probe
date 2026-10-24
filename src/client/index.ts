@@ -1,5 +1,6 @@
 export { compareResults, type Agreement, type ComparedField, type ComparedFieldName, type ComparedValue } from '../api/agreement.ts';
-export { isAbortError, isTimeoutError, ProbeError, type ProbeErrorCode } from '../api/errors.ts';
+export { ProbeError, type ProbeErrorCode } from '../api/errors.ts';
+export { isAbortError, isTimeoutError } from '../api/guards.ts';
 export { summarize, type VideoFpsSummary } from '../api/summary.ts';
 export type { BlobLike, BlobSlice } from '../core/reader.ts';
 export type * from '../core/types.ts';

@@ -88,7 +88,7 @@ type LazyProbe<Id> = Probe<Id> & { readonly loaded: boolean; load(): Promise<Pro
 A stub is what you keep in the critical bundle. It imports the probe client with a dynamic `import()` on the first `analyze`, `tryAnalyze`, `compare`, `prewarm` or `load()`, then forwards every call.
 
 - `load()` is idempotent; a failed load is retried on the next call. Creating a stub never throws: an option error such as an unregistered `engine` surfaces on the first call.
-- A failed load rejects with the factory's error as it is, not with a `ProbeError`. For the built-in stubs that is the browser's dynamic-import error (a `TypeError`), for example when the probe client chunk returns 404 after a redeploy, so check `e instanceof ProbeError` before reading `e.code`: a stub rejection that is not a `ProbeError` is a load failure, like `reason: 'load'` ([Errors](#errors)). `tryAnalyze` still resolves `null` and `prewarm` still resolves.
+- A failed load rejects with `ProbeError('worker-failed')`, `reason: 'load'`, the factory's error as `cause` and its text as the message: for the built-in stubs that is the browser's dynamic-import error, for example `TypeError: Failed to fetch dynamically imported module: <url>` when the probe client chunk returns 404 after a redeploy ([Errors](#errors)). A `ProbeError` the factory rejects with, such as an option error of the probe it creates, is passed through as it is. `load()` rejects the same way, `tryAnalyze` still resolves `null` and `prewarm` still resolves.
 - `engines` lists the ids known from the options before the load, and the routed ids after it.
 - `dispose()` on a stub that has not loaded does nothing. `destroy()` also stops a load in flight. From then on `analyze` and `compare` reject with `ProbeError('aborted')`, calls that were waiting for the load included, `tryAnalyze` resolves `null`, and `prewarm` resolves without loading anything.
 - `lazyProbeFrom` wraps any factory, for example a module of your own that calls `createProbeClient` with your worker literal: `lazyProbeFrom(() => import('./probe.ts').then((m) => m.probe))`. The demo does this.
@@ -395,15 +395,15 @@ class ProbeError extends Error {
   readonly reason?: 'load' | 'crash'; // set on worker-failed only
   // cause: the underlying error or the worker's error event, when there is one
 }
-function isAbortError(e: unknown): boolean; // ProbeError 'aborted', or any error named AbortError
-function isTimeoutError(e: unknown): boolean; // ProbeError 'timeout', or any error named TimeoutError
+function isAbortError(e: unknown): boolean; // an error named ProbeError with code 'aborted', or any error named AbortError
+function isTimeoutError(e: unknown): boolean; // an error named ProbeError with code 'timeout', or any error named TimeoutError
 ```
 
 | Code | When |
 |---|---|
 | `aborted` | the call's `signal` was aborted, or the probe was destroyed |
 | `timeout` | `timeoutMs` passed after a worker took the job (or after an in-thread start) |
-| `worker-failed` | a worker could not start or crashed; a worker could not load the engine of a job (the mp4box or mediabunny chunk or a custom loader, with the statistics chunk loaded next to it); a main-thread chunk failed to load (the inline, fallback or compare chunk, or the module of an in-thread engine); or an engine rejected. Not the parser and statistics chunks of own: see below. `reason` tells the two kinds apart |
+| `worker-failed` | a worker could not start or crashed; a worker could not load the engine of a job (the mp4box or mediabunny chunk or a custom loader, with the statistics chunk loaded next to it); a main-thread chunk failed to load (the probe client of a lazy stub, the inline, fallback or compare chunk, or the module of an in-thread engine); or an engine rejected. Not the parser and statistics chunks of own: see below. `reason` tells the two kinds apart |
 | `engine-not-registered` | the engine id has no route in this probe (thrown at creation for `engine` and `fallback`, rejected at call time otherwise) |
 | `unknown-engine` | the worker does not serve the engine it was asked for: `worker.engines` lists an engine that `serveProbeWorker` was not given |
 | `unsupported-environment` | the engine cannot run here: a worker-only engine without `Worker`, or rvfc without a DOM |
@@ -413,14 +413,14 @@ function isTimeoutError(e: unknown): boolean; // ProbeError 'timeout', or any er
 
 | Reason | When | What helps |
 |---|---|---|
-| `load` | code the probe needs did not load: the worker script (an `error` event without a message before the worker's first reply), `new Worker()` threw (for example a CSP or a cross-origin URL), a worker could not load the engine module of a job, or a main-thread chunk import rejected. The message keeps the browser's text (`Failed to fetch dynamically imported module: <url>` for a chunk), except for the worker script, where the browser gives none | after a redeploy the old hashed files are gone: reload the page ([deploy skew](bundlers.md#deploy-skew)); otherwise retry, the next call loads again |
+| `load` | code the probe needs did not load: the worker script (an `error` event without a message before the worker's first reply), `new Worker()` threw (for example a CSP or a cross-origin URL), a worker could not load the engine module of a job, or a main-thread chunk import rejected, the factory of a lazy stub included. The message keeps the browser's text (`Failed to fetch dynamically imported module: <url>` for a chunk), except for the worker script, where the browser gives none | after a redeploy the old hashed files are gone: reload the page ([deploy skew](bundlers.md#deploy-skew)); otherwise retry, the next call loads again |
 | `crash` | the code loaded and then failed: a worker `error` event with a message (an uncaught exception) or after the worker replied, or an engine that rejected or threw | a bug or a file the engine cannot handle; retrying the same file usually fails the same way |
 
 A `ProbeError('worker-failed')` that an in-thread engine throws itself is passed through as it is, so its `reason` can be unset.
 
 Problems with the file itself are never errors: they are `result.error` (and `ok: false` in `summarize`). So is a parser or statistics chunk of own that fails to load, in a worker or in the calling thread: own loads them itself and returns the import error's message as `result.error`, so the call resolves and a fallback chain moves on to its next engine. A rate profile chunk that fails to load leaves `rateProfile` null.
 
-Every rejection of a probe is a `ProbeError`. The exception is the load of a lazy stub: when its factory rejects, the stub rejects with that error as it is ([Lazy stubs](#lazy-stubs)).
+Every rejection of a probe or a lazy stub is a `ProbeError`. The guards check the name and the code instead of `instanceof`, so a `ProbeError` from another copy of the package counts too.
 
 ## Worker protocol
 

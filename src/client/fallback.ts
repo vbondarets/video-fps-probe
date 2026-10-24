@@ -1,4 +1,5 @@
-import { isAbortError, ProbeError } from '../api/errors.ts';
+import { ProbeError } from '../api/errors.ts';
+import { isAbortError } from '../api/guards.ts';
 import { emptyAnalysis, primaryTrack } from '../core/result.ts';
 import type { EngineId } from '../core/types.ts';
 import type { ContainerFamily } from '../plugins/types.ts';

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ProbeError } from '../../src/api/errors.ts';
 import type { EngineId } from '../../src/core/types.ts';
 import type { Probe } from '../../src/client/types.ts';
 import { fakeResult, FakeWorker } from './fake-worker.ts';
@@ -78,7 +79,10 @@ describe('lazyProbeFrom', () => {
       .mockRejectedValueOnce(new TypeError('Failed to fetch dynamically imported module'))
       .mockResolvedValue(probe);
     const stub = lazyProbeFrom(factory);
-    await expect(stub.analyze(mp4File())).rejects.toThrow('Failed to fetch dynamically imported module');
+    const failed = await stub.analyze(mp4File()).catch((e: unknown) => e);
+    expect(failed).toBeInstanceOf(ProbeError);
+    expect(failed).toMatchObject({ name: 'ProbeError', code: 'worker-failed', engine: null, reason: 'load', message: 'TypeError: Failed to fetch dynamically imported module' });
+    expect((failed as ProbeError).cause).toBeInstanceOf(TypeError);
     expect(stub.loaded).toBe(false);
     expect(await stub.tryAnalyze(mp4File())).toBeNull();
     await expect(stub.prewarm()).resolves.toBeUndefined();
@@ -187,13 +191,24 @@ describe('lazyProbeFrom', () => {
     const stub = lazyProbeFrom(factory);
     const loading = stub.load();
     expect(loading).toBeInstanceOf(Promise);
-    await expect(loading).rejects.toThrow('factory threw');
-    await expect(stub.analyze(mp4File())).rejects.toThrow('factory threw');
+    await expect(loading).rejects.toMatchObject({ code: 'worker-failed', reason: 'load', message: 'TypeError: factory threw' });
+    await expect(stub.analyze(mp4File())).rejects.toMatchObject({ code: 'worker-failed', reason: 'load', message: 'TypeError: factory threw' });
     expect(await stub.tryAnalyze(mp4File())).toBeNull();
     await expect(stub.prewarm()).resolves.toBeUndefined();
     expect(stub.loaded).toBe(false);
     expect((await stub.compare(mp4File())).name).toBe('');
     expect(factory).toHaveBeenCalledTimes(5);
+  });
+
+  it('passes a ProbeError of the factory through as it is, for example an option error of the probe it creates', async () => {
+    const option = new ProbeError('engine-not-registered', 'engine mp4box is not registered', { engine: 'mp4box' });
+    const factory = vi.fn<() => Promise<Probe<EngineId>>>().mockRejectedValue(option);
+    const stub = lazyProbeFrom(factory);
+    await expect(stub.load()).rejects.toBe(option);
+    await expect(stub.analyze(mp4File())).rejects.toBe(option);
+    expect('reason' in option).toBe(false);
+    expect(await stub.tryAnalyze(mp4File())).toBeNull();
+    expect(factory).toHaveBeenCalledTimes(3);
   });
 
   it('keeps tryAnalyze and prewarm from throwing when a loaded probe throws synchronously', async () => {

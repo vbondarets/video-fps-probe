@@ -1,5 +1,6 @@
 import { compareResults } from '../api/agreement.ts';
-import { isAbortError, ProbeError } from '../api/errors.ts';
+import { ProbeError } from '../api/errors.ts';
+import { isAbortError } from '../api/guards.ts';
 import type { EngineId } from '../core/types.ts';
 import { failureOf } from './fallback.ts';
 import { nameOf, type CompareContext } from './probe.ts';

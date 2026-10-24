@@ -101,7 +101,7 @@ Each engine module exports `run` and `containers` (the `EngineModule` contract).
 | `client/inline.ts` | `runInline`: an engine in the calling thread with abort, timeout and the containers gate; a lazy chunk |
 | `client/stub.ts`, `client/lazy.ts` | `lazyStub`, `lazyProbeClient`, `lazyProbeFrom` |
 | `client/types.ts`, `client/index.ts` | the public types and the `./client` entry |
-| `api/errors.ts` | `ProbeError`, `isAbortError`, `isTimeoutError` |
+| `api/errors.ts`, `api/guards.ts` | `ProbeError`; `isAbortError` and `isTimeoutError`, which check the name and the code so that the entry chunk of a lazy host holds only the class |
 | `api/summary.ts` | `summarize` |
 | `api/agreement.ts` | `compareResults` and the agreement rules |
 | `index.ts`, `probe.ts`, `analyze.ts`, `lazy.ts` | the root entry (`createProbe` registers `ownDescriptor` first), the in-thread `analyze()` and `lazyProbe` |

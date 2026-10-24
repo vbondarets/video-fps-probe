@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { isAbortError } from '../../src/api/errors.ts';
+import { isAbortError } from '../../src/api/guards.ts';
 import { KILL_AFTER_MS, WorkerPool } from '../../src/client/pool.ts';
 import { analyzeRequest, FakeWorker } from './fake-worker.ts';
 

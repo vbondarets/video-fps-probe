@@ -26,13 +26,3 @@ export class ProbeError extends Error {
     this.engine = options.engine ?? null;
   }
 }
-
-const nameOf = (e: unknown): unknown => (typeof e === 'object' && e !== null && 'name' in e ? (e as { name: unknown }).name : undefined);
-
-export function isAbortError(e: unknown): boolean {
-  return e instanceof ProbeError ? e.code === 'aborted' : nameOf(e) === 'AbortError';
-}
-
-export function isTimeoutError(e: unknown): boolean {
-  return e instanceof ProbeError ? e.code === 'timeout' : nameOf(e) === 'TimeoutError';
-}

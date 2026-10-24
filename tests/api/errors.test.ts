@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { isAbortError, isTimeoutError, ProbeError } from '../../src/api/errors.ts';
+import { ProbeError } from '../../src/api/errors.ts';
+import { isAbortError, isTimeoutError } from '../../src/api/guards.ts';
 import { workerFailed } from '../../src/client/pool.ts';
 
 describe('ProbeError', () => {
@@ -57,5 +58,16 @@ describe('abort and timeout guards', () => {
     expect(isTimeoutError(new ProbeError('aborted', 'aborted'))).toBe(false);
     expect(isTimeoutError(new DOMException('Aborted', 'AbortError'))).toBe(false);
     for (const v of [null, undefined, 'TimeoutError', 0]) expect(isTimeoutError(v)).toBe(false);
+  });
+
+  it('recognizes a ProbeError by its name and code, so one from another copy of the package counts too', () => {
+    const copy = Object.assign(new Error('aborted'), { name: 'ProbeError', code: 'aborted' });
+    expect(copy).not.toBeInstanceOf(ProbeError);
+    expect(isAbortError(copy)).toBe(true);
+    expect(isTimeoutError(copy)).toBe(false);
+    expect(isTimeoutError({ name: 'ProbeError', code: 'timeout' })).toBe(true);
+    expect(isAbortError({ name: 'ProbeError', code: 'timeout' })).toBe(false);
+    expect(isAbortError({ name: 'ProbeError' })).toBe(false);
+    expect(isAbortError({ code: 'aborted' })).toBe(false);
   });
 });

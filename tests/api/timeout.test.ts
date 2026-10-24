@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { isTimeoutError } from '../../src/api/errors.ts';
+import { isTimeoutError } from '../../src/api/guards.ts';
 import { WorkerPool } from '../../src/client/pool.ts';
 import { analyzeRequest, FakeWorker } from './fake-worker.ts';
 
