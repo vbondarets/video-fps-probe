@@ -3,7 +3,7 @@ import { resolveOptions } from './options.ts';
 import { BlobReader, type BlobLike } from './reader.ts';
 import { emptyAnalysis } from './result.ts';
 import { sniff, type SniffKind } from './sniff.ts';
-import type { AnalyzeOptions, ContainerAnalysis, ContainerAnalyzer, FileResult } from './types.ts';
+import type { AnalyzeOptions, ContainerAnalysis, ContainerAnalyzer, FileResult, ResolvedAnalyzeOptions } from './types.ts';
 
 export type AnalyzerRegistry = Record<Exclude<SniffKind, 'unknown'>, ContainerAnalyzer>;
 
@@ -20,6 +20,11 @@ export const DEFAULT_ANALYZERS: Readonly<AnalyzerRegistry> = {
 };
 
 const SNIFF_BYTES = 1024;
+
+export function firstReadAhead(size: number, opts: ResolvedAnalyzeOptions): number {
+  const { perReadMs, bytesPerMs } = opts.costModel;
+  return size - opts.readAhead.head < perReadMs * bytesPerMs ? size : opts.readAhead.head;
+}
 
 export function isAbortError(e: unknown): boolean {
   return typeof e === 'object' && e !== null && 'name' in e && (e as { name: unknown }).name === 'AbortError';
@@ -66,7 +71,7 @@ export async function analyze(
     if (reader.size === 0) {
       result.error = 'not a recognised container: empty file';
     } else {
-      const head = await reader.bytes(0, Math.min(SNIFF_BYTES, reader.size));
+      const head = await reader.bytes(0, Math.min(SNIFF_BYTES, reader.size), firstReadAhead(reader.size, resolved));
       const sniffed = sniff(head);
       if (sniffed.kind === 'unknown') {
         result.error = `not a recognised container: ${sniffed.reason}`;

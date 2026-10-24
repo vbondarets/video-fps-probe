@@ -442,14 +442,25 @@ describe('ffprobe stage-1 r_frame_rate', () => {
 describe('synthetic files end to end', () => {
   const mdat = (n: number): Bytes => box('mdat', zeros(n));
 
-  test('faststart needs one read, moov at the end two', async () => {
-    const tail = await run(bytes(ftyp(), mdat(200_000), moov(trak({ ...CFR30(), chunkOffset: 40 }))));
+  test('above the single-read size faststart needs one read, moov at the end two', async () => {
+    const tail = await run(bytes(ftyp(), mdat(500_000), moov(trak({ ...CFR30(), chunkOffset: 40 }))));
     expect(tail.error).toBeNull();
     expect(tail.io.reads).toBe(2);
     expect(tail.videoTracks[0]).toMatchObject({ frames: 90, presentedFrames: 90, avgFpsFfprobe: '30/1', rFpsFfprobe: '30/1', durationSec: 3, startSec: 0, isVfr: false });
+    const fast = await run(bytes(ftyp(), moov(trak(CFR30())), mdat(500_000)));
+    expect(fast.io).toMatchObject({ reads: 1, bytesRead: 65_536 });
+    expect(fast.formatDurationSec).toBe(3);
+  });
+
+  test('below the single-read size one read covers the file in any layout, unless reads cost nothing', async () => {
+    const file = bytes(ftyp(), mdat(200_000), moov(trak({ ...CFR30(), chunkOffset: 40 })));
+    const whole = await run(file);
+    expect(whole.io).toMatchObject({ reads: 1, bytesRead: file.length });
+    const split = await run(file, { costModel: { perReadMs: 0 } });
+    expect(split.io.reads).toBe(2);
+    expect({ ...whole.videoTracks[0], warnings: [] }).toEqual({ ...split.videoTracks[0], warnings: [] });
     const fast = await run(bytes(ftyp(), moov(trak(CFR30())), mdat(200_000)));
     expect(fast.io.reads).toBe(1);
-    expect(fast.formatDurationSec).toBe(3);
   });
 
   test('a top-level uuid box, a 64-bit mdat and a size-0 mdat are skipped by size', async () => {
@@ -591,7 +602,7 @@ describe('synthetic files end to end', () => {
   });
 
   test('an abort during the walk propagates instead of becoming a result', async () => {
-    const file = new Blob([bytes(ftyp(), mdat(200_000), moov(trak(CFR30())))]);
+    const file = new Blob([bytes(ftyp(), mdat(500_000), moov(trak(CFR30())))]);
     const controller = new AbortController();
     let reads = 0;
     const blob = {

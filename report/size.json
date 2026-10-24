@@ -14,7 +14,7 @@
       "headroom": 2559,
       "status": "ok",
       "files": [
-        "assets/index-BS7dCM7M.js"
+        "assets/index-B51OxH-M.js"
       ],
       "why": "Demo page only. React and ReactDOM are about 67.5 KB gzip of it. Measured 74.44 KB, 0.56 KB under the previous 75 KB limit. Re-set on 2026-10-24 to the measurement plus 3 percent, rounded up to 0.5 KB, when the owner decided that the demo size does not matter as long as the package stays tiny: the size promise of the package is the consumer size matrix (report/size-matrix.md), whose budgets did not change. The 3 percent still fails a regression of 2 to 3 KB here. The Vite build log prints a larger figure for the same chunk (its own gzip settings); the budget is checked against the level 9 numbers of this script only."
     },
@@ -22,11 +22,11 @@
       "key": "worker",
       "label": "worker entry (core + glue)",
       "limit": 5000,
-      "gzip": 4244,
-      "headroom": 756,
+      "gzip": 4304,
+      "headroom": 696,
       "status": "ok",
       "files": [
-        "assets/probe.worker-JI49fzTl.js"
+        "assets/probe.worker-DFA5wqw6.js"
       ],
       "why": "Sniffing, reader, options, the worker runtime and the code the lazy parsers and comparison engines share: the demo custom worker, which serves own, mp4box and mediabunny. Both own parsers are lazy chunks, and the timeline statistics are the shared statistics chunk. Budgeted by entry name: only the probe.worker file counts, and any other worker file fails as unbudgeted, so the demo ships exactly one worker. Re-set when the demo worker entry was renamed from analyze.worker to probe.worker (measured 4.19 KB), and re-checked after the worker runtime started requesting the statistics chunk with every lazy engine source: measured 4.22 KB; limit is measured plus 10 percent, rounded up to 0.5 KB (4.64 to 5 KB). That stays well under the 8.5 KB a consumer custom worker gets, so a regression of about 0.8 KB fails here instead of hiding in that headroom."
     },
@@ -34,11 +34,11 @@
       "key": "isobmff",
       "label": "ISO BMFF parser chunk",
       "limit": 13500,
-      "gzip": 12220,
-      "headroom": 1280,
+      "gzip": 12222,
+      "headroom": 1278,
       "status": "ok",
       "files": [
-        "assets/isobmff-Bas0NL5h.js"
+        "assets/isobmff-CDn4dIH-.js"
       ],
       "why": "Own MP4 and MOV parser, fetched by the worker only when a file sniffs as ISO BMFF. Measured 11.94 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB."
     },
@@ -46,11 +46,11 @@
       "key": "matroska",
       "label": "Matroska parser chunk",
       "limit": 12000,
-      "gzip": 11096,
-      "headroom": 904,
+      "gzip": 11097,
+      "headroom": 903,
       "status": "ok",
       "files": [
-        "assets/matroska-BaXK-QWv.js"
+        "assets/matroska-DbetZi5V.js"
       ],
       "why": "Own Matroska and WebM parser, fetched by the worker only when a file sniffs as EBML. Measured 10.73 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB."
     },
@@ -58,11 +58,11 @@
       "key": "parser-shared",
       "label": "shared statistics chunk",
       "limit": 5000,
-      "gzip": 4294,
-      "headroom": 706,
+      "gzip": 4293,
+      "headroom": 707,
       "status": "ok",
       "files": [
-        "assets/stats-DuutUuR_.js"
+        "assets/stats-BBGsMuKN.js"
       ],
       "why": "Timeline statistics shared by both own parsers and the comparison engines. The worker requests the chunk in parallel with the first parser, so it is part of every first analysis row. Measured 4.29 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB. Counts every chunk the parsers share. Not required: when the statistics are part of the worker entry, the worker budget catches them."
     },
@@ -70,11 +70,11 @@
       "key": "client",
       "label": "lazy probe client",
       "limit": 3500,
-      "gzip": 2987,
-      "headroom": 513,
+      "gzip": 2984,
+      "headroom": 516,
       "status": "ok",
       "files": [
-        "assets/probe-D4BdlCRZ.js"
+        "assets/probe-3Bsphf_d.js"
       ],
       "why": "The probe client fetched by the main chunk on the first file, before the worker starts: the demo probe (probe-*) with createProbeClient, its engine routing, the worker pool and the rVFC descriptor. The fallback chain, compare and the in-thread runner are separate lazy chunks that the first analysis does not load. Counted in every first analysis row. Re-set when the demo moved from the module worker pool (1.04 KB) to the library probe client: measured 2.73 KB; limit is measured plus 10 percent, rounded up to 0.5 KB, which is also the consumer client chunk budget. Not required: without a client chunk the client is part of the main chunk."
     },
@@ -82,11 +82,11 @@
       "key": "rvfc",
       "label": "lazy rVFC fallback",
       "limit": 2500,
-      "gzip": 2196,
-      "headroom": 304,
+      "gzip": 2195,
+      "headroom": 305,
       "status": "ok",
       "files": [
-        "assets/rvfc-DcPgK9v4.js"
+        "assets/rvfc-DjzOda_d.js"
       ],
       "why": "Loaded on demand from the main chunk. Measured 1.94 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB."
     },
@@ -98,7 +98,7 @@
       "headroom": 156,
       "status": "ok",
       "files": [
-        "assets/segments-Cpv1juJQ.js"
+        "assets/segments-BV7rTiIy.js"
       ],
       "why": "Segmentation, anomalies, uneven flag and sparkline buckets. Fetched by the worker only for a timeline with unequal frame rates (VFR), after the parser chunk. Measured 1.79 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB. Not required: when the chunk is merged into another one, that chunk budget catches the growth."
     },
@@ -106,11 +106,11 @@
       "key": "rateProfile",
       "label": "lazy rate profile panel (UI)",
       "limit": 1500,
-      "gzip": 936,
-      "headroom": 564,
+      "gzip": 937,
+      "headroom": 563,
       "status": "ok",
       "files": [
-        "assets/RateProfile-DoSnlzJo.js"
+        "assets/RateProfile-D4g_PeJ-.js"
       ],
       "why": "Sparkline and segment table, fetched by the main chunk (React.lazy) when a result card has a rate profile. Measured 0.94 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB. Not required: when the chunk is merged into the main chunk, the main budget catches the growth."
     },
@@ -118,13 +118,13 @@
       "key": "initial",
       "label": "initial (main + CSS + worker entry)",
       "limit": 83000,
-      "gzip": 80494,
-      "headroom": 2506,
+      "gzip": 80554,
+      "headroom": 2446,
       "status": "ok",
       "files": [
-        "assets/index-BS7dCM7M.js",
+        "assets/index-B51OxH-M.js",
         "assets/index-UkwvJHuS.css",
-        "assets/probe.worker-JI49fzTl.js"
+        "assets/probe.worker-DFA5wqw6.js"
       ],
       "why": "The demo page, its styles and the worker entry, before any file is analysed. Nothing else loads without a user action: the device info chunk (footer line and JSON export) is fetched on idle after the first result, or by the first export, so it is in neither the initial row nor the first analysis rows. Measured 80.49 KB; the previous limit was 85 KB. Re-set on 2026-10-24 to the measurement plus 3 percent, rounded up to 0.5 KB, when the owner decided that the demo size does not matter as long as the package stays tiny: the size promise of the package is the consumer size matrix (report/size-matrix.md), whose budgets did not change. The 3 percent still fails a regression of 2 to 3 KB here."
     },
@@ -132,16 +132,16 @@
       "key": "firstMp4",
       "label": "first MP4 analysis (initial + client + ISO BMFF + shared chunks)",
       "limit": 103000,
-      "gzip": 99995,
-      "headroom": 3005,
+      "gzip": 100053,
+      "headroom": 2947,
       "status": "ok",
       "files": [
-        "assets/index-BS7dCM7M.js",
+        "assets/index-B51OxH-M.js",
         "assets/index-UkwvJHuS.css",
-        "assets/probe.worker-JI49fzTl.js",
-        "assets/isobmff-Bas0NL5h.js",
-        "assets/probe-D4BdlCRZ.js",
-        "assets/stats-DuutUuR_.js"
+        "assets/probe.worker-DFA5wqw6.js",
+        "assets/isobmff-CDn4dIH-.js",
+        "assets/probe-3Bsphf_d.js",
+        "assets/stats-BBGsMuKN.js"
       ],
       "why": "The demo page plus the first MP4 or MOV result. Measured 99,995 bytes, 5 bytes under the previous 100 KB limit. Re-set on 2026-10-24 to the measurement plus 3 percent, rounded up to 0.5 KB, when the owner decided that the demo size does not matter as long as the package stays tiny: the size promise of the package is the consumer size matrix (report/size-matrix.md), whose budgets did not change. The 3 percent still fails a regression of 2 to 3 KB here. Counts the lazy probe client and the shared statistics chunk too, so the component limits (83 + 3.5 + 5 + 13.5 = 105 KB) add up to more than this limit and it can trip while every component is within its own limit."
     },
@@ -149,17 +149,17 @@
       "key": "firstVfrMp4",
       "label": "first VFR MP4 analysis (initial + client + ISO BMFF + segments + shared chunks)",
       "limit": 105000,
-      "gzip": 101839,
-      "headroom": 3161,
+      "gzip": 101897,
+      "headroom": 3103,
       "status": "ok",
       "files": [
-        "assets/index-BS7dCM7M.js",
+        "assets/index-B51OxH-M.js",
         "assets/index-UkwvJHuS.css",
-        "assets/probe.worker-JI49fzTl.js",
-        "assets/isobmff-Bas0NL5h.js",
-        "assets/segments-Cpv1juJQ.js",
-        "assets/probe-D4BdlCRZ.js",
-        "assets/stats-DuutUuR_.js"
+        "assets/probe.worker-DFA5wqw6.js",
+        "assets/isobmff-CDn4dIH-.js",
+        "assets/segments-BV7rTiIy.js",
+        "assets/probe-3Bsphf_d.js",
+        "assets/stats-BBGsMuKN.js"
       ],
       "why": "The demo page plus the first MP4 or MOV result with unequal frame rates, which also fetches the rate profile chunk. Measured 101.84 KB; the previous limit was 102.0 KB, set by the owner's rule of 2026-10-23 for the demo only (the measurement rounded up to 0.5 KB). Re-set on 2026-10-24 to the measurement plus 3 percent, rounded up to 0.5 KB, when the owner decided that the demo size does not matter as long as the package stays tiny: the size promise of the package is the consumer size matrix (report/size-matrix.md), whose budgets did not change. The 3 percent still fails a regression of 2 to 3 KB here. With the lazy probe client and the shared statistics chunk, the component limits (83 + 3.5 + 5 + 13.5 + 2 = 107 KB) add up to more than this limit, so it can trip while every component is within its own limit. Not required: without a segments chunk the code lives elsewhere and the first MP4 analysis covers it."
     },
@@ -167,16 +167,16 @@
       "key": "firstMkv",
       "label": "first Matroska analysis (initial + client + Matroska + shared chunks)",
       "limit": 102000,
-      "gzip": 98871,
-      "headroom": 3129,
+      "gzip": 98928,
+      "headroom": 3072,
       "status": "ok",
       "files": [
-        "assets/index-BS7dCM7M.js",
+        "assets/index-B51OxH-M.js",
         "assets/index-UkwvJHuS.css",
-        "assets/probe.worker-JI49fzTl.js",
-        "assets/matroska-BaXK-QWv.js",
-        "assets/probe-D4BdlCRZ.js",
-        "assets/stats-DuutUuR_.js"
+        "assets/probe.worker-DFA5wqw6.js",
+        "assets/matroska-DbetZi5V.js",
+        "assets/probe-3Bsphf_d.js",
+        "assets/stats-BBGsMuKN.js"
       ],
       "why": "The demo page plus the first MKV or WebM result. Measured 98.87 KB; the previous limit was 100 KB. Re-set on 2026-10-24 to the measurement plus 3 percent, rounded up to 0.5 KB, when the owner decided that the demo size does not matter as long as the package stays tiny: the size promise of the package is the consumer size matrix (report/size-matrix.md), whose budgets did not change. The 3 percent still fails a regression of 2 to 3 KB here. Counts the lazy probe client and the shared statistics chunk too, so the component limits (83 + 3.5 + 5 + 12 = 103.5 KB) add up to more than this limit and it can trip while every component is within its own limit."
     }
@@ -184,69 +184,69 @@
   "composites": {
     "initial": {
       "files": [
-        "assets/index-BS7dCM7M.js",
+        "assets/index-B51OxH-M.js",
         "assets/index-UkwvJHuS.css",
-        "assets/probe.worker-JI49fzTl.js"
+        "assets/probe.worker-DFA5wqw6.js"
       ],
-      "raw": 253880,
-      "gzip": 80494,
-      "brotli": 69832
+      "raw": 254069,
+      "gzip": 80554,
+      "brotli": 69871
     },
     "firstMp4": {
       "files": [
-        "assets/index-BS7dCM7M.js",
+        "assets/index-B51OxH-M.js",
         "assets/index-UkwvJHuS.css",
-        "assets/probe.worker-JI49fzTl.js",
-        "assets/isobmff-Bas0NL5h.js",
-        "assets/probe-D4BdlCRZ.js",
-        "assets/stats-DuutUuR_.js"
+        "assets/probe.worker-DFA5wqw6.js",
+        "assets/isobmff-CDn4dIH-.js",
+        "assets/probe-3Bsphf_d.js",
+        "assets/stats-BBGsMuKN.js"
       ],
-      "raw": 301762,
-      "gzip": 99995,
-      "brotli": 87505
+      "raw": 301951,
+      "gzip": 100053,
+      "brotli": 87575
     },
     "firstVfrMp4": {
       "files": [
-        "assets/index-BS7dCM7M.js",
+        "assets/index-B51OxH-M.js",
         "assets/index-UkwvJHuS.css",
-        "assets/probe.worker-JI49fzTl.js",
-        "assets/isobmff-Bas0NL5h.js",
-        "assets/segments-Cpv1juJQ.js",
-        "assets/probe-D4BdlCRZ.js",
-        "assets/stats-DuutUuR_.js"
+        "assets/probe.worker-DFA5wqw6.js",
+        "assets/isobmff-CDn4dIH-.js",
+        "assets/segments-BV7rTiIy.js",
+        "assets/probe-3Bsphf_d.js",
+        "assets/stats-BBGsMuKN.js"
       ],
-      "raw": 305112,
-      "gzip": 101839,
-      "brotli": 89213
+      "raw": 305301,
+      "gzip": 101897,
+      "brotli": 89283
     },
     "firstMatroska": {
       "files": [
-        "assets/index-BS7dCM7M.js",
+        "assets/index-B51OxH-M.js",
         "assets/index-UkwvJHuS.css",
-        "assets/probe.worker-JI49fzTl.js",
-        "assets/matroska-BaXK-QWv.js",
-        "assets/probe-D4BdlCRZ.js",
-        "assets/stats-DuutUuR_.js"
+        "assets/probe.worker-DFA5wqw6.js",
+        "assets/matroska-DbetZi5V.js",
+        "assets/probe-3Bsphf_d.js",
+        "assets/stats-BBGsMuKN.js"
       ],
-      "raw": 300065,
-      "gzip": 98871,
-      "brotli": 86587
+      "raw": 300254,
+      "gzip": 98928,
+      "brotli": 86604
     }
   },
   "chunks": [
     {
-      "file": "assets/Compare-jKpwPEiz.js",
+      "file": "assets/Compare-BQceN7PT.js",
       "kind": "lazy",
       "raw": 2883,
-      "gzip": 1204,
-      "brotli": 1090
+      "gzip": 1205,
+      "brotli": 1089
     },
     {
-      "file": "assets/RateProfile-DoSnlzJo.js",
+      "file": "assets/RateProfile-D4g_PeJ-.js",
       "kind": "rateProfile",
       "raw": 2166,
-      "gzip": 936,
-      "brotli": 849
+      "gzip": 937,
+      "brotli": 848
     },
     {
       "file": "assets/abort-BxutaVbu.js",
@@ -256,18 +256,18 @@
       "brotli": 94
     },
     {
-      "file": "assets/compare-CSB8K9jG.js",
+      "file": "assets/compare-BswqW6dP.js",
       "kind": "client-compare",
       "raw": 2605,
-      "gzip": 1324,
-      "brotli": 1209
+      "gzip": 1321,
+      "brotli": 1198
     },
     {
-      "file": "assets/counting-C9zpWQvy.js",
+      "file": "assets/counting-BtCcAnBH.js",
       "kind": "engine-shared",
       "raw": 3014,
-      "gzip": 1497,
-      "brotli": 1350
+      "gzip": 1496,
+      "brotli": 1351
     },
     {
       "file": "assets/deviceInfo-B3eOjrMK.js",
@@ -277,18 +277,18 @@
       "brotli": 2023
     },
     {
-      "file": "assets/fallback-Dht3Cju3.js",
+      "file": "assets/fallback-BdE1Arfn.js",
       "kind": "client-fallback",
       "raw": 1014,
       "gzip": 641,
-      "brotli": 560
+      "brotli": 564
     },
     {
-      "file": "assets/index-BS7dCM7M.js",
+      "file": "assets/index-B51OxH-M.js",
       "kind": "main",
       "raw": 238718,
       "gzip": 74441,
-      "brotli": 64433
+      "brotli": 64417
     },
     {
       "file": "assets/index-UkwvJHuS.css",
@@ -298,67 +298,67 @@
       "brotli": 1529
     },
     {
-      "file": "assets/inline-CkbRpK3v.js",
+      "file": "assets/inline-Dld-1ujJ.js",
       "kind": "client-inline",
       "raw": 1088,
       "gzip": 637,
-      "brotli": 558
+      "brotli": 553
     },
     {
-      "file": "assets/isobmff-Bas0NL5h.js",
+      "file": "assets/isobmff-CDn4dIH-.js",
       "kind": "isobmff",
       "raw": 30750,
-      "gzip": 12220,
-      "brotli": 11005
+      "gzip": 12222,
+      "brotli": 11043
     },
     {
-      "file": "assets/isobmff-DzbGUQd-.js",
+      "file": "assets/isobmff-CG27g7Xl.js",
       "kind": "inline-own",
       "raw": 30830,
-      "gzip": 12234,
-      "brotli": 11063
+      "gzip": 12232,
+      "brotli": 11033
     },
     {
-      "file": "assets/matroska-BaXK-QWv.js",
-      "kind": "matroska",
-      "raw": 29053,
-      "gzip": 11096,
-      "brotli": 10087
-    },
-    {
-      "file": "assets/matroska-CcKz_9Rd.js",
+      "file": "assets/matroska-B9z3GPQX.js",
       "kind": "inline-own",
       "raw": 29173,
-      "gzip": 11191,
-      "brotli": 10156
+      "gzip": 11189,
+      "brotli": 10159
     },
     {
-      "file": "assets/mediabunny-DsJPin6V.js",
+      "file": "assets/matroska-DbetZi5V.js",
+      "kind": "matroska",
+      "raw": 29053,
+      "gzip": 11097,
+      "brotli": 10072
+    },
+    {
+      "file": "assets/mediabunny-D7EdOhNf.js",
       "kind": "mediabunny",
       "raw": 200803,
       "gzip": 52774,
-      "brotli": 44466
+      "brotli": 44501
     },
     {
-      "file": "assets/mp4box-BG14bFog.js",
+      "file": "assets/mp4box-CO8Dtfla.js",
       "kind": "mp4box",
       "raw": 187643,
       "gzip": 43646,
-      "brotli": 37323
+      "brotli": 37312
     },
     {
-      "file": "assets/probe-D4BdlCRZ.js",
+      "file": "assets/probe-3Bsphf_d.js",
       "kind": "client",
       "raw": 6921,
-      "gzip": 2987,
-      "brotli": 2750
+      "gzip": 2984,
+      "brotli": 2744
     },
     {
-      "file": "assets/probe.worker-JI49fzTl.js",
+      "file": "assets/probe.worker-DFA5wqw6.js",
       "kind": "worker",
-      "raw": 10180,
-      "gzip": 4244,
-      "brotli": 3870
+      "raw": 10369,
+      "gzip": 4304,
+      "brotli": 3925
     },
     {
       "file": "assets/result-DwUAyOGs.js",
@@ -368,18 +368,18 @@
       "brotli": 325
     },
     {
-      "file": "assets/runtime-uhMG987P.js",
+      "file": "assets/runtime-xZw76Pn-.js",
       "kind": "inline-own",
-      "raw": 5899,
-      "gzip": 2477,
-      "brotli": 2284
+      "raw": 6088,
+      "gzip": 2537,
+      "brotli": 2347
     },
     {
-      "file": "assets/rvfc-DcPgK9v4.js",
+      "file": "assets/rvfc-DjzOda_d.js",
       "kind": "rvfc",
       "raw": 4243,
-      "gzip": 2196,
-      "brotli": 1983
+      "gzip": 2195,
+      "brotli": 1987
     },
     {
       "file": "assets/samples-C9gKRdrE.js",
@@ -389,14 +389,14 @@
       "brotli": 245
     },
     {
-      "file": "assets/segments-Bow7ompv.js",
+      "file": "assets/segments-B5De4K9N.js",
       "kind": "inline-own",
       "raw": 3346,
-      "gzip": 1845,
-      "brotli": 1710
+      "gzip": 1844,
+      "brotli": 1709
     },
     {
-      "file": "assets/segments-Cpv1juJQ.js",
+      "file": "assets/segments-BV7rTiIy.js",
       "kind": "segments",
       "raw": 3350,
       "gzip": 1844,
@@ -410,18 +410,18 @@
       "brotli": 886
     },
     {
-      "file": "assets/stats-B8mUyXPB.js",
-      "kind": "inline-own",
-      "raw": 10310,
-      "gzip": 4333,
-      "brotli": 3956
-    },
-    {
-      "file": "assets/stats-DuutUuR_.js",
+      "file": "assets/stats-BBGsMuKN.js",
       "kind": "parser-shared",
       "raw": 10211,
-      "gzip": 4294,
-      "brotli": 3918
+      "gzip": 4293,
+      "brotli": 3917
+    },
+    {
+      "file": "assets/stats-CcloMW2c.js",
+      "kind": "inline-own",
+      "raw": 10310,
+      "gzip": 4334,
+      "brotli": 3951
     }
   ]
 }

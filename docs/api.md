@@ -162,8 +162,8 @@ Accepted by `CallOptions`, `defaults` and the root `analyze`. They cross the wor
 |---|---|---|
 | `matroskaMode` | `'auto'` | `'header'`: headers only; `'probe'`: sampled blocks (no frame count or average); `'exact'`: every block header; `'auto'`: exact when the predicted cost is within `exactBudgetMs`, else probe |
 | `exactBudgetMs` | `150` | budget for the predicted exact-scan cost in `auto` mode |
-| `readAhead` | `{ head: 65536, fragment: 1048576, matroskaScan: 1048576, tail: 262144 }` | read window sizes in bytes: the first read, ISO BMFF fragment read-ahead, Matroska scan windows, Matroska tail scan |
-| `costModel` | `{ perReadMs: 0.8, bytesPerMs: 500000, perBlockMs: 0.0002 }` | the exact-scan cost prediction: `reads x perReadMs + bytes / bytesPerMs + blocks x perBlockMs` |
+| `readAhead` | `{ head: 65536, fragment: 1048576, matroskaScan: 1048576, tail: 262144 }` | read window sizes in bytes: the first read, ISO BMFF fragment read-ahead, Matroska scan windows, Matroska tail scan. A file smaller than `head + perReadMs x bytesPerMs` (465,536 bytes by default) is read whole in the first read |
+| `costModel` | `{ perReadMs: 0.8, bytesPerMs: 500000, perBlockMs: 0.0002 }` | the exact-scan cost prediction: `reads x perReadMs + bytes / bytesPerMs + blocks x perBlockMs`; `perReadMs x bytesPerMs` also sizes the single first read (`perReadMs: 0` keeps the first read at `readAhead.head`) |
 | `maxExpandedSamples` | `5_000_000` | most samples or blocks expanded into per-frame statistics; above it the statistics are skipped with a warning |
 
 Progress phases: `fragments` (ISO BMFF, every 64 fragments), `matroska-exact` (bytes after the first Cluster), `read` and `analyze` (mp4box), `packets` (mediabunny), `play xN` (rvfc).

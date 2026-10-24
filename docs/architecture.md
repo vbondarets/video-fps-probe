@@ -181,7 +181,7 @@ probe.analyze(file)
   [stub: import() of the client]
   route of the engine -> WorkerPool(kind).run
      postMessage {analyze} -------> serveProbeWorker: load engine ------> BlobReader(file)
-                                    (own: ownEngine = core analyze)       read head window (64 KiB, 1 read)
+                                    (own: ownEngine = core analyze)       read head window (64 KiB) or a small file whole, 1 read
                                                                           sniff(head) -> isobmff | matroska | unknown
                                                                           import() of that parser and stats.ts (first use)
                                                                           analyzeIsoBmff / analyzeMatroska(reader, opts)
@@ -192,7 +192,7 @@ probe.analyze(file)
   single engine: the result; a chain or a skip: import() of fallback.ts
 ```
 
-- The head window read by `analyze` stays in the reader cache, so a faststart MP4 or a Matroska header usually needs no second read.
+- The head window read by `analyze` stays in the reader cache, so a faststart MP4 or a Matroska header usually needs no second read. A file below the single-read size (the head window plus `perReadMs x bytesPerMs` of the cost model, 465,536 bytes by default) is read whole in that first read, and `readMany` serves ranges that a cached window already holds.
 - `io.bytesRead` counts unique bytes fetched; overlapping reads are not counted twice. `io.ms` covers the analysis where it runs, without the chunk loads.
 - The rate profile runs after the statistics of a track, inside the same `analyze` call. A track whose intervals are all within 7.5% of each other has no job and never loads `segments.ts`.
 - Cancellation: every read checks the signal before and after the fetch, and `analyze` rethrows the abort instead of returning a result. Every other failure becomes `FileResult.error`; `analyze` never throws for a bad file.

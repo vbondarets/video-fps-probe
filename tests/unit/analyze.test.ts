@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { analyze, type AnalyzerRegistry } from '../../src/core/analyze.ts';
+import { analyze, firstReadAhead, type AnalyzerRegistry } from '../../src/core/analyze.ts';
+import { resolveOptions } from '../../src/core/options.ts';
 import { emptyAnalysis, emptyTrack } from '../../src/core/result.ts';
 import type { ContainerAnalyzer } from '../../src/core/types.ts';
 
@@ -29,6 +30,25 @@ const failing: ContainerAnalyzer = async () => {
 };
 
 const registry = (iso: ContainerAnalyzer, mkv: ContainerAnalyzer = failing): AnalyzerRegistry => ({ isobmff: iso, matroska: mkv });
+
+describe('first read', () => {
+  it('reads the whole file when one read costs less than two by the cost model', () => {
+    const opts = resolveOptions();
+    const limit = opts.readAhead.head + opts.costModel.perReadMs * opts.costModel.bytesPerMs;
+    expect(limit).toBe(465_536);
+    expect(firstReadAhead(1000, opts)).toBe(1000);
+    expect(firstReadAhead(limit - 1, opts)).toBe(limit - 1);
+    expect(firstReadAhead(limit, opts)).toBe(65_536);
+    expect(firstReadAhead(600_000_000, opts)).toBe(65_536);
+  });
+
+  it('follows the head window and the cost model options', () => {
+    expect(firstReadAhead(200_000, resolveOptions({ costModel: { perReadMs: 0 } }))).toBe(65_536);
+    expect(firstReadAhead(60_000, resolveOptions({ costModel: { perReadMs: 0 } }))).toBe(60_000);
+    expect(firstReadAhead(500_000, resolveOptions({ readAhead: { head: 200_000 } }))).toBe(500_000);
+    expect(firstReadAhead(500_000, resolveOptions({ costModel: { bytesPerMs: 100_000 } }))).toBe(65_536);
+  });
+});
 
 describe('analyze', () => {
   it('leaves the parser chunk load out of io.ms, as the library engines do', async () => {

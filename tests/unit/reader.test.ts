@@ -133,6 +133,19 @@ describe('BlobReader primitive read', () => {
     expect(r.bytesFetched).toBe(1000);
   });
 
+  it('readMany serves ranges inside a cached window without reading', async () => {
+    const { blob, bytes } = memoryBlob(128 * KiB);
+    const r = new BlobReader(blob);
+    await r.view(0, 16, 128 * KiB);
+    const out = await r.readMany([
+      [1000, 100],
+      [100 * KiB, 4 * KiB],
+    ]);
+    expect(Array.from(out[1])).toEqual(Array.from(bytes.subarray(100 * KiB, 104 * KiB)));
+    expect(out[0]).toHaveLength(100);
+    expect(r.reads).toBe(1);
+  });
+
   it('works with a Blob-like object over a size above 4 GiB', async () => {
     const size = 5 * 2 ** 30;
     const calls: Array<[number, number]> = [];

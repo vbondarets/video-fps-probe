@@ -462,13 +462,14 @@ describe('modes', () => {
   it('reports progress during exact scans and honours abort', async () => {
     const blob = simpleFile({ frames: 3000, periodMs: 1000 / 30 });
     const seen: number[] = [];
-    await run(blob, { readAhead: { head: 4096, matroskaScan: 4096 }, onProgress: (p) => seen.push(p.done) });
+    await run(blob, { readAhead: { head: 4096, matroskaScan: 4096 }, costModel: { perReadMs: 0 }, onProgress: (p) => seen.push(p.done) });
     expect(seen.length).toBeGreaterThan(3);
     expect(seen[seen.length - 1]).toBe(Math.max(...seen));
     const ctl = new AbortController();
     const aborting = run(blob, {
       signal: ctl.signal,
       readAhead: { head: 4096, matroskaScan: 4096 },
+      costModel: { perReadMs: 0 },
       onProgress: (p) => {
         if (p.done > 0) ctl.abort();
       },

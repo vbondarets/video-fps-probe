@@ -118,7 +118,8 @@ export class BlobReader {
       while (next < ranges.length) {
         const i = next++;
         const [o, n] = ranges[i];
-        out[i] = await this.read(o, n);
+        const cached = this.peek(o, n);
+        out[i] = cached ? new Uint8Array(cached.buffer, cached.byteOffset, cached.byteLength) : await this.read(o, n);
       }
     };
     const lanes: Promise<void>[] = [];

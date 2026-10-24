@@ -7,9 +7,9 @@ The measurements behind the [README](../README.md): accuracy against ffprobe, sp
 <!-- tables:headline:start -->
 
 - **Accuracy.** The own parsers were checked against ffprobe 8.1.1 on 116 synthetic fixtures made with ffmpeg (111 committed, 5 large local files; real recorder output is not in the corpus, see Limitations): 1832 field checks, 1769 exact, 2 within tolerance, 1 known deviation with a recorded reason, 0 mismatches, 60 not applicable.
-- **Reads.** Median 2 reads per committed fixture, at most 2. The 3 h, 648000-frame MP4 (12.42 MiB) takes 2 reads and 2.56 MiB (20.6% of the file).
+- **Reads.** Median 1 read per committed fixture, at most 1. The 3 h, 648000-frame MP4 (12.42 MiB) takes 2 reads and 2.56 MiB (20.6% of the file).
 - **Speed.** In Chrome 155, warm: median 1.50 ms per file in the worker and 2.40 ms from file pick to rendered result; the 3 h file takes 4.10 ms. A 604.42 MB 1080p MP4 with the moov at the end takes 2 reads (75.0 KiB) and 1.70 ms; the same stream in Matroska takes 117 ms in auto mode (126 reads; a probe, so no frame count until "Scan all frames"). Measured on an earlier build, so these figures are not current ([Speed](#speed)).
-- **Size.** A default install (`video-fps-probe/lazy`) adds 0.67 KB gzip to a host app's critical path. Its first MP4 file loads 23.53 KB lazily when the host's Vite config sets `worker: { format: 'es' }`, and 35.04 KB with Vite's default worker format, 'iife', which builds the own worker as one file ([Package size](#package-size)). The demo page plus its first MP4 result loads 100.00 KB gzip (page, probe client, worker entry, shared statistics chunk, ISO BMFF parser); the first Matroska result 98.87 KB.
+- **Size.** A default install (`video-fps-probe/lazy`) adds 0.66 KB gzip to a host app's critical path. Its first MP4 file loads 23.58 KB lazily when the host's Vite config sets `worker: { format: 'es' }`, and 35.11 KB with Vite's default worker format, 'iife', which builds the own worker as one file ([Package size](#package-size)). The demo page plus its first MP4 result loads 100.05 KB gzip (page, probe client, worker entry, shared statistics chunk, ISO BMFF parser); the first Matroska result 98.93 KB.
 - **Embedding.** In a host app with a 1.95 MB gzip initial load, prewarming the worker when the upload dialog opens makes the first result on fast 4G take 4.60 ms instead of 345 ms ([Embedding in an existing app](#embedding-in-an-existing-app)). Measured on an earlier build whose worker entry and parser chunks differ from the current ones, so these figures are not current.
 - **Same result in Node and Chrome.** 116 of 116 files give identical results field by field (timing excluded).
 - **Machine.** Windows 10 Pro, Intel Core i7-10700KF (16 threads), 32 GiB, Node v24.20.0, Chrome 155 headless; ffprobe 8.1.1-full_build-www.gyan.dev.
@@ -57,87 +57,87 @@ The table below shows the primary track of every fixture. Frames are app / ffpro
 
 | Fixture | Category | ffprobe avg_frame_rate | App average | Frames app / ffprobe | Min to max FPS | VFR | Verdict | Reads | Bytes read | Chrome 155 ms |
 |---|---|---|---|---|---|---|---|---:|---:|---:|
-| `cfr_h264_23.976.mp4` | cfr | 24000/1001 | 24000/1001 | 72 / 72 | 23.976 to 23.976 | no | all exact (17) | 2 | 65.1 KiB (90.5%) | 1.40 |
+| `cfr_h264_23.976.mp4` | cfr | 24000/1001 | 24000/1001 | 72 / 72 | 23.976 to 23.976 | no | all exact (17) | 1 | 71.9 KiB (100%) | 1.40 |
 | `cfr_vp9_23.976.webm` | cfr | 24000/1001 | 24000/1001; measured 36000/1501 | 72 / 72 | 23.810 to 24.390 | no | all exact (16) | 1 | 59.4 KiB (100%) | 1.10 |
-| `cfr_h264_24.mp4` | cfr | 24/1 | 24/1 | 72 / 72 | 24.000 to 24.000 | no | all exact (17) | 2 | 65.1 KiB (91.2%) | 1.50 |
+| `cfr_h264_24.mp4` | cfr | 24/1 | 24/1 | 72 / 72 | 24.000 to 24.000 | no | all exact (17) | 1 | 71.3 KiB (100%) | 1.50 |
 | `cfr_vp9_24.webm` | cfr | 24/1 | 24/1; measured 72000/2999 | 72 / 72 | 23.810 to 24.390 | no | all exact (16) | 1 | 59.2 KiB (100%) | 1.00 |
-| `cfr_h264_25.mp4` | cfr | 25/1 | 25/1 | 75 / 75 | 25.000 to 25.000 | no | all exact (17) | 2 | 65.1 KiB (93.4%) | 1.50 |
+| `cfr_h264_25.mp4` | cfr | 25/1 | 25/1 | 75 / 75 | 25.000 to 25.000 | no | all exact (17) | 1 | 69.7 KiB (100%) | 1.50 |
 | `cfr_vp9_25.webm` | cfr | 25/1 | 25/1; measured 25/1 | 75 / 75 | 25.000 to 25.000 | no | all exact (16) | 1 | 58.8 KiB (100%) | 1.00 |
-| `cfr_h264_29.97.mp4` | cfr | 30000/1001 | 30000/1001 | 90 / 90 | 29.970 to 29.970 | no | all exact (17) | 2 | 65.1 KiB (75.4%) | 1.40 |
-| `cfr_vp9_29.97.webm` | cfr | 30000/1001 | 30000/1001; measured 30000/1001 | 90 / 90 | 29.412 to 30.303 | no | all exact (16) | 2 | 71.2 KiB (98.9%) | 1.60 |
-| `cfr_h264_30.mp4` | cfr | 30/1 | 30/1 | 90 / 90 | 30.000 to 30.000 | no | all exact (17) | 2 | 65.1 KiB (75.1%) | 1.40 |
-| `cfr_vp9_30.webm` | cfr | 30/1 | 30/1; measured 30/1 | 90 / 90 | 29.412 to 30.303 | no | all exact (16) | 2 | 70.6 KiB (99.9%) | 1.60 |
-| `cfr_h264_50.mp4` | cfr | 50/1 | 50/1 | 150 / 150 | 50.000 to 50.000 | no | all exact (17) | 2 | 65.4 KiB (59.4%) | 1.50 |
-| `cfr_vp9_50.webm` | cfr | 50/1 | 50/1; measured 50/1 | 150 / 150 | 50.000 to 50.000 | no | all exact (16) | 2 | 104.1 KiB (99.9%) | 1.70 |
-| `cfr_h264_59.94.mp4` | cfr | 60000/1001 | 60000/1001 | 180 / 180 | 59.940 to 59.940 | no | all exact (17) | 2 | 65.5 KiB (52.0%) | 1.60 |
-| `cfr_vp9_59.94.webm` | cfr | 19001/317 | 19001/317; measured 90000/1501 | 180 / 180 | 58.824 to 62.500 | no | all exact (16) | 2 | 122.3 KiB (99.8%) | 1.70 |
-| `cfr_h264_60.mp4` | cfr | 60/1 | 60/1 | 180 / 180 | 60.000 to 60.000 | no | all exact (17) | 2 | 65.5 KiB (51.8%) | 1.50 |
-| `cfr_vp9_60.webm` | cfr | 60/1 | 60/1; measured 180000/2999 | 180 / 180 | 58.824 to 62.500 | no | all exact (16) | 2 | 120.7 KiB (99.5%) | 1.60 |
-| `cfr_h264_120.mp4` | cfr | 120/1 | 120/1 | 360 / 360 | 120.0 to 120.0 | no | all exact (17) | 2 | 66.2 KiB (35.8%) | 1.60 |
-| `cfr_vp9_120.webm` | cfr | 120/1 | 120/1; measured 120/1 | 360 / 360 | 111.1 to 125.0 | no | all exact (16) | 2 | 203.8 KiB (99.9%) | 1.70 |
-| `cfr_h264_240.mp4` | cfr | 240/1 | 240/1 | 720 / 720 | 240.0 to 240.0 | no | all exact (17) | 2 | 67.7 KiB (21.0%) | 1.50 |
-| `cfr_vp9_240.webm` | cfr | 240/1 | 240/1; measured 240/1 | 720 / 720 | 200.0 to 250.0 | no | all exact (16) | 2 | 354.8 KiB (99.8%) | 2.50 |
-| `mov_nobf_default.mov` | mov | 30000/1001 | 30000/1001 | 90 / 90 | 29.970 to 29.970 | no | all exact (17) | 2 | 65.1 KiB (75.4%) | 1.60 |
-| `mov_nobf_faststart.mov` | mov | 30000/1001 | 30000/1001 | 90 / 90 | 29.970 to 29.970 | no | all exact (17) | 1 | 64.0 KiB (74.1%) | 0.90 |
+| `cfr_h264_29.97.mp4` | cfr | 30000/1001 | 30000/1001 | 90 / 90 | 29.970 to 29.970 | no | all exact (17) | 1 | 86.4 KiB (100%) | 1.40 |
+| `cfr_vp9_29.97.webm` | cfr | 30000/1001 | 30000/1001; measured 30000/1001 | 90 / 90 | 29.412 to 30.303 | no | all exact (16) | 1 | 72.0 KiB (100%) | 1.60 |
+| `cfr_h264_30.mp4` | cfr | 30/1 | 30/1 | 90 / 90 | 30.000 to 30.000 | no | all exact (17) | 1 | 86.7 KiB (100%) | 1.40 |
+| `cfr_vp9_30.webm` | cfr | 30/1 | 30/1; measured 30/1 | 90 / 90 | 29.412 to 30.303 | no | all exact (16) | 1 | 70.7 KiB (100%) | 1.60 |
+| `cfr_h264_50.mp4` | cfr | 50/1 | 50/1 | 150 / 150 | 50.000 to 50.000 | no | all exact (17) | 1 | 110.0 KiB (100%) | 1.50 |
+| `cfr_vp9_50.webm` | cfr | 50/1 | 50/1; measured 50/1 | 150 / 150 | 50.000 to 50.000 | no | all exact (16) | 1 | 104.2 KiB (100%) | 1.70 |
+| `cfr_h264_59.94.mp4` | cfr | 60000/1001 | 60000/1001 | 180 / 180 | 59.940 to 59.940 | no | all exact (17) | 1 | 126.0 KiB (100%) | 1.60 |
+| `cfr_vp9_59.94.webm` | cfr | 19001/317 | 19001/317; measured 90000/1501 | 180 / 180 | 58.824 to 62.500 | no | all exact (16) | 1 | 122.5 KiB (100%) | 1.70 |
+| `cfr_h264_60.mp4` | cfr | 60/1 | 60/1 | 180 / 180 | 60.000 to 60.000 | no | all exact (17) | 1 | 126.5 KiB (100%) | 1.50 |
+| `cfr_vp9_60.webm` | cfr | 60/1 | 60/1; measured 180000/2999 | 180 / 180 | 58.824 to 62.500 | no | all exact (16) | 1 | 121.3 KiB (100%) | 1.60 |
+| `cfr_h264_120.mp4` | cfr | 120/1 | 120/1 | 360 / 360 | 120.0 to 120.0 | no | all exact (17) | 1 | 185.2 KiB (100%) | 1.60 |
+| `cfr_vp9_120.webm` | cfr | 120/1 | 120/1; measured 120/1 | 360 / 360 | 111.1 to 125.0 | no | all exact (16) | 1 | 203.8 KiB (100%) | 1.70 |
+| `cfr_h264_240.mp4` | cfr | 240/1 | 240/1 | 720 / 720 | 240.0 to 240.0 | no | all exact (17) | 1 | 322.5 KiB (100%) | 1.50 |
+| `cfr_vp9_240.webm` | cfr | 240/1 | 240/1; measured 240/1 | 720 / 720 | 200.0 to 250.0 | no | all exact (16) | 1 | 355.4 KiB (100%) | 2.50 |
+| `mov_nobf_default.mov` | mov | 30000/1001 | 30000/1001 | 90 / 90 | 29.970 to 29.970 | no | all exact (17) | 1 | 86.4 KiB (100%) | 1.60 |
+| `mov_nobf_faststart.mov` | mov | 30000/1001 | 30000/1001 | 90 / 90 | 29.970 to 29.970 | no | all exact (17) | 1 | 86.4 KiB (100%) | 0.90 |
 | `mov_bf_elst.mov` | mov | 30000/1001 | 30000/1001 | 90 / 90 | 29.970 to 29.970 | no | all exact (17) | 1 | 35.7 KiB (100%) | 0.80 |
 | `mov_bf_noelst.mov` | mov | 30000/1001 | 30000/1001 | 90 / 90 | 29.970 to 29.970 | no | all exact (17) | 1 | 35.7 KiB (100%) | 0.80 |
 | `mov_bf_faststart.mov` | mov | 30000/1001 | 30000/1001 | 90 / 90 | 29.970 to 29.970 | no | all exact (17) | 1 | 35.7 KiB (100%) | 0.80 |
-| `mov_prores.mov` | codec | 30000/1001 | 30000/1001 | 90 / 90 | 29.970 to 29.970 | no | all exact (17) | 2 | 65.0 KiB (29.7%) | 1.50 |
+| `mov_prores.mov` | codec | 30000/1001 | 30000/1001 | 90 / 90 | 29.970 to 29.970 | no | all exact (17) | 1 | 218.8 KiB (100%) | 1.50 |
 | `mp4_bf_elst.mp4` | mov | 30000/1001 | 30000/1001 | 90 / 90 | 29.970 to 29.970 | no | all exact (17) | 1 | 35.8 KiB (100%) | 0.90 |
 | `mp4_bf_noelst.mp4` | mov | 30000/1001 | 30000/1001 | 90 / 90 | 29.970 to 29.970 | no | all exact (17) | 1 | 35.7 KiB (100%) | 0.80 |
 | `mp4_bf_faststart.mp4` | mov | 30000/1001 | 30000/1001 | 90 / 90 | 29.970 to 29.970 | no | all exact (17) | 1 | 35.8 KiB (100%) | 0.90 |
 | `mp4_elst_empty_offset.mp4` | mov | 30/1 | 30/1 | 90 / 90 | 30.000 to 30.000 | no | all exact (17) | 1 | 35.2 KiB (100%) | 0.90 |
 | `mp4_elst_trim_start.mp4` | mov | 30000/1001 | 30000/1001 | 90 / 90 | 29.970 to 29.970 | no | all exact (17) | 1 | 35.8 KiB (100%) | 0.90 |
 | `mp4_elst_trim_output_seek.mp4` | mov | 30000/1001 | 30000/1001 | 60 / 60 | 29.970 to 29.970 | no | all exact (17) | 1 | 25.1 KiB (100%) | 1.00 |
-| `fmp4_keyframe_empty_moov.mp4` | fmp4 | 30000/1001 | 30000/1001 | 120 / 120 | 29.970 to 29.970 | no | all exact (17) | 2 | 94.0 KiB (80.6%) | 1.40 |
-| `fmp4_default_base_moof.mp4` | fmp4 | 30000/1001 | 30000/1001 | 120 / 120 | 29.970 to 29.970 | no | all exact (17) | 2 | 94.0 KiB (80.6%) | 1.60 |
-| `fmp4_frag_duration.mp4` | fmp4 | 30000/1001 | 30000/1001 | 120 / 120 | 29.970 to 29.970 | no | all exact (17) | 2 | 108.7 KiB (92.7%) | 1.50 |
+| `fmp4_keyframe_empty_moov.mp4` | fmp4 | 30000/1001 | 30000/1001 | 120 / 120 | 29.970 to 29.970 | no | all exact (17) | 1 | 116.7 KiB (100%) | 1.40 |
+| `fmp4_default_base_moof.mp4` | fmp4 | 30000/1001 | 30000/1001 | 120 / 120 | 29.970 to 29.970 | no | all exact (17) | 1 | 116.7 KiB (100%) | 1.60 |
+| `fmp4_frag_duration.mp4` | fmp4 | 30000/1001 | 30000/1001 | 120 / 120 | 29.970 to 29.970 | no | all exact (17) | 1 | 117.2 KiB (100%) | 1.50 |
 | `fmp4_bframes.mp4` | fmp4 | 30000/1001 | 30000/1001 | 120 / 120 | 29.970 to 29.970 | no | all exact (17) | 1 | 48.8 KiB (100%) | 0.80 |
-| `fmp4_hybrid_no_empty_moov.mp4` | fmp4 | 30000/1001 | 30000/1001 | 120 / 120 | 29.970 to 29.970 | no | all exact (17) | 2 | 94.0 KiB (80.6%) | 1.40 |
-| `fmp4_cmaf.mp4` | fmp4 | 30000/1001 | 30000/1001 | 120 / 120 | 29.970 to 29.970 | no | all exact (17) | 2 | 94.0 KiB (80.6%) | 1.60 |
-| `fmp4_global_sidx.mp4` | fmp4 | 30000/1001 | 30000/1001 | 120 / 120 | 29.970 to 29.970 | no | all exact (17) | 2 | 94.0 KiB (80.5%) | 1.60 |
-| `fmp4_dash_flag.mp4` | fmp4 | 30000/1001 | 30000/1001 | 120 / 120 | 29.970 to 29.970 | no | all exact (17) | 2 | 94.1 KiB (80.5%) | 1.50 |
-| `mp4_hybrid_fragmented_finalized.mp4` | fmp4 | 30000/1001 | 30000/1001 | 120 / 120 | 29.970 to 29.970 | no | all exact (17) | 2 | 65.2 KiB (55.4%) | 1.40 |
-| `fmp4_dash_single_file.mp4` | fmp4 | 30000/1001 | 30000/1001 | 120 / 120 | 29.970 to 29.970 | no | all exact (17) | 2 | 94.0 KiB (80.4%) | 1.60 |
-| `fmp4_dash_concat_segments.mp4` | fmp4 | 30000/1001 | 30000/1001 | 120 / 120 | 29.970 to 29.970 | no | all exact (17) | 2 | 94.0 KiB (80.4%) | 1.60 |
+| `fmp4_hybrid_no_empty_moov.mp4` | fmp4 | 30000/1001 | 30000/1001 | 120 / 120 | 29.970 to 29.970 | no | all exact (17) | 1 | 116.7 KiB (100%) | 1.40 |
+| `fmp4_cmaf.mp4` | fmp4 | 30000/1001 | 30000/1001 | 120 / 120 | 29.970 to 29.970 | no | all exact (17) | 1 | 116.7 KiB (100%) | 1.60 |
+| `fmp4_global_sidx.mp4` | fmp4 | 30000/1001 | 30000/1001 | 120 / 120 | 29.970 to 29.970 | no | all exact (17) | 1 | 116.8 KiB (100%) | 1.60 |
+| `fmp4_dash_flag.mp4` | fmp4 | 30000/1001 | 30000/1001 | 120 / 120 | 29.970 to 29.970 | no | all exact (17) | 1 | 116.9 KiB (100%) | 1.50 |
+| `mp4_hybrid_fragmented_finalized.mp4` | fmp4 | 30000/1001 | 30000/1001 | 120 / 120 | 29.970 to 29.970 | no | all exact (17) | 1 | 117.9 KiB (100%) | 1.40 |
+| `fmp4_dash_single_file.mp4` | fmp4 | 30000/1001 | 30000/1001 | 120 / 120 | 29.970 to 29.970 | no | all exact (17) | 1 | 116.8 KiB (100%) | 1.60 |
+| `fmp4_dash_concat_segments.mp4` | fmp4 | 30000/1001 | 30000/1001 | 120 / 120 | 29.970 to 29.970 | no | all exact (17) | 1 | 116.9 KiB (100%) | 1.60 |
 | `hevc_hvc1.mp4` | codec | 30000/1001 | 30000/1001 | 90 / 90 | 29.970 to 29.970 | no | all exact (17) | 1 | 45.1 KiB (100%) | 1.00 |
 | `hevc_hev1.mp4` | codec | 30000/1001 | 30000/1001 | 90 / 90 | 29.970 to 29.970 | no | all exact (17) | 1 | 45.1 KiB (100%) | 0.80 |
 | `av1.mp4` | codec | 30000/1001 | 30000/1001 | 90 / 90 | 29.970 to 29.970 | no | all exact (17) | 1 | 20.8 KiB (100%) | 0.80 |
-| `vp9.mp4` | codec | 30000/1001 | 30000/1001 | 90 / 90 | 29.970 to 29.970 | no | all exact (17) | 2 | 65.1 KiB (90.4%) | 1.30 |
-| `vp9.webm` | codec | 30000/1001 | 30000/1001; measured 30000/1001 | 90 / 90 | 29.412 to 30.303 | no | all exact (16) | 2 | 71.2 KiB (98.9%) | 1.50 |
-| `vp8.webm` | codec | 30000/1001 | 30000/1001; measured 30000/1001 | 90 / 90 | 29.412 to 30.303 | no | all exact (16) | 2 | 160.3 KiB (99.9%) | 1.80 |
+| `vp9.mp4` | codec | 30000/1001 | 30000/1001 | 90 / 90 | 29.970 to 29.970 | no | all exact (17) | 1 | 72.0 KiB (100%) | 1.30 |
+| `vp9.webm` | codec | 30000/1001 | 30000/1001; measured 30000/1001 | 90 / 90 | 29.412 to 30.303 | no | all exact (16) | 1 | 72.0 KiB (100%) | 1.50 |
+| `vp8.webm` | codec | 30000/1001 | 30000/1001; measured 30000/1001 | 90 / 90 | 29.412 to 30.303 | no | all exact (16) | 1 | 160.3 KiB (100%) | 1.80 |
 | `av1.webm` | codec | 30000/1001 | 30000/1001; measured 30000/1001 | 90 / 90 | 29.412 to 30.303 | no | all exact (16) | 1 | 21.2 KiB (100%) | 0.90 |
-| `h264.mkv` | matroska | 30000/1001 | 30000/1001; measured 30000/1001 | 90 / 90 | 29.412 to 30.303 | no | all exact (16) | 2 | 85.8 KiB (99.3%) | 1.50 |
+| `h264.mkv` | matroska | 30000/1001 | 30000/1001; measured 30000/1001 | 90 / 90 | 29.412 to 30.303 | no | all exact (16) | 1 | 86.4 KiB (100%) | 1.50 |
 | `hevc.mkv` | codec | 30000/1001 | 30000/1001; measured 30000/1001 | 90 / 90 | 29.412 to 30.303 | no | all exact (16) | 1 | 44.3 KiB (100%) | 1.10 |
-| `vp9_live.webm` | live | 30000/1001 | 30000/1001; measured 30000/1001 | 90 / 90 | 29.412 to 30.303 | no | all exact (16) | 2 | 71.1 KiB (99.0%) | 1.60 |
-| `vp9_pipe.webm` | live | 30000/1001 | 30000/1001; measured 30000/1001 | 90 / 90 | 29.412 to 30.303 | no | all exact (16) | 2 | 71.1 KiB (99.0%) | 1.60 |
-| `vp9_unknown_clusters.webm` | live | 30000/1001 | 30000/1001; measured 30000/1001 | 90 / 90 | 29.412 to 30.303 | no | all exact (16) | 2 | 71.1 KiB (99.0%) | 1.60 |
-| `vp9_no_defaultduration.webm` | matroska | 30000/1001 | none; measured 30000/1001 | 90 / 90 | 29.412 to 30.303 | no | all exact (14) | 2 | 71.2 KiB (98.9%) | 1.60 |
-| `vfr_concat_10_30_60.mp4` | vfr | 100/3 | 100/3 | 200 / 200 | 10.000 to 60.000 | yes | all exact (16) | 2 | 65.6 KiB (40.6%) | 1.60 |
-| `vfr_concat_bframes.mp4` | vfr | 1200/37 | 1200/37 | 200 / 200 | 10.000 to 60.000 | yes | all exact (16) | 2 | 66.7 KiB (100%) | 1.90 |
-| `vfr_concat_10_30_60_ts1M.mp4` | vfr | 100/3 | 100/3 | 200 / 200 | 10.000 to 60.002 | yes | all exact (16) | 2 | 66.5 KiB (40.9%) | 2.00 |
-| `vfr_concat_10_30_60.mov` | vfr | 100/3 | 100/3 | 200 / 200 | 10.000 to 60.000 | yes | all exact (16) | 2 | 65.6 KiB (40.5%) | 1.60 |
-| `vfr_concat_10_30_60.webm` | vfr | 0/0 | none; measured 100/3 | 200 / 200 | 10.000 to 62.500 | yes | 14 exact; known deviation: avgFps.measured | 2 | 140.1 KiB (99.8%) | 1.70 |
-| `vfr_concat_10_30_60_fmp4.mp4` | vfr | 100/3 | 100/3 | 200 / 200 | 10.000 to 60.000 | yes | all exact (16) | 2 | 140.9 KiB (86.6%) | 1.60 |
-| `vfr_setpts_sine.mp4` | vfr | 13500000/445991 | 13500000/445991 | 150 / 150 | 17.149 to 119.7 | yes | all exact (16) | 2 | 66.5 KiB (46.8%) | 1.90 |
-| `vfr_select_drop.mp4` | vfr | 36/1 | 36/1 | 180 / 180 | 20.000 to 60.000 | yes | all exact (16) | 2 | 66.9 KiB (44.0%) | 1.90 |
-| `vfr_mpdecimate.mp4` | vfr | 182/9 | 182/9 | 91 / 91 | 0.667 to 30.000 | yes | all exact (16) | 2 | 65.2 KiB (74.9%) | 1.60 |
-| `vfr_screenrec_ts1000.mp4` | vfr | 61500/1501 | 61500/1501 | 246 / 246 | 2.959 to 100.0 | yes | all exact (16) | 2 | 67.6 KiB (35.8%) | 1.80 |
-| `vfr_screenrec_ts1000.webm` | vfr | 60/1 | 60/1; measured 246000/5999 | 246 / 246 | 2.994 to 62.500 | yes | all exact (16) | 2 | 179.3 KiB (98.7%) | 1.90 |
-| `vfr_pulldown_2_3.mp4` | vfr | 24/1 | 24/1 | 120 / 120 | 20.000 to 30.000 | yes | all exact (16) | 2 | 66.2 KiB (53.9%) | 1.60 |
-| `vfr_two_phase_5_200.mp4` | vfr | 205/2 | 205/2 | 820 / 820 | 5.000 to 200.0 | yes | all exact (16) | 2 | 68.1 KiB (16.6%) | 1.80 |
-| `vfr_two_phase_5_200.webm` | vfr | 0/0 | none; measured 205/2 | 820 / 820 | 5.000 to 200.0 | yes | all exact (15) | 2 | 431.0 KiB (99.9%) | 2.40 |
-| `vfr_two_phase_5_200.mkv` | vfr | 205/2 | 205/2; measured 205/2 | 820 / 820 | 5.000 to 200.0 | yes | all exact (16) | 2 | 421.2 KiB (99.9%) | 2.80 |
-| `vfr_freeze_2s.mp4` | vfr | 3600/179 | 3600/179 | 120 / 120 | 0.500 to 30.000 | yes | all exact (16) | 2 | 65.3 KiB (55.8%) | 1.90 |
-| `box64_mdat64_wide.mov` | box64 | 30000/1001 | 30000/1001 | 90 / 90 | 29.970 to 29.970 | no | all exact (17) | 2 | 65.1 KiB (75.4%) | 1.50 |
-| `box64_mdat64_free.mp4` | box64 | 30/1 | 30/1 | 90 / 90 | 30.000 to 30.000 | no | all exact (17) | 2 | 65.1 KiB (75.1%) | 1.60 |
+| `vp9_live.webm` | live | 30000/1001 | 30000/1001; measured 30000/1001 | 90 / 90 | 29.412 to 30.303 | no | all exact (16) | 1 | 71.9 KiB (100%) | 1.60 |
+| `vp9_pipe.webm` | live | 30000/1001 | 30000/1001; measured 30000/1001 | 90 / 90 | 29.412 to 30.303 | no | all exact (16) | 1 | 71.9 KiB (100%) | 1.60 |
+| `vp9_unknown_clusters.webm` | live | 30000/1001 | 30000/1001; measured 30000/1001 | 90 / 90 | 29.412 to 30.303 | no | all exact (16) | 1 | 71.9 KiB (100%) | 1.60 |
+| `vp9_no_defaultduration.webm` | matroska | 30000/1001 | none; measured 30000/1001 | 90 / 90 | 29.412 to 30.303 | no | all exact (14) | 1 | 72.0 KiB (100%) | 1.60 |
+| `vfr_concat_10_30_60.mp4` | vfr | 100/3 | 100/3 | 200 / 200 | 10.000 to 60.000 | yes | all exact (16) | 1 | 161.8 KiB (100%) | 1.60 |
+| `vfr_concat_bframes.mp4` | vfr | 1200/37 | 1200/37 | 200 / 200 | 10.000 to 60.000 | yes | all exact (16) | 1 | 66.7 KiB (100%) | 1.90 |
+| `vfr_concat_10_30_60_ts1M.mp4` | vfr | 100/3 | 100/3 | 200 / 200 | 10.000 to 60.002 | yes | all exact (16) | 1 | 162.7 KiB (100%) | 2.00 |
+| `vfr_concat_10_30_60.mov` | vfr | 100/3 | 100/3 | 200 / 200 | 10.000 to 60.000 | yes | all exact (16) | 1 | 161.7 KiB (100%) | 1.60 |
+| `vfr_concat_10_30_60.webm` | vfr | 0/0 | none; measured 100/3 | 200 / 200 | 10.000 to 62.500 | yes | 14 exact; known deviation: avgFps.measured | 1 | 140.3 KiB (100%) | 1.70 |
+| `vfr_concat_10_30_60_fmp4.mp4` | vfr | 100/3 | 100/3 | 200 / 200 | 10.000 to 60.000 | yes | all exact (16) | 1 | 162.8 KiB (100%) | 1.60 |
+| `vfr_setpts_sine.mp4` | vfr | 13500000/445991 | 13500000/445991 | 150 / 150 | 17.149 to 119.7 | yes | all exact (16) | 1 | 142.2 KiB (100%) | 1.90 |
+| `vfr_select_drop.mp4` | vfr | 36/1 | 36/1 | 180 / 180 | 20.000 to 60.000 | yes | all exact (16) | 1 | 152.1 KiB (100%) | 1.90 |
+| `vfr_mpdecimate.mp4` | vfr | 182/9 | 182/9 | 91 / 91 | 0.667 to 30.000 | yes | all exact (16) | 1 | 87.0 KiB (100%) | 1.60 |
+| `vfr_screenrec_ts1000.mp4` | vfr | 61500/1501 | 61500/1501 | 246 / 246 | 2.959 to 100.0 | yes | all exact (16) | 1 | 188.6 KiB (100%) | 1.80 |
+| `vfr_screenrec_ts1000.webm` | vfr | 60/1 | 60/1; measured 246000/5999 | 246 / 246 | 2.994 to 62.500 | yes | all exact (16) | 1 | 181.7 KiB (100%) | 1.90 |
+| `vfr_pulldown_2_3.mp4` | vfr | 24/1 | 24/1 | 120 / 120 | 20.000 to 30.000 | yes | all exact (16) | 1 | 122.8 KiB (100%) | 1.60 |
+| `vfr_two_phase_5_200.mp4` | vfr | 205/2 | 205/2 | 820 / 820 | 5.000 to 200.0 | yes | all exact (16) | 1 | 411.3 KiB (100%) | 1.80 |
+| `vfr_two_phase_5_200.webm` | vfr | 0/0 | none; measured 205/2 | 820 / 820 | 5.000 to 200.0 | yes | all exact (15) | 1 | 431.0 KiB (100%) | 2.40 |
+| `vfr_two_phase_5_200.mkv` | vfr | 205/2 | 205/2; measured 205/2 | 820 / 820 | 5.000 to 200.0 | yes | all exact (16) | 1 | 421.5 KiB (100%) | 2.80 |
+| `vfr_freeze_2s.mp4` | vfr | 3600/179 | 3600/179 | 120 / 120 | 0.500 to 30.000 | yes | all exact (16) | 1 | 117.0 KiB (100%) | 1.90 |
+| `box64_mdat64_wide.mov` | box64 | 30000/1001 | 30000/1001 | 90 / 90 | 29.970 to 29.970 | no | all exact (17) | 1 | 86.4 KiB (100%) | 1.50 |
+| `box64_mdat64_free.mp4` | box64 | 30/1 | 30/1 | 90 / 90 | 30.000 to 30.000 | no | all exact (17) | 1 | 86.7 KiB (100%) | 1.60 |
 | `box64_co64_mdat64.mp4` | box64 | 30000/1001 | 30000/1001 | 90 / 90 | 29.970 to 29.970 | no | all exact (17) | 1 | 35.8 KiB (100%) | 1.00 |
-| `av_h264_aac.mp4` | multi | 30/1 | 30/1 | 90 / 90 | 30.000 to 30.000 | no | all exact (17) | 2 | 67.8 KiB (66.9%) | 1.60 |
-| `av_h264_aac_faststart.mp4` | multi | 30/1 | 30/1 | 90 / 90 | 30.000 to 30.000 | no | all exact (17) | 1 | 64.0 KiB (63.1%) | 1.00 |
-| `multi_video_2tracks.mp4` (+1 track) | multi | 30/1 | 30/1 | 90 / 90 | 30.000 to 30.000 | no | all exact (31) | 2 | 68.7 KiB (22.9%) | 1.60 |
-| `still_image_track_first.mp4` (+1 track) | multi | 30/1 | 30/1 | 90 / 90 | 30.000 to 30.000 | no | all exact (30) | 2 | 68.4 KiB (65.2%) | 1.70 |
+| `av_h264_aac.mp4` | multi | 30/1 | 30/1 | 90 / 90 | 30.000 to 30.000 | no | all exact (17) | 1 | 101.4 KiB (100%) | 1.60 |
+| `av_h264_aac_faststart.mp4` | multi | 30/1 | 30/1 | 90 / 90 | 30.000 to 30.000 | no | all exact (17) | 1 | 101.4 KiB (100%) | 1.00 |
+| `multi_video_2tracks.mp4` (+1 track) | multi | 30/1 | 30/1 | 90 / 90 | 30.000 to 30.000 | no | all exact (31) | 1 | 299.9 KiB (100%) | 1.60 |
+| `still_image_track_first.mp4` (+1 track) | multi | 30/1 | 30/1 | 90 / 90 | 30.000 to 30.000 | no | all exact (30) | 1 | 105.0 KiB (100%) | 1.70 |
 | `cover_art_audio.m4a` | cover | opens as mov,mp4,m4a,3gp,3g2,mj2, 0 video stream(s) | ok, 0 video tracks | - | - | - | all exact (3) | 1 | 16.3 KiB (100%) | 0.80 |
-| `cover_art_plus_video.mp4` | cover | 30/1 | 30/1 | 90 / 90 | 30.000 to 30.000 | no | all exact (17) | 2 | 69.9 KiB (67.6%) | 1.40 |
+| `cover_art_plus_video.mp4` | cover | 30/1 | 30/1 | 90 / 90 | 30.000 to 30.000 | no | all exact (17) | 1 | 103.5 KiB (100%) | 1.40 |
 | `audio_only.m4a` | audio | opens as mov,mp4,m4a,3gp,3g2,mj2, 0 video stream(s) | ok, 0 video tracks | - | - | - | all exact (3) | 1 | 13.3 KiB (100%) | 0.70 |
 | `audio_only_aac.mp4` | audio | opens as mov,mp4,m4a,3gp,3g2,mj2, 0 video stream(s) | ok, 0 video tracks | - | - | - | all exact (3) | 1 | 13.3 KiB (100%) | 0.80 |
 | `audio_only_opus.webm` | audio | opens as matroska,webm, 0 video stream(s) | ok, 0 video tracks | - | - | - | all exact (3) | 1 | 13.5 KiB (100%) | 0.80 |
@@ -146,28 +146,28 @@ The table below shows the primary track of every fixture. Frames are app / ffpro
 | `corrupt_garbage_random.mp4` | corrupt | fails: moov atom not found | error: not a recognised container: no known signature | - | - | - | expected outcome (manifest) | 1 | 64.0 KiB (100%) | 0.80 |
 | `corrupt_text_named.mp4` | corrupt | fails: moov atom not found | error: not a recognised container: text file | - | - | - | expected outcome (manifest) | 1 | 63 B (100%) | 0.80 |
 | `corrupt_png_named.mp4` | corrupt | opens as png_pipe, 1 video stream(s) | error: not a recognised container: PNG image | - | - | - | expected outcome (manifest) | 1 | 2.2 KiB (100%) | 0.70 |
-| `corrupt_trunc_moov_partial.mp4` | corrupt | fails: error reading header | error: incomplete file: moov is truncated | - | - | - | expected outcome (manifest) | 2 | 64.6 KiB (74.9%) | 1.60 |
-| `corrupt_trunc_no_moov.mp4` | corrupt | fails: moov atom not found | error: incomplete file: no moov | - | - | - | expected outcome (manifest) | 1 | 64.0 KiB (74.8%) | 0.90 |
+| `corrupt_trunc_moov_partial.mp4` | corrupt | fails: error reading header | error: incomplete file: moov is truncated | - | - | - | expected outcome (manifest) | 1 | 86.2 KiB (100%) | 1.60 |
+| `corrupt_trunc_no_moov.mp4` | corrupt | fails: moov atom not found | error: incomplete file: no moov | - | - | - | expected outcome (manifest) | 1 | 85.6 KiB (100%) | 0.90 |
 | `corrupt_trunc_mdat_faststart.mp4` | corrupt | 30/1 | 30/1 | 90 / 90 | 30.000 to 30.000 | no | all exact (17) | 1 | 60.8 KiB (100%) | 0.90 |
-| `corrupt_fmp4_truncated_mid_fragment.mp4` | corrupt | 30000/1001 | 30000/1001 | 73 / 73 | 29.970 to 29.970 | no | all exact (17) | 1 | 64.0 KiB (91.4%) | 0.90 |
-| `box_mdat_size0.mp4` | box64 | 30/1 | 30/1 | 90 / 90 | 30.000 to 30.000 | no | all exact (17) | 1 | 64.0 KiB (63.1%) | 0.90 |
-| `corrupt_stts_count_huge.mp4` | corrupt | fails: error reading header | ok, 1 video track | - | - | - | expected outcome (manifest) | 2 | 65.1 KiB (75.1%) | 1.50 |
-| `sniff_webm_named_mp4.mp4` | sniff | 30000/1001 | 30000/1001; measured 30000/1001 | 90 / 90 | 29.412 to 30.303 | no | all exact (16) | 2 | 71.2 KiB (98.9%) | 1.60 |
-| `sniff_mp4_named_webm.webm` | sniff | 30/1 | 30/1 | 90 / 90 | 30.000 to 30.000 | no | all exact (17) | 2 | 65.1 KiB (75.1%) | 1.40 |
-| `sniff_mp4_named_mkv.mkv` | sniff | 30/1 | 30/1 | 90 / 90 | 30.000 to 30.000 | no | all exact (17) | 2 | 65.1 KiB (75.1%) | 1.70 |
-| `frag_vfr_global_sidx.mp4` | fmp4 | 60/1 | 60/1 | 140 / 140 | 20.000 to 60.000 | yes | all exact (16) | 2 | 117.9 KiB (97.4%) | 1.70 |
-| `frag_vfr_dash.mp4` | fmp4 | 30/1 | 30/1 | 140 / 140 | 20.000 to 60.000 | yes | all exact (16) | 2 | 118.0 KiB (97.4%) | 1.90 |
-| `h264_vfr_remux.mkv` | vfr | 130/3 | 130/3; measured 130/3 | 260 / 260 | 10.000 to 62.500 | yes | all exact (16) | 2 | 199.6 KiB (99.8%) | 1.90 |
-| `vp9_pipe_t10.webm` | live | 30/1 | 30/1; measured 30/1 | 90 / 90 | 29.412 to 30.303 | no | all exact (16) | 2 | 70.6 KiB (99.9%) | 1.70 |
-| `vp9_opus_live_audiotail.webm` | live | 30/1 | 30/1; measured 30/1 | 90 / 90 | 29.412 to 30.303 | no | all exact (16) | 2 | 98.2 KiB (99.5%) | 1.70 |
-| `h264_25_cover.mkv` | cover | 25/1 | 25/1; measured 25/1 | 75 / 75 | 25.000 to 25.000 | no | all exact (16) | 2 | 71.6 KiB (99.5%) | 1.70 |
-| `remux_cfr_120_ts16000.mp4` | cfr | 120/1 | 120/1 | 360 / 360 | 111.1 to 125.0 | no | 15 exact; within tolerance: avgFps.measured | 2 | 68.1 KiB (33.3%) | 1.60 |
-| `remux_cfr_29.97_ts16000.mp4` | cfr | 30000/1001 | 30000/1001 | 90 / 90 | 29.412 to 30.303 | no | 15 exact; within tolerance: avgFps.measured | 2 | 65.6 KiB (90.5%) | 1.60 |
-| `start_freeze_bf.mp4` | vfr | 1125/67 | 1125/67 | 150 / 150 | 0.500 to 30000.0 | yes | all exact (16) | 2 | 66.7 KiB (56.5%) | 1.60 |
-| `fmp4_missing_fragment.mp4` | fmp4 | 30/1 | 30/1 | 150 / 150 | 0.968 to 30.000 | yes | all exact (16) | 2 | 125.7 KiB (85.0%) | 1.40 |
-| `elst_trim_vfr_copy.mp4` | vfr | 205/2 | 205/2 | 820 / 820 | 5.000 to 200.0 | yes | all exact (16) | 2 | 68.1 KiB (16.6%) | 1.60 |
-| `cfr_240_ts600.mp4` | cfr | 288000/1201 | 288000/1201 | 480 / 480 | 200.0 to 300.0 | no | all exact (16) | 2 | 70.4 KiB (75.6%) | 1.70 |
-| `fmp4_global_sidx_bframes.mp4` | fmp4 | 25/1 | 25/1 | 100 / 100 | 25.000 to 25.000 | no | all exact (17) | 2 | 64.1 KiB (65.6%) | 1.50 |
+| `corrupt_fmp4_truncated_mid_fragment.mp4` | corrupt | 30000/1001 | 30000/1001 | 73 / 73 | 29.970 to 29.970 | no | all exact (17) | 1 | 70.0 KiB (100%) | 0.90 |
+| `box_mdat_size0.mp4` | box64 | 30/1 | 30/1 | 90 / 90 | 30.000 to 30.000 | no | all exact (17) | 1 | 101.4 KiB (100%) | 0.90 |
+| `corrupt_stts_count_huge.mp4` | corrupt | fails: error reading header | ok, 1 video track | - | - | - | expected outcome (manifest) | 1 | 86.7 KiB (100%) | 1.50 |
+| `sniff_webm_named_mp4.mp4` | sniff | 30000/1001 | 30000/1001; measured 30000/1001 | 90 / 90 | 29.412 to 30.303 | no | all exact (16) | 1 | 72.0 KiB (100%) | 1.60 |
+| `sniff_mp4_named_webm.webm` | sniff | 30/1 | 30/1 | 90 / 90 | 30.000 to 30.000 | no | all exact (17) | 1 | 86.7 KiB (100%) | 1.40 |
+| `sniff_mp4_named_mkv.mkv` | sniff | 30/1 | 30/1 | 90 / 90 | 30.000 to 30.000 | no | all exact (17) | 1 | 86.7 KiB (100%) | 1.70 |
+| `frag_vfr_global_sidx.mp4` | fmp4 | 60/1 | 60/1 | 140 / 140 | 20.000 to 60.000 | yes | all exact (16) | 1 | 121.0 KiB (100%) | 1.70 |
+| `frag_vfr_dash.mp4` | fmp4 | 30/1 | 30/1 | 140 / 140 | 20.000 to 60.000 | yes | all exact (16) | 1 | 121.2 KiB (100%) | 1.90 |
+| `h264_vfr_remux.mkv` | vfr | 130/3 | 130/3; measured 130/3 | 260 / 260 | 10.000 to 62.500 | yes | all exact (16) | 1 | 200.0 KiB (100%) | 1.90 |
+| `vp9_pipe_t10.webm` | live | 30/1 | 30/1; measured 30/1 | 90 / 90 | 29.412 to 30.303 | no | all exact (16) | 1 | 70.6 KiB (100%) | 1.70 |
+| `vp9_opus_live_audiotail.webm` | live | 30/1 | 30/1; measured 30/1 | 90 / 90 | 29.412 to 30.303 | no | all exact (16) | 1 | 98.7 KiB (100%) | 1.70 |
+| `h264_25_cover.mkv` | cover | 25/1 | 25/1; measured 25/1 | 75 / 75 | 25.000 to 25.000 | no | all exact (16) | 1 | 71.9 KiB (100%) | 1.70 |
+| `remux_cfr_120_ts16000.mp4` | cfr | 120/1 | 120/1 | 360 / 360 | 111.1 to 125.0 | no | 15 exact; within tolerance: avgFps.measured | 1 | 204.7 KiB (100%) | 1.60 |
+| `remux_cfr_29.97_ts16000.mp4` | cfr | 30000/1001 | 30000/1001 | 90 / 90 | 29.412 to 30.303 | no | 15 exact; within tolerance: avgFps.measured | 1 | 72.5 KiB (100%) | 1.60 |
+| `start_freeze_bf.mp4` | vfr | 1125/67 | 1125/67 | 150 / 150 | 0.500 to 30000.0 | yes | all exact (16) | 1 | 118.2 KiB (100%) | 1.60 |
+| `fmp4_missing_fragment.mp4` | fmp4 | 30/1 | 30/1 | 150 / 150 | 0.968 to 30.000 | yes | all exact (16) | 1 | 147.9 KiB (100%) | 1.40 |
+| `elst_trim_vfr_copy.mp4` | vfr | 205/2 | 205/2 | 820 / 820 | 5.000 to 200.0 | yes | all exact (16) | 1 | 411.3 KiB (100%) | 1.60 |
+| `cfr_240_ts600.mp4` | cfr | 288000/1201 | 288000/1201 | 480 / 480 | 200.0 to 300.0 | no | all exact (16) | 1 | 93.1 KiB (100%) | 1.70 |
+| `fmp4_global_sidx_bframes.mp4` | fmp4 | 25/1 | 25/1 | 100 / 100 | 25.000 to 25.000 | no | all exact (17) | 1 | 97.7 KiB (100%) | 1.50 |
 | `long_cfr_3h_60fps.mp4` | long | 60/1 | 60/1 | 648000 / 648000 | 60.000 to 60.000 | no | all exact (17) | 2 | 2.56 MiB (20.6%) | 4.10 |
 | `long_vfr_1h_screenrec.mp4` | long | 186/5 | 186/5 | 133920 / 133920 | 2.941 to 100.0 | yes | all exact (16) | 2 | 1.53 MiB (40.7%) | 70.4 |
 | `big_1080p_moov_end.mp4` | big | 30/1 | 30/1 | 1800 / 1800 | 30.000 to 30.000 | no | all exact (17) | 2 | 75.0 KiB (0.01%) | 1.70 |
@@ -201,22 +201,22 @@ Node: `npm run compare` (`analyze()` on `fs.openAsBlob`), median of 3 runs per f
 
 | File | What it is | Size | Duration | Frames | Reads | Bytes read | Node ms | Chrome 155 ms | Chrome 155 UI ms |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|
-| `av_h264_aac_faststart.mp4` | MP4, moov before mdat (faststart) | 101.4 KiB | 3 s | 90 | 1 | 64.0 KiB (63.1%) | 0.27 | 1.00 | 1.90 |
-| `av_h264_aac.mp4` | same file, moov at the end | 101.4 KiB | 3 s | 90 | 2 | 67.8 KiB (66.9%) | 0.41 | 1.60 | 2.50 |
-| `mp4_bf_elst.mp4` | MP4 with B-frames and an edit list | 35.8 KiB | 3.003 s | 90 | 1 | 35.8 KiB (100%) | 0.27 | 0.90 | 2.00 |
-| `fmp4_frag_duration.mp4` | fragmented MP4 | 117.2 KiB | 4.004 s | 120 | 2 | 108.7 KiB (92.7%) | 0.49 | 1.50 | 2.70 |
-| `frag_vfr_global_sidx.mp4` | fragmented VFR MP4 with a global sidx | 121.0 KiB | 4.967 s | 140 | 2 | 117.9 KiB (97.4%) | 0.60 | 1.70 | 2.70 |
-| `vfr_screenrec_ts1000.mp4` | VFR screen recording, timescale 1000 | 188.6 KiB | 6.004 s | 246 | 2 | 67.6 KiB (35.8%) | 0.80 | 1.80 | 2.70 |
-| `cfr_vp9_30.webm` | WebM, VP9 | 70.7 KiB | 3 s | 90 | 2 | 70.6 KiB (99.9%) | 0.58 | 1.60 | 2.80 |
-| `vp9_unknown_clusters.webm` | WebM with unknown-size clusters (live) | 71.9 KiB | - | 90 | 2 | 71.1 KiB (99.0%) | 0.50 | 1.60 | 2.30 |
-| `h264_vfr_remux.mkv` | Matroska, stream-copied VFR with BlockGroups | 200.0 KiB | 6 s | 260 | 2 | 199.6 KiB (99.8%) | 0.98 | 1.90 | 3.00 |
-| `corrupt_trunc_no_moov.mp4` | interrupted recording, no moov (error) | 85.6 KiB | - | - | 1 | 64.0 KiB (74.8%) | 0.22 | 0.90 | 1.50 |
-| `long_cfr_3h_60fps.mp4` | long CFR MP4, moov at the end | 12.42 MiB | 3 h | 648000 | 2 | 2.56 MiB (20.6%) | 3.54 | 4.10 | 5.00 |
-| `long_vfr_1h_screenrec.mp4` | long VFR screen recording MP4 | 3.76 MiB | 1 h | 133920 | 2 | 1.53 MiB (40.7%) | 55.4 | 70.4 | 72.4 |
-| `big_1080p_moov_end.mp4` | 1080p MP4 of 1 min, moov at the end | 576.42 MiB | 1 min | 1800 | 2 | 75.0 KiB (0.01%) | 0.54 | 1.70 | 2.40 |
-| `big_1080p_faststart.mp4` | same file, faststart | 576.42 MiB | 1 min | 1800 | 1 | 64.0 KiB (0.01%) | 0.28 | 0.90 | 1.70 |
-| `big_1080p.mkv` | same stream in Matroska (auto mode) | 576.43 MiB | 1 min | - | 126 | 16.51 MiB (2.86%) | 88.5 | 117 | 118 |
-| **all 111 committed fixtures** | median per file; bytes are totals | 11.70 MiB |  |  | 2 (max 2) | 8.46 MiB (72.3%) | 0.45 | 1.50 | 2.40 |
+| `av_h264_aac_faststart.mp4` | MP4, moov before mdat (faststart) | 101.4 KiB | 3 s | 90 | 1 | 101.4 KiB (100%) | 0.48 | 1.00 | 1.90 |
+| `av_h264_aac.mp4` | same file, moov at the end | 101.4 KiB | 3 s | 90 | 1 | 101.4 KiB (100%) | 0.43 | 1.60 | 2.50 |
+| `mp4_bf_elst.mp4` | MP4 with B-frames and an edit list | 35.8 KiB | 3.003 s | 90 | 1 | 35.8 KiB (100%) | 0.30 | 0.90 | 2.00 |
+| `fmp4_frag_duration.mp4` | fragmented MP4 | 117.2 KiB | 4.004 s | 120 | 1 | 117.2 KiB (100%) | 0.41 | 1.50 | 2.70 |
+| `frag_vfr_global_sidx.mp4` | fragmented VFR MP4 with a global sidx | 121.0 KiB | 4.967 s | 140 | 1 | 121.0 KiB (100%) | 0.54 | 1.70 | 2.70 |
+| `vfr_screenrec_ts1000.mp4` | VFR screen recording, timescale 1000 | 188.6 KiB | 6.004 s | 246 | 1 | 188.6 KiB (100%) | 0.81 | 1.80 | 2.70 |
+| `cfr_vp9_30.webm` | WebM, VP9 | 70.7 KiB | 3 s | 90 | 1 | 70.7 KiB (100%) | 0.47 | 1.60 | 2.80 |
+| `vp9_unknown_clusters.webm` | WebM with unknown-size clusters (live) | 71.9 KiB | - | 90 | 1 | 71.9 KiB (100%) | 0.47 | 1.60 | 2.30 |
+| `h264_vfr_remux.mkv` | Matroska, stream-copied VFR with BlockGroups | 200.0 KiB | 6 s | 260 | 1 | 200.0 KiB (100%) | 0.86 | 1.90 | 3.00 |
+| `corrupt_trunc_no_moov.mp4` | interrupted recording, no moov (error) | 85.6 KiB | - | - | 1 | 85.6 KiB (100%) | 0.29 | 0.90 | 1.50 |
+| `long_cfr_3h_60fps.mp4` | long CFR MP4, moov at the end | 12.42 MiB | 3 h | 648000 | 2 | 2.56 MiB (20.6%) | 4.10 | 4.10 | 5.00 |
+| `long_vfr_1h_screenrec.mp4` | long VFR screen recording MP4 | 3.76 MiB | 1 h | 133920 | 2 | 1.53 MiB (40.7%) | 75.9 | 70.4 | 72.4 |
+| `big_1080p_moov_end.mp4` | 1080p MP4 of 1 min, moov at the end | 576.42 MiB | 1 min | 1800 | 2 | 75.0 KiB (0.01%) | 0.70 | 1.70 | 2.40 |
+| `big_1080p_faststart.mp4` | same file, faststart | 576.42 MiB | 1 min | 1800 | 1 | 64.0 KiB (0.01%) | 0.33 | 0.90 | 1.70 |
+| `big_1080p.mkv` | same stream in Matroska (auto mode) | 576.43 MiB | 1 min | - | 126 | 16.51 MiB (2.86%) | 94.6 | 117 | 118 |
+| **all 111 committed fixtures** | median per file; bytes are totals | 11.70 MiB |  |  | 1 (max 1) | 11.70 MiB (100%) | 0.45 | 1.50 | 2.40 |
 
 - Cold start, Chrome 155: the app is ready 87.3 ms after navigation; 111 files picked at once on a fresh profile show all results after 371 ms (median of 356 ms over reloads, range 333 to 369 ms).
 - Edge 155, same warm run: median 1.60 ms per file, geometric mean 1.05x of Chrome 155.
@@ -234,9 +234,9 @@ Per-file timings for every fixture, the library engines and the cold start are i
 
 <!-- tables:package:start -->
 
-**A default install adds 0.67 KB gzip to the host app's critical path:** the package code in the entry chunk of a Vite 8.3.5 app that imports `video-fps-probe/lazy` (with Vite's preload helper, which any app with a dynamic import already has, that entry chunk is 1.39 KB). With `worker: { format: 'es' }` in the host's Vite config the first MP4 or MOV file then loads 23.53 KB lazily: the probe client, the own worker, the statistics chunk and the ISO BMFF parser; every own path together is 36.51 KB. Without a worker option Vite builds workers as 'iife', which cannot split, so the own worker is one file with both parsers and the first file loads 35.04 KB (zero-config). mp4box.js and mediabunny are only in the build when their entries are imported. Everything the default build emits outside the entry chunk is 72.64 KB, because it also holds main-thread copies of the parsers, the statistics and the worker runtime. The default flavor keeps them as an in-thread own for environments without a `Worker` global (SSR, Node) and for `worker: 'inline'`; the client flavor keeps them for `worker: 'inline'` and for environments without a `Worker` global; the root `analyze()` always runs in the calling thread on them. A browser with a `Worker` global never fetches them otherwise.
+**A default install adds 0.66 KB gzip to the host app's critical path:** the package code in the entry chunk of a Vite 8.3.5 app that imports `video-fps-probe/lazy` (with Vite's preload helper, which any app with a dynamic import already has, that entry chunk is 1.39 KB). With `worker: { format: 'es' }` in the host's Vite config the first MP4 or MOV file then loads 23.58 KB lazily: the probe client, the own worker, the statistics chunk and the ISO BMFF parser; every own path together is 36.56 KB. Without a worker option Vite builds workers as 'iife', which cannot split, so the own worker is one file with both parsers and the first file loads 35.11 KB (zero-config). mp4box.js and mediabunny are only in the build when their entries are imported. Everything the default build emits outside the entry chunk is 72.74 KB, because it also holds main-thread copies of the parsers, the statistics and the worker runtime. The default flavor keeps them as an in-thread own for environments without a `Worker` global (SSR, Node) and for `worker: 'inline'`; the client flavor keeps them for `worker: 'inline'` and for environments without a `Worker` global; the root `analyze()` always runs in the calling thread on them. A browser with a `Worker` global never fetches them otherwise.
 
-Recommended: one line in the host's Vite config, so the own worker splits and the first MP4 loads 23.53 KB instead of 35.04 KB. Module workers run on the whole package floor (Chrome and Edge 94, Firefox 114, Safari 15.4).
+Recommended: one line in the host's Vite config, so the own worker splits and the first MP4 loads 23.58 KB instead of 35.11 KB. Module workers run on the whole package floor (Chrome and Edge 94, Firefox 114, Safari 15.4).
 
 ```js
 export default defineConfig({ worker: { format: 'es' } });
@@ -244,16 +244,16 @@ export default defineConfig({ worker: { format: 'es' } });
 
 | Configuration | Imports | Vite worker option | Critical path | First MP4, lazy | All own paths, lazy | Engine chunks, lazy | Worker files | Budgets |
 |---|---|---|---:|---:|---:|---:|---:|---|
-| **default** | `video-fps-probe/lazy` | format: 'es' (recommended) | **0.67 KB** | 23.53 KB | 36.51 KB | - | 1 | ok (10 budgets) |
-| zero-config | `video-fps-probe/lazy` | none, so Vite's default format: 'iife' | **0.67 KB** | 35.04 KB | 35.04 KB | - | 1 | ok (5 budgets) |
-| custom | `video-fps-probe/client/lazy` + `video-fps-probe/worker-runtime` (host worker serving own) | format: 'es' | **0.67 KB** | 23.42 KB | 36.40 KB | - | 1 | ok (6 budgets) |
-| mp4box | `video-fps-probe/lazy` + `video-fps-probe/mp4box` | format: 'es' | **0.89 KB** | 23.56 KB | 36.55 KB | mp4box 44.77 KB | 2 | ok (5 budgets) |
-| mediabunny | `video-fps-probe/lazy` + `video-fps-probe/mediabunny` | format: 'es' | **0.89 KB** | 23.56 KB | 36.54 KB | mediabunny 53.86 KB | 2 | ok (5 budgets) |
-| rvfc | `video-fps-probe/lazy` + `video-fps-probe/rvfc` | format: 'es' | **0.76 KB** | 23.54 KB | 36.52 KB | rVFC 2.19 KB | 1 | ok (4 budgets) |
-| all | `video-fps-probe/lazy` + `video-fps-probe/mp4box` + `video-fps-probe/mediabunny` + `video-fps-probe/rvfc` | format: 'es' | **1.01 KB** | 23.57 KB | 36.56 KB | mp4box 44.77 KB, mediabunny 53.86 KB, rVFC 2.19 KB | 3 | ok (16 budgets) |
-| standalone-url | `video-fps-probe/client/lazy` + `video-fps-probe/standalone/own.worker.js?url` (classic worker from the standalone file) | none needed: the file is copied as an asset | **0.70 KB** | 34.86 KB | 34.86 KB | - | 1 | ok (6 budgets) |
-| iife-nosplit | `video-fps-probe/lazy` | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.67 KB** | 35.04 KB | 35.04 KB | - | 1 | ok (4 budgets) |
-| standalone worker file | `video-fps-probe/standalone/own.worker.js` | - | - | 32.07 KB | 32.07 KB | - | 1 file, no imports | ok |
+| **default** | `video-fps-probe/lazy` | format: 'es' (recommended) | **0.66 KB** | 23.58 KB | 36.56 KB | - | 1 | ok (10 budgets) |
+| zero-config | `video-fps-probe/lazy` | none, so Vite's default format: 'iife' | **0.67 KB** | 35.11 KB | 35.11 KB | - | 1 | ok (5 budgets) |
+| custom | `video-fps-probe/client/lazy` + `video-fps-probe/worker-runtime` (host worker serving own) | format: 'es' | **0.67 KB** | 23.48 KB | 36.46 KB | - | 1 | ok (6 budgets) |
+| mp4box | `video-fps-probe/lazy` + `video-fps-probe/mp4box` | format: 'es' | **0.89 KB** | 23.61 KB | 36.60 KB | mp4box 44.77 KB | 2 | ok (5 budgets) |
+| mediabunny | `video-fps-probe/lazy` + `video-fps-probe/mediabunny` | format: 'es' | **0.90 KB** | 23.61 KB | 36.60 KB | mediabunny 53.87 KB | 2 | ok (5 budgets) |
+| rvfc | `video-fps-probe/lazy` + `video-fps-probe/rvfc` | format: 'es' | **0.77 KB** | 23.60 KB | 36.58 KB | rVFC 2.19 KB | 1 | ok (4 budgets) |
+| all | `video-fps-probe/lazy` + `video-fps-probe/mp4box` + `video-fps-probe/mediabunny` + `video-fps-probe/rvfc` | format: 'es' | **1.01 KB** | 23.63 KB | 36.61 KB | mp4box 44.77 KB, mediabunny 53.87 KB, rVFC 2.19 KB | 3 | ok (16 budgets) |
+| standalone-url | `video-fps-probe/client/lazy` + `video-fps-probe/standalone/own.worker.js?url` (classic worker from the standalone file) | none needed: the file is copied as an asset | **0.70 KB** | 34.94 KB | 34.94 KB | - | 1 | ok (6 budgets) |
+| iife-nosplit | `video-fps-probe/lazy` | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.67 KB** | 35.11 KB | 35.11 KB | - | 1 | ok (4 budgets) |
+| standalone worker file | `video-fps-probe/standalone/own.worker.js` | - | - | 32.14 KB | 32.14 KB | - | 1 file, no imports | ok |
 
 Measured by `npm run size:matrix` on production builds of the fixtures in `tests/consumers/fixtures/`, installed from the packed tarball into a directory outside the repository with mp4box 2.4.1 and mediabunny 1.62.0; gzip -9, KB = 1000 bytes. The critical path is the package code in the entry chunk, cut out by the hidden sourcemap. CI fails when a budget is exceeded, a configuration builds an unexpected worker file, or a sourcemap lists a module that must not be there (mp4box or mediabunny where they are not imported, the prebuilt own worker in the custom-worker build); [report/size-matrix.md](../report/size-matrix.md) lists every budget with its reason.
 
@@ -267,37 +267,37 @@ The demo in `demo/` is a React app that consumes the package through a custom wo
 
 | Chunk | Loaded | Raw | gzip -9 | brotli q11 | Budget (gzip) | Headroom | Status |
 |---|---|---:|---:|---:|---:|---:|---|
-| main (React, UI, store) | page load | 238.72 KB | **74.44 KB** | 64.43 KB | 77.00 KB | 2.56 KB | ok |
+| main (React, UI, store) | page load | 238.72 KB | **74.44 KB** | 64.42 KB | 77.00 KB | 2.56 KB | ok |
 | CSS | page load | 4.98 KB | **1.81 KB** | 1.53 KB | not budgeted | - | - |
-| probe client (lazy) | first file | 6.92 KB | **2.99 KB** | 2.75 KB | 3.50 KB | 0.51 KB | ok |
+| probe client (lazy) | first file | 6.92 KB | **2.98 KB** | 2.74 KB | 3.50 KB | 0.52 KB | ok |
 | probe fallback chain | first call with a fallback chain or a skipped engine | 1.01 KB | **0.64 KB** | 0.56 KB | not budgeted | - | - |
-| probe compare (agreement rules) | first probe.compare | 2.60 KB | **1.32 KB** | 1.21 KB | not budgeted | - | - |
-| in-thread engine runner | first main-thread engine run (rVFC) | 1.09 KB | **0.64 KB** | 0.56 KB | not budgeted | - | - |
+| probe compare (agreement rules) | first probe.compare | 2.60 KB | **1.32 KB** | 1.20 KB | not budgeted | - | - |
+| in-thread engine runner | first main-thread engine run (rVFC) | 1.09 KB | **0.64 KB** | 0.55 KB | not budgeted | - | - |
 | shared by the lazy client parts and rVFC (result builders, sniffing): `abort` | with the fallback chain, compare, rVFC or the own engine in this thread | 0.10 KB | **0.11 KB** | 0.09 KB | not budgeted | - | - |
 | shared by the lazy client parts and rVFC (result builders, sniffing): `result` | with the fallback chain, compare, rVFC or the own engine in this thread | 0.71 KB | **0.38 KB** | 0.33 KB | not budgeted | - | - |
 | shared by the lazy client parts and rVFC (result builders, sniffing): `sniff` | with the fallback chain, compare, rVFC or the own engine in this thread | 2.12 KB | **0.99 KB** | 0.89 KB | not budgeted | - | - |
-| own engine in this thread (runtime and parser copies for worker inline): `isobmff` | only with worker inline or without a Worker global (own engine in this thread) | 30.83 KB | **12.23 KB** | 11.06 KB | not budgeted | - | - |
+| own engine in this thread (runtime and parser copies for worker inline): `isobmff` | only with worker inline or without a Worker global (own engine in this thread) | 30.83 KB | **12.23 KB** | 11.03 KB | not budgeted | - | - |
 | own engine in this thread (runtime and parser copies for worker inline): `matroska` | only with worker inline or without a Worker global (own engine in this thread) | 29.17 KB | **11.19 KB** | 10.16 KB | not budgeted | - | - |
-| own engine in this thread (runtime and parser copies for worker inline): `runtime` | only with worker inline or without a Worker global (own engine in this thread) | 5.90 KB | **2.48 KB** | 2.28 KB | not budgeted | - | - |
+| own engine in this thread (runtime and parser copies for worker inline): `runtime` | only with worker inline or without a Worker global (own engine in this thread) | 6.09 KB | **2.54 KB** | 2.35 KB | not budgeted | - | - |
 | own engine in this thread (runtime and parser copies for worker inline): `segments` | only with worker inline or without a Worker global (own engine in this thread) | 3.35 KB | **1.84 KB** | 1.71 KB | not budgeted | - | - |
-| own engine in this thread (runtime and parser copies for worker inline): `stats` | only with worker inline or without a Worker global (own engine in this thread) | 10.31 KB | **4.33 KB** | 3.96 KB | not budgeted | - | - |
-| worker entry (reader, sniffing, worker runtime) | first file | 10.18 KB | **4.24 KB** | 3.87 KB | 5.00 KB | 0.76 KB | ok |
+| own engine in this thread (runtime and parser copies for worker inline): `stats` | only with worker inline or without a Worker global (own engine in this thread) | 10.31 KB | **4.33 KB** | 3.95 KB | not budgeted | - | - |
+| worker entry (reader, sniffing, worker runtime) | first file | 10.37 KB | **4.30 KB** | 3.92 KB | 5.00 KB | 0.70 KB | ok |
 | shared by the parsers and engines (timeline statistics) | with the first parser, in parallel, once per worker | 10.21 KB | **4.29 KB** | 3.92 KB | 5.00 KB | 0.71 KB | ok |
-| ISO BMFF parser | first MP4 or MOV file, once per worker | 30.75 KB | **12.22 KB** | 11.01 KB | 13.50 KB | 1.28 KB | ok |
-| Matroska parser | first WebM or MKV file, once per worker | 29.05 KB | **11.10 KB** | 10.09 KB | 12.00 KB | 0.90 KB | ok |
+| ISO BMFF parser | first MP4 or MOV file, once per worker | 30.75 KB | **12.22 KB** | 11.04 KB | 13.50 KB | 1.28 KB | ok |
+| Matroska parser | first WebM or MKV file, once per worker | 29.05 KB | **11.10 KB** | 10.07 KB | 12.00 KB | 0.90 KB | ok |
 | rate profile core (segments, anomalies, sparkline buckets) | first VFR timeline, once per worker | 3.35 KB | **1.84 KB** | 1.71 KB | 2.00 KB | 0.16 KB | ok |
 | rate profile panel (UI) | first card with a rate profile | 2.17 KB | **0.94 KB** | 0.85 KB | 1.50 KB | 0.56 KB | ok |
 | device info and JSON export | on idle after the first result, or the first export (footer device line, JSON export) | 5.02 KB | **2.29 KB** | 2.02 KB | not budgeted | - | - |
 | sample file loader | click on Try sample files | 0.36 KB | **0.28 KB** | 0.24 KB | not budgeted | - | - |
-| rVFC fallback | click on Run (approximate) | 4.24 KB | **2.20 KB** | 1.98 KB | 2.50 KB | 0.30 KB | ok |
-| Compare panel | first open of a Compare engines panel | 2.88 KB | **1.20 KB** | 1.09 KB | not budgeted | - | - |
-| mp4box.js engine | Compare engines on an MP4 or MOV card | 187.64 KB | **43.65 KB** | 37.32 KB | not budgeted | - | - |
-| mediabunny engine | Compare engines | 200.80 KB | **52.77 KB** | 44.47 KB | not budgeted | - | - |
+| rVFC fallback | click on Run (approximate) | 4.24 KB | **2.19 KB** | 1.99 KB | 2.50 KB | 0.30 KB | ok |
+| Compare panel | first open of a Compare engines panel | 2.88 KB | **1.21 KB** | 1.09 KB | not budgeted | - | - |
+| mp4box.js engine | Compare engines on an MP4 or MOV card | 187.64 KB | **43.65 KB** | 37.31 KB | not budgeted | - | - |
+| mediabunny engine | Compare engines | 200.80 KB | **52.77 KB** | 44.50 KB | not budgeted | - | - |
 | shared by mp4box and mediabunny | with mp4box or mediabunny | 3.01 KB | **1.50 KB** | 1.35 KB | not budgeted | - | - |
-| initial: main + CSS + worker entry |  | 253.88 KB | **80.49 KB** | 69.83 KB | 83.00 KB | 2.51 KB | ok |
-| first MP4 analysis: initial + probe client + statistics + ISO BMFF parser |  | 301.76 KB | **100.00 KB** | 87.50 KB | 103.00 KB | 3.00 KB | ok |
-| first VFR MP4 analysis: first MP4 + rate profile core |  | 305.11 KB | **101.84 KB** | 89.21 KB | 105.00 KB | 3.16 KB | ok |
-| first Matroska analysis: initial + probe client + statistics + Matroska parser |  | 300.06 KB | **98.87 KB** | 86.59 KB | 102.00 KB | 3.13 KB | ok |
+| initial: main + CSS + worker entry |  | 254.07 KB | **80.55 KB** | 69.87 KB | 83.00 KB | 2.45 KB | ok |
+| first MP4 analysis: initial + probe client + statistics + ISO BMFF parser |  | 301.95 KB | **100.05 KB** | 87.58 KB | 103.00 KB | 2.95 KB | ok |
+| first VFR MP4 analysis: first MP4 + rate profile core |  | 305.30 KB | **101.90 KB** | 89.28 KB | 105.00 KB | 3.10 KB | ok |
+| first Matroska analysis: initial + probe client + statistics + Matroska parser |  | 300.25 KB | **98.93 KB** | 86.60 KB | 102.00 KB | 3.07 KB | ok |
 
 <!-- tables:bundle:end -->
 
@@ -350,14 +350,14 @@ Node: `npm run compare` (`analyze()` on `fs.openAsBlob`), median of 3 runs per f
 | Containers | MP4, MOV, WebM, Matroska | MP4, MOV | MP4, MOV, WebM, Matroska | whatever the browser can play |
 | Checks vs ffprobe, all fixtures | 1832 checks: 1769 exact, 1 known deviation, 0 mismatch | 1426 checks: 1285 exact, 2 known deviation, 113 mismatch (84 of them on WebM/MKV files it cannot open) | 1832 checks: 1648 exact, 2 known deviation, 126 mismatch | no ffprobe-equivalent fields |
 | Frame-rate field mismatches | MP4: 0, MKV: 0 | MP4: 3, MKV: not supported | MP4: 12, MKV: 78 | 9 of 11 estimates equal ffprobe's average; VFR files off by -10.0% and +292.3%; 2 of 13 files did not play |
-| Bytes read, 78 committed MP4/MOV files | 4.89 MiB of 8.12 MiB (60.3%) | 4.88 MiB of 8.12 MiB (60.1%) | 7.74 MiB of 8.12 MiB (95.4%) | the media element streams the file |
-| Bytes read, 30 committed WebM/MKV files | 3.50 MiB of 3.52 MiB (99.7%) | not supported | 3.52 MiB of 3.52 MiB (100%) | the media element streams the file |
-| Reads per file, median / max | 2 / 2 | 2 / 3 | 1 / 5 | n/a |
-| Time per file, Node 24 (median; geometric mean vs own) | 0.45 ms | 0.59 ms (1.45x own) | 0.57 ms (1.29x own) | needs a browser |
+| Bytes read, 78 committed MP4/MOV files | 8.12 MiB of 8.12 MiB (100%) | 4.88 MiB of 8.12 MiB (60.1%) | 7.74 MiB of 8.12 MiB (95.4%) | the media element streams the file |
+| Bytes read, 30 committed WebM/MKV files | 3.52 MiB of 3.52 MiB (100%) | not supported | 3.52 MiB of 3.52 MiB (100%) | the media element streams the file |
+| Reads per file, median / max | 1 / 1 | 2 / 3 | 1 / 5 | n/a |
+| Time per file, Node 24 (median; geometric mean vs own) | 0.45 ms | 0.64 ms (1.51x own) | 0.67 ms (1.43x own) | needs a browser |
 | Time per file, Chrome 155 (median; geometric mean vs own) | 1.50 ms | 1.60 ms (1.13x own) | 1.20 ms (0.91x own) | 1.94 s (max 4.84 s) |
-| 3 h CFR MP4, 12.42 MiB | 2 reads, 2.56 MiB; Node 3.54 ms, Chrome 4.10 ms | 3 reads, 2.56 MiB; Node 212 ms, Chrome 163 ms | 3 reads, 2.73 MiB; Node 802 ms, Chrome 495 ms | not measured |
-| 1 h VFR MP4, 3.76 MiB | 2 reads, 1.53 MiB; Node 55.4 ms, Chrome 70.4 ms | 3 reads, 1.53 MiB; Node 79.9 ms, Chrome 57.6 ms | 3 reads, 1.70 MiB; Node 208 ms, Chrome 131 ms | not measured |
-| gzip, loaded on demand | probe client 2.99 KB + worker entry 4.24 KB + statistics 4.29 KB + ISO BMFF 12.22 KB or Matroska 11.10 KB | 43.65 KB + 1.50 KB shared | 52.77 KB + 1.50 KB shared | 2.20 KB |
+| 3 h CFR MP4, 12.42 MiB | 2 reads, 2.56 MiB; Node 4.10 ms, Chrome 4.10 ms | 3 reads, 2.56 MiB; Node 189 ms, Chrome 163 ms | 3 reads, 2.73 MiB; Node 808 ms, Chrome 495 ms | not measured |
+| 1 h VFR MP4, 3.76 MiB | 2 reads, 1.53 MiB; Node 75.9 ms, Chrome 70.4 ms | 3 reads, 1.53 MiB; Node 75.5 ms, Chrome 57.6 ms | 3 reads, 1.70 MiB; Node 209 ms, Chrome 131 ms | not measured |
+| gzip, loaded on demand | probe client 2.98 KB + worker entry 4.30 KB + statistics 4.29 KB + ISO BMFF 12.22 KB or Matroska 11.10 KB | 43.65 KB + 1.50 KB shared | 52.77 KB + 1.50 KB shared | 2.19 KB |
 | Main risk | own code to maintain; cases outside the corpus are flagged, not verified | last sample duration overridden; must be fed box by box; no Matroska | packet-rate average, edit-list start trim ignored, whole-cluster Matroska reads | needs a visible tab and a playable codec; wrong on VFR; seconds per file |
 
 <!-- tables:approaches:end -->
@@ -406,7 +406,7 @@ Headless Chrome 155, GPU decoding on, display 170 Hz.
 
 ### Worker and reader
 
-The probe posts each `File` to a module Web Worker: one per worker kind by default, two in the demo. The `File` is passed by reference, so no bytes are copied. In the worker, `analyze()` reads a 64 KiB head window and sniffs the container from its magic bytes, never from the file name. It then loads the matching parser chunk with a dynamic `import()` on first use and returns a `FileResult` with per-track values, warnings and IO counters. `src/core` has no DOM dependency, so the same code runs in the worker and in Node for the tests, the comparison script and the benchmark cross-check.
+The probe posts each `File` to a module Web Worker: one per worker kind by default, two in the demo. The `File` is passed by reference, so no bytes are copied. In the worker, `analyze()` reads a 64 KiB head window, or the whole file when it is below the single-read size (465,536 bytes by default), and sniffs the container from its magic bytes, never from the file name. It then loads the matching parser chunk with a dynamic `import()` on first use and returns a `FileResult` with per-track values, warnings and IO counters. `src/core` has no DOM dependency, so the same code runs in the worker and in Node for the tests, the comparison script and the benchmark cross-check.
 
 All IO goes through one primitive, `BlobReader.read(offset, length)` over `Blob.slice().arrayBuffer()`, with up to four cached windows and an abort check before and after each read. The `reads` and `bytesRead` (unique bytes) of every result come from this reader.
 
@@ -414,27 +414,26 @@ All IO goes through one primitive, `BlobReader.read(offset, length)` over `Blob.
 
 In Chrome every `Blob.slice().arrayBuffer()` call has a fixed cost that is several times the Node cost ([research 4.1](research.md#41-reader-worker-io)), so for small files the number of reads, not the number of bytes, decides the time. The parsers are built around that:
 
-- one head window covers a faststart MP4 or a Matroska header;
-- a moov at the end of the file costs one more read;
+- a file below the single-read size is read whole in its first read, whatever its layout: the 64 KiB head window plus the bytes that one read costs by the cost model (`perReadMs x bytesPerMs`, 400,000 bytes by default), so one read never costs more than two;
+- above it, one head window covers a faststart MP4 or a Matroska header, and a moov at the end of the file costs one more read;
 - fragmented files read many fragments per window;
 - when fragments carry large mdat boxes, offsets known from a sidx or mfra index are fetched in parallel batches.
 
-The same content stored two ways shows the effect (faststart puts the moov first):
+Below the single-read size the layout no longer changes the read count (faststart puts the moov first); the 604 MB pair in [Speed](#speed) shows the extra read of a moov at the end:
 
 <!-- tables:reads:start -->
 
 | File | Size | Reads | Bytes read | Node ms | Chrome ms |
 |---|---:|---:|---:|---:|---:|
-| `mov_nobf_faststart.mov` | 86.4 KiB | 1 | 64.0 KiB | 0.28 | 0.90 |
-| `mov_nobf_default.mov` | 86.4 KiB | 2 | 65.1 KiB | 0.44 | 1.60 |
-| `av_h264_aac_faststart.mp4` | 101.4 KiB | 1 | 64.0 KiB | 0.27 | 1.00 |
-| `av_h264_aac.mp4` | 101.4 KiB | 2 | 67.8 KiB | 0.41 | 1.60 |
+| `mov_nobf_faststart.mov` | 86.4 KiB | 1 | 86.4 KiB | 0.34 | 0.90 |
+| `mov_nobf_default.mov` | 86.4 KiB | 1 | 86.4 KiB | 0.43 | 1.60 |
+| `av_h264_aac_faststart.mp4` | 101.4 KiB | 1 | 101.4 KiB | 0.48 | 1.00 |
+| `av_h264_aac.mp4` | 101.4 KiB | 1 | 101.4 KiB | 0.43 | 1.60 |
 
 | Committed fixtures read in | Files | Median bytes read | Node ms (median) | Chrome ms (median) |
 |---|---:|---:|---:|---:|
 | 0 reads | 1 | 0 B | 0.00 | 0.00 |
-| 1 read | 33 | 35.8 KiB | 0.28 | 0.90 |
-| 2 reads | 77 | 68.7 KiB | 0.50 | 1.60 |
+| 1 read | 110 | 86.7 KiB | 0.45 | 1.50 |
 
 <!-- tables:reads:end -->
 
@@ -481,18 +480,18 @@ The thresholds are constants in `src/core/segments.ts` and `src/core/stats.ts`. 
 
 <!-- tables:profile:start -->
 
-The profile code is 1.84 KB gzip in the worker and the panel 0.94 KB on the main thread, both lazy. The first VFR MP4 loads 101.84 KB gzip, 1.84 KB more than a CFR one (budget 105.00 KB). Times are the whole analysis, profile included.
+The profile code is 1.84 KB gzip in the worker and the panel 0.94 KB on the main thread, both lazy. The first VFR MP4 loads 101.90 KB gzip, 1.84 KB more than a CFR one (budget 105.00 KB). Times are the whole analysis, profile included.
 
 | File | Rate profile | Frames | Min to max FPS | Node ms | Chrome 155 ms |
 |---|---|---:|---|---:|---:|
-| `vfr_two_phase_5_200.mp4` | 2 steady segments, 5 fps for 4 s then 200 fps for 4 s; 1 rate change; uneven | 820 | 5.000 to 200.0 | 0.48 | 1.80 |
-| `vfr_two_phase_5_200.mkv` | the same stream in Matroska: the same 2 segments | 820 | 5.000 to 200.0 | 2.06 | 2.80 |
-| `vfr_freeze_2s.mp4` | 1 steady segment at 30 fps; 1 freeze of 2 s at 1.967 s; uneven | 120 | 0.500 to 30.000 | 0.53 | 1.90 |
-| `vfr_concat_10_30_60.mp4` | 3 steady segments at 10, 30 and 60 fps, 2 s each; 2 rate changes; uneven | 200 | 10.000 to 60.000 | 0.62 | 1.60 |
-| `vfr_screenrec_ts1000.mp4` | 1 steady segment at 60 fps; 2 gaps of about 1 s; uneven | 246 | 2.959 to 100.0 | 0.80 | 1.80 |
-| `vfr_pulldown_2_3.mp4` | 1 steady segment at 24 fps (a 2:3 cadence is not uneven) | 120 | 20.000 to 30.000 | 0.58 | 1.60 |
-| `cfr_h264_30.mp4` | none: all intervals equal, the chunk is not loaded | 90 | 30.000 to 30.000 | 0.43 | 1.40 |
-| `long_vfr_1h_screenrec.mp4` | 60 fps for 3598 s plus a 1.5 s variable tail; 1439 gaps (50 listed); uneven | 133920 | 2.941 to 100.0 | 55.4 | 70.4 |
+| `vfr_two_phase_5_200.mp4` | 2 steady segments, 5 fps for 4 s then 200 fps for 4 s; 1 rate change; uneven | 820 | 5.000 to 200.0 | 0.94 | 1.80 |
+| `vfr_two_phase_5_200.mkv` | the same stream in Matroska: the same 2 segments | 820 | 5.000 to 200.0 | 3.37 | 2.80 |
+| `vfr_freeze_2s.mp4` | 1 steady segment at 30 fps; 1 freeze of 2 s at 1.967 s; uneven | 120 | 0.500 to 30.000 | 0.52 | 1.90 |
+| `vfr_concat_10_30_60.mp4` | 3 steady segments at 10, 30 and 60 fps, 2 s each; 2 rate changes; uneven | 200 | 10.000 to 60.000 | 1.00 | 1.60 |
+| `vfr_screenrec_ts1000.mp4` | 1 steady segment at 60 fps; 2 gaps of about 1 s; uneven | 246 | 2.959 to 100.0 | 0.81 | 1.80 |
+| `vfr_pulldown_2_3.mp4` | 1 steady segment at 24 fps (a 2:3 cadence is not uneven) | 120 | 20.000 to 30.000 | 0.54 | 1.60 |
+| `cfr_h264_30.mp4` | none: all intervals equal, the chunk is not loaded | 90 | 30.000 to 30.000 | 0.37 | 1.40 |
+| `long_vfr_1h_screenrec.mp4` | 60 fps for 3598 s plus a 1.5 s variable tail; 1439 gaps (50 listed); uneven | 133920 | 2.941 to 100.0 | 75.9 | 70.4 |
 
 <!-- tables:profile:end -->
 
