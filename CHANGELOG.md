@@ -4,6 +4,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## Unreleased
 
+These changes go into 0.2.0, a minor release under the [0.x policy](docs/api.md#versioning): `ProbeError.reason` is a new optional field, and a lazy stub whose probe client fails to load rejects with a `ProbeError` instead of the browser's import error, which code that tested that error has to follow (see Fixed).
+
 ### Added
 
 - `ProbeError.reason` on every `worker-failed` the probe raises: `'load'` when code it needs did not load (the worker script, a chunk a worker loads for an engine or warms, a main-thread chunk, the probe client of a lazy stub, or `new Worker()` threw), `'crash'` when it failed after loading. The code stays `worker-failed`. The worker protocol's `error` reply gets an optional `reason: 'load'`; the version stays 1 ([Errors](docs/api.md#errors)).
@@ -24,8 +26,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 - `isAbortError` and `isTimeoutError` check the name and the code instead of `instanceof`, so a `ProbeError` from another copy of the package counts too. They moved to their own module, which keeps the critical path at 0.67 KB with the stub's load error added.
 - When the last worker of a pool fails to load, the queued jobs reject at once, a transient network error included; before, each queued job started a new worker. The next call retries. A worker that throws at the top level, before its first reply, counts as a load failure too.
 - `compare` reports a load failure of an engine as `crashed`, as before; `error.reason` now tells it apart from a crash.
-- The probe client grows by 0.24 KB gzip and the own worker entry by 0.03 KB, so the first MP4 loads 23.53 KB instead of 23.26 KB in the default configuration; the critical path stays 0.67 KB.
-- Demo: the sample file loader is a lazy chunk. The first VFR MP4 budget moved from 101.5 KB to 102.0 KB for the reload banner; the first MP4 loads 99,995 bytes, 5 bytes under the 100 KB promise.
+- The probe client grows by 0.24 KB gzip and the own worker entry by 0.03 KB, so the first MP4 loads 23.53 KB instead of 23.26 KB in the default configuration. The package's size promise is the consumer size matrix: its budgets did not change, every configuration passes them, and the critical path stays 0.67 KB.
+- Demo: the sample file loader is a lazy chunk. The demo's first VFR MP4 budget moved from 101.5 KB to 102.0 KB (measured 101.84 KB) for the load reason, the reload banner with its deploy check and the panel retry. That budget covers the demo page only, not the package. The demo's first MP4 loads 99,995 bytes, 5 bytes under the 100 KB promise.
 
 ### Not yet
 
