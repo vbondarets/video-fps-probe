@@ -48,8 +48,8 @@ jobs:
       - name: Self-test the ffprobe comparison
         run: node scripts/compare-ffprobe.ts --self-test
 
-      - name: Compare engines against committed ffprobe references
-        run: node scripts/compare-ffprobe.ts --engines own,mp4box,mediabunny --no-write
+      - name: Compare the own engine and every library arm against committed ffprobe references
+        run: node scripts/compare-ffprobe.ts --no-write
 
       - name: Self-test the size report
         run: node scripts/size-report.mjs --self-test
