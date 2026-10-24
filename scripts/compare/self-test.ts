@@ -396,6 +396,11 @@ export function runSelfTest(): number {
   const span = refStream({ avgFrameRate: '100/3', packets: { ...refStream().packets!, avgFromPts: fps(100, 3), avgFromPtsFrames: 200, firstPts: 0, lastPts: 538500, avgFromPtsSpanTicks: 540000 }, timeBase: { num: 1, den: 90000 } });
   expectEq('outcome: the mean frame interval, not the arm definition', outcomeOf('mediabunny-idiomatic', { info: MP4_INFO, ref: refFile([span]), result: appResult([appTrack({ avgFps: rat(11940, 359), avgFpsFfprobe: null })]) }, 'avgFps'), 'unverified');
   expectEq('outcome: the mean frame interval of the tuned average', outcomeOf('mediabunny-tuned', { info: MP4_INFO, ref: refFile([span]), result: appResult([appTrack({ avgFps: rat(11940, 359), avgFpsFfprobe: null })]) }, 'avgFps'), 'unverified');
+  const placeholder = refStream({ avgFrameRate: '2490000/67343', packets: { ...refStream().packets!, avgFromPts: fps(4980000, 135227), avgFromPtsFrames: 166, firstPts: 0, lastPts: 134727, avgFromPtsSpanTicks: 135227, lastDurationTicks: 500 } });
+  const fragmentLayout = (lastSampleTicks: number | null): FileLayout => ({ fragmented: true, hasSidx: false, topLevel: ['ftyp', 'moov', 'moof', 'mdat'], movieDurationSec: 0, tracks: [{ id: 1, handler: 'vide', mediaDurationSec: 0.1508, samples: 0, hasEditList: false, lastSampleTicks }] });
+  const packetRateOf = (layout: FileLayout) => outcomeOf('mediabunny-tuned', { info: MP4_INFO, ref: refFile([placeholder]), layout, result: appResult([appTrack({ avgFps: rat(830000, 22621), avgFpsFfprobe: null })]) }, 'avgFps');
+  expectEq('outcome: the packet rate over the stored last sample duration', packetRateOf(fragmentLayout(999)), 'definition-differs');
+  expectEq('outcome: the packet rate when the stored last duration does not explain it', packetRateOf(fragmentLayout(1)), 'wrong');
   const lattice = refStream({ timeBase: { num: 1, den: 1000 }, avgFrameRate: '4000/133', packets: { ...refStream().packets!, packets: 4, presentedPackets: 4, avgFromPts: fps(4000, 133), ptsPresented: [0, 33, 67, 100] } });
   const metrics = (warning: string, avg: Rational) => appTrack({ avgFps: avg, avgFpsFfprobe: null, warnings: [warning] });
   expectEq(

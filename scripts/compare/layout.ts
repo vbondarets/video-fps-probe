@@ -47,6 +47,14 @@ function sampleCount(buf: Buffer, stbl: Child | undefined): number | null {
   return buf.readUInt32BE(stsz.start + 8);
 }
 
+function lastSttsDelta(buf: Buffer, stbl: Child | undefined): number | null {
+  const stts = find(buf, stbl, 'stts');
+  if (!stts || stts.start + 8 > stts.end) return null;
+  const n = buf.readUInt32BE(stts.start + 4);
+  const p = stts.start + 8 + (n - 1) * 8;
+  return n > 0 && p + 8 <= stts.end ? buf.readUInt32BE(p + 4) : null;
+}
+
 function trackOf(buf: Buffer, trak: Child): LayoutTrack | null {
   const tkhd = find(buf, trak, 'tkhd');
   const mdia = find(buf, trak, 'mdia');
@@ -55,12 +63,14 @@ function trackOf(buf: Buffer, trak: Child): LayoutTrack | null {
   const media = timing(buf, find(buf, mdia, 'mdhd'), 20, 12);
   const hdlr = find(buf, mdia, 'hdlr');
   const elst = find(buf, find(buf, trak, 'edts'), 'elst');
+  const stbl = find(buf, find(buf, mdia, 'minf'), 'stbl');
   return {
     id,
     handler: hdlr && hdlr.start + 12 <= hdlr.end ? buf.toString('latin1', hdlr.start + 8, hdlr.start + 12) : null,
     mediaDurationSec: media && media.timescale > 0 ? media.duration / media.timescale : null,
-    samples: sampleCount(buf, find(buf, find(buf, mdia, 'minf'), 'stbl')),
+    samples: sampleCount(buf, stbl),
     hasEditList: !!elst && elst.start + 8 <= elst.end && buf.readUInt32BE(elst.start + 4) > 0,
+    lastSampleTicks: lastSttsDelta(buf, stbl),
   };
 }
 
@@ -72,11 +82,45 @@ function fragmentDuration(buf: Buffer, moov: Child, timescale: number): number |
   return (v1 ? Number(buf.readBigUInt64BE(mehd.start + 4)) : buf.readUInt32BE(mehd.start + 4)) / timescale;
 }
 
-async function readMoov(handle: FileHandle, offset: number, size: number): Promise<Pick<FileLayout, 'movieDurationSec' | 'fragmentDurationSec' | 'tracks'>> {
+function trexDurations(buf: Buffer, moov: Child): Map<number, number> {
+  const out = new Map<number, number>();
+  for (const trex of children(buf, find(buf, moov, 'mvex')?.start ?? 0, find(buf, moov, 'mvex')?.end ?? 0)) {
+    if (trex.type === 'trex' && trex.start + 16 <= trex.end) out.set(buf.readUInt32BE(trex.start + 4), buf.readUInt32BE(trex.start + 12));
+  }
+  return out;
+}
+
+function lastFragmentSample(buf: Buffer, traf: Child, trex: ReadonlyMap<number, number>): { id: number; ticks: number } | null {
+  let id = -1;
+  let fallback: number | null = null;
+  let last: number | null = null;
+  for (const c of children(buf, traf.start, traf.end)) {
+    if (c.type === 'tfhd' && c.start + 8 <= c.end) {
+      const flags = buf.readUInt32BE(c.start) & 0xffffff;
+      id = buf.readUInt32BE(c.start + 4);
+      const at = c.start + 8 + (flags & 1 ? 8 : 0) + (flags & 2 ? 4 : 0);
+      fallback = flags & 8 && at + 4 <= c.end ? buf.readUInt32BE(at) : (trex.get(id) ?? null);
+    } else if (c.type === 'trun' && c.start + 8 <= c.end) {
+      const flags = buf.readUInt32BE(c.start) & 0xffffff;
+      const n = buf.readUInt32BE(c.start + 4);
+      if (n === 0) continue;
+      if (!(flags & 0x100)) {
+        last = fallback;
+        continue;
+      }
+      const stride = 4 * [0x100, 0x200, 0x400, 0x800].filter((f) => flags & f).length;
+      const p = c.start + 8 + (flags & 1 ? 4 : 0) + (flags & 4 ? 4 : 0) + (n - 1) * stride;
+      last = p + 4 <= c.end ? buf.readUInt32BE(p) : null;
+    }
+  }
+  return id >= 0 && last !== null ? { id, ticks: last } : null;
+}
+
+async function readMoov(handle: FileHandle, offset: number, size: number): Promise<Pick<FileLayout, 'movieDurationSec' | 'fragmentDurationSec' | 'tracks'> & { trex: Map<number, number> }> {
   const buf = Buffer.alloc(size);
   await handle.read(buf, 0, size, offset);
   const top = children(buf, 0, size)[0];
-  if (!top || top.type !== 'moov') return { movieDurationSec: null, fragmentDurationSec: null, tracks: [] };
+  if (!top || top.type !== 'moov') return { movieDurationSec: null, fragmentDurationSec: null, tracks: [], trex: new Map() };
   const movie = timing(buf, find(buf, top, 'mvhd'), 20, 12);
   const tracks = children(buf, top.start, top.end)
     .filter((c) => c.type === 'trak')
@@ -86,6 +130,7 @@ async function readMoov(handle: FileHandle, offset: number, size: number): Promi
     movieDurationSec: movie && movie.timescale > 0 ? movie.duration / movie.timescale : null,
     fragmentDurationSec: movie ? fragmentDuration(buf, top, movie.timescale) : null,
     tracks,
+    trex: trexDurations(buf, top),
   };
 }
 
@@ -95,7 +140,7 @@ export async function scanIsoBmffLayout(path: string, size: number): Promise<Fil
     const head = Buffer.alloc(16);
     const types: string[] = [];
     const seen = new Set<string>();
-    let moov: Pick<FileLayout, 'movieDurationSec' | 'fragmentDurationSec' | 'tracks'> = { movieDurationSec: null, fragmentDurationSec: null, tracks: [] };
+    let moov: Awaited<ReturnType<typeof readMoov>> = { movieDurationSec: null, fragmentDurationSec: null, tracks: [], trex: new Map() };
     let offset = 0;
     let boxes = 0;
     while (offset + 8 <= size && boxes < MAX_BOXES) {
@@ -112,6 +157,15 @@ export async function scanIsoBmffLayout(path: string, size: number): Promise<Fil
       if (boxSize < 8) break;
       boxes++;
       if (type === 'moov' && !seen.has('moov') && offset + boxSize <= size && boxSize <= MOOV_READ_CAP) moov = await readMoov(handle, offset, boxSize);
+      if (type === 'moof' && offset + boxSize <= size && boxSize <= MOOV_READ_CAP) {
+        const buf = Buffer.alloc(boxSize);
+        await handle.read(buf, 0, boxSize, offset);
+        for (const traf of children(buf, head.readUInt32BE(0) === 1 ? 16 : 8, boxSize).filter((c) => c.type === 'traf')) {
+          const last = lastFragmentSample(buf, traf, moov.trex);
+          const track = last ? moov.tracks?.find((t) => t.id === last.id) : undefined;
+          if (track && last) track.lastSampleTicks = last.ticks;
+        }
+      }
       if (!seen.has(type)) {
         seen.add(type);
         if (types.length < TOP_LEVEL_LIST_LIMIT) types.push(type);
@@ -119,7 +173,8 @@ export async function scanIsoBmffLayout(path: string, size: number): Promise<Fil
       offset += boxSize;
     }
     if (!seen.has('moov') && !seen.has('moof') && !seen.has('ftyp')) return null;
-    return { fragmented: seen.has('moof'), hasSidx: seen.has('sidx'), topLevel: types, ...moov };
+    const { trex: _trex, ...movie } = moov;
+    return { fragmented: seen.has('moof'), hasSidx: seen.has('sidx'), topLevel: types, ...movie };
   } finally {
     await handle.close();
   }

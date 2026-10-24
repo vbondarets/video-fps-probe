@@ -226,6 +226,10 @@ const DEFINITIONS: readonly Definition[] = [
       const span = ticksToSec(p.avgFromPtsSpanTicks, s.timeBase);
       if (near(app, frames / span)) return 'frames over the presentation span, from the first timestamp to the end of the last frame';
       if (withinTick(frames / app, span, s)) return `frames over the presentation span; the span it implies is within one ${tickText(s)} tick of the file's`;
+      const stored = ctx.family === 'isobmff' ? ctx.layout?.tracks?.find((x) => x.id === c.trackId)?.lastSampleTicks : null;
+      if (stored != null && p.firstPts != null && p.lastPts != null && near(app, frames / ticksToSec(p.lastPts + stored - p.firstPts, s.timeBase))) {
+        return `frames over the presentation span, which ends at the last timestamp plus the stored duration of the last sample (${stored} ticks; ffprobe gives that packet ${p.lastDurationTicks ?? '?'})`;
+      }
       if (!storesNoLastDuration(ctx, s) || p.firstPts == null || p.lastPts == null || p.lastPts <= p.firstPts) return null;
       return near(app, frames / ticksToSec(p.lastPts - p.firstPts, s.timeBase)) ? `frames over the presentation span, which ends at the last timestamp: ${UNSTORED_LAST}` : null;
     },

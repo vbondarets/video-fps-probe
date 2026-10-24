@@ -68,6 +68,7 @@ export interface LayoutTrack {
   mediaDurationSec: number | null;
   samples: number | null;
   hasEditList: boolean;
+  lastSampleTicks?: number | null;
 }
 
 export interface MatroskaLayoutTrack {
