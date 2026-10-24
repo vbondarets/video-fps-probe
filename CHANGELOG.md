@@ -2,6 +2,22 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follow semver with the [0.x policy](docs/api.md#versioning).
 
+## Unreleased
+
+### Added
+
+- `ProbeError.reason` on every `worker-failed` the probe raises: `'load'` when code it needs did not load (the worker script, a chunk a worker loads for an engine, a main-thread chunk, or `new Worker()` threw), `'crash'` when it failed after loading. The code stays `worker-failed`. The worker protocol's `error` reply gets an optional `reason: 'load'`; the version stays 1 ([Errors](docs/api.md#errors)).
+- [Deploy skew](docs/bundlers.md#deploy-skew): what a tab opened before a redeploy sees and how to recover.
+
+### Fixed
+
+- A worker script that failed to load, for example a 404 in a tab opened before a redeploy, was reported as a bare `worker failed`. It now rejects with `reason: 'load'`, the message `worker script failed to load; the app may have been redeployed` and the error event as `cause`, and, while no worker of the pool has replied, it rejects the queued jobs once instead of fetching the script again for every queued file. The next call loads the worker again.
+- Demo: the build time and commit moved from the bundle into meta tags of `index.html`, so a deploy without code changes no longer renames every lazy chunk and breaks the first file in tabs opened before it.
+
+### Changed
+
+- The probe client grows by 0.18 KB gzip, so the first MP4 loads 23.46 KB instead of 23.26 KB in the default configuration; the critical path stays 0.67 KB.
+
 ## 0.1.0 - 2026-10-24
 
 First release; not on npm yet (`"private": true`).
