@@ -858,10 +858,18 @@ function enginesBlock(inp: Inputs): string[] {
 
 const VERDICT_RANK: Record<Verdict, number> = { exact: 3, 'within-tol': 2, 'known-deviation': 1, mismatch: 0, 'n/a': 0 };
 
-function sameCheck(f: AccFixture, track: TrackEval | null, c: Check): Check | undefined {
-  if (!track) return f.fileChecks.find((x) => x.id === c.id);
+function sameCheck(f: AccFixture, track: TrackEval | null, id: string): Check | undefined {
+  if (!track) return f.fileChecks.find((x) => x.id === id);
   const t = f.tracks.find((x) => x.refIndex !== null && x.refIndex === track.refIndex);
-  return t?.checks.find((x) => x.id === c.id);
+  return t?.checks.find((x) => x.id === id);
+}
+
+function sameValue(a: string | null, b: string | null): boolean {
+  const [x, y] = [a, b].map((v) => (v ?? '').replace(/ \(.*\)$/, ''));
+  const rx = /^(\d+)\/(\d+)$/.exec(x);
+  const ry = /^(\d+)\/(\d+)$/.exec(y);
+  if (rx && ry) return BigInt(rx[1]) * BigInt(ry[2]) === BigInt(ry[1]) * BigInt(rx[2]);
+  return x !== '' && x === y;
 }
 
 function accuracyWins(own: EngineReport, arms: readonly EngineReport[]): string[] {
@@ -871,18 +879,22 @@ function accuracyWins(own: EngineReport, arms: readonly EngineReport[]): string[
     for (const [track, c] of scoped) {
       if (c.verdict === 'exact') continue;
       const better = new Map<string, string[]>();
+      let same = false;
       for (const e of arms) {
         const theirs = e.fixtures.find((x) => x.name === f.name);
-        const x = theirs ? sameCheck(theirs, track, c) : undefined;
+        const x = theirs ? sameCheck(theirs, track, c.id) : undefined;
         if (!x || (x.verdict !== 'exact' && x.verdict !== 'within-tol') || VERDICT_RANK[x.verdict] <= VERDICT_RANK[c.verdict]) continue;
         if (x.field !== 'error' && (x.app === null || x.app === '')) continue;
         const key = `${x.verdict === 'exact' ? 'exact' : 'within tolerance'} (${x.app ?? 'no error'})`;
-        better.set(key, [...(better.get(key) ?? []), `\`${e.engine}\``]);
+        const vfr = track && theirs ? sameCheck(theirs, track, 'isVfr') : undefined;
+        const vfrWrong = vfr?.verdict === 'mismatch' && vfr.outcome === 'wrong' ? ' (whose `isVfr` on this track is wrong)' : '';
+        better.set(key, [...(better.get(key) ?? []), `\`${e.engine}\`${vfrWrong}`]);
+        if (sameValue(x.app, c.app)) same = true;
       }
       if (better.size === 0) continue;
       const where = track && f.tracks.length > 1 ? ` (track ${track.trackId})` : '';
       const theirs = [...better.entries()].map(([what, names]) => `${what} in ${names.join(' and ')}`).join('; ');
-      const mine = `${c.verdict}${c.app ? ` (${c.app})` : ''}${c.detail ? `: ${c.detail}` : ''}`;
+      const mine = `${c.verdict}${c.app ? ` (${c.app}${same ? ', the same value' : ''})` : ''}${c.detail ? `: ${c.detail}` : ''}`;
       out.push(`\`${f.name}\`${where} \`${c.id}\`: ${theirs}; own ${mine}`);
     }
   }
