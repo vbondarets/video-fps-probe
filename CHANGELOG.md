@@ -12,7 +12,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ### Fixed
 
-- A worker script that failed to load, for example a 404 in a tab opened before a redeploy, was reported as a bare `worker failed`. It now rejects with `reason: 'load'`, the message `worker script failed to load or parse; the app may have been redeployed` and the error event as `cause`. While another worker of the pool is alive, the job waits for it and no further worker starts until the next call; when the failed worker was the last one, its job and the queued jobs reject once instead of fetching the script again for every queued file. The next call loads the worker again.
+- A worker script that failed to load, for example a 404 in a tab opened before a redeploy, was reported as a crash: a bare `worker failed`, or `Uncaught SyntaxError: Unexpected token '<'` when Chromium parsed the 404 page as a classic worker. Any worker `error` event before the worker's first reply now rejects with `reason: 'load'`, the message `worker script failed to load or parse; the app may have been redeployed`, followed by the event's message when it has one, and the error event as `cause`. An `error` event after the first reply stays `reason: 'crash'`. While another worker of the pool is alive, the job waits for it and no further worker starts until the next call; when the failed worker was the last one, its job and the queued jobs reject once instead of fetching the script again for every queued file. The next call loads the worker again.
 - A lazy stub whose probe client chunk failed to load rejected with the browser's import error as it was. It now rejects with `ProbeError('worker-failed')`, `reason: 'load'` and that error as `cause`, so every rejection of a probe or a stub is a `ProbeError`; a `ProbeError` of the factory is passed through. Code that read a stub rejection without `instanceof ProbeError` as a load failure should read `e.reason === 'load'`.
 - A failed `warm` replied without `reason`, so a prewarm whose engine or parser chunk did not load was tagged `crash`. It now carries `reason: 'load'`.
 - Demo: the build time and commit moved from the bundle into meta tags of `index.html`, so a deploy without code changes no longer renames every lazy chunk and breaks the first file in tabs opened before it.
@@ -22,10 +22,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 ### Changed
 
 - `isAbortError` and `isTimeoutError` check the name and the code instead of `instanceof`, so a `ProbeError` from another copy of the package counts too. They moved to their own module, which keeps the critical path at 0.67 KB with the stub's load error added.
-- When the last worker of a pool fails to load, the queued jobs reject at once, a transient network error included; before, each queued job started a new worker. The next call retries.
+- When the last worker of a pool fails to load, the queued jobs reject at once, a transient network error included; before, each queued job started a new worker. The next call retries. A worker that throws at the top level, before its first reply, counts as a load failure too.
 - `compare` reports a load failure of an engine as `crashed`, as before; `error.reason` now tells it apart from a crash.
-- The probe client grows by 0.22 KB gzip and the own worker entry by 0.03 KB, so the first MP4 loads 23.51 KB instead of 23.26 KB in the default configuration; the critical path stays 0.67 KB.
-- Demo: the sample file loader is a lazy chunk. The first VFR MP4 budget moved from 101.5 KB to 102.0 KB for the reload banner; the first MP4 loads 99.92 KB, under the 100 KB promise.
+- The probe client grows by 0.24 KB gzip and the own worker entry by 0.03 KB, so the first MP4 loads 23.53 KB instead of 23.26 KB in the default configuration; the critical path stays 0.67 KB.
+- Demo: the sample file loader is a lazy chunk. The first VFR MP4 budget moved from 101.5 KB to 102.0 KB for the reload banner; the first MP4 loads 99.94 KB, under the 100 KB promise.
 
 ### Not yet
 

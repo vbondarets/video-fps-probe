@@ -75,11 +75,12 @@ describe('WorkerPool', () => {
     expect(seen).toEqual([1]);
   });
 
-  it('rejects a worker crash with worker-failed, discards that worker and respawns for the next job', async () => {
+  it('rejects a worker crash after the first reply with worker-failed, discards that worker and respawns for the next job', async () => {
     FakeWorker.reset('manual');
     const pool = new WorkerPool({ create: FakeWorker.create, idleTimeoutMs: 0 });
     const first = pool.run(analyzeRequest('a'), { engine: 'own' });
     const second = pool.run(analyzeRequest('b'));
+    FakeWorker.instances[0].answer(1, { type: 'progress', progress: { phase: 'moov', done: 0, total: 1 } });
     FakeWorker.instances[0].crash('script error');
     await expect(first).rejects.toMatchObject({ code: 'worker-failed', engine: 'own', message: 'script error', reason: 'crash' });
     expect(FakeWorker.instances[0].terminated).toBe(true);
@@ -114,6 +115,38 @@ describe('WorkerPool', () => {
     expect(FakeWorker.instances).toHaveLength(2);
     FakeWorker.instances[1].answer(4);
     expect(await retry).toMatchObject({ type: 'result', result: { name: 'd' } });
+  });
+
+  it('reports an error event with a message before the first reply, such as a 404 page parsed as a classic worker, as a load failure that keeps the message', async () => {
+    FakeWorker.reset('manual');
+    const pool = new WorkerPool({ create: FakeWorker.create, idleTimeoutMs: 0 });
+    const runs = ['a', 'b', 'c'].map((n) => pool.run(analyzeRequest(n), { engine: 'own' }));
+    FakeWorker.instances[0].crash("Uncaught SyntaxError: Unexpected token '<'");
+    for (const run of runs) {
+      await expect(run).rejects.toMatchObject({ code: 'worker-failed', engine: 'own', reason: 'load', message: `${LOAD_FAILED}: Uncaught SyntaxError: Unexpected token '<'` });
+    }
+    expect(await runs[0].catch((e: ProbeError) => e.cause)).toEqual({ message: "Uncaught SyntaxError: Unexpected token '<'" });
+    expect(FakeWorker.instances).toHaveLength(1);
+    expect(pool.workers).toBe(0);
+    const retry = pool.run(analyzeRequest('d'));
+    expect(FakeWorker.instances).toHaveLength(2);
+    FakeWorker.instances[1].answer(4);
+    expect(await retry).toMatchObject({ type: 'result', result: { name: 'd' } });
+  });
+
+  it('reports an error event with a message after the worker has answered as a crash that fails only its own job', async () => {
+    FakeWorker.reset('manual');
+    const pool = new WorkerPool({ create: FakeWorker.create, idleTimeoutMs: 0 });
+    const first = pool.run(analyzeRequest('a'));
+    const second = pool.run(analyzeRequest('b'), { engine: 'own' });
+    const third = pool.run(analyzeRequest('c'));
+    FakeWorker.instances[0].answer(1);
+    await first;
+    FakeWorker.instances[0].crash('Uncaught RangeError: Invalid array length');
+    await expect(second).rejects.toMatchObject({ code: 'worker-failed', engine: 'own', reason: 'crash', message: 'Uncaught RangeError: Invalid array length' });
+    expect(FakeWorker.instances).toHaveLength(2);
+    FakeWorker.instances[1].answer(3);
+    expect(await third).toMatchObject({ type: 'result', result: { name: 'c' } });
   });
 
   it('reports an error event without a message after the worker has answered as a crash, not a load failure', async () => {
@@ -201,12 +234,12 @@ describe('WorkerPool', () => {
     expect(w1.terminated).toBe(true);
   });
 
-  it('runs the whole queue on a sibling that loads after another worker failed to load', async () => {
+  it('runs the whole queue on a sibling that loads after another worker failed to parse', async () => {
     FakeWorker.reset('manual');
     const pool = new WorkerPool({ create: FakeWorker.create, size: 2, idleTimeoutMs: 0 });
     const runs = ['a', 'b', 'c'].map((n) => pool.run(analyzeRequest(n)));
     const [w1, w2] = FakeWorker.instances;
-    w1.failToLoad();
+    w1.crash("Uncaught SyntaxError: Unexpected token '<'");
     w2.answer(2);
     w2.answer(1);
     w2.answer(3);

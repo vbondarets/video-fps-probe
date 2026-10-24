@@ -101,7 +101,10 @@ describe('probe.compare', () => {
     vi.useRealTimers();
     FakeWorker.reset('reply', (m, w) => {
       if (m.type === 'analyze' && m.engine === 'mediabunny') {
-        queueMicrotask(() => w.crash('out of memory'));
+        queueMicrotask(() => {
+          w.answer(m.id, { type: 'progress', progress: { phase: 'moov', done: 0, total: 1 } });
+          w.crash('out of memory');
+        });
         return 'hang';
       }
       return undefined;

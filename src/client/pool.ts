@@ -156,7 +156,7 @@ export class WorkerPool {
       this.#release(slot);
     };
     worker.onerror = (event) => {
-      const load = !slot.answered && !event.message;
+      const load = !slot.answered;
       const job = slot.job;
       this.#discard(slot);
       if (load && this.#slots.length > 0) {
@@ -166,8 +166,9 @@ export class WorkerPool {
           this.#queue.unshift(job);
         }
       } else {
+        const message = load ? [LOAD_FAILED, event.message].filter(Boolean).join(': ') : event.message || 'worker failed';
         for (const failed of load ? [job, ...this.#queue.splice(0)] : [job]) {
-          if (failed) this.#broken(failed, load ? LOAD_FAILED : event.message || 'worker failed', load ? 'load' : 'crash', event);
+          if (failed) this.#broken(failed, message, load ? 'load' : 'crash', event);
         }
       }
       this.#pump();
