@@ -636,7 +636,29 @@ function headline(inp: Inputs): string[] {
     `- **Embedding.** In a host app with a ${fmtMB(inp.integration.host.initialGzipBytes)} gzip initial load, prewarming the worker when the upload dialog opens makes the first result on fast 4G take ${fmtMs(fast.prewarm.totalMs)} ms instead of ${fmtMs(fast.cold.totalMs)} ms ([Embedding in an existing app](#embedding-in-an-existing-app)).${integrationStale(inp) ? ` Measured on an earlier build whose worker entry and parser chunks differ from the current ones, so these figures are not current.` : ''}`,
     `- **Same result in Node and Chrome.** ${inp.bench.sanity.identical} of ${inp.bench.sanity.compared} files give identical results field by field (timing excluded).`,
     `- **Machine.** ${machine(inp)}.`,
+    '',
+    scopeLine(inp),
   ];
+}
+
+const LARGE_TEXT: Record<string, string> = { long: 'long files', big: '1080p files of 604 MB', sparse: 'sparse files' };
+
+function scopeLine(inp: Inputs): string {
+  const own = engine(inp.acc, 'own');
+  const { checks } = ownTotals(own);
+  const large = own.fixtures.filter((f) => isLarge(f, inp.manifest));
+  const committed = own.fixtures.filter((f) => !isLarge(f, inp.manifest));
+  const kinds = [...new Set(large.map((f) => f.category))].map((c) => `${large.filter((f) => f.category === c).length} ${LARGE_TEXT[c] ?? c}`);
+  const benched = new Set(Object.keys(inp.bench.chrome.warm));
+  const later = committed.filter((f) => !benched.has(f.name)).length;
+  const cc = committed.flatMap(checksOf);
+  const n = (v: Verdict): number => cc.filter((c) => c.verdict === v).length;
+  const scope = large.length > 0 ? `come from runs with \`--with-large\`, so they include ${large.length} local large files that are not committed (${kinds.join(', ')})` : 'come from the committed fixtures only';
+  return [
+    `The accuracy figures (${own.fixtures.length} fixtures, ${checks} checks) and the large-file rows ${scope}.`,
+    `The Node and Chrome identity count (${inp.bench.sanity.identical} of ${inp.bench.sanity.compared}) is from the last browser bench${later > 0 ? `, which ran before ${later} of the committed fixtures were added` : ''}.`,
+    `On the ${committed.length} committed fixtures alone, \`npm run compare -- --no-write\` (without the flag it overwrites \`report/accuracy.*\`) reproduces the own engine at ${cc.length} checks: ${n('exact')} exact, ${withinTolText(cc)}, ${n('known-deviation')} known deviations, ${n('mismatch')} mismatches and ${n('n/a')} not applicable.`,
+  ].join(' ');
 }
 
 function machine(inp: Inputs): string {

@@ -14,9 +14,9 @@ The measurements behind the [README](../README.md): accuracy against ffprobe, sp
 - **Same result in Node and Chrome.** 116 of 116 files give identical results field by field (timing excluded).
 - **Machine.** Windows 10 Pro, Intel Core i7-10700KF (16 threads), 32 GiB, Node v24.20.0, Chrome headless shell 156; ffprobe 8.1.1-full_build-www.gyan.dev.
 
-<!-- tables:headline:end -->
+The accuracy figures (131 fixtures, 2087 checks) and the large-file rows come from runs with `--with-large`, so they include 5 local large files that are not committed (2 long files, 3 1080p files of 604 MB). The Node and Chrome identity count (116 of 116) is from the last browser bench, which ran before 15 of the committed fixtures were added. On the 126 committed fixtures alone, `npm run compare -- --no-write` (without the flag it overwrites `report/accuracy.*`) reproduces the own engine at 2002 checks: 1902 exact, 13 within tolerance (9 of them a definition difference by design: the measured average of a Matroska file that stores no duration for its last frame, which avgFps gives the median interval and ffprobe its own estimate), 0 known deviations, 0 mismatches and 87 not applicable.
 
-The accuracy figures (131 fixtures, 2087 checks) and the 604 MB rows come from runs with `--with-large`, so they include 5 local large files that are not committed: the two long files and the three 604 MB 1080p files. The Node and Chrome identity count (116 of 116) is from the last browser bench, which ran before the three late-change fixtures and the twelve browser recordings were added. On the 126 committed fixtures alone, `npm run compare -- --no-write` (without the flag it overwrites `report/accuracy.*`) reproduces the own engine at 2002 checks: 1902 exact, 4 within tolerance, 9 known deviations, 0 mismatches and 87 not applicable.
+<!-- tables:headline:end -->
 
 ## Accuracy vs ffprobe
 
@@ -86,7 +86,7 @@ The libraries run in five informational arms, so that a difference is not charge
 
 <!-- tables:engines:end -->
 
-Frame-rate checks are `avgFps` (for Matroska its declared and measured variants), `nominalFps`, `frames`, `presentedFrames`, `minFps`, `maxFps`, `isVfr` and `duplicateTimestamps`. The fixture counts above include the 5 local large files that are not committed (see the note under the headline). For the idiomatic and full mediabunny arms, reads are the read callbacks of its `BlobSource`, which streams the file in chunks, so their read counts are not `Blob.slice()` calls.
+Frame-rate checks are `avgFps` (for Matroska its declared and measured variants), `nominalFps`, `frames`, `presentedFrames`, `minFps`, `maxFps`, `isVfr` and `duplicateTimestamps`. The fixture counts above include the local large files that are not committed (see the note at the end of the headline). For the idiomatic and full mediabunny arms, reads are the read callbacks of its `BlobSource`, which streams the file in chunks, so their read counts are not `Blob.slice()` calls.
 
 The libraries also win where this corpus does not measure: mediabunny reads MPEG-TS, HLS and audio formats and takes URLs and streams as input, where this package reads MP4, MOV, WebM and Matroska from a `Blob`; mediabunny returns colour, HDR, codec string and audio details that this package does not; both libraries have far more users and releases (as documented on 2026-10-24).
 
