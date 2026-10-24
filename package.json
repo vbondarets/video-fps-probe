@@ -154,7 +154,9 @@
     "consumers:build": "node scripts/consumers.mjs build",
     "size:matrix": "node scripts/size-matrix.mjs --check",
     "size:matrix:write": "node scripts/size-matrix.mjs",
-    "bench": "node scripts/bench/run-bench.mjs"
+    "bench": "node scripts/bench/run-bench.mjs",
+    "preversion": "node scripts/release-prep.mjs --preversion",
+    "version": "node scripts/release-prep.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",
