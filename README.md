@@ -68,7 +68,7 @@ import { analyze } from 'video-fps-probe';
 const result = await analyze(await openAsBlob(path), { name: path }); // in the calling thread, no worker
 ```
 
-Files above 4 GiB need a `BlobLike` in Node 24 ([in-thread analyze](docs/api.md#in-thread-analyze)).
+In-thread `analyze()` is tested on Node 24 only, the version in `.nvmrc` that every CI job uses. The example needs `fs.openAsBlob`, available since Node 19.8 and stable in Node 24. Files above 4 GiB need a `BlobLike` in Node 24 ([in-thread analyze](docs/api.md#in-thread-analyze)).
 
 ## Cancellation, timeouts and failing open
 
