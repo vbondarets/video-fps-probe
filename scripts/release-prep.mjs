@@ -13,12 +13,14 @@ export const GENERATED = ['CHANGELOG.md', 'report/size.md', 'report/size.json', 
 const USAGE = `Usage: node scripts/release-prep.mjs [--preversion | --notes <version>]
 
   (no option)        the npm "version" step, after npm bumped package.json and package-lock.json:
-                     moves the CHANGELOG Unreleased section under the new version and today's date,
+                     moves the CHANGELOG Unreleased section under the new version and today's date
+                     (the intro before its first ### heading is dropped and printed),
                      rebuilds the demo and report/size.*, rebuilds the consumer fixtures from the new
                      tarball (CONSUMERS_OFFLINE=1) and report/size-matrix.*, regenerates the doc tables
                      and stages exactly the files that changed, so npm commits them with the bump
-  --preversion       the npm "preversion" step: refuses a dirty tree or an empty Unreleased section,
-                     prints the git identity of the release commit and runs the fast gates
+  --preversion       the npm "preversion" step: refuses a dirty tree, an empty Unreleased section or
+                     an unset git user.name or user.email, prints the git identity of the release
+                     commit and runs the fast gates
   --notes <version>  prints the CHANGELOG section of a version, for the GitHub Release
 
 Release: npm version minor -m "chore(release): bumped the version to %s" (docs/releasing.md).
@@ -53,14 +55,33 @@ function unreleased(lines) {
   return found;
 }
 
+function splitIntro(body) {
+  const first = body.findIndex((line) => line.startsWith('### '));
+  return first > 0 ? { intro: body.slice(0, first), rest: body.slice(first) } : { intro: [], rest: body };
+}
+
+export function unreleasedIntro(text) {
+  return splitIntro(unreleased(text.replace(/\r\n/g, '\n').split('\n')).body).intro.join('\n').trim();
+}
+
 export function releaseChangelog(text, version, date) {
   const eol = text.includes('\r\n') ? '\r\n' : '\n';
   const lines = text.replace(/\r\n/g, '\n').split('\n');
   const { start, end, body } = unreleased(lines);
   if (lines.some((line) => isVersionHeading(line, version))) throw new Error(`CHANGELOG.md already has a ${version} section`);
-  const lead = body[0]?.trim() === '' ? [] : [''];
-  const out = [...lines.slice(0, start), UNRELEASED, '', `## ${version} - ${date}`, ...lead, ...body, ...lines.slice(end)];
+  const { rest } = splitIntro(body);
+  const lead = rest[0]?.trim() === '' ? [] : [''];
+  const out = [...lines.slice(0, start), UNRELEASED, '', `## ${version} - ${date}`, ...lead, ...rest, ...lines.slice(end)];
   return out.join('\n').replace(/\n/g, eol);
+}
+
+export function gitIdentity(configValue) {
+  const name = configValue('user.name');
+  const email = configValue('user.email');
+  if (!name || !email) {
+    throw new Error(`git user.name and user.email must both be set for the release commit and tag (user.name: ${name || 'not set'}, user.email: ${email || 'not set'})`);
+  }
+  return `${name} <${email}>`;
 }
 
 export function changelogSection(text, version) {
@@ -76,6 +97,13 @@ export function localDate(now = new Date()) {
 }
 
 const git = (...args) => execFileSync('git', args, { cwd: REPO_ROOT, encoding: 'utf8' }).trimEnd();
+const gitConfig = (key) => {
+  try {
+    return git('config', key);
+  } catch {
+    return '';
+  }
+};
 const statusLines = () => git('status', '--porcelain').split('\n').filter(Boolean);
 const pathOf = (statusLine) => statusLine.slice(3).replace(/^"|"$/g, '');
 const read = (rel) => readFileSync(join(REPO_ROOT, rel), 'utf8');
@@ -90,7 +118,7 @@ function preversion() {
   const dirty = statusLines();
   if (dirty.length > 0) throw new Error(`the working tree is not clean, commit or stash first:\n${dirty.join('\n')}`);
   unreleased(read('CHANGELOG.md').replace(/\r\n/g, '\n').split('\n'));
-  console.log(`release commit and tag as ${git('config', 'user.name')} <${git('config', 'user.email')}>`);
+  console.log(`release commit and tag as ${gitIdentity(gitConfig)}`);
   for (const [tool, args] of PREVERSION_GATES) run(tool, args);
 }
 
@@ -99,6 +127,8 @@ function version() {
   const unexpected = statusLines().filter((line) => !BUMPED.includes(pathOf(line)));
   if (unexpected.length > 0) throw new Error(`files other than ${BUMPED.join(' and ')} changed before the version step:\n${unexpected.join('\n')}`);
   const before = new Map(GENERATED.map((rel) => [rel, read(rel)]));
+  const intro = unreleasedIntro(before.get('CHANGELOG.md'));
+  if (intro) console.log(`dropped the Unreleased intro, which is not part of the ${next} section:\n${intro}`);
   writeFileSync(join(REPO_ROOT, 'CHANGELOG.md'), releaseChangelog(before.get('CHANGELOG.md'), next, localDate()));
   run('npm', 'run build:demo');
   run('node', 'scripts/size-report.mjs demo/dist --check');

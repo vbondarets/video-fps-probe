@@ -15,16 +15,16 @@ gh release create v0.2.0 --title 0.2.0 --notes "$(node scripts/release-prep.mjs 
 ```
 
 - `minor` or `patch` follows the [0.x policy](api.md#versioning); `%s` is the new version.
-- The release commit and its tag use the repository's git identity, which must be Volodymyr Bondarets <bondaretsdirect@gmail.com>. The repository-local `git config` sets it; `preversion` prints the identity it will commit with.
+- The release commit and its tag use the repository's git identity, which must be Volodymyr Bondarets <bondaretsdirect@gmail.com>. The repository-local `git config` sets it; `preversion` prints the identity it will commit with, and fails before any gate when `user.name` or `user.email` is not set, naming the value it found for each.
 - `git push --follow-tags` pushes `main` and the annotated tag `vX.Y.Z` that `npm version` creates.
 - The GitHub Release takes its notes from the CHANGELOG section of the version.
 
 ## What runs
 
-1. **`preversion`** (`node scripts/release-prep.mjs --preversion`): refuses a working tree with any change or untracked file, and an empty Unreleased section in the CHANGELOG. Then it runs the fast gates: typecheck, lint, `check:aliases`, vitest, the comparison self-test and the comparison of every engine against the committed references, the size report and check-dist self-tests, and `readme-tables --check`.
+1. **`preversion`** (`node scripts/release-prep.mjs --preversion`): refuses a working tree with any change or untracked file, an empty Unreleased section in the CHANGELOG, and a git `user.name` or `user.email` that is not set (the error names both values). It prints the identity of the release commit. Then it runs the fast gates: typecheck, lint, `check:aliases`, vitest, the comparison self-test and the comparison of every engine against the committed references, the size report and check-dist self-tests, and `readme-tables --check`.
 2. **npm** bumps `package.json` and `package-lock.json`.
 3. **`version`** (`node scripts/release-prep.mjs`):
-   - moves the CHANGELOG Unreleased section under `## X.Y.Z - YYYY-MM-DD` (today, local clock) and leaves an empty `## Unreleased` heading;
+   - moves the CHANGELOG Unreleased section under `## X.Y.Z - YYYY-MM-DD` (today, local clock) and leaves an empty `## Unreleased` heading. Text between `## Unreleased` and its first `###` heading is an intro about the coming release ("These changes go into 0.2.0 ..."): it is dropped, not moved, and printed, so the released section starts at its first `###` heading. A note that readers of the released version need, such as a migration step, belongs under a `###` heading. A section without any `###` heading moves whole;
    - rebuilds the demo and rewrites `report/size.*` with the budget check;
    - packs the new tarball, installs the consumer fixtures from the npm cache only (`CONSUMERS_OFFLINE=1`), builds them and rewrites `report/size-matrix.*` with the budget check;
    - regenerates the tables of the README, `docs/benchmarks.md` and `docs/bundlers.md`;
