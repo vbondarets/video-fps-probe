@@ -368,6 +368,8 @@ type EngineOutcome =
 
 Engines on different worker kinds run in parallel, engines that share a worker kind one after another, and rvfc on the main thread at the same time. The probe's `defaults` apply; per-call parser options do not. An abort rejects the whole call; an unregistered engine rejects with `engine-not-registered`.
 
+`crashed` covers every `worker-failed` of an engine, load failures included: an engine chunk or worker script that returns 404 after a redeploy is `crashed` with `error.reason === 'load'`, an engine that failed after it loaded has `error.reason === 'crash'`. Read `error.reason` before treating a `crashed` engine as broken.
+
 ```ts
 function compareResults<K extends EngineId>(results: Partial<Record<K, FileResult>>, reference?: K): Agreement<K>;
 
