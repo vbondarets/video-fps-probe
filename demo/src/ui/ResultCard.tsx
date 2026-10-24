@@ -199,6 +199,7 @@ export const ResultCard = memo(function ResultCard({ row }: { row: Row }) {
       </header>
       {r?.error && <ErrorLine text={`Error: ${r.error}`} />}
       {row.error && <ErrorLine text={row.error} />}
+      {!r && !busy && !row.error && <p className="mut">Not analyzed.</p>}
       {r && !r.error && !t && <p className="mut">No video track found.</p>}
       {r && t && (
         <dl className="grid">

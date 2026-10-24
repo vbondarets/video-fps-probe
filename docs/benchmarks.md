@@ -9,7 +9,7 @@ The measurements behind the [README](../README.md): accuracy against ffprobe, sp
 - **Accuracy.** The own parsers were checked against ffprobe 8.1.1 on 116 synthetic fixtures made with ffmpeg (111 committed, 5 large local files; real recorder output is not in the corpus, see Limitations): 1832 field checks, 1769 exact, 2 within tolerance, 1 known deviation with a recorded reason, 0 mismatches, 60 not applicable.
 - **Reads.** Median 2 reads per committed fixture, at most 2. The 3 h, 648000-frame MP4 (12.42 MiB) takes 2 reads and 2.56 MiB (20.6% of the file).
 - **Speed.** In Chrome 155, warm: median 1.50 ms per file in the worker and 2.40 ms from file pick to rendered result; the 3 h file takes 4.10 ms. A 604.42 MB 1080p MP4 with the moov at the end takes 2 reads (75.0 KiB) and 1.70 ms; the same stream in Matroska takes 117 ms in auto mode (126 reads; a probe, so no frame count until "Scan all frames"). Measured on an earlier build, so these figures are not current ([Speed](#speed)).
-- **Size.** A default install (`video-fps-probe/lazy`) adds 0.67 KB gzip to a host app's critical path. Its first MP4 file loads 23.51 KB lazily when the host's Vite config sets `worker: { format: 'es' }`, and 35.02 KB with Vite's default worker format, 'iife', which builds the own worker as one file ([Package size](#package-size)). The demo page plus its first MP4 result loads 99.53 KB gzip (page, probe client, worker entry, shared statistics chunk, ISO BMFF parser); the first Matroska result 98.40 KB.
+- **Size.** A default install (`video-fps-probe/lazy`) adds 0.67 KB gzip to a host app's critical path. Its first MP4 file loads 23.51 KB lazily when the host's Vite config sets `worker: { format: 'es' }`, and 35.02 KB with Vite's default worker format, 'iife', which builds the own worker as one file ([Package size](#package-size)). The demo page plus its first MP4 result loads 99.83 KB gzip (page, probe client, worker entry, shared statistics chunk, ISO BMFF parser); the first Matroska result 98.70 KB.
 - **Embedding.** In a host app with a 1.95 MB gzip initial load, prewarming the worker when the upload dialog opens makes the first result on fast 4G take 4.60 ms instead of 345 ms ([Embedding in an existing app](#embedding-in-an-existing-app)). Measured on an earlier build whose worker entry and parser chunks differ from the current ones, so these figures are not current.
 - **Same result in Node and Chrome.** 116 of 116 files give identical results field by field (timing excluded).
 - **Machine.** Windows 10 Pro, Intel Core i7-10700KF (16 threads), 32 GiB, Node v24.20.0, Chrome 155 headless; ffprobe 8.1.1-full_build-www.gyan.dev.
@@ -267,20 +267,20 @@ The demo in `demo/` is a React app that consumes the package through a custom wo
 
 | Chunk | Loaded | Raw | gzip -9 | brotli q11 | Budget (gzip) | Headroom | Status |
 |---|---|---:|---:|---:|---:|---:|---|
-| main (React, UI, store) | page load | 237.53 KB | **74.00 KB** | 64.03 KB | 75.00 KB | 1.00 KB | ok |
+| main (React, UI, store) | page load | 238.34 KB | **74.30 KB** | 64.31 KB | 75.00 KB | 0.70 KB | ok |
 | CSS | page load | 4.98 KB | **1.81 KB** | 1.53 KB | not budgeted | - | - |
-| probe client (lazy) | first file | 6.89 KB | **2.96 KB** | 2.72 KB | 3.50 KB | 0.54 KB | ok |
+| probe client (lazy) | first file | 6.89 KB | **2.96 KB** | 2.73 KB | 3.50 KB | 0.54 KB | ok |
 | probe fallback chain | first call with a fallback chain or a skipped engine | 1.01 KB | **0.64 KB** | 0.56 KB | not budgeted | - | - |
 | probe compare (agreement rules) | first probe.compare | 2.60 KB | **1.32 KB** | 1.20 KB | not budgeted | - | - |
-| in-thread engine runner | first main-thread engine run (rVFC) | 1.09 KB | **0.63 KB** | 0.56 KB | not budgeted | - | - |
+| in-thread engine runner | first main-thread engine run (rVFC) | 1.09 KB | **0.64 KB** | 0.56 KB | not budgeted | - | - |
 | shared by the lazy client parts and rVFC (result builders, sniffing): `abort` | with the fallback chain, compare, rVFC or the own engine in this thread | 0.10 KB | **0.11 KB** | 0.09 KB | not budgeted | - | - |
 | shared by the lazy client parts and rVFC (result builders, sniffing): `result` | with the fallback chain, compare, rVFC or the own engine in this thread | 0.71 KB | **0.38 KB** | 0.33 KB | not budgeted | - | - |
 | shared by the lazy client parts and rVFC (result builders, sniffing): `sniff` | with the fallback chain, compare, rVFC or the own engine in this thread | 2.12 KB | **0.99 KB** | 0.89 KB | not budgeted | - | - |
-| own engine in this thread (runtime and parser copies for worker inline): `isobmff` | only with worker inline or without a Worker global (own engine in this thread) | 30.83 KB | **12.23 KB** | 11.08 KB | not budgeted | - | - |
-| own engine in this thread (runtime and parser copies for worker inline): `matroska` | only with worker inline or without a Worker global (own engine in this thread) | 29.17 KB | **11.19 KB** | 10.17 KB | not budgeted | - | - |
+| own engine in this thread (runtime and parser copies for worker inline): `isobmff` | only with worker inline or without a Worker global (own engine in this thread) | 30.83 KB | **12.23 KB** | 11.05 KB | not budgeted | - | - |
+| own engine in this thread (runtime and parser copies for worker inline): `matroska` | only with worker inline or without a Worker global (own engine in this thread) | 29.17 KB | **11.19 KB** | 10.16 KB | not budgeted | - | - |
 | own engine in this thread (runtime and parser copies for worker inline): `runtime` | only with worker inline or without a Worker global (own engine in this thread) | 5.90 KB | **2.48 KB** | 2.29 KB | not budgeted | - | - |
-| own engine in this thread (runtime and parser copies for worker inline): `segments` | only with worker inline or without a Worker global (own engine in this thread) | 3.35 KB | **1.84 KB** | 1.71 KB | not budgeted | - | - |
-| own engine in this thread (runtime and parser copies for worker inline): `stats` | only with worker inline or without a Worker global (own engine in this thread) | 10.31 KB | **4.33 KB** | 3.96 KB | not budgeted | - | - |
+| own engine in this thread (runtime and parser copies for worker inline): `segments` | only with worker inline or without a Worker global (own engine in this thread) | 3.35 KB | **1.85 KB** | 1.71 KB | not budgeted | - | - |
+| own engine in this thread (runtime and parser copies for worker inline): `stats` | only with worker inline or without a Worker global (own engine in this thread) | 10.31 KB | **4.33 KB** | 3.95 KB | not budgeted | - | - |
 | worker entry (reader, sniffing, worker runtime) | first file | 10.18 KB | **4.24 KB** | 3.87 KB | 5.00 KB | 0.76 KB | ok |
 | shared by the parsers and engines (timeline statistics) | with the first parser, in parallel, once per worker | 10.21 KB | **4.29 KB** | 3.92 KB | 5.00 KB | 0.71 KB | ok |
 | ISO BMFF parser | first MP4 or MOV file, once per worker | 30.75 KB | **12.22 KB** | 11.01 KB | 13.50 KB | 1.28 KB | ok |
@@ -289,15 +289,15 @@ The demo in `demo/` is a React app that consumes the package through a custom wo
 | rate profile panel (UI) | first card with a rate profile | 2.17 KB | **0.94 KB** | 0.85 KB | 1.50 KB | 0.56 KB | ok |
 | device info and JSON export | on idle after the first result, or the first export (footer device line, JSON export) | 5.02 KB | **2.29 KB** | 2.02 KB | not budgeted | - | - |
 | sample file loader | click on Try sample files | 0.36 KB | **0.28 KB** | 0.24 KB | not budgeted | - | - |
-| rVFC fallback | click on Run (approximate) | 4.24 KB | **2.19 KB** | 1.98 KB | 2.50 KB | 0.31 KB | ok |
-| Compare panel | first open of a Compare engines panel | 2.88 KB | **1.20 KB** | 1.09 KB | not budgeted | - | - |
+| rVFC fallback | click on Run (approximate) | 4.24 KB | **2.19 KB** | 1.98 KB | 2.50 KB | 0.30 KB | ok |
+| Compare panel | first open of a Compare engines panel | 2.88 KB | **1.21 KB** | 1.09 KB | not budgeted | - | - |
 | mp4box.js engine | Compare engines on an MP4 or MOV card | 187.64 KB | **43.65 KB** | 37.32 KB | not budgeted | - | - |
 | mediabunny engine | Compare engines | 200.80 KB | **52.77 KB** | 44.47 KB | not budgeted | - | - |
 | shared by mp4box and mediabunny | with mp4box or mediabunny | 3.01 KB | **1.50 KB** | 1.35 KB | not budgeted | - | - |
-| initial: main + CSS + worker entry |  | 252.69 KB | **80.05 KB** | 69.43 KB | 85.00 KB | 4.95 KB | ok |
-| first MP4 analysis: initial + probe client + statistics + ISO BMFF parser |  | 300.54 KB | **99.53 KB** | 87.07 KB | 100.00 KB | 0.47 KB | ok |
-| first VFR MP4 analysis: first MP4 + rate profile core |  | 303.89 KB | **101.37 KB** | 88.78 KB | 102.00 KB | 0.63 KB | ok |
-| first Matroska analysis: initial + probe client + statistics + Matroska parser |  | 298.84 KB | **98.40 KB** | 86.15 KB | 100.00 KB | 1.60 KB | ok |
+| initial: main + CSS + worker entry |  | 253.50 KB | **80.35 KB** | 69.71 KB | 85.00 KB | 4.65 KB | ok |
+| first MP4 analysis: initial + probe client + statistics + ISO BMFF parser |  | 301.35 KB | **99.83 KB** | 87.36 KB | 100.00 KB | 0.17 KB | ok |
+| first VFR MP4 analysis: first MP4 + rate profile core |  | 304.70 KB | **101.67 KB** | 89.07 KB | 102.00 KB | 0.33 KB | ok |
+| first Matroska analysis: initial + probe client + statistics + Matroska parser |  | 299.65 KB | **98.70 KB** | 86.44 KB | 100.00 KB | 1.30 KB | ok |
 
 <!-- tables:bundle:end -->
 
@@ -481,7 +481,7 @@ The thresholds are constants in `src/core/segments.ts` and `src/core/stats.ts`. 
 
 <!-- tables:profile:start -->
 
-The profile code is 1.84 KB gzip in the worker and the panel 0.94 KB on the main thread, both lazy. The first VFR MP4 loads 101.37 KB gzip, 1.84 KB more than a CFR one (budget 102.00 KB). Times are the whole analysis, profile included.
+The profile code is 1.84 KB gzip in the worker and the panel 0.94 KB on the main thread, both lazy. The first VFR MP4 loads 101.67 KB gzip, 1.84 KB more than a CFR one (budget 102.00 KB). Times are the whole analysis, profile included.
 
 | File | Rate profile | Frames | Min to max FPS | Node ms | Chrome 155 ms |
 |---|---|---:|---|---:|---:|
@@ -620,12 +620,13 @@ Tested:
 
 **Known deviations** live in `fixtures/known-deviations/<engine>*.json`, one reason per fixture and field. An entry that no longer matches is reported as stale ([format](../fixtures/known-deviations/README.md)).
 
-**Tests.** `npm test` runs unit tests (EBML VINTs, `av_reduce`, box headers, entry bounding, statistics, rate profile, cost model, lazy parser loading, device info and export), fixture tests over every manifest row, rate profile tests on the VFR fixtures, regression tests from hostile-input reviews, and engine contract tests. `FPS_PROBE_LARGE=1` adds the long files and a generated 4.5 GB sparse MP4.
+**Tests.** `npm test` runs unit tests (EBML VINTs, `av_reduce`, box headers, entry bounding, statistics, rate profile, cost model, lazy parser loading, device info and export, the demo's deploy check), fixture tests over every manifest row, rate profile tests on the VFR fixtures, regression tests from hostile-input reviews, and engine contract tests. `FPS_PROBE_LARGE=1` adds the long files and a generated 4.5 GB sparse MP4.
 
 **End-to-end tests.** `npm run test:e2e` builds the app into `.playwright/dist`, serves it with `vite preview` on `127.0.0.1:4317` and runs `tests/e2e` in Chromium, Firefox and WebKit (`npx playwright install chromium firefox webkit` once):
 
 - `parse.spec.ts` picks every committed fixture through the page's file input and requires the result to equal `analyze()` in Node on the same file, field by field except the timing: all fixtures in Matroska `exact` mode, the Matroska-named ones also in `header` mode.
 - `ui.spec.ts`: no console errors, the sample files, "Scan all frames", the uneven badge and rate profile on the two-phase file, the compare panel with mp4box.js and mediabunny against the same engines in Node, the JSON export against the cards, no horizontal overflow at 360 px, and keyboard focus on the file input.
+- `deploy.spec.ts` keeps a tab open across a simulated redeploy, where the probe client chunk or the worker script answers 404 with or without a new entry script in the page, and requires one reload banner when the page changed, `Worker could not be loaded:` on every file when it did not, and results after a reload.
 - `rvfc.spec.ts` records the requestVideoFrameCallback estimate per browser as an attachment and fails only on a hang or an exception.
 
 `npm run test:e2e -- --project=webkit` runs one browser, `npx playwright show-report .playwright/report` opens the report, and `E2E_BASE_URL=https://vbondarets.github.io/video-fps-probe/ npx playwright test` runs the same suite against the deployed demo instead of a local build.

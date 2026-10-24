@@ -13,7 +13,7 @@ function hasFiles(e: DragEvent): boolean {
 }
 
 export default function App() {
-  const { rows, mode } = useStore();
+  const { rows, mode, redeployed } = useStore();
   const [dragging, setDragging] = useState(false);
   const [notice, setNotice] = useState('');
   const [exportNote, setExportNote] = useState<{ rows: number; outcome: ExportOutcome } | null>(null);
@@ -88,6 +88,15 @@ export default function App() {
       <p className="lead">
         Frame rate of video files, computed in your browser. Nothing is uploaded or decoded; only the bytes needed are read.
       </p>
+
+      {redeployed && (
+        <p className="card" role="alert">
+          A new version of this page was deployed. Reload to continue.{' '}
+          <button type="button" onClick={() => location.reload()}>
+            Reload
+          </button>
+        </p>
+      )}
 
       <label className={`drop${dragging ? ' on' : ''}`}>
         <input ref={input} type="file" multiple data-testid="file-input" accept="video/*,audio/*,.mp4,.m4v,.mov,.webm,.mkv" onChange={pick} />

@@ -171,7 +171,7 @@ A worker that started before the deploy keeps serving its jobs, but a parser or 
 What helps, from the most to the least robust; they combine:
 
 - **Keep the old assets for a while.** Upload the new hashed files next to the old ones and delete files older than a day or so, instead of replacing the directory. A stale tab then keeps loading the files it knows. Hosts that swap the whole site at once, such as GitHub Pages, cannot do this.
-- **Reload on the error.** Treat `e.reason === 'load'` as a possible new deploy: fetch the page's HTML with `cache: 'no-store'`, compare its entry script with the running one, and offer a reload when they differ. Vite also dispatches `vite:preloadError` on `window` when a dynamic import of the host's own code fails.
+- **Reload on the error.** Treat `e.reason === 'load'` as a possible new deploy: fetch the page's HTML with `cache: 'no-store'`, compare its entry script with the running one, and offer a reload when they differ. The [demo](../demo/README.md#deploying-to-github-pages) does this and shows one banner instead of an error per file. Vite also dispatches `vite:preloadError` on `window` when a dynamic import of the host's own code fails.
 - **Load early.** Call `prewarm()` when the upload dialog opens or on the first interaction, so the probe client, the worker and the MP4 parser load before the user picks files. This narrows the window, but a tab that stays open across a deploy without using the probe still loads everything afterwards.
 
 ## SSR and the lazy main-thread chunks

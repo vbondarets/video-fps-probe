@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
-import { isAbortError as isAbort, type AnalyzeProgress, type FileResult, type MatroskaMode } from 'video-fps-probe/client';
+import { isAbortError as isAbort, type AnalyzeProgress, type FileResult, type MatroskaMode, type ProbeError } from 'video-fps-probe/client';
 import { lazyProbeFrom } from 'video-fps-probe/client/lazy';
+import { entryOf, redeployed } from './deploy.ts';
 import type { ExportAction, ExportOutcome } from './deviceInfo.ts';
 
 export type CompareEngine = 'mp4box' | 'mediabunny' | 'rvfc';
@@ -27,6 +28,7 @@ export interface Row {
 export interface State {
   rows: Row[];
   mode: MatroskaMode;
+  redeployed?: boolean;
 }
 
 declare global {
@@ -46,6 +48,8 @@ const hosts = new Map<number, HTMLElement>();
 const probe = lazyProbeFrom(() => import('./probe.ts').then((m) => m.probe));
 
 const message = (e: unknown) => (e instanceof Error ? e.message || e.name : String(e));
+const unloaded = (e: unknown) => (e as ProbeError | null)?.reason === 'load';
+const failure = (e: unknown) => (unloaded(e) ? `Worker could not be loaded: ${message(e)}` : message(e));
 const find = (id: number) => state.rows.find((r) => r.id === id);
 const isMatroska = (r: FileResult) => r.container === 'webm' || r.container === 'matroska';
 const isIso = (r: FileResult) => r.container === 'mp4' || r.container === 'mov';
@@ -67,6 +71,16 @@ function patchRun(id: number, engine: CompareEngine, p: Partial<Run>): void {
   patch(id, { compare: { ...row.compare, [engine]: { ...prev, ...p } } });
 }
 
+let deployCheck: Promise<boolean> | null = null;
+
+function checkDeploy(): Promise<boolean> {
+  return (deployCheck ??= redeployed(location.href, entryOf(document)).then((stale) => {
+    if (stale) commit({ ...state, redeployed: true });
+    else deployCheck = null;
+    return stale;
+  }));
+}
+
 function start(id: number, mode: MatroskaMode, followMode = true): void {
   const row = find(id);
   if (!row) return;
@@ -80,8 +94,10 @@ function start(id: number, mode: MatroskaMode, followMode = true): void {
     },
     (e) => {
       const prev = find(id);
-      const error = isAbort(e) ? (prev?.result ? prev.error : 'Cancelled') : message(e);
-      patch(id, { busy: false, error, progress: null, cancel: null });
+      const error = isAbort(e) ? (prev?.result ? prev.error : 'Cancelled') : failure(e);
+      const done = { busy: false, progress: null, cancel: null };
+      if (unloaded(e)) void checkDeploy().then((stale) => patch(id, { ...done, error: stale ? null : error }));
+      else patch(id, { ...done, error });
     },
   );
 }
@@ -138,7 +154,8 @@ export async function runCompare(id: number, engine: CompareEngine): Promise<Fil
     patchRun(id, engine, { busy: false, result, progress: null, cancel: null });
     return result;
   } catch (e) {
-    patchRun(id, engine, { busy: false, error: isAbort(e) ? 'Cancelled' : message(e), progress: null, cancel: null });
+    if (unloaded(e)) void checkDeploy();
+    patchRun(id, engine, { busy: false, error: isAbort(e) ? 'Cancelled' : failure(e), progress: null, cancel: null });
     throw e;
   } finally {
     float?.remove();
