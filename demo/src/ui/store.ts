@@ -50,6 +50,7 @@ const probe = lazyProbeFrom(() => import('./probe.ts').then((m) => m.probe));
 const message = (e: unknown) => (e instanceof Error ? e.message || e.name : String(e));
 const unloaded = (e: unknown) => (e as ProbeError | null)?.reason === 'load';
 const failure = (e: unknown) => (unloaded(e) ? `Worker could not be loaded: ${message(e)}` : message(e));
+const CHUNK_IMPORT_FAILED = /dynamically imported module|Importing a module script/;
 const find = (id: number) => state.rows.find((r) => r.id === id);
 const isMatroska = (r: FileResult) => r.container === 'webm' || r.container === 'matroska';
 const isIso = (r: FileResult) => r.container === 'mp4' || r.container === 'mov';
@@ -89,8 +90,12 @@ function start(id: number, mode: MatroskaMode, followMode = true): void {
   patch(id, { busy: true, progress: null, cancel: () => controller.abort() });
   job.then(
     (result) => {
-      patch(id, { busy: false, result, error: null, progress: null, cancel: null });
-      if (followMode && isMatroska(result) && state.mode !== mode) start(id, state.mode);
+      const finish = (stale = false) => {
+        patch(id, { busy: false, ...(!stale && { result }), error: null, progress: null, cancel: null });
+        if (!stale && followMode && isMatroska(result) && state.mode !== mode) start(id, state.mode);
+      };
+      if (result.error && CHUNK_IMPORT_FAILED.test(result.error)) void checkDeploy().then(finish);
+      else finish();
     },
     (e) => {
       const prev = find(id);

@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test, type Page } from '@playwright/test';
-import { fixtureFile, openApp, waitSettled, type ProbeWindow } from './support.ts';
+import { addFixtures, fixtureFile, openApp, waitSettled, type ProbeWindow } from './support.ts';
 
 const MP4 = 'cfr_h264_30.mp4';
 const WEBM = 'cfr_vp9_30.webm';
@@ -65,6 +65,27 @@ test.describe('a tab opened before a redeploy', () => {
     await expect(page.locator('article.card', { hasText: 'Not analyzed.' })).toHaveCount(4);
     expect(requests.length).toBeGreaterThan(0);
     expect(requests.length).toBeLessThanOrEqual(2);
+  });
+
+  test('shows the reload banner when a worker that already ran cannot load the parser of a new container after a new build', async ({ page }) => {
+    await openApp(page);
+    await addFixtures(page, [MP4]);
+    const requests = await redeploy(page, '**/assets/matroska-*.js', true);
+    await addFixtures(page, [WEBM]);
+    await expect(page.getByRole('alert')).toContainText(BANNER);
+    await expect(page.locator('article.card .err')).toHaveCount(0);
+    await expect(page.locator('article.card dl.grid')).toHaveCount(1);
+    await expect(page.locator('article.card', { hasText: WEBM })).toContainText('Not analyzed.');
+    expect(requests.length).toBeGreaterThan(0);
+  });
+
+  test('keeps the parser import error of a file when the page is unchanged', async ({ page }) => {
+    await openApp(page);
+    await addFixtures(page, [MP4]);
+    await redeploy(page, '**/assets/matroska-*.js', false);
+    await addFixtures(page, [WEBM]);
+    await expect(page.locator('article.card', { hasText: WEBM }).locator('.err')).toContainText(MODULE_LOAD_FAILURE);
+    await expect(page.getByRole('alert')).toHaveCount(0);
   });
 
   test('names the import error on every file and shows no banner when the probe client chunk is missing but the page is unchanged', async ({ page }) => {

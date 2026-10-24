@@ -166,7 +166,7 @@ Bundlers name the worker files and every lazy chunk by a content hash, and many 
 
 - The probe client of a lazy stub, the worker script, a chunk the worker loads for an engine, or a main-thread chunk of the probe: `ProbeError('worker-failed')` with `reason: 'load'` ([Errors](api.md#errors)), and `tryAnalyze` resolves `null`. For a main-thread chunk the message is the browser's dynamic-import error, which is also the `cause`. A worker script that returns 404 has the message `worker script failed to load or parse; the app may have been redeployed`.
 
-A worker that started before the deploy keeps serving its jobs, but a parser or engine chunk it has not loaded yet is gone too: own reports that as `result.error` with the import error's message, a library engine as `reason: 'load'`. With the blob trampoline of the [CDN recipe](#scripts-on-a-cdn-origin), a missing standalone file is an uncaught `NetworkError` inside the worker, so it reports as `reason: 'crash'` with the browser's `importScripts` message.
+A worker that started before the deploy keeps serving its jobs, but a parser or engine chunk it has not loaded yet is gone too: own reports that as `result.error` with the import error's message (the demo runs its deploy check on that message too), a library engine as `reason: 'load'`. With the blob trampoline of the [CDN recipe](#scripts-on-a-cdn-origin), a missing standalone file is an uncaught `NetworkError` inside the worker, so it reports as `reason: 'crash'` with the browser's `importScripts` message.
 
 What helps, from the most to the least robust; they combine:
 
