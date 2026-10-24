@@ -30,10 +30,10 @@ const RULE = {
   height: 'Exact vs height',
   avgIso: 'avgFpsFfprobe (the duration-sum rational) must equal avg_frame_rate exactly',
   avgIsoMeasured: 'Presented average (presented frames / presentation span) must equal avgFromPts within 1e-9 relative; within-tol when the frames match and the spans differ by less than one median frame delta (ffprobe filled the last packet duration)',
-  avgDeclared: 'Declared rate string must equal avg_frame_rate exactly when DefaultDuration exists',
+  avgDeclared: 'avgFpsFfprobe must equal avg_frame_rate exactly: the declared rate when DefaultDuration exists, else the estimate ffprobe makes from the first packets (n/a only in header mode, which reads no blocks)',
   avgMeasured: 'Measured average must equal avgFromPts (integer-ms last duration) within 1e-9 relative; within-tol, as a definition difference by design, when the file stores no duration for the last frame (no DefaultDuration, no BlockDuration) and the average is exactly the frames over the timestamp span plus one median frame delta: avgFps gives that frame the median interval, ffprobe its own estimate, and ffprobe parity is avgFpsFfprobe',
   nominalIso: 'Exact vs r_frame_rate, only when the track is CFR (stage 1); otherwise skipped',
-  nominalMatroska: 'Declared rate string must equal r_frame_rate exactly when DefaultDuration exists; otherwise skipped',
+  nominalMatroska: 'rFpsFfprobe must equal r_frame_rate exactly: the declared rate when DefaultDuration exists, else the estimate ffprobe makes from the first packets (n/a in header mode, which reads no blocks)',
   framesIso: 'Exact vs nb_frames (non-fragmented); fragmented: vs nb_read_packets; hybrid: total vs nb_read_packets',
   framesMatroska: 'Exact vs nb_read_packets (ffprobe prints nb_frames N/A)',
   presentedIso: 'Exact vs nb_read_frames',
@@ -377,15 +377,20 @@ export function noteContradictsLayout(info: FixtureInfo, layout: FileLayout | nu
   return `the manifest note of ${info.name} says the file has no DefaultDuration, but every video track of the file has one`;
 }
 
-function avgMatroskaDeclaredDraft(t: VideoTrackResult, s: RefStream, info: FixtureInfo, mkv: MatroskaLayoutTrack | null): Draft {
+function lacksDefaultDuration(info: FixtureInfo, mkv: MatroskaLayoutTrack | null): boolean {
+  return mkv ? mkv.defaultDurationNs === null : declaresNoDefaultDuration(info);
+}
+
+function avgMatroskaDeclaredDraft(t: VideoTrackResult, s: RefStream, info: FixtureInfo, result: FileResult, mkv: MatroskaLayoutTrack | null): Draft {
   const base = trackBase('avgFps', 'declared', t, RULE.avgDeclared);
   const ff = parseRatio(s.avgFrameRate);
   const app = parseRatio(t.avgFpsFfprobe);
   if (!ff) return { ...base, verdict: 'n/a', app: t.avgFpsFfprobe, ffprobe: s.avgFrameRate, detail: 'unparseable ffprobe value' };
   if (!app) {
     if (isZeroRatio(ff)) return { ...base, verdict: 'exact', app: null, ffprobe: s.avgFrameRate, detail: 'no DefaultDuration: both report no declared rate' };
-    if (mkv ? mkv.defaultDurationNs === null : declaresNoDefaultDuration(info)) {
-      return { ...base, verdict: 'n/a', app: null, ffprobe: s.avgFrameRate, detail: 'no DefaultDuration in this file; ffprobe estimates the rate from packets (cannot be reproduced)' };
+    if (lacksDefaultDuration(info, mkv)) {
+      if (result.scan === 'header') return { ...base, verdict: 'n/a', app: null, ffprobe: s.avgFrameRate, detail: 'no DefaultDuration: ffprobe estimates the rate from the first packets, which header mode does not read' };
+      return { ...base, verdict: 'mismatch', app: null, ffprobe: s.avgFrameRate, detail: 'no DefaultDuration and blocks were read, but the app reported no estimate' };
     }
     return { ...base, verdict: 'mismatch', app: null, ffprobe: s.avgFrameRate, detail: 'the app reported no declared rate' };
   }
@@ -449,7 +454,7 @@ function nominalIsoDraft(t: VideoTrackResult, s: RefStream): Draft {
   return { ...base, verdict: 'n/a', app: appStr, ffprobe: s.rFrameRate, detail: 'not CFR: ffprobe derives r_frame_rate from heuristics (stages 2-4)' };
 }
 
-function nominalMatroskaDraft(t: VideoTrackResult, s: RefStream): Draft {
+function nominalMatroskaDraft(t: VideoTrackResult, s: RefStream, info: FixtureInfo, result: FileResult, mkv: MatroskaLayoutTrack | null): Draft {
   const base = trackBase('nominalFps', null, t, RULE.nominalMatroska);
   const ff = parseRatio(s.rFrameRate);
   const app = parseRatio(t.rFpsFfprobe);
@@ -458,6 +463,9 @@ function nominalMatroskaDraft(t: VideoTrackResult, s: RefStream): Draft {
   if (app) return { ...base, verdict: sameRatio(app, ff) ? 'exact' : 'mismatch', app: fmtRatio(app), ffprobe: s.rFrameRate };
   if (declaredAvg && ratioValue(declaredAvg) > 5 && ratioValue(declaredAvg) < 1000) {
     return { ...base, verdict: 'mismatch', app: null, ffprobe: s.rFrameRate, detail: 'the app omitted r_frame_rate although 5 < avg < 1000 makes it equal to avg_frame_rate' };
+  }
+  if (lacksDefaultDuration(info, mkv) && result.scan !== 'header') {
+    return { ...base, verdict: 'mismatch', app: null, ffprobe: s.rFrameRate, detail: 'no DefaultDuration and blocks were read, but the app reported no estimate' };
   }
   const nominal = t.nominalFps;
   let detail = 'no declared rate: ffprobe derives r_frame_rate from packets';
@@ -586,10 +594,10 @@ function trackDrafts(
     out.push(avgIsoDraft(t, s, info, layout));
     out.push(avgIsoMeasuredDraft(t, s));
   } else {
-    out.push(avgMatroskaDeclaredDraft(t, s, info, mkv));
+    out.push(avgMatroskaDeclaredDraft(t, s, info, result, mkv));
     out.push(avgMatroskaMeasuredDraft(t, s, result, mkv));
   }
-  out.push(family === 'isobmff' ? nominalIsoDraft(t, s) : nominalMatroskaDraft(t, s));
+  out.push(family === 'isobmff' ? nominalIsoDraft(t, s) : nominalMatroskaDraft(t, s, info, result, mkv));
   out.push(family === 'isobmff' ? framesIsoDraft(t, s) : framesMatroskaDraft(t, s, result));
   out.push(presentedDraft(family, t, s, result));
   out.push(durationDraft(family, t, s, info, layout));

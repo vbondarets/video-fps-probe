@@ -298,10 +298,24 @@ export function runSelfTest(): number {
     ref: mkvRef,
     result: appResult([noDeclared], { container: 'webm', scan: 'exact' }),
   });
-  expectEq('mkv without DefaultDuration: n/a', verdictOf(voided, 'avgFps.declared'), 'n/a');
+  expectEq('mkv without DefaultDuration, blocks read, no estimate: mismatch', verdictOf(voided, 'avgFps.declared'), 'mismatch');
+  expectEq('mkv without DefaultDuration, blocks read, no r_frame_rate estimate: mismatch', verdictOf(voided, 'nominalFps'), 'mismatch');
+  const voidedHeader = run({
+    info: { ...MKV_INFO, notes: 'DefaultDuration element overwritten by an EBML Void' },
+    ref: mkvRef,
+    result: appResult([noDeclared], { container: 'webm', scan: 'header' }),
+  });
+  expectEq('mkv without DefaultDuration in header mode: n/a', verdictOf(voidedHeader, 'avgFps.declared'), 'n/a');
+  expectEq('mkv without DefaultDuration in header mode: r_frame_rate n/a', verdictOf(voidedHeader, 'nominalFps'), 'n/a');
   const mkvLayout = (defaultDurationNs: number | null): FileLayout => ({ fragmented: false, hasSidx: false, topLevel: [], matroskaTracks: [{ number: 1, type: 1, defaultDurationNs, blockDurations: 0 }] });
   const scannedNone = run({ info: MKV_INFO, ref: mkvRef, layout: mkvLayout(null), result: appResult([noDeclared], { container: 'webm', scan: 'exact' }) });
-  expectEq('mkv scanned without DefaultDuration, silent note: n/a', verdictOf(scannedNone, 'avgFps.declared'), 'n/a');
+  expectEq('mkv scanned without DefaultDuration, silent note, no estimate: mismatch', verdictOf(scannedNone, 'avgFps.declared'), 'mismatch');
+  const estimated = run({ info: MKV_INFO, ref: mkvRef, layout: mkvLayout(null), result: appResult([{ ...mkvTrack, avgFpsFfprobe: mkvRef.videoStreams[0].avgFrameRate, rFpsFfprobe: mkvRef.videoStreams[0].rFrameRate }], { container: 'webm', scan: 'probe' }) });
+  expectEq('mkv without DefaultDuration, estimate equal: exact', verdictOf(estimated, 'avgFps.declared'), 'exact');
+  expectEq('mkv without DefaultDuration, r_frame_rate estimate equal: exact', verdictOf(estimated, 'nominalFps'), 'exact');
+  const offEstimate = run({ info: MKV_INFO, ref: mkvRef, layout: mkvLayout(null), result: appResult([{ ...mkvTrack, avgFpsFfprobe: '0/0', rFpsFfprobe: '1000/1' }], { container: 'webm', scan: 'probe' }) });
+  expectEq('mkv without DefaultDuration, estimate off: mismatch', verdictOf(offEstimate, 'avgFps.declared'), 'mismatch');
+  expectEq('mkv without DefaultDuration, r_frame_rate estimate off: mismatch', verdictOf(offEstimate, 'nominalFps'), 'mismatch');
   const scannedSome = run({ info: { ...MKV_INFO, notes: 'no DefaultDuration' }, ref: mkvRef, layout: mkvLayout(33366666), result: appResult([noDeclared], { container: 'webm', scan: 'exact' }) });
   expectEq('mkv scanned with DefaultDuration, note says none: mismatch', verdictOf(scannedSome, 'avgFps.declared'), 'mismatch');
   expectEq('mkv note against the scan: a harness problem', noteContradictsLayout({ ...MKV_INFO, notes: 'no DefaultDuration' }, mkvLayout(33366666)) !== null, true);
