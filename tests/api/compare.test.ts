@@ -107,8 +107,13 @@ describe('probe.compare', () => {
       return undefined;
     });
     const crashed = await probe.compare(mp4File(), { engines: ['own', 'mediabunny'] });
-    expect(crashed.outcomes.mediabunny).toMatchObject({ status: 'crashed', error: { code: 'worker-failed', message: 'out of memory' } });
+    expect(crashed.outcomes.mediabunny).toMatchObject({ status: 'crashed', error: { code: 'worker-failed', message: 'out of memory', reason: 'crash' } });
     expect(crashed.outcomes.own?.status).toBe('ok');
+    FakeWorker.reset('reply', (m) =>
+      m.type === 'analyze' && m.engine === 'mediabunny' ? { type: 'error', message: 'Failed to fetch dynamically imported module', aborted: false, reason: 'load' } : undefined,
+    );
+    const unloaded = await probe.compare(mp4File(), { engines: ['own', 'mediabunny'] });
+    expect(unloaded.outcomes.mediabunny).toMatchObject({ status: 'crashed', error: { code: 'worker-failed', engine: 'mediabunny', reason: 'load' } });
   });
 
   it('compares against the requested reference and lists the engines that differ', async () => {
