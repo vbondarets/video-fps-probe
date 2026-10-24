@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 import { AppPage } from './app.mjs';
 import { findBrowser, killAllBrowsers, launchBrowser } from './browser.mjs';
+import { commandLine, headlessMode, parseBrowserFlags } from './flags.mjs';
 import { renderMarkdown } from './report.mjs';
 import { startServer } from './server.mjs';
 import { takeScreenshots } from './shots.mjs';
@@ -121,7 +122,7 @@ function displayHzFromOs() {
   }
 }
 
-async function browserInfo(b, app) {
+async function browserInfo(b, app, exe) {
   let gpu = null;
   try {
     const info = await b.browser.send('SystemInfo.getInfo', {}, 20_000);
@@ -136,6 +137,7 @@ async function browserInfo(b, app) {
   }
   return {
     product: b.version.product,
+    mode: headlessMode(exe, parseBrowserFlags(process.env.BENCH_BROWSER_FLAGS)),
     userAgent: b.version.userAgent,
     jsVersion: b.version.jsVersion,
     gpu,
@@ -378,7 +380,8 @@ async function run(opts) {
 
   const data = {
     schema: 1,
-    command: `node scripts/bench/run-bench.mjs ${process.argv.slice(2).join(' ')}`.trim(),
+    command: commandLine('scripts/bench/run-bench.mjs', process.argv.slice(2), parseBrowserFlags(process.env.BENCH_BROWSER_FLAGS)),
+    browserFlags: parseBrowserFlags(process.env.BENCH_BROWSER_FLAGS),
     options: { reps: opts.reps, engineReps: opts.engineReps, coldReps: opts.coldReps, filter: opts.filter, skipped: [...opts.skip] },
     server: 'node:http on 127.0.0.1, Cache-Control: no-store, no compression',
     dist: assets,
@@ -398,7 +401,7 @@ async function run(opts) {
       const mark = server.mark();
       const load = await app.open();
       data.chrome.pageLoad = { ...load, requests: requestsOf(server.since(mark)) };
-      chromeInfo = await browserInfo(b, app);
+      chromeInfo = await browserInfo(b, app, chromeExe);
       log(`  ${chromeInfo.product}, page ready in ${load.readyMs.toFixed(0)} ms`);
 
       const cold = await coldBatch(app, server, fixtures);
@@ -437,7 +440,7 @@ async function run(opts) {
       }
 
       if (!opts.skip.has('rvfc')) {
-        data.chrome.rvfc = { mode: 'headless=new (GPU enabled, default flags), muted playback in the floating rVFC host', rows: await rvfcRuns(app, mods, pathOf) };
+        data.chrome.rvfc = { mode: `${chromeInfo.mode}, muted playback in the floating rVFC host`, rows: await rvfcRuns(app, mods, pathOf) };
       }
 
       if (!opts.skip.has('node')) {
@@ -470,7 +473,7 @@ async function run(opts) {
       try {
         const app = new AppPage(e.page, server.url);
         await app.open();
-        edgeInfo = await browserInfo(e, app);
+        edgeInfo = await browserInfo(e, app, edgeExe);
         const cold = await coldBatch(app, server, fixtures);
         const warm = await warmRuns(app, fixtures, opts.reps, 'edge warm');
         for (const v of Object.values(warm)) delete v.result;

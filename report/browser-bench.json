@@ -1,6 +1,9 @@
 {
  "schema": 1,
- "command": "node scripts/bench/run-bench.mjs --skip edge",
+ "command": "BENCH_BROWSER_FLAGS=\"--no-sandbox\" node scripts/bench/run-bench.mjs --skip edge",
+ "browserFlags": [
+  "--no-sandbox"
+ ],
  "options": {
   "reps": 5,
   "engineReps": 3,
@@ -13,11 +16,11 @@
  "server": "node:http on 127.0.0.1, Cache-Control: no-store, no compression",
  "dist": [
   {
-   "file": "assets/Compare-CWM6P2cd.js",
+   "file": "assets/Compare-Dv-sTUsw.js",
    "bytes": 2915
   },
   {
-   "file": "assets/RateProfile-CBbip8Fy.js",
+   "file": "assets/RateProfile-DzfnvRvQ.js",
    "bytes": 2166
   },
   {
@@ -25,11 +28,11 @@
    "bytes": 100
   },
   {
-   "file": "assets/compare-CAceZnPr.js",
+   "file": "assets/compare-BJ-aAy8S.js",
    "bytes": 2605
   },
   {
-   "file": "assets/counting-CULgQuRE.js",
+   "file": "assets/counting-ChjOR_aV.js",
    "bytes": 3014
   },
   {
@@ -37,11 +40,11 @@
    "bytes": 5022
   },
   {
-   "file": "assets/fallback-DPYOcd4Y.js",
+   "file": "assets/fallback-CZ7mlQeu.js",
    "bytes": 1014
   },
   {
-   "file": "assets/index-BXTl2cy8.js",
+   "file": "assets/index-BrLdfhqf.js",
    "bytes": 238718
   },
   {
@@ -49,51 +52,51 @@
    "bytes": 4982
   },
   {
-   "file": "assets/inline-BgLBNSSk.js",
+   "file": "assets/inline-syHHpHdu.js",
    "bytes": 1088
   },
   {
-   "file": "assets/isobmff--bgTyZ2l.js",
-   "bytes": 30830
-  },
-  {
-   "file": "assets/isobmff-DuJnWgRH.js",
+   "file": "assets/isobmff-BwPEvlAR.js",
    "bytes": 30750
   },
   {
-   "file": "assets/matroska-4x9DWvBV.js",
-   "bytes": 29053
+   "file": "assets/isobmff-m_cDIZ22.js",
+   "bytes": 30830
   },
   {
-   "file": "assets/matroska-Dv26mnt7.js",
+   "file": "assets/matroska-A9drJjqy.js",
    "bytes": 29173
   },
   {
-   "file": "assets/mediabunny-EgSVCfxL.js",
+   "file": "assets/matroska-DqaAEFYa.js",
+   "bytes": 29053
+  },
+  {
+   "file": "assets/mediabunny-DuuDIA28.js",
    "bytes": 201102
   },
   {
-   "file": "assets/mp4box-CiwkYofD.js",
+   "file": "assets/mp4box-CMny-4CP.js",
    "bytes": 187643
   },
   {
-   "file": "assets/probe-BYGI_0kD.js",
+   "file": "assets/probe-oihzfWcg.js",
    "bytes": 6921
   },
   {
-   "file": "assets/probe.worker-CHYSh4ct.js",
-   "bytes": 10369
+   "file": "assets/probe.worker-DzbF4AAw.js",
+   "bytes": 10388
   },
   {
    "file": "assets/result-DwUAyOGs.js",
    "bytes": 706
   },
   {
-   "file": "assets/runtime-C115SPpv.js",
-   "bytes": 6088
+   "file": "assets/runtime-BQc4Yc7t.js",
+   "bytes": 6107
   },
   {
-   "file": "assets/rvfc-90UdbVro.js",
+   "file": "assets/rvfc-NbXNXm4c.js",
    "bytes": 4243
   },
   {
@@ -101,24 +104,24 @@
    "bytes": 357
   },
   {
-   "file": "assets/segments-Bh9b9ZXu.js",
-   "bytes": 3346
+   "file": "assets/segments-D297JIXb.js",
+   "bytes": 3350
   },
   {
-   "file": "assets/segments-CrBOz2Ps.js",
-   "bytes": 3350
+   "file": "assets/segments-DDR8M7Do.js",
+   "bytes": 3346
   },
   {
    "file": "assets/sniff-DecauIFI.js",
    "bytes": 2123
   },
   {
-   "file": "assets/stats-B4Z-JDiE.js",
-   "bytes": 10211
+   "file": "assets/stats-BhCbPV6X.js",
+   "bytes": 10310
   },
   {
-   "file": "assets/stats-BgPT37qJ.js",
-   "bytes": 10310
+   "file": "assets/stats-PuFqh4kY.js",
+   "bytes": 10211
   }
  ],
  "fixtures": [
@@ -680,18 +683,18 @@
  ],
  "chrome": {
   "pageLoad": {
-   "domContentLoadedMs": 56,
-   "loadMs": 56.3,
-   "readyMs": 90.9,
+   "domContentLoadedMs": 60.4,
+   "loadMs": 60.8,
+   "readyMs": 118.2,
    "resources": [
     {
-     "path": "/assets/index-BXTl2cy8.js",
-     "ms": 7.5,
+     "path": "/assets/index-BrLdfhqf.js",
+     "ms": 6.5,
      "bytes": 238718
     },
     {
      "path": "/assets/index-UkwvJHuS.css",
-     "ms": 6.8,
+     "ms": 5.6,
      "bytes": 4982
     }
    ],
@@ -702,54 +705,54 @@
      "bytes": 655
     },
     {
-     "path": "/assets/index-BXTl2cy8.js",
-     "status": 200,
-     "bytes": 238718
-    },
-    {
      "path": "/assets/index-UkwvJHuS.css",
      "status": 200,
      "bytes": 4982
+    },
+    {
+     "path": "/assets/index-BrLdfhqf.js",
+     "status": 200,
+     "bytes": 238718
     }
    ]
   },
   "coldBatch": {
    "files": 111,
-   "wallMs": 281,
-   "sumMs": 155.3,
+   "wallMs": 281.4,
+   "sumMs": 147.3,
    "requests": [
     {
-     "path": "/assets/probe-BYGI_0kD.js",
+     "path": "/assets/probe-oihzfWcg.js",
      "status": 200,
      "bytes": 6921
     },
     {
-     "path": "/assets/probe.worker-CHYSh4ct.js",
+     "path": "/assets/probe.worker-DzbF4AAw.js",
      "status": 200,
-     "bytes": 10369
+     "bytes": 10388
     },
     {
-     "path": "/assets/probe.worker-CHYSh4ct.js",
+     "path": "/assets/probe.worker-DzbF4AAw.js",
      "status": 200,
-     "bytes": 10369
+     "bytes": 10388
     },
     {
-     "path": "/assets/isobmff-DuJnWgRH.js",
+     "path": "/assets/isobmff-BwPEvlAR.js",
      "status": 200,
      "bytes": 30750
     },
     {
-     "path": "/assets/stats-B4Z-JDiE.js",
-     "status": 200,
-     "bytes": 10211
-    },
-    {
-     "path": "/assets/matroska-4x9DWvBV.js",
+     "path": "/assets/matroska-DqaAEFYa.js",
      "status": 200,
      "bytes": 29053
     },
     {
-     "path": "/assets/stats-B4Z-JDiE.js",
+     "path": "/assets/stats-PuFqh4kY.js",
+     "status": 200,
+     "bytes": 10211
+    },
+    {
+     "path": "/assets/stats-PuFqh4kY.js",
      "status": 200,
      "bytes": 10211
     },
@@ -759,39 +762,39 @@
      "bytes": 5022
     },
     {
-     "path": "/assets/isobmff-DuJnWgRH.js",
+     "path": "/assets/isobmff-BwPEvlAR.js",
      "status": 200,
      "bytes": 30750
     },
     {
-     "path": "/assets/matroska-4x9DWvBV.js",
+     "path": "/assets/matroska-DqaAEFYa.js",
      "status": 200,
      "bytes": 29053
     },
     {
-     "path": "/assets/segments-CrBOz2Ps.js",
+     "path": "/assets/segments-D297JIXb.js",
      "status": 200,
      "bytes": 3350
     },
     {
-     "path": "/assets/segments-CrBOz2Ps.js",
+     "path": "/assets/segments-D297JIXb.js",
      "status": 200,
      "bytes": 3350
     },
     {
-     "path": "/assets/RateProfile-CBbip8Fy.js",
+     "path": "/assets/RateProfile-DzfnvRvQ.js",
      "status": 200,
      "bytes": 2166
     }
    ],
    "perFile": {
     "cfr_h264_23.976.mp4": {
-     "ms": 4.7,
+     "ms": 4.5,
      "reads": 1,
      "bytesRead": 73602
     },
     "cfr_vp9_23.976.webm": {
-     "ms": 5.5,
+     "ms": 5.1,
      "reads": 1,
      "bytesRead": 60807
     },
@@ -801,7 +804,7 @@
      "bytesRead": 73032
     },
     "cfr_vp9_24.webm": {
-     "ms": 1.7,
+     "ms": 1.8,
      "reads": 1,
      "bytesRead": 60585
     },
@@ -816,12 +819,12 @@
      "bytesRead": 60207
     },
     "cfr_h264_29.97.mp4": {
-     "ms": 1.8,
+     "ms": 1.6,
      "reads": 1,
      "bytesRead": 88499
     },
     "cfr_vp9_29.97.webm": {
-     "ms": 1.9,
+     "ms": 1.4,
      "reads": 1,
      "bytesRead": 73687
     },
@@ -831,12 +834,12 @@
      "bytesRead": 88810
     },
     "cfr_vp9_30.webm": {
-     "ms": 1.4,
+     "ms": 1.3,
      "reads": 1,
      "bytesRead": 72376
     },
     "cfr_h264_50.mp4": {
-     "ms": 1.3,
+     "ms": 1.2,
      "reads": 1,
      "bytesRead": 112678
     },
@@ -846,12 +849,12 @@
      "bytesRead": 106691
     },
     "cfr_h264_59.94.mp4": {
-     "ms": 1.3,
+     "ms": 1,
      "reads": 1,
      "bytesRead": 129016
     },
     "cfr_vp9_59.94.webm": {
-     "ms": 1.2,
+     "ms": 1.1,
      "reads": 1,
      "bytesRead": 125465
     },
@@ -866,7 +869,7 @@
      "bytesRead": 124160
     },
     "cfr_h264_120.mp4": {
-     "ms": 1.1,
+     "ms": 1.2,
      "reads": 1,
      "bytesRead": 189686
     },
@@ -881,32 +884,32 @@
      "bytesRead": 330241
     },
     "cfr_vp9_240.webm": {
-     "ms": 2.1,
+     "ms": 2.4,
      "reads": 1,
      "bytesRead": 363967
     },
     "mov_nobf_default.mov": {
-     "ms": 1.2,
+     "ms": 1,
      "reads": 1,
      "bytesRead": 88446
     },
     "mov_nobf_faststart.mov": {
-     "ms": 3.5,
+     "ms": 1,
      "reads": 1,
      "bytesRead": 88446
     },
     "mov_bf_elst.mov": {
-     "ms": 1.3,
+     "ms": 3.7,
      "reads": 1,
      "bytesRead": 36586
     },
     "mov_bf_noelst.mov": {
-     "ms": 1.1,
+     "ms": 2,
      "reads": 1,
      "bytesRead": 36550
     },
     "mov_bf_faststart.mov": {
-     "ms": 1,
+     "ms": 1.2,
      "reads": 1,
      "bytesRead": 36586
     },
@@ -916,12 +919,12 @@
      "bytesRead": 224032
     },
     "mp4_bf_elst.mp4": {
-     "ms": 1.1,
+     "ms": 0.9,
      "reads": 1,
      "bytesRead": 36639
     },
     "mp4_bf_noelst.mp4": {
-     "ms": 1.2,
+     "ms": 0.8,
      "reads": 1,
      "bytesRead": 36603
     },
@@ -931,7 +934,7 @@
      "bytesRead": 36639
     },
     "mp4_elst_empty_offset.mp4": {
-     "ms": 1.2,
+     "ms": 0.8,
      "reads": 1,
      "bytesRead": 36008
     },
@@ -941,37 +944,37 @@
      "bytesRead": 36639
     },
     "mp4_elst_trim_output_seek.mp4": {
-     "ms": 1.1,
+     "ms": 0.9,
      "reads": 1,
      "bytesRead": 25677
     },
     "fmp4_keyframe_empty_moov.mp4": {
-     "ms": 1.5,
+     "ms": 1.3,
      "reads": 1,
      "bytesRead": 119543
     },
     "fmp4_default_base_moof.mp4": {
-     "ms": 1.6,
+     "ms": 1.4,
      "reads": 1,
      "bytesRead": 119503
     },
     "fmp4_frag_duration.mp4": {
-     "ms": 1.1,
+     "ms": 1,
      "reads": 1,
      "bytesRead": 120011
     },
     "fmp4_bframes.mp4": {
-     "ms": 1,
+     "ms": 0.9,
      "reads": 1,
      "bytesRead": 50011
     },
     "fmp4_hybrid_no_empty_moov.mp4": {
-     "ms": 1,
+     "ms": 0.9,
      "reads": 1,
      "bytesRead": 119476
     },
     "fmp4_cmaf.mp4": {
-     "ms": 0.9,
+     "ms": 0.8,
      "reads": 1,
      "bytesRead": 119519
     },
@@ -981,7 +984,7 @@
      "bytesRead": 119591
     },
     "fmp4_dash_flag.mp4": {
-     "ms": 1.5,
+     "ms": 1,
      "reads": 1,
      "bytesRead": 119711
     },
@@ -996,7 +999,7 @@
      "bytesRead": 119624
     },
     "fmp4_dash_concat_segments.mp4": {
-     "ms": 1.2,
+     "ms": 0.9,
      "reads": 1,
      "bytesRead": 119720
     },
@@ -1006,47 +1009,47 @@
      "bytesRead": 46180
     },
     "hevc_hev1.mp4": {
-     "ms": 0.8,
+     "ms": 0.9,
      "reads": 1,
      "bytesRead": 46180
     },
     "av1.mp4": {
-     "ms": 0.7,
+     "ms": 0.8,
      "reads": 1,
      "bytesRead": 21330
     },
     "vp9.mp4": {
-     "ms": 1,
+     "ms": 0.9,
      "reads": 1,
      "bytesRead": 73754
     },
     "vp9.webm": {
-     "ms": 1.2,
+     "ms": 3.6,
      "reads": 1,
      "bytesRead": 73687
     },
     "vp8.webm": {
-     "ms": 4.3,
+     "ms": 1.2,
      "reads": 1,
      "bytesRead": 164171
     },
     "av1.webm": {
-     "ms": 1.1,
+     "ms": 1.2,
      "reads": 1,
      "bytesRead": 21697
     },
     "h264.mkv": {
-     "ms": 1.2,
+     "ms": 1.3,
      "reads": 1,
      "bytesRead": 88522
     },
     "hevc.mkv": {
-     "ms": 1.1,
+     "ms": 1.3,
      "reads": 1,
      "bytesRead": 45356
     },
     "vp9_live.webm": {
-     "ms": 1.1,
+     "ms": 1.7,
      "reads": 1,
      "bytesRead": 73582
     },
@@ -1056,7 +1059,7 @@
      "bytesRead": 73582
     },
     "vp9_unknown_clusters.webm": {
-     "ms": 1.5,
+     "ms": 1,
      "reads": 1,
      "bytesRead": 73582
     },
@@ -1071,7 +1074,7 @@
      "bytesRead": 165653
     },
     "vfr_concat_bframes.mp4": {
-     "ms": 3.7,
+     "ms": 3.3,
      "reads": 1,
      "bytesRead": 68275
     },
@@ -1081,47 +1084,47 @@
      "bytesRead": 166613
     },
     "vfr_concat_10_30_60.mov": {
-     "ms": 1.3,
+     "ms": 1.6,
      "reads": 1,
      "bytesRead": 165600
     },
     "vfr_concat_10_30_60.webm": {
-     "ms": 2.3,
+     "ms": 1.4,
      "reads": 1,
      "bytesRead": 143713
     },
     "vfr_concat_10_30_60_fmp4.mp4": {
-     "ms": 1.5,
+     "ms": 1.2,
      "reads": 1,
      "bytesRead": 166738
     },
     "vfr_setpts_sine.mp4": {
-     "ms": 1.9,
+     "ms": 1.5,
      "reads": 1,
      "bytesRead": 145595
     },
     "vfr_select_drop.mp4": {
-     "ms": 1.8,
+     "ms": 2.2,
      "reads": 1,
      "bytesRead": 155730
     },
     "vfr_mpdecimate.mp4": {
-     "ms": 1.1,
+     "ms": 1,
      "reads": 1,
      "bytesRead": 89117
     },
     "vfr_screenrec_ts1000.mp4": {
-     "ms": 1.7,
+     "ms": 1.3,
      "reads": 1,
      "bytesRead": 193130
     },
     "vfr_screenrec_ts1000.webm": {
-     "ms": 1.3,
+     "ms": 1.6,
      "reads": 1,
      "bytesRead": 186038
     },
     "vfr_pulldown_2_3.mp4": {
-     "ms": 1.9,
+     "ms": 1.5,
      "reads": 1,
      "bytesRead": 125744
     },
@@ -1131,62 +1134,62 @@
      "bytesRead": 421180
     },
     "vfr_two_phase_5_200.webm": {
-     "ms": 2.4,
+     "ms": 1.9,
      "reads": 1,
      "bytesRead": 441388
     },
     "vfr_two_phase_5_200.mkv": {
-     "ms": 2.6,
+     "ms": 2.7,
      "reads": 1,
      "bytesRead": 431615
     },
     "vfr_freeze_2s.mp4": {
-     "ms": 1.4,
+     "ms": 1.9,
      "reads": 1,
      "bytesRead": 119807
     },
     "box64_mdat64_wide.mov": {
-     "ms": 1.1,
+     "ms": 0.9,
      "reads": 1,
      "bytesRead": 88446
     },
     "box64_mdat64_free.mp4": {
-     "ms": 1.1,
+     "ms": 0.9,
      "reads": 1,
      "bytesRead": 88810
     },
     "box64_co64_mdat64.mp4": {
-     "ms": 1,
+     "ms": 0.8,
      "reads": 1,
      "bytesRead": 36643
     },
     "av_h264_aac.mp4": {
-     "ms": 1.3,
+     "ms": 0.9,
      "reads": 1,
      "bytesRead": 103809
     },
     "av_h264_aac_faststart.mp4": {
-     "ms": 1.1,
+     "ms": 0.9,
      "reads": 1,
      "bytesRead": 103809
     },
     "multi_video_2tracks.mp4": {
-     "ms": 1.5,
+     "ms": 1.4,
      "reads": 1,
      "bytesRead": 307127
     },
     "still_image_track_first.mp4": {
-     "ms": 1.1,
+     "ms": 0.8,
      "reads": 1,
      "bytesRead": 107479
     },
     "cover_art_audio.m4a": {
-     "ms": 1,
+     "ms": 0.6,
      "reads": 1,
      "bytesRead": 16690
     },
     "cover_art_plus_video.mp4": {
-     "ms": 1.1,
+     "ms": 1,
      "reads": 1,
      "bytesRead": 105948
     },
@@ -1196,12 +1199,12 @@
      "bytesRead": 13573
     },
     "audio_only_aac.mp4": {
-     "ms": 0.7,
+     "ms": 1,
      "reads": 1,
      "bytesRead": 13593
     },
     "audio_only_opus.webm": {
-     "ms": 1.1,
+     "ms": 0.9,
      "reads": 1,
      "bytesRead": 13847
     },
@@ -1211,67 +1214,67 @@
      "bytesRead": 4078
     },
     "corrupt_empty_0byte.mp4": {
-     "ms": 0.1,
+     "ms": 0,
      "reads": 0,
      "bytesRead": 0
     },
     "corrupt_garbage_random.mp4": {
-     "ms": 1.1,
+     "ms": 0.9,
      "reads": 1,
      "bytesRead": 65536
     },
     "corrupt_text_named.mp4": {
-     "ms": 0.9,
+     "ms": 1.4,
      "reads": 1,
      "bytesRead": 63
     },
     "corrupt_png_named.mp4": {
-     "ms": 0.7,
+     "ms": 1.1,
      "reads": 1,
      "bytesRead": 2256
     },
     "corrupt_trunc_moov_partial.mp4": {
-     "ms": 1.1,
+     "ms": 0.7,
      "reads": 1,
      "bytesRead": 88224
     },
     "corrupt_trunc_no_moov.mp4": {
-     "ms": 1,
+     "ms": 0.8,
      "reads": 1,
      "bytesRead": 87638
     },
     "corrupt_trunc_mdat_faststart.mp4": {
-     "ms": 1.4,
+     "ms": 0.9,
      "reads": 1,
      "bytesRead": 62285
     },
     "corrupt_fmp4_truncated_mid_fragment.mp4": {
-     "ms": 0.8,
+     "ms": 0.7,
      "reads": 1,
      "bytesRead": 71725
     },
     "box_mdat_size0.mp4": {
-     "ms": 1,
+     "ms": 0.8,
      "reads": 1,
      "bytesRead": 103809
     },
     "corrupt_stts_count_huge.mp4": {
-     "ms": 0.8,
+     "ms": 1.1,
      "reads": 1,
      "bytesRead": 88810
     },
     "sniff_webm_named_mp4.mp4": {
-     "ms": 0.9,
+     "ms": 1.1,
      "reads": 1,
      "bytesRead": 73687
     },
     "sniff_mp4_named_webm.webm": {
-     "ms": 1.2,
+     "ms": 0.8,
      "reads": 1,
      "bytesRead": 88810
     },
     "sniff_mp4_named_mkv.mkv": {
-     "ms": 1.1,
+     "ms": 0.8,
      "reads": 1,
      "bytesRead": 88810
     },
@@ -1281,12 +1284,12 @@
      "bytesRead": 123932
     },
     "frag_vfr_dash.mp4": {
-     "ms": 0.8,
+     "ms": 1.2,
      "reads": 1,
      "bytesRead": 124092
     },
     "h264_vfr_remux.mkv": {
-     "ms": 1.7,
+     "ms": 1.4,
      "reads": 1,
      "bytesRead": 204851
     },
@@ -1296,17 +1299,17 @@
      "bytesRead": 72282
     },
     "vp9_opus_live_audiotail.webm": {
-     "ms": 1,
+     "ms": 1.1,
      "reads": 1,
      "bytesRead": 101028
     },
     "h264_25_cover.mkv": {
-     "ms": 1.1,
+     "ms": 0.9,
      "reads": 1,
      "bytesRead": 73653
     },
     "remux_cfr_120_ts16000.mp4": {
-     "ms": 1.4,
+     "ms": 1.7,
      "reads": 1,
      "bytesRead": 209636
     },
@@ -1321,12 +1324,12 @@
      "bytesRead": 120993
     },
     "fmp4_missing_fragment.mp4": {
-     "ms": 1.2,
+     "ms": 1.1,
      "reads": 1,
      "bytesRead": 151484
     },
     "elst_trim_vfr_copy.mp4": {
-     "ms": 1.4,
+     "ms": 1.7,
      "reads": 1,
      "bytesRead": 421180
     },
@@ -1336,7 +1339,7 @@
      "bytesRead": 95288
     },
     "fmp4_global_sidx_bframes.mp4": {
-     "ms": 1.1,
+     "ms": 0.9,
      "reads": 1,
      "bytesRead": 100060
     }
@@ -1345,10 +1348,10 @@
   "engines": {
    "cfr_h264_23.976.mp4": {
     "mp4box": {
-     "ms": [6.1, 1.8, 1.8],
-     "wallMs": [18, 3.4, 2.9],
-     "medianMs": 1.8,
-     "medianWallMs": 3.4,
+     "ms": [5.9, 1.6, 1.5],
+     "wallMs": [18.1, 2.9, 2.6],
+     "medianMs": 1.6,
+     "medianWallMs": 2.9,
      "reads": 2,
      "bytesRead": 66634,
      "error": null,
@@ -1369,10 +1372,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [6.2, 1.5, 1.5],
-     "wallMs": [13.6, 2.1, 2.1],
-     "medianMs": 1.5,
-     "medianWallMs": 2.1,
+     "ms": [5.8, 1.7, 1.2],
+     "wallMs": [12.9, 2.3, 1.8],
+     "medianMs": 1.7,
+     "medianWallMs": 2.3,
      "reads": 1,
      "bytesRead": 73602,
      "error": null,
@@ -1395,10 +1398,10 @@
    },
    "cfr_vp9_23.976.webm": {
     "mediabunny": {
-     "ms": [3.6, 1.3, 1.4],
-     "wallMs": [4.4, 2.1, 2.1],
+     "ms": [3.6, 1.4, 1.4],
+     "wallMs": [4.5, 2.5, 2.1],
      "medianMs": 1.4,
-     "medianWallMs": 2.1,
+     "medianWallMs": 2.5,
      "reads": 1,
      "bytesRead": 60807,
      "error": null,
@@ -1415,16 +1418,16 @@
       "isVfr": false
      },
      "agreement": "avg -0.02%",
-     "nativeStatsMs": 0.3,
+     "nativeStatsMs": 0.5,
      "nativeSkipped": false
     }
    },
    "cfr_h264_24.mp4": {
     "mp4box": {
-     "ms": [1.7, 1.5, 1.8],
-     "wallMs": [3, 2.8, 3],
-     "medianMs": 1.7,
-     "medianWallMs": 3,
+     "ms": [1.8, 1.4, 1.5],
+     "wallMs": [3, 2.6, 2.6],
+     "medianMs": 1.5,
+     "medianWallMs": 2.6,
      "reads": 2,
      "bytesRead": 66636,
      "error": null,
@@ -1445,10 +1448,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.2, 1.2, 1.2],
-     "wallMs": [1.7, 1.7, 1.8],
-     "medianMs": 1.2,
-     "medianWallMs": 1.7,
+     "ms": [0.9, 1, 1.1],
+     "wallMs": [1.9, 1.5, 1.6],
+     "medianMs": 1,
+     "medianWallMs": 1.6,
      "reads": 1,
      "bytesRead": 73032,
      "error": null,
@@ -1465,16 +1468,16 @@
       "isVfr": false
      },
      "agreement": "same",
-     "nativeStatsMs": 0.1,
+     "nativeStatsMs": 0.2,
      "nativeSkipped": false
     }
    },
    "cfr_vp9_24.webm": {
     "mediabunny": {
-     "ms": [1.3, 1.3, 1.1],
-     "wallMs": [2, 2.3, 1.7],
-     "medianMs": 1.3,
-     "medianWallMs": 2,
+     "ms": [1.3, 1, 1.1],
+     "wallMs": [1.8, 1.6, 1.7],
+     "medianMs": 1.1,
+     "medianWallMs": 1.7,
      "reads": 1,
      "bytesRead": 60585,
      "error": null,
@@ -1491,16 +1494,16 @@
       "isVfr": false
      },
      "agreement": "avg -0.02%",
-     "nativeStatsMs": 0.3,
+     "nativeStatsMs": 0.2,
      "nativeSkipped": false
     }
    },
    "cfr_h264_25.mp4": {
     "mp4box": {
-     "ms": [1.5, 1.7, 1.5],
-     "wallMs": [2.7, 2.8, 2.8],
+     "ms": [1.5, 1.4, 1.5],
+     "wallMs": [2.5, 2.5, 2.5],
      "medianMs": 1.5,
-     "medianWallMs": 2.8,
+     "medianWallMs": 2.5,
      "reads": 2,
      "bytesRead": 66648,
      "error": null,
@@ -1521,10 +1524,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.1, 1.1, 0.9],
-     "wallMs": [1.4, 1.6, 1.4],
-     "medianMs": 1.1,
-     "medianWallMs": 1.4,
+     "ms": [0.9, 0.9, 0.8],
+     "wallMs": [1.4, 1.3, 1.3],
+     "medianMs": 0.9,
+     "medianWallMs": 1.3,
      "reads": 1,
      "bytesRead": 71365,
      "error": null,
@@ -1541,16 +1544,16 @@
       "isVfr": false
      },
      "agreement": "same",
-     "nativeStatsMs": 0.1,
+     "nativeStatsMs": 0.2,
      "nativeSkipped": false
     }
    },
    "cfr_vp9_25.webm": {
     "mediabunny": {
-     "ms": [1.3, 1.3, 1.3],
-     "wallMs": [2.2, 1.8, 1.8],
-     "medianMs": 1.3,
-     "medianWallMs": 1.8,
+     "ms": [1.1, 1.1, 1.3],
+     "wallMs": [1.6, 1.7, 1.9],
+     "medianMs": 1.1,
+     "medianWallMs": 1.7,
      "reads": 1,
      "bytesRead": 60207,
      "error": null,
@@ -1573,10 +1576,10 @@
    },
    "cfr_h264_29.97.mp4": {
     "mp4box": {
-     "ms": [1.7, 1.5, 1.6],
-     "wallMs": [2.7, 2.6, 2.6],
-     "medianMs": 1.6,
-     "medianWallMs": 2.6,
+     "ms": [1.6, 1.3, 1.4],
+     "wallMs": [2.7, 2.2, 2.2],
+     "medianMs": 1.4,
+     "medianWallMs": 2.2,
      "reads": 2,
      "bytesRead": 66706,
      "error": null,
@@ -1597,10 +1600,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.1, 1.1, 1],
-     "wallMs": [1.5, 1.6, 1.5],
-     "medianMs": 1.1,
-     "medianWallMs": 1.5,
+     "ms": [0.9, 0.9, 1],
+     "wallMs": [1.4, 1.4, 1.5],
+     "medianMs": 0.9,
+     "medianWallMs": 1.4,
      "reads": 1,
      "bytesRead": 88499,
      "error": null,
@@ -1623,10 +1626,10 @@
    },
    "cfr_vp9_29.97.webm": {
     "mediabunny": {
-     "ms": [1.2, 1, 0.9],
-     "wallMs": [1.6, 1.5, 1.7],
-     "medianMs": 1,
-     "medianWallMs": 1.6,
+     "ms": [0.9, 0.9, 0.8],
+     "wallMs": [1.4, 1.3, 1.6],
+     "medianMs": 0.9,
+     "medianWallMs": 1.4,
      "reads": 1,
      "bytesRead": 73687,
      "error": null,
@@ -1643,16 +1646,16 @@
       "isVfr": false
      },
      "agreement": "avg -0.01%",
-     "nativeStatsMs": 0.1,
+     "nativeStatsMs": 0.2,
      "nativeSkipped": false
     }
    },
    "cfr_h264_30.mp4": {
     "mp4box": {
-     "ms": [1.5, 1.4, 1.4],
-     "wallMs": [2.7, 2.6, 2.5],
-     "medianMs": 1.4,
-     "medianWallMs": 2.6,
+     "ms": [1.3, 1.3, 1.3],
+     "wallMs": [2.3, 2.3, 2.3],
+     "medianMs": 1.3,
+     "medianWallMs": 2.3,
      "reads": 2,
      "bytesRead": 66708,
      "error": null,
@@ -1673,10 +1676,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [0.9, 1, 0.9],
-     "wallMs": [1.5, 1.5, 1.4],
+     "ms": [0.9, 0.9, 0.9],
+     "wallMs": [1.2, 1.2, 1.2],
      "medianMs": 0.9,
-     "medianWallMs": 1.5,
+     "medianWallMs": 1.2,
      "reads": 1,
      "bytesRead": 88810,
      "error": null,
@@ -1699,10 +1702,10 @@
    },
    "cfr_vp9_30.webm": {
     "mediabunny": {
-     "ms": [1.1, 1, 0.9],
-     "wallMs": [1.6, 1.5, 1.5],
-     "medianMs": 1,
-     "medianWallMs": 1.5,
+     "ms": [0.9, 0.8, 1],
+     "wallMs": [1.3, 1.4, 1.6],
+     "medianMs": 0.9,
+     "medianWallMs": 1.4,
      "reads": 1,
      "bytesRead": 72376,
      "error": null,
@@ -1725,10 +1728,10 @@
    },
    "cfr_h264_50.mp4": {
     "mp4box": {
-     "ms": [1.5, 1.4, 1.3],
-     "wallMs": [3, 2.6, 2.3],
-     "medianMs": 1.4,
-     "medianWallMs": 2.6,
+     "ms": [1.5, 1.2, 1.3],
+     "wallMs": [2.5, 2.3, 2.2],
+     "medianMs": 1.3,
+     "medianWallMs": 2.3,
      "reads": 2,
      "bytesRead": 66956,
      "error": null,
@@ -1749,10 +1752,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.1, 1.1, 1.1],
-     "wallMs": [1.5, 1.7, 1.6],
-     "medianMs": 1.1,
-     "medianWallMs": 1.6,
+     "ms": [0.9, 0.9, 0.9],
+     "wallMs": [1.4, 1.4, 1.3],
+     "medianMs": 0.9,
+     "medianWallMs": 1.4,
      "reads": 1,
      "bytesRead": 112678,
      "error": null,
@@ -1775,10 +1778,10 @@
    },
    "cfr_vp9_50.webm": {
     "mediabunny": {
-     "ms": [1.1, 1.2, 1.3],
-     "wallMs": [1.8, 1.6, 1.8],
-     "medianMs": 1.2,
-     "medianWallMs": 1.8,
+     "ms": [0.9, 1, 1.1],
+     "wallMs": [1.7, 1.5, 1.6],
+     "medianMs": 1,
+     "medianWallMs": 1.6,
      "reads": 1,
      "bytesRead": 106691,
      "error": null,
@@ -1801,10 +1804,10 @@
    },
    "cfr_h264_59.94.mp4": {
     "mp4box": {
-     "ms": [1.4, 1.4, 1.2],
-     "wallMs": [2.7, 2.5, 2.2],
-     "medianMs": 1.4,
-     "medianWallMs": 2.5,
+     "ms": [1.3, 1.3, 1.3],
+     "wallMs": [2.4, 2.2, 2.2],
+     "medianMs": 1.3,
+     "medianWallMs": 2.2,
      "reads": 2,
      "bytesRead": 67078,
      "error": null,
@@ -1825,10 +1828,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.2, 1.2, 1.4],
-     "wallMs": [1.8, 1.7, 2.1],
-     "medianMs": 1.2,
-     "medianWallMs": 1.8,
+     "ms": [0.9, 0.9, 0.8],
+     "wallMs": [1.5, 1.3, 1.4],
+     "medianMs": 0.9,
+     "medianWallMs": 1.4,
      "reads": 1,
      "bytesRead": 129016,
      "error": null,
@@ -1851,10 +1854,10 @@
    },
    "cfr_vp9_59.94.webm": {
     "mediabunny": {
-     "ms": [1.2, 1.1, 1.3],
-     "wallMs": [1.8, 1.9, 1.9],
-     "medianMs": 1.2,
-     "medianWallMs": 1.9,
+     "ms": [0.9, 0.9, 1.1],
+     "wallMs": [1.4, 1.8, 1.6],
+     "medianMs": 0.9,
+     "medianWallMs": 1.6,
      "reads": 1,
      "bytesRead": 125465,
      "error": null,
@@ -1877,10 +1880,10 @@
    },
    "cfr_h264_60.mp4": {
     "mp4box": {
-     "ms": [1.4, 1.4, 1.6],
-     "wallMs": [2.6, 2.4, 2.8],
-     "medianMs": 1.4,
-     "medianWallMs": 2.6,
+     "ms": [1.4, 1.2, 1.2],
+     "wallMs": [2.3, 2.3, 2.2],
+     "medianMs": 1.2,
+     "medianWallMs": 2.3,
      "reads": 2,
      "bytesRead": 67080,
      "error": null,
@@ -1901,10 +1904,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.2, 1.2, 1],
-     "wallMs": [1.8, 1.9, 1.6],
-     "medianMs": 1.2,
-     "medianWallMs": 1.8,
+     "ms": [1, 1, 0.9],
+     "wallMs": [1.6, 1.7, 1.3],
+     "medianMs": 1,
+     "medianWallMs": 1.6,
      "reads": 1,
      "bytesRead": 129505,
      "error": null,
@@ -1921,16 +1924,16 @@
       "isVfr": false
      },
      "agreement": "same",
-     "nativeStatsMs": 0.2,
+     "nativeStatsMs": 0.3,
      "nativeSkipped": false
     }
    },
    "cfr_vp9_60.webm": {
     "mediabunny": {
-     "ms": [1.3, 1.3, 1.3],
-     "wallMs": [1.9, 2, 2.2],
-     "medianMs": 1.3,
-     "medianWallMs": 2,
+     "ms": [0.9, 1, 1.2],
+     "wallMs": [1.5, 1.8, 2.1],
+     "medianMs": 1,
+     "medianWallMs": 1.8,
      "reads": 1,
      "bytesRead": 124160,
      "error": null,
@@ -1947,16 +1950,16 @@
       "isVfr": false
      },
      "agreement": "avg -0.02%",
-     "nativeStatsMs": 0.3,
+     "nativeStatsMs": 0.4,
      "nativeSkipped": false
     }
    },
    "cfr_h264_120.mp4": {
     "mp4box": {
-     "ms": [1.6, 1.5, 1.6],
-     "wallMs": [2.9, 2.7, 3],
-     "medianMs": 1.6,
-     "medianWallMs": 2.9,
+     "ms": [1.4, 1.3, 1.3],
+     "wallMs": [2.6, 2.3, 2.4],
+     "medianMs": 1.3,
+     "medianWallMs": 2.4,
      "reads": 2,
      "bytesRead": 67824,
      "error": null,
@@ -1977,10 +1980,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.9, 1.8, 2.2],
-     "wallMs": [2.8, 2.8, 3.1],
-     "medianMs": 1.9,
-     "medianWallMs": 2.8,
+     "ms": [1.8, 1.6, 1.6],
+     "wallMs": [2.4, 2.6, 2.3],
+     "medianMs": 1.6,
+     "medianWallMs": 2.4,
      "reads": 2,
      "bytesRead": 189686,
      "error": null,
@@ -2003,10 +2006,10 @@
    },
    "cfr_vp9_120.webm": {
     "mediabunny": {
-     "ms": [2.3, 2.1, 2],
-     "wallMs": [3.3, 3, 3.1],
-     "medianMs": 2.1,
-     "medianWallMs": 3.1,
+     "ms": [2.3, 1.9, 1.7],
+     "wallMs": [3.2, 2.8, 3],
+     "medianMs": 1.9,
+     "medianWallMs": 3,
      "reads": 2,
      "bytesRead": 208688,
      "error": null,
@@ -2029,10 +2032,10 @@
    },
    "cfr_h264_240.mp4": {
     "mp4box": {
-     "ms": [1.4, 1.5, 1.5],
-     "wallMs": [2.6, 2.7, 2.7],
-     "medianMs": 1.5,
-     "medianWallMs": 2.7,
+     "ms": [1.2, 1.3, 1.5],
+     "wallMs": [2.4, 2.3, 2.6],
+     "medianMs": 1.3,
+     "medianWallMs": 2.4,
      "reads": 2,
      "bytesRead": 69311,
      "error": null,
@@ -2053,10 +2056,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [2, 2.2, 2.3],
-     "wallMs": [3.3, 3.4, 3.3],
-     "medianMs": 2.2,
-     "medianWallMs": 3.3,
+     "ms": [2.1, 2, 2],
+     "wallMs": [3.5, 3.2, 3.1],
+     "medianMs": 2,
+     "medianWallMs": 3.2,
      "reads": 2,
      "bytesRead": 330241,
      "error": null,
@@ -2073,16 +2076,16 @@
       "isVfr": false
      },
      "agreement": "same",
-     "nativeStatsMs": 0.7,
+     "nativeStatsMs": 0.8,
      "nativeSkipped": false
     }
    },
    "cfr_vp9_240.webm": {
     "mediabunny": {
-     "ms": [2.5, 2.7, 2.4],
-     "wallMs": [3.8, 4, 4],
-     "medianMs": 2.5,
-     "medianWallMs": 4,
+     "ms": [2.5, 2.4, 2.3],
+     "wallMs": [3.8, 3.7, 4],
+     "medianMs": 2.4,
+     "medianWallMs": 3.8,
      "reads": 2,
      "bytesRead": 363967,
      "error": null,
@@ -2105,10 +2108,10 @@
    },
    "mov_nobf_default.mov": {
     "mp4box": {
-     "ms": [2, 1.4, 1.5],
-     "wallMs": [3.2, 2.7, 2.5],
-     "medianMs": 1.5,
-     "medianWallMs": 2.7,
+     "ms": [1.8, 1.3, 1.4],
+     "wallMs": [3, 2.4, 2.3],
+     "medianMs": 1.4,
+     "medianWallMs": 2.4,
      "reads": 2,
      "bytesRead": 66665,
      "error": null,
@@ -2129,10 +2132,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.3, 1, 0.9],
-     "wallMs": [1.7, 1.4, 1.3],
-     "medianMs": 1,
-     "medianWallMs": 1.4,
+     "ms": [1, 0.9, 0.9],
+     "wallMs": [1.4, 1.3, 1.2],
+     "medianMs": 0.9,
+     "medianWallMs": 1.3,
      "reads": 1,
      "bytesRead": 88446,
      "error": null,
@@ -2155,8 +2158,8 @@
    },
    "mov_nobf_faststart.mov": {
     "mp4box": {
-     "ms": [1, 0.7, 0.9],
-     "wallMs": [2, 2, 1.9],
+     "ms": [0.9, 0.8, 0.9],
+     "wallMs": [2, 2, 1.8],
      "medianMs": 0.9,
      "medianWallMs": 2,
      "reads": 1,
@@ -2179,10 +2182,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.1, 1.1, 1],
-     "wallMs": [1.6, 1.6, 1.4],
-     "medianMs": 1.1,
-     "medianWallMs": 1.6,
+     "ms": [0.9, 0.8, 0.9],
+     "wallMs": [1.1, 1.3, 1.3],
+     "medianMs": 0.9,
+     "medianWallMs": 1.3,
      "reads": 1,
      "bytesRead": 88446,
      "error": null,
@@ -2199,16 +2202,16 @@
       "isVfr": false
      },
      "agreement": "same",
-     "nativeStatsMs": 0.2,
+     "nativeStatsMs": 0.1,
      "nativeSkipped": false
     }
    },
    "mov_bf_elst.mov": {
     "mp4box": {
-     "ms": [1.2, 1, 0.9],
-     "wallMs": [2.7, 2.1, 2.3],
-     "medianMs": 1,
-     "medianWallMs": 2.3,
+     "ms": [1.1, 0.8, 0.9],
+     "wallMs": [2.1, 1.8, 1.8],
+     "medianMs": 0.9,
+     "medianWallMs": 1.8,
      "reads": 1,
      "bytesRead": 36586,
      "error": null,
@@ -2229,10 +2232,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.6, 1, 1.4],
-     "wallMs": [2.2, 1.7, 2.5],
-     "medianMs": 1.4,
-     "medianWallMs": 2.2,
+     "ms": [1.1, 0.9, 0.9],
+     "wallMs": [1.6, 1.4, 1.4],
+     "medianMs": 0.9,
+     "medianWallMs": 1.4,
      "reads": 1,
      "bytesRead": 36586,
      "error": null,
@@ -2255,10 +2258,10 @@
    },
    "mov_bf_noelst.mov": {
     "mp4box": {
-     "ms": [1, 0.9, 0.8],
-     "wallMs": [2.5, 2.2, 2],
-     "medianMs": 0.9,
-     "medianWallMs": 2.2,
+     "ms": [0.9, 0.8, 0.7],
+     "wallMs": [2, 1.8, 1.8],
+     "medianMs": 0.8,
+     "medianWallMs": 1.8,
      "reads": 1,
      "bytesRead": 36550,
      "error": null,
@@ -2279,10 +2282,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1, 1, 1],
-     "wallMs": [1.6, 1.5, 1.6],
-     "medianMs": 1,
-     "medianWallMs": 1.6,
+     "ms": [0.8, 0.8, 0.7],
+     "wallMs": [1.3, 1.2, 1.1],
+     "medianMs": 0.8,
+     "medianWallMs": 1.2,
      "reads": 1,
      "bytesRead": 36550,
      "error": null,
@@ -2305,10 +2308,10 @@
    },
    "mov_bf_faststart.mov": {
     "mp4box": {
-     "ms": [0.9, 0.8, 0.9],
-     "wallMs": [2, 1.9, 2],
-     "medianMs": 0.9,
-     "medianWallMs": 2,
+     "ms": [0.9, 0.7, 0.8],
+     "wallMs": [1.9, 1.7, 1.7],
+     "medianMs": 0.8,
+     "medianWallMs": 1.7,
      "reads": 1,
      "bytesRead": 36586,
      "error": null,
@@ -2329,10 +2332,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.1, 1, 1],
-     "wallMs": [1.5, 1.4, 1.4],
-     "medianMs": 1,
-     "medianWallMs": 1.4,
+     "ms": [0.8, 0.8, 0.8],
+     "wallMs": [1.3, 1.2, 1.2],
+     "medianMs": 0.8,
+     "medianWallMs": 1.2,
      "reads": 1,
      "bytesRead": 36586,
      "error": null,
@@ -2355,10 +2358,10 @@
    },
    "mov_prores.mov": {
     "mp4box": {
-     "ms": [1.6, 1.5, 1.4],
-     "wallMs": [2.8, 2.7, 2.5],
-     "medianMs": 1.5,
-     "medianWallMs": 2.7,
+     "ms": [1.3, 1.2, 1.3],
+     "wallMs": [2.4, 2.1, 2.2],
+     "medianMs": 1.3,
+     "medianWallMs": 2.2,
      "reads": 2,
      "bytesRead": 66602,
      "error": null,
@@ -2379,10 +2382,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.5, 1.7, 1.7],
-     "wallMs": [2, 2.2, 2.1],
-     "medianMs": 1.7,
-     "medianWallMs": 2.1,
+     "ms": [1.5, 1.4, 1.4],
+     "wallMs": [1.9, 1.9, 2],
+     "medianMs": 1.4,
+     "medianWallMs": 1.9,
      "reads": 2,
      "bytesRead": 224032,
      "error": null,
@@ -2405,9 +2408,9 @@
    },
    "mp4_bf_elst.mp4": {
     "mp4box": {
-     "ms": [0.9, 0.9, 0.8],
-     "wallMs": [2, 2.1, 1.9],
-     "medianMs": 0.9,
+     "ms": [1, 0.8, 0.8],
+     "wallMs": [2.2, 2, 1.8],
+     "medianMs": 0.8,
      "medianWallMs": 2,
      "reads": 1,
      "bytesRead": 36639,
@@ -2429,10 +2432,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1, 0.9, 1],
-     "wallMs": [1.4, 1.4, 1.5],
-     "medianMs": 1,
-     "medianWallMs": 1.4,
+     "ms": [0.8, 0.8, 0.8],
+     "wallMs": [1.3, 1.2, 1.2],
+     "medianMs": 0.8,
+     "medianWallMs": 1.2,
      "reads": 1,
      "bytesRead": 36639,
      "error": null,
@@ -2455,10 +2458,10 @@
    },
    "mp4_bf_noelst.mp4": {
     "mp4box": {
-     "ms": [0.8, 0.9, 0.9],
-     "wallMs": [2, 1.9, 2.2],
-     "medianMs": 0.9,
-     "medianWallMs": 2,
+     "ms": [0.8, 0.7, 0.8],
+     "wallMs": [1.8, 1.8, 1.8],
+     "medianMs": 0.8,
+     "medianWallMs": 1.8,
      "reads": 1,
      "bytesRead": 36603,
      "error": null,
@@ -2479,10 +2482,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1, 0.9, 0.9],
-     "wallMs": [1.5, 1.3, 1.3],
-     "medianMs": 0.9,
-     "medianWallMs": 1.3,
+     "ms": [0.7, 0.8, 0.8],
+     "wallMs": [1.2, 1.1, 1.4],
+     "medianMs": 0.8,
+     "medianWallMs": 1.2,
      "reads": 1,
      "bytesRead": 36603,
      "error": null,
@@ -2505,10 +2508,10 @@
    },
    "mp4_bf_faststart.mp4": {
     "mp4box": {
-     "ms": [0.9, 0.9, 0.9],
-     "wallMs": [2, 2, 2.1],
-     "medianMs": 0.9,
-     "medianWallMs": 2,
+     "ms": [0.9, 0.8, 0.7],
+     "wallMs": [1.8, 1.8, 2],
+     "medianMs": 0.8,
+     "medianWallMs": 1.8,
      "reads": 1,
      "bytesRead": 36639,
      "error": null,
@@ -2529,10 +2532,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [0.8, 1, 1],
-     "wallMs": [1.3, 1.5, 1.4],
-     "medianMs": 1,
-     "medianWallMs": 1.4,
+     "ms": [0.7, 0.8, 0.8],
+     "wallMs": [1.2, 1.3, 1.3],
+     "medianMs": 0.8,
+     "medianWallMs": 1.3,
      "reads": 1,
      "bytesRead": 36639,
      "error": null,
@@ -2555,10 +2558,10 @@
    },
    "mp4_elst_empty_offset.mp4": {
     "mp4box": {
-     "ms": [1, 0.8, 0.9],
-     "wallMs": [2.1, 1.9, 2],
-     "medianMs": 0.9,
-     "medianWallMs": 2,
+     "ms": [0.8, 0.7, 0.7],
+     "wallMs": [1.8, 1.7, 1.8],
+     "medianMs": 0.7,
+     "medianWallMs": 1.8,
      "reads": 1,
      "bytesRead": 36008,
      "error": null,
@@ -2579,10 +2582,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1, 1, 1],
-     "wallMs": [1.5, 2, 1.6],
-     "medianMs": 1,
-     "medianWallMs": 1.6,
+     "ms": [0.8, 0.8, 0.9],
+     "wallMs": [1.3, 1.2, 1.3],
+     "medianMs": 0.8,
+     "medianWallMs": 1.3,
      "reads": 1,
      "bytesRead": 36008,
      "error": null,
@@ -2599,16 +2602,16 @@
       "isVfr": false
      },
      "agreement": "same",
-     "nativeStatsMs": 0.1,
+     "nativeStatsMs": 0.2,
      "nativeSkipped": false
     }
    },
    "mp4_elst_trim_start.mp4": {
     "mp4box": {
-     "ms": [0.9, 0.8, 0.9],
-     "wallMs": [2.1, 2.1, 2],
-     "medianMs": 0.9,
-     "medianWallMs": 2.1,
+     "ms": [0.8, 0.8, 1.1],
+     "wallMs": [1.8, 1.7, 2.2],
+     "medianMs": 0.8,
+     "medianWallMs": 1.8,
      "reads": 1,
      "bytesRead": 36639,
      "error": null,
@@ -2629,9 +2632,9 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1, 1, 0.9],
-     "wallMs": [1.4, 1.5, 1.4],
-     "medianMs": 1,
+     "ms": [1.2, 0.8, 0.9],
+     "wallMs": [1.7, 1.4, 1.3],
+     "medianMs": 0.9,
      "medianWallMs": 1.4,
      "reads": 1,
      "bytesRead": 36639,
@@ -2649,16 +2652,16 @@
       "isVfr": false
      },
      "agreement": "avg same, frames differ",
-     "nativeStatsMs": 0.2,
+     "nativeStatsMs": 0.1,
      "nativeSkipped": false
     }
    },
    "mp4_elst_trim_output_seek.mp4": {
     "mp4box": {
-     "ms": [0.8, 1, 0.7],
-     "wallMs": [2.1, 2.1, 2],
-     "medianMs": 0.8,
-     "medianWallMs": 2.1,
+     "ms": [0.9, 0.7, 0.7],
+     "wallMs": [1.8, 1.7, 1.6],
+     "medianMs": 0.7,
+     "medianWallMs": 1.7,
      "reads": 1,
      "bytesRead": 25677,
      "error": null,
@@ -2679,10 +2682,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.1, 0.9, 0.9],
-     "wallMs": [1.4, 1.3, 1.1],
-     "medianMs": 0.9,
-     "medianWallMs": 1.3,
+     "ms": [0.8, 0.7, 0.7],
+     "wallMs": [1.1, 1.1, 1.1],
+     "medianMs": 0.7,
+     "medianWallMs": 1.1,
      "reads": 1,
      "bytesRead": 25677,
      "error": null,
@@ -2705,10 +2708,10 @@
    },
    "fmp4_keyframe_empty_moov.mp4": {
     "mp4box": {
-     "ms": [2.5, 1.8, 1.7],
-     "wallMs": [3.4, 2.9, 2.8],
-     "medianMs": 1.8,
-     "medianWallMs": 2.9,
+     "ms": [2.2, 1.5, 1.6],
+     "wallMs": [3.2, 2.4, 2.4],
+     "medianMs": 1.6,
+     "medianWallMs": 2.4,
      "reads": 2,
      "bytesRead": 96300,
      "error": null,
@@ -2729,10 +2732,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.9, 1.3, 1.3],
-     "wallMs": [2.7, 1.9, 1.8],
-     "medianMs": 1.3,
-     "medianWallMs": 1.9,
+     "ms": [2, 1.1, 1.1],
+     "wallMs": [2.5, 1.7, 1.8],
+     "medianMs": 1.1,
+     "medianWallMs": 1.8,
      "reads": 1,
      "bytesRead": 119543,
      "error": null,
@@ -2755,10 +2758,10 @@
    },
    "fmp4_default_base_moof.mp4": {
     "mp4box": {
-     "ms": [1.7, 1.5, 1.6],
-     "wallMs": [2.7, 2.6, 2.6],
-     "medianMs": 1.6,
-     "medianWallMs": 2.6,
+     "ms": [1.6, 1.4, 1.4],
+     "wallMs": [2.9, 2.5, 2.3],
+     "medianMs": 1.4,
+     "medianWallMs": 2.5,
      "reads": 2,
      "bytesRead": 96292,
      "error": null,
@@ -2779,10 +2782,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.1, 1.1, 1.2],
-     "wallMs": [1.6, 1.5, 1.8],
-     "medianMs": 1.1,
-     "medianWallMs": 1.6,
+     "ms": [1, 0.9, 0.9],
+     "wallMs": [1.5, 1.4, 1.6],
+     "medianMs": 0.9,
+     "medianWallMs": 1.5,
      "reads": 1,
      "bytesRead": 119503,
      "error": null,
@@ -2805,10 +2808,10 @@
    },
    "fmp4_frag_duration.mp4": {
     "mp4box": {
-     "ms": [2, 2.4, 1.7],
-     "wallMs": [3.1, 4.4, 2.7],
-     "medianMs": 2,
-     "medianWallMs": 3.1,
+     "ms": [1.6, 1.5, 1.6],
+     "wallMs": [2.5, 2.3, 2.4],
+     "medianMs": 1.6,
+     "medianWallMs": 2.4,
      "reads": 2,
      "bytesRead": 111270,
      "error": null,
@@ -2829,10 +2832,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.2, 1.3, 1.1],
-     "wallMs": [1.7, 2.2, 1.6],
-     "medianMs": 1.2,
-     "medianWallMs": 1.7,
+     "ms": [1, 1, 0.9],
+     "wallMs": [1.6, 1.5, 1.9],
+     "medianMs": 1,
+     "medianWallMs": 1.6,
      "reads": 1,
      "bytesRead": 120011,
      "error": null,
@@ -2849,16 +2852,16 @@
       "isVfr": false
      },
      "agreement": "same",
-     "nativeStatsMs": 0.3,
+     "nativeStatsMs": 0.2,
      "nativeSkipped": false
     }
    },
    "fmp4_bframes.mp4": {
     "mp4box": {
-     "ms": [1.2, 1.1, 1],
-     "wallMs": [2.5, 2.1, 2.6],
-     "medianMs": 1.1,
-     "medianWallMs": 2.5,
+     "ms": [1.1, 1, 1],
+     "wallMs": [2.2, 2, 2.1],
+     "medianMs": 1,
+     "medianWallMs": 2.1,
      "reads": 1,
      "bytesRead": 50011,
      "error": null,
@@ -2879,10 +2882,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.2, 1, 0.8],
-     "wallMs": [1.9, 1.5, 1.5],
-     "medianMs": 1,
-     "medianWallMs": 1.5,
+     "ms": [1, 0.8, 0.9],
+     "wallMs": [1.5, 1.2, 1.4],
+     "medianMs": 0.9,
+     "medianWallMs": 1.4,
      "reads": 1,
      "bytesRead": 50011,
      "error": null,
@@ -2905,10 +2908,10 @@
    },
    "fmp4_hybrid_no_empty_moov.mp4": {
     "mp4box": {
-     "ms": [1.8, 1.6, 1.5],
-     "wallMs": [2.9, 2.8, 2.4],
-     "medianMs": 1.6,
-     "medianWallMs": 2.8,
+     "ms": [1.4, 1.4, 1.4],
+     "wallMs": [2.5, 2.3, 2.4],
+     "medianMs": 1.4,
+     "medianWallMs": 2.4,
      "reads": 2,
      "bytesRead": 96281,
      "error": null,
@@ -2929,10 +2932,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1, 1, 1],
-     "wallMs": [1.4, 1.6, 1.4],
-     "medianMs": 1,
-     "medianWallMs": 1.4,
+     "ms": [0.8, 0.8, 0.7],
+     "wallMs": [1.3, 1.2, 1.2],
+     "medianMs": 0.8,
+     "medianWallMs": 1.2,
      "reads": 1,
      "bytesRead": 119476,
      "error": null,
@@ -2949,16 +2952,16 @@
       "isVfr": false
      },
      "agreement": "avg same, frames differ",
-     "nativeStatsMs": 0,
+     "nativeStatsMs": 0.1,
      "nativeSkipped": false
     }
    },
    "fmp4_cmaf.mp4": {
     "mp4box": {
-     "ms": [1.5, 1.5, 2],
-     "wallMs": [2.6, 2.5, 3.1],
+     "ms": [1.4, 1.5, 1.5],
+     "wallMs": [2.3, 2.3, 2.3],
      "medianMs": 1.5,
-     "medianWallMs": 2.6,
+     "medianWallMs": 2.3,
      "reads": 2,
      "bytesRead": 96296,
      "error": null,
@@ -2979,10 +2982,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.3, 1.3, 1.2],
-     "wallMs": [1.9, 1.8, 1.6],
-     "medianMs": 1.3,
-     "medianWallMs": 1.8,
+     "ms": [0.8, 0.9, 1],
+     "wallMs": [1.5, 1.4, 1.4],
+     "medianMs": 0.9,
+     "medianWallMs": 1.4,
      "reads": 1,
      "bytesRead": 119519,
      "error": null,
@@ -3005,10 +3008,10 @@
    },
    "fmp4_global_sidx.mp4": {
     "mp4box": {
-     "ms": [2.4, 2.1, 1.9],
-     "wallMs": [3.6, 3.4, 3],
-     "medianMs": 2.1,
-     "medianWallMs": 3.4,
+     "ms": [1.7, 1.4, 1.4],
+     "wallMs": [2.7, 2.5, 2.3],
+     "medianMs": 1.4,
+     "medianWallMs": 2.5,
      "reads": 2,
      "bytesRead": 96292,
      "error": null,
@@ -3029,10 +3032,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.2, 1.1, 1.2],
-     "wallMs": [1.7, 1.7, 2],
-     "medianMs": 1.2,
-     "medianWallMs": 1.7,
+     "ms": [0.9, 0.9, 0.9],
+     "wallMs": [1.6, 1.5, 1.4],
+     "medianMs": 0.9,
+     "medianWallMs": 1.5,
      "reads": 1,
      "bytesRead": 119591,
      "error": null,
@@ -3055,10 +3058,10 @@
    },
    "fmp4_dash_flag.mp4": {
     "mp4box": {
-     "ms": [1.8, 1.6, 1.9],
-     "wallMs": [3, 2.7, 2.8],
-     "medianMs": 1.8,
-     "medianWallMs": 2.8,
+     "ms": [1.5, 1.3, 1.4],
+     "wallMs": [2.4, 2.2, 2.4],
+     "medianMs": 1.4,
+     "medianWallMs": 2.4,
      "reads": 2,
      "bytesRead": 96344,
      "error": null,
@@ -3079,10 +3082,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.1, 1.1, 1.3],
-     "wallMs": [1.6, 1.6, 1.9],
-     "medianMs": 1.1,
-     "medianWallMs": 1.6,
+     "ms": [1, 1, 1],
+     "wallMs": [1.7, 1.5, 1.7],
+     "medianMs": 1,
+     "medianWallMs": 1.7,
      "reads": 1,
      "bytesRead": 119711,
      "error": null,
@@ -3105,10 +3108,10 @@
    },
    "mp4_hybrid_fragmented_finalized.mp4": {
     "mp4box": {
-     "ms": [1.5, 1.7, 1.4],
-     "wallMs": [2.7, 2.9, 2.7],
-     "medianMs": 1.5,
-     "medianWallMs": 2.7,
+     "ms": [1.4, 1.2, 1.3],
+     "wallMs": [2.6, 2.2, 2.3],
+     "medianMs": 1.3,
+     "medianWallMs": 2.3,
      "reads": 2,
      "bytesRead": 66806,
      "error": null,
@@ -3129,10 +3132,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.3, 1.1, 1.1],
-     "wallMs": [1.8, 1.7, 1.6],
+     "ms": [0.9, 1.1, 1.2],
+     "wallMs": [1.5, 1.6, 1.7],
      "medianMs": 1.1,
-     "medianWallMs": 1.7,
+     "medianWallMs": 1.6,
      "reads": 1,
      "bytesRead": 120694,
      "error": null,
@@ -3149,16 +3152,16 @@
       "isVfr": false
      },
      "agreement": "same",
-     "nativeStatsMs": 0.2,
+     "nativeStatsMs": 0.1,
      "nativeSkipped": false
     }
    },
    "fmp4_dash_single_file.mp4": {
     "mp4box": {
-     "ms": [2.4, 1.7, 1.6],
-     "wallMs": [3.7, 2.6, 2.6],
-     "medianMs": 1.7,
-     "medianWallMs": 2.6,
+     "ms": [1.7, 1.5, 1.5],
+     "wallMs": [3, 2.5, 2.4],
+     "medianMs": 1.5,
+     "medianWallMs": 2.5,
      "reads": 2,
      "bytesRead": 96220,
      "error": null,
@@ -3179,10 +3182,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.2, 1.1, 1],
-     "wallMs": [1.9, 1.6, 1.4],
-     "medianMs": 1.1,
-     "medianWallMs": 1.6,
+     "ms": [1, 0.9, 0.8],
+     "wallMs": [1.4, 1.2, 1.3],
+     "medianMs": 0.9,
+     "medianWallMs": 1.3,
      "reads": 1,
      "bytesRead": 119624,
      "error": null,
@@ -3205,10 +3208,10 @@
    },
    "fmp4_dash_concat_segments.mp4": {
     "mp4box": {
-     "ms": [1.7, 1.6, 1.8],
-     "wallMs": [2.7, 2.5, 3],
-     "medianMs": 1.7,
-     "medianWallMs": 2.7,
+     "ms": [1.6, 1.5, 1.5],
+     "wallMs": [2.6, 2.3, 2.7],
+     "medianMs": 1.5,
+     "medianWallMs": 2.6,
      "reads": 2,
      "bytesRead": 96244,
      "error": null,
@@ -3229,10 +3232,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [0.9, 1.1, 0.9],
-     "wallMs": [1.5, 1.5, 1.3],
+     "ms": [1, 0.9, 0.8],
+     "wallMs": [1.4, 1.4, 1.2],
      "medianMs": 0.9,
-     "medianWallMs": 1.5,
+     "medianWallMs": 1.4,
      "reads": 1,
      "bytesRead": 119720,
      "error": null,
@@ -3255,10 +3258,10 @@
    },
    "hevc_hvc1.mp4": {
     "mp4box": {
-     "ms": [1.2, 0.9, 0.9],
-     "wallMs": [2.2, 2.1, 2],
-     "medianMs": 0.9,
-     "medianWallMs": 2.1,
+     "ms": [1.2, 0.7, 0.8],
+     "wallMs": [2.1, 1.8, 1.6],
+     "medianMs": 0.8,
+     "medianWallMs": 1.8,
      "reads": 1,
      "bytesRead": 46180,
      "error": null,
@@ -3279,10 +3282,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.5, 1, 1],
-     "wallMs": [1.9, 1.3, 1.5],
-     "medianMs": 1,
-     "medianWallMs": 1.5,
+     "ms": [1.3, 0.9, 0.9],
+     "wallMs": [1.8, 1.3, 1.3],
+     "medianMs": 0.9,
+     "medianWallMs": 1.3,
      "reads": 1,
      "bytesRead": 46180,
      "error": null,
@@ -3299,16 +3302,16 @@
       "isVfr": false
      },
      "agreement": "same",
-     "nativeStatsMs": 0.1,
+     "nativeStatsMs": 0.2,
      "nativeSkipped": false
     }
    },
    "hevc_hev1.mp4": {
     "mp4box": {
-     "ms": [1.1, 0.9, 0.8],
-     "wallMs": [2.1, 2.1, 1.9],
+     "ms": [1, 0.8, 0.9],
+     "wallMs": [1.8, 1.8, 1.8],
      "medianMs": 0.9,
-     "medianWallMs": 2.1,
+     "medianWallMs": 1.8,
      "reads": 1,
      "bytesRead": 46180,
      "error": null,
@@ -3329,9 +3332,9 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [0.9, 0.8, 1.2],
-     "wallMs": [1.3, 1.3, 1.7],
-     "medianMs": 0.9,
+     "ms": [0.8, 0.8, 1],
+     "wallMs": [1.2, 1.3, 1.3],
+     "medianMs": 0.8,
      "medianWallMs": 1.3,
      "reads": 1,
      "bytesRead": 46180,
@@ -3355,10 +3358,10 @@
    },
    "av1.mp4": {
     "mp4box": {
-     "ms": [1.1, 1, 1],
-     "wallMs": [2.5, 2.3, 2.4],
-     "medianMs": 1,
-     "medianWallMs": 2.4,
+     "ms": [0.9, 0.8, 0.7],
+     "wallMs": [1.9, 1.7, 1.7],
+     "medianMs": 0.8,
+     "medianWallMs": 1.7,
      "reads": 1,
      "bytesRead": 21330,
      "error": null,
@@ -3379,10 +3382,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.4, 1, 1],
-     "wallMs": [1.8, 1.6, 1.5],
-     "medianMs": 1,
-     "medianWallMs": 1.6,
+     "ms": [1, 0.9, 0.8],
+     "wallMs": [1.4, 1.3, 1.2],
+     "medianMs": 0.9,
+     "medianWallMs": 1.3,
      "reads": 1,
      "bytesRead": 21330,
      "error": null,
@@ -3405,10 +3408,10 @@
    },
    "vp9.mp4": {
     "mp4box": {
-     "ms": [1.9, 1.5, 1.7],
-     "wallMs": [3.2, 2.7, 3.2],
-     "medianMs": 1.7,
-     "medianWallMs": 3.2,
+     "ms": [1.5, 1.7, 1.5],
+     "wallMs": [2.4, 3.2, 2.8],
+     "medianMs": 1.5,
+     "medianWallMs": 2.8,
      "reads": 2,
      "bytesRead": 66691,
      "error": null,
@@ -3429,10 +3432,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.3, 1.2, 1],
-     "wallMs": [1.8, 1.8, 1.4],
-     "medianMs": 1.2,
-     "medianWallMs": 1.8,
+     "ms": [1.2, 1, 0.9],
+     "wallMs": [1.5, 1.6, 1.4],
+     "medianMs": 1,
+     "medianWallMs": 1.5,
      "reads": 1,
      "bytesRead": 73754,
      "error": null,
@@ -3455,10 +3458,10 @@
    },
    "vp9.webm": {
     "mediabunny": {
-     "ms": [1.2, 1.3, 1.2],
-     "wallMs": [1.5, 1.7, 1.7],
-     "medianMs": 1.2,
-     "medianWallMs": 1.7,
+     "ms": [1, 1.1, 0.9],
+     "wallMs": [1.6, 1.5, 1.4],
+     "medianMs": 1,
+     "medianWallMs": 1.5,
      "reads": 1,
      "bytesRead": 73687,
      "error": null,
@@ -3481,10 +3484,10 @@
    },
    "vp8.webm": {
     "mediabunny": {
-     "ms": [2.1, 2.2, 2.2],
-     "wallMs": [2.6, 2.9, 3.1],
-     "medianMs": 2.2,
-     "medianWallMs": 2.9,
+     "ms": [1.8, 1.7, 2],
+     "wallMs": [2.3, 2.3, 2.6],
+     "medianMs": 1.8,
+     "medianWallMs": 2.3,
      "reads": 2,
      "bytesRead": 164171,
      "error": null,
@@ -3507,10 +3510,10 @@
    },
    "av1.webm": {
     "mediabunny": {
-     "ms": [1.2, 1.3, 1.2],
-     "wallMs": [2.1, 2, 1.9],
-     "medianMs": 1.2,
-     "medianWallMs": 2,
+     "ms": [1.4, 0.9, 1],
+     "wallMs": [2, 1.5, 1.4],
+     "medianMs": 1,
+     "medianWallMs": 1.5,
      "reads": 1,
      "bytesRead": 21697,
      "error": null,
@@ -3533,12 +3536,38 @@
    },
    "h264.mkv": {
     "mediabunny": {
-     "ms": [1.5, 1.2, 1.2],
-     "wallMs": [1.9, 1.6, 1.8],
-     "medianMs": 1.2,
-     "medianWallMs": 1.8,
+     "ms": [1.1, 0.9, 1],
+     "wallMs": [1.5, 1.8, 1.5],
+     "medianMs": 1,
+     "medianWallMs": 1.5,
      "reads": 1,
      "bytesRead": 88522,
+     "error": null,
+     "summary": {
+      "container": "matroska",
+      "error": null,
+      "scan": "exact",
+      "tracks": 1,
+      "avg": "179109/5977",
+      "avgValue": 29.966371089175173,
+      "frames": 90,
+      "min": "500/17",
+      "max": "1000/33",
+      "isVfr": false
+     },
+     "agreement": "avg -0.01%",
+     "nativeStatsMs": 0.1,
+     "nativeSkipped": false
+    }
+   },
+   "hevc.mkv": {
+    "mediabunny": {
+     "ms": [1, 1.2, 0.9],
+     "wallMs": [1.5, 1.7, 1.3],
+     "medianMs": 1,
+     "medianWallMs": 1.5,
+     "reads": 1,
+     "bytesRead": 45356,
      "error": null,
      "summary": {
       "container": "matroska",
@@ -3557,38 +3586,12 @@
      "nativeSkipped": false
     }
    },
-   "hevc.mkv": {
-    "mediabunny": {
-     "ms": [1.4, 1.2, 1],
-     "wallMs": [2, 1.9, 1.9],
-     "medianMs": 1.2,
-     "medianWallMs": 1.9,
-     "reads": 1,
-     "bytesRead": 45356,
-     "error": null,
-     "summary": {
-      "container": "matroska",
-      "error": null,
-      "scan": "exact",
-      "tracks": 1,
-      "avg": "179109/5977",
-      "avgValue": 29.966371089175173,
-      "frames": 90,
-      "min": "500/17",
-      "max": "1000/33",
-      "isVfr": false
-     },
-     "agreement": "avg -0.01%",
-     "nativeStatsMs": 0.3,
-     "nativeSkipped": false
-    }
-   },
    "vp9_live.webm": {
     "mediabunny": {
-     "ms": [1.5, 1.2, 1.1],
-     "wallMs": [2.1, 1.7, 1.7],
-     "medianMs": 1.2,
-     "medianWallMs": 1.7,
+     "ms": [0.9, 1.1, 0.9],
+     "wallMs": [1.6, 1.6, 1.4],
+     "medianMs": 0.9,
+     "medianWallMs": 1.6,
      "reads": 1,
      "bytesRead": 73582,
      "error": null,
@@ -3611,10 +3614,10 @@
    },
    "vp9_pipe.webm": {
     "mediabunny": {
-     "ms": [1.3, 1.3, 1.2],
-     "wallMs": [2.1, 1.7, 1.7],
-     "medianMs": 1.3,
-     "medianWallMs": 1.7,
+     "ms": [0.9, 0.9, 0.9],
+     "wallMs": [1.5, 1.3, 1.4],
+     "medianMs": 0.9,
+     "medianWallMs": 1.4,
      "reads": 1,
      "bytesRead": 73582,
      "error": null,
@@ -3631,16 +3634,16 @@
       "isVfr": false
      },
      "agreement": "avg -0.01%",
-     "nativeStatsMs": 0.1,
+     "nativeStatsMs": 0.2,
      "nativeSkipped": false
     }
    },
    "vp9_unknown_clusters.webm": {
     "mediabunny": {
-     "ms": [1.2, 1.1, 1],
-     "wallMs": [1.7, 1.6, 1.4],
-     "medianMs": 1.1,
-     "medianWallMs": 1.6,
+     "ms": [0.9, 0.8, 0.7],
+     "wallMs": [1.3, 1.2, 1.1],
+     "medianMs": 0.8,
+     "medianWallMs": 1.2,
      "reads": 1,
      "bytesRead": 73582,
      "error": null,
@@ -3663,10 +3666,10 @@
    },
    "vp9_no_defaultduration.webm": {
     "mediabunny": {
-     "ms": [1.1, 1.1, 1.3],
-     "wallMs": [1.6, 1.5, 2],
-     "medianMs": 1.1,
-     "medianWallMs": 1.6,
+     "ms": [0.8, 0.8, 0.9],
+     "wallMs": [1.4, 1.3, 1.3],
+     "medianMs": 0.8,
+     "medianWallMs": 1.3,
      "reads": 1,
      "bytesRead": 73687,
      "error": null,
@@ -3683,16 +3686,16 @@
       "isVfr": false
      },
      "agreement": "avg +1.11%",
-     "nativeStatsMs": 0.1,
+     "nativeStatsMs": 0.2,
      "nativeSkipped": false
     }
    },
    "vfr_concat_10_30_60.mp4": {
     "mp4box": {
-     "ms": [1.5, 1.5, 1.7],
-     "wallMs": [3.1, 3.2, 3.3],
-     "medianMs": 1.5,
-     "medianWallMs": 3.2,
+     "ms": [1.5, 1.3, 1.4],
+     "wallMs": [2.7, 2.7, 2.6],
+     "medianMs": 1.4,
+     "medianWallMs": 2.7,
      "reads": 2,
      "bytesRead": 67179,
      "error": null,
@@ -3713,10 +3716,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.9, 1.7, 1.9],
-     "wallMs": [2.7, 2.5, 2.6],
-     "medianMs": 1.9,
-     "medianWallMs": 2.6,
+     "ms": [1.7, 1.5, 1.5],
+     "wallMs": [2.2, 2.1, 2.2],
+     "medianMs": 1.5,
+     "medianWallMs": 2.2,
      "reads": 2,
      "bytesRead": 165653,
      "error": null,
@@ -3739,10 +3742,10 @@
    },
    "vfr_concat_bframes.mp4": {
     "mp4box": {
-     "ms": [1.5, 1.9, 1.6],
-     "wallMs": [3.1, 3.4, 3],
-     "medianMs": 1.6,
-     "medianWallMs": 3.1,
+     "ms": [1.5, 1.3, 1.3],
+     "wallMs": [2.8, 2.5, 2.4],
+     "medianMs": 1.3,
+     "medianWallMs": 2.5,
      "reads": 2,
      "bytesRead": 68275,
      "error": null,
@@ -3763,10 +3766,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.3, 1.3, 1.4],
-     "wallMs": [2, 2, 2.2],
-     "medianMs": 1.3,
-     "medianWallMs": 2,
+     "ms": [0.9, 1, 1],
+     "wallMs": [1.6, 1.6, 1.7],
+     "medianMs": 1,
+     "medianWallMs": 1.6,
      "reads": 1,
      "bytesRead": 68275,
      "error": null,
@@ -3789,10 +3792,10 @@
    },
    "vfr_concat_10_30_60_ts1M.mp4": {
     "mp4box": {
-     "ms": [1.7, 1.7, 1.5],
-     "wallMs": [3.3, 3.4, 3.1],
-     "medianMs": 1.7,
-     "medianWallMs": 3.3,
+     "ms": [1.6, 1.4, 1.4],
+     "wallMs": [2.8, 2.7, 2.6],
+     "medianMs": 1.4,
+     "medianWallMs": 2.7,
      "reads": 2,
      "bytesRead": 68139,
      "error": null,
@@ -3813,10 +3816,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [2, 1.8, 1.9],
-     "wallMs": [2.7, 2.6, 2.8],
-     "medianMs": 1.9,
-     "medianWallMs": 2.7,
+     "ms": [1.6, 1.5, 1.6],
+     "wallMs": [2.2, 2.1, 2.2],
+     "medianMs": 1.6,
+     "medianWallMs": 2.2,
      "reads": 2,
      "bytesRead": 166613,
      "error": null,
@@ -3839,10 +3842,10 @@
    },
    "vfr_concat_10_30_60.mov": {
     "mp4box": {
-     "ms": [1.6, 1.5, 1.6],
-     "wallMs": [3.2, 2.9, 3.2],
-     "medianMs": 1.6,
-     "medianWallMs": 3.2,
+     "ms": [1.3, 1.5, 1.4],
+     "wallMs": [2.6, 2.6, 2.7],
+     "medianMs": 1.4,
+     "medianWallMs": 2.6,
      "reads": 2,
      "bytesRead": 67138,
      "error": null,
@@ -3863,10 +3866,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [2, 2, 2.2],
-     "wallMs": [2.7, 2.8, 2.9],
-     "medianMs": 2,
-     "medianWallMs": 2.8,
+     "ms": [1.4, 1.4, 1.6],
+     "wallMs": [2.2, 2, 2.3],
+     "medianMs": 1.4,
+     "medianWallMs": 2.2,
      "reads": 2,
      "bytesRead": 165600,
      "error": null,
@@ -3889,10 +3892,10 @@
    },
    "vfr_concat_10_30_60.webm": {
     "mediabunny": {
-     "ms": [2, 1.9, 2],
-     "wallMs": [3, 3.3, 3.2],
-     "medianMs": 2,
-     "medianWallMs": 3.2,
+     "ms": [2, 1.6, 1.7],
+     "wallMs": [2.7, 2.4, 2.7],
+     "medianMs": 1.7,
+     "medianWallMs": 2.7,
      "reads": 2,
      "bytesRead": 143713,
      "error": null,
@@ -3909,16 +3912,16 @@
       "isVfr": true
      },
      "agreement": "avg +0.28%",
-     "nativeStatsMs": 0.5,
+     "nativeStatsMs": 0.3,
      "nativeSkipped": false
     }
    },
    "vfr_concat_10_30_60_fmp4.mp4": {
     "mp4box": {
-     "ms": [2.5, 2.3, 2.5],
-     "wallMs": [4.2, 3.8, 4],
-     "medianMs": 2.5,
-     "medianWallMs": 4,
+     "ms": [2.3, 2, 2.1],
+     "wallMs": [3.5, 3.1, 3.2],
+     "medianMs": 2.1,
+     "medianWallMs": 3.2,
      "reads": 3,
      "bytesRead": 131253,
      "error": null,
@@ -3939,10 +3942,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.7, 1.8, 1.9],
-     "wallMs": [2.4, 2.5, 2.7],
-     "medianMs": 1.8,
-     "medianWallMs": 2.5,
+     "ms": [1.6, 1.6, 1.6],
+     "wallMs": [2.1, 2.5, 2.3],
+     "medianMs": 1.6,
+     "medianWallMs": 2.3,
      "reads": 2,
      "bytesRead": 166738,
      "error": null,
@@ -3959,16 +3962,16 @@
       "isVfr": true
      },
      "agreement": "same",
-     "nativeStatsMs": 0.2,
+     "nativeStatsMs": 0.3,
      "nativeSkipped": false
     }
    },
    "vfr_setpts_sine.mp4": {
     "mp4box": {
-     "ms": [1.7, 2.3, 1.4],
-     "wallMs": [3.3, 3.7, 2.6],
-     "medianMs": 1.7,
-     "medianWallMs": 3.3,
+     "ms": [1.6, 2.2, 1.5],
+     "wallMs": [3, 3.7, 2.9],
+     "medianMs": 1.6,
+     "medianWallMs": 3,
      "reads": 2,
      "bytesRead": 68147,
      "error": null,
@@ -3989,10 +3992,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.6, 1.5, 1.6],
-     "wallMs": [2.4, 2.2, 2.3],
+     "ms": [1.5, 1.6, 1.6],
+     "wallMs": [2.1, 2.2, 2.1],
      "medianMs": 1.6,
-     "medianWallMs": 2.3,
+     "medianWallMs": 2.1,
      "reads": 2,
      "bytesRead": 145595,
      "error": null,
@@ -4009,16 +4012,16 @@
       "isVfr": true
      },
      "agreement": "same",
-     "nativeStatsMs": 0.2,
+     "nativeStatsMs": 0.1,
      "nativeSkipped": false
     }
    },
    "vfr_select_drop.mp4": {
     "mp4box": {
-     "ms": [1.5, 1.4, 1.5],
-     "wallMs": [2.7, 2.7, 2.6],
-     "medianMs": 1.5,
-     "medianWallMs": 2.7,
+     "ms": [1.4, 1.3, 1.4],
+     "wallMs": [2.6, 2.7, 2.5],
+     "medianMs": 1.4,
+     "medianWallMs": 2.6,
      "reads": 2,
      "bytesRead": 68512,
      "error": null,
@@ -4039,10 +4042,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.6, 1.6, 1.5],
-     "wallMs": [2.2, 2.3, 1.9],
-     "medianMs": 1.6,
-     "medianWallMs": 2.2,
+     "ms": [1.9, 1.7, 1.4],
+     "wallMs": [2.7, 2.3, 2],
+     "medianMs": 1.7,
+     "medianWallMs": 2.3,
      "reads": 2,
      "bytesRead": 155730,
      "error": null,
@@ -4065,9 +4068,9 @@
    },
    "vfr_mpdecimate.mp4": {
     "mp4box": {
-     "ms": [1.4, 1.4, 1.2],
-     "wallMs": [2.5, 2.5, 2.3],
-     "medianMs": 1.4,
+     "ms": [1.3, 1.4, 1.3],
+     "wallMs": [2.4, 2.5, 2.6],
+     "medianMs": 1.3,
      "medianWallMs": 2.5,
      "reads": 2,
      "bytesRead": 66732,
@@ -4089,10 +4092,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [0.8, 1, 1],
-     "wallMs": [1.3, 1.4, 1.5],
-     "medianMs": 1,
-     "medianWallMs": 1.4,
+     "ms": [0.9, 1, 0.9],
+     "wallMs": [1.5, 1.3, 1.3],
+     "medianMs": 0.9,
+     "medianWallMs": 1.3,
      "reads": 1,
      "bytesRead": 89117,
      "error": null,
@@ -4116,9 +4119,9 @@
    "vfr_screenrec_ts1000.mp4": {
     "mp4box": {
      "ms": [1.4, 1.4, 1.4],
-     "wallMs": [2.6, 2.5, 2.7],
+     "wallMs": [2.5, 2.4, 2.4],
      "medianMs": 1.4,
-     "medianWallMs": 2.6,
+     "medianWallMs": 2.4,
      "reads": 2,
      "bytesRead": 69199,
      "error": null,
@@ -4139,8 +4142,8 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.8, 1.5, 1.4],
-     "wallMs": [2.4, 2.1, 2.1],
+     "ms": [1.6, 1.4, 1.5],
+     "wallMs": [2.2, 2.1, 2.1],
      "medianMs": 1.5,
      "medianWallMs": 2.1,
      "reads": 2,
@@ -4165,10 +4168,10 @@
    },
    "vfr_screenrec_ts1000.webm": {
     "mediabunny": {
-     "ms": [1.9, 1.7, 1.7],
-     "wallMs": [2.5, 2.5, 2.3],
-     "medianMs": 1.7,
-     "medianWallMs": 2.5,
+     "ms": [1.6, 1.5, 1.6],
+     "wallMs": [2.4, 2.5, 2.4],
+     "medianMs": 1.6,
+     "medianWallMs": 2.4,
      "reads": 2,
      "bytesRead": 186038,
      "error": null,
@@ -4185,16 +4188,16 @@
       "isVfr": true
      },
      "agreement": "avg -0.01%",
-     "nativeStatsMs": 0.3,
+     "nativeStatsMs": 0.4,
      "nativeSkipped": false
     }
    },
    "vfr_pulldown_2_3.mp4": {
     "mp4box": {
-     "ms": [1.4, 1.4, 1.4],
-     "wallMs": [2.5, 2.4, 2.6],
-     "medianMs": 1.4,
-     "medianWallMs": 2.5,
+     "ms": [1.3, 1.3, 1.2],
+     "wallMs": [2.4, 2.4, 2.3],
+     "medianMs": 1.3,
+     "medianWallMs": 2.4,
      "reads": 2,
      "bytesRead": 67788,
      "error": null,
@@ -4215,10 +4218,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1, 0.9, 0.8],
-     "wallMs": [1.4, 1.5, 1.5],
+     "ms": [0.9, 0.8, 1],
+     "wallMs": [1.3, 1.4, 1.3],
      "medianMs": 0.9,
-     "medianWallMs": 1.5,
+     "medianWallMs": 1.3,
      "reads": 1,
      "bytesRead": 125744,
      "error": null,
@@ -4241,10 +4244,10 @@
    },
    "vfr_two_phase_5_200.mp4": {
     "mp4box": {
-     "ms": [1.4, 1.5, 1.3],
-     "wallMs": [2.6, 2.8, 2.8],
-     "medianMs": 1.4,
-     "medianWallMs": 2.8,
+     "ms": [1.3, 1.2, 1.3],
+     "wallMs": [2.4, 2.3, 2.4],
+     "medianMs": 1.3,
+     "medianWallMs": 2.4,
      "reads": 2,
      "bytesRead": 69735,
      "error": null,
@@ -4265,10 +4268,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.8, 2.1, 2.2],
-     "wallMs": [3.3, 3.5, 3.5],
-     "medianMs": 2.1,
-     "medianWallMs": 3.5,
+     "ms": [1.8, 1.7, 1.7],
+     "wallMs": [3.2, 3, 3.1],
+     "medianMs": 1.7,
+     "medianWallMs": 3.1,
      "reads": 2,
      "bytesRead": 224572,
      "error": null,
@@ -4285,16 +4288,16 @@
       "isVfr": true
      },
      "agreement": "same",
-     "nativeStatsMs": 0.9,
+     "nativeStatsMs": 1,
      "nativeSkipped": false
     }
    },
    "vfr_two_phase_5_200.webm": {
     "mediabunny": {
-     "ms": [4.8, 4, 3.7],
-     "wallMs": [6.7, 6.3, 5.6],
+     "ms": [4, 4.3, 3.6],
+     "wallMs": [6.2, 6.3, 5.3],
      "medianMs": 4,
-     "medianWallMs": 6.3,
+     "medianWallMs": 6.2,
      "reads": 5,
      "bytesRead": 441388,
      "error": null,
@@ -4311,16 +4314,16 @@
       "isVfr": true
      },
      "agreement": "avg +0.06%",
-     "nativeStatsMs": 1.5,
+     "nativeStatsMs": 1.4,
      "nativeSkipped": false
     }
    },
    "vfr_two_phase_5_200.mkv": {
     "mediabunny": {
-     "ms": [5.8, 4.2, 4],
-     "wallMs": [8.6, 6.6, 5.8],
-     "medianMs": 4.2,
-     "medianWallMs": 6.6,
+     "ms": [5.3, 3.9, 3.8],
+     "wallMs": [8.2, 6.2, 5.4],
+     "medianMs": 3.9,
+     "medianWallMs": 6.2,
      "reads": 5,
      "bytesRead": 431615,
      "error": null,
@@ -4337,16 +4340,16 @@
       "isVfr": true
      },
      "agreement": "same",
-     "nativeStatsMs": 1.8,
+     "nativeStatsMs": 1.7,
      "nativeSkipped": false
     }
    },
    "vfr_freeze_2s.mp4": {
     "mp4box": {
-     "ms": [1.3, 1.2, 1.2],
-     "wallMs": [2.7, 2.4, 2.5],
+     "ms": [1.2, 1.2, 1.2],
+     "wallMs": [2.7, 2.4, 2.4],
      "medianMs": 1.2,
-     "medianWallMs": 2.5,
+     "medianWallMs": 2.4,
      "reads": 2,
      "bytesRead": 66847,
      "error": null,
@@ -4367,10 +4370,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [0.9, 1.1, 1.2],
-     "wallMs": [1.5, 1.9, 1.7],
-     "medianMs": 1.1,
-     "medianWallMs": 1.7,
+     "ms": [0.9, 1.1, 0.9],
+     "wallMs": [1.3, 1.7, 1.4],
+     "medianMs": 0.9,
+     "medianWallMs": 1.4,
      "reads": 1,
      "bytesRead": 119807,
      "error": null,
@@ -4393,10 +4396,10 @@
    },
    "box64_mdat64_wide.mov": {
     "mp4box": {
-     "ms": [2.3, 1.7, 1.5],
-     "wallMs": [3.3, 3, 2.6],
-     "medianMs": 1.7,
-     "medianWallMs": 3,
+     "ms": [2.3, 1.5, 1.3],
+     "wallMs": [3.5, 2.7, 2.3],
+     "medianMs": 1.5,
+     "medianWallMs": 2.7,
      "reads": 2,
      "bytesRead": 66665,
      "error": null,
@@ -4417,10 +4420,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.1, 1, 0.9],
-     "wallMs": [1.5, 1.5, 1.4],
-     "medianMs": 1,
-     "medianWallMs": 1.5,
+     "ms": [0.8, 0.9, 0.7],
+     "wallMs": [1.4, 1.3, 1.2],
+     "medianMs": 0.8,
+     "medianWallMs": 1.3,
      "reads": 1,
      "bytesRead": 88446,
      "error": null,
@@ -4443,10 +4446,10 @@
    },
    "box64_mdat64_free.mp4": {
     "mp4box": {
-     "ms": [1.5, 1.4, 1.5],
-     "wallMs": [2.7, 2.4, 2.6],
-     "medianMs": 1.5,
-     "medianWallMs": 2.6,
+     "ms": [1.4, 1.6, 1.3],
+     "wallMs": [2.4, 2.7, 2.8],
+     "medianMs": 1.4,
+     "medianWallMs": 2.7,
      "reads": 2,
      "bytesRead": 66708,
      "error": null,
@@ -4467,9 +4470,9 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1, 1, 0.8],
-     "wallMs": [1.3, 1.4, 1.2],
-     "medianMs": 1,
+     "ms": [1.4, 0.9, 0.9],
+     "wallMs": [1.8, 1.3, 1.3],
+     "medianMs": 0.9,
      "medianWallMs": 1.3,
      "reads": 1,
      "bytesRead": 88810,
@@ -4487,16 +4490,16 @@
       "isVfr": false
      },
      "agreement": "same",
-     "nativeStatsMs": 0,
+     "nativeStatsMs": 0.1,
      "nativeSkipped": false
     }
    },
    "box64_co64_mdat64.mp4": {
     "mp4box": {
-     "ms": [1, 1, 1],
-     "wallMs": [2, 2, 2.1],
-     "medianMs": 1,
-     "medianWallMs": 2,
+     "ms": [1.3, 0.9, 0.9],
+     "wallMs": [2.5, 2.2, 2],
+     "medianMs": 0.9,
+     "medianWallMs": 2.2,
      "reads": 1,
      "bytesRead": 36643,
      "error": null,
@@ -4517,10 +4520,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1, 0.9, 0.9],
-     "wallMs": [1.4, 1.3, 1.4],
+     "ms": [1, 0.8, 0.9],
+     "wallMs": [1.4, 1.3, 1.2],
      "medianMs": 0.9,
-     "medianWallMs": 1.4,
+     "medianWallMs": 1.3,
      "reads": 1,
      "bytesRead": 36643,
      "error": null,
@@ -4543,10 +4546,10 @@
    },
    "av_h264_aac.mp4": {
     "mp4box": {
-     "ms": [2.4, 1.7, 1.7],
-     "wallMs": [3.6, 2.8, 2.9],
-     "medianMs": 1.7,
-     "medianWallMs": 2.9,
+     "ms": [2.5, 1.6, 1.5],
+     "wallMs": [3.8, 2.6, 2.4],
+     "medianMs": 1.6,
+     "medianWallMs": 2.6,
      "reads": 2,
      "bytesRead": 69465,
      "error": null,
@@ -4567,10 +4570,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.5, 1.1, 1],
-     "wallMs": [2, 1.5, 1.5],
-     "medianMs": 1.1,
-     "medianWallMs": 1.5,
+     "ms": [1.3, 1, 0.9],
+     "wallMs": [1.7, 1.4, 1.3],
+     "medianMs": 1,
+     "medianWallMs": 1.4,
      "reads": 1,
      "bytesRead": 103809,
      "error": null,
@@ -4587,16 +4590,16 @@
       "isVfr": false
      },
      "agreement": "same",
-     "nativeStatsMs": 0.1,
+     "nativeStatsMs": 0.2,
      "nativeSkipped": false
     }
    },
    "av_h264_aac_faststart.mp4": {
     "mp4box": {
-     "ms": [1.1, 1.1, 1],
-     "wallMs": [2.5, 2.7, 2.3],
-     "medianMs": 1.1,
-     "medianWallMs": 2.5,
+     "ms": [0.9, 0.9, 0.9],
+     "wallMs": [2, 2.1, 1.9],
+     "medianMs": 0.9,
+     "medianWallMs": 2,
      "reads": 1,
      "bytesRead": 65536,
      "error": null,
@@ -4617,10 +4620,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1, 0.9, 1],
-     "wallMs": [1.4, 1.4, 1.5],
-     "medianMs": 1,
-     "medianWallMs": 1.4,
+     "ms": [0.8, 0.9, 0.9],
+     "wallMs": [1.3, 1.1, 1.3],
+     "medianMs": 0.9,
+     "medianWallMs": 1.3,
      "reads": 1,
      "bytesRead": 103809,
      "error": null,
@@ -4643,10 +4646,10 @@
    },
    "multi_video_2tracks.mp4": {
     "mp4box": {
-     "ms": [1.7, 1.6, 1.7],
-     "wallMs": [3, 3, 3],
-     "medianMs": 1.7,
-     "medianWallMs": 3,
+     "ms": [1.5, 1.5, 1.4],
+     "wallMs": [2.6, 2.7, 2.5],
+     "medianMs": 1.5,
+     "medianWallMs": 2.6,
      "reads": 2,
      "bytesRead": 70350,
      "error": null,
@@ -4667,10 +4670,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [2, 1.8, 1.8],
-     "wallMs": [2.7, 2.3, 2.4],
-     "medianMs": 1.8,
-     "medianWallMs": 2.4,
+     "ms": [1.7, 1.7, 1.6],
+     "wallMs": [2.3, 2.2, 2],
+     "medianMs": 1.7,
+     "medianWallMs": 2.2,
      "reads": 2,
      "bytesRead": 307127,
      "error": null,
@@ -4693,10 +4696,10 @@
    },
    "still_image_track_first.mp4": {
     "mp4box": {
-     "ms": [1.9, 1.7, 1.7],
-     "wallMs": [3.3, 3, 3.3],
-     "medianMs": 1.7,
-     "medianWallMs": 3.3,
+     "ms": [1.7, 1.6, 1.5],
+     "wallMs": [2.8, 2.6, 2.5],
+     "medianMs": 1.6,
+     "medianWallMs": 2.6,
      "reads": 2,
      "bytesRead": 70042,
      "error": null,
@@ -4717,10 +4720,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.3, 1.1, 1],
-     "wallMs": [1.7, 1.6, 1.5],
-     "medianMs": 1.1,
-     "medianWallMs": 1.6,
+     "ms": [1.2, 1, 1],
+     "wallMs": [1.7, 1.5, 1.4],
+     "medianMs": 1,
+     "medianWallMs": 1.5,
      "reads": 1,
      "bytesRead": 107479,
      "error": null,
@@ -4743,10 +4746,10 @@
    },
    "cover_art_audio.m4a": {
     "mp4box": {
-     "ms": [0.9, 0.9, 0.9],
-     "wallMs": [1.9, 2, 1.9],
-     "medianMs": 0.9,
-     "medianWallMs": 1.9,
+     "ms": [0.9, 0.7, 0.8],
+     "wallMs": [1.7, 1.6, 1.6],
+     "medianMs": 0.8,
+     "medianWallMs": 1.6,
      "reads": 1,
      "bytesRead": 16690,
      "error": null,
@@ -4767,8 +4770,8 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [0.7, 0.6, 0.7],
-     "wallMs": [1, 0.9, 0.9],
+     "ms": [0.8, 0.7, 0.7],
+     "wallMs": [1, 0.8, 0.9],
      "medianMs": 0.7,
      "medianWallMs": 0.9,
      "reads": 1,
@@ -4793,10 +4796,10 @@
    },
    "cover_art_plus_video.mp4": {
     "mp4box": {
-     "ms": [1.5, 1.6, 1.7],
-     "wallMs": [2.6, 2.4, 2.7],
-     "medianMs": 1.6,
-     "medianWallMs": 2.6,
+     "ms": [1.4, 1.4, 1.4],
+     "wallMs": [2.5, 2.3, 2.3],
+     "medianMs": 1.4,
+     "medianWallMs": 2.3,
      "reads": 2,
      "bytesRead": 71604,
      "error": null,
@@ -4817,10 +4820,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.8, 1.1, 1.1],
-     "wallMs": [2.2, 1.4, 1.5],
-     "medianMs": 1.1,
-     "medianWallMs": 1.5,
+     "ms": [0.9, 0.9, 0.9],
+     "wallMs": [1.3, 1.2, 1.3],
+     "medianMs": 0.9,
+     "medianWallMs": 1.3,
      "reads": 1,
      "bytesRead": 105948,
      "error": null,
@@ -4843,10 +4846,10 @@
    },
    "audio_only.m4a": {
     "mp4box": {
-     "ms": [0.8, 0.9, 0.9],
-     "wallMs": [1.8, 2, 1.7],
-     "medianMs": 0.9,
-     "medianWallMs": 1.8,
+     "ms": [0.8, 0.7, 0.6],
+     "wallMs": [1.6, 1.6, 1.5],
+     "medianMs": 0.7,
+     "medianWallMs": 1.6,
      "reads": 1,
      "bytesRead": 13573,
      "error": null,
@@ -4867,10 +4870,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [0.7, 0.8, 0.6],
-     "wallMs": [0.9, 1, 0.8],
-     "medianMs": 0.7,
-     "medianWallMs": 0.9,
+     "ms": [0.7, 0.6, 0.6],
+     "wallMs": [0.8, 0.8, 0.8],
+     "medianMs": 0.6,
+     "medianWallMs": 0.8,
      "reads": 1,
      "bytesRead": 13573,
      "error": null,
@@ -4893,10 +4896,10 @@
    },
    "audio_only_aac.mp4": {
     "mp4box": {
-     "ms": [0.8, 0.9, 0.8],
-     "wallMs": [1.8, 2, 1.8],
-     "medianMs": 0.8,
-     "medianWallMs": 1.8,
+     "ms": [0.8, 0.7, 0.7],
+     "wallMs": [1.7, 1.7, 1.3],
+     "medianMs": 0.7,
+     "medianWallMs": 1.7,
      "reads": 1,
      "bytesRead": 13593,
      "error": null,
@@ -4917,8 +4920,8 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [0.6, 0.7, 0.9],
-     "wallMs": [0.9, 0.9, 1],
+     "ms": [0.7, 0.7, 0.6],
+     "wallMs": [0.9, 0.9, 0.8],
      "medianMs": 0.7,
      "medianWallMs": 0.9,
      "reads": 1,
@@ -4943,10 +4946,10 @@
    },
    "audio_only_opus.webm": {
     "mediabunny": {
-     "ms": [0.8, 0.8, 0.7],
-     "wallMs": [1, 1, 0.9],
-     "medianMs": 0.8,
-     "medianWallMs": 1,
+     "ms": [0.7, 0.6, 0.6],
+     "wallMs": [1, 0.8, 0.8],
+     "medianMs": 0.6,
+     "medianWallMs": 0.8,
      "reads": 1,
      "bytesRead": 13847,
      "error": null,
@@ -4969,10 +4972,10 @@
    },
    "edge_single_frame.mp4": {
     "mp4box": {
-     "ms": [0.9, 0.7, 0.8],
-     "wallMs": [1.8, 1.8, 1.8],
-     "medianMs": 0.8,
-     "medianWallMs": 1.8,
+     "ms": [0.8, 0.7, 0.7],
+     "wallMs": [1.7, 1.7, 1.6],
+     "medianMs": 0.7,
+     "medianWallMs": 1.7,
      "reads": 1,
      "bytesRead": 4078,
      "error": null,
@@ -4993,10 +4996,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [0.9, 0.8, 1],
-     "wallMs": [1.3, 1.3, 1.4],
-     "medianMs": 0.9,
-     "medianWallMs": 1.3,
+     "ms": [0.7, 0.6, 0.8],
+     "wallMs": [1.1, 1, 1.1],
+     "medianMs": 0.7,
+     "medianWallMs": 1.1,
      "reads": 1,
      "bytesRead": 4078,
      "error": null,
@@ -5023,10 +5026,10 @@
    "corrupt_png_named.mp4": {},
    "corrupt_trunc_moov_partial.mp4": {
     "mp4box": {
-     "ms": [1.6, 1.3, 1.3],
-     "wallMs": [2.6, 2.2, 2.6],
-     "medianMs": 1.3,
-     "medianWallMs": 2.6,
+     "ms": [1.3, 1.1, 1.2],
+     "wallMs": [2, 2, 2.2],
+     "medianMs": 1.2,
+     "medianWallMs": 2,
      "reads": 2,
      "bytesRead": 66122,
      "error": "incomplete file: no moov",
@@ -5047,10 +5050,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [0.9, 0.7, 0.7],
-     "wallMs": [1.1, 1, 0.9],
+     "ms": [0.7, 0.6, 0.7],
+     "wallMs": [0.9, 0.9, 0.8],
      "medianMs": 0.7,
-     "medianWallMs": 1,
+     "medianWallMs": 0.9,
      "reads": 1,
      "bytesRead": 88224,
      "error": null,
@@ -5073,10 +5076,10 @@
    },
    "corrupt_trunc_no_moov.mp4": {
     "mp4box": {
-     "ms": [0.7, 0.8, 0.7],
-     "wallMs": [1.6, 1.9, 1.6],
-     "medianMs": 0.7,
-     "medianWallMs": 1.6,
+     "ms": [0.7, 0.5, 0.6],
+     "wallMs": [1.5, 1.3, 1.4],
+     "medianMs": 0.6,
+     "medianWallMs": 1.4,
      "reads": 1,
      "bytesRead": 65536,
      "error": "incomplete file: no moov",
@@ -5097,9 +5100,9 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [0.8, 0.8, 0.7],
-     "wallMs": [1, 0.9, 0.9],
-     "medianMs": 0.8,
+     "ms": [0.7, 0.6, 0.7],
+     "wallMs": [0.9, 0.8, 0.9],
+     "medianMs": 0.7,
      "medianWallMs": 0.9,
      "reads": 1,
      "bytesRead": 87638,
@@ -5123,10 +5126,10 @@
    },
    "corrupt_trunc_mdat_faststart.mp4": {
     "mp4box": {
-     "ms": [0.9, 1.1, 1],
-     "wallMs": [1.9, 2.2, 2.2],
-     "medianMs": 1,
-     "medianWallMs": 2.2,
+     "ms": [0.8, 1, 0.9],
+     "wallMs": [1.8, 2, 2],
+     "medianMs": 0.9,
+     "medianWallMs": 2,
      "reads": 1,
      "bytesRead": 62285,
      "error": null,
@@ -5147,10 +5150,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [0.9, 1, 0.8],
-     "wallMs": [1.4, 1.2, 1.4],
-     "medianMs": 0.9,
-     "medianWallMs": 1.4,
+     "ms": [0.9, 0.7, 0.7],
+     "wallMs": [1.3, 1.1, 1],
+     "medianMs": 0.7,
+     "medianWallMs": 1.1,
      "reads": 1,
      "bytesRead": 62285,
      "error": null,
@@ -5167,16 +5170,16 @@
       "isVfr": false
      },
      "agreement": "avg same, frames differ",
-     "nativeStatsMs": 0,
+     "nativeStatsMs": 0.1,
      "nativeSkipped": false
     }
    },
    "corrupt_fmp4_truncated_mid_fragment.mp4": {
     "mp4box": {
-     "ms": [1.1, 0.9, 0.8],
-     "wallMs": [2.3, 2.3, 1.9],
+     "ms": [0.9, 0.9, 0.8],
+     "wallMs": [2, 1.8, 1.6],
      "medianMs": 0.9,
-     "medianWallMs": 2.3,
+     "medianWallMs": 1.8,
      "reads": 1,
      "bytesRead": 65536,
      "error": null,
@@ -5197,10 +5200,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [0.8, 0.9, 1],
-     "wallMs": [1.2, 1.3, 1.4],
-     "medianMs": 0.9,
-     "medianWallMs": 1.3,
+     "ms": [0.8, 0.9, 0.7],
+     "wallMs": [1.2, 1.2, 1.2],
+     "medianMs": 0.8,
+     "medianWallMs": 1.2,
      "reads": 1,
      "bytesRead": 71725,
      "error": null,
@@ -5217,16 +5220,16 @@
       "isVfr": false
      },
      "agreement": "avg same, frames differ",
-     "nativeStatsMs": 0.2,
+     "nativeStatsMs": 0.1,
      "nativeSkipped": false
     }
    },
    "box_mdat_size0.mp4": {
     "mp4box": {
-     "ms": [1.1, 0.9, 0.9],
-     "wallMs": [2.3, 2, 2],
+     "ms": [0.9, 0.8, 0.9],
+     "wallMs": [1.8, 1.8, 1.9],
      "medianMs": 0.9,
-     "medianWallMs": 2,
+     "medianWallMs": 1.8,
      "reads": 1,
      "bytesRead": 65536,
      "error": null,
@@ -5247,10 +5250,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.1, 1, 0.9],
-     "wallMs": [1.5, 1.4, 1.4],
-     "medianMs": 1,
-     "medianWallMs": 1.4,
+     "ms": [0.9, 0.9, 0.8],
+     "wallMs": [1.2, 1.2, 1.2],
+     "medianMs": 0.9,
+     "medianWallMs": 1.2,
      "reads": 1,
      "bytesRead": 103809,
      "error": null,
@@ -5273,10 +5276,10 @@
    },
    "corrupt_stts_count_huge.mp4": {
     "mp4box": {
-     "ms": [1.3, 1.2, 1.3],
-     "wallMs": [2.3, 2.3, 2.3],
-     "medianMs": 1.3,
-     "medianWallMs": 2.3,
+     "ms": [1.2, 1.2, 1.2],
+     "wallMs": [2, 1.9, 1.8],
+     "medianMs": 1.2,
+     "medianWallMs": 1.9,
      "reads": 2,
      "bytesRead": 66708,
      "error": "Offset is outside the bounds of the DataView",
@@ -5297,10 +5300,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.3, 1.1, 1],
-     "wallMs": [1.6, 1.4, 1.4],
-     "medianMs": 1.1,
-     "medianWallMs": 1.4,
+     "ms": [1.2, 0.9, 1],
+     "wallMs": [1.4, 1.2, 1.3],
+     "medianMs": 1,
+     "medianWallMs": 1.3,
      "reads": 1,
      "bytesRead": 88810,
      "error": null,
@@ -5323,10 +5326,10 @@
    },
    "sniff_webm_named_mp4.mp4": {
     "mediabunny": {
-     "ms": [0.9, 1.1, 1],
-     "wallMs": [1.4, 1.6, 1.6],
-     "medianMs": 1,
-     "medianWallMs": 1.6,
+     "ms": [0.9, 0.8, 0.8],
+     "wallMs": [1.4, 1.2, 1.3],
+     "medianMs": 0.8,
+     "medianWallMs": 1.3,
      "reads": 1,
      "bytesRead": 73687,
      "error": null,
@@ -5343,16 +5346,16 @@
       "isVfr": false
      },
      "agreement": "avg -0.01%",
-     "nativeStatsMs": 0.2,
+     "nativeStatsMs": 0.1,
      "nativeSkipped": false
     }
    },
    "sniff_mp4_named_webm.webm": {
     "mp4box": {
-     "ms": [1.6, 1.5, 1.5],
-     "wallMs": [2.6, 2.4, 2.7],
-     "medianMs": 1.5,
-     "medianWallMs": 2.6,
+     "ms": [1.4, 1.3, 1.3],
+     "wallMs": [2.3, 2.2, 2.2],
+     "medianMs": 1.3,
+     "medianWallMs": 2.2,
      "reads": 2,
      "bytesRead": 66708,
      "error": null,
@@ -5373,10 +5376,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.1, 1, 0.9],
-     "wallMs": [1.5, 1.4, 1.3],
-     "medianMs": 1,
-     "medianWallMs": 1.4,
+     "ms": [0.9, 0.9, 0.8],
+     "wallMs": [1.3, 1.3, 1.2],
+     "medianMs": 0.9,
+     "medianWallMs": 1.3,
      "reads": 1,
      "bytesRead": 88810,
      "error": null,
@@ -5393,16 +5396,16 @@
       "isVfr": false
      },
      "agreement": "same",
-     "nativeStatsMs": 0.1,
+     "nativeStatsMs": 0.2,
      "nativeSkipped": false
     }
    },
    "sniff_mp4_named_mkv.mkv": {
     "mp4box": {
-     "ms": [1.5, 1.6, 1.4],
-     "wallMs": [2.7, 2.8, 2.6],
-     "medianMs": 1.5,
-     "medianWallMs": 2.7,
+     "ms": [1.3, 1.4, 1.3],
+     "wallMs": [2.3, 2.4, 2.3],
+     "medianMs": 1.3,
+     "medianWallMs": 2.3,
      "reads": 2,
      "bytesRead": 66708,
      "error": null,
@@ -5423,10 +5426,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1, 1, 1],
-     "wallMs": [1.5, 1.4, 1.4],
-     "medianMs": 1,
-     "medianWallMs": 1.4,
+     "ms": [0.8, 0.7, 0.8],
+     "wallMs": [1.2, 1.1, 1.2],
+     "medianMs": 0.8,
+     "medianWallMs": 1.2,
      "reads": 1,
      "bytesRead": 88810,
      "error": null,
@@ -5449,10 +5452,10 @@
    },
    "frag_vfr_global_sidx.mp4": {
     "mp4box": {
-     "ms": [1.9, 1.8, 1.8],
-     "wallMs": [3.1, 3, 3],
-     "medianMs": 1.8,
-     "medianWallMs": 3,
+     "ms": [1.7, 1.4, 1.4],
+     "wallMs": [2.6, 2.4, 2.5],
+     "medianMs": 1.4,
+     "medianWallMs": 2.5,
      "reads": 2,
      "bytesRead": 120718,
      "error": null,
@@ -5473,10 +5476,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.1, 1.1, 1.2],
-     "wallMs": [1.8, 1.6, 1.9],
-     "medianMs": 1.1,
-     "medianWallMs": 1.8,
+     "ms": [1, 1, 1],
+     "wallMs": [1.5, 1.5, 1.6],
+     "medianMs": 1,
+     "medianWallMs": 1.5,
      "reads": 1,
      "bytesRead": 123932,
      "error": null,
@@ -5499,10 +5502,10 @@
    },
    "frag_vfr_dash.mp4": {
     "mp4box": {
-     "ms": [2, 1.7, 1.9],
-     "wallMs": [3.3, 2.8, 3.1],
-     "medianMs": 1.9,
-     "medianWallMs": 3.1,
+     "ms": [1.7, 1.6, 1.5],
+     "wallMs": [2.8, 2.6, 2.6],
+     "medianMs": 1.6,
+     "medianWallMs": 2.6,
      "reads": 2,
      "bytesRead": 120822,
      "error": null,
@@ -5523,10 +5526,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1, 1, 1.1],
-     "wallMs": [1.8, 1.7, 1.7],
-     "medianMs": 1,
-     "medianWallMs": 1.7,
+     "ms": [0.9, 0.9, 0.9],
+     "wallMs": [1.6, 1.4, 1.4],
+     "medianMs": 0.9,
+     "medianWallMs": 1.4,
      "reads": 1,
      "bytesRead": 124092,
      "error": null,
@@ -5549,10 +5552,10 @@
    },
    "h264_vfr_remux.mkv": {
     "mediabunny": {
-     "ms": [2.3, 2.1, 1.8],
-     "wallMs": [3.4, 3.4, 2.5],
-     "medianMs": 2.1,
-     "medianWallMs": 3.4,
+     "ms": [2, 1.9, 1.8],
+     "wallMs": [3.1, 3.5, 2.5],
+     "medianMs": 1.9,
+     "medianWallMs": 3.1,
      "reads": 2,
      "bytesRead": 204851,
      "error": null,
@@ -5569,16 +5572,16 @@
       "isVfr": true
      },
      "agreement": "same",
-     "nativeStatsMs": 0.7,
+     "nativeStatsMs": 0.6,
      "nativeSkipped": false
     }
    },
    "vp9_pipe_t10.webm": {
     "mediabunny": {
-     "ms": [0.9, 1.1, 1],
-     "wallMs": [1.4, 1.5, 1.4],
-     "medianMs": 1,
-     "medianWallMs": 1.4,
+     "ms": [0.8, 0.8, 0.8],
+     "wallMs": [1.2, 1.2, 1.2],
+     "medianMs": 0.8,
+     "medianWallMs": 1.2,
      "reads": 1,
      "bytesRead": 72282,
      "error": null,
@@ -5601,9 +5604,9 @@
    },
    "vp9_opus_live_audiotail.webm": {
     "mediabunny": {
-     "ms": [1.4, 1.1, 1.4],
-     "wallMs": [1.9, 1.8, 2],
-     "medianMs": 1.4,
+     "ms": [1.3, 1.2, 1.4],
+     "wallMs": [1.7, 1.9, 1.9],
+     "medianMs": 1.3,
      "medianWallMs": 1.9,
      "reads": 1,
      "bytesRead": 101028,
@@ -5627,10 +5630,10 @@
    },
    "h264_25_cover.mkv": {
     "mediabunny": {
-     "ms": [1.7, 1.3, 1.1],
-     "wallMs": [2, 1.7, 1.4],
-     "medianMs": 1.3,
-     "medianWallMs": 1.7,
+     "ms": [1.5, 0.9, 0.8],
+     "wallMs": [1.9, 1.3, 1.3],
+     "medianMs": 0.9,
+     "medianWallMs": 1.3,
      "reads": 1,
      "bytesRead": 73653,
      "error": null,
@@ -5653,10 +5656,10 @@
    },
    "remux_cfr_120_ts16000.mp4": {
     "mp4box": {
-     "ms": [1.8, 1.8, 1.6],
-     "wallMs": [2.7, 2.9, 2.7],
-     "medianMs": 1.8,
-     "medianWallMs": 2.7,
+     "ms": [1.6, 1.7, 1.5],
+     "wallMs": [2.6, 2.6, 2.3],
+     "medianMs": 1.6,
+     "medianWallMs": 2.6,
      "reads": 2,
      "bytesRead": 69727,
      "error": null,
@@ -5677,10 +5680,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.8, 1.7, 1.9],
-     "wallMs": [2.5, 2.4, 2.5],
-     "medianMs": 1.8,
-     "medianWallMs": 2.5,
+     "ms": [13.5, 2.3, 1.9],
+     "wallMs": [14.5, 3.1, 2.7],
+     "medianMs": 2.3,
+     "medianWallMs": 3.1,
      "reads": 2,
      "bytesRead": 209636,
      "error": null,
@@ -5697,16 +5700,16 @@
       "isVfr": false
      },
      "agreement": "same",
-     "nativeStatsMs": 0.4,
+     "nativeStatsMs": 0.5,
      "nativeSkipped": false
     }
    },
    "remux_cfr_29.97_ts16000.mp4": {
     "mp4box": {
-     "ms": [2.1, 1.6, 1.4],
-     "wallMs": [3, 14, 2.5],
-     "medianMs": 1.6,
-     "medianWallMs": 3,
+     "ms": [1.8, 1.5, 1.4],
+     "wallMs": [2.9, 2.6, 2.4],
+     "medianMs": 1.5,
+     "medianWallMs": 2.6,
      "reads": 2,
      "bytesRead": 67219,
      "error": null,
@@ -5727,9 +5730,9 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [0.9, 0.9, 0.9],
-     "wallMs": [1.4, 1.3, 1.2],
-     "medianMs": 0.9,
+     "ms": [0.8, 0.8, 0.9],
+     "wallMs": [1.3, 1.2, 1.3],
+     "medianMs": 0.8,
      "medianWallMs": 1.3,
      "reads": 1,
      "bytesRead": 74282,
@@ -5753,10 +5756,10 @@
    },
    "start_freeze_bf.mp4": {
     "mp4box": {
-     "ms": [1.6, 1.5, 1.5],
-     "wallMs": [2.9, 3, 2.7],
-     "medianMs": 1.5,
-     "medianWallMs": 2.9,
+     "ms": [1.4, 1.3, 1.3],
+     "wallMs": [2.6, 2.4, 2.3],
+     "medianMs": 1.3,
+     "medianWallMs": 2.4,
      "reads": 2,
      "bytesRead": 68315,
      "error": null,
@@ -5777,10 +5780,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.5, 1.6, 1.2],
-     "wallMs": [2.4, 2.5, 2],
-     "medianMs": 1.5,
-     "medianWallMs": 2.4,
+     "ms": [1.3, 1.1, 1],
+     "wallMs": [2.1, 1.9, 1.6],
+     "medianMs": 1.1,
+     "medianWallMs": 1.9,
      "reads": 1,
      "bytesRead": 120993,
      "error": null,
@@ -5803,10 +5806,10 @@
    },
    "fmp4_missing_fragment.mp4": {
     "mp4box": {
-     "ms": [2.2, 1.6, 1.7],
-     "wallMs": [3.5, 3, 2.8],
-     "medianMs": 1.7,
-     "medianWallMs": 3,
+     "ms": [1.9, 1.3, 1.5],
+     "wallMs": [3.2, 2.4, 2.5],
+     "medianMs": 1.5,
+     "medianWallMs": 2.5,
      "reads": 2,
      "bytesRead": 128763,
      "error": null,
@@ -5827,10 +5830,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.7, 1.9, 1.6],
-     "wallMs": [2.3, 2.6, 2.1],
-     "medianMs": 1.7,
-     "medianWallMs": 2.3,
+     "ms": [1.6, 1.4, 1.4],
+     "wallMs": [2.1, 2.1, 2],
+     "medianMs": 1.4,
+     "medianWallMs": 2.1,
      "reads": 2,
      "bytesRead": 151484,
      "error": null,
@@ -5853,10 +5856,10 @@
    },
    "elst_trim_vfr_copy.mp4": {
     "mp4box": {
-     "ms": [1.4, 1.4, 1.5],
-     "wallMs": [2.7, 2.8, 2.7],
-     "medianMs": 1.4,
-     "medianWallMs": 2.7,
+     "ms": [1.4, 1.3, 1.3],
+     "wallMs": [2.7, 2.4, 2.3],
+     "medianMs": 1.3,
+     "medianWallMs": 2.4,
      "reads": 2,
      "bytesRead": 69735,
      "error": null,
@@ -5877,10 +5880,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.9, 2.4, 2.3],
-     "wallMs": [3.2, 3.6, 3.6],
-     "medianMs": 2.3,
-     "medianWallMs": 3.6,
+     "ms": [1.7, 1.9, 1.8],
+     "wallMs": [2.9, 3.3, 2.9],
+     "medianMs": 1.8,
+     "medianWallMs": 2.9,
      "reads": 2,
      "bytesRead": 224572,
      "error": null,
@@ -5903,10 +5906,10 @@
    },
    "cfr_240_ts600.mp4": {
     "mp4box": {
-     "ms": [2, 1.9, 1.7],
-     "wallMs": [3, 2.9, 2.8],
-     "medianMs": 1.9,
-     "medianWallMs": 2.9,
+     "ms": [1.6, 1.5, 1.5],
+     "wallMs": [2.4, 2.3, 2.2],
+     "medianMs": 1.5,
+     "medianWallMs": 2.3,
      "reads": 2,
      "bytesRead": 72085,
      "error": null,
@@ -5927,10 +5930,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.5, 1.4, 1.4],
-     "wallMs": [2.3, 2.4, 2.3],
-     "medianMs": 1.4,
-     "medianWallMs": 2.3,
+     "ms": [1.1, 1.2, 1.2],
+     "wallMs": [1.8, 2, 2],
+     "medianMs": 1.2,
+     "medianWallMs": 2,
      "reads": 1,
      "bytesRead": 95288,
      "error": null,
@@ -5953,10 +5956,10 @@
    },
    "fmp4_global_sidx_bframes.mp4": {
     "mp4box": {
-     "ms": [1.8, 1.6, 1.6],
-     "wallMs": [3, 2.7, 2.5],
-     "medianMs": 1.6,
-     "medianWallMs": 2.7,
+     "ms": [1.6, 1.4, 1.4],
+     "wallMs": [2.7, 2.6, 2.3],
+     "medianMs": 1.4,
+     "medianWallMs": 2.6,
      "reads": 2,
      "bytesRead": 65646,
      "error": null,
@@ -5977,10 +5980,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.1, 1.1, 1.2],
-     "wallMs": [1.6, 1.6, 1.6],
-     "medianMs": 1.1,
-     "medianWallMs": 1.6,
+     "ms": [1, 1, 1.1],
+     "wallMs": [1.5, 1.4, 1.4],
+     "medianMs": 1,
+     "medianWallMs": 1.4,
      "reads": 1,
      "bytesRead": 100060,
      "error": null,
@@ -5997,18 +6000,18 @@
       "isVfr": false
      },
      "agreement": "same",
-     "nativeStatsMs": 0.2,
+     "nativeStatsMs": 0.1,
      "nativeSkipped": false
     }
    }
   },
   "warm": {
    "cfr_h264_23.976.mp4": {
-    "ms": [1.1, 0.9, 0.8, 0.8, 0.8],
-    "wallMs": [2.3, 1.7, 1.7, 1.6, 2.1],
+    "ms": [1, 0.8, 0.6, 0.8, 0.8],
+    "wallMs": [2, 1.5, 1.3, 1.6, 1.4],
     "medianMs": 0.8,
-    "minMs": 0.8,
-    "medianWallMs": 1.7,
+    "minMs": 0.6,
+    "medianWallMs": 1.5,
     "reads": 1,
     "bytesRead": 73602,
     "size": 73602,
@@ -6028,11 +6031,11 @@
     "repeatable": true
    },
    "cfr_vp9_23.976.webm": {
-    "ms": [1.1, 1.2, 0.9, 0.8, 0.8],
-    "wallMs": [1.9, 2.2, 2.2, 1.5, 1.5],
-    "medianMs": 0.9,
-    "minMs": 0.8,
-    "medianWallMs": 1.9,
+    "ms": [1.3, 0.7, 0.4, 0.7, 1.2],
+    "wallMs": [2.1, 1.6, 1.4, 1.4, 1.7],
+    "medianMs": 0.7,
+    "minMs": 0.4,
+    "medianWallMs": 1.6,
     "reads": 1,
     "bytesRead": 60807,
     "size": 60807,
@@ -6052,11 +6055,11 @@
     "repeatable": true
    },
    "cfr_h264_24.mp4": {
-    "ms": [0.8, 1.4, 0.9, 0.9, 0.8],
-    "wallMs": [1.8, 4.1, 1.6, 1.5, 1.3],
-    "medianMs": 0.9,
-    "minMs": 0.8,
-    "medianWallMs": 1.6,
+    "ms": [0.8, 0.7, 0.9, 0.6, 0.6],
+    "wallMs": [1.7, 1.5, 1.5, 1.3, 1.3],
+    "medianMs": 0.7,
+    "minMs": 0.6,
+    "medianWallMs": 1.5,
     "reads": 1,
     "bytesRead": 73032,
     "size": 73032,
@@ -6076,11 +6079,11 @@
     "repeatable": true
    },
    "cfr_vp9_24.webm": {
-    "ms": [0.9, 0.9, 0.9, 0.7, 0.8],
-    "wallMs": [1.7, 1.6, 1.6, 2.4, 1.7],
-    "medianMs": 0.9,
+    "ms": [0.8, 1.1, 0.7, 0.7, 0.9],
+    "wallMs": [1.5, 1.7, 1.4, 1.3, 2.6],
+    "medianMs": 0.8,
     "minMs": 0.7,
-    "medianWallMs": 1.7,
+    "medianWallMs": 1.5,
     "reads": 1,
     "bytesRead": 60585,
     "size": 60585,
@@ -6100,11 +6103,11 @@
     "repeatable": true
    },
    "cfr_h264_25.mp4": {
-    "ms": [0.9, 1, 0.9, 0.9, 0.8],
-    "wallMs": [1.5, 2, 1.7, 1.6, 1.3],
-    "medianMs": 0.9,
-    "minMs": 0.8,
-    "medianWallMs": 1.6,
+    "ms": [0.7, 0.7, 0.7, 0.5, 0.8],
+    "wallMs": [1.5, 1.4, 1.3, 1.2, 1.4],
+    "medianMs": 0.7,
+    "minMs": 0.5,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 71365,
     "size": 71365,
@@ -6124,11 +6127,11 @@
     "repeatable": true
    },
    "cfr_vp9_25.webm": {
-    "ms": [1.1, 1.1, 0.7, 0.9, 0.8],
-    "wallMs": [1.7, 2.1, 1.6, 1.5, 1.6],
-    "medianMs": 0.9,
-    "minMs": 0.7,
-    "medianWallMs": 1.6,
+    "ms": [0.8, 0.6, 0.6, 0.7, 0.7],
+    "wallMs": [1.4, 1.3, 1.3, 1.3, 1.8],
+    "medianMs": 0.7,
+    "minMs": 0.6,
+    "medianWallMs": 1.3,
     "reads": 1,
     "bytesRead": 60207,
     "size": 60207,
@@ -6148,11 +6151,11 @@
     "repeatable": true
    },
    "cfr_h264_29.97.mp4": {
-    "ms": [0.8, 0.9, 0.8, 0.8, 0.9],
-    "wallMs": [1.6, 1.6, 1.5, 1.5, 1.7],
-    "medianMs": 0.8,
-    "minMs": 0.8,
-    "medianWallMs": 1.6,
+    "ms": [0.7, 0.7, 0.7, 0.8, 0.7],
+    "wallMs": [1.3, 1.4, 1.3, 1.5, 1.4],
+    "medianMs": 0.7,
+    "minMs": 0.7,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 88499,
     "size": 88499,
@@ -6172,11 +6175,11 @@
     "repeatable": true
    },
    "cfr_vp9_29.97.webm": {
-    "ms": [1, 1.1, 1, 0.9, 0.9],
-    "wallMs": [1.7, 2.3, 1.8, 1.5, 1.7],
-    "medianMs": 1,
-    "minMs": 0.9,
-    "medianWallMs": 1.7,
+    "ms": [1.1, 0.8, 0.7, 0.9, 0.8],
+    "wallMs": [1.9, 1.8, 1.4, 1.5, 1.4],
+    "medianMs": 0.8,
+    "minMs": 0.7,
+    "medianWallMs": 1.5,
     "reads": 1,
     "bytesRead": 73687,
     "size": 73687,
@@ -6196,11 +6199,11 @@
     "repeatable": true
    },
    "cfr_h264_30.mp4": {
-    "ms": [0.8, 1.3, 0.7, 0.8, 0.8],
-    "wallMs": [1.7, 2.2, 1.5, 1.4, 1.5],
+    "ms": [0.8, 0.8, 0.7, 0.8, 0.7],
+    "wallMs": [1.5, 1.5, 1.3, 1.3, 1.3],
     "medianMs": 0.8,
     "minMs": 0.7,
-    "medianWallMs": 1.5,
+    "medianWallMs": 1.3,
     "reads": 1,
     "bytesRead": 88810,
     "size": 88810,
@@ -6220,11 +6223,11 @@
     "repeatable": true
    },
    "cfr_vp9_30.webm": {
-    "ms": [0.8, 1, 1, 1, 0.9],
-    "wallMs": [1.7, 1.6, 1.7, 1.8, 1.6],
-    "medianMs": 1,
-    "minMs": 0.8,
-    "medianWallMs": 1.7,
+    "ms": [0.7, 0.7, 0.8, 0.7, 0.6],
+    "wallMs": [1.7, 1.4, 1.4, 1.3, 1.3],
+    "medianMs": 0.7,
+    "minMs": 0.6,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 72376,
     "size": 72376,
@@ -6244,11 +6247,11 @@
     "repeatable": true
    },
    "cfr_h264_50.mp4": {
-    "ms": [0.8, 0.9, 1, 1, 0.8],
-    "wallMs": [1.5, 1.8, 1.8, 1.6, 1.4],
-    "medianMs": 0.9,
-    "minMs": 0.8,
-    "medianWallMs": 1.6,
+    "ms": [0.9, 0.8, 0.8, 0.7, 0.7],
+    "wallMs": [1.6, 1.2, 1.3, 1.2, 1.2],
+    "medianMs": 0.8,
+    "minMs": 0.7,
+    "medianWallMs": 1.2,
     "reads": 1,
     "bytesRead": 112678,
     "size": 112678,
@@ -6268,11 +6271,11 @@
     "repeatable": true
    },
    "cfr_vp9_50.webm": {
-    "ms": [1, 1, 1, 1, 0.8],
-    "wallMs": [1.7, 1.7, 1.7, 1.8, 1.7],
-    "medianMs": 1,
-    "minMs": 0.8,
-    "medianWallMs": 1.7,
+    "ms": [1, 0.9, 0.7, 0.8, 1],
+    "wallMs": [1.6, 1.6, 1.5, 1.3, 1.8],
+    "medianMs": 0.9,
+    "minMs": 0.7,
+    "medianWallMs": 1.6,
     "reads": 1,
     "bytesRead": 106691,
     "size": 106691,
@@ -6292,11 +6295,11 @@
     "repeatable": true
    },
    "cfr_h264_59.94.mp4": {
-    "ms": [1, 1.1, 0.9, 0.9, 1],
-    "wallMs": [1.9, 1.7, 1.6, 1.7, 1.8],
-    "medianMs": 1,
-    "minMs": 0.9,
-    "medianWallMs": 1.7,
+    "ms": [0.9, 0.8, 0.6, 0.6, 0.8],
+    "wallMs": [1.6, 1.5, 1.3, 1.3, 1.4],
+    "medianMs": 0.8,
+    "minMs": 0.6,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 129016,
     "size": 129016,
@@ -6316,11 +6319,11 @@
     "repeatable": true
    },
    "cfr_vp9_59.94.webm": {
-    "ms": [1, 1.1, 0.9, 0.9, 1.1],
-    "wallMs": [1.8, 2, 1.6, 1.7, 1.9],
-    "medianMs": 1,
-    "minMs": 0.9,
-    "medianWallMs": 1.8,
+    "ms": [1, 0.9, 0.8, 0.8, 0.8],
+    "wallMs": [1.6, 1.9, 1.7, 1.7, 1.4],
+    "medianMs": 0.8,
+    "minMs": 0.8,
+    "medianWallMs": 1.7,
     "reads": 1,
     "bytesRead": 125465,
     "size": 125465,
@@ -6340,11 +6343,11 @@
     "repeatable": true
    },
    "cfr_h264_60.mp4": {
-    "ms": [0.9, 0.8, 0.9, 1, 0.9],
-    "wallMs": [1.6, 1.6, 1.6, 2.3, 1.7],
-    "medianMs": 0.9,
-    "minMs": 0.8,
-    "medianWallMs": 1.6,
+    "ms": [1.5, 1, 1.1, 0.6, 0.8],
+    "wallMs": [2.2, 1.5, 1.8, 1.4, 1.4],
+    "medianMs": 1,
+    "minMs": 0.6,
+    "medianWallMs": 1.5,
     "reads": 1,
     "bytesRead": 129505,
     "size": 129505,
@@ -6364,11 +6367,11 @@
     "repeatable": true
    },
    "cfr_vp9_60.webm": {
-    "ms": [0.8, 1.1, 1.1, 1, 1],
-    "wallMs": [1.6, 1.8, 1.9, 1.8, 1.7],
-    "medianMs": 1,
+    "ms": [0.8, 0.9, 1.2, 0.9, 0.9],
+    "wallMs": [1.5, 1.5, 2.1, 1.5, 1.4],
+    "medianMs": 0.9,
     "minMs": 0.8,
-    "medianWallMs": 1.8,
+    "medianWallMs": 1.5,
     "reads": 1,
     "bytesRead": 124160,
     "size": 124160,
@@ -6388,11 +6391,11 @@
     "repeatable": true
    },
    "cfr_h264_120.mp4": {
-    "ms": [1.1, 1.1, 0.9, 1, 1],
-    "wallMs": [1.9, 1.7, 2.1, 1.7, 2],
-    "medianMs": 1,
+    "ms": [1.1, 0.9, 1, 0.9, 0.9],
+    "wallMs": [2.1, 1.5, 1.6, 1.4, 1.4],
+    "medianMs": 0.9,
     "minMs": 0.9,
-    "medianWallMs": 1.9,
+    "medianWallMs": 1.5,
     "reads": 1,
     "bytesRead": 189686,
     "size": 189686,
@@ -6412,11 +6415,11 @@
     "repeatable": true
    },
    "cfr_vp9_120.webm": {
-    "ms": [1.7, 1.1, 1.5, 1.1, 1],
-    "wallMs": [2.5, 1.8, 2.3, 1.8, 1.9],
+    "ms": [1.3, 1.2, 1.1, 1.1, 0.9],
+    "wallMs": [1.9, 1.6, 1.8, 1.7, 1.7],
     "medianMs": 1.1,
-    "minMs": 1,
-    "medianWallMs": 1.9,
+    "minMs": 0.9,
+    "medianWallMs": 1.7,
     "reads": 1,
     "bytesRead": 208688,
     "size": 208688,
@@ -6436,11 +6439,11 @@
     "repeatable": true
    },
    "cfr_h264_240.mp4": {
-    "ms": [1.5, 1.3, 1.2, 1.1, 1],
-    "wallMs": [2.3, 2, 1.8, 1.9, 1.9],
-    "medianMs": 1.2,
+    "ms": [1.1, 1, 1.3, 1.2, 1],
+    "wallMs": [1.7, 1.6, 2, 1.9, 1.6],
+    "medianMs": 1.1,
     "minMs": 1,
-    "medianWallMs": 1.9,
+    "medianWallMs": 1.7,
     "reads": 1,
     "bytesRead": 330241,
     "size": 330241,
@@ -6460,11 +6463,11 @@
     "repeatable": true
    },
    "cfr_vp9_240.webm": {
-    "ms": [1.5, 1.3, 1.3, 1.4, 1.4],
-    "wallMs": [2.1, 2.1, 2, 2.2, 1.9],
-    "medianMs": 1.4,
-    "minMs": 1.3,
-    "medianWallMs": 2.1,
+    "ms": [1.3, 1.2, 1.3, 1.3, 1.2],
+    "wallMs": [1.8, 2.3, 1.8, 2, 1.6],
+    "medianMs": 1.3,
+    "minMs": 1.2,
+    "medianWallMs": 1.8,
     "reads": 1,
     "bytesRead": 363967,
     "size": 363967,
@@ -6484,11 +6487,11 @@
     "repeatable": true
    },
    "mov_nobf_default.mov": {
-    "ms": [1, 1, 0.8, 0.9, 0.9],
-    "wallMs": [1.7, 1.4, 1.6, 1.5, 1.6],
-    "medianMs": 0.9,
-    "minMs": 0.8,
-    "medianWallMs": 1.6,
+    "ms": [0.9, 0.8, 0.6, 0.8, 0.7],
+    "wallMs": [1.3, 1.4, 1.5, 1.4, 1.4],
+    "medianMs": 0.8,
+    "minMs": 0.6,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 88446,
     "size": 88446,
@@ -6508,11 +6511,11 @@
     "repeatable": true
    },
    "mov_nobf_faststart.mov": {
-    "ms": [0.8, 0.9, 0.8, 0.9, 1.1],
-    "wallMs": [1.6, 1.7, 1.6, 1.7, 1.9],
-    "medianMs": 0.9,
-    "minMs": 0.8,
-    "medianWallMs": 1.7,
+    "ms": [0.7, 0.7, 0.6, 0.7, 0.6],
+    "wallMs": [1.3, 1.3, 1.3, 1.5, 1.3],
+    "medianMs": 0.7,
+    "minMs": 0.6,
+    "medianWallMs": 1.3,
     "reads": 1,
     "bytesRead": 88446,
     "size": 88446,
@@ -6532,11 +6535,11 @@
     "repeatable": true
    },
    "mov_bf_elst.mov": {
-    "ms": [0.7, 0.8, 0.8, 0.8, 0.9],
-    "wallMs": [1.6, 1.6, 1.6, 1.5, 1.5],
-    "medianMs": 0.8,
-    "minMs": 0.7,
-    "medianWallMs": 1.6,
+    "ms": [0.7, 0.7, 0.6, 0.8, 0.6],
+    "wallMs": [1.6, 1.2, 1.2, 1.3, 1.2],
+    "medianMs": 0.7,
+    "minMs": 0.6,
+    "medianWallMs": 1.2,
     "reads": 1,
     "bytesRead": 36586,
     "size": 36586,
@@ -6556,11 +6559,11 @@
     "repeatable": true
    },
    "mov_bf_noelst.mov": {
-    "ms": [0.9, 0.8, 0.9, 0.9, 0.8],
-    "wallMs": [1.7, 1.5, 1.5, 1.4, 1.6],
-    "medianMs": 0.9,
-    "minMs": 0.8,
-    "medianWallMs": 1.5,
+    "ms": [0.7, 0.7, 0.6, 0.7, 0.7],
+    "wallMs": [1.5, 1.2, 1.3, 1.5, 1.2],
+    "medianMs": 0.7,
+    "minMs": 0.6,
+    "medianWallMs": 1.3,
     "reads": 1,
     "bytesRead": 36550,
     "size": 36550,
@@ -6580,11 +6583,11 @@
     "repeatable": true
    },
    "mov_bf_faststart.mov": {
-    "ms": [1, 0.8, 0.8, 1.4, 0.9],
-    "wallMs": [1.6, 1.7, 1.3, 3, 1.6],
-    "medianMs": 0.9,
-    "minMs": 0.8,
-    "medianWallMs": 1.6,
+    "ms": [0.7, 0.6, 0.6, 0.8, 0.8],
+    "wallMs": [1.3, 1.3, 1.2, 1.5, 1.5],
+    "medianMs": 0.7,
+    "minMs": 0.6,
+    "medianWallMs": 1.3,
     "reads": 1,
     "bytesRead": 36586,
     "size": 36586,
@@ -6604,11 +6607,11 @@
     "repeatable": true
    },
    "mov_prores.mov": {
-    "ms": [1, 1, 1, 1.1, 0.9],
-    "wallMs": [1.8, 1.8, 1.9, 1.8, 1.8],
-    "medianMs": 1,
-    "minMs": 0.9,
-    "medianWallMs": 1.8,
+    "ms": [0.8, 1, 0.9, 1, 0.8],
+    "wallMs": [1.5, 1.7, 1.6, 1.7, 1.3],
+    "medianMs": 0.9,
+    "minMs": 0.8,
+    "medianWallMs": 1.6,
     "reads": 1,
     "bytesRead": 224032,
     "size": 224032,
@@ -6628,11 +6631,11 @@
     "repeatable": true
    },
    "mp4_bf_elst.mp4": {
-    "ms": [1.3, 0.9, 0.7, 0.9, 0.8],
-    "wallMs": [2.1, 1.4, 1.5, 1.5, 1.4],
-    "medianMs": 0.9,
-    "minMs": 0.7,
-    "medianWallMs": 1.5,
+    "ms": [0.8, 0.8, 0.8, 0.7, 0.5],
+    "wallMs": [1.4, 1.4, 1.4, 1.7, 1.2],
+    "medianMs": 0.8,
+    "minMs": 0.5,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 36639,
     "size": 36639,
@@ -6652,11 +6655,11 @@
     "repeatable": true
    },
    "mp4_bf_noelst.mp4": {
-    "ms": [0.8, 0.7, 0.9, 0.8, 0.9],
-    "wallMs": [1.8, 1.4, 1.6, 1.5, 1.6],
-    "medianMs": 0.8,
-    "minMs": 0.7,
-    "medianWallMs": 1.6,
+    "ms": [0.6, 0.8, 0.7, 0.8, 0.7],
+    "wallMs": [1.4, 1.3, 1.2, 1.5, 1.1],
+    "medianMs": 0.7,
+    "minMs": 0.6,
+    "medianWallMs": 1.3,
     "reads": 1,
     "bytesRead": 36603,
     "size": 36603,
@@ -6676,11 +6679,11 @@
     "repeatable": true
    },
    "mp4_bf_faststart.mp4": {
-    "ms": [0.9, 0.9, 0.7, 0.7, 0.8],
-    "wallMs": [1.5, 1.5, 1.4, 1.5, 1.6],
-    "medianMs": 0.8,
-    "minMs": 0.7,
-    "medianWallMs": 1.5,
+    "ms": [0.8, 0.6, 0.5, 0.9, 0.7],
+    "wallMs": [1.5, 1.3, 1.3, 1.5, 1.3],
+    "medianMs": 0.7,
+    "minMs": 0.5,
+    "medianWallMs": 1.3,
     "reads": 1,
     "bytesRead": 36639,
     "size": 36639,
@@ -6700,11 +6703,11 @@
     "repeatable": true
    },
    "mp4_elst_empty_offset.mp4": {
-    "ms": [0.8, 0.9, 0.8, 0.9, 0.9],
-    "wallMs": [1.5, 1.5, 1.7, 1.6, 1.5],
-    "medianMs": 0.9,
-    "minMs": 0.8,
-    "medianWallMs": 1.5,
+    "ms": [0.9, 0.6, 0.6, 0.8, 0.8],
+    "wallMs": [1.4, 1.2, 1.2, 1.4, 1.3],
+    "medianMs": 0.8,
+    "minMs": 0.6,
+    "medianWallMs": 1.3,
     "reads": 1,
     "bytesRead": 36008,
     "size": 36008,
@@ -6724,11 +6727,11 @@
     "repeatable": true
    },
    "mp4_elst_trim_start.mp4": {
-    "ms": [0.8, 0.7, 1, 0.8, 0.9],
-    "wallMs": [1.4, 1.4, 1.7, 1.8, 1.6],
-    "medianMs": 0.8,
-    "minMs": 0.7,
-    "medianWallMs": 1.6,
+    "ms": [0.9, 0.7, 0.5, 1.1, 0.6],
+    "wallMs": [1.5, 1.3, 1.2, 1.9, 1.5],
+    "medianMs": 0.7,
+    "minMs": 0.5,
+    "medianWallMs": 1.5,
     "reads": 1,
     "bytesRead": 36639,
     "size": 36639,
@@ -6748,11 +6751,11 @@
     "repeatable": true
    },
    "mp4_elst_trim_output_seek.mp4": {
-    "ms": [0.8, 1, 0.7, 0.7, 0.9],
-    "wallMs": [1.6, 1.6, 1.4, 1.5, 1.6],
-    "medianMs": 0.8,
-    "minMs": 0.7,
-    "medianWallMs": 1.6,
+    "ms": [0.7, 0.8, 0.7, 0.6, 0.7],
+    "wallMs": [1.3, 1.4, 1.2, 1.6, 1.4],
+    "medianMs": 0.7,
+    "minMs": 0.6,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 25677,
     "size": 25677,
@@ -6772,11 +6775,11 @@
     "repeatable": true
    },
    "fmp4_keyframe_empty_moov.mp4": {
-    "ms": [1, 1, 1, 0.8, 1],
-    "wallMs": [1.8, 1.6, 1.7, 1.5, 1.6],
-    "medianMs": 1,
+    "ms": [0.9, 1, 0.8, 0.8, 0.8],
+    "wallMs": [1.5, 1.7, 1.4, 1.6, 1.4],
+    "medianMs": 0.8,
     "minMs": 0.8,
-    "medianWallMs": 1.6,
+    "medianWallMs": 1.5,
     "reads": 1,
     "bytesRead": 119543,
     "size": 119543,
@@ -6796,11 +6799,11 @@
     "repeatable": true
    },
    "fmp4_default_base_moof.mp4": {
-    "ms": [0.9, 0.9, 0.9, 0.9, 0.8],
-    "wallMs": [1.8, 1.7, 1.6, 1.6, 1.5],
-    "medianMs": 0.9,
-    "minMs": 0.8,
-    "medianWallMs": 1.6,
+    "ms": [0.8, 0.9, 0.7, 0.8, 0.6],
+    "wallMs": [1.7, 1.4, 1.5, 1.3, 1.2],
+    "medianMs": 0.8,
+    "minMs": 0.6,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 119503,
     "size": 119503,
@@ -6820,11 +6823,11 @@
     "repeatable": true
    },
    "fmp4_frag_duration.mp4": {
-    "ms": [0.9, 1, 1.1, 0.9, 0.9],
-    "wallMs": [1.9, 1.9, 1.7, 1.6, 1.6],
-    "medianMs": 0.9,
-    "minMs": 0.9,
-    "medianWallMs": 1.7,
+    "ms": [0.9, 0.8, 0.7, 0.8, 0.7],
+    "wallMs": [1.7, 1.3, 1.4, 1.4, 1.6],
+    "medianMs": 0.8,
+    "minMs": 0.7,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 120011,
     "size": 120011,
@@ -6844,11 +6847,11 @@
     "repeatable": true
    },
    "fmp4_bframes.mp4": {
-    "ms": [0.9, 0.9, 0.9, 0.8, 0.9],
-    "wallMs": [1.9, 1.6, 1.8, 1.7, 1.5],
-    "medianMs": 0.9,
-    "minMs": 0.8,
-    "medianWallMs": 1.7,
+    "ms": [0.9, 0.7, 0.7, 0.6, 0.7],
+    "wallMs": [1.7, 1.3, 1.2, 1.2, 1.4],
+    "medianMs": 0.7,
+    "minMs": 0.6,
+    "medianWallMs": 1.3,
     "reads": 1,
     "bytesRead": 50011,
     "size": 50011,
@@ -6868,11 +6871,11 @@
     "repeatable": true
    },
    "fmp4_hybrid_no_empty_moov.mp4": {
-    "ms": [0.9, 0.9, 0.8, 0.8, 1.1],
-    "wallMs": [1.9, 1.6, 1.6, 1.5, 1.7],
+    "ms": [1, 0.9, 0.7, 0.7, 0.9],
+    "wallMs": [1.7, 1.3, 1.3, 1.4, 1.7],
     "medianMs": 0.9,
-    "minMs": 0.8,
-    "medianWallMs": 1.6,
+    "minMs": 0.7,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 119476,
     "size": 119476,
@@ -6892,11 +6895,11 @@
     "repeatable": true
    },
    "fmp4_cmaf.mp4": {
-    "ms": [0.9, 1, 0.8, 0.9, 1],
-    "wallMs": [1.6, 1.6, 1.6, 1.4, 1.6],
-    "medianMs": 0.9,
-    "minMs": 0.8,
-    "medianWallMs": 1.6,
+    "ms": [0.9, 0.8, 0.6, 0.8, 0.8],
+    "wallMs": [1.7, 1.4, 1.3, 1.4, 1.6],
+    "medianMs": 0.8,
+    "minMs": 0.6,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 119519,
     "size": 119519,
@@ -6916,8 +6919,8 @@
     "repeatable": true
    },
    "fmp4_global_sidx.mp4": {
-    "ms": [0.9, 0.8, 0.7, 0.9, 1],
-    "wallMs": [1.8, 1.5, 1.4, 1.6, 1.6],
+    "ms": [0.9, 0.8, 0.9, 0.7, 0.9],
+    "wallMs": [1.9, 1.7, 1.6, 1.4, 1.6],
     "medianMs": 0.9,
     "minMs": 0.7,
     "medianWallMs": 1.6,
@@ -6940,11 +6943,11 @@
     "repeatable": true
    },
    "fmp4_dash_flag.mp4": {
-    "ms": [0.9, 1, 0.9, 1, 0.9],
-    "wallMs": [1.5, 1.7, 1.4, 1.5, 1.5],
-    "medianMs": 0.9,
-    "minMs": 0.9,
-    "medianWallMs": 1.5,
+    "ms": [1, 0.7, 0.6, 0.7, 0.8],
+    "wallMs": [1.8, 1.4, 1.2, 1.3, 1.6],
+    "medianMs": 0.7,
+    "minMs": 0.6,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 119711,
     "size": 119711,
@@ -6964,11 +6967,11 @@
     "repeatable": true
    },
    "mp4_hybrid_fragmented_finalized.mp4": {
-    "ms": [0.9, 0.9, 1, 1, 1],
-    "wallMs": [1.6, 1.5, 1.6, 1.7, 1.9],
-    "medianMs": 1,
-    "minMs": 0.9,
-    "medianWallMs": 1.6,
+    "ms": [0.9, 0.7, 0.7, 0.8, 0.8],
+    "wallMs": [1.8, 1.4, 1.3, 1.3, 1.6],
+    "medianMs": 0.8,
+    "minMs": 0.7,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 120694,
     "size": 120694,
@@ -6988,11 +6991,11 @@
     "repeatable": true
    },
    "fmp4_dash_single_file.mp4": {
-    "ms": [1, 0.8, 1.1, 0.9, 0.8],
-    "wallMs": [1.7, 1.5, 1.8, 1.4, 1.8],
-    "medianMs": 0.9,
-    "minMs": 0.8,
-    "medianWallMs": 1.7,
+    "ms": [0.9, 0.8, 0.8, 0.6, 1],
+    "wallMs": [1.6, 1.3, 1.3, 1.3, 1.6],
+    "medianMs": 0.8,
+    "minMs": 0.6,
+    "medianWallMs": 1.3,
     "reads": 1,
     "bytesRead": 119624,
     "size": 119624,
@@ -7012,11 +7015,11 @@
     "repeatable": true
    },
    "fmp4_dash_concat_segments.mp4": {
-    "ms": [1, 0.9, 0.8, 1.1, 1.1],
-    "wallMs": [1.7, 1.7, 1.7, 1.9, 1.9],
-    "medianMs": 1,
-    "minMs": 0.8,
-    "medianWallMs": 1.7,
+    "ms": [0.8, 0.8, 0.8, 0.7, 0.8],
+    "wallMs": [1.6, 1.3, 1.3, 1.4, 1.6],
+    "medianMs": 0.8,
+    "minMs": 0.7,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 119720,
     "size": 119720,
@@ -7036,11 +7039,11 @@
     "repeatable": true
    },
    "hevc_hvc1.mp4": {
-    "ms": [0.7, 0.9, 1, 0.9, 1],
-    "wallMs": [1.6, 1.7, 1.5, 1.7, 1.9],
-    "medianMs": 0.9,
+    "ms": [0.7, 0.9, 0.7, 0.8, 0.8],
+    "wallMs": [1.5, 1.3, 1.3, 1.4, 1.3],
+    "medianMs": 0.8,
     "minMs": 0.7,
-    "medianWallMs": 1.7,
+    "medianWallMs": 1.3,
     "reads": 1,
     "bytesRead": 46180,
     "size": 46180,
@@ -7060,10 +7063,10 @@
     "repeatable": true
    },
    "hevc_hev1.mp4": {
-    "ms": [0.9, 0.9, 0.8, 0.8, 0.8],
-    "wallMs": [1.5, 1.5, 1.5, 1.4, 1.8],
+    "ms": [1, 0.8, 0.6, 0.8, 0.8],
+    "wallMs": [1.9, 1.5, 1.7, 1.5, 1.4],
     "medianMs": 0.8,
-    "minMs": 0.8,
+    "minMs": 0.6,
     "medianWallMs": 1.5,
     "reads": 1,
     "bytesRead": 46180,
@@ -7084,11 +7087,11 @@
     "repeatable": true
    },
    "av1.mp4": {
-    "ms": [0.7, 0.9, 0.9, 0.7, 0.8],
-    "wallMs": [1.4, 1.5, 1.8, 1.6, 1.5],
+    "ms": [0.8, 0.9, 0.9, 0.7, 0.7],
+    "wallMs": [1.7, 1.3, 1.4, 1.6, 1.3],
     "medianMs": 0.8,
     "minMs": 0.7,
-    "medianWallMs": 1.5,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 21330,
     "size": 21330,
@@ -7108,11 +7111,11 @@
     "repeatable": true
    },
    "vp9.mp4": {
-    "ms": [0.8, 1, 1.2, 0.9, 0.9],
-    "wallMs": [1.4, 1.6, 2, 2.3, 1.5],
+    "ms": [1, 0.5, 0.9, 0.9, 0.7],
+    "wallMs": [1.8, 1.3, 1.4, 1.7, 1.3],
     "medianMs": 0.9,
-    "minMs": 0.8,
-    "medianWallMs": 1.6,
+    "minMs": 0.5,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 73754,
     "size": 73754,
@@ -7132,11 +7135,11 @@
     "repeatable": true
    },
    "vp9.webm": {
-    "ms": [1.1, 1.1, 0.8, 1.1, 0.9],
-    "wallMs": [1.9, 1.7, 1.7, 1.7, 1.7],
-    "medianMs": 1.1,
+    "ms": [0.9, 0.8, 0.8, 0.8, 0.9],
+    "wallMs": [1.8, 1.3, 1.3, 1.7, 1.4],
+    "medianMs": 0.8,
     "minMs": 0.8,
-    "medianWallMs": 1.7,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 73687,
     "size": 73687,
@@ -7156,11 +7159,11 @@
     "repeatable": true
    },
    "vp8.webm": {
-    "ms": [1.1, 1.1, 1.2, 1, 1],
-    "wallMs": [1.8, 1.8, 1.9, 1.7, 1.8],
-    "medianMs": 1.1,
-    "minMs": 1,
-    "medianWallMs": 1.8,
+    "ms": [0.9, 0.8, 0.7, 1, 0.9],
+    "wallMs": [1.9, 1.4, 1.4, 1.7, 1.6],
+    "medianMs": 0.9,
+    "minMs": 0.7,
+    "medianWallMs": 1.6,
     "reads": 1,
     "bytesRead": 164171,
     "size": 164171,
@@ -7180,11 +7183,11 @@
     "repeatable": true
    },
    "av1.webm": {
-    "ms": [0.8, 0.9, 1, 1, 0.7],
-    "wallMs": [1.5, 1.6, 1.7, 1.5, 1.5],
-    "medianMs": 0.9,
-    "minMs": 0.7,
-    "medianWallMs": 1.5,
+    "ms": [1, 0.6, 1, 0.8, 0.6],
+    "wallMs": [1.8, 1.3, 1.6, 1.4, 1.4],
+    "medianMs": 0.8,
+    "minMs": 0.6,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 21697,
     "size": 21697,
@@ -7204,11 +7207,11 @@
     "repeatable": true
    },
    "h264.mkv": {
-    "ms": [0.8, 0.9, 0.8, 0.9, 0.9],
-    "wallMs": [1.6, 1.9, 1.8, 1.8, 1.6],
-    "medianMs": 0.9,
-    "minMs": 0.8,
-    "medianWallMs": 1.8,
+    "ms": [0.9, 1, 0.8, 0.7, 0.8],
+    "wallMs": [1.7, 1.7, 1.3, 1.5, 1.4],
+    "medianMs": 0.8,
+    "minMs": 0.7,
+    "medianWallMs": 1.5,
     "reads": 1,
     "bytesRead": 88522,
     "size": 88522,
@@ -7228,11 +7231,11 @@
     "repeatable": true
    },
    "hevc.mkv": {
-    "ms": [0.9, 0.9, 1, 1, 0.7],
-    "wallMs": [1.7, 1.8, 1.6, 1.7, 1.6],
-    "medianMs": 0.9,
+    "ms": [1, 0.7, 0.7, 0.8, 0.7],
+    "wallMs": [1.7, 1.4, 1.5, 1.4, 1.3],
+    "medianMs": 0.7,
     "minMs": 0.7,
-    "medianWallMs": 1.7,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 45356,
     "size": 45356,
@@ -7252,11 +7255,11 @@
     "repeatable": true
    },
    "vp9_live.webm": {
-    "ms": [1.1, 1, 0.9, 0.7, 0.8],
-    "wallMs": [2.4, 1.8, 1.7, 1.6, 1.6],
+    "ms": [1, 0.7, 0.9, 1.1, 0.8],
+    "wallMs": [1.6, 1.3, 1.5, 1.7, 1.5],
     "medianMs": 0.9,
     "minMs": 0.7,
-    "medianWallMs": 1.7,
+    "medianWallMs": 1.5,
     "reads": 1,
     "bytesRead": 73582,
     "size": 73582,
@@ -7276,11 +7279,11 @@
     "repeatable": true
    },
    "vp9_pipe.webm": {
-    "ms": [0.9, 0.8, 1.1, 0.9, 0.9],
-    "wallMs": [1.7, 1.6, 1.9, 1.6, 1.7],
-    "medianMs": 0.9,
-    "minMs": 0.8,
-    "medianWallMs": 1.7,
+    "ms": [1, 0.8, 0.7, 0.8, 0.7],
+    "wallMs": [1.9, 1.4, 1.2, 1.7, 1.4],
+    "medianMs": 0.8,
+    "minMs": 0.7,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 73582,
     "size": 73582,
@@ -7300,11 +7303,11 @@
     "repeatable": true
    },
    "vp9_unknown_clusters.webm": {
-    "ms": [0.9, 0.9, 0.9, 1, 1.1],
-    "wallMs": [1.7, 1.5, 1.7, 1.9, 1.6],
-    "medianMs": 0.9,
-    "minMs": 0.9,
-    "medianWallMs": 1.7,
+    "ms": [1, 0.8, 0.7, 1, 0.8],
+    "wallMs": [1.6, 1.3, 1.3, 1.5, 1.5],
+    "medianMs": 0.8,
+    "minMs": 0.7,
+    "medianWallMs": 1.5,
     "reads": 1,
     "bytesRead": 73582,
     "size": 73582,
@@ -7324,11 +7327,11 @@
     "repeatable": true
    },
    "vp9_no_defaultduration.webm": {
-    "ms": [0.9, 1.2, 1.2, 1, 0.9],
-    "wallMs": [1.8, 2, 1.9, 1.7, 1.6],
-    "medianMs": 1,
-    "minMs": 0.9,
-    "medianWallMs": 1.8,
+    "ms": [0.9, 0.7, 0.6, 0.7, 0.9],
+    "wallMs": [1.7, 1.4, 1.3, 1.4, 1.4],
+    "medianMs": 0.7,
+    "minMs": 0.6,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 73687,
     "size": 73687,
@@ -7348,11 +7351,11 @@
     "repeatable": true
    },
    "vfr_concat_10_30_60.mp4": {
-    "ms": [1.2, 1.1, 1.1, 0.7, 1.1],
-    "wallMs": [2.2, 2.1, 2, 1.9, 2],
-    "medianMs": 1.1,
+    "ms": [1.1, 0.9, 0.8, 0.9, 0.7],
+    "wallMs": [2.1, 1.9, 2, 1.6, 1.7],
+    "medianMs": 0.9,
     "minMs": 0.7,
-    "medianWallMs": 2,
+    "medianWallMs": 1.9,
     "reads": 1,
     "bytesRead": 165653,
     "size": 165653,
@@ -7372,11 +7375,11 @@
     "repeatable": true
    },
    "vfr_concat_bframes.mp4": {
-    "ms": [1.3, 0.9, 1, 1, 1.1],
-    "wallMs": [2.3, 1.9, 1.9, 1.9, 2.2],
-    "medianMs": 1,
-    "minMs": 0.9,
-    "medianWallMs": 1.9,
+    "ms": [1, 0.9, 0.8, 0.9, 0.9],
+    "wallMs": [2.1, 1.7, 1.9, 1.6, 1.6],
+    "medianMs": 0.9,
+    "minMs": 0.8,
+    "medianWallMs": 1.7,
     "reads": 1,
     "bytesRead": 68275,
     "size": 68275,
@@ -7396,11 +7399,11 @@
     "repeatable": true
    },
    "vfr_concat_10_30_60_ts1M.mp4": {
-    "ms": [1.3, 1.2, 1.2, 0.9, 1.2],
-    "wallMs": [2.3, 2.1, 1.9, 2.1, 2.2],
-    "medianMs": 1.2,
-    "minMs": 0.9,
-    "medianWallMs": 2.1,
+    "ms": [1.3, 1.1, 1, 1, 1.1],
+    "wallMs": [2.3, 1.8, 1.9, 1.7, 1.8],
+    "medianMs": 1.1,
+    "minMs": 1,
+    "medianWallMs": 1.8,
     "reads": 1,
     "bytesRead": 166613,
     "size": 166613,
@@ -7420,11 +7423,11 @@
     "repeatable": true
    },
    "vfr_concat_10_30_60.mov": {
-    "ms": [1.1, 1.2, 1, 1, 1.1],
-    "wallMs": [2.3, 2.1, 1.8, 2, 2],
-    "medianMs": 1.1,
-    "minMs": 1,
-    "medianWallMs": 2,
+    "ms": [1.1, 0.7, 0.9, 0.9, 0.9],
+    "wallMs": [2, 1.6, 1.7, 1.9, 2],
+    "medianMs": 0.9,
+    "minMs": 0.7,
+    "medianWallMs": 1.9,
     "reads": 1,
     "bytesRead": 165600,
     "size": 165600,
@@ -7444,11 +7447,11 @@
     "repeatable": true
    },
    "vfr_concat_10_30_60.webm": {
-    "ms": [1.2, 1.1, 1.2, 1.1, 1.1],
-    "wallMs": [2.2, 2.1, 2.7, 2, 2.1],
-    "medianMs": 1.1,
-    "minMs": 1.1,
-    "medianWallMs": 2.1,
+    "ms": [1.2, 1, 1.3, 1, 1],
+    "wallMs": [2, 1.8, 2.1, 1.8, 2],
+    "medianMs": 1,
+    "minMs": 1,
+    "medianWallMs": 2,
     "reads": 1,
     "bytesRead": 143713,
     "size": 143713,
@@ -7468,11 +7471,11 @@
     "repeatable": true
    },
    "vfr_concat_10_30_60_fmp4.mp4": {
-    "ms": [1.2, 1.5, 1, 1, 1.1],
-    "wallMs": [2.4, 2.9, 1.9, 1.9, 2.5],
-    "medianMs": 1.1,
-    "minMs": 1,
-    "medianWallMs": 2.4,
+    "ms": [1, 0.9, 1, 0.8, 0.9],
+    "wallMs": [2.1, 1.7, 3.8, 1.7, 1.7],
+    "medianMs": 0.9,
+    "minMs": 0.8,
+    "medianWallMs": 1.7,
     "reads": 1,
     "bytesRead": 166738,
     "size": 166738,
@@ -7492,11 +7495,11 @@
     "repeatable": true
    },
    "vfr_setpts_sine.mp4": {
-    "ms": [1.4, 1.4, 1.4, 1.2, 1.6],
-    "wallMs": [2.4, 2.5, 2.2, 2.1, 2.6],
-    "medianMs": 1.4,
-    "minMs": 1.2,
-    "medianWallMs": 2.4,
+    "ms": [1.4, 1.1, 1.2, 0.9, 1],
+    "wallMs": [2.3, 2.1, 2.1, 1.7, 1.9],
+    "medianMs": 1.1,
+    "minMs": 0.9,
+    "medianWallMs": 2.1,
     "reads": 1,
     "bytesRead": 145595,
     "size": 145595,
@@ -7516,11 +7519,11 @@
     "repeatable": true
    },
    "vfr_select_drop.mp4": {
-    "ms": [1.2, 1.3, 1.3, 1.4, 1.2],
-    "wallMs": [2.2, 2.4, 2.2, 2.7, 2.1],
-    "medianMs": 1.3,
-    "minMs": 1.2,
-    "medianWallMs": 2.2,
+    "ms": [1.2, 1.2, 1, 1.1, 1.1],
+    "wallMs": [2.1, 2, 1.8, 1.7, 2],
+    "medianMs": 1.1,
+    "minMs": 1,
+    "medianWallMs": 2,
     "reads": 1,
     "bytesRead": 155730,
     "size": 155730,
@@ -7540,11 +7543,11 @@
     "repeatable": true
    },
    "vfr_mpdecimate.mp4": {
-    "ms": [1, 1, 1.1, 1.3, 1.1],
-    "wallMs": [1.8, 2, 2.4, 2.2, 1.8],
-    "medianMs": 1.1,
-    "minMs": 1,
-    "medianWallMs": 2,
+    "ms": [0.9, 0.9, 0.9, 0.8, 0.9],
+    "wallMs": [1.8, 1.6, 1.6, 1.9, 1.9],
+    "medianMs": 0.9,
+    "minMs": 0.8,
+    "medianWallMs": 1.8,
     "reads": 1,
     "bytesRead": 89117,
     "size": 89117,
@@ -7564,11 +7567,11 @@
     "repeatable": true
    },
    "vfr_screenrec_ts1000.mp4": {
-    "ms": [1.5, 1.2, 1.2, 1.1, 1.2],
-    "wallMs": [2.5, 2.3, 2.1, 2, 2.2],
-    "medianMs": 1.2,
-    "minMs": 1.1,
-    "medianWallMs": 2.2,
+    "ms": [1.3, 1, 1.2, 1, 1.1],
+    "wallMs": [2.7, 2, 2, 1.9, 2.1],
+    "medianMs": 1.1,
+    "minMs": 1,
+    "medianWallMs": 2,
     "reads": 1,
     "bytesRead": 193130,
     "size": 193130,
@@ -7588,10 +7591,10 @@
     "repeatable": true
    },
    "vfr_screenrec_ts1000.webm": {
-    "ms": [1.1, 1.4, 1, 1, 1.1],
-    "wallMs": [2, 2.5, 1.8, 2, 2.2],
-    "medianMs": 1.1,
-    "minMs": 1,
+    "ms": [1.5, 1.1, 1, 0.8, 1],
+    "wallMs": [2.5, 2, 2, 1.8, 2],
+    "medianMs": 1,
+    "minMs": 0.8,
     "medianWallMs": 2,
     "reads": 1,
     "bytesRead": 186038,
@@ -7612,11 +7615,11 @@
     "repeatable": true
    },
    "vfr_pulldown_2_3.mp4": {
-    "ms": [1.1, 1.3, 0.9, 1.1, 1],
-    "wallMs": [2, 2.7, 1.8, 1.9, 2],
-    "medianMs": 1.1,
+    "ms": [1.3, 1, 0.9, 1, 1],
+    "wallMs": [2.2, 1.7, 1.6, 1.6, 1.8],
+    "medianMs": 1,
     "minMs": 0.9,
-    "medianWallMs": 2,
+    "medianWallMs": 1.7,
     "reads": 1,
     "bytesRead": 125744,
     "size": 125744,
@@ -7636,11 +7639,11 @@
     "repeatable": true
    },
    "vfr_two_phase_5_200.mp4": {
-    "ms": [1.4, 1.4, 1.3, 1.5, 1.4],
-    "wallMs": [2.4, 2.4, 1.9, 2.1, 2.2],
-    "medianMs": 1.4,
-    "minMs": 1.3,
-    "medianWallMs": 2.2,
+    "ms": [1.1, 1.3, 1.3, 1.2, 1.1],
+    "wallMs": [2.3, 1.9, 2.1, 2, 2.3],
+    "medianMs": 1.2,
+    "minMs": 1.1,
+    "medianWallMs": 2.1,
     "reads": 1,
     "bytesRead": 421180,
     "size": 421180,
@@ -7660,11 +7663,11 @@
     "repeatable": true
    },
    "vfr_two_phase_5_200.webm": {
-    "ms": [1.8, 1.9, 1.8, 1.6, 1.8],
-    "wallMs": [2.8, 2.8, 2.5, 2.3, 2.9],
+    "ms": [1.6, 4.1, 4.6, 1.5, 1.8],
+    "wallMs": [2.7, 5.2, 5.7, 2.4, 2.9],
     "medianMs": 1.8,
-    "minMs": 1.6,
-    "medianWallMs": 2.8,
+    "minMs": 1.5,
+    "medianWallMs": 2.9,
     "reads": 1,
     "bytesRead": 441388,
     "size": 441388,
@@ -7684,11 +7687,11 @@
     "repeatable": true
    },
    "vfr_two_phase_5_200.mkv": {
-    "ms": [2.2, 2, 1.9, 1.9, 1.7],
-    "wallMs": [3.2, 3, 2.8, 2.6, 2.5],
-    "medianMs": 1.9,
-    "minMs": 1.7,
-    "medianWallMs": 2.8,
+    "ms": [4.6, 1.8, 1.6, 3.5, 1.6],
+    "wallMs": [6.1, 2.4, 2.5, 4.8, 2.4],
+    "medianMs": 1.8,
+    "minMs": 1.6,
+    "medianWallMs": 2.5,
     "reads": 1,
     "bytesRead": 431615,
     "size": 431615,
@@ -7708,11 +7711,11 @@
     "repeatable": true
    },
    "vfr_freeze_2s.mp4": {
-    "ms": [0.9, 1.1, 1.1, 1, 0.8],
-    "wallMs": [1.9, 2.1, 1.9, 2.4, 1.6],
-    "medianMs": 1,
+    "ms": [1, 0.9, 0.8, 1, 0.9],
+    "wallMs": [1.9, 1.9, 1.6, 1.6, 1.7],
+    "medianMs": 0.9,
     "minMs": 0.8,
-    "medianWallMs": 1.9,
+    "medianWallMs": 1.7,
     "reads": 1,
     "bytesRead": 119807,
     "size": 119807,
@@ -7732,11 +7735,11 @@
     "repeatable": true
    },
    "box64_mdat64_wide.mov": {
-    "ms": [1, 1.5, 1, 0.7, 0.8],
-    "wallMs": [1.7, 2.6, 1.6, 1.6, 1.3],
-    "medianMs": 1,
-    "minMs": 0.7,
-    "medianWallMs": 1.6,
+    "ms": [0.9, 0.7, 0.7, 0.6, 0.8],
+    "wallMs": [1.5, 1.3, 1.3, 1.3, 1.4],
+    "medianMs": 0.7,
+    "minMs": 0.6,
+    "medianWallMs": 1.3,
     "reads": 1,
     "bytesRead": 88446,
     "size": 88446,
@@ -7756,11 +7759,11 @@
     "repeatable": true
    },
    "box64_mdat64_free.mp4": {
-    "ms": [0.9, 1.1, 0.9, 0.9, 0.7],
-    "wallMs": [1.7, 1.7, 1.5, 1.5, 1.3],
-    "medianMs": 0.9,
+    "ms": [0.8, 0.9, 0.7, 0.7, 0.7],
+    "wallMs": [1.7, 1.4, 1.6, 1.1, 2.2],
+    "medianMs": 0.7,
     "minMs": 0.7,
-    "medianWallMs": 1.5,
+    "medianWallMs": 1.6,
     "reads": 1,
     "bytesRead": 88810,
     "size": 88810,
@@ -7780,11 +7783,11 @@
     "repeatable": true
    },
    "box64_co64_mdat64.mp4": {
-    "ms": [0.9, 0.8, 0.9, 0.8, 0.6],
-    "wallMs": [1.7, 1.6, 1.7, 1.5, 1.2],
-    "medianMs": 0.8,
-    "minMs": 0.6,
-    "medianWallMs": 1.6,
+    "ms": [0.7, 0.8, 0.8, 0.7, 0.7],
+    "wallMs": [1.5, 1.3, 1.4, 1.4, 1.4],
+    "medianMs": 0.7,
+    "minMs": 0.7,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 36643,
     "size": 36643,
@@ -7804,11 +7807,11 @@
     "repeatable": true
    },
    "av_h264_aac.mp4": {
-    "ms": [1.1, 1, 0.8, 0.9, 0.8],
-    "wallMs": [1.7, 2.7, 1.6, 1.5, 1.7],
-    "medianMs": 0.9,
-    "minMs": 0.8,
-    "medianWallMs": 1.7,
+    "ms": [0.9, 0.7, 0.6, 0.8, 0.8],
+    "wallMs": [1.7, 1.3, 1.4, 1.4, 1.3],
+    "medianMs": 0.8,
+    "minMs": 0.6,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 103809,
     "size": 103809,
@@ -7828,11 +7831,11 @@
     "repeatable": true
    },
    "av_h264_aac_faststart.mp4": {
-    "ms": [0.9, 1.1, 0.6, 1, 0.9],
-    "wallMs": [1.7, 2.2, 1.3, 1.6, 1.5],
-    "medianMs": 0.9,
+    "ms": [0.9, 0.8, 0.9, 0.7, 0.6],
+    "wallMs": [1.5, 1.5, 1.6, 1.4, 1.2],
+    "medianMs": 0.8,
     "minMs": 0.6,
-    "medianWallMs": 1.6,
+    "medianWallMs": 1.5,
     "reads": 1,
     "bytesRead": 103809,
     "size": 103809,
@@ -7852,11 +7855,11 @@
     "repeatable": true
    },
    "multi_video_2tracks.mp4": {
-    "ms": [1.1, 1.4, 1.1, 1.2, 1],
-    "wallMs": [2.1, 2.6, 2.6, 3.1, 1.7],
-    "medianMs": 1.1,
-    "minMs": 1,
-    "medianWallMs": 2.6,
+    "ms": [1, 0.9, 1.1, 0.9, 0.8],
+    "wallMs": [1.9, 1.8, 1.7, 1.7, 1.5],
+    "medianMs": 0.9,
+    "minMs": 0.8,
+    "medianWallMs": 1.7,
     "reads": 1,
     "bytesRead": 307127,
     "size": 307127,
@@ -7876,11 +7879,11 @@
     "repeatable": true
    },
    "still_image_track_first.mp4": {
-    "ms": [0.9, 1.3, 0.9, 1, 0.8],
-    "wallMs": [2, 2.4, 2, 1.8, 1.6],
-    "medianMs": 0.9,
-    "minMs": 0.8,
-    "medianWallMs": 2,
+    "ms": [0.9, 0.9, 0.6, 0.7, 0.6],
+    "wallMs": [1.9, 1.5, 1.4, 1.5, 1.5],
+    "medianMs": 0.7,
+    "minMs": 0.6,
+    "medianWallMs": 1.5,
     "reads": 1,
     "bytesRead": 107479,
     "size": 107479,
@@ -7900,11 +7903,11 @@
     "repeatable": true
    },
    "cover_art_audio.m4a": {
-    "ms": [0.9, 1.1, 0.8, 0.7, 0.7],
-    "wallMs": [1.4, 2.1, 1.3, 1.3, 1.1],
-    "medianMs": 0.8,
-    "minMs": 0.7,
-    "medianWallMs": 1.3,
+    "ms": [0.7, 0.8, 0.6, 0.5, 0.7],
+    "wallMs": [1.2, 1.1, 1.1, 1, 1.2],
+    "medianMs": 0.7,
+    "minMs": 0.5,
+    "medianWallMs": 1.1,
     "reads": 1,
     "bytesRead": 16690,
     "size": 16690,
@@ -7924,11 +7927,11 @@
     "repeatable": true
    },
    "cover_art_plus_video.mp4": {
-    "ms": [0.9, 1, 1.1, 0.9, 0.8],
-    "wallMs": [1.4, 1.8, 1.8, 1.9, 1.5],
-    "medianMs": 0.9,
-    "minMs": 0.8,
-    "medianWallMs": 1.8,
+    "ms": [0.9, 0.8, 0.7, 0.7, 0.8],
+    "wallMs": [1.6, 1.2, 1.4, 1.4, 1.4],
+    "medianMs": 0.8,
+    "minMs": 0.7,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 105948,
     "size": 105948,
@@ -7948,11 +7951,11 @@
     "repeatable": true
    },
    "audio_only.m4a": {
-    "ms": [0.7, 0.7, 0.7, 0.9, 0.6],
-    "wallMs": [1.3, 1.4, 1.4, 1.5, 1.4],
+    "ms": [0.8, 0.6, 0.7, 0.7, 0.7],
+    "wallMs": [1.3, 1.2, 1.1, 1.1, 1.1],
     "medianMs": 0.7,
     "minMs": 0.6,
-    "medianWallMs": 1.4,
+    "medianWallMs": 1.1,
     "reads": 1,
     "bytesRead": 13573,
     "size": 13573,
@@ -7972,11 +7975,11 @@
     "repeatable": true
    },
    "audio_only_aac.mp4": {
-    "ms": [0.7, 1, 0.8, 0.7, 0.7],
-    "wallMs": [1.3, 1.6, 1.3, 1.2, 1.2],
-    "medianMs": 0.7,
-    "minMs": 0.7,
-    "medianWallMs": 1.3,
+    "ms": [0.7, 0.6, 0.5, 0.5, 0.6],
+    "wallMs": [1.4, 1.1, 1, 1, 1],
+    "medianMs": 0.6,
+    "minMs": 0.5,
+    "medianWallMs": 1,
     "reads": 1,
     "bytesRead": 13593,
     "size": 13593,
@@ -7996,11 +7999,11 @@
     "repeatable": true
    },
    "audio_only_opus.webm": {
-    "ms": [0.7, 0.9, 1.1, 0.9, 0.9],
-    "wallMs": [1.3, 1.9, 1.7, 1.5, 1.3],
-    "medianMs": 0.9,
-    "minMs": 0.7,
-    "medianWallMs": 1.5,
+    "ms": [0.8, 0.6, 0.6, 0.5, 0.6],
+    "wallMs": [1.5, 1.2, 1, 1, 1],
+    "medianMs": 0.6,
+    "minMs": 0.5,
+    "medianWallMs": 1,
     "reads": 1,
     "bytesRead": 13847,
     "size": 13847,
@@ -8020,11 +8023,11 @@
     "repeatable": true
    },
    "edge_single_frame.mp4": {
-    "ms": [0.8, 0.7, 0.9, 0.8, 0.6],
-    "wallMs": [1.4, 1.4, 1.9, 1.5, 1.4],
-    "medianMs": 0.8,
-    "minMs": 0.6,
-    "medianWallMs": 1.4,
+    "ms": [0.7, 0.7, 0.6, 0.5, 0.6],
+    "wallMs": [1.6, 1.2, 1.2, 1.1, 1.1],
+    "medianMs": 0.6,
+    "minMs": 0.5,
+    "medianWallMs": 1.2,
     "reads": 1,
     "bytesRead": 4078,
     "size": 4078,
@@ -8045,10 +8048,10 @@
    },
    "corrupt_empty_0byte.mp4": {
     "ms": [0, 0, 0, 0, 0],
-    "wallMs": [0.6, 0.6, 0.6, 0.7, 0.4],
+    "wallMs": [0.5, 0.4, 0.5, 0.5, 0.4],
     "medianMs": 0,
     "minMs": 0,
-    "medianWallMs": 0.6,
+    "medianWallMs": 0.5,
     "reads": 0,
     "bytesRead": 0,
     "size": 0,
@@ -8068,11 +8071,11 @@
     "repeatable": true
    },
    "corrupt_garbage_random.mp4": {
-    "ms": [0.8, 0.9, 0.8, 0.7, 0.8],
-    "wallMs": [1.3, 1.6, 1.4, 1.5, 1.2],
-    "medianMs": 0.8,
-    "minMs": 0.7,
-    "medianWallMs": 1.4,
+    "ms": [0.7, 0.6, 0.7, 0.6, 0.9],
+    "wallMs": [1.2, 1, 1, 1, 1.6],
+    "medianMs": 0.7,
+    "minMs": 0.6,
+    "medianWallMs": 1,
     "reads": 1,
     "bytesRead": 65536,
     "size": 65536,
@@ -8092,11 +8095,11 @@
     "repeatable": true
    },
    "corrupt_text_named.mp4": {
-    "ms": [0.9, 0.7, 0.6, 0.7, 0.7],
-    "wallMs": [1.3, 1.2, 1.2, 1.3, 1.1],
-    "medianMs": 0.7,
-    "minMs": 0.6,
-    "medianWallMs": 1.2,
+    "ms": [0.8, 0.6, 0.6, 0.4, 0.6],
+    "wallMs": [1.3, 0.8, 1.1, 0.9, 1.1],
+    "medianMs": 0.6,
+    "minMs": 0.4,
+    "medianWallMs": 1.1,
     "reads": 1,
     "bytesRead": 63,
     "size": 63,
@@ -8116,11 +8119,11 @@
     "repeatable": true
    },
    "corrupt_png_named.mp4": {
-    "ms": [0.7, 0.8, 0.6, 0.8, 0.7],
-    "wallMs": [1.1, 1.1, 1, 1.3, 1.3],
-    "medianMs": 0.7,
-    "minMs": 0.6,
-    "medianWallMs": 1.1,
+    "ms": [0.6, 0.5, 0.5, 0.6, 0.6],
+    "wallMs": [1.1, 0.9, 0.8, 0.9, 1],
+    "medianMs": 0.6,
+    "minMs": 0.5,
+    "medianWallMs": 0.9,
     "reads": 1,
     "bytesRead": 2256,
     "size": 2256,
@@ -8140,11 +8143,11 @@
     "repeatable": true
    },
    "corrupt_trunc_moov_partial.mp4": {
-    "ms": [0.8, 1.1, 0.7, 0.9, 0.9],
-    "wallMs": [1.4, 1.8, 1.2, 1.5, 1.4],
-    "medianMs": 0.9,
-    "minMs": 0.7,
-    "medianWallMs": 1.4,
+    "ms": [0.9, 0.6, 0.7, 0.6, 0.6],
+    "wallMs": [1.6, 1.1, 1.2, 1.4, 1.1],
+    "medianMs": 0.6,
+    "minMs": 0.6,
+    "medianWallMs": 1.2,
     "reads": 1,
     "bytesRead": 88224,
     "size": 88224,
@@ -8164,11 +8167,11 @@
     "repeatable": true
    },
    "corrupt_trunc_no_moov.mp4": {
-    "ms": [0.9, 1, 1, 0.8, 0.8],
-    "wallMs": [1.6, 1.7, 1.4, 1.4, 1.7],
-    "medianMs": 0.9,
-    "minMs": 0.8,
-    "medianWallMs": 1.6,
+    "ms": [0.9, 0.8, 0.6, 0.7, 0.6],
+    "wallMs": [1.5, 1.3, 1.1, 1.1, 1],
+    "medianMs": 0.7,
+    "minMs": 0.6,
+    "medianWallMs": 1.1,
     "reads": 1,
     "bytesRead": 87638,
     "size": 87638,
@@ -8188,11 +8191,11 @@
     "repeatable": true
    },
    "corrupt_trunc_mdat_faststart.mp4": {
-    "ms": [0.7, 0.8, 0.9, 1, 1],
-    "wallMs": [1.6, 1.7, 1.7, 1.7, 2],
-    "medianMs": 0.9,
-    "minMs": 0.7,
-    "medianWallMs": 1.7,
+    "ms": [1.3, 0.7, 0.6, 0.6, 0.7],
+    "wallMs": [2.2, 1.4, 1.3, 1.2, 1.2],
+    "medianMs": 0.7,
+    "minMs": 0.6,
+    "medianWallMs": 1.3,
     "reads": 1,
     "bytesRead": 62285,
     "size": 62285,
@@ -8212,11 +8215,11 @@
     "repeatable": true
    },
    "corrupt_fmp4_truncated_mid_fragment.mp4": {
-    "ms": [0.8, 0.8, 0.9, 0.8, 0.9],
-    "wallMs": [1.7, 1.8, 1.5, 1.9, 2.6],
+    "ms": [1, 0.6, 0.8, 0.8, 0.9],
+    "wallMs": [1.9, 1.4, 1.3, 1.3, 1.4],
     "medianMs": 0.8,
-    "minMs": 0.8,
-    "medianWallMs": 1.8,
+    "minMs": 0.6,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 71725,
     "size": 71725,
@@ -8236,11 +8239,11 @@
     "repeatable": true
    },
    "box_mdat_size0.mp4": {
-    "ms": [1, 0.9, 1, 0.9, 0.8],
-    "wallMs": [1.8, 1.7, 1.9, 1.8, 1.6],
-    "medianMs": 0.9,
-    "minMs": 0.8,
-    "medianWallMs": 1.8,
+    "ms": [0.9, 0.6, 0.8, 0.8, 1],
+    "wallMs": [1.9, 1.3, 1.3, 1.3, 1.6],
+    "medianMs": 0.8,
+    "minMs": 0.6,
+    "medianWallMs": 1.3,
     "reads": 1,
     "bytesRead": 103809,
     "size": 103809,
@@ -8260,11 +8263,11 @@
     "repeatable": true
    },
    "corrupt_stts_count_huge.mp4": {
-    "ms": [1, 0.9, 0.9, 1, 1.3],
-    "wallMs": [1.6, 1.8, 1.6, 1.8, 2],
-    "medianMs": 1,
-    "minMs": 0.9,
-    "medianWallMs": 1.8,
+    "ms": [1, 0.7, 0.7, 0.6, 0.7],
+    "wallMs": [2.2, 1.2, 1.5, 1.3, 1.4],
+    "medianMs": 0.7,
+    "minMs": 0.6,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 88810,
     "size": 88810,
@@ -8284,11 +8287,11 @@
     "repeatable": true
    },
    "sniff_webm_named_mp4.mp4": {
-    "ms": [0.9, 1, 1.1, 1, 0.8],
-    "wallMs": [1.6, 1.8, 1.8, 1.6, 1.5],
-    "medianMs": 1,
-    "minMs": 0.8,
-    "medianWallMs": 1.6,
+    "ms": [1.2, 0.7, 0.9, 0.8, 0.8],
+    "wallMs": [2.1, 1.5, 1.5, 1.6, 1.3],
+    "medianMs": 0.8,
+    "minMs": 0.7,
+    "medianWallMs": 1.5,
     "reads": 1,
     "bytesRead": 73687,
     "size": 73687,
@@ -8308,11 +8311,11 @@
     "repeatable": true
    },
    "sniff_mp4_named_webm.webm": {
-    "ms": [1, 0.8, 0.8, 0.8, 0.7],
-    "wallMs": [1.7, 1.5, 1.6, 1.5, 1.6],
-    "medianMs": 0.8,
-    "minMs": 0.7,
-    "medianWallMs": 1.6,
+    "ms": [0.9, 0.9, 0.6, 0.7, 0.6],
+    "wallMs": [1.8, 1.6, 1.3, 1.2, 1.2],
+    "medianMs": 0.7,
+    "minMs": 0.6,
+    "medianWallMs": 1.3,
     "reads": 1,
     "bytesRead": 88810,
     "size": 88810,
@@ -8332,11 +8335,11 @@
     "repeatable": true
    },
    "sniff_mp4_named_mkv.mkv": {
-    "ms": [1.1, 0.7, 0.9, 1, 0.7],
-    "wallMs": [1.9, 1.4, 1.7, 2.2, 2.1],
-    "medianMs": 0.9,
-    "minMs": 0.7,
-    "medianWallMs": 1.9,
+    "ms": [1, 0.8, 0.6, 0.7, 0.8],
+    "wallMs": [1.6, 1.4, 1.3, 1.2, 1.3],
+    "medianMs": 0.8,
+    "minMs": 0.6,
+    "medianWallMs": 1.3,
     "reads": 1,
     "bytesRead": 88810,
     "size": 88810,
@@ -8356,11 +8359,11 @@
     "repeatable": true
    },
    "frag_vfr_global_sidx.mp4": {
-    "ms": [1.1, 0.9, 1, 1.1, 0.9],
-    "wallMs": [2, 1.8, 2, 2.1, 1.8],
-    "medianMs": 1,
-    "minMs": 0.9,
-    "medianWallMs": 2,
+    "ms": [1, 0.9, 0.8, 0.8, 0.9],
+    "wallMs": [1.8, 1.6, 1.6, 1.5, 1.6],
+    "medianMs": 0.9,
+    "minMs": 0.8,
+    "medianWallMs": 1.6,
     "reads": 1,
     "bytesRead": 123932,
     "size": 123932,
@@ -8380,11 +8383,11 @@
     "repeatable": true
    },
    "frag_vfr_dash.mp4": {
-    "ms": [1.1, 1.2, 1.1, 1, 1.1],
-    "wallMs": [2.2, 2, 2, 1.9, 1.9],
-    "medianMs": 1.1,
-    "minMs": 1,
-    "medianWallMs": 2,
+    "ms": [1, 0.9, 0.8, 0.9, 0.9],
+    "wallMs": [2, 1.6, 1.8, 1.5, 1.9],
+    "medianMs": 0.9,
+    "minMs": 0.8,
+    "medianWallMs": 1.8,
     "reads": 1,
     "bytesRead": 124092,
     "size": 124092,
@@ -8404,11 +8407,11 @@
     "repeatable": true
    },
    "h264_vfr_remux.mkv": {
-    "ms": [1.5, 1.4, 1.6, 1.3, 1.5],
-    "wallMs": [2.5, 2.4, 2.6, 2.1, 2.2],
-    "medianMs": 1.5,
-    "minMs": 1.3,
-    "medianWallMs": 2.4,
+    "ms": [1.2, 1.2, 1.3, 1.3, 1.2],
+    "wallMs": [2.1, 1.9, 2, 2.4, 2],
+    "medianMs": 1.2,
+    "minMs": 1.2,
+    "medianWallMs": 2,
     "reads": 1,
     "bytesRead": 204851,
     "size": 204851,
@@ -8428,11 +8431,11 @@
     "repeatable": true
    },
    "vp9_pipe_t10.webm": {
-    "ms": [0.9, 1, 0.9, 0.8, 1],
-    "wallMs": [1.9, 1.6, 1.6, 2.1, 1.5],
-    "medianMs": 0.9,
-    "minMs": 0.8,
-    "medianWallMs": 1.6,
+    "ms": [0.6, 0.8, 0.8, 0.7, 0.8],
+    "wallMs": [1.5, 1.9, 1.4, 1.5, 1.5],
+    "medianMs": 0.8,
+    "minMs": 0.6,
+    "medianWallMs": 1.5,
     "reads": 1,
     "bytesRead": 72282,
     "size": 72282,
@@ -8452,11 +8455,11 @@
     "repeatable": true
    },
    "vp9_opus_live_audiotail.webm": {
-    "ms": [1.1, 1.2, 0.9, 0.9, 1],
-    "wallMs": [1.9, 1.9, 1.7, 1.8, 2],
-    "medianMs": 1,
-    "minMs": 0.9,
-    "medianWallMs": 1.9,
+    "ms": [0.8, 1.1, 0.8, 0.8, 0.7],
+    "wallMs": [1.4, 1.6, 1.3, 1.5, 1.5],
+    "medianMs": 0.8,
+    "minMs": 0.7,
+    "medianWallMs": 1.5,
     "reads": 1,
     "bytesRead": 101028,
     "size": 101028,
@@ -8476,11 +8479,11 @@
     "repeatable": true
    },
    "h264_25_cover.mkv": {
-    "ms": [1, 1, 0.9, 1, 1],
-    "wallMs": [1.8, 1.9, 1.8, 1.6, 1.5],
-    "medianMs": 1,
-    "minMs": 0.9,
-    "medianWallMs": 1.8,
+    "ms": [0.8, 0.8, 0.9, 0.7, 0.9],
+    "wallMs": [1.4, 1.5, 1.5, 1.3, 1.8],
+    "medianMs": 0.8,
+    "minMs": 0.7,
+    "medianWallMs": 1.5,
     "reads": 1,
     "bytesRead": 73653,
     "size": 73653,
@@ -8500,11 +8503,11 @@
     "repeatable": true
    },
    "remux_cfr_120_ts16000.mp4": {
-    "ms": [1.4, 1.1, 1.2, 1, 0.9],
-    "wallMs": [2.4, 1.9, 1.9, 1.7, 1.6],
-    "medianMs": 1.1,
+    "ms": [0.9, 1, 0.9, 1, 0.9],
+    "wallMs": [1.9, 1.5, 1.5, 1.6, 1.7],
+    "medianMs": 0.9,
     "minMs": 0.9,
-    "medianWallMs": 1.9,
+    "medianWallMs": 1.6,
     "reads": 1,
     "bytesRead": 209636,
     "size": 209636,
@@ -8524,11 +8527,11 @@
     "repeatable": true
    },
    "remux_cfr_29.97_ts16000.mp4": {
-    "ms": [1, 0.9, 0.9, 0.7, 0.7],
-    "wallMs": [1.8, 1.7, 1.9, 1.4, 1.4],
-    "medianMs": 0.9,
-    "minMs": 0.7,
-    "medianWallMs": 1.7,
+    "ms": [0.8, 0.6, 0.8, 0.8, 0.7],
+    "wallMs": [1.5, 1.4, 1.5, 1.3, 1.3],
+    "medianMs": 0.8,
+    "minMs": 0.6,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 74282,
     "size": 74282,
@@ -8548,11 +8551,11 @@
     "repeatable": true
    },
    "start_freeze_bf.mp4": {
-    "ms": [1.1, 0.9, 1, 0.9, 0.9],
-    "wallMs": [2.1, 1.9, 2, 1.9, 1.6],
+    "ms": [1, 0.9, 0.8, 0.9, 0.9],
+    "wallMs": [1.7, 1.8, 1.8, 2.1, 1.6],
     "medianMs": 0.9,
-    "minMs": 0.9,
-    "medianWallMs": 1.9,
+    "minMs": 0.8,
+    "medianWallMs": 1.8,
     "reads": 1,
     "bytesRead": 120993,
     "size": 120993,
@@ -8572,11 +8575,11 @@
     "repeatable": true
    },
    "fmp4_missing_fragment.mp4": {
-    "ms": [1.1, 1.1, 1.1, 1.1, 0.8],
-    "wallMs": [2, 1.9, 1.9, 2.1, 1.6],
-    "medianMs": 1.1,
+    "ms": [0.9, 0.9, 0.9, 0.8, 0.8],
+    "wallMs": [1.5, 1.8, 1.6, 1.6, 1.7],
+    "medianMs": 0.9,
     "minMs": 0.8,
-    "medianWallMs": 1.9,
+    "medianWallMs": 1.6,
     "reads": 1,
     "bytesRead": 151484,
     "size": 151484,
@@ -8596,11 +8599,11 @@
     "repeatable": true
    },
    "elst_trim_vfr_copy.mp4": {
-    "ms": [1.3, 1.4, 1.5, 1.4, 1.4],
-    "wallMs": [2.4, 2.4, 2.4, 2.7, 2.3],
-    "medianMs": 1.4,
-    "minMs": 1.3,
-    "medianWallMs": 2.4,
+    "ms": [1.1, 1.2, 1, 1.4, 1.2],
+    "wallMs": [1.9, 2.1, 1.9, 2.1, 2.2],
+    "medianMs": 1.2,
+    "minMs": 1,
+    "medianWallMs": 2.1,
     "reads": 1,
     "bytesRead": 421180,
     "size": 421180,
@@ -8620,11 +8623,11 @@
     "repeatable": true
    },
    "cfr_240_ts600.mp4": {
-    "ms": [1.2, 1.2, 1.1, 1.1, 1.1],
-    "wallMs": [2.1, 2.1, 1.8, 2, 1.7],
+    "ms": [1.1, 1.2, 1, 0.8, 1.1],
+    "wallMs": [1.6, 1.8, 1.5, 1.6, 1.8],
     "medianMs": 1.1,
-    "minMs": 1.1,
-    "medianWallMs": 2,
+    "minMs": 0.8,
+    "medianWallMs": 1.6,
     "reads": 1,
     "bytesRead": 95288,
     "size": 95288,
@@ -8644,11 +8647,11 @@
     "repeatable": true
    },
    "fmp4_global_sidx_bframes.mp4": {
-    "ms": [1, 1.2, 0.8, 0.9, 0.9],
-    "wallMs": [1.8, 2.1, 1.7, 2, 1.4],
-    "medianMs": 0.9,
-    "minMs": 0.8,
-    "medianWallMs": 1.8,
+    "ms": [1, 0.8, 0.7, 1, 0.8],
+    "wallMs": [4.9, 1.2, 1.4, 1.4, 1.3],
+    "medianMs": 0.8,
+    "minMs": 0.7,
+    "medianWallMs": 1.4,
     "reads": 1,
     "bytesRead": 100060,
     "size": 100060,
@@ -8671,11 +8674,11 @@
   "large": {
    "long_cfr_3h_60fps.mp4": {
     "own": {
-     "ms": [3.9, 4, 4],
-     "wallMs": [4.9, 4.9, 4.9],
-     "medianMs": 4,
-     "minMs": 3.9,
-     "medianWallMs": 4.9,
+     "ms": [3.7, 3.5, 3.4],
+     "wallMs": [4.6, 4.2, 4.2],
+     "medianMs": 3.5,
+     "minMs": 3.4,
+     "medianWallMs": 4.2,
      "reads": 2,
      "bytesRead": 2680079,
      "size": 13023277,
@@ -8695,10 +8698,10 @@
      "repeatable": true
     },
     "mp4box": {
-     "ms": [197.8, 133.4, 134.8],
-     "wallMs": [199, 135, 136.3],
-     "medianMs": 134.8,
-     "medianWallMs": 136.3,
+     "ms": [180.3, 150.7, 125.2],
+     "wallMs": [181.4, 154.1, 126.5],
+     "medianMs": 150.7,
+     "medianWallMs": 154.1,
      "reads": 3,
      "bytesRead": 2680079,
      "error": null,
@@ -8719,10 +8722,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [455, 423, 430.1],
-     "wallMs": [455.3, 423.4, 430.6],
-     "medianMs": 430.1,
-     "medianWallMs": 430.6,
+     "ms": [427.5, 421.6, 412.2],
+     "wallMs": [428, 422.2, 412.8],
+     "medianMs": 421.6,
+     "medianWallMs": 422.2,
      "reads": 3,
      "bytesRead": 2865197,
      "error": null,
@@ -8745,11 +8748,11 @@
    },
    "long_vfr_1h_screenrec.mp4": {
     "own": {
-     "ms": [63.2, 71, 35.6],
-     "wallMs": [67.9, 72.8, 37],
-     "medianMs": 63.2,
-     "minMs": 35.6,
-     "medianWallMs": 67.9,
+     "ms": [62.4, 68.5, 35.4],
+     "wallMs": [63.8, 70, 36.7],
+     "medianMs": 62.4,
+     "minMs": 35.4,
+     "medianWallMs": 63.8,
      "reads": 2,
      "bytesRead": 1604603,
      "size": 3941496,
@@ -8769,10 +8772,10 @@
      "repeatable": true
     },
     "mp4box": {
-     "ms": [54.3, 48.7, 59.2],
-     "wallMs": [56.2, 50.5, 62.6],
-     "medianMs": 54.3,
-     "medianWallMs": 56.2,
+     "ms": [51.1, 50.4, 53.9],
+     "wallMs": [52.8, 52.4, 57.1],
+     "medianMs": 51.1,
+     "medianWallMs": 52.8,
      "reads": 3,
      "bytesRead": 1604603,
      "error": null,
@@ -8793,10 +8796,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [128.7, 116.9, 117.3],
-     "wallMs": [296.7, 283, 282.4],
-     "medianMs": 117.3,
-     "medianWallMs": 283,
+     "ms": [114.5, 116.6, 119.4],
+     "wallMs": [275.6, 275.1, 285.6],
+     "medianMs": 116.6,
+     "medianWallMs": 275.6,
      "reads": 3,
      "bytesRead": 1778808,
      "error": null,
@@ -8813,17 +8816,17 @@
       "isVfr": true
      },
      "agreement": "same",
-     "nativeStatsMs": 165.1,
+     "nativeStatsMs": 159.9,
      "nativeSkipped": false
     }
    },
    "big_1080p_moov_end.mp4": {
     "own": {
-     "ms": [1.6, 1.4, 1.4],
-     "wallMs": [2.3, 2.1, 2.4],
+     "ms": [1.5, 1.4, 1.2],
+     "wallMs": [2.3, 2.1, 2],
      "medianMs": 1.4,
-     "minMs": 1.4,
-     "medianWallMs": 2.3,
+     "minMs": 1.2,
+     "medianWallMs": 2.1,
      "reads": 2,
      "bytesRead": 76837,
      "size": 604421957,
@@ -8843,10 +8846,10 @@
      "repeatable": true
     },
     "mp4box": {
-     "ms": [2.8, 1.6, 1.5],
-     "wallMs": [4, 2.9, 2.4],
-     "medianMs": 1.6,
-     "medianWallMs": 2.9,
+     "ms": [2.3, 1.8, 1.7],
+     "wallMs": [3.3, 3.5, 2.7],
+     "medianMs": 1.8,
+     "medianWallMs": 3.3,
      "reads": 2,
      "bytesRead": 76837,
      "error": null,
@@ -8867,9 +8870,9 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [2.7, 2.5, 2.6],
-     "wallMs": [5, 4.7, 4.6],
-     "medianMs": 2.6,
+     "ms": [2.4, 2.5, 2.4],
+     "wallMs": [4.9, 4.7, 4.4],
+     "medianMs": 2.4,
      "medianWallMs": 4.7,
      "reads": 2,
      "bytesRead": 245573,
@@ -8887,17 +8890,17 @@
       "isVfr": false
      },
      "agreement": "same",
-     "nativeStatsMs": 1.9,
+     "nativeStatsMs": 1.8,
      "nativeSkipped": false
     }
    },
    "big_1080p_faststart.mp4": {
     "own": {
-     "ms": [0.9, 0.8, 0.7],
-     "wallMs": [1.7, 1.5, 1.5],
-     "medianMs": 0.8,
-     "minMs": 0.7,
-     "medianWallMs": 1.5,
+     "ms": [0.8, 0.6, 0.6],
+     "wallMs": [1.4, 1.3, 1.3],
+     "medianMs": 0.6,
+     "minMs": 0.6,
+     "medianWallMs": 1.3,
      "reads": 1,
      "bytesRead": 65536,
      "size": 604421957,
@@ -8917,8 +8920,8 @@
      "repeatable": true
     },
     "mp4box": {
-     "ms": [1.1, 0.9, 1],
-     "wallMs": [2.3, 2, 1.9],
+     "ms": [1.1, 1, 1],
+     "wallMs": [2, 2, 2],
      "medianMs": 1,
      "medianWallMs": 2,
      "reads": 1,
@@ -8941,10 +8944,10 @@
      "nativeSkipped": false
     },
     "mediabunny": {
-     "ms": [1.6, 1.7, 1.9],
-     "wallMs": [3.7, 4.7, 3.9],
+     "ms": [1.7, 1.7, 1.7],
+     "wallMs": [3.7, 3.7, 3.6],
      "medianMs": 1.7,
-     "medianWallMs": 3.9,
+     "medianWallMs": 3.7,
      "reads": 1,
      "bytesRead": 131072,
      "error": null,
@@ -8961,17 +8964,17 @@
       "isVfr": false
      },
      "agreement": "same",
-     "nativeStatsMs": 1.8,
+     "nativeStatsMs": 1.7,
      "nativeSkipped": false
     }
    },
    "big_1080p.mkv": {
     "own": {
-     "ms": [133.2, 120.7, 117.2],
-     "wallMs": [134.2, 121.6, 118.5],
-     "medianMs": 120.7,
-     "minMs": 117.2,
-     "medianWallMs": 121.6,
+     "ms": [119, 110.1, 109.3],
+     "wallMs": [119.9, 111.2, 110.7],
+     "medianMs": 110.1,
+     "minMs": 109.3,
+     "medianWallMs": 111.2,
      "reads": 126,
      "bytesRead": 17313792,
      "size": 604428419,
@@ -8991,10 +8994,10 @@
      "repeatable": true
     },
     "mediabunny": {
-     "ms": [764.7, 762.5, 760.1],
-     "wallMs": [1553.8, 1526.4, 1524.3],
-     "medianMs": 762.5,
-     "medianWallMs": 1526.4,
+     "ms": [766.4, 733, 752.1],
+     "wallMs": [1505.5, 1482.8, 1560.6],
+     "medianMs": 752.1,
+     "medianWallMs": 1505.5,
      "reads": 122,
      "bytesRead": 604428419,
      "error": null,
@@ -9011,7 +9014,7 @@
       "isVfr": false
      },
      "agreement": "avg differs",
-     "nativeStatsMs": 763.9,
+     "nativeStatsMs": 749.4,
      "nativeSkipped": false
     }
    }
@@ -9022,165 +9025,165 @@
     "label": "ISO BMFF",
     "runs": [
      {
-      "coldWallMs": 17.8,
-      "coldMs": 4.4,
-      "warmWallMs": 2.8,
-      "warmMs": 1.6,
-      "chunks": [
-       {
-        "path": "/assets/probe-BYGI_0kD.js",
-        "status": 200,
-        "bytes": 6921
-       },
-       {
-        "path": "/assets/probe.worker-CHYSh4ct.js",
-        "status": 200,
-        "bytes": 10369
-       },
-       {
-        "path": "/assets/isobmff-DuJnWgRH.js",
-        "status": 200,
-        "bytes": 30750
-       },
-       {
-        "path": "/assets/stats-B4Z-JDiE.js",
-        "status": 200,
-        "bytes": 10211
-       }
-      ]
-     },
-     {
-      "coldWallMs": 21.2,
-      "coldMs": 4.8,
-      "warmWallMs": 3.1,
-      "warmMs": 1.6,
-      "chunks": [
-       {
-        "path": "/assets/probe-BYGI_0kD.js",
-        "status": 200,
-        "bytes": 6921
-       },
-       {
-        "path": "/assets/probe.worker-CHYSh4ct.js",
-        "status": 200,
-        "bytes": 10369
-       },
-       {
-        "path": "/assets/isobmff-DuJnWgRH.js",
-        "status": 200,
-        "bytes": 30750
-       },
-       {
-        "path": "/assets/stats-B4Z-JDiE.js",
-        "status": 200,
-        "bytes": 10211
-       }
-      ]
-     },
-     {
-      "coldWallMs": 21.5,
-      "coldMs": 5.2,
-      "warmWallMs": 3.8,
-      "warmMs": 1.5,
-      "chunks": [
-       {
-        "path": "/assets/probe-BYGI_0kD.js",
-        "status": 200,
-        "bytes": 6921
-       },
-       {
-        "path": "/assets/probe.worker-CHYSh4ct.js",
-        "status": 200,
-        "bytes": 10369
-       },
-       {
-        "path": "/assets/isobmff-DuJnWgRH.js",
-        "status": 200,
-        "bytes": 30750
-       },
-       {
-        "path": "/assets/stats-B4Z-JDiE.js",
-        "status": 200,
-        "bytes": 10211
-       }
-      ]
-     },
-     {
-      "coldWallMs": 20.5,
-      "coldMs": 4.7,
-      "warmWallMs": 4.1,
-      "warmMs": 1.7,
-      "chunks": [
-       {
-        "path": "/assets/probe-BYGI_0kD.js",
-        "status": 200,
-        "bytes": 6921
-       },
-       {
-        "path": "/assets/probe.worker-CHYSh4ct.js",
-        "status": 200,
-        "bytes": 10369
-       },
-       {
-        "path": "/assets/isobmff-DuJnWgRH.js",
-        "status": 200,
-        "bytes": 30750
-       },
-       {
-        "path": "/assets/stats-B4Z-JDiE.js",
-        "status": 200,
-        "bytes": 10211
-       }
-      ]
-     },
-     {
-      "coldWallMs": 19.6,
+      "coldWallMs": 17.4,
       "coldMs": 4.6,
-      "warmWallMs": 3.2,
-      "warmMs": 1.6,
+      "warmWallMs": 2.9,
+      "warmMs": 1.4,
       "chunks": [
        {
-        "path": "/assets/probe-BYGI_0kD.js",
+        "path": "/assets/probe-oihzfWcg.js",
         "status": 200,
         "bytes": 6921
        },
        {
-        "path": "/assets/probe.worker-CHYSh4ct.js",
+        "path": "/assets/probe.worker-DzbF4AAw.js",
         "status": 200,
-        "bytes": 10369
+        "bytes": 10388
        },
        {
-        "path": "/assets/isobmff-DuJnWgRH.js",
+        "path": "/assets/isobmff-BwPEvlAR.js",
         "status": 200,
         "bytes": 30750
        },
        {
-        "path": "/assets/stats-B4Z-JDiE.js",
+        "path": "/assets/stats-PuFqh4kY.js",
+        "status": 200,
+        "bytes": 10211
+       }
+      ]
+     },
+     {
+      "coldWallMs": 18.9,
+      "coldMs": 4.7,
+      "warmWallMs": 2.7,
+      "warmMs": 1.3,
+      "chunks": [
+       {
+        "path": "/assets/probe-oihzfWcg.js",
+        "status": 200,
+        "bytes": 6921
+       },
+       {
+        "path": "/assets/probe.worker-DzbF4AAw.js",
+        "status": 200,
+        "bytes": 10388
+       },
+       {
+        "path": "/assets/isobmff-BwPEvlAR.js",
+        "status": 200,
+        "bytes": 30750
+       },
+       {
+        "path": "/assets/stats-PuFqh4kY.js",
+        "status": 200,
+        "bytes": 10211
+       }
+      ]
+     },
+     {
+      "coldWallMs": 17.1,
+      "coldMs": 4.3,
+      "warmWallMs": 2.4,
+      "warmMs": 1.3,
+      "chunks": [
+       {
+        "path": "/assets/probe-oihzfWcg.js",
+        "status": 200,
+        "bytes": 6921
+       },
+       {
+        "path": "/assets/probe.worker-DzbF4AAw.js",
+        "status": 200,
+        "bytes": 10388
+       },
+       {
+        "path": "/assets/isobmff-BwPEvlAR.js",
+        "status": 200,
+        "bytes": 30750
+       },
+       {
+        "path": "/assets/stats-PuFqh4kY.js",
+        "status": 200,
+        "bytes": 10211
+       }
+      ]
+     },
+     {
+      "coldWallMs": 16.7,
+      "coldMs": 4.2,
+      "warmWallMs": 3.4,
+      "warmMs": 1.3,
+      "chunks": [
+       {
+        "path": "/assets/probe-oihzfWcg.js",
+        "status": 200,
+        "bytes": 6921
+       },
+       {
+        "path": "/assets/probe.worker-DzbF4AAw.js",
+        "status": 200,
+        "bytes": 10388
+       },
+       {
+        "path": "/assets/isobmff-BwPEvlAR.js",
+        "status": 200,
+        "bytes": 30750
+       },
+       {
+        "path": "/assets/stats-PuFqh4kY.js",
+        "status": 200,
+        "bytes": 10211
+       }
+      ]
+     },
+     {
+      "coldWallMs": 17.1,
+      "coldMs": 4.6,
+      "warmWallMs": 2.4,
+      "warmMs": 1.2,
+      "chunks": [
+       {
+        "path": "/assets/probe-oihzfWcg.js",
+        "status": 200,
+        "bytes": 6921
+       },
+       {
+        "path": "/assets/probe.worker-DzbF4AAw.js",
+        "status": 200,
+        "bytes": 10388
+       },
+       {
+        "path": "/assets/isobmff-BwPEvlAR.js",
+        "status": 200,
+        "bytes": 30750
+       },
+       {
+        "path": "/assets/stats-PuFqh4kY.js",
         "status": 200,
         "bytes": 10211
        }
       ]
      }
     ],
-    "coldWallMs": 20.5,
-    "coldMs": 4.7,
-    "warmWallMs": 3.2,
-    "warmMs": 1.6,
+    "coldWallMs": 17.1,
+    "coldMs": 4.6,
+    "warmWallMs": 2.7,
+    "warmMs": 1.3,
     "chunks": [
      {
-      "path": "/assets/probe-BYGI_0kD.js",
+      "path": "/assets/probe-oihzfWcg.js",
       "bytes": 6921
      },
      {
-      "path": "/assets/probe.worker-CHYSh4ct.js",
-      "bytes": 10369
+      "path": "/assets/probe.worker-DzbF4AAw.js",
+      "bytes": 10388
      },
      {
-      "path": "/assets/isobmff-DuJnWgRH.js",
+      "path": "/assets/isobmff-BwPEvlAR.js",
       "bytes": 30750
      },
      {
-      "path": "/assets/stats-B4Z-JDiE.js",
+      "path": "/assets/stats-PuFqh4kY.js",
       "bytes": 10211
      }
     ]
@@ -9190,165 +9193,165 @@
     "label": "Matroska",
     "runs": [
      {
-      "coldWallMs": 21.4,
-      "coldMs": 5.7,
-      "warmWallMs": 3.3,
-      "warmMs": 2,
-      "chunks": [
-       {
-        "path": "/assets/probe-BYGI_0kD.js",
-        "status": 200,
-        "bytes": 6921
-       },
-       {
-        "path": "/assets/probe.worker-CHYSh4ct.js",
-        "status": 200,
-        "bytes": 10369
-       },
-       {
-        "path": "/assets/matroska-4x9DWvBV.js",
-        "status": 200,
-        "bytes": 29053
-       },
-       {
-        "path": "/assets/stats-B4Z-JDiE.js",
-        "status": 200,
-        "bytes": 10211
-       }
-      ]
-     },
-     {
-      "coldWallMs": 18.4,
-      "coldMs": 4.8,
-      "warmWallMs": 3.6,
+      "coldWallMs": 17.8,
+      "coldMs": 4.9,
+      "warmWallMs": 2.9,
       "warmMs": 1.7,
       "chunks": [
        {
-        "path": "/assets/probe-BYGI_0kD.js",
+        "path": "/assets/probe-oihzfWcg.js",
         "status": 200,
         "bytes": 6921
        },
        {
-        "path": "/assets/probe.worker-CHYSh4ct.js",
+        "path": "/assets/probe.worker-DzbF4AAw.js",
         "status": 200,
-        "bytes": 10369
+        "bytes": 10388
        },
        {
-        "path": "/assets/matroska-4x9DWvBV.js",
+        "path": "/assets/matroska-DqaAEFYa.js",
         "status": 200,
         "bytes": 29053
        },
        {
-        "path": "/assets/stats-B4Z-JDiE.js",
+        "path": "/assets/stats-PuFqh4kY.js",
         "status": 200,
         "bytes": 10211
        }
       ]
      },
      {
-      "coldWallMs": 19.6,
+      "coldWallMs": 17.7,
       "coldMs": 4.9,
-      "warmWallMs": 3.6,
-      "warmMs": 1.9,
+      "warmWallMs": 2.7,
+      "warmMs": 1.4,
       "chunks": [
        {
-        "path": "/assets/probe-BYGI_0kD.js",
+        "path": "/assets/probe-oihzfWcg.js",
         "status": 200,
         "bytes": 6921
        },
        {
-        "path": "/assets/probe.worker-CHYSh4ct.js",
+        "path": "/assets/probe.worker-DzbF4AAw.js",
         "status": 200,
-        "bytes": 10369
+        "bytes": 10388
        },
        {
-        "path": "/assets/matroska-4x9DWvBV.js",
+        "path": "/assets/matroska-DqaAEFYa.js",
         "status": 200,
         "bytes": 29053
        },
        {
-        "path": "/assets/stats-B4Z-JDiE.js",
+        "path": "/assets/stats-PuFqh4kY.js",
         "status": 200,
         "bytes": 10211
        }
       ]
      },
      {
-      "coldWallMs": 18.4,
-      "coldMs": 5.2,
-      "warmWallMs": 3.7,
-      "warmMs": 2,
+      "coldWallMs": 19.1,
+      "coldMs": 5.9,
+      "warmWallMs": 2.7,
+      "warmMs": 1.4,
       "chunks": [
        {
-        "path": "/assets/probe-BYGI_0kD.js",
+        "path": "/assets/probe-oihzfWcg.js",
         "status": 200,
         "bytes": 6921
        },
        {
-        "path": "/assets/probe.worker-CHYSh4ct.js",
+        "path": "/assets/probe.worker-DzbF4AAw.js",
         "status": 200,
-        "bytes": 10369
+        "bytes": 10388
        },
        {
-        "path": "/assets/matroska-4x9DWvBV.js",
+        "path": "/assets/matroska-DqaAEFYa.js",
         "status": 200,
         "bytes": 29053
        },
        {
-        "path": "/assets/stats-B4Z-JDiE.js",
+        "path": "/assets/stats-PuFqh4kY.js",
         "status": 200,
         "bytes": 10211
        }
       ]
      },
      {
-      "coldWallMs": 20.7,
-      "coldMs": 5.2,
+      "coldWallMs": 20.8,
+      "coldMs": 5.5,
+      "warmWallMs": 2.9,
+      "warmMs": 1.7,
+      "chunks": [
+       {
+        "path": "/assets/probe-oihzfWcg.js",
+        "status": 200,
+        "bytes": 6921
+       },
+       {
+        "path": "/assets/probe.worker-DzbF4AAw.js",
+        "status": 200,
+        "bytes": 10388
+       },
+       {
+        "path": "/assets/matroska-DqaAEFYa.js",
+        "status": 200,
+        "bytes": 29053
+       },
+       {
+        "path": "/assets/stats-PuFqh4kY.js",
+        "status": 200,
+        "bytes": 10211
+       }
+      ]
+     },
+     {
+      "coldWallMs": 18.2,
+      "coldMs": 5.4,
       "warmWallMs": 3.5,
       "warmMs": 1.8,
       "chunks": [
        {
-        "path": "/assets/probe-BYGI_0kD.js",
+        "path": "/assets/probe-oihzfWcg.js",
         "status": 200,
         "bytes": 6921
        },
        {
-        "path": "/assets/probe.worker-CHYSh4ct.js",
+        "path": "/assets/probe.worker-DzbF4AAw.js",
         "status": 200,
-        "bytes": 10369
+        "bytes": 10388
        },
        {
-        "path": "/assets/matroska-4x9DWvBV.js",
+        "path": "/assets/matroska-DqaAEFYa.js",
         "status": 200,
         "bytes": 29053
        },
        {
-        "path": "/assets/stats-B4Z-JDiE.js",
+        "path": "/assets/stats-PuFqh4kY.js",
         "status": 200,
         "bytes": 10211
        }
       ]
      }
     ],
-    "coldWallMs": 19.6,
-    "coldMs": 5.2,
-    "warmWallMs": 3.6,
-    "warmMs": 1.9,
+    "coldWallMs": 18.2,
+    "coldMs": 5.4,
+    "warmWallMs": 2.9,
+    "warmMs": 1.7,
     "chunks": [
      {
-      "path": "/assets/probe-BYGI_0kD.js",
+      "path": "/assets/probe-oihzfWcg.js",
       "bytes": 6921
      },
      {
-      "path": "/assets/probe.worker-CHYSh4ct.js",
-      "bytes": 10369
+      "path": "/assets/probe.worker-DzbF4AAw.js",
+      "bytes": 10388
      },
      {
-      "path": "/assets/matroska-4x9DWvBV.js",
+      "path": "/assets/matroska-DqaAEFYa.js",
       "bytes": 29053
      },
      {
-      "path": "/assets/stats-B4Z-JDiE.js",
+      "path": "/assets/stats-PuFqh4kY.js",
       "bytes": 10211
      }
     ]
@@ -9356,13 +9359,13 @@
   ],
   "reloadBatch": {
    "files": 111,
-   "wallMs": [261.8, 253.1, 250.6, 229.2, 258],
-   "medianMs": 253.1,
-   "minMs": 229.2,
-   "maxMs": 261.8
+   "wallMs": [250.3, 248, 233.5, 263, 214],
+   "medianMs": 248,
+   "minMs": 214,
+   "maxMs": 263
   },
   "rvfc": {
-   "mode": "headless=new (GPU enabled, default flags), muted playback in the floating rVFC host",
+   "mode": "chrome-headless-shell (the old headless mode), extra flags --no-sandbox, muted playback in the floating rVFC host",
    "rows": [
     {
      "name": "cfr_h264_24.mp4",
@@ -9389,9 +9392,9 @@
      ],
      "callbacks": 41,
      "rate": 1,
-     "displayHz": 61.074,
-     "ms": 2036.3,
-     "wallMs": 2042.2,
+     "displayHz": 63.291,
+     "ms": 2005.9,
+     "wallMs": 2011.6,
      "error": null
     },
     {
@@ -9419,9 +9422,9 @@
      ],
      "callbacks": 41,
      "rate": 1,
-     "displayHz": 61.133,
-     "ms": 1947.3,
-     "wallMs": 1948.4,
+     "displayHz": 61.449,
+     "ms": 1947.2,
+     "wallMs": 1948.3,
      "error": null
     },
     {
@@ -9438,20 +9441,20 @@
      "passes": [
       {
        "fps": 29.969730572122224,
-       "avg": 29.97004389565964,
-       "pairs": 43,
+       "avg": 29.97002997002997,
+       "pairs": 42,
        "spread": 0,
        "lo": 29.969730572122025,
        "hi": 29.970628783791902,
        "rate": 1,
-       "callbacks": 47
+       "callbacks": 46
       }
      ],
-     "callbacks": 47,
+     "callbacks": 46,
      "rate": 1,
-     "displayHz": 61.074,
-     "ms": 1879.4,
-     "wallMs": 1880.5,
+     "displayHz": 61.509,
+     "ms": 1845.6,
+     "wallMs": 1846.6,
      "error": null
     },
     {
@@ -9468,20 +9471,20 @@
      "passes": [
       {
        "fps": 30.00030000299998,
-       "avg": 29.999986046518117,
-       "pairs": 43,
+       "avg": 29.999999999999996,
+       "pairs": 42,
        "spread": 0,
        "lo": 29.999400011999683,
        "hi": 30.000300003000177,
        "rate": 1,
-       "callbacks": 47
+       "callbacks": 46
       }
      ],
-     "callbacks": 47,
+     "callbacks": 46,
      "rate": 1,
-     "displayHz": 60.858,
-     "ms": 1865,
-     "wallMs": 1865.9,
+     "displayHz": 61.192,
+     "ms": 1846.7,
+     "wallMs": 1847.8,
      "error": null
     },
     {
@@ -9498,30 +9501,30 @@
      "passes": [
       {
        "fps": 59.998800023999564,
-       "avg": 60,
-       "pairs": 49,
+       "avg": 60.000028235307404,
+       "pairs": 61,
        "spread": 0,
        "lo": 59.998800023999166,
        "hi": 60.002400096004386,
        "rate": 1,
-       "callbacks": 72
+       "callbacks": 77
       },
       {
        "fps": 59.998800023999564,
-       "avg": 60.000055814005414,
-       "pairs": 43,
+       "avg": 60.00000000000001,
+       "pairs": 42,
        "spread": 0,
        "lo": 59.998800023999166,
        "hi": 60.00240009600399,
        "rate": 0.5,
-       "callbacks": 47
+       "callbacks": 46
       }
      ],
-     "callbacks": 119,
+     "callbacks": 123,
      "rate": 0.5,
-     "displayHz": 60.936,
-     "ms": 3413.9,
-     "wallMs": 3414.9,
+     "displayHz": 61.074,
+     "ms": 3380.3,
+     "wallMs": 3381.4,
      "error": null
     },
     {
@@ -9539,22 +9542,22 @@
       {
        "fps": 59.998800023999564,
        "avg": 59.999986363639465,
-       "pairs": 86,
+       "pairs": 88,
        "spread": 0,
        "lo": 59.998800023999166,
        "hi": 60.002400096004386,
        "rate": 1,
-       "callbacks": 91
+       "callbacks": 92
       },
       {
        "fps": 120.00480019200718,
-       "avg": 119.99988705892983,
-       "pairs": 53,
+       "avg": 119.99994418607248,
+       "pairs": 68,
        "spread": 0,
        "lo": 119.99040076793764,
        "hi": 120.00480019200877,
        "rate": 0.5,
-       "callbacks": 73
+       "callbacks": 81
       },
       {
        "fps": 120.00480019200758,
@@ -9567,11 +9570,11 @@
        "callbacks": 46
       }
      ],
-     "callbacks": 210,
+     "callbacks": 219,
      "rate": 0.25,
-     "displayHz": 61.133,
-     "ms": 4913.7,
-     "wallMs": 4914.8,
+     "displayHz": 60.8,
+     "ms": 4897.2,
+     "wallMs": 4898.1,
      "error": null
     },
     {
@@ -9588,33 +9591,33 @@
      "passes": [
       {
        "fps": 59.998800023999564,
-       "avg": 59.83000121019775,
-       "pairs": 86,
-       "spread": 0.03488372093023256,
+       "avg": 59.99998636363946,
+       "pairs": 85,
+       "spread": 0.03529411764705882,
        "lo": 48.00076801228822,
        "hi": 80.00000000000011,
        "rate": 1,
-       "callbacks": 91
+       "callbacks": 90
       },
       {
        "fps": 120.00480019200718,
        "avg": 120.00005454547933,
-       "pairs": 84,
+       "pairs": 86,
        "spread": 0,
        "lo": 119.99040076793764,
        "hi": 120.00480019200877,
        "rate": 0.5,
-       "callbacks": 90
+       "callbacks": 91
       },
       {
-       "fps": 239.9808015358773,
-       "avg": 239.99978181838014,
-       "pairs": 46,
+       "fps": 239.9808015358777,
+       "avg": 239.9997818183802,
+       "pairs": 58,
        "spread": 0,
        "lo": 239.9808015358753,
        "hi": 240.0384061449838,
        "rate": 0.25,
-       "callbacks": 71
+       "callbacks": 77
       },
       {
        "fps": 239.9808015358773,
@@ -9627,11 +9630,11 @@
        "callbacks": 46
       }
      ],
-     "callbacks": 298,
+     "callbacks": 304,
      "rate": 0.125,
-     "displayHz": 61.31,
-     "ms": 6446.1,
-     "wallMs": 6447.2,
+     "displayHz": 61.133,
+     "ms": 6446.8,
+     "wallMs": 6447.8,
      "error": null
     },
     {
@@ -9663,8 +9666,8 @@
      "callbacks": 41,
      "rate": 1,
      "displayHz": 60.956,
-     "ms": 3031.1,
-     "wallMs": 3032.6,
+     "ms": 3030.1,
+     "wallMs": 3032,
      "error": null
     },
     {
@@ -9695,12 +9698,12 @@
        "callbacks": 44
       },
       {
-       "fps": 80.5023345677029,
-       "avg": 28.449149333961646,
-       "pairs": 35,
-       "spread": 0.9714285714285714,
-       "lo": 17.59541111678077,
-       "hi": 80.5023345677029,
+       "fps": 91.92866335723433,
+       "avg": 30.991169106095484,
+       "pairs": 36,
+       "spread": 0.9444444444444444,
+       "lo": 17.867672021012385,
+       "hi": 91.92866335723433,
        "rate": 0.5,
        "callbacks": 41
       },
@@ -9717,9 +9720,9 @@
      ],
      "callbacks": 122,
      "rate": 0.25,
-     "displayHz": 61.192,
-     "ms": 9080,
-     "wallMs": 9081.3,
+     "displayHz": 61.231,
+     "ms": 8880.6,
+     "wallMs": 8882.2,
      "error": null
     },
     {
@@ -9749,9 +9752,9 @@
      ],
      "callbacks": 47,
      "rate": 1,
-     "displayHz": 61.074,
-     "ms": 1881.4,
-     "wallMs": 1882.4,
+     "displayHz": 61.192,
+     "ms": 1862.4,
+     "wallMs": 1863.5,
      "error": null
     },
     {
@@ -9769,8 +9772,8 @@
      "callbacks": 0,
      "rate": null,
      "displayHz": null,
-     "ms": 2.7,
-     "wallMs": 3.7,
+     "ms": 3.4,
+     "wallMs": 4.2,
      "error": "unplayable: PipelineStatus::DEMUXER_ERROR_NO_SUPPORTED_STREAMS: FFmpegDemuxer: no supported streams (canPlayType=maybe)"
     },
     {
@@ -9788,8 +9791,8 @@
      "callbacks": 0,
      "rate": null,
      "displayHz": null,
-     "ms": 2,
-     "wallMs": 2.9,
+     "ms": 2.1,
+     "wallMs": 3,
      "error": "unplayable: PipelineStatus::DEMUXER_ERROR_NO_SUPPORTED_STREAMS: FFmpegDemuxer: no supported streams (canPlayType=)"
     },
     {
@@ -9808,20 +9811,20 @@
      "passes": [
       {
        "fps": 30.3030303030303,
-       "avg": 29.965156794425084,
-       "pairs": 43,
+       "avg": 29.957203994293867,
+       "pairs": 42,
        "spread": 0,
        "lo": 29.411764705882327,
        "hi": 30.30303030303038,
        "rate": 1,
-       "callbacks": 47
+       "callbacks": 46
       }
      ],
-     "callbacks": 47,
+     "callbacks": 46,
      "rate": 1,
-     "displayHz": 62.956,
-     "ms": 1854.1,
-     "wallMs": 1854.9,
+     "displayHz": 62.706,
+     "ms": 1838.5,
+     "wallMs": 1839.4,
      "error": null
     }
    ]
@@ -9839,35 +9842,35 @@
  "screenshots": [
   {
    "file": "app-light.png",
-   "bytes": 201102,
+   "bytes": 201127,
    "width": 1280,
    "height": 2305,
    "note": "8 results, light theme, 1280 px"
   },
   {
    "file": "app-dark.png",
-   "bytes": 204018,
+   "bytes": 204087,
    "width": 1280,
    "height": 2305,
    "note": "same list, prefers-color-scheme: dark, 1280 px"
   },
   {
    "file": "app-mobile.png",
-   "bytes": 158714,
+   "bytes": 159123,
    "width": 780,
    "height": 1688,
    "note": "first card at 390 px with the Compare panel open, no sideways scroll (device pixel ratio 2)"
   },
   {
    "file": "compare-vfr.png",
-   "bytes": 60504,
+   "bytes": 60460,
    "width": 1092,
    "height": 803,
    "note": "compare panel on vfr_concat_10_30_60.mp4 (statuses: done, done, done)"
   }
  ],
  "environment": {
-  "date": "2026-10-24T14:37:03.200Z",
+  "date": "2026-10-24T15:55:41.931Z",
   "os": "Windows_NT 10.0.19045 (Windows 10 Pro) x64",
   "cpu": "Intel(R) Core(TM) i7-10700KF CPU @ 3.80GHz",
   "logicalCores": 16,
@@ -9876,6 +9879,7 @@
   "displayHzOs": [170],
   "chrome": {
    "product": "HeadlessChrome/156.0.8078.4",
+   "mode": "chrome-headless-shell (the old headless mode), extra flags --no-sandbox",
    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/156.0.8078.4 Safari/537.36",
    "jsVersion": "15.6.75",
    "gpu": {
@@ -9883,10 +9887,10 @@
     "videoDecode": "disabled_software",
     "gpuCompositing": "disabled_software"
    },
-   "rafHz": 60.678,
+   "rafHz": 60.739,
    "timerResolutionMs": 0.1
   },
   "edge": null
  },
- "totalSeconds": 59.73904160000001
+ "totalSeconds": 59.696098400000004
 }

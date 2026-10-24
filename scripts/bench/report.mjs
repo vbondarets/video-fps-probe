@@ -24,8 +24,8 @@ function environment(d) {
   const c = e.chrome ?? {};
   const hz = e.displayHzOs ? `${e.displayHzOs.join(', ')} Hz (Windows, Win32_VideoController)` : 'not reported by the OS query';
   const rows = [
-    ['Browser', `${c.product ?? '-'} (V8 ${c.jsVersion ?? '-'}), headless=new`],
-    ['Second browser', e.edge ? `${e.edge.product} (V8 ${e.edge.jsVersion}), headless=new, warm own-engine run only` : 'Edge not installed or skipped'],
+    ['Browser', `${c.product ?? '-'} (V8 ${c.jsVersion ?? '-'}), ${c.mode ?? 'headless mode not recorded'}`],
+    ['Second browser', e.edge ? `${e.edge.product} (V8 ${e.edge.jsVersion}), ${e.edge.mode ?? 'headless mode not recorded'}, warm own-engine run only` : 'Edge not installed or skipped'],
     ['OS', e.os],
     ['CPU', `${e.cpu}, ${e.logicalCores} logical cores`],
     ['Memory', `${e.memoryGiB} GiB`],

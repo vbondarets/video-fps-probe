@@ -10,6 +10,7 @@ import { gzipSync } from 'node:zlib';
 import { discover } from '../size-report.mjs';
 import { AppPage } from './app.mjs';
 import { findBrowser, killAllBrowsers, launchBrowser } from './browser.mjs';
+import { commandLine, headlessMode, parseBrowserFlags } from './flags.mjs';
 import { mimeOf, resolveRequest } from './server.mjs';
 import { median } from './values.mjs';
 
@@ -1066,7 +1067,7 @@ function sizes(chunks, glue) {
   ];
 }
 
-function environment(version, opts, pauseMs) {
+function environment(version, mode, opts, pauseMs) {
   const cpus = os.cpus();
   return {
     date: new Date().toISOString(),
@@ -1076,6 +1077,7 @@ function environment(version, opts, pauseMs) {
     memoryGiB: Math.round(os.totalmem() / 1024 ** 3),
     node: process.version,
     browser: version.product,
+    mode,
     userAgent: version.userAgent,
     jsVersion: version.jsVersion,
     options: { reps: opts.reps, batchReps: opts.batchReps, cpuReps: opts.cpuReps, profiles: opts.profiles.map((p) => p.id), skipped: [...opts.skip] },
@@ -1201,7 +1203,8 @@ async function run(opts) {
   ]);
   const data = {
     schema: 1,
-    command: `node scripts/bench/integration.mjs ${process.argv.slice(2).join(' ')}`.trim(),
+    command: commandLine('scripts/bench/integration.mjs', process.argv.slice(2), parseBrowserFlags(process.env.BENCH_BROWSER_FLAGS)),
+    browserFlags: parseBrowserFlags(process.env.BENCH_BROWSER_FLAGS),
     host: HOST,
     profiles: opts.profiles,
     scenarios: SCENARIOS,
@@ -1230,7 +1233,7 @@ async function run(opts) {
       log('cpu per file');
       data.cpu = await cpuPhase(bench, opts);
     }
-    data.environment = environment(b.version, opts, bench.tracker.pauseMs);
+    data.environment = environment(b.version, headlessMode(chromeExe, parseBrowserFlags(process.env.BENCH_BROWSER_FLAGS)), opts, bench.tracker.pauseMs);
     await b.close();
     b = null;
     if (!opts.skip.has('memory')) {
@@ -1345,7 +1348,7 @@ function renderMarkdown(d) {
   L.push('');
   L.push(
     table(['Item', 'Value'], 'll', [
-      ['Browser', `${e.browser} (V8 ${e.jsVersion}), headless=new, throwaway profile`],
+      ['Browser', `${e.browser} (V8 ${e.jsVersion}), ${e.mode ?? 'headless mode not recorded'}, throwaway profile`],
       ['OS', e.os],
       ['CPU', `${e.cpu}, ${e.logicalCores} logical cores, ${e.memoryGiB} GiB RAM`],
       ['Node', e.node],

@@ -5,11 +5,11 @@ What it costs to embed the FPS probe into an existing large React SPA, measured 
 ## Headline
 
 - Initial load of the host grows only by the trigger: 519 B gzip measured (budget 1000 B), 0.027% of 1.95 MB (0.051% at the 1 KB budget).
-- First MP4 lazily downloads 22.34 KB gzip (glue + worker entry + ISO BMFF chunk + statistics chunk): 1.15% of the host initial load, 0.35% of the full app; both parsers 33.43 KB (1.71% / 0.53%).
-- First MP4 from pick to result (host model, median of 5): none (localhost) 16.4 ms cold / 14.9 ms HTTP-prefetched / 4.40 ms prewarmed; cable 143 ms cold / 13.5 ms HTTP-prefetched / 4.30 ms prewarmed; fast 4G 349 ms cold / 13.0 ms HTTP-prefetched / 4.30 ms prewarmed; slow 4G 629 ms cold / 13.2 ms HTTP-prefetched / 4.20 ms prewarmed; 3G 1246 ms cold / 13.4 ms HTTP-prefetched / 4.20 ms prewarmed.
-- Main thread on the host model: TBT 0.00 ms for the first file, 0.00 ms for 111 files at once (cold), 0.00 ms warm, 0.00 ms for the 3 h file (no long tasks); probe main-thread CPU 1.74 ms for the first file and 15.9 ms for 111 files, in short tasks.
-- Memory after use (host model, idle after 111 files, after GC, median of 3 fresh browsers): +2.76 MB JS heap (page delta + 2 worker heaps), renderer private memory +20.49 MB (peak before GC +36.26 MB); of that the probe itself (minus the pick-and-list control) +18.43 MB, +5.41 MB after the first file.
-- Worker time per file (warm, median): av_h264_aac_faststart.mp4 1.00 ms, av_h264_aac.mp4 0.90 ms, fmp4_cmaf.mp4 0.90 ms, vfr_concat_10_30_60.webm 1.20 ms, long_cfr_3h_60fps.mp4 3.90 ms, long_vfr_1h_screenrec.mp4 38.1 ms; 111 files 104 ms summed worker time.
+- First MP4 lazily downloads 22.35 KB gzip (glue + worker entry + ISO BMFF chunk + statistics chunk): 1.15% of the host initial load, 0.35% of the full app; both parsers 33.44 KB (1.72% / 0.53%).
+- First MP4 from pick to result (host model, median of 5): none (localhost) 15.3 ms cold / 12.9 ms HTTP-prefetched / 4.20 ms prewarmed; cable 144 ms cold / 12.6 ms HTTP-prefetched / 4.10 ms prewarmed; fast 4G 347 ms cold / 12.5 ms HTTP-prefetched / 4.10 ms prewarmed; slow 4G 628 ms cold / 13.1 ms HTTP-prefetched / 4.50 ms prewarmed; 3G 1251 ms cold / 12.9 ms HTTP-prefetched / 4.90 ms prewarmed.
+- Main thread on the host model: TBT 0.00 ms for the first file, 0.00 ms for 111 files at once (cold), 0.00 ms warm, 0.00 ms for the 3 h file (no long tasks); probe main-thread CPU 1.10 ms for the first file and 17.9 ms for 111 files, in short tasks.
+- Memory after use (host model, idle after 111 files, after GC, median of 3 fresh browsers): +2.74 MB JS heap (page delta + 2 worker heaps), renderer private memory +19.44 MB (peak before GC +34.70 MB); of that the probe itself (minus the pick-and-list control) +17.18 MB, +5.14 MB after the first file.
+- Worker time per file (warm, median): av_h264_aac_faststart.mp4 1.10 ms, av_h264_aac.mp4 0.90 ms, fmp4_cmaf.mp4 1.00 ms, vfr_concat_10_30_60.webm 1.00 ms, long_cfr_3h_60fps.mp4 3.50 ms, long_vfr_1h_screenrec.mp4 36.3 ms; 111 files 96.6 ms summed worker time.
 - Against a 100 MB upload (80.0 s at 10 Mbps): a typical MP4 adds 0.001%; the one-time cold first-file extra on 3G adds 1.56%.
 
 ## Summary in percent
@@ -18,12 +18,12 @@ What it costs to embed the FPS probe into an existing large React SPA, measured 
 |---|---|---|---|
 | Host initial load, bytes (critical bundle) | +0.027% | +0.027% | +1.74% |
 | Host full app, bytes | +0.35% only after a video is picked | +0.35% once the dialog opens | +0.54% on every load |
-| First video, one-time wait, fast 4G | +348 ms (20.05% of the host's own initial download) | +2.70 ms prewarmed, +11.4 ms HTTP-prefetched or cached | +2.70 ms, but +30.2 ms on every page load |
-| First video, one-time wait, slow 4G | +627 ms (6.43% of the host's own initial download) | +2.60 ms prewarmed, +11.5 ms HTTP-prefetched or cached | +2.60 ms, but +170 ms on every page load |
-| First video, one-time wait, 3G | +1244 ms (5.98% of the host's own initial download) | +2.50 ms prewarmed, +11.6 ms HTTP-prefetched or cached | +2.50 ms, but +362 ms on every page load |
+| First video, one-time wait, fast 4G | +345 ms (19.91% of the host's own initial download) | +2.60 ms prewarmed, +10.9 ms HTTP-prefetched or cached | +2.60 ms, but +30.2 ms on every page load |
+| First video, one-time wait, slow 4G | +627 ms (6.43% of the host's own initial download) | +2.90 ms prewarmed, +11.6 ms HTTP-prefetched or cached | +2.90 ms, but +170 ms on every page load |
+| First video, one-time wait, 3G | +1249 ms (6.01% of the host's own initial download) | +3.20 ms prewarmed, +11.4 ms HTTP-prefetched or cached | +3.20 ms, but +362 ms on every page load |
 | Main thread (long tasks, TBT) | 0 long tasks, TBT 0.00 ms even for 111 files at once | same | same, plus worker start at page load |
-| Memory (renderer, probe share) | +5.41 MB (2.71%) after the first video, +18.43 MB (9.21%) after 111 | same, from dialog open | +5.41 MB (2.71%) for every visitor |
-| Per video, against a 100 MB upload at 10 Mbps | +1.00 ms = 0.001% | same | same |
+| Memory (renderer, probe share) | +5.14 MB (2.57%) after the first video, +17.18 MB (8.59%) after 111 | same, from dialog open | +5.14 MB (2.57%) for every visitor |
+| Per video, against a 100 MB upload at 10 Mbps | +1.10 ms = 0.001% | same | same |
 
 Critical bundle = the JS and CSS the host downloads, parses and runs before its first render, on every page load. "+0.03%" means only the trigger joins it; the probe itself is lazy and costs nothing until a user picks a video. Latency percentages compare the one-time wait with the time the host already needs to download its own initial bundle on the same link; memory percentages assume a host tab of 200 MB, since the host was not measured. Details and formulas: section 6.
 
@@ -31,14 +31,14 @@ Critical bundle = the JS and CSS the host downloads, parses and runs before its 
 
 | Item | Value |
 |---|---|
-| Browser | HeadlessChrome/156.0.8078.4 (V8 15.6.75), headless=new, throwaway profile |
+| Browser | HeadlessChrome/156.0.8078.4 (V8 15.6.75), chrome-headless-shell (the old headless mode), extra flags --no-sandbox, throwaway profile |
 | OS | Windows_NT 10.0.19045 x64 |
 | CPU | Intel(R) Core(TM) i7-10700KF CPU @ 3.80GHz, 16 logical cores, 32 GiB RAM |
 | Node | v24.20.0 |
 | Server | node:http on 127.0.0.1, gzip level 9 (Content-Encoding: gzip), /assets/* Cache-Control: public, max-age=31536000, immutable; pages no-cache |
 | Runs | latency 5 page loads per profile and scenario; main thread 3 fresh pages; memory 3 fresh browsers per page; CPU 7 picks per file |
-| Date | 2026-10-24T14:40:23.066Z |
-| Total time | 290 s |
+| Date | 2026-10-24T15:58:52.455Z |
+| Total time | 289 s |
 
 ## Integration model
 
@@ -59,20 +59,20 @@ Sizes from the files, gzip level 9 (the server sends exactly these bodies). Each
 |---|---|---:|---:|
 | host trigger (inline script on the host page, readable source) | host critical path (every page load) | 0.92 KB | 0.52 KB |
 | glue chunk (WorkerPool from src/client/pool.ts, minified by rolldown) | first pick (or prefetch) | 3.19 KB | 1.51 KB |
-| worker entry (probe.worker-CHYSh4ct.js) | first pick (worker spawn) | 10.37 KB | 4.31 KB |
-| ISO BMFF parser chunk (isobmff-DuJnWgRH.js) | first MP4/MOV | 30.75 KB | 12.22 KB |
-| Matroska parser chunk (matroska-4x9DWvBV.js) | first MKV/WebM | 29.05 KB | 11.10 KB |
-| shared statistics chunk (stats-B4Z-JDiE.js), requested with either parser | first pick, with the parser | 10.21 KB | 4.29 KB |
-| PoC main chunk, React + UI (index-BXTl2cy8.js), not shipped in the integration | PoC only | 238.72 KB | 74.44 KB |
-| PoC probe client (probe-BYGI_0kD.js), fetched by the app on the first pick, not shipped in the integration | PoC only, first pick | 6.92 KB | 2.98 KB |
+| worker entry (probe.worker-DzbF4AAw.js) | first pick (worker spawn) | 10.39 KB | 4.32 KB |
+| ISO BMFF parser chunk (isobmff-BwPEvlAR.js) | first MP4/MOV | 30.75 KB | 12.22 KB |
+| Matroska parser chunk (matroska-DqaAEFYa.js) | first MKV/WebM | 29.05 KB | 11.10 KB |
+| shared statistics chunk (stats-PuFqh4kY.js), requested with either parser | first pick, with the parser | 10.21 KB | 4.29 KB |
+| PoC main chunk, React + UI (index-BrLdfhqf.js), not shipped in the integration | PoC only | 238.72 KB | 74.44 KB |
+| PoC probe client (probe-oihzfWcg.js), fetched by the app on the first pick, not shipped in the integration | PoC only, first pick | 6.92 KB | 2.98 KB |
 
 Bytes on the wire for the first MP4 on the host model page (cold, one run):
 
 | Request | Server body bytes | CDP headers bytes | CDP encodedDataLength (total) | Resource Timing encodedBodySize | Resource Timing transferSize |
 |---|---:|---:|---:|---:|---:|
 | glue chunk | 1515 (gzip) | 303 | 1818 | 1515 | 1815 |
-| worker entry | 4308 (gzip) | 303 | 303 | 4308 | 4608 |
-| ISO BMFF parser chunk | 12220 (gzip) | 304 | 12524 | 12220 | 12520 |
+| worker entry | 4317 (gzip) | 303 | 303 | 4317 | 4617 |
+| ISO BMFF parser chunk | 12221 (gzip) | 304 | 12525 | 12221 | 12521 |
 
 CDP `loadingFinished.encodedDataLength` is headers plus body for the glue and the parser chunk. For the worker entry (a dedicated worker main script, fetched by the browser process) Chrome reports only the header bytes there, so the server count and Resource Timing are the reliable numbers for that request. Resource Timing `transferSize` is the encoded body plus a nominal 300 B header allowance.
 
@@ -92,21 +92,21 @@ Time from the file pick (`change` event) to the rendered result for the first MP
 
 | Profile | Scenario | Pick to result ms | Range ms | Warm ms | Extra ms | Prefetch or prewarm ms (before the pick) | Requests to the server at pick | gzip bytes at pick |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
-| none (localhost) | cold | 16.4 | 15.8 to 23.4 | 1.70 | 14.7 | - | 4 | 22336 |
-| none (localhost) | prefetch | 14.9 | 13.1 to 16.2 | 1.60 | 13.3 | 3.40 | 0 | 0 |
-| none (localhost) | prewarm | 4.40 | 4.30 to 4.60 | 1.60 | 2.80 | 12.2 | 0 | 0 |
-| cable | cold | 143 | 143 to 146 | 1.60 | 142 | - | 4 | 22336 |
-| cable | prefetch | 13.5 | 13.3 to 14.1 | 1.60 | 11.9 | 48.7 | 0 | 0 |
-| cable | prewarm | 4.30 | 4.20 to 4.80 | 1.60 | 2.70 | 143 | 0 | 0 |
-| fast 4G | cold | 349 | 345 to 360 | 1.60 | 348 | - | 4 | 22336 |
-| fast 4G | prefetch | 13.0 | 12.7 to 13.7 | 1.60 | 11.4 | 141 | 0 | 0 |
-| fast 4G | prewarm | 4.30 | 4.20 to 5.50 | 1.60 | 2.70 | 345 | 0 | 0 |
-| slow 4G | cold | 629 | 611 to 630 | 1.60 | 627 | - | 4 | 22336 |
-| slow 4G | prefetch | 13.2 | 12.9 to 15.9 | 1.70 | 11.5 | 299 | 0 | 0 |
-| slow 4G | prewarm | 4.20 | 4.10 to 4.50 | 1.60 | 2.60 | 613 | 0 | 0 |
-| 3G | cold | 1246 | 1244 to 1266 | 1.50 | 1244 | - | 4 | 22336 |
-| 3G | prefetch | 13.4 | 13.0 to 14.6 | 1.80 | 11.6 | 611 | 0 | 0 |
-| 3G | prewarm | 4.20 | 4.20 to 4.40 | 1.70 | 2.50 | 1244 | 0 | 0 |
+| none (localhost) | cold | 15.3 | 15.0 to 20.6 | 1.60 | 13.7 | - | 4 | 22347 |
+| none (localhost) | prefetch | 12.9 | 12.4 to 21.8 | 1.60 | 11.3 | 3.70 | 0 | 0 |
+| none (localhost) | prewarm | 4.20 | 4.10 to 4.30 | 1.70 | 2.50 | 11.5 | 0 | 0 |
+| cable | cold | 144 | 141 to 146 | 1.50 | 143 | - | 4 | 22347 |
+| cable | prefetch | 12.6 | 12.3 to 12.7 | 1.60 | 11.0 | 49.0 | 0 | 0 |
+| cable | prewarm | 4.10 | 4.00 to 5.50 | 1.60 | 2.50 | 143 | 0 | 0 |
+| fast 4G | cold | 347 | 346 to 350 | 1.60 | 345 | - | 4 | 22347 |
+| fast 4G | prefetch | 12.5 | 12.4 to 13.1 | 1.60 | 10.9 | 141 | 0 | 0 |
+| fast 4G | prewarm | 4.10 | 3.90 to 4.20 | 1.50 | 2.60 | 345 | 0 | 0 |
+| slow 4G | cold | 628 | 610 to 636 | 1.60 | 627 | - | 4 | 22347 |
+| slow 4G | prefetch | 13.1 | 12.6 to 14.1 | 1.50 | 11.6 | 295 | 0 | 0 |
+| slow 4G | prewarm | 4.50 | 4.20 to 6.20 | 1.60 | 2.90 | 629 | 0 | 0 |
+| 3G | cold | 1251 | 1242 to 1263 | 1.60 | 1249 | - | 4 | 22347 |
+| 3G | prefetch | 12.9 | 12.2 to 14.0 | 1.50 | 11.4 | 610 | 0 | 0 |
+| 3G | prewarm | 4.90 | 4.00 to 11.4 | 1.70 | 3.20 | 1260 | 0 | 0 |
 
 `cold`: nothing loaded before the pick. `prefetch`: fetch() of the glue, worker entry, ISO BMFF and statistics chunks before the pick (HTTP cache warm). `prewarm`: prewarm hook before the pick: glue imported, worker spawned, ISO BMFF chunk loaded and run once on a 16-byte ftyp blob.
 
@@ -114,36 +114,36 @@ Breakdown (medians per phase, so they need not add up exactly to the median tota
 
 | Profile | Scenario | Total | Pick to glue loaded | Worker spawn (to entry request) | Worker entry fetch | Worker boot + entry eval + first read (to parser request) | Parser chunk fetch | Parser compile + first run + render | Steady (warm) pick |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| none (localhost) | cold | 16.4 | 1.40 | 0.96 | 1.36 | 5.30 | 1.50 | 6.10 | 1.70 |
-| none (localhost) | prefetch | 14.9 | 0.80 | 0.87 | 0.56 | 5.20 | 0.80 | 5.20 | 1.60 |
-| cable | cold | 143 | 44.9 | 1.03 | 46.2 | 5.70 | 42.1 | 4.40 | 1.60 |
-| cable | prefetch | 13.5 | 0.80 | 0.86 | 0.52 | 5.10 | 0.70 | 5.30 | 1.60 |
-| fast 4G | cold | 349 | 107 | 0.92 | 109 | 6.00 | 121 | 4.40 | 1.60 |
-| fast 4G | prefetch | 13.0 | 0.80 | 0.98 | 0.54 | 4.90 | 0.70 | 5.00 | 1.60 |
-| slow 4G | cold | 629 | 171 | 0.93 | 188 | 2.90 | 261 | 4.50 | 1.60 |
-| slow 4G | prefetch | 13.2 | 0.80 | 0.91 | 0.60 | 5.00 | 0.70 | 5.20 | 1.70 |
-| 3G | cold | 1246 | 343 | 1.00 | 379 | 2.90 | 515 | 4.40 | 1.50 |
-| 3G | prefetch | 13.4 | 0.80 | 1.01 | 0.49 | 5.10 | 0.70 | 5.20 | 1.80 |
+| none (localhost) | cold | 15.3 | 1.20 | 1.05 | 1.30 | 5.30 | 1.40 | 5.00 | 1.60 |
+| none (localhost) | prefetch | 12.9 | 0.70 | 0.91 | 0.50 | 5.20 | 0.70 | 5.00 | 1.60 |
+| cable | cold | 144 | 44.2 | 1.04 | 46.1 | 5.30 | 42.1 | 4.30 | 1.50 |
+| cable | prefetch | 12.6 | 0.70 | 0.79 | 0.61 | 4.80 | 0.70 | 5.10 | 1.60 |
+| fast 4G | cold | 347 | 107 | 0.85 | 109 | 5.10 | 120 | 4.30 | 1.60 |
+| fast 4G | prefetch | 12.5 | 0.80 | 0.85 | 0.55 | 4.80 | 0.70 | 5.00 | 1.60 |
+| slow 4G | cold | 628 | 171 | 0.96 | 187 | 3.10 | 263 | 4.30 | 1.60 |
+| slow 4G | prefetch | 13.1 | 0.70 | 0.85 | 0.55 | 5.10 | 0.70 | 5.10 | 1.50 |
+| 3G | cold | 1251 | 343 | 1.06 | 379 | 3.00 | 521 | 4.40 | 1.60 |
+| 3G | prefetch | 12.9 | 0.70 | 0.86 | 0.52 | 4.90 | 0.70 | 5.00 | 1.50 |
 
 ### PoC app (cross-check)
 
 | Profile | Scenario | Pick to result ms | Range ms | Warm ms | Extra ms | Prefetch or prewarm ms (before the pick) | Requests to the server at pick | gzip bytes at pick |
 |---|---|---:|---:|---:|---:|---:|---:|---:|
-| none (localhost) | cold | 18.8 | 17.9 to 31.9 | 2.30 | 16.5 | - | 5 | 26098 |
-| none (localhost) | prefetch | 15.5 | 15.2 to 15.6 | 2.30 | 13.2 | 3.50 | 1 | 2292 |
-| none (localhost) | prewarm | 3.00 | 2.60 to 4.10 | 2.50 | 0.50 | 17.8 | 1 | 2292 |
-| cable | cold | 146 | 143 to 146 | 2.40 | 143 | - | 5 | 26098 |
-| cable | prefetch | 15.2 | 14.9 to 16.4 | 2.20 | 13.0 | 49.0 | 1 | 2292 |
-| cable | prewarm | 2.50 | 2.30 to 3.00 | 2.40 | 0.10 | 145 | 1 | 2292 |
-| fast 4G | cold | 350 | 344 to 362 | 2.50 | 348 | - | 5 | 26098 |
-| fast 4G | prefetch | 15.9 | 15.3 to 16.2 | 2.50 | 13.4 | 140 | 1 | 2292 |
-| fast 4G | prewarm | 2.40 | 2.30 to 3.00 | 2.40 | 0.00 | 350 | 1 | 2292 |
-| slow 4G | cold | 632 | 624 to 639 | 2.40 | 630 | - | 5 | 26098 |
-| slow 4G | prefetch | 15.7 | 15.1 to 16.3 | 2.40 | 13.3 | 311 | 1 | 2292 |
-| slow 4G | prewarm | 2.50 | 2.40 to 2.60 | 2.40 | 0.10 | 644 | 1 | 2292 |
-| 3G | cold | 1261 | 1254 to 1265 | 2.30 | 1259 | - | 5 | 26098 |
-| 3G | prefetch | 16.3 | 15.6 to 16.6 | 2.40 | 13.9 | 629 | 1 | 2292 |
-| 3G | prewarm | 2.40 | 2.30 to 2.60 | 2.30 | 0.10 | 1263 | 1 | 2292 |
+| none (localhost) | cold | 17.9 | 17.5 to 34.1 | 2.40 | 15.5 | - | 5 | 26107 |
+| none (localhost) | prefetch | 14.8 | 14.7 to 15.1 | 2.30 | 12.5 | 3.60 | 1 | 2292 |
+| none (localhost) | prewarm | 2.50 | 2.30 to 3.60 | 2.50 | 0.00 | 17.1 | 1 | 2292 |
+| cable | cold | 145 | 143 to 148 | 2.10 | 142 | - | 5 | 26107 |
+| cable | prefetch | 14.7 | 14.5 to 15.0 | 2.20 | 12.5 | 48.2 | 1 | 2292 |
+| cable | prewarm | 2.30 | 2.20 to 3.50 | 2.30 | 0.00 | 144 | 1 | 2292 |
+| fast 4G | cold | 350 | 348 to 351 | 2.40 | 347 | - | 5 | 26107 |
+| fast 4G | prefetch | 14.8 | 14.6 to 15.4 | 2.30 | 12.5 | 141 | 1 | 2292 |
+| fast 4G | prewarm | 2.20 | 2.00 to 3.20 | 2.40 | -0.20 | 348 | 1 | 2292 |
+| slow 4G | cold | 648 | 628 to 649 | 2.40 | 646 | - | 5 | 26107 |
+| slow 4G | prefetch | 15.7 | 15.5 to 15.9 | 2.30 | 13.4 | 315 | 1 | 2292 |
+| slow 4G | prewarm | 2.40 | 2.30 to 2.70 | 2.40 | 0.00 | 643 | 1 | 2292 |
+| 3G | cold | 1247 | 1240 to 1283 | 2.30 | 1245 | - | 5 | 26107 |
+| 3G | prefetch | 15.0 | 14.9 to 16.2 | 2.30 | 12.7 | 629 | 1 | 2292 |
+| 3G | prewarm | 2.40 | 2.30 to 2.70 | 2.20 | 0.20 | 1262 | 1 | 2292 |
 
 `cold`: nothing loaded before the pick. `prefetch`: fetch() of the probe client, worker entry, ISO BMFF and statistics chunks before the pick (HTTP cache warm). `prewarm`: a tiny MP4 (edge_single_frame.mp4, 4 KB) picked first, which spawns the worker and loads the parser.
 
@@ -151,20 +151,20 @@ Breakdown (medians per phase, so they need not add up exactly to the median tota
 
 | Profile | Scenario | Total | Glue | Worker spawn (to entry request) | Worker entry fetch | Worker boot + entry eval + first read (to parser request) | Parser chunk fetch | Parser compile + first run + render | Steady (warm) pick |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| none (localhost) | cold | 18.8 | in main chunk | 3.52 | 1.58 | 5.50 | 1.50 | 6.90 | 2.30 |
-| none (localhost) | prefetch | 15.5 | in main chunk | 2.75 | 0.65 | 5.30 | 0.70 | 5.90 | 2.30 |
-| cable | cold | 146 | in main chunk | 46.8 | 45.5 | 5.50 | 41.8 | 5.40 | 2.40 |
-| cable | prefetch | 15.2 | in main chunk | 2.73 | 0.71 | 5.00 | 0.70 | 6.10 | 2.20 |
-| fast 4G | cold | 350 | in main chunk | 109 | 110 | 5.30 | 120 | 5.50 | 2.50 |
-| fast 4G | prefetch | 15.9 | in main chunk | 2.68 | 0.66 | 5.30 | 0.70 | 6.30 | 2.50 |
-| slow 4G | cold | 632 | in main chunk | 173 | 186 | 3.10 | 263 | 5.30 | 2.40 |
-| slow 4G | prefetch | 15.7 | in main chunk | 2.76 | 0.70 | 5.50 | 0.70 | 6.10 | 2.40 |
-| 3G | cold | 1261 | in main chunk | 360 | 375 | 3.40 | 515 | 5.40 | 2.30 |
-| 3G | prefetch | 16.3 | in main chunk | 2.82 | 0.73 | 5.40 | 0.80 | 6.20 | 2.40 |
+| none (localhost) | cold | 17.9 | in main chunk | 3.63 | 1.40 | 5.40 | 1.50 | 6.00 | 2.40 |
+| none (localhost) | prefetch | 14.8 | in main chunk | 2.51 | 0.61 | 5.20 | 0.60 | 5.90 | 2.30 |
+| cable | cold | 145 | in main chunk | 45.8 | 46.2 | 5.20 | 42.8 | 5.30 | 2.10 |
+| cable | prefetch | 14.7 | in main chunk | 2.55 | 0.67 | 4.80 | 0.70 | 5.90 | 2.20 |
+| fast 4G | cold | 350 | in main chunk | 110 | 108 | 5.00 | 120 | 5.20 | 2.40 |
+| fast 4G | prefetch | 14.8 | in main chunk | 2.64 | 0.66 | 5.10 | 0.70 | 5.90 | 2.30 |
+| slow 4G | cold | 648 | in main chunk | 187 | 188 | 3.00 | 265 | 5.40 | 2.40 |
+| slow 4G | prefetch | 15.7 | in main chunk | 2.72 | 0.70 | 5.50 | 0.70 | 6.00 | 2.30 |
+| 3G | cold | 1247 | in main chunk | 358 | 372 | 2.80 | 517 | 5.20 | 2.30 |
+| 3G | prefetch | 15.0 | in main chunk | 2.67 | 0.74 | 4.90 | 0.70 | 5.90 | 2.30 |
 
 The `prefetch` row is also roughly what a returning visitor gets with no prefetch code at all: the chunks have hashed names and are served `immutable`, so they come from the HTTP cache; only the compile and the first unoptimised run remain (possibly a little less, since V8 can reuse its code cache on repeat visits).
 
-Phase marks come from Resource Timing in the page (glue, worker entry end) and in the worker (parser chunk), and from CDP `Network.requestWillBeSent.wallTime` for the worker entry start (its Resource Timing start is reported at response time). Clock check: parser chunk end from CDP minus Resource Timing, median 0.06 ms on the unthrottled profile. Worker targets are auto-attached paused so their network events are captured; resuming took median 1.74 ms (max 2.85 ms), which can only lengthen the unthrottled cold path by that much (on throttled profiles it overlaps the entry download).
+Phase marks come from Resource Timing in the page (glue, worker entry end) and in the worker (parser chunk), and from CDP `Network.requestWillBeSent.wallTime` for the worker entry start (its Resource Timing start is reported at response time). Clock check: parser chunk end from CDP minus Resource Timing, median 0.03 ms on the unthrottled profile. Worker targets are auto-attached paused so their network events are captured; resuming took median 1.71 ms (max 2.87 ms), which can only lengthen the unthrottled cold path by that much (on throttled profiles it overlaps the entry download).
 
 ## 3. Main thread while analysing
 
@@ -174,35 +174,35 @@ Recorded in the page: `PerformanceObserver('longtask')` (tasks over 50 ms; TBT =
 
 | Work | Wall ms | Long tasks | Longest ms | TBT ms | rAF gap p95 / max ms | setTimeout(0) gap p95 / max ms | Input delay p95 / max ms | Main-thread CPU added ms | of it script / layout+style ms | Main thread busy |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| idle page (baseline) | - | 0 | - | 0.00 | 18.0 / 18.2 | 14.4 / 18.9 | 0.30 / 0.30 | - | - | - |
-| first file, cold (cfr_h264_30.mp4) | 25.0 | 0 | 0.00 | 0.00 | 17.6 / 17.6 | 15.0 / 16.9 | 0.30 / 0.30 (n 7) | 2.58 | 0.43 / 0.25 | 1.12% |
-| 111 files at once, cold | 134 | 0 | 0.00 | 0.00 | 18.0 / 21.5 | 15.1 / 20.1 | 0.60 / 0.60 (n 11) | 27.4 | 24.0 / 3.21 | 8.08% |
-| 111 files at once, warm | 119 | 0 | 0.00 | 0.00 | 17.7 / 19.7 | 13.3 / 18.6 | 0.60 / 0.60 (n 10) | 28.8 | 23.6 / 3.49 | 8.86% |
-| 3 h file (long_cfr_3h_60fps.mp4), warm | 12.2 | 0 | 0.00 | 0.00 | 17.4 / 17.4 | 9.10 / 18.8 | 0.30 / 0.30 (n 6) | 2.11 | 0.17 / 0.37 | 1.00% |
+| idle page (baseline) | - | 0 | - | 0.00 | 18.0 / 18.1 | 13.2 / 19.2 | 0.20 / 0.20 | - | - | - |
+| first file, cold (cfr_h264_30.mp4) | 14.6 | 0 | 0.00 | 0.00 | 17.7 / 17.7 | 14.4 / 19.0 | 0.20 / 0.20 (n 7) | 2.52 | 0.65 / 0.27 | 1.17% |
+| 111 files at once, cold | 148 | 0 | 0.00 | 0.00 | 18.0 / 20.7 | 13.9 / 19.8 | 0.60 / 0.60 (n 11) | 28.3 | 24.1 / 3.53 | 8.13% |
+| 111 files at once, warm | 85.3 | 0 | 0.00 | 0.00 | 17.7 / 18.1 | 12.7 / 17.7 | 0.70 / 0.70 (n 9) | 24.9 | 20.2 / 2.92 | 8.60% |
+| 3 h file (long_cfr_3h_60fps.mp4), warm | 7.20 | 0 | 0.00 | 0.00 | 17.5 / 17.7 | 17.2 / 17.7 | 0.20 / 0.20 (n 6) | 1.97 | 0.18 / 0.32 | 0.94% |
 
 ### Control (host model page with the probe switched off: files picked and listed by name only)
 
 | Work | Wall ms | Long tasks | Longest ms | TBT ms | rAF gap p95 / max ms | setTimeout(0) gap p95 / max ms | Input delay p95 / max ms | Main-thread CPU added ms | of it script / layout+style ms | Main thread busy |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| idle page (baseline) | - | 0 | - | 0.00 | 18.0 / 18.1 | 14.4 / 20.2 | 0.20 / 0.20 | - | - | - |
-| first file, cold (cfr_h264_30.mp4) | 0.30 | 0 | 0.00 | 0.00 | 17.6 / 17.6 | 14.3 / 18.3 | 0.20 / 0.20 (n 6) | 0.84 | 0.31 / 0.19 | 0.42% |
-| 111 files at once, cold | 15.3 | 0 | 0.00 | 0.00 | 26.8 / 26.8 | 19.2 / 27.8 | 4.70 / 4.70 (n 7) | 11.5 | 15.4 / 1.55 | 5.34% |
-| 111 files at once, warm | 14.5 | 0 | 0.00 | 0.00 | 17.7 / 31.3 | 13.3 / 29.8 | 4.30 / 4.30 (n 7) | 11.7 | 14.4 / 1.81 | 5.46% |
-| 3 h file (long_cfr_3h_60fps.mp4), warm | 0.20 | 0 | 0.00 | 0.00 | 18.0 / 18.0 | 11.8 / 18.3 | 0.20 / 0.20 (n 6) | 0.49 | 0.24 / 0.27 | 0.24% |
+| idle page (baseline) | - | 0 | - | 0.00 | 17.9 / 18.1 | 14.2 / 19.3 | 0.20 / 0.20 | - | - | - |
+| first file, cold (cfr_h264_30.mp4) | 0.30 | 0 | 0.00 | 0.00 | 17.7 / 17.7 | 13.9 / 18.8 | 0.20 / 0.20 (n 6) | 1.41 | 0.40 / 0.18 | 0.71% |
+| 111 files at once, cold | 12.8 | 0 | 0.00 | 0.00 | 29.8 / 29.8 | 17.2 / 27.5 | 2.60 / 2.60 (n 7) | 10.4 | 12.8 / 1.58 | 4.89% |
+| 111 files at once, warm | 12.7 | 0 | 0.00 | 0.00 | 18.1 / 29.9 | 13.7 / 25.0 | 2.60 / 2.60 (n 7) | 10.8 | 12.8 / 1.70 | 5.09% |
+| 3 h file (long_cfr_3h_60fps.mp4), warm | 0.20 | 0 | 0.00 | 0.00 | 17.7 / 17.9 | 8.20 / 18.7 | 0.20 / 0.20 (n 6) | 1.21 | 0.22 / 0.26 | 0.60% |
 
 ### PoC app (React UI, 111 result cards)
 
 | Work | Wall ms | Long tasks | Longest ms | TBT ms | rAF gap p95 / max ms | setTimeout(0) gap p95 / max ms | Input delay p95 / max ms | Main-thread CPU added ms | of it script / layout+style ms | Main thread busy |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| idle page (baseline) | - | 0 | - | 0.00 | 18.0 / 18.1 | 13.9 / 19.4 | 0.30 / 0.30 | - | - | - |
-| first file, cold (cfr_h264_30.mp4) | 23.4 | 0 | 0.00 | 0.00 | 18.0 / 18.0 | 16.0 / 18.3 | 1.10 / 1.10 (n 7) | 9.38 | 2.90 / 1.48 | 4.16% |
-| 111 files at once, cold | 261 | 0 | 0.00 | 0.00 | 26.7 / 39.0 | 20.9 / 40.5 | 13.9 / 13.9 (n 15) | 215 | 97.7 / 69.7 | 46.54% |
-| 111 files at once, warm | 246 | 0 | 0.00 | 0.00 | 21.5 / 34.1 | 20.0 / 39.0 | 16.3 / 16.3 (n 14) | 237 | 86.5 / 90.4 | 53.48% |
-| 3 h file (long_cfr_3h_60fps.mp4), warm | 18.7 | 0 | 0.00 | 0.00 | 17.7 / 18.0 | 7.20 / 23.9 | 7.30 / 7.30 (n 7) | 20.2 | 1.37 / 7.46 | 9.01% |
+| idle page (baseline) | - | 0 | - | 0.00 | 18.0 / 18.0 | 16.1 / 19.3 | 0.30 / 0.30 | - | - | - |
+| first file, cold (cfr_h264_30.mp4) | 20.0 | 0 | 0.00 | 0.00 | 18.0 / 18.0 | 13.1 / 16.5 | 0.40 / 0.40 (n 7) | 7.97 | 2.47 / 1.42 | 3.56% |
+| 111 files at once, cold | 264 | 0 | 0.00 | 0.00 | 23.2 / 44.5 | 20.5 / 38.6 | 14.8 / 14.8 (n 15) | 211 | 96.9 / 66.2 | 45.54% |
+| 111 files at once, warm | 229 | 0 | 0.00 | 0.00 | 21.1 / 37.0 | 22.3 / 39.4 | 18.4 / 18.4 (n 14) | 229 | 87.4 / 83.7 | 51.49% |
+| 3 h file (long_cfr_3h_60fps.mp4), warm | 17.6 | 0 | 0.00 | 0.00 | 17.1 / 17.6 | 16.3 / 21.4 | 6.90 / 6.90 (n 6) | 18.7 | 1.57 / 7.34 | 8.71% |
 
-Probe share of the main-thread CPU (host model minus control, which carries the same pick, list update and CDP harness work): first file 1.74 ms, 111 files cold 15.9 ms (4.75% of the window), warm 17.1 ms, 3 h file 1.63 ms. These are spread over many short tasks (message handling for 111 results and progress events); none of them is a long task. Differences of a few ms are within run-to-run noise (see the per-run values in the JSON).
+Probe share of the main-thread CPU (host model minus control, which carries the same pick, list update and CDP harness work): first file 1.10 ms, 111 files cold 17.9 ms (5.14% of the window), warm 14.1 ms, 3 h file 0.76 ms. These are spread over many short tasks (message handling for 111 results and progress events); none of them is a long task. Differences of a few ms are within run-to-run noise (see the per-run values in the JSON).
 
-rAF in this headless Chrome follows the display (idle gap p50 16.7 ms). Long Task API: ok.
+rAF in this headless Chrome follows the display (idle gap p50 16.6 ms). Long Task API: ok.
 
 ## 4. Memory
 
@@ -212,42 +212,42 @@ Each pass runs in a fresh Chrome (new renderer process, so no garbage from earli
 
 | State | GC | Page heap used | Page heap delta | Workers | Worker heap used (each) | JS added (page delta + workers) | Renderer private | Private delta | Private delta per pass MB | Working set delta |
 |---|---|---:|---:|---:|---|---:|---:|---:|---:|---:|
-| page loaded, no worker yet | yes | 0.47 MB | 0.00 MB | 0 | - | 0.00 MB | 24.39 MB | 0.00 MB | 0.0, 0.0, 0.0 | 0.00 MB |
-| same page 2 s later (noise reference) | yes | 0.47 MB | 0.00 MB | 0 | - | 0.00 MB | 24.41 MB | 0.02 MB | 0.0, 0.0, 0.0 | 0.03 MB |
-| after the first file | yes | 0.51 MB | 0.04 MB | 1 | 0.45 MB | 0.50 MB | 29.71 MB | 5.50 MB | 5.5, 6.5, 5.3 | 9.91 MB |
-| right after the batch, before GC | no | 1.47 MB | 0.99 MB | 2 | 1.54 MB, 1.79 MB | 4.27 MB | 59.94 MB | 36.26 MB | 36.7, 36.3, 34.1 | 41.75 MB |
-| right after the batch, after GC | yes | 0.68 MB | 0.21 MB | 2 | 1.32 MB, 1.26 MB | 2.76 MB | 44.04 MB | 20.30 MB | 20.3, 20.5, 19.7 | 30.63 MB |
-| 3 s idle after the batch, after GC | yes | 0.68 MB | 0.21 MB | 2 | 1.32 MB, 1.26 MB | 2.76 MB | 44.04 MB | 20.49 MB | 20.6, 20.5, 19.7 | 30.68 MB |
-| right after the 3 h file, before GC | no | 1.23 MB | 0.76 MB | 2 | 1.35 MB, 1.26 MB | 3.36 MB | 49.57 MB | 25.18 MB | 25.2, 24.1, 25.2 | 33.16 MB |
-| after the 3 h file, after GC | yes | 0.68 MB | 0.21 MB | 2 | 1.32 MB, 1.26 MB | 2.76 MB | 44.57 MB | 20.20 MB | 21.3, 20.2, 19.8 | 29.47 MB |
+| page loaded, no worker yet | yes | 0.47 MB | 0.00 MB | 0 | - | 0.00 MB | 28.88 MB | 0.00 MB | 0.0, 0.0, 0.0 | 0.00 MB |
+| same page 2 s later (noise reference) | yes | 0.47 MB | 0.00 MB | 0 | - | 0.00 MB | 28.91 MB | 0.03 MB | 0.0, 0.1, 0.0 | 0.04 MB |
+| after the first file | yes | 0.51 MB | 0.04 MB | 1 | 0.45 MB | 0.50 MB | 34.37 MB | 5.50 MB | 5.5, 5.5, 5.5 | 9.90 MB |
+| right after the batch, before GC | no | 1.47 MB | 0.99 MB | 2 | 1.61 MB, 1.82 MB | 4.28 MB | 62.82 MB | 34.70 MB | 32.9, 34.7, 37.3 | 41.93 MB |
+| right after the batch, after GC | yes | 0.68 MB | 0.21 MB | 2 | 1.26 MB, 1.28 MB | 2.74 MB | 48.98 MB | 19.68 MB | 19.0, 19.7, 22.2 | 30.15 MB |
+| 3 s idle after the batch, after GC | yes | 0.68 MB | 0.21 MB | 2 | 1.26 MB, 1.28 MB | 2.74 MB | 48.98 MB | 19.44 MB | 19.0, 19.4, 22.2 | 30.29 MB |
+| right after the 3 h file, before GC | no | 1.23 MB | 0.76 MB | 2 | 1.31 MB, 1.28 MB | 3.35 MB | 53.76 MB | 24.00 MB | 23.8, 24.0, 27.0 | 34.34 MB |
+| after the 3 h file, after GC | yes | 0.68 MB | 0.21 MB | 2 | 1.26 MB, 1.28 MB | 2.74 MB | 49.86 MB | 19.91 MB | 19.9, 19.1, 22.1 | 29.30 MB |
 
 ### Control (probe switched off: files picked and listed only)
 
 | State | GC | Page heap used | Page heap delta | Workers | Worker heap used (each) | JS added (page delta + workers) | Renderer private | Private delta | Private delta per pass MB | Working set delta |
 |---|---|---:|---:|---:|---|---:|---:|---:|---:|---:|
-| page loaded, no worker yet | yes | 0.47 MB | 0.00 MB | 0 | - | 0.00 MB | 24.29 MB | 0.00 MB | 0.0, 0.0, 0.0 | 0.00 MB |
-| same page 2 s later (noise reference) | yes | 0.47 MB | 0.00 MB | 0 | - | 0.00 MB | 24.31 MB | 0.05 MB | 0.1, 0.0, 0.1 | 0.04 MB |
-| after the first file | yes | 0.49 MB | 0.01 MB | 0 | - | 0.01 MB | 24.35 MB | 0.09 MB | 0.1, 0.1, 0.1 | 1.85 MB |
-| right after the batch, before GC | no | 0.67 MB | 0.20 MB | 0 | - | 0.20 MB | 26.53 MB | 2.25 MB | 2.3, 2.2, 2.3 | 6.48 MB |
-| right after the batch, after GC | yes | 0.56 MB | 0.09 MB | 0 | - | 0.09 MB | 26.31 MB | 2.02 MB | 2.0, 2.0, 2.0 | 6.38 MB |
-| 3 s idle after the batch, after GC | yes | 0.56 MB | 0.09 MB | 0 | - | 0.09 MB | 26.35 MB | 2.06 MB | 2.1, 2.1, 2.0 | 6.40 MB |
-| right after the 3 h file, before GC | no | 0.64 MB | 0.17 MB | 0 | - | 0.17 MB | 26.73 MB | 2.44 MB | 2.5, 2.4, 2.4 | 6.65 MB |
-| after the 3 h file, after GC | yes | 0.56 MB | 0.09 MB | 0 | - | 0.09 MB | 26.46 MB | 2.16 MB | 2.2, 2.2, 2.1 | 6.28 MB |
+| page loaded, no worker yet | yes | 0.47 MB | 0.00 MB | 0 | - | 0.00 MB | 24.20 MB | 0.00 MB | 0.0, 0.0, 0.0 | 0.00 MB |
+| same page 2 s later (noise reference) | yes | 0.47 MB | 0.00 MB | 0 | - | 0.00 MB | 24.39 MB | 0.02 MB | 0.0, 0.2, 0.0 | 0.02 MB |
+| after the first file | yes | 0.49 MB | 0.01 MB | 0 | - | 0.01 MB | 24.56 MB | 0.36 MB | 0.2, 0.4, 1.3 | 1.93 MB |
+| right after the batch, before GC | no | 0.67 MB | 0.20 MB | 0 | - | 0.20 MB | 26.69 MB | 2.48 MB | 2.3, 2.5, 3.5 | 6.53 MB |
+| right after the batch, after GC | yes | 0.56 MB | 0.09 MB | 0 | - | 0.09 MB | 26.44 MB | 2.24 MB | 2.1, 2.2, 3.2 | 6.41 MB |
+| 3 s idle after the batch, after GC | yes | 0.56 MB | 0.09 MB | 0 | - | 0.09 MB | 26.46 MB | 2.25 MB | 2.1, 2.3, 3.2 | 6.44 MB |
+| right after the 3 h file, before GC | no | 0.64 MB | 0.17 MB | 0 | - | 0.17 MB | 26.85 MB | 2.65 MB | 2.5, 2.6, 3.6 | 6.68 MB |
+| after the 3 h file, after GC | yes | 0.56 MB | 0.09 MB | 0 | - | 0.09 MB | 26.53 MB | 2.33 MB | 2.2, 2.3, 3.3 | 6.32 MB |
 
 ### PoC app
 
 | State | GC | Page heap used | Page heap delta | Workers | Worker heap used (each) | JS added (page delta + workers) | Renderer private | Private delta | Private delta per pass MB | Working set delta |
 |---|---|---:|---:|---:|---|---:|---:|---:|---:|---:|
-| page loaded, no worker yet | yes | 1.09 MB | 0.00 MB | 0 | - | 0.00 MB | 27.87 MB | 0.00 MB | 0.0, 0.0, 0.0 | 0.00 MB |
-| same page 2 s later (noise reference) | yes | 1.09 MB | 0.00 MB | 0 | - | 0.00 MB | 27.91 MB | 0.07 MB | 0.0, 0.1, 0.1 | 0.07 MB |
-| after the first file | yes | 1.40 MB | 0.31 MB | 1 | 0.45 MB | 0.77 MB | 36.03 MB | 7.20 MB | 7.1, 8.3, 7.2 | 19.03 MB |
-| right after the batch, before GC | no | 6.34 MB | 5.25 MB | 2 | 1.93 MB, 2.09 MB | 9.32 MB | 105.00 MB | 77.13 MB | 77.1, 87.4, 73.1 | 92.30 MB |
-| right after the batch, after GC | yes | 4.96 MB | 3.87 MB | 2 | 1.27 MB, 1.28 MB | 6.42 MB | 83.93 MB | 55.11 MB | 54.4, 57.2, 55.1 | 75.45 MB |
-| 3 s idle after the batch, after GC | yes | 4.96 MB | 3.87 MB | 2 | 1.27 MB, 1.28 MB | 6.42 MB | 82.28 MB | 54.41 MB | 54.4, 57.2, 53.4 | 74.71 MB |
-| right after the 3 h file, before GC | no | 5.64 MB | 4.55 MB | 2 | 1.31 MB, 1.28 MB | 7.14 MB | 87.59 MB | 58.77 MB | 57.9, 62.1, 58.8 | 74.19 MB |
-| after the 3 h file, after GC | yes | 5.00 MB | 3.91 MB | 2 | 1.27 MB, 1.28 MB | 6.46 MB | 81.43 MB | 52.61 MB | 52.4, 57.2, 52.6 | 69.15 MB |
+| page loaded, no worker yet | yes | 1.09 MB | 0.00 MB | 0 | - | 0.00 MB | 27.84 MB | 0.00 MB | 0.0, 0.0, 0.0 | 0.00 MB |
+| same page 2 s later (noise reference) | yes | 1.09 MB | 0.00 MB | 0 | - | 0.00 MB | 27.88 MB | 0.06 MB | 0.0, 0.1, 0.3 | 0.05 MB |
+| after the first file | yes | 1.40 MB | 0.31 MB | 1 | 0.45 MB | 0.77 MB | 35.08 MB | 7.33 MB | 7.2, 7.3, 7.4 | 19.07 MB |
+| right after the batch, before GC | no | 7.50 MB | 6.41 MB | 2 | 1.69 MB, 1.97 MB | 10.06 MB | 104.53 MB | 76.97 MB | 73.5, 78.6, 77.0 | 93.08 MB |
+| right after the batch, after GC | yes | 4.96 MB | 3.87 MB | 2 | 1.25 MB, 1.29 MB | 6.41 MB | 84.66 MB | 55.20 MB | 55.2, 52.7, 57.1 | 75.65 MB |
+| 3 s idle after the batch, after GC | yes | 4.96 MB | 3.87 MB | 2 | 1.25 MB, 1.29 MB | 6.41 MB | 84.66 MB | 53.46 MB | 53.5, 52.4, 57.1 | 76.46 MB |
+| right after the 3 h file, before GC | no | 5.64 MB | 4.55 MB | 2 | 1.32 MB, 1.29 MB | 7.14 MB | 90.21 MB | 58.85 MB | 58.9, 56.2, 62.7 | 72.58 MB |
+| after the 3 h file, after GC | yes | 5.00 MB | 3.91 MB | 2 | 1.25 MB, 1.29 MB | 6.45 MB | 84.53 MB | 54.40 MB | 54.4, 51.8, 57.0 | 69.03 MB |
 
-Probe share (host model minus control, renderer private bytes): first file +5.41 MB, right after 111 files before GC +34.00 MB, idle after the batch +18.43 MB, after the 3 h file +18.04 MB. The control alone (111 File objects, 111 list items) adds 2.06 MB at idle.
+Probe share (host model minus control, renderer private bytes): first file +5.14 MB, right after 111 files before GC +32.22 MB, idle after the batch +17.18 MB, after the 3 h file +17.58 MB. The control alone (111 File objects, 111 list items) adds 2.25 MB at idle.
 
 Reading the host rows: the first file brings one worker and costs about 5 MB of private memory, almost all of it outside the JS heaps (worker thread, isolate, Blink worker scope); the second worker joins during the batch. JS heaps grow by only about 2.4 MB in total, so the rest of the idle delta after 111 files is allocator memory kept after 111 concurrent reads, not live objects. The peak before GC is transient.
 
@@ -259,52 +259,52 @@ Worker-side `FileResult.io.ms` (wall time inside the worker from the first read 
 
 | Case | File | Size | Scan | Frames | Avg FPS | Reads | Bytes read | Worker ms | UI ms |
 |---|---|---:|---|---:|---|---:|---:|---:|---:|
-| typical MP4 (faststart, H.264 + AAC) | av_h264_aac_faststart.mp4 | 0.10 MB | exact | 90 | 30/1 | 1 | 0.10 MB | 1.00 | 1.50 |
-| MP4 with moov at the end (H.264 + AAC) | av_h264_aac.mp4 | 0.10 MB | exact | 90 | 30/1 | 1 | 0.10 MB | 0.90 | 1.40 |
-| fragmented MP4 (CMAF) | fmp4_cmaf.mp4 | 0.12 MB | exact | 120 | 30000/1001 | 1 | 0.12 MB | 0.90 | 1.30 |
-| WebM, exact block scan (VFR) | vfr_concat_10_30_60.webm | 0.14 MB | exact | 200 | 100/3 | 1 | 0.14 MB | 1.20 | 1.60 |
-| 3 h CFR 60 fps MP4 (648000 frames, 13 MB) | long_cfr_3h_60fps.mp4 | 13.02 MB | exact | 648000 | 60/1 | 2 | 2.68 MB | 3.90 | 4.40 |
-| 1 h VFR screen recording MP4 (133920 frames) | long_vfr_1h_screenrec.mp4 | 3.94 MB | exact | 133920 | 186/5 | 2 | 1.60 MB | 38.1 | 38.6 |
+| typical MP4 (faststart, H.264 + AAC) | av_h264_aac_faststart.mp4 | 0.10 MB | exact | 90 | 30/1 | 1 | 0.10 MB | 1.10 | 1.60 |
+| MP4 with moov at the end (H.264 + AAC) | av_h264_aac.mp4 | 0.10 MB | exact | 90 | 30/1 | 1 | 0.10 MB | 0.90 | 1.50 |
+| fragmented MP4 (CMAF) | fmp4_cmaf.mp4 | 0.12 MB | exact | 120 | 30000/1001 | 1 | 0.12 MB | 1.00 | 1.30 |
+| WebM, exact block scan (VFR) | vfr_concat_10_30_60.webm | 0.14 MB | exact | 200 | 100/3 | 1 | 0.14 MB | 1.00 | 1.50 |
+| 3 h CFR 60 fps MP4 (648000 frames, 13 MB) | long_cfr_3h_60fps.mp4 | 13.02 MB | exact | 648000 | 60/1 | 2 | 2.68 MB | 3.50 | 4.00 |
+| 1 h VFR screen recording MP4 (133920 frames) | long_vfr_1h_screenrec.mp4 | 3.94 MB | exact | 133920 | 186/5 | 2 | 1.60 MB | 36.3 | 36.8 |
 
-111 files at once on the warm page, median of 3: 75.2 ms wall, 104 ms worker time summed over files (two workers in parallel), renderer process CPU 141 ms (main thread 29.1 ms), all Chrome processes 253 ms (network.mojom.NetworkService 0.06 ms, browser 114 ms, GPU 9.07 ms, renderer 141 ms). The browser process share covers the Blob reads of the local files and this harness's CDP traffic; the main-thread share is the pick itself, result messages and the host page list update.
+111 files at once on the warm page, median of 3: 70.2 ms wall, 96.6 ms worker time summed over files (two workers in parallel), renderer process CPU 125 ms (main thread 25.1 ms), all Chrome processes 231 ms (browser 99.6 ms, GPU 6.54 ms, network.mojom.NetworkService 0.00 ms, renderer 125 ms). The browser process share covers the Blob reads of the local files and this harness's CDP traffic; the main-thread share is the pick itself, result messages and the host page list update.
 
 ## 6. Percentages against the host app
 
 Formulas (B = bytes, gzip):
 
 - Initial-load increase = trigger B / 1950000 B. Measured trigger 519 B gives 0.027%; the 1 KB budget gives 0.051%. Parse and run cost of the trigger: one closure and one event listener, not measurable against the host's 6.38 MB of raw JS.
-- Lazy first-file bytes = glue + worker entry + parser chunk + statistics chunk = 22.34 KB for MP4/MOV (21.21 KB for MKV/WebM, 33.43 KB once both parsers loaded). Against the initial load: 1.15% (both parsers 1.71%); against the full app: 0.35% (both 0.53%). Paid once per page session, only by users who pick a video, and cacheable (hashed file names).
+- Lazy first-file bytes = glue + worker entry + parser chunk + statistics chunk = 22.35 KB for MP4/MOV (21.22 KB for MKV/WebM, 33.44 KB once both parsers loaded). Against the initial load: 1.15% (both parsers 1.72%); against the full app: 0.35% (both 0.53%). Paid once per page session, only by users who pick a video, and cacheable (hashed file names).
 - One-time latency = cold extra ms (pick to result, minus the warm pick). Relative figure: extra / time to download the host's initial 1.95 MB on the same link (B x 8 / down bps, transfer only, so the real host load is longer and the percentage smaller).
 
 | Profile | Host initial transfer s | Lazy bytes transfer ms | Cold total ms | Cold extra ms | Extra vs host initial | HTTP-prefetched total ms | Prewarmed total ms | Prefetch needs ms | Prewarm needs ms |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| none (localhost) | - | - | 16.4 | 14.7 | - | 14.9 | 4.40 | 3.40 | 12.2 |
-| cable | 0.3 | 3.57 | 143 | 142 | 45.45% | 13.5 | 4.30 | 48.7 | 143 |
-| fast 4G | 1.7 | 19.9 | 349 | 348 | 20.05% | 13.0 | 4.30 | 141 | 345 |
-| slow 4G | 9.8 | 112 | 629 | 627 | 6.43% | 13.2 | 4.20 | 299 | 613 |
-| 3G | 20.8 | 238 | 1246 | 1244 | 5.98% | 13.4 | 4.20 | 611 | 1244 |
+| none (localhost) | - | - | 15.3 | 13.7 | - | 12.9 | 4.20 | 3.70 | 11.5 |
+| cable | 0.3 | 3.58 | 144 | 143 | 45.67% | 12.6 | 4.10 | 49.0 | 143 |
+| fast 4G | 1.7 | 19.9 | 347 | 345 | 19.91% | 12.5 | 4.10 | 141 | 345 |
+| slow 4G | 9.8 | 112 | 628 | 627 | 6.43% | 13.1 | 4.50 | 295 | 629 |
+| 3G | 20.8 | 238 | 1251 | 1249 | 6.01% | 12.9 | 4.90 | 610 | 1260 |
 
 "Needs" is how long the prefetch or prewarm itself took on that link: the hook has to start at least that long before the pick (for example when the upload dialog opens; the OS file dialog alone usually takes seconds) to hide the whole cost.
 
-- Main-thread blocking added (TBT, host model): first file 0.00 ms, 111 files at once 0.00 ms cold and 0.00 ms warm, 3 h file 0.00 ms. Probe main-thread CPU (host minus control): 1.74 ms for the first file, 15.9 ms for 111 files (4.75% of the batch window), 1.63 ms for the 3 h file (differences of a few ms are within run-to-run noise). Parsing runs in the workers; the main thread only posts File handles and receives small result objects. Between picks the added main-thread work is zero.
-- Memory added by the probe (host model minus control, renderer private bytes, after GC): first file +5.41 MB, idle after 111 files +18.43 MB, peak right after 111 files before GC +34.00 MB. As an illustration against a host tab of 100 MB: 5.41% after one file, 18.43% after 111; 200 MB: 2.71% after one file, 9.21% after 111 (formula: added MB / host MB; the host's own memory was not measured).
-- Memory added (host model, after GC): after the first file JS +0.50 MB, renderer private +5.50 MB (one worker); idle after 111 files JS +2.76 MB (page 0.21 MB, workers 2.55 MB used), renderer private +20.49 MB (two workers). Peak right after 111 files before GC: JS +4.27 MB, private +36.26 MB. These host-model numbers include the pick-and-list work that the control isolates.
+- Main-thread blocking added (TBT, host model): first file 0.00 ms, 111 files at once 0.00 ms cold and 0.00 ms warm, 3 h file 0.00 ms. Probe main-thread CPU (host minus control): 1.10 ms for the first file, 17.9 ms for 111 files (5.14% of the batch window), 0.76 ms for the 3 h file (differences of a few ms are within run-to-run noise). Parsing runs in the workers; the main thread only posts File handles and receives small result objects. Between picks the added main-thread work is zero.
+- Memory added by the probe (host model minus control, renderer private bytes, after GC): first file +5.14 MB, idle after 111 files +17.18 MB, peak right after 111 files before GC +32.22 MB. As an illustration against a host tab of 100 MB: 5.14% after one file, 17.18% after 111; 200 MB: 2.57% after one file, 8.59% after 111 (formula: added MB / host MB; the host's own memory was not measured).
+- Memory added (host model, after GC): after the first file JS +0.50 MB, renderer private +5.50 MB (one worker); idle after 111 files JS +2.74 MB (page 0.21 MB, workers 2.53 MB used), renderer private +19.44 MB (two workers). Peak right after 111 files before GC: JS +4.28 MB, private +34.70 MB. These host-model numbers include the pick-and-list work that the control isolates.
 - Per-file cost against an upload of 100.00 MB: upload time = B x 8 / upload bps, so 80.0 s at 10 Mbps and 16.0 s at 50 Mbps. Share = probe ms / upload ms (the probe reads only container headers from the local file, it does not use the network):
 
 | Upload speed | Upload time s | av_h264_aac_faststart.mp4 | av_h264_aac.mp4 | fmp4_cmaf.mp4 | vfr_concat_10_30_60.webm | long_cfr_3h_60fps.mp4 | long_vfr_1h_screenrec.mp4 | cold first-file extra, none (localhost) | cold first-file extra, cable | cold first-file extra, fast 4G | cold first-file extra, slow 4G | cold first-file extra, 3G |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| 10 Mbps | 80.0 | 1.00 ms = 0.001% | 0.90 ms = 0.001% | 0.90 ms = 0.001% | 1.20 ms = 0.001% | 3.90 ms = 0.005% | 38.1 ms = 0.048% | 14.7 ms = 0.018% | 142 ms = 0.18% | 348 ms = 0.43% | 627 ms = 0.78% | 1244 ms = 1.56% |
-| 50 Mbps | 16.0 | 1.00 ms = 0.006% | 0.90 ms = 0.006% | 0.90 ms = 0.006% | 1.20 ms = 0.007% | 3.90 ms = 0.024% | 38.1 ms = 0.24% | 14.7 ms = 0.092% | 142 ms = 0.89% | 348 ms = 2.17% | 627 ms = 3.92% | 1244 ms = 7.78% |
+| 10 Mbps | 80.0 | 1.10 ms = 0.001% | 0.90 ms = 0.001% | 1.00 ms = 0.001% | 1.00 ms = 0.001% | 3.50 ms = 0.004% | 36.3 ms = 0.045% | 13.7 ms = 0.017% | 143 ms = 0.18% | 345 ms = 0.43% | 627 ms = 0.78% | 1249 ms = 1.56% |
+| 50 Mbps | 16.0 | 1.10 ms = 0.007% | 0.90 ms = 0.006% | 1.00 ms = 0.006% | 1.00 ms = 0.006% | 3.50 ms = 0.022% | 36.3 ms = 0.23% | 13.7 ms = 0.086% | 143 ms = 0.89% | 345 ms = 2.16% | 627 ms = 3.92% | 1249 ms = 7.81% |
 
 ### Integration options compared
 
-Derived from the measurements above. Eager means the glue, worker entry and both parser chunks are part of the critical bundle and the worker is started at page load (33.95 KB gzip, which is the trigger plus all lazy pieces); its first-file latency is the prewarm row, and every visitor pays its bytes and its idle worker, whether they upload a video or not. Transfer ms = bytes x 8 / down kbps.
+Derived from the measurements above. Eager means the glue, worker entry and both parser chunks are part of the critical bundle and the worker is started at page load (33.96 KB gzip, which is the trigger plus all lazy pieces); its first-file latency is the prewarm row, and every visitor pays its bytes and its idle worker, whether they upload a video or not. Transfer ms = bytes x 8 / down kbps.
 
 | Option | Critical-path bytes | vs host initial | Added initial transfer | Bytes when used | First-file latency (cold extra or total) | Memory | Who pays |
 |---|---:|---:|---|---|---|---|---|
-| lazy on the first file (proposed) | 0.52 KB | 0.027% | cable 0.08 ms, fast 4G 0.46 ms, slow 4G 2.60 ms, 3G 5.54 ms | 22.34 KB (MP4) | cable +142 ms, fast 4G +348 ms, slow 4G +627 ms, 3G +1244 ms | +5.41 MB after the first file | only users who pick a video |
-| lazy + prefetch when the upload dialog opens | 0.52 KB | 0.027% | cable 0.08 ms, fast 4G 0.46 ms, slow 4G 2.60 ms, 3G 5.54 ms | 22.34 KB (also if the dialog is cancelled) | cable 4.30 ms total if prewarmed, 13.5 ms if only HTTP-prefetched, fast 4G 4.30 ms total if prewarmed, 13.0 ms if only HTTP-prefetched, slow 4G 4.20 ms total if prewarmed, 13.2 ms if only HTTP-prefetched, 3G 4.20 ms total if prewarmed, 13.4 ms if only HTTP-prefetched | +5.41 MB once prewarmed | users who open the dialog |
-| eager (in the critical bundle) | 33.95 KB | 1.74% | cable 5.43 ms, fast 4G 30.2 ms, slow 4G 170 ms, 3G 362 ms | 0 (already loaded) | cable 4.30 ms total, fast 4G 4.30 ms total, slow 4G 4.20 ms total, 3G 4.20 ms total | +5.41 MB for every visitor from page load | every visitor, every page load |
+| lazy on the first file (proposed) | 0.52 KB | 0.027% | cable 0.08 ms, fast 4G 0.46 ms, slow 4G 2.60 ms, 3G 5.54 ms | 22.35 KB (MP4) | cable +143 ms, fast 4G +345 ms, slow 4G +627 ms, 3G +1249 ms | +5.14 MB after the first file | only users who pick a video |
+| lazy + prefetch when the upload dialog opens | 0.52 KB | 0.027% | cable 0.08 ms, fast 4G 0.46 ms, slow 4G 2.60 ms, 3G 5.54 ms | 22.35 KB (also if the dialog is cancelled) | cable 4.10 ms total if prewarmed, 12.6 ms if only HTTP-prefetched, fast 4G 4.10 ms total if prewarmed, 12.5 ms if only HTTP-prefetched, slow 4G 4.50 ms total if prewarmed, 13.1 ms if only HTTP-prefetched, 3G 4.90 ms total if prewarmed, 12.9 ms if only HTTP-prefetched | +5.14 MB once prewarmed | users who open the dialog |
+| eager (in the critical bundle) | 33.96 KB | 1.74% | cable 5.43 ms, fast 4G 30.2 ms, slow 4G 170 ms, 3G 362 ms | 0 (already loaded) | cable 4.10 ms total, fast 4G 4.10 ms total, slow 4G 4.50 ms total, 3G 4.90 ms total | +5.14 MB for every visitor from page load | every visitor, every page load |
 
 ## Caveats
 
@@ -317,4 +317,4 @@ Derived from the measurements above. Eager means the glue, worker entry and both
 
 ## Rerun
 
-`npm run build && node scripts/bench/integration.mjs` (options: `--reps`, `--batch-reps`, `--cpu-reps`, `--profiles none,cable,fast4g,slow4g,3g`, `--skip latency,main,memory,cpu`, `--render report/integration-cost.json` to redraw this file without measuring, `--no-write`). Writes `report/integration-cost.md` and `.json`. Command of this run: `node scripts/bench/integration.mjs`.
+`npm run build && node scripts/bench/integration.mjs` (options: `--reps`, `--batch-reps`, `--cpu-reps`, `--profiles none,cable,fast4g,slow4g,3g`, `--skip latency,main,memory,cpu`, `--render report/integration-cost.json` to redraw this file without measuring, `--no-write`). Writes `report/integration-cost.md` and `.json`. Command of this run: `BENCH_BROWSER_FLAGS="--no-sandbox" node scripts/bench/integration.mjs`.
