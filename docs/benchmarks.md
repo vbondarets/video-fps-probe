@@ -641,7 +641,7 @@ The profile code is 1.84 KB gzip in the worker and the panel 0.94 KB on the main
 | Value | MP4 / MOV | Matroska / WebM |
 |---|---|---|
 | `avg_frame_rate` | `av_reduce(timescale x N, D)` with N = sum of stts counts (plus trun samples inside ffprobe's header extent) and D = sum of count x delta; edit lists are ignored | `av_reduce(1e9, DefaultDuration, 30000)`: declared, not measured; without a DefaultDuration ffprobe's estimate from the first packets, reproduced in probe and exact mode ([implementation notes](implementation-notes.md#ffprobe-frame-rates-without-defaultduration-020)) |
-| `r_frame_rate` | stage 1 only: `timescale / d0` when every kept duration except the last equals the first; otherwise ffprobe uses probing heuristics and the app shows none | equals `avg_frame_rate` when it is between 5 and 1000 |
+| `r_frame_rate` | stage 1 only: `timescale / d0` when every kept duration except the last equals the first; otherwise ffprobe uses probing heuristics and the app shows none | equals `avg_frame_rate` when it is between 5 and 1000; without a DefaultDuration ffprobe's estimate from the first packets, reproduced like `avg_frame_rate` |
 | frames | `nb_frames` = sum of stts counts; fragmented files: `nb_read_packets` | `nb_read_packets`: blocks, with laces counted |
 | presented frames | `nb_read_frames`: samples inside the first non-empty edit | same as frames |
 | measured average | presented frames / (last PTS + stored duration of the last presented sample - first PTS), compared with the same value from ffprobe's packets; within one frame interval when ffprobe fills the last packet duration itself (VP9 in MP4) | frames / (last PTS + last duration - first PTS), compared with the same value computed from ffprobe's packets |
@@ -672,7 +672,7 @@ A track keeps two averages when they differ: `avgFps`, presented frames over the
 
 - Matroska has no frame index: an exact frame count, min, max and VFR flag need a block scan. `auto` mode runs it only when the predicted cost is within budget; otherwise the card shows a sampled probe until "Scan all frames" is pressed.
 - Matroska timestamps are usually 1 ms ticks. CFR content shows a quantized min and max, and VFR between rates whose frame periods differ by less than about 1 ms is invisible.
-- `r_frame_rate` is reproduced only for tracks with equal intervals (ffprobe's stage 1). For VFR ffprobe uses probing heuristics; the app shows a dominant rate or nothing.
+- In MP4 and MOV, `r_frame_rate` is reproduced only for tracks with equal intervals (ffprobe's stage 1). For VFR ffprobe uses probing heuristics; the app shows a dominant rate or nothing. In Matroska and WebM without a DefaultDuration, the same heuristics, run on the first packets, are reproduced for both `avg_frame_rate` and `r_frame_rate` (VP8, VP9, AV1 and Baseline H.264, with Opus as the only other track kind); a Matroska DefaultDuration outside 5 to 1000 fps leaves `r_frame_rate` unreproduced.
 - With a complete sidx, ffprobe 8.1.1 reads only part of a fragmented file. The app reports the full-file average as Average FPS and reproduces ffprobe's partial value in `avgFpsFfprobe`.
 - ISMV (Smooth Streaming, `ffmpeg -f ismv`) with B-frames: fragments without `tfdt` and with negative composition offsets give a start of 0 instead of ffprobe's 0.04 s and a format duration about 20 ms off. Frames, rates and the VFR flag match.
 - Compressed movie headers (`cmov`) and a moov above 256 MiB are unsupported. Only the first stsd entry is used.
