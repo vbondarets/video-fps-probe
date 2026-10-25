@@ -293,14 +293,16 @@ describe('ffprobe frame rates of Matroska without DefaultDuration', () => {
       ['POC type 1', sps(null, 66, POC1), avcSlices(60, null), 'H.264 pic_order_cnt_type 1'],
       ['field coding', sps(null, 66, poc0(8), true), fieldSlices, 'H.264 field coding'],
       ['a bottom field POC offset', POC0, avcSlices(60, 2), 'H.264 bottom field POC', pps(1)],
+      ['a first slice that is not an IDR', POC0, avcSlices(60, 2).map((s, i) => (i ? s : slice({ frameNum: 0, lsb: 0 }))), 'H.264 does not start with an IDR'],
+      ['a first slice that is not an IDR, with bitstream_restriction', sps(vui(0, 0)), avcSlices(60, null).map((s, i) => (i ? s : slice({ frameNum: 0 }))), 'H.264 does not start with an IDR'],
       ['a packet without a slice', POC0, avcSlices(60, 2).map((s, i) => (i === 4 ? nal(0x06, (u) => u(8, 5)) : s)), 'no H.264 slice header'],
       ['a slice header cut short', POC0, avcSlices(60, 2).map((s, i) => (i === 2 ? s.subarray(0, 2) : s)), 'bad H.264 PPS or slice header'],
     ] as const)('reports no estimate for %s', async (_label, spsNal, slices, reason, ppsNal = pps()) => {
       expect(await run(spsNal, slices, ppsNal)).toEqual(notReproduced(reason));
     });
 
-    it('follows pic_order_cnt_lsb across its wrap, from a keyframe that is not an IDR', async () => {
-      const wrap = [10, 12, 14, 0, 2, 4, 6].map((lsb, frameNum) => ({ frameNum, lsb }));
+    it('follows pic_order_cnt_lsb across its wrap', async () => {
+      const wrap = [10, 12, 14, 0, 2, 4, 6].map((lsb, frameNum) => ({ idr: frameNum === 0, frameNum, lsb }));
       expect(await run(POC0_SHORT, decoded(wrap, 4))).toEqual(ESTIMATED);
       const back = [0, 14, 0, 2, 4, 6, 8].map((lsb, frameNum) => ({ idr: frameNum === 0, frameNum, lsb }));
       expect(await run(POC0_SHORT, decoded(back, 4))).toEqual(notReproduced('H.264 POC step -2'));
@@ -319,7 +321,7 @@ describe('ffprobe frame rates of Matroska without DefaultDuration', () => {
     it('counts POC type 2 from frame_num, one below for a non-reference picture, across the frame_num wrap', async () => {
       const nonRef = [0, 1, 1, 2, 3, 4, 5].map((frameNum, i) => ({ idr: i === 0, ref: i !== 1, frameNum }));
       expect(await run(OPEN, decoded(nonRef))).toEqual(ESTIMATED);
-      expect(await run(OPEN, decoded([14, 15, 0, 1, 2, 3, 4].map((frameNum) => ({ frameNum }))))).toEqual(ESTIMATED);
+      expect(await run(OPEN, decoded([14, 15, 0, 1, 2, 3, 4].map((frameNum, i) => ({ idr: i === 0, frameNum }))))).toEqual(ESTIMATED);
       const twoNonRef = [0, 1, 1, 1, 2, 3, 4].map((frameNum, i) => ({ idr: i === 0, ref: i !== 1 && i !== 2, frameNum }));
       expect(await run(OPEN, decoded(twoNonRef))).toEqual(notReproduced('H.264 POC step 0'));
     });

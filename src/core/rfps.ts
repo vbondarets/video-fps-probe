@@ -175,7 +175,15 @@ function h264Unsupported(cp: Uint8Array | null, packets: readonly Uint8Array[]):
   const type = (n: Uint8Array): number => n[0] & 31;
   const sps = sets.find((n) => type(n) === 7);
   const s = sps ? h264Sps(sps) : 'no H.264 SPS';
-  if (s === null || typeof s === 'string') return s;
+  if (typeof s === 'string') return s;
+  const slices: Uint8Array[] = [];
+  for (const packet of s ? packets : packets.slice(0, 1)) {
+    const nal = nalUnits(packet, lengthSize).find((n) => type(n) === 1 || type(n) === 5);
+    if (!nal) return 'no H.264 slice header';
+    slices.push(nal);
+  }
+  if (type(slices[0]) !== 5) return 'H.264 does not start with an IDR';
+  if (!s) return null;
   const pps = sets.filter((n) => type(n) === 8);
   if (!pps.length) return 'no H.264 PPS';
   const frames = 2 ** s.frameNumBits;
@@ -192,9 +200,7 @@ function h264Unsupported(cp: Uint8Array | null, packets: readonly Uint8Array[]):
       u(1);
       if (u(1) && !s.pocType) return 'H.264 bottom field POC';
     }
-    for (const packet of packets) {
-      const nal = nalUnits(packet, lengthSize).find((n) => type(n) === 1 || type(n) === 5);
-      if (!nal) return 'no H.264 slice header';
+    for (const nal of slices) {
       const { u, ue } = rbsp(nal);
       ue();
       ue();
