@@ -216,18 +216,15 @@ function fit(target: Q, rule: FpsRule = {}): readonly [Q, number] | null {
   };
   const oneOf = rule.oneOf == null ? null : list(rule.oneOf);
   const named = rule.exact == null ? oneOf : list(rule.exact).filter((q) => !oneOf || oneOf.some((o) => cmp(o, q) === 0n));
-  if (named) {
-    const best = nearest(named);
-    return best && [best, 0];
-  }
   if (lo && hi && cmp(lo, hi) > 0) return null;
-  if (inside(target)) return [target, 0];
-  const standard = nearest(STANDARD);
-  if (standard) return divided((q) => STANDARD.some((s) => inside(s) && cmp(s, q) === 0n)) ?? [standard, 0];
-  if (lo && cmp(target, lo) < 0) return [lo, 0];
-  const top = hi!;
-  const under = cmp(target, [DECIMATE_FROM[0] * top[0], DECIMATE_FROM[1] * top[1]]) >= 0 ? divided((q) => cmp(q, top) <= 0) : undefined;
-  return under && !(lo && cmp(under[0], lo) < 0) ? under : [top, 0];
+  if (!named && inside(target)) return [target, 0];
+  const listed = (named ?? STANDARD).filter(inside);
+  const range = !named && listed.length === 0;
+  const closest = range ? (lo && cmp(target, lo) < 0 ? lo : hi!) : nearest(listed);
+  if (!closest) return null;
+  const allowed = range ? inside : (q: Q): boolean => listed.some((s) => cmp(s, q) === 0n);
+  const decimates = cmp(target, [DECIMATE_FROM[0] * closest[0], DECIMATE_FROM[1] * closest[1]]) >= 0;
+  return (decimates && divided(allowed)) || [closest, 0];
 }
 
 export function check(result: FileResult | null | undefined, rules: CheckRules): CheckReport {

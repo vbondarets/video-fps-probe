@@ -547,7 +547,7 @@ describe('check: suggestedFps', () => {
     ['halves 60000/1001 under a maximum of 30', rate(60000, 1001), { max: 30 }, 30000 / 1001, '59.94 (60000/1001) fps is not allowed: convert to 29.97 (30000/1001) fps, which keeps 1 of every 2 frames'],
     ['takes the x/1001 reading of an exact NTSC decimal nearer to the rate', rate(30), { exact: 29.97 }, 30000 / 1001, '30 fps is not allowed: convert to 29.97 (30000/1001) fps'],
     ['names the exact rate of a minimum given as a fraction', rate(29), { min: '30000/1001' }, 30000 / 1001, '29 fps is not allowed: convert to 29.97 (30000/1001) fps'],
-    ['takes the nearest oneOf rate inside min and max', rate(60), { oneOf: [24, 30, 60], max: 50 }, 30, '60 fps is not allowed: convert to 30 fps'],
+    ['halves 60 to the nearest oneOf rate inside min and max', rate(60), { oneOf: [24, 30, 60], max: 50 }, 30, '60 fps is not allowed: convert to 30 fps, which keeps 1 of every 2 frames'],
     ['prints a rate just above the maximum with enough digits to differ from it', rate(150001, 2500), { max: 60 }, 60, '60.0004 (150001/2500) fps is not allowed: convert to 60 fps'],
     ['retimes 60.06 to a maximum of 60', rate(6006, 100), { max: 60 }, 60, '60.06 (3003/50) fps is not allowed: convert to 60 fps'],
     ['retimes 40 to a maximum of 30', rate(40), { max: 30 }, 30, '40 fps is not allowed: convert to 30 fps'],
@@ -563,6 +563,37 @@ describe('check: suggestedFps', () => {
     ['takes the maximum when no standard rate is between the bounds', rate(70), { min: 61, max: 62 }, 62, '70 fps is not allowed: convert to 62 fps'],
   ] as const)('%s', (_, avgFps, fps, value, reason) => {
     expect(check(result({ avgFps }), { fps }).suggestedFps).toEqual({ value, reason });
+  });
+
+  it.each([
+    ['50 under max 30 keeps 1 of 2 at 25', rate(50), { max: 30 }, rate(25), 2],
+    ['60 under max 29.97 takes 29.97, as no standard 60 / k is allowed', rate(60), { max: 29.97 }, rate(30000, 1001), 0],
+    ['120 under max 60 keeps 1 of 2 at 60', rate(120), { max: 60 }, rate(60), 2],
+    ['31 under max 30 takes 30, below 1.5 x 30', rate(31), { max: 30 }, rate(30), 0],
+    ['59.94 under max 30 keeps 1 of 2 at 29.97', rate(60000, 1001), { max: 30 }, rate(30000, 1001), 2],
+    ['50 under max 49 takes 48, below 1.5 x 48, not 25', rate(50), { max: 49 }, rate(48), 0],
+    ['60 under max 59 takes 50, below 1.5 x 50, not 30', rate(60), { max: 59 }, rate(50), 0],
+    ['120 under max 100 takes 100, below 1.5 x 100, not 60', rate(120), { max: 100 }, rate(100), 0],
+    ['72, exactly 1.5 x 48, under max 48 keeps 1 of 3 at 24', rate(72), { max: 48 }, rate(24), 3],
+    ['90, exactly 1.5 x 60, under max 60 keeps 1 of 3 at 30', rate(90), { max: 60 }, rate(30), 3],
+    ['100 under min 55 and max 60 takes 60, as 50 is below the minimum', rate(100), { min: 55, max: 60 }, rate(60), 0],
+    ['120 under min 24 and max 30 keeps 1 of 4 at 30', rate(120), { min: 24, max: 30 }, rate(30), 4],
+    ['10 under min 24 and max 30 takes 24, never multiplying', rate(10), { min: 24, max: 30 }, rate(24), 0],
+    ['30 under max 20, below every standard rate, keeps 1 of 2 at 15', rate(30), { max: 20 }, rate(15), 2],
+    ['29 under max 20, below every standard rate and 1.5 x 20, takes 20', rate(29), { max: 20 }, rate(20), 0],
+    ['45 under min 16 and max 20 takes 20, as 22.5 and 15 are outside', rate(45), { min: 16, max: 20 }, rate(20), 0],
+    ['50 under oneOf 25 and 30 keeps 1 of 2 at 25, not the nearer 30', rate(50), { oneOf: [25, 30] }, rate(25), 2],
+    ['40 under oneOf 20 and 30 takes 30, below 1.5 x 30, not 20', rate(40), { oneOf: [20, 30] }, rate(30), 0],
+    ['120 under oneOf 24 and 50 and min 30 takes 50, as 24 is below the minimum', rate(120), { oneOf: [24, 50], min: 30 }, rate(50), 0],
+    ['50 under exact 25 keeps 1 of 2 at 25', rate(50), { exact: 25 }, rate(25), 2],
+    ['30 under exact 24 takes 24', rate(30), { exact: 24 }, rate(24), 0],
+    ['59.94 under exact 29.97 keeps 1 of 2 at 30000/1001', rate(60000, 1001), { exact: 29.97 }, rate(30000, 1001), 2],
+    ['120 under exact 60 in oneOf 30 and 60 keeps 1 of 2 at 60', rate(120), { exact: 60, oneOf: [30, 60] }, rate(60), 2],
+  ] as const)('one rule for every bound: %s', (_, avgFps, fps, expected, k) => {
+    const s = check(result({ avgFps }), { fps }).suggestedFps;
+    expect(s?.value).toBe(expected.value);
+    expect(s?.reason.endsWith(k ? ` fps, which keeps 1 of every ${k} frames` : ' fps')).toBe(true);
+    expect(check(result({ avgFps: expected }), { fps }).verdict).toBe('pass');
   });
 
   it('takes a oneOf rate given without a list from JSON, as the bound does', () => {
