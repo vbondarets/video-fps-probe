@@ -98,7 +98,7 @@ describe('the framework-free store of video-fps-probe/react', () => {
     expect(second.read().status).toBe('success');
   });
 
-  it('aborts the analysis when the last subscriber leaves, and analyzes again on the next mount', async () => {
+  it('aborts the analysis when the last subscriber leaves, and analyzes again on the next subscribe', async () => {
     const { probe, calls } = fakeProbe();
     const store = createVideoFpsStore(probe);
     const file = blob();
@@ -113,6 +113,27 @@ describe('the framework-free store of video-fps-probe/react', () => {
     expect(mount(store, file).read().status).toBe('pending');
     expect(calls).toHaveLength(2);
     expect(calls[1].options.signal?.aborted).toBe(false);
+  });
+
+  it('analyzes again when a component that rendered before the abort subscribes after it, without a new render', async () => {
+    const { probe, calls } = fakeProbe();
+    const store = createVideoFpsStore(probe);
+    const file = blob();
+    const key = store.keyOf({});
+    const a = mount(store, file);
+    const rendered = store.snapshot(file, key, {});
+    a.unsubscribe();
+    await settle();
+    expect(calls[0].options.signal?.aborted).toBe(true);
+    const renders: VideoFpsState[] = [];
+    store.subscribe(file, key, () => renders.push(store.snapshot(file, key, {})));
+    expect(store.snapshot(file, key, {})).toBe(rendered);
+    expect(calls).toHaveLength(2);
+    expect(calls[1].options.signal?.aborted).toBe(false);
+    calls[1].resolve(resultOf('a.mp4'));
+    await settle();
+    expect(renders.map((s) => s.status)).toEqual(['success']);
+    expect(store.snapshot(file, key, {}).result?.name).toBe('a.mp4');
   });
 
   it('keeps a finished result after the last subscriber leaves', async () => {

@@ -2298,24 +2298,24 @@
         "own"
       ],
       "metrics": {
-        "entry": 69679,
-        "trigger": 1633,
-        "react": 1171,
-        "client": 2902,
+        "entry": 69663,
+        "trigger": 1617,
+        "react": 1152,
+        "client": 2904,
         "isobmff": 12205,
         "matroska": 11590,
         "segments": 1844,
         "rfps": 3575,
-        "firstMp4": 23597,
-        "allOwn": 40606,
+        "firstMp4": 23599,
+        "allOwn": 40608,
         "mp4box": null,
         "mediabunny": null,
         "engineShared": null,
         "rvfc": null,
         "pageEngineShared": null,
         "summary": 430,
-        "firstMp4Summary": 24027,
-        "lazyTotal": 81394
+        "firstMp4Summary": 24029,
+        "lazyTotal": 81405
       },
       "workers": [
         {
@@ -2327,26 +2327,26 @@
       ],
       "files": [
         {
-          "file": "assets/compare-B9M_uSAP.js",
-          "gzip": 1324,
+          "file": "assets/compare-DJwNM731.js",
+          "gzip": 1328,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/fallback-CqPY-byx.js",
-          "gzip": 731,
+          "file": "assets/fallback-BIHZdn80.js",
+          "gzip": 735,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/index-C-Dhnr31.js",
-          "gzip": 69679,
+          "file": "assets/index-CWLz2mY2.js",
+          "gzip": 69663,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-BC4lLGgX.js",
-          "gzip": 631,
+          "file": "assets/inline-yp3XCwDT.js",
+          "gzip": 635,
           "worker": null,
           "class": "shared"
         },
@@ -2357,8 +2357,8 @@
           "class": "isobmff"
         },
         {
-          "file": "assets/isobmff-C5NwAvRn.js",
-          "gzip": 12234,
+          "file": "assets/isobmff-DnPibfcx.js",
+          "gzip": 12233,
           "worker": null,
           "class": "isobmff"
         },
@@ -2369,7 +2369,7 @@
           "class": "matroska"
         },
         {
-          "file": "assets/matroska-BxpWMvRX.js",
+          "file": "assets/matroska-Dhd4U2tk.js",
           "gzip": 11768,
           "worker": null,
           "class": "matroska"
@@ -2381,8 +2381,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/probe-DiFgI2av.js",
-          "gzip": 2902,
+          "file": "assets/probe-Crq4q6A6.js",
+          "gzip": 2904,
           "worker": null,
           "class": "shared"
         },
@@ -2393,8 +2393,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/rfps-BB6U3uOB.js",
-          "gzip": 3576,
+          "file": "assets/rfps-DOVL0xZM.js",
+          "gzip": 3574,
           "worker": null,
           "class": "rfps"
         },
@@ -2405,13 +2405,13 @@
           "class": "rfps"
         },
         {
-          "file": "assets/runtime-cBMo7LjS.js",
-          "gzip": 2544,
+          "file": "assets/runtime-BusC0r-K.js",
+          "gzip": 2542,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/segments-B-qM0or9.js",
+          "file": "assets/segments-BYZ2Xwlw.js",
           "gzip": 1845,
           "worker": null,
           "class": "segments"
@@ -2435,8 +2435,8 @@
           "class": "stats"
         },
         {
-          "file": "assets/stats-DQaxqtYk.js",
-          "gzip": 4335,
+          "file": "assets/stats-x8BJi49S.js",
+          "gzip": 4337,
           "worker": null,
           "class": "stats"
         },
@@ -2459,8 +2459,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 2000,
-          "gzip": 1633,
-          "headroom": 367,
+          "gzip": 1617,
+          "headroom": 383,
           "status": "ok",
           "why": "The package code in the entry chunk of a React host that imports video-fps-probe/react next to video-fps-probe/lazy: the lazyProbe stub, ProbeError and the React entry. React and ReactDOM are host code and are not counted. Measured 1.63 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -2468,8 +2468,8 @@
           "key": "react",
           "label": "React entry (the provider and hooks in the entry chunk, React not counted)",
           "limit": 1500,
-          "gzip": 1171,
-          "headroom": 329,
+          "gzip": 1152,
+          "headroom": 348,
           "status": "ok",
           "why": "The part of the critical path the React entry adds: VideoFpsProvider, useVideoFps and the framework-free store that caches by Blob, then by engine and options, and aborts on unmount. Design estimate 1.5 KB; measured 1.17 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -2477,8 +2477,8 @@
           "key": "client",
           "label": "probe client (lazy)",
           "limit": 3000,
-          "gzip": 2902,
-          "headroom": 98,
+          "gzip": 2904,
+          "headroom": 96,
           "status": "ok",
           "why": "As in the default configuration: the React entry adds nothing to the probe client. Measured 2.90 KB."
         },
@@ -2504,8 +2504,8 @@
           "key": "firstMp4",
           "label": "first MP4 analysis, lazy total",
           "limit": 24000,
-          "gzip": 23597,
-          "headroom": 403,
+          "gzip": 23599,
+          "headroom": 401,
           "status": "ok",
           "why": "The first MP4 as in the default configuration: the probe client, the own worker entry, the statistics chunk and the ISO BMFF parser. Measured 23.60 KB."
         },
@@ -2513,8 +2513,8 @@
           "key": "firstMp4Summary",
           "label": "first MP4 analysis with the React summary, lazy total",
           "limit": 24500,
-          "gzip": 24027,
-          "headroom": 473,
+          "gzip": 24029,
+          "headroom": 471,
           "status": "ok",
           "why": "What the first MP4 of a React host loads lazily: the first MP4 of the default configuration plus the summary module of the store. The 24 KB promise of the default configuration plus the 0.5 KB summary budget. Measured 24.03 KB."
         },
@@ -2522,8 +2522,8 @@
           "key": "allOwn",
           "label": "all own paths, lazy total",
           "limit": 41000,
-          "gzip": 40606,
-          "headroom": 394,
+          "gzip": 40608,
+          "headroom": 392,
           "status": "ok",
           "why": "As in the default configuration. Measured 40.57 KB."
         },
@@ -2531,8 +2531,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 82000,
-          "gzip": 81394,
-          "headroom": 606,
+          "gzip": 81405,
+          "headroom": 595,
           "status": "ok",
           "why": "As in the default configuration plus the summary module. Measured 81.32 KB."
         }
@@ -2551,9 +2551,9 @@
         "own"
       ],
       "metrics": {
-        "entry": 47060,
-        "trigger": 1633,
-        "react": 1172,
+        "entry": 47044,
+        "trigger": 1617,
+        "react": 1153,
         "client": 2901,
         "isobmff": 12205,
         "matroska": 11590,
@@ -2568,7 +2568,7 @@
         "pageEngineShared": null,
         "summary": 430,
         "firstMp4Summary": 24026,
-        "lazyTotal": 81396
+        "lazyTotal": 81400
       },
       "workers": [
         {
@@ -2580,39 +2580,39 @@
       ],
       "files": [
         {
-          "file": "assets/compare-C1ulM8al.js",
-          "gzip": 1324,
+          "file": "assets/compare-6AQwlVQS.js",
+          "gzip": 1326,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/fallback-DGRh0kgL.js",
-          "gzip": 732,
+          "file": "assets/fallback-CQfQczok.js",
+          "gzip": 734,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/index-Cuq3SFGb.js",
-          "gzip": 47060,
+          "file": "assets/index-0MAZJoKK.js",
+          "gzip": 47044,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-BRI7QJsx.js",
-          "gzip": 633,
+          "file": "assets/inline-5VFOIjMQ.js",
+          "gzip": 634,
           "worker": null,
           "class": "shared"
-        },
-        {
-          "file": "assets/isobmff-AKm2VGBJ.js",
-          "gzip": 12233,
-          "worker": null,
-          "class": "isobmff"
         },
         {
           "file": "assets/isobmff-BTlZkYMO.js",
           "gzip": 12205,
           "worker": "own.worker",
+          "class": "isobmff"
+        },
+        {
+          "file": "assets/isobmff-BaH-Bs_h.js",
+          "gzip": 12233,
+          "worker": null,
           "class": "isobmff"
         },
         {
@@ -2622,8 +2622,8 @@
           "class": "matroska"
         },
         {
-          "file": "assets/matroska-C61loLfS.js",
-          "gzip": 11768,
+          "file": "assets/matroska-BMMg_R69.js",
+          "gzip": 11769,
           "worker": null,
           "class": "matroska"
         },
@@ -2634,7 +2634,7 @@
           "class": "shared"
         },
         {
-          "file": "assets/probe-Bapm1TKr.js",
+          "file": "assets/probe-A18NUDGH.js",
           "gzip": 2901,
           "worker": null,
           "class": "shared"
@@ -2646,7 +2646,7 @@
           "class": "shared"
         },
         {
-          "file": "assets/rfps-BBeY_od8.js",
+          "file": "assets/rfps-BB1HoU57.js",
           "gzip": 3575,
           "worker": null,
           "class": "rfps"
@@ -2658,13 +2658,13 @@
           "class": "rfps"
         },
         {
-          "file": "assets/runtime-CVvfOiOQ.js",
+          "file": "assets/runtime-BjJPuusk.js",
           "gzip": 2545,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/segments-BbaM-zqp.js",
+          "file": "assets/segments-5ZirlYai.js",
           "gzip": 1844,
           "worker": null,
           "class": "segments"
@@ -2688,8 +2688,8 @@
           "class": "stats"
         },
         {
-          "file": "assets/stats-d4Jt8Ya_.js",
-          "gzip": 4337,
+          "file": "assets/stats-QeiVDSZf.js",
+          "gzip": 4335,
           "worker": null,
           "class": "stats"
         },
@@ -2712,8 +2712,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 2000,
-          "gzip": 1633,
-          "headroom": 367,
+          "gzip": 1617,
+          "headroom": 383,
           "status": "ok",
           "why": "As in the react configuration, built with React 18.3.1 and ReactDOM 18.3.1. Measured 1.63 KB."
         },
@@ -2721,8 +2721,8 @@
           "key": "react",
           "label": "React entry (the provider and hooks in the entry chunk, React not counted)",
           "limit": 1500,
-          "gzip": 1172,
-          "headroom": 328,
+          "gzip": 1153,
+          "headroom": 347,
           "status": "ok",
           "why": "As in the react configuration: the React entry is the same code for React 18 and 19. Measured 1.17 KB."
         },
@@ -2739,8 +2739,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 82000,
-          "gzip": 81396,
-          "headroom": 604,
+          "gzip": 81400,
+          "headroom": 600,
           "status": "ok",
           "why": "As in the react configuration. Measured 81.32 KB."
         }

@@ -96,9 +96,8 @@ export function createVideoFpsStore(probe: Probe<EngineId>): VideoFpsStore {
       return options.progress ? e.full : e.lean;
     },
     subscribe(file, key, listener) {
-      const byKey = cache.get(file);
-      const e = byKey?.get(key);
-      if (!byKey || !e) return noop;
+      const e = cache.get(file)?.get(key);
+      if (!e) return noop;
       e.listeners.add(listener);
       if (!e.run && e.full.status === 'pending') start(file, e);
       return () => {
@@ -107,7 +106,6 @@ export function createVideoFpsStore(probe: Probe<EngineId>): VideoFpsStore {
           if (e.listeners.size || !e.run) return;
           e.run.abort();
           e.run = null;
-          if (byKey.get(key) === e) byKey.delete(key);
         });
       };
     },
