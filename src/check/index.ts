@@ -264,7 +264,8 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   ): void => {
     const bounds = BOUNDS.filter((b) => rule?.[b] != null).map((b) => {
       const path = `${group}.${b}${side}`;
-      return [b, rule![b]!, (b === 'oneOf' ? [rule![b]!].flat() : [rule![b]!]).map((v) => (group === 'fps' ? readings(v, path) : [ratio(v, path, group !== 'aspectRatio')]))] as const;
+      const values = (b === 'oneOf' ? [rule![b]!].flat() : [rule![b]!]).map((v) => (group === 'fps' ? readings(v, path) : [ratio(v, path, group !== 'aspectRatio')]));
+      return [b, rule![b]!, values] as const;
     });
     if (bounds.length === 0) return;
     if (!actual) return void unknown(group, missing);
@@ -281,7 +282,8 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
     if (list == null) return;
     if (!Array.isArray(list) || list.some((x) => typeof x !== 'string')) invalid(rule, list, 'a list of strings');
     if (typeof actual !== 'string' || !actual || actual === 'unknown') unknown(rule, missing);
-    else if (!list.some((x) => x.toLowerCase() === actual.toLowerCase())) add(rule, severity, list, actual, `${actual} is not one of ${list.length ? list.join(', ') : 'an empty list'}`);
+    else if (!list.some((x) => x.toLowerCase() === actual.toLowerCase()))
+      add(rule, severity, list, actual, `${actual} is not one of ${list.length ? list.join(', ') : 'an empty list'}`);
   };
   const policy = (rule: 'vfr' | 'uneven', state: unknown, missing: string, message: string): boolean => {
     const p = rules[rule];
