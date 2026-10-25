@@ -45,6 +45,9 @@
       "client/lazy": [
         "dist/client/lazy.d.ts"
       ],
+      "react": [
+        "dist/react/index.d.ts"
+      ],
       "mp4box": [
         "dist/plugins/mp4box.d.ts"
       ],
@@ -82,6 +85,10 @@
       "types": "./dist/client/lazy.d.ts",
       "default": "./dist/client/lazy.js"
     },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "default": "./dist/react/index.js"
+    },
     "./mp4box": {
       "types": "./dist/plugins/mp4box.d.ts",
       "default": "./dist/plugins/mp4box.js"
@@ -111,13 +118,17 @@
   },
   "peerDependencies": {
     "mediabunny": "^1.62.0",
-    "mp4box": "^2.4.1"
+    "mp4box": "^2.4.1",
+    "react": ">=18"
   },
   "peerDependenciesMeta": {
     "mp4box": {
       "optional": true
     },
     "mediabunny": {
+      "optional": true
+    },
+    "react": {
       "optional": true
     }
   },

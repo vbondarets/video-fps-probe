@@ -8,10 +8,11 @@ The package is ESM only, targets ES2022 and ships its own types. Every entry exc
 
 | Entry | Exports | Worker literal in the build |
 |---|---|---|
-| `video-fps-probe` | `createProbe`, `analyze`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, every type on this page except `EngineSource` and `RvfcPluginOptions` | the own worker |
+| `video-fps-probe` | `createProbe`, `analyze`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, every type on this page except `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions` and `VideoFpsState` | the own worker |
 | `video-fps-probe/lazy` | `lazyProbe`, `lazyProbeFrom`, `LazyProbe`, `ProbeOptions` | the own worker |
-| `video-fps-probe/client` | `createProbeClient`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, every type on this page except `InThreadOptions`, `EngineSource` and `RvfcPluginOptions` | none |
+| `video-fps-probe/client` | `createProbeClient`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, every type on this page except `InThreadOptions`, `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions` and `VideoFpsState` | none |
 | `video-fps-probe/client/lazy` | `lazyProbeClient`, `lazyProbeFrom`, `ClientOptions`, `LazyProbe`, `Probe` | none |
+| `video-fps-probe/react` | `VideoFpsProvider`, `useVideoFps`, `useVideoFpsProbe`, `usePrewarmVideoFps`, `VideoFpsProviderProps`, `UseVideoFpsOptions`, `VideoFpsState`, `VideoFpsSummary` | none |
 | `video-fps-probe/mp4box` | `mp4box()` descriptor | the mp4box worker |
 | `video-fps-probe/mediabunny` | `mediabunny()` descriptor | the mediabunny worker |
 | `video-fps-probe/rvfc` | `rvfc(options)` descriptor, `RvfcPluginOptions` | none (main thread) |
@@ -167,6 +168,75 @@ Accepted by `CallOptions`, `defaults` and the root `analyze`. They cross the wor
 | `maxExpandedSamples` | `5_000_000` | most samples or blocks expanded into per-frame statistics; above it the statistics are skipped with a warning |
 
 Progress phases: `fragments` (ISO BMFF, every 64 fragments), `matroska-exact` (bytes after the first Cluster), `read` and `analyze` (mp4box), `packets` (mediabunny), `play xN` (rvfc).
+
+## React
+
+`video-fps-probe/react` puts a probe behind React hooks: a provider that takes the probe, a hook that analyzes a file and re-renders with its state, and two helpers. It works with React 18 and 19, an optional peer (`>=18`), and needs nothing else.
+
+```tsx
+import { useState } from 'react';
+import { lazyProbe } from 'video-fps-probe/lazy';
+import { VideoFpsProvider, useVideoFps } from 'video-fps-probe/react';
+
+const probe = lazyProbe(); // once, at module scope: a new probe object starts a new cache
+
+export function App() {
+  return (
+    <VideoFpsProvider probe={probe}>
+      <Upload />
+    </VideoFpsProvider>
+  );
+}
+
+function Upload() {
+  const [file, setFile] = useState<File | null>(null);
+  const { status, summary, error, retry } = useVideoFps(file);
+  return (
+    <>
+      <input type="file" onChange={(e) => setFile(e.currentTarget.files?.[0] ?? null)} />
+      {status === 'pending' && <p>Reading the frame rate...</p>}
+      {status === 'success' && <p>{summary?.ok ? `${summary.fps?.toFixed(3)} fps${summary.isVfr ? ', variable' : ''}` : `No frame rate: ${summary?.error}`}</p>}
+      {status === 'error' && <button onClick={retry}>Retry ({error?.code})</button>}
+    </>
+  );
+}
+```
+
+```ts
+function VideoFpsProvider(props: VideoFpsProviderProps): React.ReactElement;
+function useVideoFps(file: Blob | null | undefined, options?: UseVideoFpsOptions): VideoFpsState;
+function useVideoFpsProbe<P extends Probe<EngineId> = Probe<EngineId>>(): P;
+function usePrewarmVideoFps(options?: PrewarmOptions<EngineId>): () => void;
+
+interface VideoFpsProviderProps {
+  probe: Probe<EngineId>; // required: lazyProbe(), lazyProbeClient({ ... }), createProbe() or createProbeClient({ ... })
+  children?: React.ReactNode;
+}
+
+interface UseVideoFpsOptions extends Omit<CallOptions<EngineId>, 'signal' | 'onProgress'> {
+  enabled?: boolean; // default true; false keeps the state idle and analyzes nothing
+  progress?: boolean; // default false; true re-renders on every progress event
+}
+
+interface VideoFpsState {
+  status: 'idle' | 'pending' | 'success' | 'error';
+  result: ProbeResult | null; // set on success
+  summary: VideoFpsSummary | null; // summarize(result), set on success
+  error: ProbeError | null; // set on error
+  progress: AnalyzeProgress | null; // with progress: true, while pending
+  cancel(): void;
+  retry(): void;
+}
+```
+
+- **The provider is required.** There is no default probe, so `video-fps-probe/react` does not reach the own worker literal and suits a host with its own worker (`lazyProbeClient`). A hook outside a provider throws `ProbeError('engine-not-registered')` with the message `wrap in VideoFpsProvider`. Keep the probe object stable, at module scope or in state: the provider keys its cache by it.
+- **States.** `idle` without a file or with `enabled: false`; `pending` from the first render with a file; `success` when the call resolved, a file the parsers cannot read included (`result.error` set, `summary.ok` false), as `analyze` resolves; `error` when it rejected, with the probe's `ProbeError` (`timeout`, `worker-failed` with its `reason`, `aborted`). The summary module is a lazy chunk fetched in parallel with the first analysis; if it fails to load, the state is `error` with `worker-failed` and `reason: 'load'`. With `progress: true` a component re-renders on each progress event (at most every 50 ms from a worker); without it, progress does not re-render it.
+- **When it runs.** The analysis starts when the component mounts, from an effect, so server rendering and a render that React throws away start nothing. The options are the `CallOptions` of `analyze` without `signal` and `onProgress`, which the hook owns: `engine`, `fallback`, `name`, `host` (rvfc), `timeoutMs` and the parser options.
+- **Cache.** Results are cached per provider in a `WeakMap` keyed by the Blob, then by the options (key order does not matter; `host` counts by identity). Another component, a re-render or a remount with the same Blob and options gets the cached state without a second analysis, and the double effects of `StrictMode` run one analysis. Finished results and errors stay cached as long as the Blob lives; `retry()` analyzes again.
+- **Aborts.** When the last component using a pending analysis unmounts, or switches to another file or options, the analysis is aborted and dropped from the cache; the check runs after the current task, so the remount of `StrictMode` keeps the analysis. `cancel()` aborts at once and sets `error` to `ProbeError('aborted', 'cancelled')`.
+- **`useVideoFpsProbe()`** returns the provider's probe, for `compare`, `tryAnalyze` or `dispose`. Name the type when you need the stub's fields: `useVideoFpsProbe<LazyProbe<'own'>>().loaded`.
+- **`usePrewarmVideoFps(options)`** returns a stable function that calls `probe.prewarm(options)` and fetches the summary module, for example on the focus of an upload button.
+- **`'use client'`** is the first statement of `dist/react/index.js`, so the hooks run on the client in the Next.js App Router and other server-component frameworks. A bundler that does not know the directive, such as Vite without `@vitejs/plugin-react`, warns that it may not be preserved; outside such a framework it has no effect.
 
 ## In-thread analyze
 

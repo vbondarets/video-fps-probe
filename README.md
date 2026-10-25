@@ -41,7 +41,36 @@ track?.isVfr;
 track?.rateProfile?.summary; // for example 'Uneven: 5 fps for 4 s, 200 fps for 4 s'
 ```
 
-The first call loads the probe client, the worker and the parser of the sniffed container; `probe.prewarm()` loads them ahead, for example when an upload dialog opens. `createProbe()` from `video-fps-probe` is the probe without the stub; `summarize(result)` flattens the primary track. React support comes in 0.2.0.
+The first call loads the probe client, the worker and the parser of the sniffed container; `probe.prewarm()` loads them ahead, for example when an upload dialog opens. `createProbe()` from `video-fps-probe` is the probe without the stub; `summarize(result)` flattens the primary track.
+
+## React
+
+```tsx
+import { useState } from 'react';
+import { lazyProbe } from 'video-fps-probe/lazy';
+import { VideoFpsProvider, useVideoFps } from 'video-fps-probe/react';
+
+const probe = lazyProbe(); // once, at module scope
+
+export const App = () => (
+  <VideoFpsProvider probe={probe}>
+    <Upload />
+  </VideoFpsProvider>
+);
+
+function Upload() {
+  const [file, setFile] = useState<File | null>(null);
+  const { status, summary } = useVideoFps(file); // 'idle', 'pending', 'success' or 'error'; also result, error, progress, cancel(), retry()
+  return (
+    <>
+      <input type="file" onChange={(e) => setFile(e.currentTarget.files?.[0] ?? null)} />
+      {status === 'success' && <p>{summary?.ok ? `${summary.fps?.toFixed(3)} fps` : summary?.error}</p>}
+    </>
+  );
+}
+```
+
+React 18 and 19. `useVideoFps` caches each result by the file and the options, runs one analysis through the double effects of `StrictMode`, and aborts a pending one when the last component using it unmounts; `usePrewarmVideoFps()` returns a function that prewarms the probe ([details](docs/api.md#react)).
 
 ## Engines
 

@@ -1,5 +1,5 @@
 import { execFileSync, execSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import ts from 'typescript';
@@ -10,6 +10,7 @@ const PACKAGE = 'video-fps-probe';
 const DOC = readFileSync(join(REPO_ROOT, 'docs', 'api.md'), 'utf8');
 const EVERY_TYPE = 'every type on this page';
 const PROSE_TYPES = ['VideoTrackResult', 'RateProfile', 'Provenance', 'TrackField'];
+const REACT_TYPES = ['@types/react', 'csstype'];
 const OPTIONS: ts.CompilerOptions = {
   module: ts.ModuleKind.ESNext,
   moduleResolution: ts.ModuleResolutionKind.Bundler,
@@ -83,6 +84,7 @@ describe('the types and values docs/api.md names', () => {
     execFileSync('tar', ['-xzf', filename!], { cwd: dir, stdio: 'ignore' });
     mkdirSync(join(dir, 'node_modules'));
     renameSync(join(dir, 'package'), join(dir, 'node_modules', PACKAGE));
+    for (const name of REACT_TYPES) cpSync(join(REPO_ROOT, 'node_modules', name), join(dir, 'node_modules', name), { recursive: true });
     globals = globalTypes(dir);
     expected = expectedImports(globals.names);
   });
@@ -93,7 +95,9 @@ describe('the types and values docs/api.md names', () => {
 
   it('are read from the entries table and the code blocks', () => {
     expect(PROSE_TYPES.filter((name) => !new RegExp(`\\b${name}\\b`).test(DOC))).toEqual([]);
-    expect([...expected.keys()].sort()).toEqual([PACKAGE, ...['client', 'client/lazy', 'engines/mediabunny', 'engines/mp4box', 'lazy', 'mediabunny', 'mp4box', 'rvfc', 'worker-runtime'].map((e) => `${PACKAGE}/${e}`)]);
+    expect([...expected.keys()].sort()).toEqual([PACKAGE, ...['client', 'client/lazy', 'engines/mediabunny', 'engines/mp4box', 'lazy', 'mediabunny', 'mp4box', 'react', 'rvfc', 'worker-runtime'].map((e) => `${PACKAGE}/${e}`)]);
+    expect([...expected.get(`${PACKAGE}/react`)!].sort()).toEqual(['UseVideoFpsOptions', 'VideoFpsProvider', 'VideoFpsProviderProps', 'VideoFpsState', 'VideoFpsSummary', 'usePrewarmVideoFps', 'useVideoFps', 'useVideoFpsProbe']);
+    expect(['VideoFpsProviderProps', 'UseVideoFpsOptions', 'VideoFpsState'].filter((name) => expected.get(PACKAGE)!.has(name) || expected.get(`${PACKAGE}/client`)!.has(name))).toEqual([]);
     expect([...expected.get(PACKAGE)!]).toEqual(expect.arrayContaining(['createProbe', 'analyze', 'Mp4boxNative', 'MediabunnyNative', 'RvfcDetails', 'VideoTrackResult', 'InThreadOptions', 'BlobLike']));
     expect([...expected.get(`${PACKAGE}/client`)!]).toEqual(expect.arrayContaining(['createProbeClient', 'Mp4boxNative', 'BlobLike']));
     expect(expected.get(`${PACKAGE}/client`)!.has('InThreadOptions')).toBe(false);

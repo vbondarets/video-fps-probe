@@ -9,7 +9,7 @@ import ts from 'typescript';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const KB = 1000;
 
-export const UNPACKED_CAP = 460 * KB;
+export const UNPACKED_CAP = 470 * KB;
 
 const ALLOWED = [/^(?:index|lazy|analyze|probe)\.(?:js|d\.ts)$/, /^(?:core|engines|worker|client|api|plugins|react|standalone)\/[\w./-]+\.(?:js|d\.ts)$/];
 const PACK_EXTRAS = new Set(['package.json', 'README.md', 'LICENSE', 'CHANGELOG.md']);
@@ -28,6 +28,7 @@ const posix = (p) => p.split('\\').join('/');
 const kb = (n) => `${(n / KB).toFixed(2)} KB`;
 const bare = (specifier) => !specifier.startsWith('.') && !specifier.startsWith('/');
 const peerOf = (specifier) => PEERS.find((p) => specifier === p || specifier.startsWith(`${p}/`)) ?? null;
+const isReact = (specifier) => /^react(?:-dom)?(?:\/|$)/.test(specifier);
 
 function walk(dir, base = dir, out = []) {
   if (!existsSync(dir)) return out;
@@ -183,9 +184,9 @@ export function checkDist({ pack = true, ssr = true, repo = REPO_ROOT } = {}) {
         if (!existsSync(join(dist, resolved))) fail(`${file}: ${dynamic ? 'import()' : 'import'} ${specifier} does not resolve inside dist${resolved === target ? '' : ` (no ${resolved})`}`);
       }
       const peer = peerOf(specifier);
+      if (isReact(specifier) && !file.startsWith('react/')) fail(`${file}: imports ${specifier} outside react/`);
       if (file.endsWith('.d.ts')) {
         if (peer) fail(`${file}: type import of the peer ${specifier}`);
-        if ((specifier === 'react' || specifier.startsWith('react/')) && !file.startsWith('react/')) fail(`${file}: imports react outside react/`);
       } else if (peer && !PEER_ENGINES.includes(file)) {
         fail(`${file}: bare peer import ${specifier} outside ${PEER_ENGINES.join(', ')}`);
       }
@@ -312,6 +313,13 @@ export function runSelfTest() {
     expectProblem('worker/runtime.js with a new URL of a worker file and a query fails', problemsOf({ ...assets, 'worker/runtime.js': "export const url = new URL('./own.worker.js?worker', import.meta.url);\n" }), 'literal hygiene: worker/runtime.js reaches', true);
     expectProblem('the worker literal in plugins/own.js passes when no hygiene root reaches it', problemsOf({ ...assets, 'client/index.js': 'export const x = 1;\n', 'plugins/own.js': "export const start = () => new Worker(new URL('../worker/own.worker.js', import.meta.url), { type: 'module' });\n" }), 'literal hygiene', false);
     expectProblem('a new URL of a file outside worker/ and standalone/ passes', problemsOf({ ...assets, 'client/index.js': "export const url = new URL('../core/table.js', import.meta.url);\n" }), 'literal hygiene', false);
+
+    const react = { 'react/index.js': "'use client';\nimport { useMemo } from 'react';\nexport const x = useMemo;\n", 'react/index.d.ts': "import type { ReactNode } from 'react';\nexport type X = ReactNode;\n" };
+    expectProblem('react/ importing react with use client first passes', problemsOf(react), 'react', false);
+    expectProblem("react/index.js without 'use client' first fails", problemsOf({ ...react, 'react/index.js': "import { useMemo } from 'react';\n'use client';\nexport const x = useMemo;\n" }), "react/index.js: 'use client' is not the first statement", true);
+    expectProblem('a module outside react/ importing react fails', problemsOf({ ...react, 'client/index.js': "import { useMemo } from 'react';\nexport const x = useMemo;\n" }), 'client/index.js: imports react outside react/', true);
+    expectProblem('a module outside react/ importing react-dom/client fails', problemsOf({ ...react, 'core/x.js': "export const load = () => import('react-dom/client');\n" }), 'core/x.js: imports react-dom/client outside react/', true);
+    expectProblem('a .d.ts outside react/ importing react fails', problemsOf({ ...react, 'api/x.d.ts': "export type X = import('react').ReactNode;\n" }), 'api/x.d.ts: imports react outside react/', true);
   } finally {
     rmSync(repo, { recursive: true, force: true });
   }
