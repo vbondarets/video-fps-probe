@@ -518,7 +518,7 @@ type PresetSourceKind = 'official' | 'gateway';
 interface ProviderPreset {
   readonly name: string;
   readonly sourceUrl: string; // the page every limit was read from
-  readonly sourceKind: PresetSourceKind; // 'gateway': documented by a reseller, not by the API owner
+  readonly sourceKind: PresetSourceKind; // 'gateway': documented by a service that serves another company's model
   readonly verifiedAt: string; // YYYY-MM-DD, the day every number was read again from sourceUrl
   readonly note: string; // what the rules leave out, and why
   readonly rules: CheckRules;
@@ -527,7 +527,7 @@ interface ProviderPreset {
 check(result, klingO1ReferenceVideo.rules);
 ```
 
-The published input limits of video generation APIs for a reference or source video, as `check()` rules. Each preset is a named export with no import, so a bundler keeps only the presets a host imports. A rule holds only a limit the source states; a limit the page leaves ambiguous or does not publish is left out, and the note says so. No source says whether its MB is decimal or binary, so a size limit holds the larger reading, MiB (1,048,576 bytes), and the note names it: a file over the limit is over it under either reading, and a file between the two readings passes and may still be refused. A gateway preset has `severity: 'warn'`, because a reseller's limits need not be the model owner's. Limits of a request rather than a file, such as the number of reference videos or their total duration, are outside `check()`, which judges one file.
+The published input limits of video generation APIs for a reference or source video, as `check()` rules. Each preset is a named export with no import, so a bundler keeps only the presets a host imports. A rule holds only a limit the source states; a limit the page leaves ambiguous or does not publish is left out, and the note says so. No source says whether its MB is decimal or binary, so a size limit holds the larger reading, MiB (1,048,576 bytes), and the note names it: a file over the limit is over it under either reading, and a file between the two readings passes and may still be refused. A gateway preset, documented by a service such as fal or EvoLink that serves another company's model, has `severity: 'warn'`, because its limits need not be the model owner's. Limits of a request rather than a file, such as the number of reference videos or their total duration, are outside `check()`, which judges one file.
 
 | Export | Model and input | Source | Rules |
 |---|---|---|---|
@@ -535,7 +535,7 @@ The published input limits of video generation APIs for a reference or source vi
 | `klingMotionControl` | Kling Motion Control 3.0: the motion video | official | 3 to 30 s (10 s when the character orientation follows the image, not checked), each side 340 to 3850 px, at most 100 MB (read as MiB), MP4 or MOV |
 | `runwayAleph2` | Runway Aleph 2.0: the input video | official | at most 30 fps, 2 to 30 s, at most 200 MB read as MiB (the upload limit; 32 MB by URL), MP4, MOV, Matroska or WebM with H.264, HEVC, AV1, ProRes, VP8, VP9, MJPEG or MPEG-2 |
 | `veoExtend` | Google Veo 3.1: the video to extend | official | exactly 24 fps, 1 to 30 s, 16:9 or 9:16, a short side of at least 720 px, MP4 |
-| `wan26ReferenceToVideoFal` | Wan 2.6 reference to video on fal: each reference video | official | at least 16 fps, 2 to 30 s, at most 30 MB (read as MiB), MP4 or MOV |
+| `wan26ReferenceToVideoFal` | Wan 2.6 reference to video, as the fal endpoint documents it: each reference video | gateway | at least 16 fps, 2 to 30 s, at most 30 MB (read as MiB), MP4 or MOV |
 | `seedance2ReferenceVideo` | Seedance 2.0: a reference video, as the EvoLink gateway documents it | gateway | 24 to 60 fps, 2 to 15 s, each side 300 to 6000 px, 409,600 to 2,086,876 pixels, an aspect ratio of 0.4 to 2.5, at most 50 MB (read as MiB), MP4 or MOV |
 
 Every number was read again from its source on 2026-10-25. The preset tests fail when a preset lacks a source, a kind, a date or a note, and warn without failing (a GitHub Actions warning in CI) when a `verifiedAt` is more than 90 days old: read the page again and move `verifiedAt` only after every number has been checked.

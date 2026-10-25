@@ -71,7 +71,7 @@ describe('presets: a file inside and a file outside each preset', () => {
     ['klingMotionControl', { width: 1280, height: 720, durationSec: 20 }, {}, { durationSec: 31 }, {}, 'fail', ['duration.max']],
     ['runwayAleph2', { durationSec: 10 }, {}, { avgFps: makeRational(60, 1) }, {}, 'fail', ['fps.max']],
     ['veoExtend', { avgFps: makeRational(24, 1), durationSec: 8 }, {}, { avgFps: makeRational(24, 1), width: 1440 }, {}, 'fail', ['aspectRatio.oneOf']],
-    ['wan26ReferenceToVideoFal', { avgFps: makeRational(16, 1) }, {}, {}, { size: 31_457_281 }, 'fail', ['fileSize.max']],
+    ['wan26ReferenceToVideoFal', { avgFps: makeRational(16, 1) }, {}, {}, { size: 31_457_281 }, 'warn', ['fileSize.max']],
     ['seedance2ReferenceVideo', { width: 1280, height: 720, durationSec: 10 }, {}, { width: 3840, height: 2160 }, {}, 'warn', ['pixels.max']],
   ] as const)('%s', (name, inside, insideFile, outside, outsideFile, verdict, rules) => {
     const preset = presets[name];

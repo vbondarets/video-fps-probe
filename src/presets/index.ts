@@ -50,10 +50,10 @@ export const veoExtend: ProviderPreset = {
 export const wan26ReferenceToVideoFal: ProviderPreset = {
   name: 'Wan 2.6 reference to video on fal',
   sourceUrl: 'https://fal.ai/models/wan/v2.6/reference-to-video/api',
-  sourceKind: 'official',
+  sourceKind: 'gateway',
   verifiedAt: '2026-10-25',
-  note: 'The limits of the fal endpoint, for each of 1 to 3 reference videos. No resolution, aspect ratio or codec limit is published for the input. The page does not say whether 30 MB is decimal or binary; the larger reading, 31,457,280 bytes, is checked.',
-  rules: { fps: { min: 16 }, duration: { min: 2, max: 30 }, fileSize: { max: 31_457_280 }, containers: ['mp4', 'mov'] },
+  note: 'As the fal endpoint documents it, for each of 1 to 3 reference videos; fal serves a model it does not make, and no first-party page was verified. No resolution, aspect ratio or codec limit is published for the input. The page does not say whether 30 MB is decimal or binary; the larger reading, 31,457,280 bytes, is checked.',
+  rules: { fps: { min: 16 }, duration: { min: 2, max: 30 }, fileSize: { max: 31_457_280 }, containers: ['mp4', 'mov'], severity: 'warn' },
 };
 
 export const seedance2ReferenceVideo: ProviderPreset = {
