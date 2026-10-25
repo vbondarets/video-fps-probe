@@ -4,6 +4,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## Unreleased
 
+## 0.2.0 - 2026-10-25
+
 ### Added
 
 - First release on npm: `npm install video-fps-probe`; Yarn, pnpm and bun install the same publish ([Publishing](docs/publishing.md)).
