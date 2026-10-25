@@ -448,6 +448,17 @@ describe('check: verdict, severity and failing open', () => {
     expect(messages(result({}, { size: undefined }))).toEqual(['fileSize: unknown, no file size']);
   });
 
+  it.each([
+    ['an object', '{}', 'of type object'],
+    ['a list', '[]', 'a list'],
+    ['a number', '5', 'of type number'],
+    ['true', 'true', 'of type boolean'],
+    ['a blank string', '"  "', 'blank'],
+  ])('says the error is %s instead of printing it as text', (_, json, kind) => {
+    const broken = { ...result(), error: JSON.parse(json) } as unknown as FileResult;
+    expect(check(broken, { fps: { min: 24 } }).violations.map((v) => v.message)).toEqual([`fps: unknown, the analysis failed, and its error is ${kind}`]);
+  });
+
   it('is unknown without a video track', () => {
     expect(check(result({}, { videoTracks: [], primaryTrackId: null }), { fps: { min: 24 } }).violations[0]!.message).toBe('fps: unknown, no video track');
   });

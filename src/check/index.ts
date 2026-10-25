@@ -144,6 +144,9 @@ function primaryTrack(result: FileResult): VideoTrackResult | string {
   return (track as VideoTrackResult) || `no primary track: primaryTrackId ${id === undefined ? 'is missing' : `${JSON.stringify(id)} matches no video track`}`;
 }
 
+const failedWith = (e: unknown): string =>
+  `the analysis failed${typeof e === 'string' && e.trim() ? `: ${e}` : `, and its error is ${typeof e === 'string' ? 'blank' : Array.isArray(e) ? 'a list' : `of type ${typeof e}`}`}`;
+
 const fromRational = (r: Pick<Rational, 'num' | 'den'> | null | undefined): Q | null => (r && whole(r.num) && whole(r.den) ? [BigInt(r.num), BigInt(r.den)] : null);
 
 const gcd = (a: bigint, b: bigint): bigint => (b === 0n ? a : gcd(b, a % b));
@@ -244,7 +247,7 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   for (const [rule, v, list] of choices) if (v != null && !list.includes(v as string)) invalid(rule, v, `one of ${list.join(', ')}`);
   const violations: CheckViolation[] = [];
   const severity = rules.severity === 'warn' ? 'warn' : 'fail';
-  const failure = result == null ? 'the analysis failed: no result' : result.error ? `the analysis failed: ${result.error}` : null;
+  const failure = result == null ? 'the analysis failed: no result' : result.error ? failedWith(result.error) : null;
   const found = failure ?? primaryTrack(result!);
   const t = typeof found === 'string' ? null : found;
   const add = (rule: string, s: CheckSeverity, expected: CheckExpected, actual: number | string | boolean | null, message: string): number =>
