@@ -63,10 +63,10 @@ Trusted publishing needs npm 11.5.1 or later and Node 22.14.0 or later (the work
 ## Each later release
 
 1. `npm version minor -m "chore(release): bumped the version to %s"` (or `patch`) on a clean `main` ([Releasing](releasing.md)), then `git push --follow-tags`.
-2. `gh release create vX.Y.Z --title X.Y.Z --notes "$(node scripts/release-prep.mjs --notes X.Y.Z)"`.
-3. `gh workflow run release.yml -f tag=vX.Y.Z`, or Actions > Release > Run workflow with the tag. Pushing a tag starts nothing.
-4. The run checks out the tag in every CI job (`ci.yml` called with the tag as its ref). The publish job then waits for the `npm` environment: approve it under Review deployments. It checks out the tag, fails unless the tag is `v` plus the `package.json` version, `private` is not true and npm is 11.5.1 or later (`node scripts/release-prep.mjs --publish-check vX.Y.Z`), runs `npm ci --ignore-scripts`, so that no install script of a dev dependency runs while the job holds `id-token: write`, and `npm publish --access public`, which still runs `prepack`, with `--tag next` for a prerelease such as `1.0.0-rc.1` so that `latest` stays on the last release.
-5. `npm view video-fps-probe dist-tags` shows the new version.
+2. `gh workflow run release.yml -f tag=vX.Y.Z`, or Actions > Release > Run workflow with the tag. Pushing a tag starts nothing.
+3. The run checks out the tag in every CI job (`ci.yml` called with the tag as its ref). The publish job then waits for the `npm` environment: approve it under Review deployments. It checks out the tag, fails unless the tag is `v` plus the `package.json` version, `private` is not true and npm is 11.5.1 or later (`node scripts/release-prep.mjs --publish-check vX.Y.Z`), runs `npm ci --ignore-scripts`, so that no install script of a dev dependency runs while the job holds `id-token: write`, and `npm publish --access public`, which still runs `prepack`, with `--tag next` for a prerelease such as `1.0.0-rc.1` so that `latest` stays on the last release.
+4. `npm view video-fps-probe dist-tags` shows the new version.
+5. Only then the GitHub Release: `gh release create vX.Y.Z --title X.Y.Z --notes "$(node scripts/release-prep.mjs --notes X.Y.Z)"`, with `--prerelease` for a version such as `1.0.0-rc.1`, so that GitHub, like npm, keeps its latest release on the last stable version. A declined approval or a failed publish then leaves no GitHub Release that npm does not have.
 
 ## Deprecate or unpublish
 
@@ -77,6 +77,8 @@ npm deprecate video-fps-probe@0.2.1 "use 0.2.2: <what is wrong>"
 npm deprecate video-fps-probe@"< 0.2.2" "<message>"   # a range
 npm deprecate video-fps-probe@0.2.1 ""                # undeprecate
 ```
+
+Windows PowerShell 5.1 drops an empty argument before npm sees it, so the last line does not undeprecate in it: write the message as `'""'`, or run the line in Git Bash.
 
 npm allows an unpublish within 72 hours of the publish, when no other package on the registry depends on the version. Later, only when no package depends on it, it had fewer than 300 downloads in the last week and it has a single owner. A `video-fps-probe@version` can never be published again once it was used, and after every version is unpublished no new version can be published for 24 hours. Where those rules do not allow an unpublish, npm's [unpublish policy](https://docs.npmjs.com/policies/unpublish) points to deprecation.
 
