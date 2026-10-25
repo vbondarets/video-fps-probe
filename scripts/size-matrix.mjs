@@ -148,7 +148,11 @@ export const BUDGETS = {
   ],
 };
 
-export const STANDALONE_BUDGET = { limit: 37.5 * KB, why: `dist/standalone/own.worker.js: the own worker as one minified IIFE file with no imports, built by rolldown. Design estimate 35.0 KB; measured 32.04 KB. ${RESET} Raised from 35.5 KB to 36 KB in 0.2.0, measured 35.58 KB, when the ffprobe frame rate estimate, which the file inlines, began to read the H.264 slice headers that decide the decoder delay (0.63 KB gzip). Measured 35.95 KB when re-set. ${RESET_020}` };
+export const STANDALONE_BUDGETS = {
+  'own.worker.js': { limit: 37.5 * KB, why: `dist/standalone/own.worker.js: the own worker as one minified IIFE file with no imports, built by rolldown. Design estimate 35.0 KB; measured 32.04 KB. ${RESET} Raised from 35.5 KB to 36 KB in 0.2.0, measured 35.58 KB, when the ffprobe frame rate estimate, which the file inlines, began to read the H.264 slice headers that decide the decoder delay (0.63 KB gzip). Measured 35.95 KB when re-set. ${RESET_020}` },
+  'own-isobmff.worker.js': { limit: 22 * KB, why: `dist/standalone/own-isobmff.worker.js: the ISO BMFF worker of own as one minified IIFE file with no imports, built by rolldown, for a host that starts classic workers and registers it with byContainer. Design estimate 21.2 to 21.6 KB; measured 21.15 KB. ${RESET_030}` },
+  'own-matroska.worker.js': { limit: 25 * KB, why: `dist/standalone/own-matroska.worker.js: the Matroska worker of own as one minified IIFE file with no imports, with the ffprobe frame rate estimate and the rate profile core inlined. Design estimate 24.2 to 24.6 KB; measured 23.80 KB. ${RESET_030}` },
+};
 
 const LABELS = {
   trigger: 'critical path (package code in the entry chunk)',
@@ -434,16 +438,13 @@ function versionOf(dir, name) {
 
 export function buildMatrix(dir) {
   const fixtures = FIXTURES.map((f) => measureFixture(dir, f));
-  const standaloneFile = join(installedPackage(dir), 'dist', 'standalone', 'own.worker.js');
-  const standaloneGzip = existsSync(standaloneFile) ? gzipOf(readFileSync(standaloneFile)) : null;
-  const standalone = {
-    gzip: standaloneGzip,
-    limit: STANDALONE_BUDGET.limit,
-    status: standaloneGzip === null ? 'missing' : standaloneGzip > STANDALONE_BUDGET.limit ? 'over' : 'ok',
-    why: STANDALONE_BUDGET.why,
-  };
+  const standalone = Object.entries(STANDALONE_BUDGETS).map(([file, { limit, why }]) => {
+    const path = join(installedPackage(dir), 'dist', 'standalone', file);
+    const gzip = existsSync(path) ? gzipOf(readFileSync(path)) : null;
+    return { file, gzip, limit, status: gzip === null ? 'missing' : gzip > limit ? 'over' : 'ok', why };
+  });
   const failures = fixtures.flatMap((f) => f.problems.map((p) => (p.startsWith(`${f.name} `) ? p : `${f.name}: ${p}`)));
-  if (standalone.status !== 'ok') failures.push(`standalone own.worker.js: ${standalone.status}`);
+  for (const s of standalone) if (s.status !== 'ok') failures.push(`standalone ${s.file}: ${s.status}${s.gzip === null ? '' : ` (${kb(s.gzip)} > ${kb(s.limit)})`}`);
   failures.push(...pinDrift(dir));
   const tarball = readdirSync(dir).find((f) => f.endsWith('.tgz')) ?? null;
   return {
@@ -491,7 +492,10 @@ export function renderMarkdown(matrix) {
     const status = f.problems.length === 0 ? 'ok' : `${f.problems.length} problem${f.problems.length === 1 ? '' : 's'}`;
     out.push(`| ${f.name} | ${importsOf(f)} | ${f.worker} | **${kb(f.metrics.trigger)}** | ${kb(f.metrics.entry)} | ${cell(f.metrics.firstMp4)} | ${cell(f.metrics.firstMkv)} | ${cell(f.metrics.allOwn)} | ${engine} | ${f.workers.length} (${f.workers.map((w) => w.name).join(', ')}) | ${status} |`);
   }
-  out.push(`| standalone worker file | video-fps-probe/standalone/own.worker.js | - | - | - | ${cell(matrix.standalone.gzip)} | ${cell(matrix.standalone.gzip)} | ${cell(matrix.standalone.gzip)} | - | 1 file, no imports | ${matrix.standalone.status} |`);
+  for (const s of matrix.standalone) {
+    const [mp4, mkv] = s.file === 'own-isobmff.worker.js' ? [s.gzip, null] : s.file === 'own-matroska.worker.js' ? [null, s.gzip] : [s.gzip, s.gzip];
+    out.push(`| standalone worker file | video-fps-probe/standalone/${s.file} | - | - | - | ${cell(mp4)} | ${cell(mkv)} | ${cell(s.gzip)} | - | 1 file, no imports | ${s.status} |`);
+  }
   out.push('');
   out.push(
     'First MP4: the probe client and the worker that serves own for an ISO BMFF file. The default flavor runs own on one worker per container family, picked by the first four bytes of the file, and the ISO BMFF worker holds its parser and the statistics. A custom worker that serves own (custom) loads the statistics chunk and the ISO BMFF parser chunk after its entry, the statistics in parallel with the parser. First MKV is the same for a Matroska or WebM file without DefaultDuration, the worst case, which also loads the ffprobe frame rate estimate. All own paths is every own path of both families with the rate profile core; in the default flavor it counts both workers, each with its own copy of the runtime and the statistics. A worker built as iife cannot split, so in zero-config and iife-nosplit each own worker is one file, and in standalone-url the standalone file holds both parsers.',
@@ -521,7 +525,7 @@ export function renderMarkdown(matrix) {
   out.push('| Configuration | Budget | Limit | Actual | Headroom | Status |');
   out.push('|---|---|---:|---:|---:|---|');
   for (const f of matrix.fixtures) for (const b of f.budgets) out.push(`| ${f.name} | ${b.label} | ${kb(b.limit)} | ${cell(b.gzip)} | ${cell(b.headroom)} | ${b.status} |`);
-  out.push(`| standalone | own.worker.js | ${kb(matrix.standalone.limit)} | ${cell(matrix.standalone.gzip)} | ${matrix.standalone.gzip === null ? '-' : kb(matrix.standalone.limit - matrix.standalone.gzip)} | ${matrix.standalone.status} |`);
+  for (const s of matrix.standalone) out.push(`| standalone | ${s.file} | ${kb(s.limit)} | ${cell(s.gzip)} | ${s.gzip === null ? '-' : kb(s.limit - s.gzip)} | ${s.status} |`);
   out.push('');
   out.push('## Checks');
   out.push('');
@@ -538,7 +542,7 @@ export function renderMarkdown(matrix) {
   out.push('## Why these limits');
   out.push('');
   for (const f of matrix.fixtures) for (const b of f.budgets) out.push(`- **${f.name}, ${b.label}** (${kb(b.limit)}): ${b.why}`);
-  out.push(`- **standalone, own.worker.js** (${kb(matrix.standalone.limit)}): ${matrix.standalone.why}`);
+  for (const s of matrix.standalone) out.push(`- **standalone, ${s.file}** (${kb(s.limit)}): ${s.why}`);
   out.push('');
   out.push('## Files');
   out.push('');
@@ -564,7 +568,7 @@ function main() {
   for (const f of matrix.fixtures) {
     console.log(`${f.name.padEnd(13)} critical ${kb(f.metrics.trigger).padStart(9)}  first MP4 ${cell(f.metrics.firstMp4).padStart(9)}  workers ${f.workers.length}  ${f.problems.length === 0 ? 'ok' : 'FAIL'}`);
   }
-  console.log(`${'standalone'.padEnd(13)} own.worker.js ${cell(matrix.standalone.gzip)}  ${matrix.standalone.status}`);
+  for (const s of matrix.standalone) console.log(`${'standalone'.padEnd(13)} ${s.file} ${cell(s.gzip)}  ${s.status}`);
   const failures = [...matrix.failures];
   if (values.check && !values.out) {
     const reportDir = join(REPO_ROOT, 'report');

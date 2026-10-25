@@ -7,8 +7,7 @@ import { declarationClosure } from './check-dist.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(REPO_ROOT, 'dist');
-const STANDALONE_ENTRY = join(REPO_ROOT, 'src', 'worker', 'own.worker.ts');
-const STANDALONE_FILE = join(DIST, 'standalone', 'own.worker.js');
+export const STANDALONE = ['own.worker', 'own-isobmff.worker', 'own-matroska.worker'];
 
 const WORKER_URL = /(new\s+URL\(\s*)(['"])([^'"]+\.worker)\.ts\2/g;
 const DTS_SPECIFIER = /(['"])(\.{1,2}\/[^'"]+)\.ts\1/g;
@@ -38,14 +37,20 @@ function rewrite(files, pattern, replacement) {
 
 async function buildStandalone() {
   const { build } = await import('rolldown');
-  await build({
-    input: STANDALONE_ENTRY,
-    platform: 'browser',
-    tsconfig: join(REPO_ROOT, 'tsconfig.lib.json'),
-    transform: { target: 'es2022' },
-    logLevel: 'warn',
-    output: { file: STANDALONE_FILE, format: 'iife', codeSplitting: false, minify: true, comments: false },
-  });
+  const files = [];
+  for (const name of STANDALONE) {
+    const file = join(DIST, 'standalone', `${name}.js`);
+    await build({
+      input: join(REPO_ROOT, 'src', 'worker', `${name}.ts`),
+      platform: 'browser',
+      tsconfig: join(REPO_ROOT, 'tsconfig.lib.json'),
+      transform: { target: 'es2022' },
+      logLevel: 'warn',
+      output: { file, format: 'iife', codeSplitting: false, minify: true, comments: false },
+    });
+    files.push(posix(relative(REPO_ROOT, file)));
+  }
+  return files;
 }
 
 async function main() {
@@ -60,8 +65,8 @@ async function main() {
   const reached = declarationClosure(DIST, JSON.parse(readFileSync(join(REPO_ROOT, 'package.json'), 'utf8')));
   const unreached = dts.filter((f) => !reached.has(posix(relative(DIST, f))));
   for (const f of unreached) rmSync(f);
-  await buildStandalone();
-  console.log(`built ${posix(relative(REPO_ROOT, DIST))}: ${js.length} js, ${dts.length - unreached.length} d.ts, worker URLs rewritten in ${urls} files, d.ts specifiers in ${specifiers} files, ${unreached.length} d.ts no exported entry's types reach left out, ${posix(relative(REPO_ROOT, STANDALONE_FILE))}`);
+  const standalone = await buildStandalone();
+  console.log(`built ${posix(relative(REPO_ROOT, DIST))}: ${js.length} js, ${dts.length - unreached.length} d.ts, worker URLs rewritten in ${urls} files, d.ts specifiers in ${specifiers} files, ${unreached.length} d.ts no exported entry's types reach left out, ${standalone.join(', ')}`);
 }
 
-await main();
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();

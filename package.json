@@ -128,6 +128,8 @@
       "default": "./dist/engines/mediabunny.js"
     },
     "./standalone/own.worker.js": "./dist/standalone/own.worker.js",
+    "./standalone/own-isobmff.worker.js": "./dist/standalone/own-isobmff.worker.js",
+    "./standalone/own-matroska.worker.js": "./dist/standalone/own-matroska.worker.js",
     "./package.json": "./package.json"
   },
   "peerDependencies": {
@@ -160,7 +162,7 @@
     "build:demo": "tsc -b && vite build --config demo/vite.config.ts",
     "preview": "vite preview --config demo/vite.config.ts",
     "check:package": "publint --strict && node scripts/check-dist.mjs",
-    "check:types": "npx --yes @arethetypeswrong/cli@0.18.5 --pack . --ignore-rules cjs-resolves-to-esm --exclude-entrypoints ./standalone/own.worker.js",
+    "check:types": "npx --yes @arethetypeswrong/cli@0.18.5 --pack . --ignore-rules cjs-resolves-to-esm --exclude-entrypoints ./standalone/own.worker.js ./standalone/own-isobmff.worker.js ./standalone/own-matroska.worker.js",
     "prepack": "npm run build:lib && node scripts/check-dist.mjs",
     "check:aliases": "node scripts/src-aliases.mjs --check",
     "check:stable-chunks": "node scripts/check-stable-chunks.mjs",

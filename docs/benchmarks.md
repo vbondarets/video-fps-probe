@@ -398,6 +398,8 @@ export default defineConfig({ worker: { format: 'es' } });
 | check | `video-fps-probe/lazy` + `video-fps-probe/check` | format: 'es' | **4.45 KB** | 22.69 KB | 25.59 KB | 48.66 KB | - | 2 | ok (5 budgets) |
 | preset | `video-fps-probe/lazy` + `video-fps-probe/check` + `video-fps-probe/presets` (klingO1ReferenceVideo) | format: 'es' | **4.80 KB** | 22.69 KB | 25.59 KB | 48.65 KB | - | 2 | ok (6 budgets) |
 | standalone worker file | `video-fps-probe/standalone/own.worker.js` | - | - | 35.95 KB | 35.95 KB | 35.95 KB | - | 1 file, no imports | ok |
+| standalone worker file | `video-fps-probe/standalone/own-isobmff.worker.js` | - | - | 21.15 KB | - | 21.15 KB | - | 1 file, no imports | ok |
+| standalone worker file | `video-fps-probe/standalone/own-matroska.worker.js` | - | - | - | 23.80 KB | 23.80 KB | - | 1 file, no imports | ok |
 
 Measured by `npm run size:matrix` on production builds of the fixtures in `tests/consumers/fixtures/`, installed from the packed tarball into a directory outside the repository with mp4box 2.4.1 and mediabunny 1.62.1; gzip -9, KB = 1000 bytes. The critical path is the package code in the entry chunk, cut out by the hidden sourcemap. CI fails when a budget is exceeded, a configuration builds an unexpected worker file, or a sourcemap lists a module that must not be there (mp4box or mediabunny where they are not imported, the prebuilt own worker in the custom-worker build); [report/size-matrix.md](../report/size-matrix.md) lists every budget with its reason.
 

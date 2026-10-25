@@ -7,6 +7,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 ### Added
 
 - `byContainer` on a custom worker: `{ create, engines, byContainer: { matroska: () => new Worker(...) } }` runs own on the worker of the file's container family, and every other engine and family on `create` ([api](docs/api.md)).
+- `video-fps-probe/standalone/own-isobmff.worker.js` and `own-matroska.worker.js`: the two own workers as classic scripts with no imports, about 21.2 and 23.8 KB gzip, for `byContainer`. The combined `own.worker.js` stays.
 - A weekly canary builds the package with the latest mp4box, mediabunny, Vite and rolldown: the comparison against ffprobe, the size budgets and the browser smoke test. It fails only when the own engine or a size check changes, and lists what changed in the library arms.
 
 ### Changed
@@ -16,6 +17,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 - `workers` counts per worker kind, so `workers: 1` can run one MP4 and one WebM at once. `prewarm()` starts the worker of each container family it is given: ISO BMFF by default, nothing for `containers: []`.
 - A missing own worker file, such as a 404 after a redeploy, rejects only the jobs of its container family with `reason: 'load'`, and the next call retries; in 0.2.0 a missing parser chunk came back as an error string in the result.
 - Service worker precache lists that name `own.worker` need both new worker files. A host that wants one own worker can keep the 0.2.0 layout with a custom worker that runs `serveProbeWorker({ own: ownEngine })` from `video-fps-probe/worker-runtime`.
+- The installed package grows from about 442 KB to 563 KB unpacked, mostly for the two new standalone files; a bundler still takes only what the app imports.
 - CI also runs the unit, fixture and package tests on Node 22.12, the lowest version the package supports, next to Node 24; 0.2.0 tested Node 24 only.
 
 ## 0.2.0 - 2026-10-25

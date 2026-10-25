@@ -232,7 +232,7 @@ interface MatrixFixture {
 interface SizeMatrix {
   versions: Record<string, string | null>;
   fixtures: MatrixFixture[];
-  standalone: { gzip: number | null; limit: number; status: string };
+  standalone: { file: string; gzip: number | null; limit: number; status: string }[];
 }
 
 interface Inputs {
@@ -1052,8 +1052,10 @@ function packageBlock(inp: Inputs, doc: Doc): string[] {
       status(f),
     ]),
   );
-  const s = inp.matrix.standalone;
-  rows.push(row(['standalone worker file', '`video-fps-probe/standalone/own.worker.js`', '-', '-', kbOrDash(s.gzip), kbOrDash(s.gzip), kbOrDash(s.gzip), '-', '1 file, no imports', s.status]));
+  for (const s of inp.matrix.standalone) {
+    const [mp4, mkv] = s.file === 'own-isobmff.worker.js' ? [s.gzip, null] : s.file === 'own-matroska.worker.js' ? [null, s.gzip] : [s.gzip, s.gzip];
+    rows.push(row(['standalone worker file', `\`video-fps-probe/standalone/${s.file}\``, '-', '-', kbOrDash(mp4), kbOrDash(mkv), kbOrDash(s.gzip), '-', '1 file, no imports', s.status]));
+  }
   const v = inp.matrix.versions;
   return [
     `**A default install adds ${fmtKB(matrixMetric(inp, 'default', 'trigger'))} gzip to the host app's critical path:** the package code in the entry chunk of a Vite ${v['vite'] ?? ''} app that imports \`video-fps-probe/lazy\` (with Vite's preload helper, which any app with a dynamic import already has, that entry chunk is ${fmtKB(matrixMetric(inp, 'default', 'entry'))}). With \`worker: { format: 'es' }\` in the host's Vite config the first MP4 or MOV file then loads ${fmtKB(matrixMetric(inp, 'default', 'firstMp4'))} lazily: the probe client and the ISO BMFF worker of own, which holds its parser and the statistics. The first MKV or WebM file without DefaultDuration loads ${fmtKB(matrixMetric(inp, 'default', 'firstMkv'))}: the probe client, the Matroska worker and the ffprobe frame rate estimate. Every own path together is ${fmtKB(matrixMetric(inp, 'default', 'allOwn'))}, because each worker holds its own copy of the runtime and the statistics. Without a worker option Vite builds workers as 'iife', which cannot split, so each own worker is one file, and the first MP4 loads ${fmtKB(matrixMetric(inp, 'zero-config', 'firstMp4'))} and the first MKV ${fmtKB(matrixMetric(inp, 'zero-config', 'firstMkv'))} (zero-config). mp4box.js and mediabunny are only in the build when their entries are imported. Everything the default build emits outside the entry chunk is ${fmtKB(matrixMetric(inp, 'default', 'lazyTotal'))}, because it also holds main-thread copies of the parsers, the statistics and the worker runtime. The default flavor keeps them as an in-thread own for environments without a \`Worker\` global (SSR, Node) and for \`worker: 'inline'\`; the client flavor keeps them for \`worker: 'inline'\` and for environments without a \`Worker\` global; the root \`analyze()\` always runs in the calling thread on them. A browser with a \`Worker\` global never fetches them otherwise.`,
