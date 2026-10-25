@@ -185,8 +185,9 @@ function judgedFps(t: VideoTrackResult, source: FpsSource | undefined, cfr: read
   return cfr?.[0] ?? fromRational(t.avgFps);
 }
 
-function unevenOf(t: VideoTrackResult): boolean | null {
-  if (t.rateProfile) return t.rateProfile.uneven;
+function unevenOf(t: VideoTrackResult): unknown {
+  const p: unknown = t.rateProfile;
+  if (p != null) return record(p) ? p.uneven : null;
   return t.isVfr === false || (t.minFps && t.maxFps && t.maxFps.value <= t.minFps.value * UNEVEN_SPREAD) ? false : null;
 }
 
@@ -273,12 +274,12 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
     if (typeof actual !== 'string' || !actual || actual === 'unknown') unknown(rule, missing);
     else if (!list.some((x) => x.toLowerCase() === actual.toLowerCase())) add(rule, severity, list, actual, `${actual} is not one of ${list.join(', ')}`);
   };
-  const policy = (rule: 'vfr' | 'uneven', state: boolean | null, missing: string, message: string): boolean => {
+  const policy = (rule: 'vfr' | 'uneven', state: unknown, missing: string, message: string): boolean => {
     const p = rules[rule];
     if (!p || p === 'allow') return false;
-    if (state === null) unknown(rule, missing);
+    if (typeof state !== 'boolean') unknown(rule, missing);
     else if (state) add(rule, p === 'warn' ? 'warn' : severity, p, true, message);
-    return !!state;
+    return state === true;
   };
 
   const cfr = t && steady(t);
@@ -312,8 +313,10 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
     if (audio === null) unknown('audio', `audio track count${!counts && typeof engine === 'string' ? ` (the ${engine} engine reports none)` : ''}`);
     else if (audio !== required) add('audio', severity, rules.audio, audio, `${rules.audio}, the file has ${required ? 'no' : 'an'} audio track`);
   }
-  const vfr = policy('vfr', t && t.isVfr, 'VFR flag', 'the frame rate is variable');
-  const uneven = policy('uneven', t && unevenOf(t), 'rate profile', `the frame rate is uneven${t?.rateProfile ? `: ${t.rateProfile.summary}` : ''}`);
+  const vfr = policy('vfr', t?.isVfr, 'VFR flag', 'the frame rate is variable');
+  const profile: unknown = t?.rateProfile;
+  const summary = record(profile) && typeof profile.summary === 'string' ? `: ${profile.summary}` : '';
+  const uneven = policy('uneven', t && unevenOf(t), `${profile == null ? '' : 'uneven flag in the '}rate profile`, `the frame rate is uneven${summary}`);
 
   const report: CheckReport = { verdict: 'pass', violations };
   const fpsOff = violations.some((v) => v.rule.startsWith('fps.'));

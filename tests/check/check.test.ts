@@ -311,6 +311,28 @@ describe('check: allowlists, audio and rate policies', () => {
     expect(check(result({ isVfr: true, minFps: rate(20), maxFps: rate(30) }), { uneven: 'reject' }).verdict).toBe('unknown');
     expect(check(result({ isVfr: true, rateProfile: profile }), { uneven: 'warn' }).verdict).toBe('warn');
   });
+
+  it('is unknown, not even or constant, when the flag a policy reads is missing', () => {
+    const unknownOf = (r: FileResult, c: CheckRules) => check(r, c).violations.map((v) => [v.rule, v.severity, v.message]);
+    const withoutVfr = JSON.parse(JSON.stringify(result({ isVfr: undefined }))) as FileResult;
+    expect('isVfr' in withoutVfr.videoTracks[0]!).toBe(false);
+    for (const vfr of ['reject', 'warn'] as const) {
+      expect(unknownOf(withoutVfr, { vfr }), vfr).toEqual([['vfr', 'unknown', 'vfr: unknown, no VFR flag']]);
+      expect(unknownOf(result({ isVfr: 'yes' as unknown as boolean }), { vfr }), vfr).toEqual([['vfr', 'unknown', 'vfr: unknown, no VFR flag']]);
+    }
+    expect(check(withoutVfr, { vfr: 'allow' }).verdict).toBe('pass');
+    const profile = { segments: [], moreSegments: 0, anomalies: [], moreAnomalies: 0, buckets: { bucketSec: 1, fps: [] }, dominantShare: 1, summary: 'Steady: 30 fps' };
+    for (const uneven of ['reject', 'warn'] as const) {
+      for (const rateProfile of [profile, { ...profile, uneven: null }, { ...profile, uneven: 'no' }, true, 'Steady']) {
+        expect(unknownOf(result({ isVfr: false, rateProfile: rateProfile as unknown as VideoTrackResult['rateProfile'] }), { uneven }), JSON.stringify({ uneven, rateProfile })).toEqual([
+          ['uneven', 'unknown', 'uneven: unknown, no uneven flag in the rate profile'],
+        ]);
+      }
+    }
+    expect(check(result({ isVfr: true, rateProfile: { ...profile, uneven: true, summary: undefined } as unknown as VideoTrackResult['rateProfile'] }), { uneven: 'reject' }).violations[0]!.message).toBe('uneven: the frame rate is uneven');
+    expect(check(result({ isVfr: undefined, rateProfile: null }), { uneven: 'reject' }).violations[0]!.message).toBe('uneven: unknown, no rate profile');
+    expect(check(withoutVfr, { vfr: 'reject', fps: { max: 60 } }).suggestedFps).toBeUndefined();
+  });
 });
 
 describe('check: verdict, severity and failing open', () => {
