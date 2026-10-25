@@ -85,6 +85,8 @@ describe('publish check of the Release workflow', () => {
     const workflow = readFileSync(new URL('../../.github/workflows/release.yml', import.meta.url), 'utf8');
     expect(workflow).toContain('node scripts/release-prep.mjs --publish-check "$TAG"');
     expect(workflow.indexOf('--publish-check')).toBeLessThan(workflow.indexOf('npm publish'));
+    expect(workflow).toMatch(/^\s+run: npm ci --ignore-scripts$/m);
+    expect(workflow).not.toMatch(/^\s+run: npm ci$/m);
     expect(workflow).not.toMatch(/^\s+(push|pull_request|release):/m);
   });
 });
