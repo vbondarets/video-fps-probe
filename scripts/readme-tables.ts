@@ -1108,7 +1108,7 @@ function sizeBlock(inp: Inputs, doc: Doc): string[] {
   ];
 }
 
-const VITE_SETUPS = ['default', 'zero-config', 'iife-nosplit', 'custom', 'standalone-url'];
+const VITE_SETUPS = ['default', 'zero-config', 'iife-nosplit', 'custom', 'standalone-url', 'standalone-split-url'];
 
 function viteBlock(inp: Inputs, doc: Doc): string[] {
   const kb = (name: string, metric: string): string => fmtKB(matrixMetric(inp, name, metric));

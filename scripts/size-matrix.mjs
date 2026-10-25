@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { FIXTURES, OWN_WORKERS, consumersDir, fixtureDist, installedPackage, pinDrift } from './consumers.mjs';
+import { FIXTURES, OWN_WORKERS, WORKER_MUST_NOT, consumersDir, fixtureDist, installedPackage, pinDrift } from './consumers.mjs';
 import { discover, measure, scanReferences } from './size-report.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -102,6 +102,17 @@ export const BUDGETS = {
     { key: 'worker:own.worker', limit: 37.5 * KB, why: `dist/standalone/own.worker.js, which Vite copies unchanged as an asset for the ?url import and the host starts as a classic worker. Measured 32.04 KB, the standalone row below. ${RESET} Raised from 35.5 KB to 36 KB in 0.2.0, measured 35.58 KB, as the standalone row below. Measured 35.95 KB when re-set. ${RESET_020}` },
     { key: 'firstMp4', limit: 40 * KB, why: `What the first MP4 loads with the standalone worker: the probe client and the one-file worker. It suits a host whose workers must stay classic scripts. Measured 34.60 KB. ${RESET} Raised from 38.5 KB to 39 KB in 0.2.0, measured 38.56 KB, because the standalone file inlines the ffprobe frame rate estimate, which began to read the H.264 slice headers and to ride the block walk of the exact scan (0.81 KB gzip together). Measured 38.74 KB when re-set. ${RESET_020}` },
     { key: 'lazyTotal', limit: 82 * KB, why: `As in the custom configuration, with the standalone file as the worker. Measured 70.56 KB. ${RESET} Raised from 78 KB to 79 KB in 0.2.0, measured 78.48 KB, for the H.264 slice header check of the ffprobe frame rate estimate, in the standalone file and in the main-thread copy. Measured 79.26 KB when re-set. ${RESET_020}` },
+  ],
+  'standalone-split-url': [
+    { key: 'trigger', limit: 1 * KB, why: `The lazyProbeClient stub in the host entry chunk, as in the standalone-url configuration; the asset URLs of the two standalone files are host code and are not counted. Measured 0.73 KB. ${RESET_030}` },
+    { key: 'entry', limit: 2 * KB, why: `The lazyProbeClient stub, Vite's preload helper and the host's asset URLs of the two standalone files. Measured 1.49 KB. ${RESET_030}` },
+    { key: 'client', limit: 3.5 * KB, why: `As in the custom configuration: the same client, which routes own by container family with byContainer. Measured 3.11 KB. ${RESET_030}` },
+    { key: 'worker:own-isobmff.worker', limit: 22 * KB, why: `dist/standalone/own-isobmff.worker.js, which Vite copies unchanged as an asset for the ?url import and the host starts as a classic worker, as the standalone row below. Measured 21.15 KB. ${RESET_030}` },
+    { key: 'worker:own-matroska.worker', limit: 25 * KB, why: `dist/standalone/own-matroska.worker.js, copied the same way and registered with byContainer, as the standalone row below. Measured 23.80 KB. ${RESET_030}` },
+    { key: 'firstMp4', limit: 25 * KB, why: `What the first MP4 loads with the split standalone files: the probe client and the ISO BMFF file, against 38.74 KB with the combined standalone file of standalone-url in 0.2.0. Design estimate 25.0 KB; measured 24.26 KB. ${RESET_030}` },
+    { key: 'firstMkv', limit: 28 * KB, why: `What the first MKV or WebM file loads with the split standalone files: the probe client and the Matroska file, which inlines the ffprobe frame rate estimate. Design estimate 28.5 KB; measured 26.92 KB. ${RESET_030}` },
+    { key: 'allOwn', limit: 50 * KB, why: `The probe client and both split standalone files. Measured 48.06 KB. ${RESET_030}` },
+    { key: 'lazyTotal', limit: 91.5 * KB, why: `As in the standalone-url configuration, with the two split standalone files instead of the combined one. Design estimate 92.0 KB; measured 88.60 KB. ${RESET_030}` },
   ],
   'iife-nosplit': [
     { key: 'trigger', limit: 1 * KB, why: `As in the default configuration. Measured 0.67 KB. ${RESET} Measured 0.66 KB when re-set. ${RESET_020}` },
@@ -401,6 +412,13 @@ export function measureFixture(dir, fixture) {
     for (const s of maps.get(f)?.sources ?? []) for (const pattern of fixture.mustNot) if (s.includes(pattern)) leaks.push(`${f}: ${pattern} (${s.slice(s.indexOf('node_modules/'))})`);
   }
   for (const l of leaks) problems.push(`must not exist: ${l}`);
+  const workerLeaks = [];
+  for (const [name, patterns] of Object.entries(WORKER_MUST_NOT)) {
+    for (const f of workers[name]?.side ?? []) {
+      for (const s of maps.get(f)?.sources ?? []) for (const pattern of patterns) if (s.includes(pattern)) workerLeaks.push(`${name} ${f}: ${pattern}`);
+    }
+  }
+  for (const l of workerLeaks) problems.push(`worker must not reach: ${l}`);
   problems.push(...found.chains);
 
   const value = (key) => (key.startsWith('worker:') ? (workers[key.slice(7)]?.entry ?? null) : metrics[key]);
@@ -425,6 +443,7 @@ export function measureFixture(dir, fixture) {
     files: files.map((f) => ({ file: f, gzip: gz.get(f), worker: Object.keys(workers).find((n) => workers[n].side.has(f)) ?? null, class: classOf(f) })),
     mustNot: fixture.mustNot,
     leaks,
+    workerLeaks,
     chains: found.chains,
     budgets,
     problems,
@@ -532,11 +551,13 @@ export function renderMarkdown(matrix) {
   for (const f of matrix.fixtures) {
     const leaks = f.leaks.length === 0 ? `none of ${f.mustNot.length > 0 ? f.mustNot.map((m) => `\`${m}\``).join(', ') : '(no patterns)'} appears in any sourcemap` : `${f.leaks.length} must-not-exist source(s): ${f.leaks.join('; ')}`;
     const chains = f.chains.length === 0 ? 'request chains ok' : f.chains.join('; ');
-    out.push(`- **${f.name}**: worker files ${f.workers.map((w) => `${w.name} (${w.chunks} lazy chunk${w.chunks === 1 ? '' : 's'})`).join(', ')}; ${leaks}; ${chains}.`);
+    const own = f.workers.filter((w) => Object.hasOwn(WORKER_MUST_NOT, w.name));
+    const isolation = own.length === 0 ? '' : f.workerLeaks.length === 0 ? `; ${own.map((w) => w.name).join(' and ')} reach${own.length === 1 ? 'es' : ''} only the parser of ${own.length === 1 ? 'its' : 'their'} container family` : `; ${f.workerLeaks.length} worker isolation problem(s): ${f.workerLeaks.join('; ')}`;
+    out.push(`- **${f.name}**: worker files ${f.workers.map((w) => `${w.name} (${w.chunks} lazy chunk${w.chunks === 1 ? '' : 's'})`).join(', ')}; ${leaks}${isolation}; ${chains}.`);
   }
   out.push('');
   out.push(
-    'Must-not-exist reads the `sources` of every hidden sourcemap, because minified identifiers are renamed. The request chain check is the one in `scripts/size-report.mjs`: every static dependency of a parser or engine chunk is already loaded, or requested in the same Promise.all.',
+    'Must-not-exist reads the `sources` of every hidden sourcemap, because minified identifiers are renamed. The ISO BMFF worker of own and every file it loads must not list the Matroska parser, the ffprobe frame rate estimate or the parser loaders of `core/analyze.js`; the Matroska worker must not list the ISO BMFF parser or `core/analyze.js`. A standalone file copied as an asset has no sourcemap, so `tests/package/standalone.test.ts` checks it instead. The request chain check is the one in `scripts/size-report.mjs`: every static dependency of a parser or engine chunk is already loaded, or requested in the same Promise.all.',
   );
   out.push('');
   out.push('## Why these limits');

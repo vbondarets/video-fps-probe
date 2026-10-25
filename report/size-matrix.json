@@ -173,6 +173,7 @@
         "video-fps-probe/dist/engines/"
       ],
       "leaks": [],
+      "workerLeaks": [],
       "chains": [],
       "budgets": [
         {
@@ -440,6 +441,7 @@
         "video-fps-probe/dist/engines/"
       ],
       "leaks": [],
+      "workerLeaks": [],
       "chains": [],
       "budgets": [
         {
@@ -678,10 +680,13 @@
       "mustNot": [
         "video-fps-probe/dist/plugins/own.js",
         "video-fps-probe/dist/worker/own.worker.js",
+        "video-fps-probe/dist/worker/own-isobmff.worker.js",
+        "video-fps-probe/dist/worker/own-matroska.worker.js",
         "node_modules/mp4box/",
         "node_modules/mediabunny/"
       ],
       "leaks": [],
+      "workerLeaks": [],
       "chains": [],
       "budgets": [
         {
@@ -970,6 +975,7 @@
         "node_modules/mediabunny/"
       ],
       "leaks": [],
+      "workerLeaks": [],
       "chains": [],
       "budgets": [
         {
@@ -1258,6 +1264,7 @@
         "node_modules/mp4box/"
       ],
       "leaks": [],
+      "workerLeaks": [],
       "chains": [],
       "budgets": [
         {
@@ -1493,6 +1500,7 @@
         "node_modules/mediabunny/"
       ],
       "leaks": [],
+      "workerLeaks": [],
       "chains": [],
       "budgets": [
         {
@@ -1837,6 +1845,7 @@
       ],
       "mustNot": [],
       "leaks": [],
+      "workerLeaks": [],
       "chains": [],
       "budgets": [
         {
@@ -2144,10 +2153,13 @@
       "mustNot": [
         "video-fps-probe/dist/plugins/own.js",
         "video-fps-probe/dist/worker/own.worker.js",
+        "video-fps-probe/dist/worker/own-isobmff.worker.js",
+        "video-fps-probe/dist/worker/own-matroska.worker.js",
         "node_modules/mp4box/",
         "node_modules/mediabunny/"
       ],
       "leaks": [],
+      "workerLeaks": [],
       "chains": [],
       "budgets": [
         {
@@ -2203,6 +2215,243 @@
           "headroom": 2396,
           "status": "ok",
           "why": "As in the custom configuration, with the standalone file as the worker. Measured 70.56 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 78 KB to 79 KB in 0.2.0, measured 78.48 KB, for the H.264 slice header check of the ffprobe frame rate estimate, in the standalone file and in the main-thread copy. Measured 79.26 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
+        }
+      ],
+      "problems": []
+    },
+    {
+      "name": "standalone-split-url",
+      "imports": [
+        "./client/lazy",
+        "./standalone/own-isobmff.worker.js?url",
+        "./standalone/own-matroska.worker.js?url"
+      ],
+      "note": "classic workers from the split standalone files, with byContainer",
+      "worker": "none needed: the files are copied as assets",
+      "engines": [
+        "own"
+      ],
+      "metrics": {
+        "entry": 1494,
+        "trigger": 733,
+        "react": null,
+        "check": null,
+        "presets": null,
+        "client": 3111,
+        "isobmff": null,
+        "matroska": null,
+        "segments": null,
+        "rfps": null,
+        "firstMp4": 24257,
+        "firstMkv": 26916,
+        "allOwn": 48062,
+        "mp4box": null,
+        "mediabunny": null,
+        "engineShared": null,
+        "rvfc": null,
+        "pageEngineShared": null,
+        "summary": null,
+        "firstMp4Summary": null,
+        "lazyTotal": 88603
+      },
+      "workers": [
+        {
+          "name": "own-isobmff.worker",
+          "entry": 21146,
+          "chunks": 0,
+          "sha256": "872d71b209c35263"
+        },
+        {
+          "name": "own-matroska.worker",
+          "entry": 23805,
+          "chunks": 0,
+          "sha256": "3e7a03d68a7f98be"
+        }
+      ],
+      "files": [
+        {
+          "file": "assets/compare-CTHv_q62.js",
+          "gzip": 1327,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/fallback-DmpAUpz5.js",
+          "gzip": 734,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/index-CGdGEI45.js",
+          "gzip": 1494,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/inline-BXtlMvFg.js",
+          "gzip": 634,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/isobmff-CHVDj30w.js",
+          "gzip": 12234,
+          "worker": null,
+          "class": "isobmff"
+        },
+        {
+          "file": "assets/matroska--LoLN9hZ.js",
+          "gzip": 11899,
+          "worker": null,
+          "class": "matroska"
+        },
+        {
+          "file": "assets/own-isobmff.worker-BW1udzp7.js",
+          "gzip": 21146,
+          "worker": "own-isobmff.worker",
+          "class": "shared"
+        },
+        {
+          "file": "assets/own-matroska.worker-CE6woVKN.js",
+          "gzip": 23805,
+          "worker": "own-matroska.worker",
+          "class": "shared"
+        },
+        {
+          "file": "assets/probe-DxRhN0tX.js",
+          "gzip": 3111,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/result-DwUAyOGs.js",
+          "gzip": 381,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/rfps-D33YyPGS.js",
+          "gzip": 3602,
+          "worker": null,
+          "class": "rfps"
+        },
+        {
+          "file": "assets/runtime-8YUdSFfq.js",
+          "gzip": 2560,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/segments-BP69rm31.js",
+          "gzip": 1844,
+          "worker": null,
+          "class": "segments"
+        },
+        {
+          "file": "assets/sniff-DecauIFI.js",
+          "gzip": 989,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/stats-DhsP_7J6.js",
+          "gzip": 4337,
+          "worker": null,
+          "class": "stats"
+        }
+      ],
+      "mustNot": [
+        "video-fps-probe/dist/plugins/own.js",
+        "video-fps-probe/dist/worker/own.worker.js",
+        "video-fps-probe/dist/worker/own-isobmff.worker.js",
+        "video-fps-probe/dist/worker/own-matroska.worker.js",
+        "node_modules/mp4box/",
+        "node_modules/mediabunny/"
+      ],
+      "leaks": [],
+      "workerLeaks": [],
+      "chains": [],
+      "budgets": [
+        {
+          "key": "trigger",
+          "label": "critical path (package code in the entry chunk)",
+          "limit": 1000,
+          "gzip": 733,
+          "headroom": 267,
+          "status": "ok",
+          "why": "The lazyProbeClient stub in the host entry chunk, as in the standalone-url configuration; the asset URLs of the two standalone files are host code and are not counted. Measured 0.73 KB. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "entry",
+          "label": "entry chunk with the preload helper",
+          "limit": 2000,
+          "gzip": 1494,
+          "headroom": 506,
+          "status": "ok",
+          "why": "The lazyProbeClient stub, Vite's preload helper and the host's asset URLs of the two standalone files. Measured 1.49 KB. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "client",
+          "label": "probe client (lazy)",
+          "limit": 3500,
+          "gzip": 3111,
+          "headroom": 389,
+          "status": "ok",
+          "why": "As in the custom configuration: the same client, which routes own by container family with byContainer. Measured 3.11 KB. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "worker:own-isobmff.worker",
+          "label": "own-isobmff.worker entry",
+          "limit": 22000,
+          "gzip": 21146,
+          "headroom": 854,
+          "status": "ok",
+          "why": "dist/standalone/own-isobmff.worker.js, which Vite copies unchanged as an asset for the ?url import and the host starts as a classic worker, as the standalone row below. Measured 21.15 KB. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "worker:own-matroska.worker",
+          "label": "own-matroska.worker entry",
+          "limit": 25000,
+          "gzip": 23805,
+          "headroom": 1195,
+          "status": "ok",
+          "why": "dist/standalone/own-matroska.worker.js, copied the same way and registered with byContainer, as the standalone row below. Measured 23.80 KB. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "firstMp4",
+          "label": "first MP4 analysis, lazy total",
+          "limit": 25000,
+          "gzip": 24257,
+          "headroom": 743,
+          "status": "ok",
+          "why": "What the first MP4 loads with the split standalone files: the probe client and the ISO BMFF file, against 38.74 KB with the combined standalone file of standalone-url in 0.2.0. Design estimate 25.0 KB; measured 24.26 KB. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "firstMkv",
+          "label": "first MKV or WebM analysis without DefaultDuration, lazy total",
+          "limit": 28000,
+          "gzip": 26916,
+          "headroom": 1084,
+          "status": "ok",
+          "why": "What the first MKV or WebM file loads with the split standalone files: the probe client and the Matroska file, which inlines the ffprobe frame rate estimate. Design estimate 28.5 KB; measured 26.92 KB. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "allOwn",
+          "label": "all own paths, lazy total",
+          "limit": 50000,
+          "gzip": 48062,
+          "headroom": 1938,
+          "status": "ok",
+          "why": "The probe client and both split standalone files. Measured 48.06 KB. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "lazyTotal",
+          "label": "emitted lazy total (every file outside the entry chunk)",
+          "limit": 91500,
+          "gzip": 88603,
+          "headroom": 2897,
+          "status": "ok",
+          "why": "As in the standalone-url configuration, with the two split standalone files instead of the combined one. Design estimate 92.0 KB; measured 88.60 KB. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
         }
       ],
       "problems": []
@@ -2351,6 +2600,7 @@
         "node_modules/mediabunny/"
       ],
       "leaks": [],
+      "workerLeaks": [],
       "chains": [],
       "budgets": [
         {
@@ -2598,6 +2848,7 @@
         "video-fps-probe/dist/engines/"
       ],
       "leaks": [],
+      "workerLeaks": [],
       "chains": [],
       "budgets": [
         {
@@ -2863,6 +3114,7 @@
         "video-fps-probe/dist/engines/"
       ],
       "leaks": [],
+      "workerLeaks": [],
       "chains": [],
       "budgets": [
         {
@@ -3068,6 +3320,7 @@
         "video-fps-probe/dist/engines/"
       ],
       "leaks": [],
+      "workerLeaks": [],
       "chains": [],
       "budgets": [
         {
@@ -3283,6 +3536,7 @@
         "video-fps-probe/dist/engines/"
       ],
       "leaks": [],
+      "workerLeaks": [],
       "chains": [],
       "budgets": [
         {
