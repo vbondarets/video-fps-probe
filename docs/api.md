@@ -120,7 +120,7 @@ interface CallOptions<Id> extends WireOptions {
 }
 ```
 
-- **`analyze`** resolves with the result of the first engine of the chain (`engine`, then `fallback`, duplicates removed). A file that cannot be analysed is a result with `error` set, not a rejection. A probe rejects only with a `ProbeError`: an abort, a timeout, a failed worker, or an engine that is not registered. A lazy stub can also reject with the import error of its own load ([Lazy stubs](#lazy-stubs)).
+- **`analyze`** resolves with the result of the first engine of the chain (`engine`, then `fallback`, duplicates removed). A file that cannot be analysed is a result with `error` set, not a rejection. A probe rejects only with a `ProbeError`: an abort, a timeout, a failed worker, or an engine that is not registered. So does a lazy stub whose own load fails: `ProbeError('worker-failed')` with `reason: 'load'` and the import error as `cause` ([Lazy stubs](#lazy-stubs)).
 - **Fallback.** With a chain of two or more, the next engine runs when the current one returns an error, no video track or no frame rate, skips the container (mp4box on WebM), times out or crashes. An abort stops the chain at once. If every engine fails, the result of the last engine that returned one comes back, with `attempts` listing the others (`{ engine, error }`); if none returned a result, the last error rejects.
 - **`tryAnalyze`** is `analyze` that resolves `null` instead of rejecting.
 - **`prewarm`** loads ahead of the first file: the probe client (for a stub), the worker, and the parser chunks for `containers` (default `['isobmff']`), for `engines` (default: the probe's `engine`). One warm request goes to each worker kind; in-thread engines load their chunks. It never rejects.
@@ -285,7 +285,7 @@ interface EngineDescriptor<Id extends EngineId = EngineId> {
 
 The host of rvfc comes from the per-call `host`, else from `rvfc({ host })`. Without one, or without a DOM, it rejects (`worker-failed` and `unsupported-environment` respectively).
 
-- The peers are optional and npm does not install them with the package (verified for npm only; not verified for yarn, pnpm and bun): `npm install mp4box` or `npm install mediabunny` (or the yarn, pnpm or bun equivalent). Importing `video-fps-probe/mp4box` or `video-fps-probe/mediabunny` without its peer fails the build, because the peer cannot be resolved.
+- The peers are optional, and no package manager installs them with the package (npm and pnpm leave optional peers out, bun uses only a copy that is already installed, Yarn takes peers from the app; [publishing](publishing.md#one-publish-for-every-package-manager)): `npm install mp4box` or `npm install mediabunny` (or the Yarn, pnpm or bun equivalent). The consumer tests verify this for npm only. Importing `video-fps-probe/mp4box` or `video-fps-probe/mediabunny` without its peer fails the build, because the peer cannot be resolved.
 - Engine ids are typed from what you register: `engine: 'mp4box'` without `mp4box()` is a type error, and `ProbeError('engine-not-registered')` at run time.
 
 ### Custom worker

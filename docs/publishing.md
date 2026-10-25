@@ -58,7 +58,7 @@ Trusted publishing needs npm 11.5.1 or later and Node 22.14.0 or later (the work
 
 ## Each later release
 
-1. `npm version minor -m "chore(release): bumped the version to %s"` on a clean `main` ([Releasing](releasing.md)), then `git push --follow-tags`.
+1. `npm version minor -m "chore(release): bumped the version to %s"` (or `patch`) on a clean `main` ([Releasing](releasing.md)), then `git push --follow-tags`.
 2. `gh release create vX.Y.Z --title X.Y.Z --notes "$(node scripts/release-prep.mjs --notes X.Y.Z)"`.
 3. `gh workflow run release.yml -f tag=vX.Y.Z`, or Actions > Release > Run workflow with the tag. Pushing a tag starts nothing.
 4. The run checks out the tag in every CI job (`ci.yml` called with the tag as its ref). The publish job then waits for the `npm` environment: approve it under Review deployments. It checks out the tag, fails unless the tag is `v` plus the `package.json` version, `private` is not true and npm is 11.5.1 or later (`node scripts/release-prep.mjs --publish-check vX.Y.Z`), runs `npm ci` and `npm publish --access public`, with `--tag next` for a prerelease such as `1.0.0-rc.1` so that `latest` stays on the last release.
