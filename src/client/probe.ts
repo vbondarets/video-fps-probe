@@ -1,18 +1,25 @@
 import { ProbeError } from '../api/errors.ts';
 import type { EngineId } from '../core/types.ts';
 import type { ContainerFamily, EngineDescriptor, EngineModule, WorkerEngineId } from '../plugins/types.ts';
-import type { WireOptions } from '../worker/protocol.ts';
+import type { JobRequest, WireOptions } from '../worker/protocol.ts';
 import type { InlineReply } from './inline.ts';
-import { WorkerPool, workerFailed } from './pool.ts';
-import { familyOf } from './route.ts';
-import type { BaseOptions, CallOptions, ClientOptions, CustomWorker, IdOf, Probe, ProbeResult } from './types.ts';
+import { WorkerPool, workerFailed, type RunOptions } from './pool.ts';
+import type { SplitRoute } from './route.ts';
+import type { BaseOptions, CallOptions, CustomWorker, Probe, ProbeResult } from './types.ts';
 
 export interface CoreOptions extends BaseOptions<EngineId> {
   worker?: CustomWorker<WorkerEngineId> | 'inline';
   engines?: readonly EngineDescriptor[];
+  split?: SplitRoute;
 }
 
-export type Route = { kind: string; pool: (family?: ContainerFamily) => WorkerPool; split?: true } | { load: () => Promise<EngineModule> } | { error: ProbeError };
+export type Pools = (key: string, create: () => Worker) => WorkerPool;
+
+export type Lazy = <T>(chunk: Promise<T>, engine: EngineId | null) => Promise<T>;
+
+export type Runner = { run: (request: JobRequest, options?: RunOptions) => Promise<unknown> };
+
+export type Route = { kind: string; pool: () => Runner } | { load: () => Promise<EngineModule> } | { error: ProbeError };
 
 type SplitDescriptor = EngineDescriptor & { readonly createWorkers?: Readonly<Record<ContainerFamily, () => Worker>> };
 
@@ -29,10 +36,10 @@ const notRegistered = (id: EngineId, message = `engine ${id} is not registered`)
 
 export const nameOf = (file: Blob): string => (typeof File !== 'undefined' && file instanceof File ? file.name : '');
 
-const loadOwnInThread = async (): Promise<EngineModule> => (await import('../worker/runtime.ts')).ownEngine;
+const loadOwnInThread = (): Promise<EngineModule> => import('../worker/runtime.ts').then((m) => m.ownEngine);
 
 export function createProbeCore(options: CoreOptions): Probe<EngineId> {
-  const { worker, engines: descriptors = [], engine: defaultEngine = 'own', fallback: defaultFallback = [], workers, idleTimeoutMs, timeoutMs: defaultTimeout, defaults } = options;
+  const { worker, engines: descriptors = [], engine: defaultEngine = 'own', fallback: defaultFallback = [], workers, idleTimeoutMs, timeoutMs: defaultTimeout, defaults, split } = options;
   const custom = typeof worker === 'object' ? worker : null;
   const byContainer = custom?.byContainer;
   const inline = worker === 'inline' || typeof Worker === 'undefined';
@@ -49,35 +56,25 @@ export function createProbeCore(options: CoreOptions): Probe<EngineId> {
       chunk.then(resolve, (e: unknown) => reject(workerFailed(String(e), 'load', engine, e))).finally(() => life.signal.removeEventListener('abort', stop));
     });
 
-  const poolFor = (key: string, create: () => Worker): WorkerPool => {
+  const poolFor: Pools = (key, create) => {
     let pool = pools.get(key);
     if (!pool) pools.set(key, (pool = new WorkerPool({ create, size: workers, idleTimeoutMs })));
     return pool;
   };
   const poolOf = (kind: string, create: () => Worker): Route => ({ kind, pool: () => poolFor(kind, create) });
-  const splitOf = (kind: string, byFamily: Partial<Record<ContainerFamily, () => Worker>>, create?: () => Worker): Route => ({
-    kind,
-    split: true,
-    pool: (family) => {
-      const own = byFamily[family!];
-      return own ? poolFor(`${kind}-${family}`, own) : poolFor(kind, create!);
-    },
-  });
   const servedBy = (d: SplitDescriptor | undefined, key: 'load' | 'loadOwn'): Route | null => {
     const load = d?.[key];
     if (!d || !load) return null;
     if (inline || d.thread !== 'worker') return { load };
-    const split = d.createWorkers;
-    return d.createWorker ? poolOf(d.id, d.createWorker) : split ? splitOf(d.id, split) : { load };
+    if (d.createWorker) return poolOf(d.id, d.createWorker);
+    return (d.createWorkers && split?.(d.id, d.createWorkers, poolFor, lazy, life.signal)) || { load };
   };
   const routeOf = (id: EngineId): Route | null => {
     const listed: Route | null = !custom?.engines.includes(id as WorkerEngineId)
       ? null
       : inline
         ? { error: new ProbeError('unsupported-environment', `engine ${id} runs in a worker and Worker is not available`, { engine: id }) }
-        : id === 'own' && byContainer
-          ? splitOf('custom', byContainer, custom.create)
-          : poolOf('custom', custom.create);
+        : (id === 'own' && byContainer && split?.('custom', byContainer, poolFor, lazy, life.signal, custom.create)) || poolOf('custom', custom.create);
     if (listed && 'pool' in listed) return listed;
     const route =
       id === 'own'
@@ -101,11 +98,7 @@ export function createProbeCore(options: CoreOptions): Probe<EngineId> {
     if ('error' in route) return Promise.reject(route.error);
     const timeoutMs = call.timeoutMs ?? defaultTimeout;
     if ('pool' in route) {
-      const start = (family?: ContainerFamily) =>
-        life.signal.aborted
-          ? Promise.reject(destroyed(id))
-          : (route.pool(family).run({ type: 'analyze', file, name, engine: id as WorkerEngineId, options: wire }, { signal: call.signal, timeoutMs, onProgress: call.onProgress, engine: id }) as Promise<InlineReply>);
-      return route.split ? lazy(familyOf(file, call.signal), id).then(start) : start();
+      return route.pool().run({ type: 'analyze', file, name, engine: id as WorkerEngineId, options: wire }, { signal: call.signal, timeoutMs, onProgress: call.onProgress, engine: id }) as Promise<InlineReply>;
     }
     const signals = [call.signal, life.signal];
     return lazy(import('./inline.ts'), id).then((m) => m.runInline(route.load, file, name, wire, { engine: id, signals, timeoutMs, onProgress: call.onProgress, host: call.host }));
@@ -133,20 +126,18 @@ export function createProbeCore(options: CoreOptions): Probe<EngineId> {
     async prewarm(o = {}) {
       if (life.signal.aborted) return;
       const containers = o.containers ?? ['isobmff'];
-      const warm = new Map<WorkerPool, readonly [WorkerEngineId[], ContainerFamily[]]>();
-      const add = (pool: WorkerPool, id: EngineId, families: readonly ContainerFamily[]) => {
-        const [engines, union] = warm.get(pool) ?? [[], []];
-        warm.set(pool, [[...engines, id as WorkerEngineId], [...new Set([...union, ...families])]]);
-      };
+      const warm = new Map<Runner, WorkerEngineId[]>();
       const jobs: Promise<unknown>[] = [];
       for (const id of o.engines ?? [defaultEngine]) {
         const route = routes.get(id);
         if (!route || 'error' in route) continue;
         if ('load' in route) jobs.push(lazy(route.load(), id).then((m) => m.warm?.(containers)));
-        else if (!route.split) add(route.pool(), id, containers);
-        else for (const f of ['isobmff', 'matroska'] as const) if (containers.includes(f)) add(route.pool(f), id, [f]);
+        else {
+          const pool = route.pool();
+          warm.set(pool, [...(warm.get(pool) ?? []), id as WorkerEngineId]);
+        }
       }
-      for (const [pool, [engines, union]] of warm) jobs.push(pool.run({ type: 'warm', engines, containers: union }, { timeoutMs: defaultTimeout }));
+      for (const [pool, engines] of warm) jobs.push(pool.run({ type: 'warm', engines, containers }, { timeoutMs: defaultTimeout }));
       await Promise.allSettled(jobs);
     },
     dispose() {
@@ -157,10 +148,4 @@ export function createProbeCore(options: CoreOptions): Probe<EngineId> {
       for (const pool of pools.values()) pool.destroy();
     },
   };
-}
-
-export function createProbeClient<const E extends readonly EngineDescriptor[] = [], const W extends WorkerEngineId = never>(
-  options: ClientOptions<E, W>,
-): Probe<W | IdOf<E[number]> | 'own'> {
-  return createProbeCore(options) as Probe<W | IdOf<E[number]> | 'own'>;
 }

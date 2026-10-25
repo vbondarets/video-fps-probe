@@ -1,7 +1,9 @@
 import { openAsBlob, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
-import { EBML, familyOf } from '../../src/client/route.ts';
+import type { Lazy, Pools } from '../../src/client/probe.ts';
+import type { WorkerPool } from '../../src/client/pool.ts';
+import { EBML, familyOf, splitRoute } from '../../src/client/route.ts';
 import { EBML_MAGIC, sniff } from '../../src/core/sniff.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
 
@@ -116,5 +118,70 @@ describe('familyOf', () => {
       expect(add, String(i)).toHaveBeenCalledTimes(1);
       expect(remove, String(i)).toHaveBeenCalledWith('abort', add.mock.calls[0]![1]);
     }
+  });
+});
+
+describe('splitRoute', () => {
+  const setup = (fail: string | null = null) => {
+    const calls: [string, unknown][] = [];
+    const created = new Map<string, () => Worker>();
+    const pools: Pools = (key, create) => {
+      created.set(key, create);
+      return { run: async (request: unknown) => (calls.push([key, request]), key === fail ? Promise.reject(new Error(key)) : { key }) } as unknown as WorkerPool;
+    };
+    const lazy: Lazy = (chunk) => chunk;
+    return { calls, created, pools, lazy };
+  };
+  const matroska = () => ({}) as Worker;
+  const custom = () => ({}) as Worker;
+  const analyzeOf = (file: Blob) => ({ type: 'analyze' as const, file, name: 'x', engine: 'own' as const, options: {} });
+
+  it('runs a Matroska head on the worker of its family and every other head on the worker of the route', async () => {
+    const { calls, created, pools, lazy } = setup();
+    const runner = splitRoute('custom', { matroska }, pools, lazy, new AbortController().signal, custom);
+    if (!('pool' in runner)) throw new Error('not a pool route');
+    expect(runner.kind).toBe('custom');
+    expect(await runner.pool().run(analyzeOf(new Blob([new Uint8Array(EBML)])))).toEqual({ key: 'custom-matroska' });
+    expect(await runner.pool().run(analyzeOf(new Blob([new Uint8Array([0, 0, 0, 0x18])])))).toEqual({ key: 'custom' });
+    expect(calls.map(([key]) => key)).toEqual(['custom-matroska', 'custom']);
+    expect([...created]).toEqual([
+      ['custom-matroska', matroska],
+      ['custom', custom],
+    ]);
+  });
+
+  it('sends a warm request to the worker of each family it names, once, and settles when every one has', async () => {
+    const { calls, pools, lazy } = setup('custom-matroska');
+    const route = splitRoute('custom', { matroska }, pools, lazy, new AbortController().signal, custom);
+    if (!('pool' in route)) throw new Error('not a pool route');
+    const warm = { type: 'warm' as const, engines: ['own' as const], containers: ['matroska', 'isobmff', 'matroska'] as const };
+    await expect(route.pool().run(warm)).resolves.toEqual([
+      { status: 'fulfilled', value: { key: 'custom' } },
+      { status: 'rejected', reason: new Error('custom-matroska') },
+    ]);
+    expect(calls).toEqual([
+      ['custom', { ...warm, containers: ['isobmff'] }],
+      ['custom-matroska', { ...warm, containers: ['matroska'] }],
+    ]);
+    expect(await route.pool().run({ ...warm, containers: [] })).toEqual([]);
+    expect(calls).toHaveLength(2);
+  });
+
+  it('rejects through lazy and reaches no pool when the probe is destroyed while the head is read', async () => {
+    const { calls, pools } = setup();
+    const life = new AbortController();
+    const destroyed = new Error('probe destroyed');
+    const lazy: Lazy = <T>(chunk: Promise<T>) => {
+      if (!life.signal.aborted) {
+        life.abort();
+        return chunk;
+      }
+      chunk.catch(() => {});
+      return Promise.reject(destroyed);
+    };
+    const route = splitRoute('own', { matroska }, pools, lazy, life.signal);
+    if (!('pool' in route)) throw new Error('not a pool route');
+    await expect(route.pool().run(analyzeOf(new Blob([new Uint8Array(EBML)])))).rejects.toBe(destroyed);
+    expect(calls).toEqual([]);
   });
 });

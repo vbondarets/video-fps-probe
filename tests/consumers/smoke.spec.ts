@@ -3,7 +3,7 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
 import { expect, test, type Page } from '@playwright/test';
-import { CONSUMERS_PORT, FIXTURES, OWN_WORKERS, buildUrl, consumersDir, devUrl, installedPackage } from '../../scripts/consumers.mjs';
+import { CONSUMERS_PORT, FIXTURES, OWN_WORKERS, SPLIT_ROUTING, buildUrl, consumersDir, devUrl, installedPackage } from '../../scripts/consumers.mjs';
 import type { EngineDescriptor, ProbeResult } from '../../src/index.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
 
@@ -133,6 +133,8 @@ for (const fixture of FIXTURES) {
       });
       const workerUrls: string[] = [];
       page.on('worker', (worker) => workerUrls.push(worker.url()));
+      const requested: string[] = [];
+      page.on('request', (request) => requested.push(request.url()));
       await page.goto(mode === 'build' ? buildUrl(CONSUMERS_PORT, fixture.name) : devUrl(CONSUMERS_PORT, fixture.name));
       await page.waitForFunction(() => window.__probe !== undefined);
       expect(await page.evaluate(() => [...(window.__probe as ConsumerProbe).engines])).toEqual(fixture.engines);
@@ -183,6 +185,11 @@ for (const fixture of FIXTURES) {
         }
       }
       for (const name of fixture.workers) expect(workerUrls.some((url) => url.includes(name)), `a ${name} worker ran (started: ${workerUrls.join(', ') || 'none'})`).toBe(true);
+      if (mode === 'build') {
+        const routing = requested.filter((url) => /\/assets\/route-[\w-]+\.js$/.test(url));
+        if (fixture.byContainer) expect(routing, 'the split routing chunk loads once with byContainer').toHaveLength(1);
+        if (fixture.clientMustNot?.includes(SPLIT_ROUTING)) expect(routing, 'a custom worker without byContainer never loads the split routing').toEqual([]);
+      }
       expect(pageErrors).toEqual([]);
       expect(navigations, mode === 'dev' ? 'the dev server reloaded the page when an engine first ran' : 'the page navigated again').toBe(1);
     });

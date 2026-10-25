@@ -7,7 +7,7 @@ vi.mock('../../src/client/fallback.ts', async (importOriginal) => {
   return importOriginal();
 });
 
-import { createProbeClient } from '../../src/client/probe.ts';
+import { createProbeClient } from '../../src/client/create.ts';
 import { fakeResult, FakeWorker } from './fake-worker.ts';
 import { analyzed, customWorker, fakeModule, mainDescriptor, mp4File } from './probe-helpers.ts';
 

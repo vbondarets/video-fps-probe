@@ -37,7 +37,7 @@ async function loadProbe(gates: Gates = {}) {
     await gates.inline;
     return importOriginal();
   });
-  return (await import('../../src/client/probe.ts')).createProbeClient;
+  return (await import('../../src/client/create.ts')).createProbeClient;
 }
 
 const failedChunk = () => {

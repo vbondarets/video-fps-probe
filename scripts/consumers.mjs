@@ -22,6 +22,8 @@ const ES = "format: 'es'";
 export const OWN_WORKERS = { isobmff: 'own-isobmff.worker', matroska: 'own-matroska.worker' };
 const OWN = Object.values(OWN_WORKERS);
 const PREBUILT_OWN = ['video-fps-probe/dist/worker/own.worker.js', 'video-fps-probe/dist/worker/own-isobmff.worker.js', 'video-fps-probe/dist/worker/own-matroska.worker.js'];
+const EAGER_CLIENT = 'video-fps-probe/dist/client/create.js';
+export const SPLIT_ROUTING = 'video-fps-probe/dist/client/route.js';
 export const WORKER_MUST_NOT = {
   [OWN_WORKERS.isobmff]: ['video-fps-probe/dist/core/matroska/', 'video-fps-probe/dist/core/rfps.js', 'video-fps-probe/dist/core/analyze.js'],
   [OWN_WORKERS.matroska]: ['video-fps-probe/dist/core/isobmff/', 'video-fps-probe/dist/core/analyze.js'],
@@ -45,7 +47,8 @@ export const FIXTURES = [
     worker: ES,
     engines: ['own'],
     workers: ['fps.worker'],
-    mustNot: ['video-fps-probe/dist/plugins/own.js', ...PREBUILT_OWN, 'node_modules/mp4box/', 'node_modules/mediabunny/'],
+    mustNot: ['video-fps-probe/dist/plugins/own.js', ...PREBUILT_OWN, EAGER_CLIENT, 'node_modules/mp4box/', 'node_modules/mediabunny/'],
+    clientMustNot: [SPLIT_ROUTING],
   },
   { name: 'mp4box', imports: ['./lazy', './mp4box'], worker: ES, engines: ['own', 'mp4box'], workers: [...OWN, 'mp4box.worker'], mustNot: ['node_modules/mediabunny/'] },
   { name: 'mediabunny', imports: ['./lazy', './mediabunny'], worker: ES, engines: ['own', 'mediabunny'], workers: [...OWN, 'mediabunny.worker'], mustNot: ['node_modules/mp4box/'] },
@@ -59,7 +62,8 @@ export const FIXTURES = [
     engines: ['own'],
     workers: ['own.worker'],
     singleFileWorkers: true,
-    mustNot: ['video-fps-probe/dist/plugins/own.js', ...PREBUILT_OWN, 'node_modules/mp4box/', 'node_modules/mediabunny/'],
+    mustNot: ['video-fps-probe/dist/plugins/own.js', ...PREBUILT_OWN, EAGER_CLIENT, 'node_modules/mp4box/', 'node_modules/mediabunny/'],
+    clientMustNot: [SPLIT_ROUTING],
   },
   {
     name: 'standalone-split-url',
@@ -69,7 +73,8 @@ export const FIXTURES = [
     engines: ['own'],
     workers: OWN,
     singleFileWorkers: true,
-    mustNot: ['video-fps-probe/dist/plugins/own.js', ...PREBUILT_OWN, 'node_modules/mp4box/', 'node_modules/mediabunny/'],
+    byContainer: true,
+    mustNot: ['video-fps-probe/dist/plugins/own.js', ...PREBUILT_OWN, EAGER_CLIENT, 'node_modules/mp4box/', 'node_modules/mediabunny/'],
   },
   {
     name: 'iife-nosplit',

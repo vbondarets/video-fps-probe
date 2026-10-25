@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProbeError } from '../../src/api/errors.ts';
-import { createProbeClient } from '../../src/client/probe.ts';
+import { createProbeClient } from '../../src/client/create.ts';
 import { fakeResult, FakeWorker } from './fake-worker.ts';
 import { analyzed, customWorker, fakeModule, mainDescriptor, mp4File, webmFile, workerDescriptor } from './probe-helpers.ts';
 

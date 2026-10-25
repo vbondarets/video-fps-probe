@@ -1,7 +1,7 @@
 import { openAsBlob } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createProbeClient } from '../../src/client/probe.ts';
+import { createProbeClient } from '../../src/client/create.ts';
 import { mediabunny } from '../../src/plugins/mediabunny.ts';
 import { mp4box } from '../../src/plugins/mp4box.ts';
 import { createProbe } from '../../src/probe.ts';

@@ -8,6 +8,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 - `byContainer` on a custom worker: `{ create, engines, byContainer: { matroska: () => new Worker(...) } }` runs own on the worker of the file's container family, and every other engine and family on `create` ([api](docs/api.md)).
 - `video-fps-probe/standalone/own-isobmff.worker.js` and `own-matroska.worker.js`: the two own workers as classic scripts with no imports, about 21.2 and 23.8 KB gzip, for `byContainer`. The combined `own.worker.js` stays.
+- `lazyProbeClient` loads the routing by container family only with `byContainer`, as a chunk of about 0.4 KB gzip after the probe client, so a custom worker without it loads about 23.6 KB for the first MP4 (23.5 KB in 0.2.0).
 - A weekly canary builds the package with the latest mp4box, mediabunny, Vite and rolldown: the comparison against ffprobe, the size budgets and the browser smoke test. It fails only when an own result changes or a size check fails, never when only a library arm changes: its smoke test asserts own only, and the job summary lists what changed in the library arms, in the comparison and in the browsers.
 
 ### Changed

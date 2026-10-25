@@ -6,8 +6,12 @@ export interface ConsumerFixture {
   engines: Array<'own' | 'mp4box' | 'mediabunny' | 'rvfc'>;
   workers: string[];
   singleFileWorkers?: boolean;
+  byContainer?: boolean;
   mustNot: string[];
+  clientMustNot?: string[];
 }
+
+export const SPLIT_ROUTING: string;
 
 export const OWN_WORKERS: Record<'isobmff' | 'matroska', string>;
 

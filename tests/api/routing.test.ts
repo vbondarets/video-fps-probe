@@ -1,7 +1,8 @@
 import { openAsBlob } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createProbeClient, createProbeCore } from '../../src/client/probe.ts';
+import { createProbeClient } from '../../src/client/create.ts';
+import { createProbeCore } from '../../src/client/probe.ts';
 import { analyze as analyzeCore } from '../../src/core/analyze.ts';
 import type { FileResult } from '../../src/core/types.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';

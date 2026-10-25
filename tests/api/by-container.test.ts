@@ -1,7 +1,7 @@
 import { openAsBlob } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createProbeClient } from '../../src/client/probe.ts';
+import { createProbeClient } from '../../src/client/create.ts';
 import type { CustomWorker } from '../../src/client/types.ts';
 import { analyze as analyzeCore } from '../../src/core/analyze.ts';
 import type { FileResult } from '../../src/core/types.ts';
@@ -44,11 +44,17 @@ describe('custom worker byContainer', () => {
     ]);
   });
 
-  it('prewarms one request per worker, with the union of the containers of the engines that share it', async () => {
+  it('prewarms own per container family on the worker of each family, and another engine on the custom worker with all of them', async () => {
     const probe = createProbeClient({ worker: { create: FakeWorker.as('custom'), engines: ['own', 'mediabunny'], byContainer: { matroska: FakeWorker.as('matroska') } } });
     await probe.prewarm({ engines: ['own', 'mediabunny'], containers: ['isobmff', 'matroska'] });
     expect(FakeWorker.instances.map((w) => [w.label, w.posted])).toEqual([
-      ['custom', [{ v: 1, id: 1, type: 'warm', engines: ['own', 'mediabunny'], containers: ['isobmff', 'matroska'] }]],
+      [
+        'custom',
+        [
+          { v: 1, id: 1, type: 'warm', engines: ['own'], containers: ['isobmff'] },
+          { v: 1, id: 2, type: 'warm', engines: ['mediabunny'], containers: ['isobmff', 'matroska'] },
+        ],
+      ],
       ['matroska', [{ v: 1, id: 1, type: 'warm', engines: ['own'], containers: ['matroska'] }]],
     ]);
   });

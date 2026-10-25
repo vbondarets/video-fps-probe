@@ -10,7 +10,7 @@ vi.mock('../../src/api/agreement.ts', async (importOriginal) => {
   return importOriginal();
 });
 
-import { createProbeClient } from '../../src/client/probe.ts';
+import { createProbeClient } from '../../src/client/create.ts';
 
 beforeEach(() => {
   FakeWorker.reset();
