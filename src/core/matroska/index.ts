@@ -20,6 +20,8 @@ const SYNC_SEARCH_BYTES = 1024 * 1024;
 const SYNC_SEARCH_STEP = 256 * 1024;
 const FIRST_CLUSTER_SEARCH_BYTES = 16 * 1024 * 1024;
 const DENSITY_SAMPLE_BYTES = 16 * 1024;
+const ESTIMATE_PACKETS = 48;
+const ESTIMATE_BYTES = 5_000_000;
 const MAX_CUE_FALLBACKS = 4;
 const MAX_BLOCK_BYTES = 0x10000000;
 const SAMPLED_IDS: ReadonlySet<number> = new Set([ID_TIMESTAMP, ID_VOID, ID_CRC32, ID_POSITION, ID_PREV_SIZE]);
@@ -196,6 +198,11 @@ export function estimateScan(region: number, d: BlockDensity | null, durationFra
   const sampledVideo = d.video * k;
   const blocks = d.blocks * k * (d.video > 0 && durationFrames > sampledVideo ? durationFrames / sampledVideo : 1);
   return { blocks, large: d.large * k, smallBytes: d.smallBytes * k };
+}
+
+export function estimateWalkMs(region: number, d: BlockDensity | null, opts: ResolvedAnalyzeOptions): number {
+  const bytes = Math.min(region, ESTIMATE_BYTES, d?.video ? Math.ceil((ESTIMATE_PACKETS * d.bytes) / d.video) : ESTIMATE_BYTES);
+  return predictReadMs(opts.costModel, Math.ceil(bytes / opts.readAhead.head), bytes);
 }
 
 export interface ScanPlan {
@@ -411,13 +418,16 @@ export async function analyzeMatroska(reader: BlobReader, opts: ResolvedAnalyzeO
   const t0 = video[0];
   const dur = h.tagDurations.get(t0.uid) ?? infoDurationSec(h);
   const durationFrames = dur > 0 && t0.defaultDuration > 0 ? (dur * 1e9) / t0.defaultDuration : 0;
-  const plan = planExactScan(region, estimateScan(region, await sampleDensity(src, video, first, region), durationFrames), opts);
+  const density = await sampleDensity(src, video, first, region);
+  const plan = planExactScan(region, estimateScan(region, density, durationFrames), opts);
+  const estimate = t0.defaultDuration ? null : await loadEstimate();
   if (mode === 'auto') {
-    mode = plan.ms <= opts.exactBudgetMs ? 'exact' : 'probe';
-    if (mode === 'probe') w.push(`exact block scan skipped: predicted ${plan.ms.toFixed(0)} ms exceeds the ${opts.exactBudgetMs} ms budget`);
+    const walkMs = typeof estimate === 'object' && estimate && !estimate.setupUnsupported(h) ? estimateWalkMs(region, density, opts) : 0;
+    mode = plan.ms <= opts.exactBudgetMs + walkMs ? 'exact' : 'probe';
+    const walk = walkMs ? ` plus the ${walkMs.toFixed(0)} ms that probe mode reads for the ffprobe estimate` : '';
+    if (mode === 'probe') w.push(`exact block scan skipped: predicted ${plan.ms.toFixed(0)} ms exceeds the ${opts.exactBudgetMs} ms budget${walk}`);
   }
   const r0 = a.videoTracks[0];
-  const estimate = t0.defaultDuration ? null : await loadEstimate();
   const note = (est: FfprobeRates | string): void => {
     if (typeof est !== 'string') {
       r0.avgFpsFfprobe = est.avg;

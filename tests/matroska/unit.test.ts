@@ -1,12 +1,15 @@
+import { openAsBlob } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { analyze } from '../../src/core/analyze.ts';
 import { readHeader, readId, readSize, UNKNOWN_SIZE, vintLength } from '../../src/core/matroska/ebml.ts';
 import { parseDurationTag } from '../../src/core/matroska/header.ts';
-import { codecNameOf, declaredRate, mergeRunStats, planExactScan } from '../../src/core/matroska/index.ts';
+import { codecNameOf, declaredRate, estimateWalkMs, mergeRunStats, planExactScan } from '../../src/core/matroska/index.ts';
 import { parseBlockHeader } from '../../src/core/matroska/scan.ts';
 import { resolveOptions } from '../../src/core/options.ts';
 import { analyzeTimeline } from '../../src/core/stats.ts';
 import type { AnalyzeOptions, FileResult } from '../../src/core/types.ts';
+import { FILES_DIR } from '../helpers/fixtures.ts';
 import {
   blockBody,
   blockGroup,
@@ -434,6 +437,28 @@ describe('modes', () => {
     const tight = await run(simpleFile({ frames: 60 }), { matroskaMode: 'auto', exactBudgetMs: 0 });
     expect(tight.scan).toBe('probe');
     expect(tight.warnings.join(' ')).toMatch(/exact block scan skipped/);
+  });
+
+  it('counts in auto the walk that probe mode reads for the ffprobe estimate of a file without DefaultDuration', async () => {
+    const costModel = { perReadMs: 0, bytesPerMs: 1, perBlockMs: 0 };
+    const fixture = async (name: string, exactBudgetMs: number) => run(await openAsBlob(join(FILES_DIR, name)), { matroskaMode: 'auto', exactBudgetMs, costModel });
+    const skipped = (r: FileResult): number[] => (/predicted (\d+) ms exceeds the \d+ ms budget(?: plus the (\d+) ms)?/.exec(r.warnings.join(' ')) ?? []).slice(1).map(Number);
+    const [plan, walk] = skipped(await fixture('vp9_no_defaultduration.webm', 0));
+    expect(plan).toBeGreaterThan(walk!);
+    expect(walk).toBeGreaterThan(0);
+    expect(skipped(await fixture('vp9.webm', 0))).toEqual([plan, Number.NaN]);
+    expect((await fixture('vp9_no_defaultduration.webm', plan! - walk! / 2)).scan).toBe('exact');
+    expect((await fixture('vp9_no_defaultduration.webm', plan! - walk! - 2)).scan).toBe('probe');
+    expect((await fixture('vp9.webm', plan! - walk! / 2)).scan).toBe('probe');
+  });
+
+  it('predicts the estimate walk from the sampled block density, at most 5,000,000 bytes and the region', () => {
+    const opts = resolveOptions({ costModel: { perReadMs: 1, bytesPerMs: 1000, perBlockMs: 0 } });
+    const density = { bytes: 16_000, blocks: 2, video: 1, large: 1, smallBytes: 0 };
+    expect(estimateWalkMs(10_000_000, density, opts)).toBe(Math.ceil(768_000 / 65_536) + 768);
+    expect(estimateWalkMs(100_000, density, opts)).toBe(2 + 100);
+    expect(estimateWalkMs(100_000_000, { ...density, bytes: 1_000_000 }, opts)).toBe(Math.ceil(5_000_000 / 65_536) + 5000);
+    expect(estimateWalkMs(100_000_000, null, opts)).toBe(Math.ceil(5_000_000 / 65_536) + 5000);
   });
 
   it('keeps the exact frame count but skips per-frame statistics above maxExpandedSamples', async () => {

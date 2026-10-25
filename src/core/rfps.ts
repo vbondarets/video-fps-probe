@@ -254,7 +254,7 @@ function codecUnsupported(t: MkvTrack, packets: readonly Uint8Array[]): string |
   return t.codecId === AVC ? h264Unsupported(cp, packets) : null;
 }
 
-function setupUnsupported(h: MkvHeader): string | null {
+export function setupUnsupported(h: MkvHeader): string | null {
   const video = h.tracks.filter((t) => t.type === 1);
   if (video.length !== 1) return `${video.length} video tracks`;
   if (new Set(h.tracks.map((t) => t.number)).size < h.tracks.length) return 'duplicate track numbers';
