@@ -87,9 +87,13 @@ describe('presets', () => {
   });
 
   it('warns, without failing, about a preset verified more than 90 days ago', () => {
-    const verified = Date.parse('2026-10-25T00:00:00Z');
-    expect(stale(verified + 90 * DAY_MS)).toEqual([]);
-    expect(stale(verified + 91 * DAY_MS).length).toBe(ALL.length);
+    for (const [name, preset] of ALL) {
+      const verified = Date.parse(`${preset.verifiedAt}T00:00:00Z`);
+      const staleNames = (now: number): string[] => stale(now).map(([n]) => n);
+      expect(staleNames(verified + STALE_AFTER_DAYS * DAY_MS), name).not.toContain(name);
+      expect(staleNames(verified + (STALE_AFTER_DAYS + 1) * DAY_MS), name).toContain(name);
+      expect(ageInDays(preset, verified + STALE_AFTER_DAYS * DAY_MS + DAY_MS - 1), name).toBe(STALE_AFTER_DAYS);
+    }
     for (const [name, preset] of stale(Date.now())) {
       const message = `${name} was verified on ${preset.verifiedAt}, ${ageInDays(preset, Date.now())} days ago: verify it again against ${preset.sourceUrl}`;
       if (process.env.GITHUB_ACTIONS) console.log(`::warning title=Stale preset::${message}`);
