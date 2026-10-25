@@ -273,7 +273,7 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
     if (list == null) return;
     if (!Array.isArray(list) || list.some((x) => typeof x !== 'string')) invalid(rule, list, 'a list of strings');
     if (typeof actual !== 'string' || !actual || actual === 'unknown') unknown(rule, missing);
-    else if (!list.some((x) => x.toLowerCase() === actual.toLowerCase())) add(rule, severity, list, actual, `${actual} is not one of ${list.join(', ')}`);
+    else if (!list.some((x) => x.toLowerCase() === actual.toLowerCase())) add(rule, severity, list, actual, `${actual} is not one of ${list.length ? list.join(', ') : 'an empty list'}`);
   };
   const policy = (rule: 'vfr' | 'uneven', state: unknown, missing: string, message: string): boolean => {
     const p = rules[rule];

@@ -294,6 +294,13 @@ describe('check: allowlists, audio and rate policies', () => {
     expect(check(result({}, { container: 'unknown' }), { containers: ['mp4'] }).violations[0]).toMatchObject({ rule: 'containers', severity: 'unknown', message: 'containers: unknown, no container' });
   });
 
+  it('names an empty allowlist as the fps oneOf does', () => {
+    expect(check(result({}, { container: 'mp4' }), { containers: [] }).violations).toEqual([{ rule: 'containers', severity: 'fail', expected: [], actual: 'mp4', message: 'containers: mp4 is not one of an empty list' }]);
+    expect(check(result(), { codecs: [] }).violations).toEqual([{ rule: 'codecs', severity: 'fail', expected: [], actual: 'h264', message: 'codecs: h264 is not one of an empty list' }]);
+    expect(check(result({ avgFps: rate(30) }), { fps: { oneOf: [] } }).violations[0]!.message).toBe('fps.oneOf: 30 fps is not one of an empty list');
+    expect(check(result({}, { container: 'unknown' }), { containers: [] }).verdict).toBe('unknown');
+  });
+
   it('requires or forbids audio', () => {
     expect(failed(result({}, { audioTrackCount: 0 }), { audio: 'required' })).toEqual(['audio']);
     expect(failed(result({}, { audioTrackCount: 2 }), { audio: 'required' })).toEqual([]);
