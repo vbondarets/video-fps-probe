@@ -293,7 +293,8 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   const fps = t && judgedFps(t, rules.fps?.source, cfr);
   const near = t && (rules.fps?.source ?? 'avg') === 'avg' ? resolution(t, cfr) : undefined;
   limits('fps', rules.fps, fps, fps ? fraction(fps) : '', (against) => fpsText(fps!, against), ' fps', `${rules.fps?.source ?? 'avg'} frame rate`, '', near);
-  const span = cfr?.[1] ?? quantity(t && (t.durationSec ?? result!.formatDurationSec));
+  const exact = cfr?.[1] ?? quantity(t && (t.durationSec ?? result!.formatDurationSec));
+  const span: Q | null = exact && [(exact[0] * 2_000_000n + exact[1]) / (2n * exact[1]), 1_000_000n];
   const seconds = span ? value(span) : 0;
   limits('duration', rules.duration, span, seconds, (against) => `${digits(span!, against)}`, ' s', 'duration');
 

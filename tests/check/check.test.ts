@@ -1,4 +1,4 @@
-import { openAsBlob } from 'node:fs';
+import { openAsBlob, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { check, type CheckRules, type FpsRule } from '../../src/check/index.ts';
@@ -6,7 +6,7 @@ import { analyze } from '../../src/core/analyze.ts';
 import { emptyAnalysis, emptyTrack } from '../../src/core/result.ts';
 import { makeRational } from '../../src/core/rational.ts';
 import type { FileResult, NominalFps, Rational, VideoTrackResult } from '../../src/core/types.ts';
-import { FILES_DIR } from '../helpers/fixtures.ts';
+import { FILES_DIR, loadRef } from '../helpers/fixtures.ts';
 
 const run = async (name: string) => analyze(await openAsBlob(join(FILES_DIR, name)), name);
 
@@ -259,7 +259,19 @@ describe('check: duration, frame size, aspect ratio, pixels and file size', () =
 
   it('reports the duration of a constant track on 1 ms ticks as its frames over its nominal rate', () => {
     const track = { avgFps: rate(901000, 30033), durationSec: 30.033, nominalFps: { ...rate(30), kind: 'declared' as const }, timestampsQuantized: true, frames: 901, presentedFrames: 901 };
-    expect(check(result(track), { duration: { max: 30 } }).violations).toEqual([{ rule: 'duration.max', severity: 'fail', expected: 30, actual: 901 / 30, message: 'duration.max: 30.033 s is above the maximum 30 s' }]);
+    expect(check(result(track), { duration: { max: 30 } }).violations).toEqual([{ rule: 'duration.max', severity: 'fail', expected: 30, actual: 30.033333, message: 'duration.max: 30.033 s is above the maximum 30 s' }]);
+  });
+
+  it('judges the duration at the microsecond, as ffprobe prints it', () => {
+    const webm5994 = { avgFps: rate(90000, 1501), nominalFps: { ...rate(19001, 317), kind: 'declared' as const }, timestampsQuantized: true, frames: 180, presentedFrames: 180, durationSec: 3.002 };
+    expect(180 * (317 / 19001)).toBeLessThan(3.003);
+    for (const duration of [{ min: 3.003 }, { max: 3.003 }, { min: 3.003, max: 3.003 }, { min: '3.003000' }]) {
+      expect(check(result(webm5994), { duration } as CheckRules), JSON.stringify(duration)).toEqual({ verdict: 'pass', violations: [] });
+    }
+    expect(check(result(webm5994), { duration: { min: 3.0031 } }).violations).toEqual([{ rule: 'duration.min', severity: 'fail', expected: 3.0031, actual: 3.003, message: 'duration.min: 3.003 s is below the minimum 3.0031 s' }]);
+    expect(failed(result({ durationSec: 3.0029999999999997 }), { duration: { min: 3.003 } })).toEqual([]);
+    expect(failed(result({ durationSec: 3.0000005 }), { duration: { max: 3 } })).toEqual(['duration.max']);
+    expect(failed(result({ durationSec: 3.0000004 }), { duration: { max: 3 } })).toEqual([]);
   });
 
   it('treats a size that is not a whole number as missing, instead of throwing', () => {
@@ -672,6 +684,25 @@ describe('check: committed fixtures', () => {
     expect(check(w24, { fps: { exact: 24 } }).verdict).toBe('pass');
     expect(check(w5994, { fps: { max: 60 } }).verdict).toBe('pass');
     expect(check(w5994, { fps: { min: 60 } }).violations.map((v) => [v.rule, v.actual])).toEqual([['fps.min', '19001/317']]);
+  });
+
+  it('passes the duration ffprobe prints on every constant committed file on 1 ms ticks', async () => {
+    const tag = (s: string): number => s.split(':').reduce((a, x) => a * 60 + Number(x), 0);
+    const judged: string[] = [];
+    for (const name of readdirSync(FILES_DIR)) {
+      const ref = loadRef(name) as { probe?: { streams?: Array<{ codec_type: string; duration?: string; tags?: { DURATION?: string } }> } } | null;
+      const stream = ref?.probe?.streams?.find((s) => s.codec_type === 'video');
+      const printed = stream?.duration && stream.duration !== 'N/A' ? Number(stream.duration) : stream?.tags?.DURATION ? +tag(stream.tags.DURATION).toFixed(6) : null;
+      if (printed === null) continue;
+      const r = await run(name);
+      const t = r.videoTracks.find((x) => x.trackId === r.primaryTrackId);
+      if (!t?.timestampsQuantized || t.isVfr !== false) continue;
+      judged.push(name);
+      expect(check(r, { duration: { min: printed, max: printed } }), `${name}: ffprobe ${printed} s`).toEqual({ verdict: 'pass', violations: [] });
+    }
+    expect(judged).toEqual(expect.arrayContaining(['cfr_vp9_59.94.webm', 'cfr_vp9_23.976.webm', 'cfr_vp9_60.webm', 'remux_cfr_29.97_ts16000.mp4']));
+    expect(judged.length).toBeGreaterThanOrEqual(15);
+    expect(check(await run('cfr_vp9_59.94.webm'), { duration: { min: 3.003 } })).toEqual({ verdict: 'pass', violations: [] });
   });
 
   it('judges the 3 s of a constant 60 fps WebM whose 1 ms ticks span 2.999 s', async () => {
