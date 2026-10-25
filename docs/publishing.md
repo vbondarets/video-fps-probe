@@ -25,6 +25,7 @@ The package has no dependencies. mp4box, mediabunny and React are optional peers
 
 Trusted publishing is configured on the package's settings page, and `npm trust` needs the package to exist, so the first version is published by hand.
 
+0. **Make the package public, then release.** npm refuses to publish a package whose `package.json` has `"private": true`, so a `chore(package)` commit on `main` sets `"private": false` before the release. Only then [Releasing](releasing.md) makes the 0.2.0 commit and the `v0.2.0` tag; its `preversion` step refuses `"private": true`, so a tag that npm cannot publish is never pushed.
 1. **Two-factor authentication.** npm publishes only from an account with 2FA on, or with a granular token that bypasses it. On npmjs.com, Account > Two-Factor Authentication > Enable 2FA, with a security key: a hardware key or a platform authenticator such as Windows Hello, Touch ID or Face ID (WebAuthn, set up on the website only). Keep the recovery codes off that device.
 2. **Log in.** `npm login`, whose default `auth-type` is `web`; `npm whoami` prints the account.
 3. **Publish the tag** from a clean clone, with the Node version of `.nvmrc`:
@@ -32,12 +33,14 @@ Trusted publishing is configured on the package's settings page, and `npm trust`
    ```sh
    git fetch --tags
    git switch --detach v0.2.0
-   npm ci
+   npm ci --ignore-scripts
+   node scripts/release-prep.mjs --publish-check v0.2.0   # prints latest
    npm publish --access public
    ```
 
-   `npm publish` runs `prepack`, which builds `dist/` and runs `scripts/check-dist.mjs`, then asks for the second factor. `--access public` is already the default of a new unscoped package (an unscoped package cannot be restricted); it keeps the command the same as the workflow's. npm refuses to publish while `package.json` has `"private": true`.
+   `--publish-check` is the check the Release workflow runs before it publishes: it fails unless the tag is `v` plus the `package.json` version, `private` is not true and npm is 11.5.1 or later, and prints the dist-tag. `--ignore-scripts` keeps the install scripts of the dev dependencies from running in a shell that is logged in to npm; the build needs none (only `fsevents`, which is for macOS, has one). `npm publish` still runs the package's own `prepack`, which builds `dist/` and runs `scripts/check-dist.mjs`, then asks for the second factor. `--access public` is already the default of a new unscoped package (an unscoped package cannot be restricted); it keeps the command the same as the workflow's.
 4. **Confirm.** `npm view video-fps-probe` shows the package, and `npm view video-fps-probe dist-tags` shows `latest: 0.2.0`.
+5. **GitHub Release**, once npm has the version: `gh release create v0.2.0 --title 0.2.0 --notes "$(node scripts/release-prep.mjs --notes 0.2.0)"`.
 
 A version published from a laptop has no provenance; npm generates it only for a publish from a supported CI system.
 
