@@ -86,6 +86,50 @@ describe('check: frame rate as exact rationals', () => {
   });
 });
 
+describe('check: rule validation', () => {
+  const thrown = (f: () => unknown): unknown => {
+    try {
+      f();
+    } catch (e) {
+      return e;
+    }
+    return null;
+  };
+
+  it.each([
+    ['a negative display size', '{"display":{"minWidth":-5}}', "display.minWidth: -5 is not a non-negative number or 'num/den'"],
+    ['a display size that is not a number', '{"display":{"minShortSide":"wide"}}', 'display.minShortSide: "wide" is not a non-negative number or \'num/den\''],
+    ['an allowlist entry that is not a string', '{"containers":["mp4",4]}', 'containers: ["mp4",4] is not a list of strings'],
+    ['an allowlist that is not a list', '{"codecs":"h264"}', 'codecs: "h264" is not a list of strings'],
+    ['an audio rule it does not know', '{"audio":"require"}', 'audio: "require" is not one of required, forbidden'],
+    ['a vfr policy it does not know', '{"vfr":"rejected"}', 'vfr: "rejected" is not one of allow, warn, reject'],
+    ['an uneven policy it does not know', '{"uneven":true}', 'uneven: true is not one of allow, warn, reject'],
+    ['a severity it does not know', '{"severity":"warning"}', 'severity: "warning" is not one of fail, warn'],
+    ['a frame rate source it does not know', '{"fps":{"min":24,"source":"mean"}}', 'fps.source: "mean" is not one of avg, ffprobe, nominal, dominant'],
+    ['a rule group that is not an object', '{"fps":24}', 'fps: 24 is not an object'],
+    ['rules that are not an object', 'null', 'rules: null is not an object'],
+  ])('throws a TypeError naming the rule for %s, whatever the result', (_, json, message) => {
+    for (const r of [result(), result({}, { error: 'moov box not found' }), null]) {
+      expect(thrown(() => check(r, JSON.parse(json) as CheckRules)), json).toEqual(new TypeError(message));
+    }
+    expect(thrown(() => check(result(), undefined as unknown as CheckRules))).toEqual(new TypeError('rules: undefined is not an object'));
+  });
+
+  it('judges a display size given as a decimal string, as every other bound', () => {
+    expect(failed(result(), JSON.parse('{"display":{"minShortSide":"2000","maxLongSide":"1920"}}') as CheckRules)).toEqual(['display.minShortSide']);
+  });
+
+  it('gives one unknown entry for the display rule of a track without a size', () => {
+    expect(check(result({ width: 0, height: 0 }), { display: { minWidth: 1, maxHeight: 2, minShortSide: 1 } }).violations).toEqual([{ rule: 'display', severity: 'unknown', expected: null, actual: null, message: 'display: unknown, no display size' }]);
+  });
+});
+
+describe('check: bounds of the display size', () => {
+  it('reports the side, the bound and the size', () => {
+    expect(check(result({ width: 699, height: 1000 }), { display: { minShortSide: 700 } }).violations).toEqual([{ rule: 'display.minShortSide', severity: 'fail', expected: 700, actual: 699, message: 'display.minShortSide: 699 px is below the minimum 700 px' }]);
+  });
+});
+
 describe('check: duration, display size, aspect ratio, pixels and file size', () => {
   it.each([
     ['3 s meets a minimum of 3', { durationSec: 3 }, { duration: { min: 3 } }, []],

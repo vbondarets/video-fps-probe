@@ -76,6 +76,14 @@ const DECIMATE_FROM = 1.5;
 const SPAN_SLACK_MS = 3n;
 const BOUNDS: readonly Bound[] = ['min', 'max', 'exact', 'oneOf'];
 const RELATION: Record<Bound, string> = { min: 'below the minimum', max: 'above the maximum', exact: 'not', oneOf: 'not one of' };
+const SIDES = ['Width', 'Height', 'ShortSide', 'LongSide'] as const;
+const GROUPS = ['fps', 'duration', 'display', 'aspectRatio', 'pixels', 'fileSize'] as const;
+const POLICIES: readonly RatePolicy[] = ['allow', 'warn', 'reject'];
+const SOURCES: readonly FpsSource[] = ['avg', 'ffprobe', 'nominal', 'dominant'];
+
+const invalid = (rule: string, v: unknown, what: string): never => {
+  throw new TypeError(`${rule}: ${JSON.stringify(v)} is not ${what}`);
+};
 
 function decimal(s: string): Q | null {
   const m = /^(\d+)(?:\.(\d+))?(?:e([+-]?\d+))?$/i.exec(s.trim());
@@ -89,8 +97,7 @@ function ratio(v: unknown, rule: string): Q {
   const parts = typeof v === 'number' ? [String(v)] : typeof v === 'string' ? v.split(/[/:]/) : [];
   const [a, b] = parts.map(decimal);
   const q: Q | null = a && parts.length === 1 ? a : a && b && parts.length === 2 ? [a[0] * b[1], a[1] * b[0]] : null;
-  if (!q || q[1] === 0n) throw new TypeError(`${rule}: ${JSON.stringify(v)} is not a non-negative number or 'num/den'`);
-  return q;
+  return q && q[1] !== 0n ? q : invalid(rule, v, "a non-negative number or 'num/den'");
 }
 
 const cmp = (a: Q, b: Q): bigint => a[0] * b[1] - b[0] * a[1];
@@ -149,25 +156,30 @@ function fit(target: number, rule: FpsRule = {}): [number, number] {
 }
 
 export function check(result: FileResult | null | undefined, rules: CheckRules): CheckReport {
+  if (!rules || typeof rules !== 'object') invalid('rules', rules, 'an object');
+  for (const g of GROUPS) if (rules[g] != null && typeof rules[g] !== 'object') invalid(g, rules[g], 'an object');
+  const choices: Array<[string, unknown, readonly string[]]> = [['fps.source', rules.fps?.source, SOURCES], ['audio', rules.audio, ['required', 'forbidden']], ['vfr', rules.vfr, POLICIES], ['uneven', rules.uneven, POLICIES], ['severity', rules.severity, ['fail', 'warn']]];
+  for (const [rule, v, list] of choices) if (v != null && !list.includes(v as string)) invalid(rule, v, `one of ${list.join(', ')}`);
   const violations: CheckViolation[] = [];
   const severity = rules.severity === 'warn' ? 'warn' : 'fail';
   const error = result ? result.error : 'no result';
   const t = result && !error ? (result.videoTracks.find((x) => x.trackId === result.primaryTrackId) ?? null) : null;
   const add = (rule: string, s: CheckSeverity, expected: CheckExpected, actual: number | string | boolean | null, message: string): number => violations.push({ rule, severity: s, expected, actual, message: `${rule}: ${message}` });
-  const unknown = (rule: string, missing: string): number => add(rule, 'unknown', null, null, `unknown, ${error ? `the analysis failed: ${error}` : t ? `no ${missing}` : 'no video track'}`);
+  const unknown = (rule: string, missing: string): unknown => violations.some((v) => v.rule === rule) || add(rule, 'unknown', null, null, `unknown, ${error ? `the analysis failed: ${error}` : t ? `no ${missing}` : 'no video track'}`);
 
-  const limits = (group: string, rule: Partial<Record<Bound, RatioValue | readonly RatioValue[]>> | undefined, actual: Q | null, shown: number | string, text: string, unit: string, missing: string): void => {
-    const bounds = BOUNDS.filter((b) => rule?.[b] != null).map((b) => [b, rule![b]!, [rule![b]!].flat().map((v) => ratio(v, `${group}.${b}`))] as const);
+  const limits = (group: string, rule: Partial<Record<Bound, RatioValue | readonly RatioValue[]>> | undefined, actual: Q | null, shown: number | string, text: string, unit: string, missing: string, side = ''): void => {
+    const bounds = BOUNDS.filter((b) => rule?.[b] != null).map((b) => [b, rule![b]!, [rule![b]!].flat().map((v) => ratio(v, `${group}.${b}${side}`))] as const);
     if (bounds.length === 0) return;
     if (!actual) return void unknown(group, missing);
     for (const [b, expected, qs] of bounds) {
       const c = qs.map((q) => cmp(actual, q));
-      if (b === 'min' ? c[0]! < 0n : b === 'max' ? c[0]! > 0n : !c.includes(0n)) add(`${group}.${b}`, severity, expected, shown, `${text}${unit} is ${RELATION[b]} ${[expected].flat().join(', ')}${unit}`);
+      if (b === 'min' ? c[0]! < 0n : b === 'max' ? c[0]! > 0n : !c.includes(0n)) add(`${group}.${b}${side}`, severity, expected, shown, `${text}${unit} is ${RELATION[b]} ${[expected].flat().join(', ')}${unit}`);
     }
   };
   const quantity = (x: number | null | undefined): Q | null => (typeof x === 'number' && x >= 0 && Number.isFinite(x) ? decimal(String(x)) : null);
   const allow = (rule: 'containers' | 'codecs', list: readonly string[] | undefined, actual: string | null | undefined, missing: string): void => {
-    if (!list) return;
+    if (list == null) return;
+    if (!Array.isArray(list) || list.some((x) => typeof x !== 'string')) invalid(rule, list, 'a list of strings');
     if (!actual || actual === 'unknown') unknown(rule, missing);
     else if (!list.some((x) => x.toLowerCase() === actual)) add(rule, severity, list, actual, `${actual} is not one of ${list.join(', ')}`);
   };
@@ -190,15 +202,11 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   const w = (turned ? t?.height : t?.width) || 0;
   const h = (turned ? t?.width : t?.height) || 0;
   const sized = w > 0 && h > 0;
-  const sides: Record<string, number> = { Width: w, Height: h, ShortSide: Math.min(w, h), LongSide: Math.max(w, h) };
-  const display = Object.entries(rules.display ?? {}).filter(([key, v]) => typeof v === 'number' && /^(?:min|max)(?:Width|Height|ShortSide|LongSide)$/.test(key));
-  if (display.length > 0 && !sized) unknown('display', 'display size');
-  else
-    for (const [key, v] of display) {
-      const side = sides[key.slice(3)]!;
-      const b = key.slice(0, 3) as Bound;
-      if (b === 'min' ? side < v! : side > v!) add(`display.${key}`, severity, v!, side, `${side} px is ${RELATION[b]} ${v} px (${w}x${h})`);
-    }
+  const sides = { Width: w, Height: h, ShortSide: Math.min(w, h), LongSide: Math.max(w, h) };
+  for (const side of SIDES) {
+    const x = sides[side];
+    limits('display', { min: rules.display?.[`min${side}`], max: rules.display?.[`max${side}`] }, sized ? [BigInt(x), 1n] : null, x, `${x}`, ' px', 'display size', side);
+  }
   const area: Q = [BigInt(w), BigInt(h)];
   limits('aspectRatio', rules.aspectRatio, sized ? area : null, fraction(area), `${w}x${h} (${round(w / h)})`, '', 'display size');
   limits('pixels', rules.pixels, sized ? [BigInt(w * h), 1n] : null, w * h, `${w * h}`, ' px', 'display size');

@@ -393,8 +393,8 @@ export default defineConfig({ worker: { format: 'es' } });
 | iife-nosplit | `video-fps-probe/lazy` | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.67 KB** | 38.79 KB | 38.79 KB | - | 1 | ok (4 budgets) |
 | react | `video-fps-probe/lazy` + `video-fps-probe/react` (React 19.3.1) | format: 'es' | **1.64 KB** | 23.60 KB | 40.61 KB | - | 1 | ok (9 budgets) |
 | react18 | `video-fps-probe/lazy` + `video-fps-probe/react` (React 18.3.1) | format: 'es' | **1.63 KB** | 23.60 KB | 40.61 KB | - | 1 | ok (4 budgets) |
-| check | `video-fps-probe/lazy` + `video-fps-probe/check` | format: 'es' | **3.15 KB** | 23.60 KB | 40.61 KB | - | 1 | ok (5 budgets) |
-| preset | `video-fps-probe/lazy` + `video-fps-probe/check` + `video-fps-probe/presets` (klingO1ReferenceVideo) | format: 'es' | **3.40 KB** | 23.60 KB | 40.60 KB | - | 1 | ok (6 budgets) |
+| check | `video-fps-probe/lazy` + `video-fps-probe/check` | format: 'es' | **3.34 KB** | 23.60 KB | 40.61 KB | - | 1 | ok (5 budgets) |
+| preset | `video-fps-probe/lazy` + `video-fps-probe/check` + `video-fps-probe/presets` (klingO1ReferenceVideo) | format: 'es' | **3.58 KB** | 23.59 KB | 40.60 KB | - | 1 | ok (6 budgets) |
 | standalone worker file | `video-fps-probe/standalone/own.worker.js` | - | - | 35.80 KB | 35.80 KB | - | 1 file, no imports | ok |
 
 Measured by `npm run size:matrix` on production builds of the fixtures in `tests/consumers/fixtures/`, installed from the packed tarball into a directory outside the repository with mp4box 2.4.1 and mediabunny 1.62.1; gzip -9, KB = 1000 bytes. The critical path is the package code in the entry chunk, cut out by the hidden sourcemap. CI fails when a budget is exceeded, a configuration builds an unexpected worker file, or a sourcemap lists a module that must not be there (mp4box or mediabunny where they are not imported, the prebuilt own worker in the custom-worker build); [report/size-matrix.md](../report/size-matrix.md) lists every budget with its reason.
