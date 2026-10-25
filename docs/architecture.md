@@ -8,6 +8,7 @@ src/
   lazy.ts                          lazyProbe stub of the default flavor
   api/                             ProbeError, summarize, compareResults (no worker, no parser)
   check/                           check(result, rules): upload limits, a module with no imports
+  presets/                         provider limits as check() rules, a module with no imports
   client/                          probe client: routing, WorkerPool, fallback, compare, inline runner, lazy stubs
   plugins/                         engine descriptors; the only modules with a worker literal
   worker/                          worker runtime, the v1 protocol and the prebuilt worker entries
@@ -236,12 +237,12 @@ Where a bundler places modules shared by several lazy chunks can change between 
 
 **`scripts/check-dist.mjs`** (`npm run check:package` after publint, and `prepack`) fails on any of:
 
-- a file outside the whitelist (`dist/{index,lazy,analyze,probe}` and `dist/{core,engines,worker,client,api,plugins,react,check,standalone}/**` as `.js` and `.d.ts`), or a pack listing with anything but those plus `package.json`, `README.md`, `LICENSE` and `CHANGELOG.md`;
+- a file outside the whitelist (`dist/{index,lazy,analyze,probe}` and `dist/{core,engines,worker,client,api,plugins,react,check,presets,standalone}/**` as `.js` and `.d.ts`), or a pack listing with anything but those plus `package.json`, `README.md`, `LICENSE` and `CHANGELOG.md`;
 - an unpacked package size above the cap (`UNPACKED_CAP`, 470 KB, README and CHANGELOG included; in 0.2.0 it went from 450 to 460 KB when the H.264 slice header check of the ffprobe frame rate estimate took the package to 450.1 KB, and to 470 KB when `video-fps-probe/react` took it past 460 KB). The cap bounds the install footprint in `node_modules`, not the size of a host bundle: a bundler takes only the modules a host imports, and the size matrix below budgets that. It leaves room for the README and the CHANGELOG, which grow with every release;
 - an export or `typesVersions` target that does not exist, an import that does not resolve inside `dist/`, a `.ts` specifier, a `.d.ts` import without a `.d.ts` behind it, a `.d.ts` that no exported entry's types reach;
 - a worker reference that is not a literal `.js` URL to an existing file, or a literal outside the three plugin modules; the literal hygiene above;
 - peer isolation: the static closure of the entries and plugins reaching a parser, an engine adapter or a bare `mp4box` or `mediabunny` import; a peer imported anywhere but the two engine adapters, or by a `.d.ts`;
-- an import of any module, static or `import()`, in `dist/check/index.js`;
+- an import of any module, static or `import()`, in `dist/check/index.js` or `dist/presets/index.js`;
 - `import.meta.env`, the demo's test hook, a DOM global in a worker file;
 - an entry that throws when imported in plain Node (the SSR check).
 

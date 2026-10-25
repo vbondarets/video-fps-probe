@@ -26,5 +26,5 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src/*.ts", "src/core", "src/engines", "src/worker", "src/client", "src/api", "src/plugins", "src/react", "src/check"]
+  "include": ["src/*.ts", "src/core", "src/engines", "src/worker", "src/client", "src/api", "src/plugins", "src/react", "src/check", "src/presets"]
 }

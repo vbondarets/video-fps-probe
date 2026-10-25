@@ -11,13 +11,13 @@ const KB = 1000;
 
 export const UNPACKED_CAP = 470 * KB;
 
-const ALLOWED = [/^(?:index|lazy|analyze|probe)\.(?:js|d\.ts)$/, /^(?:core|engines|worker|client|api|plugins|react|check|standalone)\/[\w./-]+\.(?:js|d\.ts)$/];
+const ALLOWED = [/^(?:index|lazy|analyze|probe)\.(?:js|d\.ts)$/, /^(?:core|engines|worker|client|api|plugins|react|check|presets|standalone)\/[\w./-]+\.(?:js|d\.ts)$/];
 const PACK_EXTRAS = new Set(['package.json', 'README.md', 'LICENSE', 'CHANGELOG.md']);
 const LITERAL_HOSTS = ['plugins/own.js', 'plugins/mp4box.js', 'plugins/mediabunny.js'];
 const PEER_ENGINES = ['engines/mp4box.js', 'engines/mediabunny.js'];
 const PARSER_DIRS = ['core/isobmff/', 'core/matroska/'];
 const PEERS = ['mp4box', 'mediabunny'];
-const PURE_ENTRIES = ['check/index.js'];
+const PURE_ENTRIES = ['check/index.js', 'presets/index.js'];
 const WORKER_CALL = /\bnew\s+(?:Worker|SharedWorker)\s*\(/g;
 const WORKER_LITERAL = /^new\s+(?:Worker|SharedWorker)\s*\(\s*new\s+URL\s*\(\s*(?:'([^']+)'|"([^"]+)")\s*,\s*import\.meta\.url\s*\)/;
 const WORKER_ASSET = /^(?:worker\/[^/]+\.worker\.js|standalone\/.+)$/;
@@ -347,6 +347,7 @@ export function runSelfTest() {
     expectProblem('a module outside react/ importing react-dom/client fails', problemsOf({ ...react, 'core/x.js': "export const load = () => import('react-dom/client');\n" }), 'core/x.js: imports react-dom/client outside react/', true);
     expectProblem('check/index.js with no import passes', problemsOf({ 'check/index.js': 'export const check = () => null;\n' }), 'check/index.js', false);
     expectProblem('check/index.js importing a module at run time fails', problemsOf({ ...x, 'check/index.js': "import { x } from '../core/x.js';\nexport const check = () => x;\n" }), 'check/index.js: imports ../core/x.js at run time', true);
+    expectProblem('presets/index.js importing check at run time fails', problemsOf({ 'check/index.js': 'export const check = () => null;\n', 'presets/index.js': "export { check } from '../check/index.js';\n" }), 'presets/index.js: imports ../check/index.js at run time', true);
     expectProblem('check/index.js with an import() fails', problemsOf({ ...x, 'check/index.js': "export const check = () => import('../core/x.js');\n" }), 'check/index.js: imports ../core/x.js at run time', true);
     expectProblem('a .d.ts outside react/ importing react fails', problemsOf({ ...react, 'api/x.d.ts': "export type X = import('react').ReactNode;\n" }), 'api/x.d.ts: imports react outside react/', true);
 

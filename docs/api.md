@@ -8,11 +8,12 @@ The package is ESM only, targets ES2022 and ships its own types. Every entry exc
 
 | Entry | Exports | Worker literal in the build |
 |---|---|---|
-| `video-fps-probe` | `createProbe`, `analyze`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, every type on this page except `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions`, `VideoFpsState` and the check types (`CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `DisplayRule`, `RangeRule`, `RatioValue`, `RatePolicy`) | the own worker |
+| `video-fps-probe` | `createProbe`, `analyze`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, every type on this page except `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions`, `VideoFpsState` and the check types (`CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `DisplayRule`, `RangeRule`, `RatioValue`, `RatePolicy`) and the preset types (`ProviderPreset`, `PresetSourceKind`) | the own worker |
 | `video-fps-probe/lazy` | `lazyProbe`, `lazyProbeFrom`, `LazyProbe`, `ProbeOptions` | the own worker |
-| `video-fps-probe/client` | `createProbeClient`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, every type on this page except `InThreadOptions`, `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions`, `VideoFpsState` and the check types (`CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `DisplayRule`, `RangeRule`, `RatioValue`, `RatePolicy`) | none |
+| `video-fps-probe/client` | `createProbeClient`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, every type on this page except `InThreadOptions`, `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions`, `VideoFpsState` and the check types (`CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `DisplayRule`, `RangeRule`, `RatioValue`, `RatePolicy`) and the preset types (`ProviderPreset`, `PresetSourceKind`) | none |
 | `video-fps-probe/client/lazy` | `lazyProbeClient`, `lazyProbeFrom`, `ClientOptions`, `LazyProbe`, `Probe` | none |
 | `video-fps-probe/check` | `check`, `CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `DisplayRule`, `RangeRule`, `RatioValue`, `RatePolicy` | none |
+| `video-fps-probe/presets` | `klingO1ReferenceVideo`, `klingMotionControl`, `runwayAleph2`, `veoExtend`, `wan26ReferenceToVideoFal`, `seedance2ReferenceVideo`, `ProviderPreset`, `PresetSourceKind` | none |
 | `video-fps-probe/react` | `VideoFpsProvider`, `useVideoFps`, `useVideoFpsProbe`, `usePrewarmVideoFps`, `VideoFpsProviderProps`, `UseVideoFpsOptions`, `VideoFpsState`, `VideoFpsSummary` | none |
 | `video-fps-probe/mp4box` | `mp4box()` descriptor | the mp4box worker |
 | `video-fps-probe/mediabunny` | `mediabunny()` descriptor | the mediabunny worker |
@@ -27,7 +28,7 @@ There are two flavors because bundlers emit a worker file for every `new Worker(
 - **Default flavor** (`video-fps-probe`, `video-fps-probe/lazy`): the own engine and its prebuilt worker are built in. Use it unless you build your own worker.
 - **Client flavor** (`video-fps-probe/client`, `video-fps-probe/client/lazy`): no worker is built in. You pass a worker, `'inline'`, or prebuilt descriptors. A host with its own worker uses this flavor so the unused own worker is never emitted.
 
-The `mp4box` and `mediabunny` descriptors each carry their own prebuilt worker, which serves that engine and own. `rvfc`, `worker-runtime` and `engines/*` never reach a worker literal, and `check` imports no other module. `check-dist` enforces all of this on every build.
+The `mp4box` and `mediabunny` descriptors each carry their own prebuilt worker, which serves that engine and own. `rvfc`, `worker-runtime` and `engines/*` never reach a worker literal, and `check` and `presets` import no other module. `check-dist` enforces all of this on every build.
 
 ## Probes
 
@@ -505,6 +506,39 @@ report.verdict; // 'fail' for a 23.976 fps file
 report.violations[0]; // { rule: 'fps.min', severity: 'fail', expected: 24, actual: '24000/1001', message: 'fps.min: 23.976 (24000/1001) fps is below the minimum 24 fps' }
 report.suggestedFps; // { value: 24, reason: '23.976 (24000/1001) fps is not allowed: convert to 24 fps' }
 ```
+
+## Presets
+
+```ts
+import { check } from 'video-fps-probe/check';
+import { klingO1ReferenceVideo } from 'video-fps-probe/presets';
+
+type PresetSourceKind = 'official' | 'gateway';
+
+interface ProviderPreset {
+  readonly name: string;
+  readonly sourceUrl: string; // the page every limit was read from
+  readonly sourceKind: PresetSourceKind; // 'gateway': documented by a reseller, not by the API owner
+  readonly verifiedAt: string; // YYYY-MM-DD, the day every number was read again from sourceUrl
+  readonly note: string; // what the rules leave out, and why
+  readonly rules: CheckRules;
+}
+
+check(result, klingO1ReferenceVideo.rules);
+```
+
+The published input limits of video generation APIs for a reference or source video, as `check()` rules. Each preset is a named export with no import, so a bundler keeps only the presets a host imports. A rule holds only a limit the source states; a limit the page leaves ambiguous or does not publish is left out, and the note says so. A size in MB is read as 1,000,000 bytes, the stricter of the two readings. A gateway preset has `severity: 'warn'`, because a reseller's limits need not be the model owner's. Limits of a request rather than a file, such as the number of reference videos or their total duration, are outside `check()`, which judges one file.
+
+| Export | Model and input | Source | Rules |
+|---|---|---|---|
+| `klingO1ReferenceVideo` | Kling O1 omni video: the feature or base video | official | 24 to 60 fps, 3 to 10 s, each side 700 to 2160 px, at most 200 MB, MP4 or MOV |
+| `klingMotionControl` | Kling Motion Control 3.0: the motion video | official | 3 to 30 s (10 s when the character orientation follows the image, not checked), each side 340 to 3850 px, at most 100 MB, MP4 or MOV |
+| `runwayAleph2` | Runway Aleph 2.0: the input video | official | at most 30 fps, 2 to 30 s, at most 200 MB (the upload limit; 32 MB by URL), MP4, MOV, Matroska or WebM with H.264, HEVC, AV1, ProRes, VP8, VP9, MJPEG or MPEG-2 |
+| `veoExtend` | Google Veo 3.1: the video to extend | official | exactly 24 fps, 1 to 30 s, 16:9 or 9:16, a short side of at least 720 px, MP4 |
+| `wan26ReferenceToVideoFal` | Wan 2.6 reference to video on fal: each reference video | official | at least 16 fps, 2 to 30 s, at most 30 MB, MP4 or MOV |
+| `seedance2ReferenceVideo` | Seedance 2.0: a reference video, as the EvoLink gateway documents it | gateway | 24 to 60 fps, 2 to 15 s, each side 300 to 6000 px, 409,600 to 2,086,876 pixels, an aspect ratio of 0.4 to 2.5, at most 50 MB, MP4 or MOV |
+
+Every number was read again from its source on 2026-10-25. The preset tests fail when a preset lacks a source, a kind, a date or a note, and warn without failing (a GitHub Actions warning in CI) when a `verifiedAt` is more than 90 days old: read the page again and move `verifiedAt` only after every number has been checked.
 
 ## Compare and agreement
 
