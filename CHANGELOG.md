@@ -80,6 +80,7 @@ These changes go into 0.2.0, a minor release under the [0.x policy](docs/api.md#
 - `avgFpsFfprobe` and `rFpsFfprobe` of a Matroska track without DefaultDuration are reproduced only in the cases listed above; elsewhere they are null and a warning names the reason.
 - A regular cadence such as 2:3 pulldown is VFR, but its rate profile reads as Steady.
 - `check` judges the stored frame size: the sample aspect ratio of a `pasp` box or a Matroska DisplayWidth is not applied.
+- `check` judges the `duration` of a VFR WebM or Matroska track on 1 ms ticks by its measured span, which can be up to about one frame interval shorter than the container duration ffprobe prints: `vfr_screenrec_ts1000.webm` lasts 5.999 s against ffprobe's 6.000000, so `duration: { min: 6 }` fails it.
 - rVFC needs playback: a visible foreground tab, a playable codec and seconds per file.
 - Files above 2^53 bytes, `cmov` headers and a moov above 256 MiB are rejected as error results.
 - In `auto` mode a large Matroska file gets a sampled probe unless the exact scan is predicted to take at most 150 ms, plus the first packets that probe mode reads for the ffprobe estimate of a track without DefaultDuration.
