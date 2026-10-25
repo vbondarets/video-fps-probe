@@ -146,7 +146,7 @@ function fit(target: number, rule: FpsRule = {}): [number, number] {
   const hi = n(rule.max) ?? Infinity;
   const exact = n(rule.exact);
   if (exact !== null) return [exact, 0];
-  const allowed = (rule.oneOf ?? []).map((v) => n(v)!).filter((v) => v >= lo && v <= hi);
+  const allowed = [rule.oneOf ?? []].flat().map((v) => n(v)!).filter((v) => v >= lo && v <= hi);
   const distance = (v: number): number => Math.abs(v - target) + v * 1e-9;
   if (allowed.length > 0) return [allowed.reduce((best, v) => (distance(v) < distance(best) ? v : best)), 0];
   if (target < lo) return [lo, 0];

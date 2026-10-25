@@ -296,6 +296,14 @@ describe('check: suggestedFps', () => {
     expect(check(result({ avgFps }), { fps }).suggestedFps).toEqual({ value, reason });
   });
 
+  it('takes a oneOf rate given without a list from JSON, as the bound does', () => {
+    expect(check(result({ avgFps: rate(30) }), JSON.parse('{"fps":{"oneOf":24}}') as CheckRules)).toEqual({
+      verdict: 'fail',
+      violations: [{ rule: 'fps.oneOf', severity: 'fail', expected: 24, actual: '30/1', message: 'fps.oneOf: 30 fps is not one of 24 fps' }],
+      suggestedFps: { value: 24, reason: '30 fps is not allowed: convert to 24 fps' },
+    });
+  });
+
   it('suggests a constant rate for rejected VFR, within the frame rate rule', () => {
     const vfr = result({ avgFps: rate(2987, 100), isVfr: true, dominantFps: { rate: rate(30), share: 0.7 } });
     expect(check(vfr, { vfr: 'reject' }).suggestedFps).toEqual({ value: 30, reason: 'the frame rate is variable: re-encode at a constant 30 fps' });
