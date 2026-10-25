@@ -61,6 +61,7 @@ export const FIXTURES = [
   },
   { name: 'react', imports: ['./lazy', './react'], note: `React ${DEV_DEPENDENCIES.react}`, worker: ES, engines: ['own'], workers: ['own.worker'], mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/', 'video-fps-probe/dist/engines/'] },
   { name: 'react18', imports: ['./lazy', './react'], note: `React ${REACT_18}`, worker: ES, engines: ['own'], workers: ['own.worker'], mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/', 'video-fps-probe/dist/engines/'] },
+  { name: 'check', imports: ['./lazy', './check'], worker: ES, engines: ['own'], workers: ['own.worker'], mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/', 'video-fps-probe/dist/engines/'] },
 ];
 
 export function consumersDir(arg) {

@@ -9,7 +9,7 @@ import { discover, measure, scanReferences } from './size-report.mjs';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const KB = 1000;
 const PACKAGE_SOURCE = 'node_modules/video-fps-probe/';
-const REACT_SOURCE = `${PACKAGE_SOURCE}dist/react/`;
+const ENTRY_SOURCES = { react: ['./react', `${PACKAGE_SOURCE}dist/react/`], check: ['./check', `${PACKAGE_SOURCE}dist/check/`] };
 
 const RESET = 'The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.';
 const PROMISE = 'User-facing promise of the package, accepted by the owner on 2026-10-23 when the demo budget moved to 101.5 KB: the default configuration adds at most 1 KB to the critical path and the first MP4 loads at most 24 KB lazily.';
@@ -116,6 +116,13 @@ export const BUDGETS = {
     { key: 'firstMp4Summary', limit: 24.5 * KB, why: 'As in the react configuration. Measured 24.03 KB.' },
     { key: 'lazyTotal', limit: 82 * KB, why: 'As in the react configuration. Measured 81.32 KB.' },
   ],
+  check: [
+    { key: 'trigger', limit: 3.5 * KB, why: `The package code in the entry chunk of a host that imports video-fps-probe/check statically next to video-fps-probe/lazy: the lazyProbe stub of the default configuration and check. Measured 2.95 KB. ${RESET}` },
+    { key: 'check', limit: 3 * KB, why: `The part of the critical path the check entry adds: check(result, rules) with its exact rational comparison, the violation messages and suggestedFps. It imports no other module, so nothing of it loads lazily. Design estimate 0.8 to 1.5 KB; measured 2.38 KB. ${RESET}` },
+    { key: 'entry', limit: 4.5 * KB, why: `The trigger of this configuration plus Vite's preload helper. Measured 3.67 KB. ${RESET}` },
+    { key: 'firstMp4', limit: 24 * KB, why: 'Importing check must not change what the first own analysis loads, so the 24 KB promise of the default configuration applies here too. Measured 23.60 KB.' },
+    { key: 'lazyTotal', limit: 81 * KB, why: 'As in the default configuration: check adds no lazy file. Measured 80.97 KB.' },
+  ],
 };
 
 export const STANDALONE_BUDGET = { limit: 36 * KB, why: `dist/standalone/own.worker.js: the own worker as one minified IIFE file with no imports, built by rolldown. Design estimate 35.0 KB; measured 32.04 KB. ${RESET} Raised from 35.5 KB to 36 KB in 0.2.0, measured 35.58 KB, when the ffprobe frame rate estimate, which the file inlines, began to read the H.264 slice headers that decide the decoder delay (0.63 KB gzip).` };
@@ -123,6 +130,7 @@ export const STANDALONE_BUDGET = { limit: 36 * KB, why: `dist/standalone/own.wor
 const LABELS = {
   trigger: 'critical path (package code in the entry chunk)',
   react: 'React entry (the provider and hooks in the entry chunk, React not counted)',
+  check: 'check entry (in the entry chunk)',
   entry: 'entry chunk with the preload helper',
   client: 'probe client (lazy)',
   isobmff: 'ISO BMFF parser (in the own worker)',
@@ -261,12 +269,12 @@ export function measureFixture(dir, fixture) {
 
   const entry = found.main ? closureOf(found.main, fileSet, texts, { dynamic: false }) : new Set();
   let trigger = 0;
-  let react = 0;
+  const entryCode = Object.fromEntries(Object.keys(ENTRY_SOURCES).map((key) => [key, 0]));
   for (const f of entry) {
     const map = maps.get(f);
     if (map) {
       trigger += gzipOf(Buffer.from(codeFromSources(texts.get(f), map, (s) => s.includes(PACKAGE_SOURCE))));
-      if (fixture.imports.includes('./react')) react += gzipOf(Buffer.from(codeFromSources(texts.get(f), map, (s) => s.includes(REACT_SOURCE))));
+      for (const [key, [entryImport, source]] of Object.entries(ENTRY_SOURCES)) if (fixture.imports.includes(entryImport)) entryCode[key] += gzipOf(Buffer.from(codeFromSources(texts.get(f), map, (s) => s.includes(source))));
     } else problems.push(`${f}: no sourcemap`);
   }
   const without = (set) => new Set([...set].filter((f) => !entry.has(f)));
@@ -316,7 +324,8 @@ export function measureFixture(dir, fixture) {
   const metrics = {
     entry: sum(entry),
     trigger,
-    react: fixture.imports.includes('./react') ? react : null,
+    react: fixture.imports.includes(ENTRY_SOURCES.react[0]) ? entryCode.react : null,
+    check: fixture.imports.includes(ENTRY_SOURCES.check[0]) ? entryCode.check : null,
     client: clientFiles.size > 0 ? sum(without(clientFiles)) : null,
     isobmff: ownWorker?.byClass.isobmff ? sum(ownWorker.byClass.isobmff) : null,
     matroska: ownWorker?.byClass.matroska ? sum(ownWorker.byClass.matroska) : null,
@@ -451,6 +460,10 @@ export function renderMarkdown(matrix) {
     out.push(
       `In ${react.map((f) => `${f.name} (${f.note})`).join(' and ')} the entry chunk also holds React and ReactDOM, which a React host ships anyway, so its column is not a package cost. The critical path counts the package code only, and the React entry is ${new Set(react.map((f) => cell(f.metrics.react))).size === 1 ? `${cell(react[0].metrics.react)} of it in each` : react.map((f) => `${cell(f.metrics.react)} of it in ${f.name}`).join(' and ')}. The first analysis also fetches the ${cell(react[0].metrics.summary)} summary module of the store, in parallel with the probe client.`,
     );
+    out.push('');
+  }
+  for (const f of matrix.fixtures.filter((x) => typeof x.metrics.check === 'number')) {
+    out.push(`In ${f.name}, ${cell(f.metrics.check)} of the ${cell(f.metrics.trigger)} critical path is \`check\`, imported statically next to the lazy stub. It imports no other module and loads nothing lazily, so the lazy columns equal the default configuration's.`);
     out.push('');
   }
   out.push('## Budgets (gzip)');

@@ -23,6 +23,7 @@
         "entry": 1393,
         "trigger": 665,
         "react": null,
+        "check": null,
         "client": 2901,
         "isobmff": 12205,
         "matroska": 11590,
@@ -287,6 +288,7 @@
         "entry": 1394,
         "trigger": 665,
         "react": null,
+        "check": null,
         "client": 2905,
         "isobmff": null,
         "matroska": null,
@@ -468,6 +470,7 @@
         "entry": 1462,
         "trigger": 670,
         "react": null,
+        "check": null,
         "client": 2791,
         "isobmff": 12206,
         "matroska": 11590,
@@ -690,6 +693,7 @@
         "entry": 1743,
         "trigger": 892,
         "react": null,
+        "check": null,
         "client": 2936,
         "isobmff": 12205,
         "matroska": 11590,
@@ -975,6 +979,7 @@
         "entry": 1744,
         "trigger": 894,
         "react": null,
+        "check": null,
         "client": 2933,
         "isobmff": 12205,
         "matroska": 11590,
@@ -1260,6 +1265,7 @@
         "entry": 1582,
         "trigger": 766,
         "react": null,
+        "check": null,
         "client": 2916,
         "isobmff": 12205,
         "matroska": 11590,
@@ -1478,6 +1484,7 @@
         "entry": 1913,
         "trigger": 1011,
         "react": null,
+        "check": null,
         "client": 2949,
         "isobmff": 12205,
         "matroska": 11590,
@@ -1940,6 +1947,7 @@
         "entry": 1446,
         "trigger": 699,
         "react": null,
+        "check": null,
         "client": 2796,
         "isobmff": null,
         "matroska": null,
@@ -2130,6 +2138,7 @@
         "entry": 1394,
         "trigger": 665,
         "react": null,
+        "check": null,
         "client": 2905,
         "isobmff": null,
         "matroska": null,
@@ -2301,6 +2310,7 @@
         "entry": 69850,
         "trigger": 1637,
         "react": 1171,
+        "check": null,
         "client": 2904,
         "isobmff": 12205,
         "matroska": 11590,
@@ -2554,6 +2564,7 @@
         "entry": 47248,
         "trigger": 1634,
         "react": 1171,
+        "check": null,
         "client": 2904,
         "isobmff": 12205,
         "matroska": 11590,
@@ -2743,6 +2754,218 @@
           "headroom": 596,
           "status": "ok",
           "why": "As in the react configuration. Measured 81.32 KB."
+        }
+      ],
+      "problems": []
+    },
+    {
+      "name": "check",
+      "imports": [
+        "./lazy",
+        "./check"
+      ],
+      "note": null,
+      "worker": "format: 'es'",
+      "engines": [
+        "own"
+      ],
+      "metrics": {
+        "entry": 3674,
+        "trigger": 2953,
+        "react": null,
+        "check": 2385,
+        "client": 2901,
+        "isobmff": 12205,
+        "matroska": 11590,
+        "segments": 1844,
+        "rfps": 3575,
+        "firstMp4": 23596,
+        "allOwn": 40605,
+        "mp4box": null,
+        "mediabunny": null,
+        "engineShared": null,
+        "rvfc": null,
+        "pageEngineShared": null,
+        "summary": null,
+        "firstMp4Summary": null,
+        "lazyTotal": 80973
+      },
+      "workers": [
+        {
+          "name": "own.worker",
+          "entry": 4183,
+          "chunks": 5,
+          "sha256": "2175d4e26d3b13a9"
+        }
+      ],
+      "files": [
+        {
+          "file": "assets/compare-D_o2Sd_Y.js",
+          "gzip": 1325,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/fallback-jJImPdah.js",
+          "gzip": 734,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/index-DtADN1JE.js",
+          "gzip": 3674,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/inline-DOqpo2l7.js",
+          "gzip": 633,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/isobmff-BTlZkYMO.js",
+          "gzip": 12205,
+          "worker": "own.worker",
+          "class": "isobmff"
+        },
+        {
+          "file": "assets/isobmff-Dbk5zlkA.js",
+          "gzip": 12235,
+          "worker": null,
+          "class": "isobmff"
+        },
+        {
+          "file": "assets/matroska-BKeSRyS1.js",
+          "gzip": 11590,
+          "worker": "own.worker",
+          "class": "matroska"
+        },
+        {
+          "file": "assets/matroska-D5QA8cZ_.js",
+          "gzip": 11770,
+          "worker": null,
+          "class": "matroska"
+        },
+        {
+          "file": "assets/own.worker-CPOe01DR.js",
+          "gzip": 4183,
+          "worker": "own.worker",
+          "class": "shared"
+        },
+        {
+          "file": "assets/probe-CBMQi1V9.js",
+          "gzip": 2901,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/result-DwUAyOGs.js",
+          "gzip": 381,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/rfps-DVQOUeWm.js",
+          "gzip": 3575,
+          "worker": null,
+          "class": "rfps"
+        },
+        {
+          "file": "assets/rfps-DerqVKow.js",
+          "gzip": 3575,
+          "worker": "own.worker",
+          "class": "rfps"
+        },
+        {
+          "file": "assets/runtime-BKmSOVWx.js",
+          "gzip": 2545,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/segments-D9EAWPX2.js",
+          "gzip": 1844,
+          "worker": "own.worker",
+          "class": "segments"
+        },
+        {
+          "file": "assets/segments-DyKhuDTB.js",
+          "gzip": 1845,
+          "worker": null,
+          "class": "segments"
+        },
+        {
+          "file": "assets/sniff-DecauIFI.js",
+          "gzip": 989,
+          "worker": null,
+          "class": "shared"
+        },
+        {
+          "file": "assets/stats-7bjIKJh4.js",
+          "gzip": 4336,
+          "worker": null,
+          "class": "stats"
+        },
+        {
+          "file": "assets/stats-BpRErjel.js",
+          "gzip": 4307,
+          "worker": "own.worker",
+          "class": "stats"
+        }
+      ],
+      "mustNot": [
+        "node_modules/mp4box/",
+        "node_modules/mediabunny/",
+        "video-fps-probe/dist/engines/"
+      ],
+      "leaks": [],
+      "chains": [],
+      "budgets": [
+        {
+          "key": "trigger",
+          "label": "critical path (package code in the entry chunk)",
+          "limit": 3500,
+          "gzip": 2953,
+          "headroom": 547,
+          "status": "ok",
+          "why": "The package code in the entry chunk of a host that imports video-fps-probe/check statically next to video-fps-probe/lazy: the lazyProbe stub of the default configuration and check. Measured 2.95 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "check",
+          "label": "check entry (in the entry chunk)",
+          "limit": 3000,
+          "gzip": 2385,
+          "headroom": 615,
+          "status": "ok",
+          "why": "The part of the critical path the check entry adds: check(result, rules) with its exact rational comparison, the violation messages and suggestedFps. It imports no other module, so nothing of it loads lazily. Design estimate 0.8 to 1.5 KB; measured 2.38 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "entry",
+          "label": "entry chunk with the preload helper",
+          "limit": 4500,
+          "gzip": 3674,
+          "headroom": 826,
+          "status": "ok",
+          "why": "The trigger of this configuration plus Vite's preload helper. Measured 3.67 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "firstMp4",
+          "label": "first MP4 analysis, lazy total",
+          "limit": 24000,
+          "gzip": 23596,
+          "headroom": 404,
+          "status": "ok",
+          "why": "Importing check must not change what the first own analysis loads, so the 24 KB promise of the default configuration applies here too. Measured 23.60 KB."
+        },
+        {
+          "key": "lazyTotal",
+          "label": "emitted lazy total (every file outside the entry chunk)",
+          "limit": 81000,
+          "gzip": 80973,
+          "headroom": 27,
+          "status": "ok",
+          "why": "As in the default configuration: check adds no lazy file. Measured 80.97 KB."
         }
       ],
       "problems": []

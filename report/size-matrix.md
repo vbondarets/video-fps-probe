@@ -19,6 +19,7 @@ The critical path is the package code inside the host entry chunk, cut out of th
 | iife-nosplit | video-fps-probe/lazy | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.67 KB** | 1.39 KB | 38.79 KB | 38.79 KB | - | 1 (own.worker) | ok |
 | react | video-fps-probe/lazy + video-fps-probe/react (React 19.3.1) | format: 'es' | **1.64 KB** | 69.85 KB | 23.60 KB | 40.61 KB | - | 1 (own.worker) | ok |
 | react18 | video-fps-probe/lazy + video-fps-probe/react (React 18.3.1) | format: 'es' | **1.63 KB** | 47.25 KB | 23.60 KB | 40.61 KB | - | 1 (own.worker) | ok |
+| check | video-fps-probe/lazy + video-fps-probe/check | format: 'es' | **2.95 KB** | 3.67 KB | 23.60 KB | 40.60 KB | - | 1 (own.worker) | ok |
 | standalone worker file | video-fps-probe/standalone/own.worker.js | - | - | - | 35.80 KB | 35.80 KB | - | 1 file, no imports | ok |
 
 First MP4: the probe client, the worker entry that serves own, the statistics chunk (requested in parallel with the parser) and the ISO BMFF parser. All own paths adds the Matroska parser, the ffprobe frame rate estimate of a Matroska file without DefaultDuration and the rate profile core. A worker built as iife cannot split, so in zero-config and iife-nosplit the own worker is one file, as the standalone file is in standalone-url, and both columns are the client plus that file.
@@ -26,6 +27,8 @@ First MP4: the probe client, the worker entry that serves own, the statistics ch
 The host's worker option decides the first MP4: 23.60 KB with `worker: { format: 'es' }` (default), 38.79 KB with no worker option (zero-config), because Vite's default worker format is 'iife'. In Vite 8.3.5 zero-config and iife-nosplit build byte-identical own worker files: with format 'iife' Vite already inlines the worker's dynamic imports, so `codeSplitting: false` changes nothing.
 
 In react (React 19.3.1) and react18 (React 18.3.1) the entry chunk also holds React and ReactDOM, which a React host ships anyway, so its column is not a package cost. The critical path counts the package code only, and the React entry is 1.17 KB of it in each. The first analysis also fetches the 0.43 KB summary module of the store, in parallel with the probe client.
+
+In check, 2.38 KB of the 2.95 KB critical path is `check`, imported statically next to the lazy stub. It imports no other module and loads nothing lazily, so the lazy columns equal the default configuration's.
 
 ## Budgets (gzip)
 
@@ -110,6 +113,11 @@ In react (React 19.3.1) and react18 (React 18.3.1) the entry chunk also holds Re
 | react18 | React entry (the provider and hooks in the entry chunk, React not counted) | 1.50 KB | 1.17 KB | 0.33 KB | ok |
 | react18 | first MP4 analysis with the React summary, lazy total | 24.50 KB | 24.03 KB | 0.47 KB | ok |
 | react18 | emitted lazy total (every file outside the entry chunk) | 82.00 KB | 81.40 KB | 0.60 KB | ok |
+| check | critical path (package code in the entry chunk) | 3.50 KB | 2.95 KB | 0.55 KB | ok |
+| check | check entry (in the entry chunk) | 3.00 KB | 2.38 KB | 0.61 KB | ok |
+| check | entry chunk with the preload helper | 4.50 KB | 3.67 KB | 0.83 KB | ok |
+| check | first MP4 analysis, lazy total | 24.00 KB | 23.60 KB | 0.40 KB | ok |
+| check | emitted lazy total (every file outside the entry chunk) | 81.00 KB | 80.97 KB | 0.03 KB | ok |
 | standalone | own.worker.js | 36.00 KB | 35.80 KB | 0.20 KB | ok |
 
 ## Checks
@@ -125,6 +133,7 @@ In react (React 19.3.1) and react18 (React 18.3.1) the entry chunk also holds Re
 - **iife-nosplit**: worker files own.worker (0 lazy chunks); none of `node_modules/mp4box/`, `node_modules/mediabunny/` appears in any sourcemap; request chains ok.
 - **react**: worker files own.worker (5 lazy chunks); none of `node_modules/mp4box/`, `node_modules/mediabunny/`, `video-fps-probe/dist/engines/` appears in any sourcemap; request chains ok.
 - **react18**: worker files own.worker (5 lazy chunks); none of `node_modules/mp4box/`, `node_modules/mediabunny/`, `video-fps-probe/dist/engines/` appears in any sourcemap; request chains ok.
+- **check**: worker files own.worker (5 lazy chunks); none of `node_modules/mp4box/`, `node_modules/mediabunny/`, `video-fps-probe/dist/engines/` appears in any sourcemap; request chains ok.
 
 Must-not-exist reads the `sources` of every hidden sourcemap, because minified identifiers are renamed. The request chain check is the one in `scripts/size-report.mjs`: every static dependency of a parser or engine chunk is already loaded, or requested in the same Promise.all.
 
@@ -209,6 +218,11 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 - **react18, React entry (the provider and hooks in the entry chunk, React not counted)** (1.50 KB): As in the react configuration: the React entry is the same code for React 18 and 19. Measured 1.17 KB.
 - **react18, first MP4 analysis with the React summary, lazy total** (24.50 KB): As in the react configuration. Measured 24.03 KB.
 - **react18, emitted lazy total (every file outside the entry chunk)** (82.00 KB): As in the react configuration. Measured 81.32 KB.
+- **check, critical path (package code in the entry chunk)** (3.50 KB): The package code in the entry chunk of a host that imports video-fps-probe/check statically next to video-fps-probe/lazy: the lazyProbe stub of the default configuration and check. Measured 2.95 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
+- **check, check entry (in the entry chunk)** (3.00 KB): The part of the critical path the check entry adds: check(result, rules) with its exact rational comparison, the violation messages and suggestedFps. It imports no other module, so nothing of it loads lazily. Design estimate 0.8 to 1.5 KB; measured 2.38 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
+- **check, entry chunk with the preload helper** (4.50 KB): The trigger of this configuration plus Vite's preload helper. Measured 3.67 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
+- **check, first MP4 analysis, lazy total** (24.00 KB): Importing check must not change what the first own analysis loads, so the 24 KB promise of the default configuration applies here too. Measured 23.60 KB.
+- **check, emitted lazy total (every file outside the entry chunk)** (81.00 KB): As in the default configuration: check adds no lazy file. Measured 80.97 KB.
 - **standalone, own.worker.js** (36.00 KB): dist/standalone/own.worker.js: the own worker as one minified IIFE file with no imports, built by rolldown. Design estimate 35.0 KB; measured 32.04 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 35.5 KB to 36 KB in 0.2.0, measured 35.58 KB, when the ffprobe frame rate estimate, which the file inlines, began to read the H.264 slice headers that decide the decoder delay (0.63 KB gzip).
 
 ## Files
@@ -454,4 +468,23 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | react18 | assets/stats.js | page | stats | 4.34 KB |
 | react18 | assets/stats.js | own.worker | stats | 4.31 KB |
 | react18 | assets/summary.js | page | summary | 0.43 KB |
+| check | assets/compare.js | page | shared | 1.32 KB |
+| check | assets/fallback.js | page | shared | 0.73 KB |
+| check | assets/index.js | page | shared | 3.67 KB |
+| check | assets/inline.js | page | shared | 0.63 KB |
+| check | assets/isobmff.js | own.worker | isobmff | 12.21 KB |
+| check | assets/isobmff.js | page | isobmff | 12.23 KB |
+| check | assets/matroska.js | own.worker | matroska | 11.59 KB |
+| check | assets/matroska.js | page | matroska | 11.77 KB |
+| check | assets/own.worker.js | own.worker | shared | 4.18 KB |
+| check | assets/probe.js | page | shared | 2.90 KB |
+| check | assets/result.js | page | shared | 0.38 KB |
+| check | assets/rfps.js | page | rfps | 3.58 KB |
+| check | assets/rfps.js | own.worker | rfps | 3.58 KB |
+| check | assets/runtime.js | page | shared | 2.54 KB |
+| check | assets/segments.js | own.worker | segments | 1.84 KB |
+| check | assets/segments.js | page | segments | 1.84 KB |
+| check | assets/sniff.js | page | shared | 0.99 KB |
+| check | assets/stats.js | page | stats | 4.34 KB |
+| check | assets/stats.js | own.worker | stats | 4.31 KB |
 

@@ -1097,7 +1097,7 @@ function sizeBlock(inp: Inputs, doc: Doc): string[] {
     '',
     `Engines cost nothing until imported. Importing a descriptor grows the critical path a little, from ${kb('default', 'trigger')} to ${grown.slice(0, -1).join(', ')} and ${grown.at(-1)}, and the engine itself loads lazily: ${engines.join(', ')}. Gzip -9 of production builds from the packed tarball, budgeted in CI; every configuration is in [docs/benchmarks.md](${doc.link('docs/benchmarks.md')}#package-size).`,
     '',
-    `\`video-fps-probe/react\` adds ${kb('react', 'react')} to the critical path for the provider, \`useVideoFps\` and its store (React itself not counted); its first analysis also fetches a ${kb('react', 'summary')} summary module, in parallel with the probe client.`,
+    `\`video-fps-probe/react\` adds ${kb('react', 'react')} to the critical path for the provider, \`useVideoFps\` and its store (React itself not counted); its first analysis also fetches a ${kb('react', 'summary')} summary module, in parallel with the probe client. \`video-fps-probe/check\` adds ${kb('check', 'check')} when imported statically, and nothing lazily.`,
   ];
 }
 
