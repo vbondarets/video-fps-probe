@@ -1,5 +1,10 @@
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { diffReports, outsidePeers, renderSummary, satisfies } from '../../scripts/canary-summary.mjs';
+import { diffReports, outsidePeers, readSmoke, renderSummary, satisfies, type SmokeRun } from '../../scripts/canary-summary.mjs';
+
+const run = (engine: SmokeRun['engine'], outcome: SmokeRun['outcome'], detail: string | null = null, browser = 'chromium'): SmokeRun => ({ browser, fixture: 'all', mode: 'build', file: 'cfr_h264_29.97.mp4', engine, outcome, detail });
 
 const check = (id: string, verdict: string, app: string, trackId: number | null = null) => ({ id, sub: null, trackId, verdict, app });
 const fixture = (name: string, checks: ReturnType<typeof check>[], tracks: ReturnType<typeof check>[] = []) => ({ name, appError: null, threw: null, fileChecks: checks, tracks: [{ checks: tracks }] });
@@ -48,6 +53,42 @@ describe('canary summary', () => {
     expect(outsidePeers(peers, { mp4box: '3.0.0', mediabunny: '1.63.0', vite: '9.0.0' })).toEqual(['mp4box 3.0.0 is outside the peer range ^2.4.1 of the package']);
     const { markdown } = renderSummary(diffReports(committed, committed), { versions: { mp4box: '3.0.0' }, failures: [] }, peers);
     expect(markdown).toContain('Installed with --legacy-peer-deps:\n- mp4box 3.0.0 is outside the peer range ^2.4.1 of the package');
+  });
+
+  it('lists the library runs of the smoke test that differ from Node and still passes', () => {
+    const smoke = [run('mp4box', 'equal'), run('mediabunny', 'differs', 'tracks, warnings'), run('mp4box', 'threw', 'worker-failed | load', 'webkit'), run('mediabunny', 'error', 'no video track')];
+    const { markdown, ownChanged } = renderSummary(diffReports(committed, committed), null, {}, smoke);
+    expect(ownChanged).toBe(false);
+    expect(markdown).toContain('The own engine is unchanged.');
+    expect(markdown).toContain('### Library arms in the consumer smoke test');
+    expect(markdown).toContain('Informational: the smoke test asserts the own engine only. 1 of 4 runs of mp4box and mediabunny in the browsers equal Node analyze from the same tarball.');
+    expect(markdown).toContain('| chromium | all | build | `cfr_h264_29.97.mp4` | mediabunny | differs: tracks, warnings |');
+    expect(markdown).toContain('| webkit | all | build | `cfr_h264_29.97.mp4` | mp4box | threw: worker-failed \\| load |');
+    expect(markdown).toContain('| chromium | all | build | `cfr_h264_29.97.mp4` | mediabunny | error: no video track |');
+    expect(markdown).not.toContain('| mp4box | equal');
+  });
+
+  it('fails on an own change even when every library run of the smoke test is equal', () => {
+    const measured = report(engine('own', null, [fixture('a.mp4', [check('error', 'mismatch', 'no')], [check('avgFps', 'exact', '30/1', 1)])]));
+    const { markdown, ownChanged } = renderSummary(diffReports(committed, measured), null, {}, [run('mp4box', 'equal')]);
+    expect(ownChanged).toBe(true);
+    expect(markdown).toContain('1 of 1 runs of mp4box and mediabunny in the browsers equal Node analyze from the same tarball.');
+    expect(markdown).not.toContain('| Browser |');
+  });
+
+  it('reads the smoke reports of a directory, and none from a missing one', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'video-fps-probe-smoke-'));
+    try {
+      writeFileSync(join(dir, 'webkit-all-dev.json'), JSON.stringify([run('mp4box', 'differs', 'tracks', 'webkit')]));
+      writeFileSync(join(dir, 'chromium-all-build.json'), JSON.stringify([run('mp4box', 'equal'), run('mediabunny', 'equal')]));
+      writeFileSync(join(dir, 'notes.txt'), 'not a report');
+      expect(readSmoke(dir).map((r) => `${r.browser} ${r.engine} ${r.outcome}`)).toEqual(['chromium mp4box equal', 'chromium mediabunny equal', 'webkit mp4box differs']);
+      expect(readSmoke(join(dir, 'missing'))).toEqual([]);
+      expect(renderSummary(diffReports(committed, committed), null, {}, []).markdown).toContain('The consumer smoke test recorded no run of mp4box or mediabunny.');
+      expect(renderSummary(diffReports(committed, committed)).markdown).not.toContain('smoke test');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it('keeps two checks of one field on one track apart', () => {

@@ -14,10 +14,24 @@ export interface ArmDiff {
   changed: { fixture: string; checks: CheckChange[] }[];
 }
 
+export interface SmokeRun {
+  browser: string;
+  fixture: string;
+  mode: 'build' | 'dev';
+  file: string;
+  engine: 'mp4box' | 'mediabunny';
+  outcome: 'equal' | 'differs' | 'error' | 'threw';
+  detail: string | null;
+}
+
 export function diffReports(committed: unknown, measured: unknown): ArmDiff[];
 
 export function satisfies(version: string, range: string): boolean;
 
 export function outsidePeers(peers: Record<string, string>, versions: Record<string, string | null | undefined>): string[];
 
-export function renderSummary(arms: ArmDiff[], matrix?: { versions?: Record<string, string | null>; failures: string[] } | null, peers?: Record<string, string>): { markdown: string; ownChanged: boolean };
+export function readSmoke(dir: string): SmokeRun[];
+
+export function renderSmoke(runs: readonly SmokeRun[]): string[];
+
+export function renderSummary(arms: ArmDiff[], matrix?: { versions?: Record<string, string | null>; failures: string[] } | null, peers?: Record<string, string>, smoke?: readonly SmokeRun[] | null): { markdown: string; ownChanged: boolean };

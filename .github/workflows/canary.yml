@@ -67,13 +67,15 @@ jobs:
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: node scripts/size-matrix.mjs --check --out .canary/size-matrix
 
-      - name: Run the consumer smoke tests (Chromium, Firefox, WebKit)
+      - name: Run the consumer smoke tests (Chromium, Firefox, WebKit), asserting the own engine only
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        env:
+          CONSUMERS_LIBRARY_REPORT: .canary/smoke
         run: npm run test:consumers
 
-      - name: Write the changes of the library arms to the job summary
+      - name: Write the changes of the library arms, in the comparison and in the smoke tests, to the job summary
         if: ${{ !cancelled() && steps.compare.outcome != 'skipped' }}
-        run: node scripts/canary-summary.mjs --measured .canary/compare/accuracy.json --matrix .canary/size-matrix/size-matrix.json --summary "$GITHUB_STEP_SUMMARY"
+        run: node scripts/canary-summary.mjs --measured .canary/compare/accuracy.json --matrix .canary/size-matrix/size-matrix.json --smoke .canary/smoke --summary "$GITHUB_STEP_SUMMARY"
 
       - name: Upload the canary reports
         if: ${{ !cancelled() }}

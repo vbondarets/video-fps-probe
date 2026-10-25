@@ -1,4 +1,4 @@
-import { appendFileSync, existsSync, readFileSync } from 'node:fs';
+import { appendFileSync, existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -7,14 +7,18 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const VERDICTS = ['exact', 'within-tol', 'known-deviation', 'mismatch', 'n/a'];
 const LISTED = 40;
 
-const USAGE = `Usage: node scripts/canary-summary.mjs --measured <accuracy.json> [--committed <accuracy.json>] [--matrix <size-matrix.json>] [--summary <file>]
+const USAGE = `Usage: node scripts/canary-summary.mjs --measured <accuracy.json> [--committed <accuracy.json>] [--matrix <size-matrix.json>] [--smoke <dir>] [--summary <file>]
 
 Compares a compare-ffprobe run against the committed report/accuracy.json, fixture by fixture, on the
 fixtures both runs have, and prints a Markdown summary: per arm the library version, the verdict counts
 and the fixtures whose checks changed. --matrix adds the versions the size matrix measured and its
-failures. --summary appends the Markdown to a file, such as $GITHUB_STEP_SUMMARY, instead of printing it.
+failures. --smoke adds the mp4box and mediabunny runs that the consumer smoke test recorded in <dir>
+with CONSUMERS_LIBRARY_REPORT=<dir>, where it asserts the own engine only: each run that does not equal
+Node analyze from the same tarball. --summary appends the Markdown to a file, such as
+$GITHUB_STEP_SUMMARY, instead of printing it.
 
-Exits 1 when a check of the own engine changed, 0 when only library arms changed.
+Exits 1 when a check of the own engine changed, 0 when only library arms changed, in the comparison or
+in the smoke test.
 `;
 
 function checkStates(fixture) {
@@ -80,7 +84,24 @@ export function outsidePeers(peers, versions) {
 
 const arrow = (a, b) => (a === b ? `${a ?? '-'}` : `${a ?? '-'} → ${b ?? '-'}`);
 
-export function renderSummary(arms, matrix = null, peers = {}) {
+const cell = (text) => String(text).replaceAll('|', '\\|').replace(/\s+/g, ' ');
+
+export function renderSmoke(runs) {
+  const out = ['### Library arms in the consumer smoke test', ''];
+  if (runs.length === 0) {
+    out.push('The consumer smoke test recorded no run of mp4box or mediabunny.');
+    return out;
+  }
+  const off = runs.filter((r) => r.outcome !== 'equal');
+  out.push(`Informational: the smoke test asserts the own engine only. ${runs.length - off.length} of ${runs.length} runs of mp4box and mediabunny in the browsers equal Node analyze from the same tarball.`);
+  if (off.length === 0) return out;
+  out.push('', '| Browser | Fixture | Mode | File | Arm | Outcome |', '|---|---|---|---|---|---|');
+  for (const r of off.slice(0, LISTED)) out.push(`| ${r.browser} | ${r.fixture} | ${r.mode} | \`${r.file}\` | ${r.engine} | ${r.outcome}${r.detail ? `: ${cell(r.detail)}` : ''} |`);
+  if (off.length > LISTED) out.push('', `And ${off.length - LISTED} more run(s), in the uploaded smoke reports.`);
+  return out;
+}
+
+export function renderSummary(arms, matrix = null, peers = {}, smoke = null) {
   const out = ['## Canary', ''];
   const own = arms.filter((a) => a.own);
   const ownChanged = own.some((a) => a.changed.length > 0 || a.loadSkipped.after !== a.loadSkipped.before);
@@ -119,15 +140,24 @@ export function renderSummary(arms, matrix = null, peers = {}) {
     out.push('');
     out.push('</details>');
   }
+  if (smoke) out.push('', ...renderSmoke(smoke));
   out.push('');
   return { markdown: out.join('\n'), ownChanged };
 }
 
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'));
 
+export const readSmoke = (dir) =>
+  existsSync(dir)
+    ? readdirSync(dir)
+        .filter((f) => f.endsWith('.json'))
+        .sort()
+        .flatMap((f) => readJson(join(dir, f)))
+    : [];
+
 function main() {
   const { values } = parseArgs({
-    options: { measured: { type: 'string' }, committed: { type: 'string' }, matrix: { type: 'string' }, summary: { type: 'string' }, help: { type: 'boolean', default: false } },
+    options: { measured: { type: 'string' }, committed: { type: 'string' }, matrix: { type: 'string' }, smoke: { type: 'string' }, summary: { type: 'string' }, help: { type: 'boolean', default: false } },
     strict: true,
   });
   if (values.help || !values.measured) {
@@ -137,7 +167,7 @@ function main() {
   const committed = readJson(values.committed ?? join(REPO_ROOT, 'report', 'accuracy.json'));
   const matrix = values.matrix && existsSync(values.matrix) ? readJson(values.matrix) : null;
   const { peerDependencies = {} } = readJson(join(REPO_ROOT, 'package.json'));
-  const { markdown, ownChanged } = renderSummary(diffReports(committed, readJson(values.measured)), matrix, peerDependencies);
+  const { markdown, ownChanged } = renderSummary(diffReports(committed, readJson(values.measured)), matrix, peerDependencies, values.smoke ? readSmoke(values.smoke) : null);
   if (values.summary) appendFileSync(values.summary, `${markdown}\n`);
   else console.log(markdown);
   if (ownChanged) console.error('FAIL: a check of the own engine differs from the committed report/accuracy.json');

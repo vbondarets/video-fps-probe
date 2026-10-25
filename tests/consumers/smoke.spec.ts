@@ -1,12 +1,24 @@
-import { openAsBlob } from 'node:fs';
-import { join } from 'node:path';
+import { mkdirSync, openAsBlob, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { isDeepStrictEqual } from 'node:util';
 import { expect, test, type Page } from '@playwright/test';
 import { CONSUMERS_PORT, FIXTURES, OWN_WORKERS, buildUrl, consumersDir, devUrl, installedPackage } from '../../scripts/consumers.mjs';
 import type { EngineDescriptor, ProbeResult } from '../../src/index.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
 
 type WorkerEngine = 'own' | 'mp4box' | 'mediabunny';
+type LibraryOutcome = Pick<LibraryRun, 'outcome' | 'detail'>;
+
+interface LibraryRun {
+  browser: string;
+  fixture: string;
+  mode: 'build' | 'dev';
+  file: string;
+  engine: Exclude<WorkerEngine, 'own'>;
+  outcome: 'equal' | 'differs' | 'error' | 'threw';
+  detail: string | null;
+}
 
 interface ConsumerProbe {
   readonly engines: readonly string[];
@@ -37,6 +49,7 @@ const RVFC_FILES = ['cfr_h264_29.97.mp4', 'cfr_vp9_29.97.webm'] as const;
 const RVFC_UNSUPPORTED = 'requestVideoFrameCallback unsupported';
 
 const DIST = pathToFileURL(join(installedPackage(consumersDir()), 'dist')).href;
+const LIBRARY_REPORT = process.env.CONSUMERS_LIBRARY_REPORT ? resolve(process.env.CONSUMERS_LIBRARY_REPORT) : null;
 
 async function nodeAnalyze(name: string, engine: WorkerEngine): Promise<ProbeResult> {
   const { analyze } = (await import(`${DIST}/index.js`)) as PackageRoot;
@@ -93,6 +106,22 @@ function withoutTiming(r: ProbeResult) {
   return { ...rest, io: { reads: io.reads, bytesRead: io.bytesRead }, ...(mediabunny ? { mediabunny: { ...mediabunny, nativeStatsMs: 0 } } : {}) };
 }
 
+const plain = (value: unknown): unknown => JSON.parse(JSON.stringify(value ?? null));
+const firstLine = (e: unknown) => (e instanceof Error ? e.message : String(e)).split('\n')[0]!;
+
+async function libraryOutcome(page: Page, name: string, engine: WorkerEngine): Promise<LibraryOutcome> {
+  try {
+    const expected: Record<string, unknown> = withoutTiming(await nodeAnalyze(name, engine));
+    const actual = await browserAnalyze(page, name, engine);
+    if (actual.engine !== engine || actual.error !== null) return { outcome: 'error', detail: actual.error ?? `ran on ${actual.engine}` };
+    const measured: Record<string, unknown> = withoutTiming(actual);
+    const fields = [...new Set([...Object.keys(expected), ...Object.keys(measured)])].filter((k) => !isDeepStrictEqual(plain(measured[k]), plain(expected[k])));
+    return fields.length === 0 ? { outcome: 'equal', detail: null } : { outcome: 'differs', detail: fields.join(', ') };
+  } catch (e) {
+    return { outcome: 'threw', detail: firstLine(e) };
+  }
+}
+
 for (const fixture of FIXTURES) {
   for (const mode of ['build', 'dev'] as const) {
     test(`${fixture.name} under vite ${mode} equals Node analyze from the same tarball`, async ({ page, browserName }) => {
@@ -112,9 +141,15 @@ for (const fixture of FIXTURES) {
       const split = OWN_WORKER_NAMES.every((name) => fixture.workers.includes(name));
       const ownStarted = () => workerUrls.filter((url) => OWN_WORKER_NAMES.some((name) => url.includes(name)));
       let runs = 0;
+      const library: LibraryRun[] = [];
       for (const file of FILES) {
         for (const engine of engines) {
           if (!FAMILIES[engine].includes(file.family)) continue;
+          if (LIBRARY_REPORT && engine !== 'own') {
+            library.push({ browser: browserName, fixture: fixture.name, mode, file: file.name, engine, ...(await libraryOutcome(page, file.name, engine)) });
+            runs++;
+            continue;
+          }
           const expected = await nodeAnalyze(file.name, engine);
           const before = ownStarted().length;
           const actual = await browserAnalyze(page, file.name, engine);
@@ -128,6 +163,10 @@ for (const fixture of FIXTURES) {
           expect(withoutTiming(actual), `${file.name} with ${engine}`).toEqual(withoutTiming(expected));
           runs++;
         }
+      }
+      if (LIBRARY_REPORT && library.length > 0) {
+        mkdirSync(LIBRARY_REPORT, { recursive: true });
+        writeFileSync(join(LIBRARY_REPORT, `${browserName}-${fixture.name}-${mode}.json`), `${JSON.stringify(library, null, 2)}\n`);
       }
       expect(runs).toBeGreaterThanOrEqual(FILES.length);
       if (split) {
