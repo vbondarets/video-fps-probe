@@ -95,7 +95,9 @@ describe('the types and values docs/api.md names', () => {
 
   it('are read from the entries table and the code blocks', () => {
     expect(PROSE_TYPES.filter((name) => !new RegExp(`\\b${name}\\b`).test(DOC))).toEqual([]);
-    expect([...expected.keys()].sort()).toEqual([PACKAGE, ...['client', 'client/lazy', 'engines/mediabunny', 'engines/mp4box', 'lazy', 'mediabunny', 'mp4box', 'react', 'rvfc', 'worker-runtime'].map((e) => `${PACKAGE}/${e}`)]);
+    expect([...expected.keys()].sort()).toEqual([PACKAGE, ...['check', 'client', 'client/lazy', 'engines/mediabunny', 'engines/mp4box', 'lazy', 'mediabunny', 'mp4box', 'react', 'rvfc', 'worker-runtime'].map((e) => `${PACKAGE}/${e}`)]);
+    expect([...expected.get(`${PACKAGE}/check`)!].sort()).toEqual(['AspectRatioRule', 'CheckExpected', 'CheckReport', 'CheckRules', 'CheckSeverity', 'CheckVerdict', 'CheckViolation', 'DisplayRule', 'FpsRule', 'FpsSource', 'RangeRule', 'RatePolicy', 'RatioValue', 'SuggestedFps', 'check']);
+    expect(['check', 'CheckRules', 'CheckReport', 'RatioValue'].filter((name) => expected.get(PACKAGE)!.has(name) || expected.get(`${PACKAGE}/client`)!.has(name))).toEqual([]);
     expect([...expected.get(`${PACKAGE}/react`)!].sort()).toEqual(['UseVideoFpsOptions', 'VideoFpsProvider', 'VideoFpsProviderProps', 'VideoFpsState', 'VideoFpsSummary', 'usePrewarmVideoFps', 'useVideoFps', 'useVideoFpsProbe']);
     expect(['VideoFpsProviderProps', 'UseVideoFpsOptions', 'VideoFpsState'].filter((name) => expected.get(PACKAGE)!.has(name) || expected.get(`${PACKAGE}/client`)!.has(name))).toEqual([]);
     expect([...expected.get(PACKAGE)!]).toEqual(expect.arrayContaining(['createProbe', 'analyze', 'Mp4boxNative', 'MediabunnyNative', 'RvfcDetails', 'VideoTrackResult', 'InThreadOptions', 'BlobLike']));

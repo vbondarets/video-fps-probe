@@ -1,0 +1,214 @@
+import type { ContainerKind, FileResult, Rational, VideoTrackResult } from '../core/types.ts';
+
+export type RatioValue = number | `${number}/${number}` | `${number}:${number}`;
+export type RatePolicy = 'allow' | 'warn' | 'reject';
+export type FpsSource = 'avg' | 'ffprobe' | 'nominal' | 'dominant';
+export type CheckVerdict = 'pass' | 'warn' | 'fail' | 'unknown';
+export type CheckSeverity = 'fail' | 'warn' | 'unknown';
+
+export interface RangeRule<T = number> {
+  min?: T;
+  max?: T;
+}
+
+export interface FpsRule extends RangeRule<RatioValue> {
+  exact?: RatioValue;
+  oneOf?: readonly RatioValue[];
+  source?: FpsSource;
+}
+
+export interface AspectRatioRule extends RangeRule<RatioValue> {
+  oneOf?: readonly RatioValue[];
+}
+
+export interface DisplayRule {
+  minWidth?: number;
+  maxWidth?: number;
+  minHeight?: number;
+  maxHeight?: number;
+  minShortSide?: number;
+  maxShortSide?: number;
+  minLongSide?: number;
+  maxLongSide?: number;
+}
+
+export interface CheckRules {
+  fps?: FpsRule;
+  duration?: RangeRule;
+  display?: DisplayRule;
+  aspectRatio?: AspectRatioRule;
+  pixels?: RangeRule;
+  fileSize?: RangeRule;
+  containers?: readonly ContainerKind[];
+  codecs?: readonly string[];
+  audio?: 'required' | 'forbidden';
+  vfr?: RatePolicy;
+  uneven?: RatePolicy;
+  severity?: 'fail' | 'warn';
+}
+
+export type CheckExpected = number | string | readonly (number | string)[] | null;
+
+export interface CheckViolation {
+  rule: string;
+  severity: CheckSeverity;
+  expected: CheckExpected;
+  actual: number | string | boolean | null;
+  message: string;
+}
+
+export interface SuggestedFps {
+  value: number;
+  reason: string;
+}
+
+export interface CheckReport {
+  verdict: CheckVerdict;
+  violations: CheckViolation[];
+  suggestedFps?: SuggestedFps;
+}
+
+type Q = readonly [bigint, bigint];
+type Bound = 'min' | 'max' | 'exact' | 'oneOf';
+
+const UNEVEN_SPREAD = 1.075;
+const DECIMATE_FROM = 1.5;
+const BOUNDS: readonly Bound[] = ['min', 'max', 'exact', 'oneOf'];
+const RELATION: Record<Bound, string> = { min: 'below the minimum', max: 'above the maximum', exact: 'not', oneOf: 'not one of' };
+
+function decimal(s: string): Q | null {
+  const m = /^(\d+)(?:\.(\d+))?(?:e([+-]?\d+))?$/i.exec(s.trim());
+  if (!m) return null;
+  const e = Number(m[3] ?? 0) - (m[2]?.length ?? 0);
+  const n = BigInt(m[1]! + (m[2] ?? ''));
+  return e >= 0 ? [n * 10n ** BigInt(e), 1n] : [n, 10n ** BigInt(-e)];
+}
+
+function ratio(v: unknown, rule: string): Q {
+  const parts = typeof v === 'number' ? [String(v)] : typeof v === 'string' ? v.split(/[/:]/) : [];
+  const [a, b] = parts.map(decimal);
+  const q: Q | null = a && parts.length === 1 ? a : a && b && parts.length === 2 ? [a[0] * b[1], a[1] * b[0]] : null;
+  if (!q || q[1] === 0n) throw new TypeError(`${rule}: ${JSON.stringify(v)} is not a non-negative number or 'num/den'`);
+  return q;
+}
+
+const cmp = (a: Q, b: Q): bigint => a[0] * b[1] - b[0] * a[1];
+
+const fromRational = (r: Pick<Rational, 'num' | 'den'> | null | undefined): Q | null =>
+  r && Number.isSafeInteger(r.num) && Number.isSafeInteger(r.den) && r.num > 0 && r.den > 0 ? [BigInt(r.num), BigInt(r.den)] : null;
+
+const gcd = (a: bigint, b: bigint): bigint => (b === 0n ? a : gcd(b, a % b));
+
+const value = (q: Q): number => Number(q[0]) / Number(q[1]);
+
+const round = (x: number): number => +x.toFixed(3);
+
+function fraction(q: Q): string {
+  const g = gcd(q[0], q[1]) || 1n;
+  return `${q[0] / g}/${q[1] / g}`;
+}
+
+const fpsText = (q: Q): string => (q[0] % q[1] === 0n ? `${q[0] / q[1]}` : `${round(value(q))} (${fraction(q)})`);
+
+function judgedFps(t: VideoTrackResult, source: FpsSource | undefined): Q | null {
+  const m = /^(\d+)\/(\d+)$/.exec(t.avgFpsFfprobe ?? '');
+  if (source === 'ffprobe') return m ? fromRational({ num: Number(m[1]), den: Number(m[2]) }) : null;
+  return fromRational(source === 'nominal' ? t.nominalFps : source === 'dominant' ? (t.dominantFps?.rate ?? (t.isVfr === false ? t.nominalFps : null)) : t.avgFps);
+}
+
+function unevenOf(t: VideoTrackResult): boolean | null {
+  if (t.rateProfile) return t.rateProfile.uneven;
+  return t.isVfr === false || (t.minFps && t.maxFps && t.maxFps.value <= t.minFps.value * UNEVEN_SPREAD) ? false : null;
+}
+
+function fit(target: number, rule: FpsRule = {}): [number, number] {
+  const n = (v: RatioValue | undefined): number | null => (v === undefined ? null : value(ratio(v, 'fps')));
+  const lo = n(rule.min) ?? 0;
+  const hi = n(rule.max) ?? Infinity;
+  const exact = n(rule.exact);
+  if (exact !== null) return [exact, 0];
+  const allowed = (rule.oneOf ?? []).map((v) => n(v)!).filter((v) => v >= lo && v <= hi);
+  const distance = (v: number): number => Math.abs(v - target) + v * 1e-9;
+  if (allowed.length > 0) return [allowed.reduce((best, v) => (distance(v) < distance(best) ? v : best)), 0];
+  if (target < lo) return [lo, 0];
+  if (target <= hi) return [target, 0];
+  if (target >= hi * DECIMATE_FROM) for (let k = 2; k <= 8; k++) if (target / k <= hi) return target / k >= lo ? [target / k, k] : [hi, 0];
+  return [hi, 0];
+}
+
+export function check(result: FileResult | null | undefined, rules: CheckRules): CheckReport {
+  const violations: CheckViolation[] = [];
+  const severity = rules.severity === 'warn' ? 'warn' : 'fail';
+  const error = result ? result.error : 'no result';
+  const t = result && !error ? (result.videoTracks.find((x) => x.trackId === result.primaryTrackId) ?? null) : null;
+  const add = (rule: string, s: CheckSeverity, expected: CheckExpected, actual: number | string | boolean | null, message: string): number => violations.push({ rule, severity: s, expected, actual, message: `${rule}: ${message}` });
+  const unknown = (rule: string, missing: string): number => add(rule, 'unknown', null, null, `unknown, ${error ? `the analysis failed: ${error}` : t ? `no ${missing}` : 'no video track'}`);
+
+  const limits = (group: string, rule: Partial<Record<Bound, RatioValue | readonly RatioValue[]>> | undefined, actual: Q | null, shown: number | string, text: string, unit: string, missing: string): void => {
+    if (!rule) return;
+    const bounds = BOUNDS.filter((b) => rule[b] !== undefined).map((b) => [b, rule[b]!, [rule[b]!].flat().map((v) => ratio(v, `${group}.${b}`))] as const);
+    if (!actual) return void unknown(group, missing);
+    for (const [b, expected, qs] of bounds) {
+      const c = qs.map((q) => cmp(actual, q));
+      if (b === 'min' ? c[0]! < 0n : b === 'max' ? c[0]! > 0n : !c.includes(0n)) add(`${group}.${b}`, severity, expected, shown, `${text}${unit} is ${RELATION[b]} ${[expected].flat().join(', ')}${unit}`);
+    }
+  };
+  const quantity = (x: number | null | undefined): Q | null => (typeof x === 'number' && x >= 0 && Number.isFinite(x) ? decimal(String(x)) : null);
+  const allow = (rule: 'containers' | 'codecs', list: readonly string[] | undefined, actual: string | null | undefined, missing: string): void => {
+    if (!list) return;
+    if (!actual || actual === 'unknown') unknown(rule, missing);
+    else if (!list.some((x) => x.toLowerCase() === actual)) add(rule, severity, list, actual, `${actual} is not one of ${list.join(', ')}`);
+  };
+  const policy = (rule: 'vfr' | 'uneven', state: boolean | null, missing: string, message: string): boolean => {
+    const p = rules[rule];
+    if (!p || p === 'allow') return false;
+    if (state === null) unknown(rule, missing);
+    else if (state) add(rule, p === 'warn' ? 'warn' : severity, p, true, message);
+    return !!state;
+  };
+
+  const fps = t && judgedFps(t, rules.fps?.source);
+  limits('fps', rules.fps, fps, fps ? fraction(fps) : '', fps ? fpsText(fps) : '', ' fps', `${rules.fps?.source ?? 'avg'} frame rate`);
+  const duration = t && (t.durationSec ?? result!.formatDurationSec);
+  limits('duration', rules.duration, quantity(duration), duration ?? '', `${round(duration ?? 0)}`, ' s', 'duration');
+
+  const turned = t ? Math.abs(t.rotation) % 180 === 90 : false;
+  const w = (turned ? t?.height : t?.width) || 0;
+  const h = (turned ? t?.width : t?.height) || 0;
+  const sized = w > 0 && h > 0;
+  if (rules.display && !sized) unknown('display', 'display size');
+  else if (rules.display) {
+    const sides: Record<string, number> = { Width: w, Height: h, ShortSide: Math.min(w, h), LongSide: Math.max(w, h) };
+    for (const [key, v] of Object.entries(rules.display)) {
+      const side = sides[key.slice(3)];
+      const b = key.slice(0, 3) as Bound;
+      if (side !== undefined && typeof v === 'number' && (b === 'min' ? side < v : side > v)) add(`display.${key}`, severity, v, side, `${side} px is ${RELATION[b]} ${v} px (${w}x${h})`);
+    }
+  }
+  const area: Q = [BigInt(w), BigInt(h)];
+  limits('aspectRatio', rules.aspectRatio, sized ? area : null, fraction(area), `${w}x${h} (${round(w / h)})`, '', 'display size');
+  limits('pixels', rules.pixels, sized ? [BigInt(w * h), 1n] : null, w * h, `${w * h}`, ' px', 'display size');
+  limits('fileSize', rules.fileSize, quantity(result?.size), result?.size ?? '', `${result?.size}`, ' bytes', 'file size');
+  allow('containers', rules.containers, result?.container, 'container');
+  allow('codecs', rules.codecs, t?.codecName, 'codec name');
+  if (rules.audio) {
+    const audio = t ? result!.audioTrackCount > 0 : null;
+    const required = rules.audio === 'required';
+    if (audio === null) unknown('audio', '');
+    else if (audio !== required) add('audio', severity, rules.audio, audio, `${rules.audio}, the file has ${required ? 'no' : 'an'} audio track`);
+  }
+  const vfr = policy('vfr', t && t.isVfr, 'VFR flag', 'the frame rate is variable');
+  const uneven = policy('uneven', t && unevenOf(t), 'rate profile', `the frame rate is uneven${t?.rateProfile ? `: ${t.rateProfile.summary}` : ''}`);
+
+  const report: CheckReport = { verdict: 'pass', violations };
+  const fpsOff = violations.some((v) => v.rule.startsWith('fps.'));
+  if (t && (fpsOff || vfr || uneven)) {
+    const constant = fpsOff ? fps : (fromRational(t.dominantFps?.rate) ?? fromRational(t.nominalFps));
+    const [v, k] = fit(constant ? value(constant) : Math.round(t.avgFps?.value ?? 0), rules.fps);
+    const how = k > 1 ? `, which keeps 1 of every ${k} frames` : '';
+    if (v > 0) report.suggestedFps = { value: v, reason: fpsOff ? `${fpsText(fps!)} fps is not allowed: convert to ${round(v)} fps${how}` : `the frame rate is ${vfr ? 'variable' : 'uneven'}: re-encode at a constant ${round(v)} fps${how}` };
+  }
+  const has = (s: CheckSeverity): boolean => violations.some((v) => v.severity === s);
+  report.verdict = has('fail') ? 'fail' : has('unknown') ? 'unknown' : has('warn') ? 'warn' : 'pass';
+  return report;
+}

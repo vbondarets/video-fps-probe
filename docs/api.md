@@ -8,10 +8,11 @@ The package is ESM only, targets ES2022 and ships its own types. Every entry exc
 
 | Entry | Exports | Worker literal in the build |
 |---|---|---|
-| `video-fps-probe` | `createProbe`, `analyze`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, every type on this page except `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions` and `VideoFpsState` | the own worker |
+| `video-fps-probe` | `createProbe`, `analyze`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, every type on this page except `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions`, `VideoFpsState` and the check types (`CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `DisplayRule`, `RangeRule`, `RatioValue`, `RatePolicy`) | the own worker |
 | `video-fps-probe/lazy` | `lazyProbe`, `lazyProbeFrom`, `LazyProbe`, `ProbeOptions` | the own worker |
-| `video-fps-probe/client` | `createProbeClient`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, every type on this page except `InThreadOptions`, `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions` and `VideoFpsState` | none |
+| `video-fps-probe/client` | `createProbeClient`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, every type on this page except `InThreadOptions`, `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions`, `VideoFpsState` and the check types (`CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `DisplayRule`, `RangeRule`, `RatioValue`, `RatePolicy`) | none |
 | `video-fps-probe/client/lazy` | `lazyProbeClient`, `lazyProbeFrom`, `ClientOptions`, `LazyProbe`, `Probe` | none |
+| `video-fps-probe/check` | `check`, `CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `DisplayRule`, `RangeRule`, `RatioValue`, `RatePolicy` | none |
 | `video-fps-probe/react` | `VideoFpsProvider`, `useVideoFps`, `useVideoFpsProbe`, `usePrewarmVideoFps`, `VideoFpsProviderProps`, `UseVideoFpsOptions`, `VideoFpsState`, `VideoFpsSummary` | none |
 | `video-fps-probe/mp4box` | `mp4box()` descriptor | the mp4box worker |
 | `video-fps-probe/mediabunny` | `mediabunny()` descriptor | the mediabunny worker |
@@ -26,7 +27,7 @@ There are two flavors because bundlers emit a worker file for every `new Worker(
 - **Default flavor** (`video-fps-probe`, `video-fps-probe/lazy`): the own engine and its prebuilt worker are built in. Use it unless you build your own worker.
 - **Client flavor** (`video-fps-probe/client`, `video-fps-probe/client/lazy`): no worker is built in. You pass a worker, `'inline'`, or prebuilt descriptors. A host with its own worker uses this flavor so the unused own worker is never emitted.
 
-The `mp4box` and `mediabunny` descriptors each carry their own prebuilt worker, which serves that engine and own. `rvfc`, `worker-runtime` and `engines/*` never reach a worker literal. `check-dist` enforces all of this on every build.
+The `mp4box` and `mediabunny` descriptors each carry their own prebuilt worker, which serves that engine and own. `rvfc`, `worker-runtime` and `engines/*` never reach a worker literal, and `check` imports no other module. `check-dist` enforces all of this on every build.
 
 ## Probes
 
@@ -407,6 +408,103 @@ function summarize(result: FileResult): VideoFpsSummary; // video-fps-probe, vid
 ```
 
 Flattens the primary track: `ok`, `name`, `container`, `engine`, `fps` (`avgFps.value`), `fpsRational` (`'num/den'`), `nominalFps`, `frames` (`presentedFrames ?? frames`), `durationSec` (track, else format), `width`, `height`, `rotation`, `isVfr`, `minFps`, `maxFps`, `approximate`, `error` and `warnings` (file and track). `ok` is false and `error` is set when the result has an error, no video track (`no video track`) or no average (`no frame rate`). `approximate` is true when the average, the nominal rate or the frame count is `estimated` or `sampled`.
+
+## Check
+
+```ts
+import { check } from 'video-fps-probe/check';
+
+function check(result: FileResult | null | undefined, rules: CheckRules): CheckReport;
+```
+
+Judges a result against upload limits in the calling thread: a pure function with no worker, no parser and no import of its own (`check-dist` fails a `dist/check/index.js` that imports anything). The rules are plain JSON, so a server can send them, and [presets](#presets) carry the published limits of video generation providers.
+
+```ts
+type RatioValue = number | `${number}/${number}` | `${number}:${number}`; // 24, '24000/1001', '16:9'
+type RatePolicy = 'allow' | 'warn' | 'reject';
+type FpsSource = 'avg' | 'ffprobe' | 'nominal' | 'dominant';
+
+interface RangeRule<T = number> {
+  min?: T;
+  max?: T;
+}
+
+interface FpsRule extends RangeRule<RatioValue> {
+  exact?: RatioValue;
+  oneOf?: readonly RatioValue[];
+  source?: FpsSource; // default 'avg'
+}
+
+interface AspectRatioRule extends RangeRule<RatioValue> {
+  oneOf?: readonly RatioValue[];
+}
+
+interface DisplayRule {
+  minWidth?: number;
+  maxWidth?: number;
+  minHeight?: number;
+  maxHeight?: number;
+  minShortSide?: number;
+  maxShortSide?: number;
+  minLongSide?: number;
+  maxLongSide?: number;
+}
+
+interface CheckRules {
+  fps?: FpsRule;
+  duration?: RangeRule; // seconds
+  display?: DisplayRule; // pixels, after rotation
+  aspectRatio?: AspectRatioRule; // display width over display height
+  pixels?: RangeRule; // display width x height
+  fileSize?: RangeRule; // bytes
+  containers?: readonly ContainerKind[];
+  codecs?: readonly string[]; // ffprobe codec names: 'h264', 'hevc', 'vp9', 'av1', 'prores', ...
+  audio?: 'required' | 'forbidden';
+  vfr?: RatePolicy;
+  uneven?: RatePolicy;
+  severity?: 'fail' | 'warn'; // of a broken limit, default 'fail'
+}
+
+type CheckVerdict = 'pass' | 'warn' | 'fail' | 'unknown';
+type CheckSeverity = 'fail' | 'warn' | 'unknown';
+type CheckExpected = number | string | readonly (number | string)[] | null;
+
+interface CheckViolation {
+  rule: string; // 'fps.min', 'display.maxLongSide', 'containers', 'vfr', ...
+  severity: CheckSeverity;
+  expected: CheckExpected; // the rule value as given; null for unknown
+  actual: number | string | boolean | null; // 'num/den' for a frame rate or an aspect ratio
+  message: string;
+}
+
+interface SuggestedFps {
+  value: number;
+  reason: string;
+}
+
+interface CheckReport {
+  verdict: CheckVerdict;
+  violations: CheckViolation[];
+  suggestedFps?: SuggestedFps;
+}
+```
+
+**Exact comparison.** Every bound is inclusive and compared as an exact rational with BigInt cross-multiplication, never as a float. A number counts as the decimal it prints as, so `24` is 24/1 and `23.976` is 2997/125; a string is `'num/den'` or `'num:den'`, each side a decimal. NTSC film at 23.976 fps is `24000/1001`, which is below `min: 24`; 59.94 fps (`60000/1001`) is below `min: 60` and meets `max: 60`; `30000/1001` is above `max: 29.97`; and `exact: 23.976` does not match `24000/1001`, so write `exact: '24000/1001'`. Duration, sizes, pixels and the file size are compared the same way. A rule value that is not a non-negative number or such a string throws a `TypeError` naming the rule, whatever the result.
+
+**What is judged.** The primary track. `fps.source` picks the rate: `'avg'` is `avgFps`, presented frames over the presentation span; `'ffprobe'` is `avgFpsFfprobe`, the `avg_frame_rate` ffprobe prints (unknown when it is null or `0/0`); `'nominal'` is `nominalFps`; `'dominant'` is `dominantFps.rate` for a VFR track and `nominalFps` for a constant one. The display size is `width` x `height`, swapped when `rotation` is 90 or 270 in either direction. `duration` is the track's `durationSec`, else `formatDurationSec`; `codecs` compares `codecName` without case; `audio` reads `audioTrackCount` and `vfr` reads `isVfr`. `uneven` reads `rateProfile.uneven`; without a profile, a track that is not VFR, or whose shortest and longest frame intervals are within 7.5% of each other (below that no profile is built), is even, and any other track is unknown: a Matroska file outside an exact scan, or a profile chunk that failed to load.
+
+**Violations and the verdict.** A broken limit is a violation with the rule, its severity, the rule value and the actual value. Its severity is `rules.severity`; a policy of `'warn'` gives `warn` and `'reject'` gives `rules.severity`. A rule whose field is missing gives one `unknown` entry for its group (`fps`, `display`, `audio`, ...). The verdict is `fail` when any violation fails, else `unknown` when a field was missing, else `warn` when any violation warns, else `pass`.
+
+**Failing open.** `check(null, rules)` is `unknown`, so the result of `tryAnalyze` goes straight in. A result with an `error`, or without a video track, judges only `fileSize` (the Blob's size) and `containers` (the sniffed container, unless it is `'unknown'`); every other rule is unknown. A `fail` is a limit the file breaks for certain; an `unknown` means the probe could not tell, and an upload flow that fails open sends the file and lets the server decide.
+
+**suggestedFps.** Set when a frame rate bound, `vfr` or `uneven` is broken (as a failure or a warning). `value` is a rate that the `fps` rule allows and `reason` says what to do: `exact` when set, else the nearest `oneOf` rate between `min` and `max` (the lower one on a tie), else `min` for a slower track, else, for a track at least 1.5 times `max`, its rate divided by the smallest whole number from 2 to 8 that brings it under `max` (120 to 60, 50 to 25 and 59.94 to 29.97 each keep 1 of every 2 frames), else `max`. A VFR or uneven track whose rate passes gets its dominant or nominal rate, else its rounded average, fitted the same way.
+
+```ts
+const report = check(await probe.tryAnalyze(file), { fps: { min: 24, max: 60 }, duration: { min: 3, max: 10 }, vfr: 'warn' });
+report.verdict; // 'fail' for a 23.976 fps file
+report.violations[0]; // { rule: 'fps.min', severity: 'fail', expected: 24, actual: '24000/1001', message: 'fps.min: 23.976 (24000/1001) fps is below the minimum 24 fps' }
+report.suggestedFps; // { value: 24, reason: '23.976 (24000/1001) fps is not allowed: convert to 24 fps' }
+```
 
 ## Compare and agreement
 

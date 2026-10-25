@@ -48,6 +48,9 @@
       "react": [
         "dist/react/index.d.ts"
       ],
+      "check": [
+        "dist/check/index.d.ts"
+      ],
       "mp4box": [
         "dist/plugins/mp4box.d.ts"
       ],
@@ -88,6 +91,10 @@
     "./react": {
       "types": "./dist/react/index.d.ts",
       "default": "./dist/react/index.js"
+    },
+    "./check": {
+      "types": "./dist/check/index.d.ts",
+      "default": "./dist/check/index.js"
     },
     "./mp4box": {
       "types": "./dist/plugins/mp4box.d.ts",
