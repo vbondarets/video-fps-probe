@@ -129,6 +129,17 @@ function close(n: bigint, a: Q, b: Q, slack: bigint, perSecond: bigint): boolean
 
 const whole = (x: unknown): x is number => Number.isSafeInteger(x) && (x as number) > 0;
 
+const record = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x);
+
+function primaryTrack(result: FileResult): VideoTrackResult | string {
+  const list: unknown = result.videoTracks;
+  const id: unknown = result.primaryTrackId;
+  if (!Array.isArray(list)) return 'the result has no videoTracks list';
+  if (list.length === 0) return 'no video track';
+  const track: unknown = list.find((x) => record(x) && typeof id === 'number' && x.trackId === id);
+  return (track as VideoTrackResult) || `no primary track: primaryTrackId ${id === undefined ? 'is missing' : `${JSON.stringify(id)} matches no video track`}`;
+}
+
 const fromRational = (r: Pick<Rational, 'num' | 'den'> | null | undefined): Q | null => (r && whole(r.num) && whole(r.den) ? [BigInt(r.num), BigInt(r.den)] : null);
 
 const gcd = (a: bigint, b: bigint): bigint => (b === 0n ? a : gcd(b, a % b));
@@ -223,12 +234,12 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   for (const [rule, v, list] of choices) if (v != null && !list.includes(v as string)) invalid(rule, v, `one of ${list.join(', ')}`);
   const violations: CheckViolation[] = [];
   const severity = rules.severity === 'warn' ? 'warn' : 'fail';
-  const error = result ? result.error : 'no result';
-  const t = result && !error && Array.isArray(result.videoTracks) ? (result.videoTracks.find((x) => x.trackId === result.primaryTrackId) ?? null) : null;
+  const failure = result == null ? 'the analysis failed: no result' : result.error ? `the analysis failed: ${result.error}` : null;
+  const found = failure ?? primaryTrack(result!);
+  const t = typeof found === 'string' ? null : found;
   const add = (rule: string, s: CheckSeverity, expected: CheckExpected, actual: number | string | boolean | null, message: string): number =>
     violations.push({ rule, severity: s, expected, actual, message: `${rule}: ${message}` });
-  const unknown = (rule: string, missing: string): unknown =>
-    violations.some((v) => v.rule === rule) || add(rule, 'unknown', null, null, `unknown, ${error ? `the analysis failed: ${error}` : t ? `no ${missing}` : 'no video track'}`);
+  const unknown = (rule: string, missing: string): unknown => violations.some((v) => v.rule === rule) || add(rule, 'unknown', null, null, `unknown, ${t ? `no ${missing}` : found}`);
 
   const limits = (
     group: string,
@@ -256,10 +267,10 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
     }
   };
   const quantity = (x: number | null | undefined): Q | null => (typeof x === 'number' ? decimal(String(x)) : null);
-  const allow = (rule: 'containers' | 'codecs', list: readonly string[] | undefined, actual: string | null | undefined, missing: string): void => {
+  const allow = (rule: 'containers' | 'codecs', list: readonly string[] | undefined, actual: unknown, missing: string): void => {
     if (list == null) return;
     if (!Array.isArray(list) || list.some((x) => typeof x !== 'string')) invalid(rule, list, 'a list of strings');
-    if (!actual || actual === 'unknown') unknown(rule, missing);
+    if (typeof actual !== 'string' || !actual || actual === 'unknown') unknown(rule, missing);
     else if (!list.some((x) => x.toLowerCase() === actual.toLowerCase())) add(rule, severity, list, actual, `${actual} is not one of ${list.join(', ')}`);
   };
   const policy = (rule: 'vfr' | 'uneven', state: boolean | null, missing: string, message: string): boolean => {
@@ -293,10 +304,12 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   allow('containers', rules.containers, result?.container, 'container');
   allow('codecs', rules.codecs, t?.codecName, 'codec name');
   if (rules.audio) {
-    const counted = t && AUDIO_ENGINES.includes(result!.engine) && Number.isSafeInteger(result!.audioTrackCount);
-    const audio = counted ? result!.audioTrackCount > 0 : null;
+    const engine: unknown = result?.engine;
+    const counts = AUDIO_ENGINES.includes(engine as string);
+    const n = result?.audioTrackCount;
+    const audio = t && counts && Number.isSafeInteger(n) && n! >= 0 ? n! > 0 : null;
     const required = rules.audio === 'required';
-    if (audio === null) unknown('audio', `audio track count (the ${result?.engine} engine reports none)`);
+    if (audio === null) unknown('audio', `audio track count${!counts && typeof engine === 'string' ? ` (the ${engine} engine reports none)` : ''}`);
     else if (audio !== required) add('audio', severity, rules.audio, audio, `${rules.audio}, the file has ${required ? 'no' : 'an'} audio track`);
   }
   const vfr = policy('vfr', t && t.isVfr, 'VFR flag', 'the frame rate is variable');

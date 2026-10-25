@@ -378,9 +378,65 @@ describe('check: verdict, severity and failing open', () => {
         ['codecs', 'unknown'],
         ['vfr', 'unknown'],
       ]);
-      expect(report.violations[0]!.message).toBe('fps: unknown, no video track');
+      expect(report.violations[0]!.message).toBe('fps: unknown, the result has no videoTracks list');
     }
     expect(check(JSON.parse('{"size":500}') as FileResult, { fileSize: { max: 100 } }).verdict).toBe('fail');
+  });
+
+  it.each([
+    ['a null entry', '{"videoTracks":[null],"primaryTrackId":1}', 'no primary track: primaryTrackId 1 matches no video track'],
+    ['entries that are not objects', '{"videoTracks":[1,"x",[],{"trackId":2}],"primaryTrackId":1}', 'no primary track: primaryTrackId 1 matches no video track'],
+    ['a track without trackId', '{"videoTracks":[{"codecName":"h264","width":1920}],"primaryTrackId":1}', 'no primary track: primaryTrackId 1 matches no video track'],
+    ['tracks without trackId and no primaryTrackId', '{"videoTracks":[{"codecName":"h264"},{"codecName":"vp9"}]}', 'no primary track: primaryTrackId is missing'],
+    ['a primaryTrackId that is not a number', '{"videoTracks":[{"trackId":1}],"primaryTrackId":"1"}', 'no primary track: primaryTrackId "1" matches no video track'],
+    ['a null primaryTrackId next to a track', '{"videoTracks":[{"trackId":1}],"primaryTrackId":null}', 'no primary track: primaryTrackId null matches no video track'],
+    ['a primaryTrackId that points nowhere', '{"videoTracks":[{"trackId":1},{"trackId":2}],"primaryTrackId":3}', 'no primary track: primaryTrackId 3 matches no video track'],
+    ['videoTracks that is not a list', '{"videoTracks":{"trackId":1},"primaryTrackId":1}', 'the result has no videoTracks list'],
+    ['a result that is a list', '[{"videoTracks":[{"trackId":1}],"primaryTrackId":1}]', 'the result has no videoTracks list'],
+    ['a result that is a string', '"x.mp4"', 'the result has no videoTracks list'],
+  ])('is unknown, without throwing, for %s, and says why', (_, json, why) => {
+    const all: CheckRules = { fps: { min: 24 }, duration: { max: 30 }, frameSize: { minWidth: 1 }, codecs: ['h264'], audio: 'required', vfr: 'reject', uneven: 'reject' };
+    const report = check(JSON.parse(json) as FileResult, all);
+    expect(report.verdict).toBe('unknown');
+    expect(report.violations.map((v) => v.message)).toEqual(['fps', 'duration', 'frameSize', 'codecs', 'audio', 'vfr', 'uneven'].map((rule) => `${rule}: unknown, ${why}`));
+  });
+
+  it('judges a track whose fields have the wrong types without throwing, as unknown where it cannot read them', () => {
+    const all: CheckRules = {
+      fps: { min: 24, max: 60 },
+      duration: { max: 30 },
+      frameSize: { maxLongSide: 3000 },
+      aspectRatio: { max: 2 },
+      pixels: { max: 1e7 },
+      fileSize: { max: 1e9 },
+      containers: ['mp4'],
+      codecs: ['h264'],
+      audio: 'required',
+      vfr: 'reject',
+      uneven: 'reject',
+    };
+    const fields = ['trackId', 'codecName', 'width', 'height', 'rotation', 'durationSec', 'avgFps', 'avgFpsFfprobe', 'nominalFps', 'dominantFps', 'minFps', 'maxFps', 'frames', 'presentedFrames', 'isVfr', 'timestampsQuantized', 'rateProfile'];
+    const values: unknown[] = [null, undefined, 0, -1, Number.NaN, '30', 'x', true, [], {}, [1, 2], { num: 'a', den: 0, value: 'b', rate: 7 }];
+    const sources = [undefined, 'ffprobe', 'nominal', 'dominant'] as const;
+    for (const field of fields)
+      for (const v of values)
+        for (const source of sources) {
+          const r = result({ isVfr: true, minFps: rate(10), maxFps: rate(60), [field]: v });
+          const label = JSON.stringify({ field, v, source });
+          expect(() => check(r, { ...all, fps: { ...all.fps, source } }), label).not.toThrow();
+          expect(() => check(JSON.parse(JSON.stringify(r)) as FileResult, { ...all, fps: { ...all.fps, source } }), label).not.toThrow();
+        }
+    for (const [key, v] of [['container', 42], ['engine', {}], ['audioTrackCount', -1], ['size', '50'], ['formatDurationSec', 'long']] as const) {
+      expect(() => check(result({}, { [key]: v } as Partial<FileResult>), all), key).not.toThrow();
+    }
+    expect(check(result({ codecName: 264 as unknown as string }), { codecs: ['h264'] }).violations).toEqual([{ rule: 'codecs', severity: 'unknown', expected: null, actual: null, message: 'codecs: unknown, no codec name' }]);
+    expect(check(result({}, { audioTrackCount: -1 }), { audio: 'forbidden' }).verdict).toBe('unknown');
+    expect(check(result({}, { engine: undefined as unknown as FileResult['engine'] }), { audio: 'forbidden' }).violations[0]!.message).toBe('audio: unknown, no audio track count');
+  });
+
+  it('reads a null rate profile as no profile', () => {
+    expect(check(result({ isVfr: true, rateProfile: null }), { uneven: 'reject' }).violations[0]!.message).toBe('uneven: unknown, no rate profile');
+    expect(check(result({ isVfr: false, rateProfile: null }), { uneven: 'reject' }).verdict).toBe('pass');
   });
 });
 
