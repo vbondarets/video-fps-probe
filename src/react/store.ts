@@ -40,6 +40,8 @@ const IDLE: VideoFpsState = { status: 'idle', ...CLEAR, cancel: noop, retry: noo
 const hosts = new WeakMap<object, number>();
 let hostCount = 0;
 const loadSummary = () => import('../api/summary.ts');
+const failure = (error: unknown, reason: 'load' | 'crash'): ProbeError =>
+  error instanceof ProbeError ? error : Object.assign(new ProbeError('worker-failed', String(error), { cause: error }), { reason });
 const sortKeys = (_key: string, v: unknown): unknown => (v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => (a < b ? -1 : 1))) : v);
 
 export function createVideoFpsStore(probe: Probe<EngineId>): VideoFpsStore {
@@ -64,10 +66,14 @@ export function createVideoFpsStore(probe: Probe<EngineId>): VideoFpsStore {
     const onProgress = (progress: AnalyzeProgress): void => {
       if (e.run === run) set(e, { progress }, true);
     };
-    Promise.all([probe.analyze(file, { ...options, signal: run.signal, onProgress }), loadSummary()]).then(
-      ([result, { summarize }]) => settle({ status: 'success', result, summary: summarize(result), progress: null }),
-      (error: unknown) => settle({ status: 'error', error: error instanceof ProbeError ? error : Object.assign(new ProbeError('worker-failed', String(error), { cause: error }), { reason: 'load' as const }) }),
-    );
+    Promise.all([
+      probe.analyze(file, { ...options, signal: run.signal, onProgress }),
+      loadSummary().catch((error: unknown) => {
+        throw failure(error, 'load');
+      }),
+    ])
+      .then(([result, { summarize }]) => settle({ status: 'success', result, summary: summarize(result), progress: null }))
+      .catch((error: unknown) => settle({ status: 'error', error: failure(error, 'crash') }));
   };
 
   return {

@@ -178,7 +178,7 @@ describe('the framework-free store of video-fps-probe/react', () => {
     expect(view.read().result?.name).toBe('new.mp4');
   });
 
-  it('gives a rejection as the error state, and wraps anything but a ProbeError as a load failure', async () => {
+  it('gives a rejection as the error state, and wraps any other rejection of the probe as a crash', async () => {
     const { probe, calls } = fakeProbe();
     const store = createVideoFpsStore(probe);
     const timeout = new ProbeError('timeout', 'timed out');
@@ -189,7 +189,16 @@ describe('the framework-free store of video-fps-probe/react', () => {
     calls[1].reject(cause);
     await settle();
     expect(a.read()).toMatchObject({ status: 'error', error: timeout, result: null });
-    expect(b.read().error).toMatchObject({ code: 'worker-failed', reason: 'load', cause });
+    expect(b.read().error).toMatchObject({ code: 'worker-failed', reason: 'crash', cause });
+  });
+
+  it('settles to the error state, as a crash, when the summary of a result throws', async () => {
+    const { probe, calls } = fakeProbe();
+    const store = createVideoFpsStore(probe);
+    const view = mount(store, blob());
+    calls[0].resolve(null as unknown as ProbeResult);
+    await settle();
+    expect(view.read()).toMatchObject({ status: 'error', result: null, error: { name: 'ProbeError', code: 'worker-failed', reason: 'crash', cause: expect.any(TypeError) } });
   });
 
   it('re-renders only the subscribers that ask for progress when progress comes in', async () => {
