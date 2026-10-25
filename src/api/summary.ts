@@ -1,4 +1,3 @@
-import { primaryTrack } from '../core/result.ts';
 import type { ContainerKind, EngineId, FileResult, Provenance } from '../core/types.ts';
 
 export interface VideoFpsSummary {
@@ -25,7 +24,7 @@ export interface VideoFpsSummary {
 const APPROXIMATE: ReadonlySet<Provenance | undefined> = new Set<Provenance | undefined>(['estimated', 'sampled']);
 
 export function summarize(r: FileResult): VideoFpsSummary {
-  const t = primaryTrack(r);
+  const t = r.primaryTrackId === null ? null : (r.videoTracks.find((x) => x.trackId === r.primaryTrackId) ?? null);
   const error = r.error ?? (!t ? 'no video track' : t.avgFps ? null : 'no frame rate');
   return {
     ok: error === null,
