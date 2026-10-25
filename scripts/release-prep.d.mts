@@ -6,6 +6,8 @@ export function releaseChangelog(text: string, version: string, date: string): s
 
 export function gitIdentity(configValue: (key: string) => string): string;
 
+export function publicManifest(manifest: { private?: unknown }): void;
+
 export function changelogSection(text: string, version: string): string;
 
 export function localDate(now?: Date): string;

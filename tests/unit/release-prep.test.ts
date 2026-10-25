@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { GENERATED, changelogSection, gitIdentity, localDate, publishCheck, releaseChangelog, unreleasedIntro } from '../../scripts/release-prep.mjs';
+import { GENERATED, changelogSection, gitIdentity, localDate, publicManifest, publishCheck, releaseChangelog, unreleasedIntro } from '../../scripts/release-prep.mjs';
 import { TARGETS } from '../../scripts/readme-tables.ts';
 
 const CHANGELOG = ['# Changelog', '', 'Intro.', '', '## Unreleased', '', '### Added', '', '- A thing.', '', '## 0.1.0 - 2026-10-24', '', 'First release.', ''].join('\n');
@@ -43,6 +43,12 @@ describe('release changelog', () => {
     expect(gitIdentity(config({ 'user.name': 'Volodymyr Bondarets', 'user.email': 'bondaretsdirect@gmail.com' }))).toBe('Volodymyr Bondarets <bondaretsdirect@gmail.com>');
     expect(() => gitIdentity(config({ 'user.name': 'Volodymyr Bondarets' }))).toThrow('(user.name: Volodymyr Bondarets, user.email: not set)');
     expect(() => gitIdentity(config({}))).toThrow('(user.name: not set, user.email: not set)');
+  });
+
+  it('refuses a release of a package that npm would refuse to publish', () => {
+    expect(() => publicManifest({ private: true })).toThrow('package.json has "private": true, which npm refuses to publish: commit "private": false before the release');
+    expect(() => publicManifest({ private: false })).not.toThrow();
+    expect(() => publicManifest({})).not.toThrow();
   });
 
   it('dates the section from the local clock', () => {

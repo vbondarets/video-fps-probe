@@ -18,9 +18,9 @@ const USAGE = `Usage: node scripts/release-prep.mjs [--preversion | --notes <ver
                      rebuilds the demo and report/size.*, rebuilds the consumer fixtures from the new
                      tarball (CONSUMERS_OFFLINE=1) and report/size-matrix.*, regenerates the doc tables
                      and stages exactly the files that changed, so npm commits them with the bump
-  --preversion       the npm "preversion" step: refuses a dirty tree, an empty Unreleased section or
-                     an unset git user.name or user.email, prints the git identity of the release
-                     commit and runs the fast gates
+  --preversion       the npm "preversion" step: refuses a dirty tree, an empty Unreleased section,
+                     "private": true in package.json or an unset git user.name or user.email, prints
+                     the git identity of the release commit and runs the fast gates
   --notes <version>  prints the CHANGELOG section of a version, for the GitHub Release
   --publish-check <tag>
                      the check of the Release workflow before npm publish: fails unless the tag is
@@ -89,6 +89,10 @@ export function gitIdentity(configValue) {
   return `${name} <${email}>`;
 }
 
+export function publicManifest(manifest) {
+  if (manifest.private === true) throw new Error('package.json has "private": true, which npm refuses to publish: commit "private": false before the release (docs/releasing.md)');
+}
+
 export function changelogSection(text, version) {
   const lines = text.replace(/\r\n/g, '\n').split('\n');
   const start = lines.findIndex((line) => isVersionHeading(line, version));
@@ -136,6 +140,7 @@ function preversion() {
   const dirty = statusLines();
   if (dirty.length > 0) throw new Error(`the working tree is not clean, commit or stash first:\n${dirty.join('\n')}`);
   unreleased(read('CHANGELOG.md').replace(/\r\n/g, '\n').split('\n'));
+  publicManifest(JSON.parse(read('package.json')));
   console.log(`release commit and tag as ${gitIdentity(gitConfig)}`);
   for (const [tool, args] of PREVERSION_GATES) run(tool, args);
 }
