@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { FIXTURES, consumersDir, fixtureDist, installedPackage } from './consumers.mjs';
+import { FIXTURES, consumersDir, fixtureDist, installedPackage, lockedOverrides } from './consumers.mjs';
 import { discover, measure, scanReferences } from './size-report.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -409,12 +409,16 @@ export function buildMatrix(dir) {
   };
   const failures = fixtures.flatMap((f) => f.problems.map((p) => (p.startsWith(`${f.name} `) ? p : `${f.name}: ${p}`)));
   if (standalone.status !== 'ok') failures.push(`standalone own.worker.js: ${standalone.status}`);
+  for (const [name, locked] of Object.entries(lockedOverrides())) {
+    const installed = versionOf(dir, name);
+    if (installed !== null && installed !== locked) failures.push(`consumers: ${name} ${installed} is installed, package-lock.json has ${locked}; run npm run consumers:setup`);
+  }
   const tarball = readdirSync(dir).find((f) => f.endsWith('.tgz')) ?? null;
   return {
     generator: 'scripts/size-matrix.mjs',
     unit: 'KB = 1000 bytes; gzip level 9',
     tarball,
-    versions: { 'video-fps-probe': versionOf(dir, 'video-fps-probe'), vite: versionOf(dir, 'vite'), mp4box: versionOf(dir, 'mp4box'), mediabunny: versionOf(dir, 'mediabunny') },
+    versions: { 'video-fps-probe': versionOf(dir, 'video-fps-probe'), vite: versionOf(dir, 'vite'), rolldown: versionOf(dir, 'rolldown'), mp4box: versionOf(dir, 'mp4box'), mediabunny: versionOf(dir, 'mediabunny') },
     fixtures,
     standalone,
     failures,
@@ -436,7 +440,7 @@ export function renderMarkdown(matrix) {
   out.push('# Package size matrix');
   out.push('');
   out.push(
-    `What the package adds to a Vite ${matrix.versions.vite} app in each configuration, measured by \`scripts/size-matrix.mjs\` on production builds of the consumer fixtures in \`tests/consumers/fixtures/\`. Each fixture installs the packed tarball (${matrix.tarball ?? 'video-fps-probe'}) with mp4box ${matrix.versions.mp4box} and mediabunny ${matrix.versions.mediabunny} into a directory outside the repository, so nothing resolves to the source tree. KB means 1000 bytes; every size is gzip level 9 per file, and totals are sums of files.`,
+    `What the package adds to a Vite ${matrix.versions.vite} app in each configuration, measured by \`scripts/size-matrix.mjs\` on production builds of the consumer fixtures in \`tests/consumers/fixtures/\`. Each fixture installs the packed tarball (${matrix.tarball ?? 'video-fps-probe'}) with mp4box ${matrix.versions.mp4box} and mediabunny ${matrix.versions.mediabunny} into a directory outside the repository, so nothing resolves to the source tree. Every package Vite and the peers pull in is pinned to its package-lock.json version, rolldown ${matrix.versions.rolldown} among them, so Windows and Linux emit byte-identical files. KB means 1000 bytes; every size is gzip level 9 per file, and totals are sums of files.`,
   );
   out.push('');
   out.push(

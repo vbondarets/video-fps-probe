@@ -10,6 +10,7 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SOURCES = join(REPO_ROOT, 'tests', 'consumers', 'fixtures');
 const INSTALLED = ['vite', 'mp4box', 'mediabunny', 'react', 'react-dom'];
 const REACT_18 = '18.3.1';
+const REACT_18_OVERRIDES = { 'js-tokens': '4.0.0', 'loose-envify': '1.4.0', scheduler: '0.23.2' };
 const SHARED = ['vite.base.ts', 'react-app.ts'];
 const DEV_DEPENDENCIES = JSON.parse(readFileSync(join(REPO_ROOT, 'package.json'), 'utf8')).devDependencies;
 const NPM_ENV = { ...process.env, npm_config_update_notifier: 'false' };
@@ -65,6 +66,38 @@ export const FIXTURES = [
   { name: 'preset', imports: ['./lazy', './check', './presets'], note: 'klingO1ReferenceVideo', worker: ES, engines: ['own'], workers: ['own.worker'], mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/', 'video-fps-probe/dist/engines/'] },
 ];
 
+function lockPath(packages, from, name) {
+  for (let base = from; ; ) {
+    const path = base ? `${base}/node_modules/${name}` : `node_modules/${name}`;
+    if (packages[path]) return path;
+    if (!base) return null;
+    const cut = base.lastIndexOf('/node_modules/');
+    base = cut === -1 ? '' : base.slice(0, cut);
+  }
+}
+
+export function lockedOverrides(direct = INSTALLED) {
+  const { packages } = JSON.parse(readFileSync(join(REPO_ROOT, 'package-lock.json'), 'utf8'));
+  const pinned = new Map();
+  const seen = new Set();
+  for (const stack = direct.map((name) => [lockPath(packages, '', name), name]); stack.length > 0; ) {
+    const [path, name] = stack.pop();
+    if (!path) throw new Error(`package-lock.json does not resolve ${name}`);
+    if (seen.has(path)) continue;
+    seen.add(path);
+    const { version, dependencies = {}, optionalDependencies = {} } = packages[path];
+    if (pinned.has(name) && pinned.get(name) !== version) throw new Error(`package-lock.json resolves ${name} to ${pinned.get(name)} and ${version}; the consumer overrides pin one version per name`);
+    pinned.set(name, version);
+    for (const dep of Object.keys(dependencies)) stack.push([lockPath(packages, path, dep), dep]);
+    for (const dep of Object.keys(optionalDependencies)) {
+      const at = lockPath(packages, path, dep);
+      if (at) stack.push([at, dep]);
+    }
+  }
+  for (const name of direct) pinned.delete(name);
+  return Object.fromEntries([...pinned].sort(([a], [b]) => (a < b ? -1 : 1)));
+}
+
 export function consumersDir(arg) {
   return resolve(arg ?? process.env.CONSUMERS_DIR ?? join(tmpdir(), 'video-fps-probe-consumers'));
 }
@@ -93,7 +126,8 @@ export function setup(dir) {
     if (!version) throw new Error(`${name} is not a devDependency of ${manifest.name}`);
     dependencies[name] = version;
   }
-  writeFileSync(join(dir, 'package.json'), `${JSON.stringify({ name: 'video-fps-probe-consumers', private: true, type: 'module', dependencies }, null, 2)}\n`);
+  const overrides = lockedOverrides();
+  writeFileSync(join(dir, 'package.json'), `${JSON.stringify({ name: 'video-fps-probe-consumers', private: true, type: 'module', dependencies, overrides }, null, 2)}\n`);
   rmSync(join(dir, 'node_modules', 'video-fps-probe'), { recursive: true, force: true });
   const offline = process.env.CONSUMERS_OFFLINE === '1';
   const userconfig = offline ? mkdtempSync(join(tmpdir(), 'video-fps-probe-npmrc-')) : null;
@@ -103,13 +137,13 @@ export function setup(dir) {
     execSync(`npm install ${mode} --strict-peer-deps --no-audit --no-fund --no-package-lock`, { cwd: dir, env: NPM_ENV, stdio: 'inherit' });
     const react18 = join(dir, 'react18');
     mkdirSync(react18, { recursive: true });
-    writeFileSync(join(react18, 'package.json'), `${JSON.stringify({ name: 'video-fps-probe-consumers-react18', private: true, dependencies: { react: REACT_18, 'react-dom': REACT_18, 'video-fps-probe': `file:../${filename}` } }, null, 2)}\n`);
+    writeFileSync(join(react18, 'package.json'), `${JSON.stringify({ name: 'video-fps-probe-consumers-react18', private: true, dependencies: { react: REACT_18, 'react-dom': REACT_18, 'video-fps-probe': `file:../${filename}` }, overrides: REACT_18_OVERRIDES }, null, 2)}\n`);
     rmSync(installedPackage(react18), { recursive: true, force: true });
     execSync(`npm install ${mode} --strict-peer-deps --no-audit --no-fund --no-package-lock`, { cwd: react18, env: NPM_ENV, stdio: 'inherit' });
   } finally {
     if (userconfig) rmSync(userconfig, { recursive: true, force: true });
   }
-  console.log(`installed ${filename}, ${INSTALLED.map((n) => `${n}@${dependencies[n]}`).join(', ')} into ${dir}, and ${filename} with react@${REACT_18} and react-dom@${REACT_18} into ${join(dir, 'react18')}${offline ? ' from the npm cache only' : ''}`);
+  console.log(`installed ${filename}, ${INSTALLED.map((n) => `${n}@${dependencies[n]}`).join(', ')} with ${Object.keys(overrides).length} transitive packages at their package-lock.json versions (rolldown@${overrides.rolldown}) into ${dir}, and ${filename} with react@${REACT_18} and react-dom@${REACT_18} into ${join(dir, 'react18')}${offline ? ' from the npm cache only' : ''}`);
 }
 
 export function copyFixtures(dir, names = FIXTURES.map((f) => f.name)) {

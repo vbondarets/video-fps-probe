@@ -13,6 +13,8 @@ export const FIXTURES: ConsumerFixture[];
 
 export const CONSUMERS_PORT: number;
 
+export function lockedOverrides(direct?: string[]): Record<string, string>;
+
 export function consumersDir(arg?: string): string;
 
 export function fixtureRoot(dir: string, name: string): string;
