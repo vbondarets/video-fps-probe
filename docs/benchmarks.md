@@ -778,11 +778,11 @@ Tested:
 
 `npm run test:e2e -- --project=webkit` runs one browser, `npx playwright show-report .playwright/report` opens the report, and `E2E_BASE_URL=https://vbondarets.github.io/video-fps-probe/ npx playwright test` runs the same suite against the deployed demo instead of a local build.
 
-**CI.** [ci.yml](../.github/workflows/ci.yml) has four jobs on Ubuntu: Verify (type check, lint, the source aliases, tests, the comparison against the committed references, the demo build, its size budgets and the generated tables), Package (check-dist self-test, `build:lib`, publint and check-dist, attw, dist parity and API types), End-to-end (the demo suite in Chromium, Firefox and WebKit) and Consumers (the packed tarball in the Vite 8 consumer fixtures: the size matrix, the generated tables against that measurement, and the smoke test under `vite build` and `vite dev` in all three browsers). [pages.yml](../.github/workflows/pages.yml) deploys `demo/dist/` to GitHub Pages.
+**CI.** [ci.yml](../.github/workflows/ci.yml) has five jobs on Ubuntu: Verify (type check, lint, the source aliases, tests, the comparison against the committed references, the demo build, its size budgets and the generated tables), Node 22.12 (the tests, `build:lib`, dist parity and API types on the lowest Node that `devEngines` allows, next to the Node 24 of `.nvmrc` that every other job uses), Package (check-dist self-test, `build:lib`, publint and check-dist, attw, dist parity and API types), End-to-end (the demo suite in Chromium, Firefox and WebKit) and Consumers (the packed tarball in the Vite 8 consumer fixtures: the size matrix, the generated tables against that measurement, and the smoke test under `vite build` and `vite dev` in all three browsers). [pages.yml](../.github/workflows/pages.yml) deploys `demo/dist/` to GitHub Pages.
 
 ## Reproducing the numbers
 
-Node 22.12 or newer (CI uses the version in `.nvmrc`).
+Node 22.12 or newer (CI uses the version in `.nvmrc`, and runs the tests on 22.12 too).
 
 ```
 npm ci
