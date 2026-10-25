@@ -112,6 +112,20 @@ describe('check: duration, display size, aspect ratio, pixels and file size', ()
     expect(failed(result(track), r as CheckRules)).toEqual(expected);
   });
 
+  it.each([
+    ['180 frames of 60 fps on 1 ms ticks spanning 2.999 s meet a minimum of 3 s', { avgFps: rate(180000, 2999), durationSec: 2.999, nominal: rate(60), frames: 180 }, { min: 3 }, []],
+    ['900 frames of 30 fps on 1 ms ticks spanning 30.001 s meet a maximum of 30 s', { avgFps: rate(900000, 30001), durationSec: 30.001, nominal: rate(30), frames: 900 }, { max: 30 }, []],
+    ['901 frames of 30 fps on 1 ms ticks are above a maximum of 30 s', { avgFps: rate(901000, 30033), durationSec: 30.033, nominal: rate(30), frames: 901 }, { max: 30 }, ['duration.max']],
+    ['a declared rate far from the average leaves the measured 2.999 s', { avgFps: rate(50), durationSec: 2.999, nominal: rate(60), frames: 150 }, { min: 3 }, ['duration.min']],
+  ] as const)('%s', (_, { nominal, frames, ...track }, duration, expected) => {
+    expect(failed(result({ ...track, nominalFps: { ...nominal, kind: 'declared' }, timestampsQuantized: true, frames, presentedFrames: frames }), { duration })).toEqual(expected);
+  });
+
+  it('reports the duration of a constant track on 1 ms ticks as its frames over its nominal rate', () => {
+    const track = { avgFps: rate(901000, 30033), durationSec: 30.033, nominalFps: { ...rate(30), kind: 'declared' as const }, timestampsQuantized: true, frames: 901, presentedFrames: 901 };
+    expect(check(result(track), { duration: { max: 30 } }).violations).toEqual([{ rule: 'duration.max', severity: 'fail', expected: 30, actual: 901 / 30, message: 'duration.max: 30.033 s is above the maximum 30 s' }]);
+  });
+
   it('uses the format duration when the track has none', () => {
     expect(failed(result({ durationSec: null }, { formatDurationSec: 31 }), { duration: { max: 30 } })).toEqual(['duration.max']);
   });
@@ -287,6 +301,12 @@ describe('check: committed fixtures', () => {
     expect(check(w24, { fps: { exact: 24 } }).verdict).toBe('pass');
     expect(check(w5994, { fps: { max: 60 } }).verdict).toBe('pass');
     expect(check(w5994, { fps: { min: 60 } }).violations.map((v) => [v.rule, v.actual])).toEqual([['fps.min', '19001/317']]);
+  });
+
+  it('judges the 3 s of a constant 60 fps WebM whose 1 ms ticks span 2.999 s', async () => {
+    const w60 = await run('cfr_vp9_60.webm');
+    expect(w60.videoTracks[0]!.durationSec).toBe(2.999);
+    expect(check(w60, { duration: { min: 3, max: 3 } })).toEqual({ verdict: 'pass', violations: [] });
   });
 
   it('rejects the uneven two-phase recording and suggests a rate', async () => {
