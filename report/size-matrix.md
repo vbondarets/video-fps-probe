@@ -19,8 +19,8 @@ The critical path is the package code inside the host entry chunk, cut out of th
 | iife-nosplit | video-fps-probe/lazy | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.67 KB** | 1.39 KB | 38.79 KB | 38.79 KB | - | 1 (own.worker) | ok |
 | react | video-fps-probe/lazy + video-fps-probe/react (React 19.3.1) | format: 'es' | **1.64 KB** | 69.85 KB | 23.60 KB | 40.61 KB | - | 1 (own.worker) | ok |
 | react18 | video-fps-probe/lazy + video-fps-probe/react (React 18.3.1) | format: 'es' | **1.63 KB** | 47.25 KB | 23.60 KB | 40.61 KB | - | 1 (own.worker) | ok |
-| check | video-fps-probe/lazy + video-fps-probe/check | format: 'es' | **3.00 KB** | 3.72 KB | 23.59 KB | 40.60 KB | - | 1 (own.worker) | ok |
-| preset | video-fps-probe/lazy + video-fps-probe/check + video-fps-probe/presets (klingO1ReferenceVideo) | format: 'es' | **3.24 KB** | 3.96 KB | 23.60 KB | 40.61 KB | - | 1 (own.worker) | ok |
+| check | video-fps-probe/lazy + video-fps-probe/check | format: 'es' | **3.11 KB** | 3.83 KB | 23.60 KB | 40.61 KB | - | 1 (own.worker) | ok |
+| preset | video-fps-probe/lazy + video-fps-probe/check + video-fps-probe/presets (klingO1ReferenceVideo) | format: 'es' | **3.35 KB** | 4.08 KB | 23.59 KB | 40.60 KB | - | 1 (own.worker) | ok |
 | standalone worker file | video-fps-probe/standalone/own.worker.js | - | - | - | 35.80 KB | 35.80 KB | - | 1 file, no imports | ok |
 
 First MP4: the probe client, the worker entry that serves own, the statistics chunk (requested in parallel with the parser) and the ISO BMFF parser. All own paths adds the Matroska parser, the ffprobe frame rate estimate of a Matroska file without DefaultDuration and the rate profile core. A worker built as iife cannot split, so in zero-config and iife-nosplit the own worker is one file, as the standalone file is in standalone-url, and both columns are the client plus that file.
@@ -29,9 +29,9 @@ The host's worker option decides the first MP4: 23.60 KB with `worker: { format:
 
 In react (React 19.3.1) and react18 (React 18.3.1) the entry chunk also holds React and ReactDOM, which a React host ships anyway, so its column is not a package cost. The critical path counts the package code only, and the React entry is 1.17 KB of it in each. The first analysis also fetches the 0.43 KB summary module of the store, in parallel with the probe client.
 
-In check, 2.43 KB of the 3.00 KB critical path is `check`, imported statically next to the lazy stub. It imports no other module and loads nothing lazily, so the lazy columns equal the default configuration's.
+In check, 2.54 KB of the 3.11 KB critical path is `check`, imported statically next to the lazy stub. It imports no other module and loads nothing lazily, so the lazy columns equal the default configuration's.
 
-In preset, 2.43 KB of the 3.24 KB critical path is `check` and 0.31 KB the one preset it imports (klingO1ReferenceVideo), imported statically next to the lazy stub. Neither entry imports another module or loads anything lazily, so the lazy columns equal the default configuration's.
+In preset, 2.54 KB of the 3.35 KB critical path is `check` and 0.31 KB the one preset it imports (klingO1ReferenceVideo), imported statically next to the lazy stub. Neither entry imports another module or loads anything lazily, so the lazy columns equal the default configuration's.
 
 ## Budgets (gzip)
 
@@ -116,17 +116,17 @@ In preset, 2.43 KB of the 3.24 KB critical path is `check` and 0.31 KB the one p
 | react18 | React entry (the provider and hooks in the entry chunk, React not counted) | 1.50 KB | 1.17 KB | 0.33 KB | ok |
 | react18 | first MP4 analysis with the React summary, lazy total | 24.50 KB | 24.03 KB | 0.47 KB | ok |
 | react18 | emitted lazy total (every file outside the entry chunk) | 82.00 KB | 81.40 KB | 0.60 KB | ok |
-| check | critical path (package code in the entry chunk) | 3.50 KB | 3.00 KB | 0.50 KB | ok |
-| check | check entry (in the entry chunk) | 3.00 KB | 2.43 KB | 0.57 KB | ok |
-| check | entry chunk with the preload helper | 4.50 KB | 3.72 KB | 0.78 KB | ok |
-| check | first MP4 analysis, lazy total | 24.00 KB | 23.59 KB | 0.41 KB | ok |
-| check | emitted lazy total (every file outside the entry chunk) | 81.00 KB | 80.96 KB | 0.04 KB | ok |
-| preset | critical path (package code in the entry chunk) | 4.00 KB | 3.24 KB | 0.76 KB | ok |
-| preset | check entry (in the entry chunk) | 3.00 KB | 2.43 KB | 0.57 KB | ok |
+| check | critical path (package code in the entry chunk) | 3.50 KB | 3.11 KB | 0.39 KB | ok |
+| check | check entry (in the entry chunk) | 3.00 KB | 2.54 KB | 0.46 KB | ok |
+| check | entry chunk with the preload helper | 4.50 KB | 3.83 KB | 0.67 KB | ok |
+| check | first MP4 analysis, lazy total | 24.00 KB | 23.60 KB | 0.40 KB | ok |
+| check | emitted lazy total (every file outside the entry chunk) | 81.00 KB | 80.97 KB | 0.04 KB | ok |
+| preset | critical path (package code in the entry chunk) | 4.00 KB | 3.35 KB | 0.65 KB | ok |
+| preset | check entry (in the entry chunk) | 3.00 KB | 2.54 KB | 0.46 KB | ok |
 | preset | presets entry (the imported presets, in the entry chunk) | 0.50 KB | 0.31 KB | 0.19 KB | ok |
-| preset | entry chunk with the preload helper | 4.50 KB | 3.96 KB | 0.54 KB | ok |
-| preset | first MP4 analysis, lazy total | 24.00 KB | 23.60 KB | 0.40 KB | ok |
-| preset | emitted lazy total (every file outside the entry chunk) | 81.00 KB | 80.96 KB | 0.04 KB | ok |
+| preset | entry chunk with the preload helper | 4.50 KB | 4.08 KB | 0.42 KB | ok |
+| preset | first MP4 analysis, lazy total | 24.00 KB | 23.59 KB | 0.41 KB | ok |
+| preset | emitted lazy total (every file outside the entry chunk) | 81.00 KB | 80.97 KB | 0.03 KB | ok |
 | standalone | own.worker.js | 36.00 KB | 35.80 KB | 0.20 KB | ok |
 
 ## Checks
@@ -484,9 +484,9 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | react18 | assets/stats.js | page | stats | 4.34 KB |
 | react18 | assets/stats.js | own.worker | stats | 4.31 KB |
 | react18 | assets/summary.js | page | summary | 0.43 KB |
-| check | assets/compare.js | page | shared | 1.33 KB |
+| check | assets/compare.js | page | shared | 1.32 KB |
 | check | assets/fallback.js | page | shared | 0.73 KB |
-| check | assets/index.js | page | shared | 3.72 KB |
+| check | assets/index.js | page | shared | 3.83 KB |
 | check | assets/inline.js | page | shared | 0.63 KB |
 | check | assets/isobmff.js | own.worker | isobmff | 12.21 KB |
 | check | assets/isobmff.js | page | isobmff | 12.23 KB |
@@ -503,22 +503,22 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | check | assets/sniff.js | page | shared | 0.99 KB |
 | check | assets/stats.js | own.worker | stats | 4.31 KB |
 | check | assets/stats.js | page | stats | 4.34 KB |
-| preset | assets/compare.js | page | shared | 1.32 KB |
+| preset | assets/compare.js | page | shared | 1.33 KB |
 | preset | assets/fallback.js | page | shared | 0.73 KB |
-| preset | assets/index.js | page | shared | 3.96 KB |
+| preset | assets/index.js | page | shared | 4.08 KB |
 | preset | assets/inline.js | page | shared | 0.63 KB |
-| preset | assets/isobmff.js | page | isobmff | 12.23 KB |
 | preset | assets/isobmff.js | own.worker | isobmff | 12.21 KB |
+| preset | assets/isobmff.js | page | isobmff | 12.23 KB |
 | preset | assets/matroska.js | own.worker | matroska | 11.59 KB |
 | preset | assets/matroska.js | page | matroska | 11.77 KB |
 | preset | assets/own.worker.js | own.worker | shared | 4.18 KB |
 | preset | assets/probe.js | page | shared | 2.90 KB |
 | preset | assets/result.js | page | shared | 0.38 KB |
+| preset | assets/rfps.js | page | rfps | 3.58 KB |
 | preset | assets/rfps.js | own.worker | rfps | 3.58 KB |
-| preset | assets/rfps.js | page | rfps | 3.57 KB |
-| preset | assets/runtime.js | page | shared | 2.54 KB |
-| preset | assets/segments.js | page | segments | 1.84 KB |
+| preset | assets/runtime.js | page | shared | 2.55 KB |
 | preset | assets/segments.js | own.worker | segments | 1.84 KB |
+| preset | assets/segments.js | page | segments | 1.84 KB |
 | preset | assets/sniff.js | page | shared | 0.99 KB |
 | preset | assets/stats.js | own.worker | stats | 4.31 KB |
 | preset | assets/stats.js | page | stats | 4.34 KB |

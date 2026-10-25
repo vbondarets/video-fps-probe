@@ -73,6 +73,7 @@ type Bound = 'min' | 'max' | 'exact' | 'oneOf';
 
 const UNEVEN_SPREAD = 1.075;
 const DECIMATE_FROM = 1.5;
+const SPAN_SLACK_MS = 3n;
 const BOUNDS: readonly Bound[] = ['min', 'max', 'exact', 'oneOf'];
 const RELATION: Record<Bound, string> = { min: 'below the minimum', max: 'above the maximum', exact: 'not', oneOf: 'not one of' };
 
@@ -113,7 +114,13 @@ const fpsText = (q: Q): string => (q[0] % q[1] === 0n ? `${q[0] / q[1]}` : `${ro
 function judgedFps(t: VideoTrackResult, source: FpsSource | undefined): Q | null {
   const m = /^(\d+)\/(\d+)$/.exec(t.avgFpsFfprobe ?? '');
   if (source === 'ffprobe') return m ? fromRational({ num: Number(m[1]), den: Number(m[2]) }) : null;
-  return fromRational(source === 'nominal' ? t.nominalFps : source === 'dominant' ? (t.dominantFps?.rate ?? (t.isVfr === false ? t.nominalFps : null)) : t.avgFps);
+  if (source === 'nominal' || source === 'dominant') return fromRational(source === 'nominal' ? t.nominalFps : (t.dominantFps?.rate ?? (t.isVfr === false ? t.nominalFps : null)));
+  const avg = fromRational(t.avgFps);
+  const nominal = fromRational(t.nominalFps);
+  const frames = t.presentedFrames ?? t.frames;
+  if (!avg || !nominal || !t.timestampsQuantized || t.isVfr !== false || !Number.isSafeInteger(frames)) return avg;
+  const gap = BigInt(frames!) * (avg[1] * nominal[0] - nominal[1] * avg[0]);
+  return (gap < 0n ? -gap : gap) * 1000n <= SPAN_SLACK_MS * avg[0] * nominal[0] ? nominal : avg;
 }
 
 function unevenOf(t: VideoTrackResult): boolean | null {

@@ -79,6 +79,15 @@ describe('presets: a file inside and a file outside each preset', () => {
     expect(check(result({ avgFps: makeRational(60, 1), durationSec: 10 }), presets.runwayAleph2.rules).suggestedFps).toEqual({ value: 30, reason: '60 fps is not allowed: convert to 30 fps, which keeps 1 of every 2 frames' });
   });
 
+  it.each([
+    ['91 frames of a 30 fps WebM (91000/3033) under Runway Aleph 2.0', 'runwayAleph2', { avgFps: makeRational(91000, 3033), codecName: 'vp9', durationSec: 3.033 }, 91, makeRational(30, 1), 'webm'],
+    ['121 frames of a 30 fps MKV (121000/4033) under Runway Aleph 2.0', 'runwayAleph2', { avgFps: makeRational(121000, 4033), durationSec: 4.033 }, 121, makeRational(30, 1), 'matroska'],
+    ['181 frames of a 60 fps MKV remuxed to MP4 (22625/377) under Kling O1', 'klingO1ReferenceVideo', { avgFps: makeRational(22625, 377), durationSec: 3.016 }, 181, makeRational(60, 1), 'mp4'],
+  ] as const)('passes %s, judged by its nominal rate', (_, name, track, frames, nominal, container) => {
+    const r = result({ ...track, frames, presentedFrames: frames, nominalFps: { ...nominal, kind: 'declared' }, timestampsQuantized: true }, { container });
+    expect(check(r, presets[name].rules)).toEqual({ verdict: 'pass', violations: [] });
+  });
+
   it('fails a committed 23.976 fps file under Kling O1 for its frame rate', async () => {
     const r = await analyze(await openAsBlob(join(FILES_DIR, 'cfr_h264_23.976.mp4')), 'cfr_h264_23.976.mp4');
     const report = check(r, presets.klingO1ReferenceVideo.rules);

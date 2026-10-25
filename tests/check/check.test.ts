@@ -5,7 +5,7 @@ import { check, type CheckRules } from '../../src/check/index.ts';
 import { analyze } from '../../src/core/analyze.ts';
 import { emptyAnalysis, emptyTrack } from '../../src/core/result.ts';
 import { makeRational } from '../../src/core/rational.ts';
-import type { FileResult, VideoTrackResult } from '../../src/core/types.ts';
+import type { FileResult, NominalFps, Rational, VideoTrackResult } from '../../src/core/types.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
 
 const run = async (name: string) => analyze(await openAsBlob(join(FILES_DIR, name)), name);
@@ -39,6 +39,24 @@ describe('check: frame rate as exact rationals', () => {
     ['25 is not an exact 24 and above a maximum of 24', rate(25), { exact: 24, max: 24 }, ['fps.max', 'fps.exact']],
   ] as const)('%s', (_, avgFps, fps, expected) => {
     expect(failed(result({ avgFps }), { fps })).toEqual(expected);
+  });
+
+  const ticked = (num: number, den: number, frames: number, nominal: Rational, kind: NominalFps['kind'] = 'declared'): Partial<VideoTrackResult> => ({ avgFps: rate(num, den), nominalFps: { ...nominal, kind }, timestampsQuantized: true, frames, presentedFrames: frames });
+
+  it.each([
+    ['180 frames of 60 fps on 1 ms ticks (180000/2999) meet a maximum of 60', ticked(180000, 2999, 180, rate(60)), { min: 24, max: 60 }, []],
+    ['72 frames of 24 fps on 1 ms ticks (72000/2999) meet an exact 24 and a maximum of 24', ticked(72000, 2999, 72, rate(24)), { exact: 24, max: 24 }, []],
+    ['91 frames of 30 fps on 1 ms ticks (91000/3033) meet a maximum of 30', ticked(91000, 3033, 91, rate(30)), { max: 30 }, []],
+    ['181 frames of 60 fps remuxed to MP4 (22625/377) meet a maximum of 60', ticked(22625, 377, 181, rate(60), 'snapped'), { max: 60 }, []],
+    ['72 frames of 23.976 fps on 1 ms ticks (36000/1501) stay below a minimum of 24', ticked(36000, 1501, 72, rate(24000, 1001)), { min: 24 }, ['fps.min']],
+    ['a span 3 ms off the nominal one judges the nominal 60', ticked(180000, 3003, 180, rate(60)), { min: 60 }, []],
+    ['a span 4 ms off the nominal one judges the average 180000/3004', ticked(180000, 3004, 180, rate(60)), { min: 60 }, ['fps.min']],
+    ['a declared rate far from the average judges the average', ticked(50, 1, 150, rate(60)), { max: 50 }, []],
+    ['a track not on 1 ms ticks judges its average', { ...ticked(180000, 2999, 180, rate(60), 'snapped'), timestampsQuantized: false }, { max: 60 }, ['fps.max']],
+    ['a VFR track on 1 ms ticks judges its average', { ...ticked(180000, 2999, 180, rate(60)), isVfr: true }, { max: 60 }, ['fps.max']],
+    ["source 'ffprobe' judges what ffprobe prints", { ...ticked(22625, 377, 181, rate(60), 'snapped'), avgFpsFfprobe: '22625/377' }, { max: 60, source: 'ffprobe' }, ['fps.max']],
+  ] as const)('%s', (_, track, fps, expected) => {
+    expect(failed(result(track), { fps })).toEqual(expected);
   });
 
   it('reports the rule, the expected value, the exact actual value and a message', () => {
@@ -258,6 +276,17 @@ describe('check: committed fixtures', () => {
     expect(check(await run('cfr_h264_60.mp4'), { fps }).verdict).toBe('pass');
     expect(check(await run('cfr_h264_59.94.mp4'), { fps: { min: 60 } }).verdict).toBe('fail');
     expect(check(await run('cfr_vp9_23.976.webm'), { fps, containers: ['webm'] }).violations.map((v) => v.rule)).toEqual(['fps.min']);
+  });
+
+  it('judges a constant WebM on 1 ms ticks by its nominal rate at whole-number bounds', async () => {
+    const [w24, w5994, w60] = await Promise.all(['cfr_vp9_24.webm', 'cfr_vp9_59.94.webm', 'cfr_vp9_60.webm'].map(run));
+    expect([w24, w60].map((r) => r.videoTracks[0]!.avgFps)).toMatchObject([{ num: 72000, den: 2999 }, { num: 180000, den: 2999 }]);
+    expect(check(w60, { fps: { min: 24, max: 60 } })).toEqual({ verdict: 'pass', violations: [] });
+    expect(check(w60, { fps: { exact: 60 } }).verdict).toBe('pass');
+    expect(check(w24, { fps: { max: 24 } }).verdict).toBe('pass');
+    expect(check(w24, { fps: { exact: 24 } }).verdict).toBe('pass');
+    expect(check(w5994, { fps: { max: 60 } }).verdict).toBe('pass');
+    expect(check(w5994, { fps: { min: 60 } }).violations.map((v) => [v.rule, v.actual])).toEqual([['fps.min', '19001/317']]);
   });
 
   it('rejects the uneven two-phase recording and suggests a rate', async () => {
