@@ -75,6 +75,7 @@ type Text = string | ((against: readonly Q[]) => string);
 const UNEVEN_SPREAD = 1.075;
 const DECIMATE_FROM: Q = [3n, 2n];
 const SPAN_SLACK_MS = 3n;
+const MAX_EXPONENT = 400;
 const NOMINAL_SLACK_PER_S = 10_000_000n;
 const NTSC = [24n, 30n, 48n, 60n, 120n];
 const STANDARD: Q[] = [...[24n, 25n, 30n, 48n, 50n, 60n, 100n, 120n].map((m): Q => [m, 1n]), ...NTSC.map((m): Q => [m * 1000n, 1001n])];
@@ -101,8 +102,9 @@ const invalid = (rule: string, v: unknown, what: string): never => {
 
 function decimal(s: string): Q | null {
   const m = /^(\d+)(?:\.(\d+))?(?:e([+-]?\d+))?$/i.exec(s.trim());
-  if (!m) return null;
+  if (!m || !Number.isFinite(Number(m[0]))) return null;
   const e = Number(m[3] ?? 0) - (m[2]?.length ?? 0);
+  if (Math.abs(e) > MAX_EXPONENT) return null;
   const n = BigInt(m[1]! + (m[2] ?? ''));
   return e >= 0 ? [n * 10n ** BigInt(e), 1n] : [n, 10n ** BigInt(-e)];
 }

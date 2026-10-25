@@ -211,6 +211,17 @@ describe('check: rule validation', () => {
     expect(failed(result(), { aspectRatio: { min: '16:9' }, fps: { exact: '30:1' } })).toEqual([]);
   });
 
+  it('refuses a decimal string beyond the finite range at once, naming the path', () => {
+    const started = performance.now();
+    for (const v of ['1e400', '1e400000000', '1e-400000000', `0.${'0'.repeat(500)}1`]) {
+      const rules = JSON.parse(JSON.stringify({ duration: { max: v } })) as CheckRules;
+      expect(() => check(result(), rules), v).toThrow(new TypeError(`duration.max: ${JSON.stringify(v)} is not a non-negative number`));
+      expect(() => check(result(), JSON.parse(JSON.stringify({ fps: { max: `${v}/1` } })) as CheckRules), v).toThrow(TypeError);
+    }
+    expect(performance.now() - started).toBeLessThan(1000);
+    expect(failed(result({ durationSec: 90 }), JSON.parse('{"duration":{"max":"1e300","min":"1e-300"}}') as CheckRules)).toEqual([]);
+  });
+
   it('gives one unknown entry for the frame size rule of a track without a size', () => {
     expect(check(result({ width: 0, height: 0 }), { frameSize: { minWidth: 1, maxHeight: 2, minShortSide: 1 } }).violations).toEqual([{ rule: 'frameSize', severity: 'unknown', expected: null, actual: null, message: 'frameSize: unknown, no frame size' }]);
   });
