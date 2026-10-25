@@ -9,7 +9,7 @@ import { discover, measure, scanReferences } from './size-report.mjs';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const KB = 1000;
 const PACKAGE_SOURCE = 'node_modules/video-fps-probe/';
-const ENTRY_SOURCES = { react: ['./react', `${PACKAGE_SOURCE}dist/react/`], check: ['./check', `${PACKAGE_SOURCE}dist/check/`] };
+const ENTRY_SOURCES = { react: ['./react', `${PACKAGE_SOURCE}dist/react/`], check: ['./check', `${PACKAGE_SOURCE}dist/check/`], presets: ['./presets', `${PACKAGE_SOURCE}dist/presets/`] };
 
 const RESET = 'The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.';
 const PROMISE = 'User-facing promise of the package, accepted by the owner on 2026-10-23 when the demo budget moved to 101.5 KB: the default configuration adds at most 1 KB to the critical path and the first MP4 loads at most 24 KB lazily.';
@@ -123,6 +123,14 @@ export const BUDGETS = {
     { key: 'firstMp4', limit: 24 * KB, why: 'Importing check must not change what the first own analysis loads, so the 24 KB promise of the default configuration applies here too. Measured 23.60 KB.' },
     { key: 'lazyTotal', limit: 81 * KB, why: 'As in the default configuration: check adds no lazy file. Measured 80.97 KB.' },
   ],
+  preset: [
+    { key: 'trigger', limit: 4 * KB, why: `The check configuration plus one preset, klingO1ReferenceVideo, imported from video-fps-probe/presets. Measured 3.19 KB. ${RESET}` },
+    { key: 'check', limit: 3 * KB, why: 'As in the check configuration. Measured 2.38 KB.' },
+    { key: 'presets', limit: 0.5 * KB, why: `The one imported preset: its name, source, date, note and rules. The six presets together are about 1.3 KB gzip, so this limit also fails a build that stops tree-shaking the presets a host does not import. Design estimate 0.1 to 0.2 KB per preset; measured 0.31 KB. ${RESET}` },
+    { key: 'entry', limit: 4.5 * KB, why: `The trigger of this configuration plus Vite's preload helper. Measured 3.92 KB. ${RESET}` },
+    { key: 'firstMp4', limit: 24 * KB, why: 'As in the check configuration. Measured 23.59 KB.' },
+    { key: 'lazyTotal', limit: 81 * KB, why: 'As in the check configuration. Measured 80.95 KB.' },
+  ],
 };
 
 export const STANDALONE_BUDGET = { limit: 36 * KB, why: `dist/standalone/own.worker.js: the own worker as one minified IIFE file with no imports, built by rolldown. Design estimate 35.0 KB; measured 32.04 KB. ${RESET} Raised from 35.5 KB to 36 KB in 0.2.0, measured 35.58 KB, when the ffprobe frame rate estimate, which the file inlines, began to read the H.264 slice headers that decide the decoder delay (0.63 KB gzip).` };
@@ -131,6 +139,7 @@ const LABELS = {
   trigger: 'critical path (package code in the entry chunk)',
   react: 'React entry (the provider and hooks in the entry chunk, React not counted)',
   check: 'check entry (in the entry chunk)',
+  presets: 'presets entry (the imported presets, in the entry chunk)',
   entry: 'entry chunk with the preload helper',
   client: 'probe client (lazy)',
   isobmff: 'ISO BMFF parser (in the own worker)',
@@ -326,6 +335,7 @@ export function measureFixture(dir, fixture) {
     trigger,
     react: fixture.imports.includes(ENTRY_SOURCES.react[0]) ? entryCode.react : null,
     check: fixture.imports.includes(ENTRY_SOURCES.check[0]) ? entryCode.check : null,
+    presets: fixture.imports.includes(ENTRY_SOURCES.presets[0]) ? entryCode.presets : null,
     client: clientFiles.size > 0 ? sum(without(clientFiles)) : null,
     isobmff: ownWorker?.byClass.isobmff ? sum(ownWorker.byClass.isobmff) : null,
     matroska: ownWorker?.byClass.matroska ? sum(ownWorker.byClass.matroska) : null,
@@ -463,7 +473,8 @@ export function renderMarkdown(matrix) {
     out.push('');
   }
   for (const f of matrix.fixtures.filter((x) => typeof x.metrics.check === 'number')) {
-    out.push(`In ${f.name}, ${cell(f.metrics.check)} of the ${cell(f.metrics.trigger)} critical path is \`check\`, imported statically next to the lazy stub. It imports no other module and loads nothing lazily, so the lazy columns equal the default configuration's.`);
+    const preset = typeof f.metrics.presets === 'number' ? ` and ${cell(f.metrics.presets)} the one preset it imports (${f.note})` : '';
+    out.push(`In ${f.name}, ${cell(f.metrics.check)} of the ${cell(f.metrics.trigger)} critical path is \`check\`${preset}, imported statically next to the lazy stub. ${preset ? 'Neither entry imports another module or loads anything' : 'It imports no other module and loads nothing'} lazily, so the lazy columns equal the default configuration's.`);
     out.push('');
   }
   out.push('## Budgets (gzip)');
