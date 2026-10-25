@@ -14,6 +14,7 @@ fixtures/large/
 .bench/
 *.local
 report/*.local.*
+/release-notes.md
 
 # Playwright output
 .playwright/

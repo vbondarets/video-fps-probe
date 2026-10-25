@@ -10,6 +10,8 @@ export function publicManifest(manifest: { private?: unknown }): void;
 
 export function changelogSection(text: string, version: string): string;
 
+export function writeNotes(text: string, version: string, out: string): string;
+
 export function localDate(now?: Date): string;
 
 export function publishCheck(manifest: { version: string; private?: unknown }, tag: string, npmVersion: string): 'next' | 'latest';

@@ -11,15 +11,34 @@ git config user.name      # Volodymyr Bondarets
 git config user.email     # bondaretsdirect@gmail.com
 npm version minor -m "chore(release): bumped the version to %s"
 git push --follow-tags
-# publish the tag to npm (docs/publishing.md), then:
-gh release create v0.2.0 --title 0.2.0 --notes "$(node scripts/release-prep.mjs --notes 0.2.0)"
+# publish the tag to npm (docs/publishing.md), then the GitHub Release (below)
 ```
 
 - `package.json` has `"private": false`, committed on `main` before the run: once for 0.2.0, the first npm release (a `chore(package)` commit), and kept afterwards. `preversion` refuses `"private": true`, because npm would refuse to publish the tag after it was pushed.
 - `minor` or `patch` follows the [0.x policy](api.md#versioning); `%s` is the new version.
 - The release commit and its tag use the repository's git identity, which must be Volodymyr Bondarets <bondaretsdirect@gmail.com>. The repository-local `git config` sets it; `preversion` prints the identity it will commit with, and fails before any gate when `user.name` or `user.email` is not set, naming the value it found for each.
 - `git push --follow-tags` pushes `main` and the annotated tag `vX.Y.Z` that `npm version` creates.
-- The GitHub Release takes its notes from the CHANGELOG section of the version. Create it after `npm view video-fps-probe dist-tags` shows the version, so GitHub never lists a release that npm does not have, and add `--prerelease` for a version such as `1.0.0-rc.1`, which npm publishes under `next`.
+## GitHub Release
+
+The GitHub Release comes after the npm publish: create it once `npm view video-fps-probe dist-tags` shows the version, so GitHub never lists a release that npm does not have. Its notes are the CHANGELOG section of the version, written to a file: `--notes <version> --out <file>` writes the section as UTF-8 with LF line ends, prints the absolute path of the file, and fails when the version has no section or an empty one. `release-notes.md` in the repository root is git-ignored, so the file never makes the tree dirty for the next `preversion`.
+
+Bash (Git Bash, Linux, macOS):
+
+```sh
+notes="$(node scripts/release-prep.mjs --notes 0.2.0 --out release-notes.md)"
+gh release create v0.2.0 --title 0.2.0 --notes-file "$notes"
+```
+
+Windows PowerShell 5.1 (and PowerShell 7):
+
+```powershell
+$notes = node scripts/release-prep.mjs --notes 0.2.0 --out release-notes.md
+gh release create v0.2.0 --title 0.2.0 --notes-file $notes
+```
+
+For a prerelease such as `1.0.0-rc.1`, which npm publishes under `next`, add `--prerelease`, so that GitHub, like npm, keeps its latest release on the last stable version: `gh release create v1.0.0-rc.1 --title 1.0.0-rc.1 --prerelease --notes-file $notes`.
+
+The notes go through a file, not an argument such as `--notes "$(...)"`: in PowerShell, `"$(...)"` joins the output lines with spaces, so the notes lose their line breaks, Windows PowerShell 5.1 mangles the double quotes inside an argument it passes to a native program, and a Windows command line holds at most 32,767 characters.
 
 ## What runs
 

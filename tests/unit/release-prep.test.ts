@@ -1,6 +1,10 @@
-import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { GENERATED, changelogSection, gitIdentity, localDate, publicManifest, publishCheck, releaseChangelog, unreleasedIntro } from '../../scripts/release-prep.mjs';
+import { GENERATED, changelogSection, gitIdentity, localDate, publicManifest, publishCheck, releaseChangelog, unreleasedIntro, writeNotes } from '../../scripts/release-prep.mjs';
 import { TARGETS } from '../../scripts/readme-tables.ts';
 
 const CHANGELOG = ['# Changelog', '', 'Intro.', '', '## Unreleased', '', '### Added', '', '- A thing.', '', '## 0.1.0 - 2026-10-24', '', 'First release.', ''].join('\n');
@@ -62,6 +66,60 @@ describe('release changelog', () => {
 
   it('stages every file the doc tables write', () => {
     for (const { path } of TARGETS) expect(GENERATED).toContain(path);
+  });
+});
+
+describe('release notes file', () => {
+  const inTemp = (body: (dir: string) => void): void => {
+    const dir = mkdtempSync(join(tmpdir(), 'release-notes-'));
+    try {
+      body(dir);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  };
+
+  it('writes the section of a version with LF line ends and a final newline, and returns the absolute path', () => {
+    inTemp((dir) => {
+      const released = releaseChangelog(CHANGELOG.replace(/\n/g, '\r\n'), '0.2.0', '2026-11-02');
+      const path = writeNotes(released, '0.2.0', join(dir, 'notes.md'));
+      expect(path).toBe(join(dir, 'notes.md'));
+      expect(readFileSync(path, 'utf8')).toBe('### Added\n\n- A thing.\n');
+      expect(readFileSync(writeNotes(released, '0.1.0', join(dir, 'old.md')), 'utf8')).toBe('First release.\n');
+    });
+  });
+
+  it('refuses a missing version, an empty section and an empty path', () => {
+    inTemp((dir) => {
+      expect(() => writeNotes(CHANGELOG, '0.3.0', join(dir, 'notes.md'))).toThrow(/no 0.3.0 section/);
+      expect(() => writeNotes('## Unreleased\n\n## 0.2.0 - 2026-11-02\n\n## 0.1.0\n', '0.2.0', join(dir, 'notes.md'))).toThrow('the 0.2.0 section of CHANGELOG.md is empty: no release notes to write');
+      expect(() => writeNotes(CHANGELOG, '0.1.0', '')).toThrow('--out needs the path of the release notes file');
+    });
+  });
+
+  it('writes the committed 0.1.0 notes from the command line and prints only the path', () => {
+    inTemp((dir) => {
+      const out = join(dir, 'notes 0.1.0.md');
+      const printed = execFileSync(process.execPath, [fileURLToPath(new URL('../../scripts/release-prep.mjs', import.meta.url)), '--notes', '0.1.0', '--out', out], { encoding: 'utf8' });
+      expect(printed).toBe(`${out}\n`);
+      const committed = readFileSync(new URL('../../CHANGELOG.md', import.meta.url), 'utf8');
+      expect(readFileSync(out, 'utf8')).toBe(`${changelogSection(committed, '0.1.0')}\n`);
+    });
+  });
+
+  it('is how the release docs create the GitHub Release, in Bash and in PowerShell', () => {
+    for (const doc of ['releasing.md', 'publishing.md']) {
+      const text = readFileSync(new URL(`../../docs/${doc}`, import.meta.url), 'utf8');
+      expect(text, doc).toContain('notes="$(node scripts/release-prep.mjs --notes ');
+      expect(text, doc).toContain('$notes = node scripts/release-prep.mjs --notes ');
+      expect(text, doc).not.toMatch(/gh release create[^\n]*--notes "/);
+      expect(text.match(/gh release create [^\n]*/g)?.every((line) => line.includes('--notes-file')), doc).toBe(true);
+    }
+    expect(readFileSync(new URL('../../.gitignore', import.meta.url), 'utf8').split(/\r?\n/)).toContain('/release-notes.md');
+  });
+
+  it('refuses --out without --notes', () => {
+    expect(() => execFileSync(process.execPath, [fileURLToPath(new URL('../../scripts/release-prep.mjs', import.meta.url)), '--out', 'notes.md'], { encoding: 'utf8', stdio: 'pipe' })).toThrow(/--out <file> writes the release notes and needs --notes <version>/);
   });
 });
 

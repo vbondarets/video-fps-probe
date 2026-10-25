@@ -40,7 +40,19 @@ Trusted publishing is configured on the package's settings page, and `npm trust`
 
    `--publish-check` is the check the Release workflow runs before it publishes: it fails unless the tag is `v` plus the `package.json` version, `private` is not true and npm is 11.5.1 or later, and prints the dist-tag. `--ignore-scripts` keeps the install scripts of the dev dependencies from running in a shell that is logged in to npm; the build needs none (only `fsevents`, which is for macOS, has one). `npm publish` still runs the package's own `prepack`, which builds `dist/` and runs `scripts/check-dist.mjs`, then asks for the second factor. `--access public` is already the default of a new unscoped package (an unscoped package cannot be restricted); it keeps the command the same as the workflow's.
 4. **Confirm.** `npm view video-fps-probe` shows the package, and `npm view video-fps-probe dist-tags` shows `latest: 0.2.0`.
-5. **GitHub Release**, once npm has the version: `gh release create v0.2.0 --title 0.2.0 --notes "$(node scripts/release-prep.mjs --notes 0.2.0)"`.
+5. **GitHub Release**, once npm has the version, from a notes file ([Releasing](releasing.md#github-release)). In Bash:
+
+   ```sh
+   notes="$(node scripts/release-prep.mjs --notes 0.2.0 --out release-notes.md)"
+   gh release create v0.2.0 --title 0.2.0 --notes-file "$notes"
+   ```
+
+   In Windows PowerShell 5.1:
+
+   ```powershell
+   $notes = node scripts/release-prep.mjs --notes 0.2.0 --out release-notes.md
+   gh release create v0.2.0 --title 0.2.0 --notes-file $notes
+   ```
 
 A version published from a laptop has no provenance; npm generates it only for a publish from a supported CI system.
 
@@ -66,7 +78,19 @@ Trusted publishing needs npm 11.5.1 or later and Node 22.14.0 or later (the work
 2. `gh workflow run release.yml -f tag=vX.Y.Z`, or Actions > Release > Run workflow with the tag. Pushing a tag starts nothing.
 3. The run checks out the tag in every CI job (`ci.yml` called with the tag as its ref). The publish job then waits for the `npm` environment: approve it under Review deployments. It checks out the tag, fails unless the tag is `v` plus the `package.json` version, `private` is not true and npm is 11.5.1 or later (`node scripts/release-prep.mjs --publish-check vX.Y.Z`), runs `npm ci --ignore-scripts`, so that no install script of a dev dependency runs while the job holds `id-token: write`, and `npm publish --access public`, which still runs `prepack`, with `--tag next` for a prerelease such as `1.0.0-rc.1` so that `latest` stays on the last release.
 4. `npm view video-fps-probe dist-tags` shows the new version.
-5. Only then the GitHub Release: `gh release create vX.Y.Z --title X.Y.Z --notes "$(node scripts/release-prep.mjs --notes X.Y.Z)"`, with `--prerelease` for a version such as `1.0.0-rc.1`, so that GitHub, like npm, keeps its latest release on the last stable version. A declined approval or a failed publish then leaves no GitHub Release that npm does not have.
+5. Only then the GitHub Release, from a notes file ([Releasing](releasing.md#github-release)), with `--prerelease` for a version such as `1.0.0-rc.1`, so that GitHub, like npm, keeps its latest release on the last stable version. A declined approval or a failed publish then leaves no GitHub Release that npm does not have. In Bash:
+
+   ```sh
+   notes="$(node scripts/release-prep.mjs --notes X.Y.Z --out release-notes.md)"
+   gh release create vX.Y.Z --title X.Y.Z --notes-file "$notes"   # add --prerelease for X.Y.Z-rc.N
+   ```
+
+   In Windows PowerShell 5.1:
+
+   ```powershell
+   $notes = node scripts/release-prep.mjs --notes X.Y.Z --out release-notes.md
+   gh release create vX.Y.Z --title X.Y.Z --notes-file $notes   # add --prerelease for X.Y.Z-rc.N
+   ```
 
 ## Deprecate or unpublish
 

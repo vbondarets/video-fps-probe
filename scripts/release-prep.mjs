@@ -10,7 +10,7 @@ const UNRELEASED = '## Unreleased';
 const BUMPED = ['package.json', 'package-lock.json'];
 export const GENERATED = ['CHANGELOG.md', 'report/size.md', 'report/size.json', 'report/size-matrix.md', 'report/size-matrix.json', 'README.md', 'docs/benchmarks.md', 'docs/bundlers.md', 'report/README.md'];
 
-const USAGE = `Usage: node scripts/release-prep.mjs [--preversion | --notes <version> | --publish-check <tag>]
+const USAGE = `Usage: node scripts/release-prep.mjs [--preversion | --notes <version> [--out <file>] | --publish-check <tag>]
 
   (no option)        the npm "version" step, after npm bumped package.json and package-lock.json:
                      moves the CHANGELOG Unreleased section under the new version and today's date
@@ -22,6 +22,8 @@ const USAGE = `Usage: node scripts/release-prep.mjs [--preversion | --notes <ver
                      "private": true in package.json or an unset git user.name or user.email, prints
                      the git identity of the release commit and runs the fast gates
   --notes <version>  prints the CHANGELOG section of a version, for the GitHub Release
+  --out <file>       with --notes: writes the section to <file> (UTF-8, LF line ends) instead and
+                     prints the absolute path, for gh release create --notes-file <file>
   --publish-check <tag>
                      the check of the Release workflow before npm publish: fails unless the tag is
                      v plus the package.json version, "private" is not true and npm is 11.5.1 or
@@ -100,6 +102,15 @@ export function changelogSection(text, version) {
   return section(lines, start).body.join('\n').trim();
 }
 
+export function writeNotes(text, version, out) {
+  const notes = changelogSection(text, version);
+  if (!notes) throw new Error(`the ${version} section of CHANGELOG.md is empty: no release notes to write`);
+  if (!out) throw new Error('--out needs the path of the release notes file');
+  const path = resolve(out);
+  writeFileSync(path, `${notes}\n`);
+  return path;
+}
+
 const TRUSTED_NPM = [11, 5, 1];
 
 export function publishCheck(manifest, tag, npmVersion) {
@@ -170,14 +181,16 @@ function version() {
 
 function main() {
   const { values } = parseArgs({
-    options: { preversion: { type: 'boolean', default: false }, notes: { type: 'string' }, 'publish-check': { type: 'string' }, help: { type: 'boolean', default: false } },
+    options: { preversion: { type: 'boolean', default: false }, notes: { type: 'string' }, out: { type: 'string' }, 'publish-check': { type: 'string' }, help: { type: 'boolean', default: false } },
     strict: true,
   });
   if (values.help) {
     console.log(USAGE);
     return 0;
   }
+  if (values.out !== undefined && !values.notes) throw new Error('--out <file> writes the release notes and needs --notes <version>');
   if (values['publish-check']) console.log(publishCheck(JSON.parse(read('package.json')), values['publish-check'], execSync('npm --version', { env: NPM_ENV, encoding: 'utf8' }).trim()));
+  else if (values.notes && values.out !== undefined) console.log(writeNotes(read('CHANGELOG.md'), values.notes, values.out));
   else if (values.notes) console.log(changelogSection(read('CHANGELOG.md'), values.notes));
   else if (values.preversion) preversion();
   else version();
