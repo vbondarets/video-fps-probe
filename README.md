@@ -98,7 +98,7 @@ import { analyze } from 'video-fps-probe';
 const result = await analyze(await openAsBlob(path), { name: path }); // in the calling thread, no worker
 ```
 
-In-thread `analyze()` is tested on Node 24 only, the version in `.nvmrc` that every CI job uses. The example needs `fs.openAsBlob`, available since Node 19.8 and stable in Node 24. Files above 4 GiB need a `BlobLike` in Node 24 ([in-thread analyze](docs/api.md#in-thread-analyze)). The type declarations name DOM types such as `Worker` and `HTMLElement`, so a TypeScript project for Node needs `"DOM"` in `lib` or `skipLibCheck: true`.
+In-thread `analyze()` is tested on Node 24, the version in `.nvmrc`, and on Node 22.12, the lowest supported version: CI runs the unit, fixture and package tests on both. The example needs `fs.openAsBlob`, available since Node 19.8 and stable in Node 24. Files above 4 GiB need a `BlobLike` in Node 24 ([in-thread analyze](docs/api.md#in-thread-analyze)). The type declarations name DOM types such as `Worker` and `HTMLElement`, so a TypeScript project for Node needs `"DOM"` in `lib` or `skipLibCheck: true`.
 
 ## Cancellation, timeouts and failing open
 
