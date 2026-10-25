@@ -521,7 +521,7 @@ interface ProviderPreset {
   readonly sourceKind: PresetSourceKind; // 'gateway': documented by a service that serves another company's model
   readonly verifiedAt: string; // YYYY-MM-DD, the day every number was read again from sourceUrl
   readonly note: string; // what the rules leave out, and why
-  readonly rules: CheckRules;
+  readonly rules: { readonly [K in keyof CheckRules]: Readonly<CheckRules[K]> }; // read-only at every level: every importer shares the preset
 }
 
 check(result, klingO1ReferenceVideo.rules);

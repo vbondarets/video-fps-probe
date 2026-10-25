@@ -8,7 +8,7 @@ export interface ProviderPreset {
   readonly sourceKind: PresetSourceKind;
   readonly verifiedAt: string;
   readonly note: string;
-  readonly rules: CheckRules;
+  readonly rules: { readonly [K in keyof CheckRules]: Readonly<CheckRules[K]> };
 }
 
 export const klingO1ReferenceVideo: ProviderPreset = {

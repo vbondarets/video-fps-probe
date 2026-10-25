@@ -1,7 +1,7 @@
 import { openAsBlob } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { check } from '../../src/check/index.ts';
+import { check, type CheckRules } from '../../src/check/index.ts';
 import { analyze } from '../../src/core/analyze.ts';
 import { emptyAnalysis, emptyTrack } from '../../src/core/result.ts';
 import { makeRational } from '../../src/core/rational.ts';
@@ -51,6 +51,20 @@ describe('presets', () => {
     const max = preset.rules.fileSize!.max as number;
     expect(max % 1_048_576).toBe(0);
     expect(preset.note).toContain(`whether ${max / 1_048_576} MB is decimal or binary; the larger reading, ${max.toLocaleString('en-US')} bytes, is checked`);
+  });
+
+  it('types the rules of a shared preset as read-only at every level, and check() still takes them', () => {
+    const mutate = (preset: ProviderPreset): void => {
+      // @ts-expect-error a preset's frame rate bound is read-only
+      preset.rules.fps!.min = 0;
+      // @ts-expect-error a preset's display bound is read-only
+      preset.rules.display!.maxLongSide = 0;
+      // @ts-expect-error a preset's rule group is read-only
+      preset.rules.fps = {};
+    };
+    const rules: CheckRules = presets.klingO1ReferenceVideo.rules;
+    expect(typeof mutate).toBe('function');
+    expect(rules).toBe(presets.klingO1ReferenceVideo.rules);
   });
 
   it('warns, without failing, about a preset verified more than 90 days ago', () => {
