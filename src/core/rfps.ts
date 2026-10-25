@@ -94,16 +94,17 @@ export interface H264Poc {
   frameNumBits: number;
   pocType: number;
   pocLsbBits: number;
+  fixedDelay: boolean;
 }
 
-export function h264Sps(nal: Uint8Array): H264Poc | string | null {
+export function h264Sps(nal: Uint8Array): H264Poc | string {
   const { u, ue } = rbsp(nal);
   try {
     const profile = u(8);
     if (profile !== 66) return `H.264 profile ${profile}`;
     u(16);
     ue();
-    const s: H264Poc = { frameNumBits: ue() + 4, pocType: ue(), pocLsbBits: 0 };
+    const s: H264Poc = { frameNumBits: ue() + 4, pocType: ue(), pocLsbBits: 0, fixedDelay: false };
     if (s.pocType === 0) s.pocLsbBits = ue() + 4;
     if (s.pocType === 1) {
       u(1);
@@ -132,7 +133,8 @@ export function h264Sps(nal: Uint8Array): H264Poc | string | null {
       if (u(1)) {
         u(1);
         for (let i = 0; i < 4; i++) ue();
-        return ue() ? 'H.264 reordering' : null;
+        if (ue()) return 'H.264 reordering';
+        s.fixedDelay = true;
       }
     }
     return s.pocType === 1 ? 'H.264 pic_order_cnt_type 1' : frameMbsOnly ? s : 'H.264 field coding';
@@ -177,13 +179,12 @@ function h264Unsupported(cp: Uint8Array | null, packets: readonly Uint8Array[]):
   const s = sps ? h264Sps(sps) : 'no H.264 SPS';
   if (typeof s === 'string') return s;
   const slices: Uint8Array[] = [];
-  for (const packet of s ? packets : packets.slice(0, 1)) {
+  for (const packet of packets) {
     const nal = nalUnits(packet, lengthSize).find((n) => type(n) === 1 || type(n) === 5);
     if (!nal) return 'no H.264 slice header';
     slices.push(nal);
   }
   if (type(slices[0]) !== 5) return 'H.264 does not start with an IDR';
-  if (!s) return null;
   const pps = sets.filter((n) => type(n) === 8);
   if (!pps.length) return 'no H.264 PPS';
   const frames = 2 ** s.frameNumBits;
@@ -223,7 +224,7 @@ function h264Unsupported(cp: Uint8Array | null, packets: readonly Uint8Array[]):
         poc = m + x;
         if (nal[0] & 0x60) [msb, lsb] = [m, x];
       }
-      if (last !== null && poc - last !== 1 && poc - last !== 2) return `H.264 POC step ${poc - last}`;
+      if (last !== null && (s.fixedDelay ? poc < last : poc - last !== 1 && poc - last !== 2)) return `H.264 POC step ${poc - last}`;
       last = poc;
     }
   } catch {

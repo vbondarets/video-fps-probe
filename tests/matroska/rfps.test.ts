@@ -240,10 +240,10 @@ describe('ffprobe frame rates of Matroska without DefaultDuration', () => {
   });
 
   it('reads a Baseline H.264 SPS without timing info, as Chrome writes it, whose bitstream_restriction fixes the reorder delay at 0', () => {
-    expect(h264Sps(hex('67 42 c0 15 8c 68 14 19 79 e6 e0 21 a0 20 f0 88 46 a0'))).toBeNull();
-    expect(h264Sps(sps(vui(0, 0)))).toBeNull();
-    expect(h264Sps(sps(null))).toEqual({ frameNumBits: 4, pocType: 2, pocLsbBits: 0 });
-    expect(h264Sps(sps(null, 66, poc0(6)))).toEqual({ frameNumBits: 4, pocType: 0, pocLsbBits: 6 });
+    expect(h264Sps(hex('67 42 c0 15 8c 68 14 19 79 e6 e0 21 a0 20 f0 88 46 a0'))).toEqual({ frameNumBits: 15, pocType: 2, pocLsbBits: 0, fixedDelay: true });
+    expect(h264Sps(sps(vui(0, 0)))).toEqual({ frameNumBits: 4, pocType: 2, pocLsbBits: 0, fixedDelay: true });
+    expect(h264Sps(sps(null))).toEqual({ frameNumBits: 4, pocType: 2, pocLsbBits: 0, fixedDelay: false });
+    expect(h264Sps(sps(null, 66, poc0(6)))).toEqual({ frameNumBits: 4, pocType: 0, pocLsbBits: 6, fixedDelay: false });
   });
 
   it('rejects H.264 that sets a codec frame rate, reorders frames or is not Baseline', () => {
@@ -271,7 +271,8 @@ describe('ffprobe frame rates of Matroska without DefaultDuration', () => {
       ['POC type 0 in steps of 4 with bitstream_restriction', sps(vui(0, 0), 66, poc0(8)), avcSlices(60, 4)],
       ['POC type 2 with consecutive frame_num', OPEN, avcSlices(60, null)],
       ['POC type 2 with a frame_num gap after the 7 decoded packets', OPEN, avcSlices(60, null, 7)],
-      ['POC type 2 with a frame_num gap and bitstream_restriction', sps(vui(0, 0)), avcSlices(60, null, 2)],
+      ['POC type 0 in steps of 2 and 6 with bitstream_restriction', sps(vui(0, 0), 66, poc0(8)), avcSlices(60, 2).map((s, i) => (i >= 4 ? slice({ frameNum: i, lsb: 2 * i + 4 }) : s))],
+      ['POC type 2 with a frame_num gap after the 7 decoded packets and bitstream_restriction', sps(vui(0, 0)), avcSlices(60, null, 7)],
     ] as const)('estimates %s', async (_label, spsNal, slices) => {
       expect(await run(spsNal, slices)).toEqual(ESTIMATED);
     });
@@ -290,6 +291,11 @@ describe('ffprobe frame rates of Matroska without DefaultDuration', () => {
       ['POC type 0 in steps of 4', POC0, avcSlices(60, 4), 'H.264 POC step 4'],
       ['POC type 0 that falls back', POC0, avcSlices(60, 2).map((s, i) => (i === 5 ? slice({ frameNum: 5, lsb: 2 }) : s)), 'H.264 POC step -6'],
       ['POC type 2 with a frame_num gap in the decoded packets', OPEN, avcSlices(60, null, 3), 'H.264 frame_num gap'],
+      ['POC type 2 with a frame_num gap in the decoded packets and bitstream_restriction', sps(vui(0, 0)), avcSlices(60, null, 2), 'H.264 frame_num gap'],
+      ['POC type 0 that falls back with bitstream_restriction', sps(vui(0, 0), 66, poc0(8)), avcSlices(60, 2).map((s, i) => (i === 5 ? slice({ frameNum: 5, lsb: 2 }) : s)), 'H.264 POC step -6'],
+      ['POC type 1 with bitstream_restriction', sps(vui(0, 0), 66, POC1), avcSlices(60, null), 'H.264 pic_order_cnt_type 1'],
+      ['field coding with bitstream_restriction', sps(vui(0, 0), 66, poc0(8), true), fieldSlices, 'H.264 field coding'],
+      ['a packet without a slice with bitstream_restriction', sps(vui(0, 0)), avcSlices(60, null).map((s, i) => (i === 4 ? nal(0x06, (u) => u(8, 5)) : s)), 'no H.264 slice header'],
       ['POC type 1', sps(null, 66, POC1), avcSlices(60, null), 'H.264 pic_order_cnt_type 1'],
       ['field coding', sps(null, 66, poc0(8), true), fieldSlices, 'H.264 field coding'],
       ['a bottom field POC offset', POC0, avcSlices(60, 2), 'H.264 bottom field POC', pps(1)],
@@ -306,6 +312,12 @@ describe('ffprobe frame rates of Matroska without DefaultDuration', () => {
       expect(await run(POC0_SHORT, decoded(wrap, 4))).toEqual(ESTIMATED);
       const back = [0, 14, 0, 2, 4, 6, 8].map((lsb, frameNum) => ({ idr: frameNum === 0, frameNum, lsb }));
       expect(await run(POC0_SHORT, decoded(back, 4))).toEqual(notReproduced('H.264 POC step -2'));
+    });
+
+    it('estimates with bitstream_restriction a POC that steps by 0 for a second non-reference picture, which FFmpeg outputs in order', async () => {
+      const twoNonRef = [0, 1, 1, 1, 2, 3, 4].map((frameNum, i) => ({ idr: i === 0, ref: i !== 1 && i !== 2, frameNum }));
+      expect(await run(sps(vui(0, 0)), decoded(twoNonRef))).toEqual(ESTIMATED);
+      expect(await run(OPEN, decoded(twoNonRef))).toEqual(notReproduced('H.264 POC step 0'));
     });
 
     it('restarts the POC at an IDR', async () => {
