@@ -35,7 +35,8 @@ tests/                             vitest suites, e2e, consumer fixtures and dis
 | `options.ts` | Defaults and `resolveOptions`: read-ahead sizes (head 64 KiB, fragment 1 MiB, Matroska scan 1 MiB, tail 256 KiB), cost model (0.8 ms per read, 500 kB/ms, 0.0002 ms per block or laced frame), exact-scan budget (150 ms), expansion limit (5M samples, also the Matroska PTS array cap), `predictReadMs` |
 | `result.ts` | `emptyAnalysis()`, `emptyTrack()`, `primaryTrack()` shared by the parsers, engines, API and demo |
 | `abort.ts` | `throwIfAborted(signal)`: the abort check of every read, written out because `AbortSignal.throwIfAborted` needs Chrome 100, above the floor |
-| `analyze.ts` | `analyze(blob, name, opts)`: timing, head read, sniffing, dispatch to the container parser (loaded with a dynamic `import()` on first use, together with `stats.ts`), error capture; `DEFAULT_LOADERS` |
+| `dispatch.ts` | `analyzeWith(blob, name, opts, analyzerOf)`: timing, head read, sniffing, dispatch to the analyzer `analyzerOf` returns for the sniffed container, error capture. It references no parser, so a worker entry that imports one parser statically does not pull in the other |
+| `analyze.ts` | `analyze(blob, name, opts)`: `analyzeWith` with `DEFAULT_LOADERS`, which load the container parser with a dynamic `import()` on first use, together with `stats.ts` |
 | `index.ts` | Barrel of the core modules for tests and scripts; not a package entry |
 
 ### ISO BMFF (`src/core/isobmff`)
@@ -79,8 +80,11 @@ Each engine module exports `run` and `containers` (the `EngineModule` contract).
 | Path | Role |
 |---|---|
 | `protocol.ts` | `PROTOCOL_VERSION = 1` and the typed request and response messages |
-| `runtime.ts` | `serveProbeWorker(engines)`: installs `self.onmessage`, loads engine sources on first use (in parallel with `core/stats.ts`), gates engines by container family, one `AbortController` per job, progress throttled to 50 ms, warm requests. `ownEngine`: the core `analyze` as an `EngineModule` whose `warm` loads the parser chunks |
-| `own.worker.ts` | `serveProbeWorker({ own: ownEngine })` |
+| `serve.ts` | `serveProbeWorker(engines)`: installs `self.onmessage`, loads engine sources on first use (in parallel with `core/stats.ts`), gates engines by container family, one `AbortController` per job, progress throttled to 50 ms, warm requests. Imports no parser |
+| `runtime.ts` | the `./worker-runtime` entry: `serveProbeWorker` from `serve.ts`, and `ownEngine`, the core `analyze` as an `EngineModule` whose `warm` loads the parser chunks |
+| `single.ts` | `singleContainerEngine(kind, analyzer)`: own for one container family with its parser imported statically; a file of the other family is an error result that keeps the sniffed container, so a fallback chain moves on |
+| `own-isobmff.worker.ts`, `own-matroska.worker.ts` | `serveProbeWorker({ own: singleContainerEngine(...) })` with the ISO BMFF or the Matroska parser: the two own workers of the default flavor, and the inputs of the two split standalone files |
+| `own.worker.ts` | `serveProbeWorker({ own: ownEngine })`: the input of the combined `dist/standalone/own.worker.js` only |
 | `mp4box.worker.ts` | `serveProbeWorker({ own: ownEngine, mp4box: () => import('../engines/mp4box.ts') })` |
 | `mediabunny.worker.ts` | the same with mediabunny |
 
@@ -89,7 +93,7 @@ Each engine module exports `run` and `containers` (the `EngineModule` contract).
 | Path | Role |
 |---|---|
 | `types.ts` | `EngineModule` (`run`, `containers`, optional `warm`), `EngineDescriptor` (`id`, `thread`, `createWorker`, `load`, `loadOwn`), `ContainerFamily`, `WorkerEngineId` |
-| `own.ts` | `ownDescriptor`, internal: the own worker literal, and `load` of the runtime for the calling thread. Reachable only from `.` and `./lazy` |
+| `own.ts` | `ownDescriptor`, internal: `createWorkers`, the two worker literals of the own workers keyed by container family, and `load` of the runtime for the calling thread. Reachable only from `.` and `./lazy` |
 | `mp4box.ts`, `mediabunny.ts` | `mp4box()`, `mediabunny()`: their worker literal, `load` of the engine (with the statistics chunk) and `loadOwn` |
 | `rvfc.ts` | `rvfc({ host })`: `thread: 'main'`, no worker, `load` of `engines/rvfc.ts` |
 
@@ -98,6 +102,7 @@ Each engine module exports `run` and `containers` (the `EngineModule` contract).
 | Path | Role |
 |---|---|
 | `client/probe.ts` | `createProbeCore`: builds the route of every engine, owns the pools, runs `analyze`, `tryAnalyze`, `prewarm`, `dispose` and `destroy`; `createProbeClient` |
+| `client/route.ts` | `familyOf(file, signal)`: the first 4 bytes of the file pick the own worker of a split route; never rejects |
 | `client/pool.ts` | `WorkerPool`: one pool per worker kind, queue, timeouts, cancel, idle termination |
 | `client/fallback.ts` | `runChain`: the fallback chain, `attempts`, skipped results; a lazy chunk loaded only for chains or skips |
 | `client/compare.ts` | `compare`: per-engine outcomes and the agreement; a lazy chunk |
@@ -113,17 +118,19 @@ Each engine module exports `run` and `containers` (the `EngineModule` contract).
 
 Bundlers emit a worker file for every `new Worker(new URL('...', import.meta.url))` literal they find in the module graph, also behind `import()` and also when the code never runs (Vite 8 matches the literal in every module it loads). The package therefore comes in two flavors:
 
-- **Default** (`.`, `./lazy`): `createProbe` registers `ownDescriptor`, so the own worker is built in.
+- **Default** (`.`, `./lazy`): `createProbe` registers `ownDescriptor`, so the two own workers are built in.
 - **Client** (`./client`, `./client/lazy`): no descriptor is built in; the host passes `worker: { create, engines }`, `'inline'` or prebuilt descriptors. A host with a custom worker pays for exactly one worker file.
 
 **Literal hygiene.** Worker literals live only in `plugins/own.ts`, `plugins/mp4box.ts` and `plugins/mediabunny.ts`. The static and dynamic import closure of `./client`, `./client/lazy`, `./rvfc`, `./worker-runtime` and `./engines/*` reaches none of them, and no other `new URL(..., import.meta.url)` of a worker or standalone file. `check-dist` enforces it on the built `dist/`, and the size matrix asserts the worker files of each consumer build.
 
 ## Worker kinds and routing
 
-A worker kind is a worker script: `own`, `mp4box`, `mediabunny` (the prebuilt ones) or `custom` (the host's). Each kind has its own `WorkerPool`. At creation the probe computes one route per engine id:
+A worker kind is a worker script: `own-isobmff`, `own-matroska`, `mp4box`, `mediabunny` (the prebuilt ones), `custom` (the host's) or `custom-<family>` (a `byContainer` worker). Each kind has its own `WorkerPool`. At creation the probe computes one route per engine id:
 
 - an engine listed on the custom worker runs there;
-- `own` otherwise runs on the worker of the default engine when that descriptor has `loadOwn` (mp4box, mediabunny), else on the own worker, else on any descriptor with `loadOwn`, else in the calling thread when inline;
+- `own` otherwise runs on the worker of the default engine when that descriptor has `loadOwn` (mp4box, mediabunny), else on the own workers, else on any descriptor with `loadOwn`, else in the calling thread when inline;
+- the own workers and a custom worker with `byContainer` give a split route: `run` first reads the first 4 bytes of the file with `familyOf`, then takes the pool of that family (`own-isobmff` or `own-matroska`, `custom-<family>` or `custom`). `1A 45 DF A3` goes to the Matroska worker and everything else to the ISO BMFF worker; that is the first branch of `sniff()` exactly, so the route never disagrees with the worker's own sniff. The read is bounded by the call's `signal` and by `destroy()`, and is not counted in `io`. `compare` still groups engines by the route's kind, `own` or `custom`;
+- `prewarm` sends one warm request per pool, with the engines on it and the union of their containers; a split route adds only the pools of the families it is given;
 - any other engine runs on its descriptor's worker, or through its `load()` in the calling thread when the descriptor is `thread: 'main'` (rvfc) or the probe is inline;
 - an engine listed only on the custom worker gets an `unsupported-environment` route when the probe is inline.
 
@@ -182,11 +189,13 @@ main thread                         worker (module)                       core
 -----------                         ---------------                       ----
 probe.analyze(file)                                                       
   [stub: import() of the client]
-  route of the engine -> WorkerPool(kind).run
+  route of the engine
+  split route: familyOf(file), 4 bytes -> own-isobmff | own-matroska
+  -> WorkerPool(kind).run
      postMessage {analyze} -------> serveProbeWorker: load engine ------> BlobReader(file)
-                                    (own: ownEngine = core analyze)       read head window (64 KiB) or a small file whole, 1 read
-                                                                          sniff(head) -> isobmff | matroska | unknown
-                                                                          import() of that parser and stats.ts (first use)
+                                    (own: the parser of the worker's      read head window (64 KiB) or a small file whole, 1 read
+                                    family, or ownEngine = core analyze   sniff(head) -> isobmff | matroska | unknown
+                                    in a custom worker)                   custom worker: import() of that parser and stats.ts (first use)
                                                                           analyzeIsoBmff / analyzeMatroska(reader, opts)
                                                                              timeline -> analyzeTimeline() (+ profile job)
                                                                           profile job? import() of segments.ts
@@ -211,11 +220,12 @@ probe.analyze(file)
 | Chunk | Contents | Loaded by | When |
 |---|---|---|---|
 | stub | `lazyStub` and the lazy entry | the host's entry chunk | page load (the critical path) |
-| probe client | `client/probe.ts`, `pool.ts` and, in the default flavor, the own descriptor | `import()` in the stub | first call or `prewarm()` |
+| probe client | `client/probe.ts`, `route.ts`, `pool.ts` and, in the default flavor, the own descriptor | `import()` in the stub | first call or `prewarm()` |
+| own worker of a family | `worker/own-isobmff.worker.ts` or `own-matroska.worker.ts`: runtime, reader, sniff, options, result builders, the statistics and that family's parser | the worker literal of the family, default flavor | first file of that family |
 | fallback, compare, inline | `client/fallback.ts`, `client/compare.ts` with `api/agreement.ts`, `client/inline.ts` | `import()` in the client | first chain or skip, first `compare`, first in-thread run |
-| worker entry | runtime, reader, sniff, options, result builders | the worker literal of the kind | first job of that kind |
+| worker entry | runtime, reader, sniff, options, result builders | the worker literal of the kind (mp4box, mediabunny, a custom worker) | first job of that kind |
 | statistics | `core/stats.ts` and what it shares | `import()` with each parser or engine, in parallel | first parser or engine, once per worker |
-| ISO BMFF, Matroska | `src/core/isobmff`, `src/core/matroska` | `import()` in `core/analyze.ts` | first file of that container, once per worker |
+| ISO BMFF, Matroska | `src/core/isobmff`, `src/core/matroska` | `import()` in `core/analyze.ts`, in every worker but the two own workers, which hold their parser | first file of that container, once per worker |
 | segments | `core/segments.ts` (rate profile) | `import()` in `stats.ts` | first track with unequal intervals, once per worker |
 | rfps | `core/rfps.ts` (ffprobe frame rate estimate) | `import()` in the Matroska parser | first Matroska track without DefaultDuration in probe or exact mode, once per worker |
 | mp4box, mediabunny | the library and its adapter | `import()` in the runtime | first job of that engine |

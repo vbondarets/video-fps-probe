@@ -2,14 +2,14 @@
 
 Everything the package exports, by entry, with options, defaults, errors and the result schema. The [README](../README.md) has the short version; [bundlers.md](bundlers.md) covers worker setup per bundler, and [architecture.md](architecture.md) how the pieces fit together.
 
-The package is ESM only, targets ES2022 and ships its own types. Every entry except the standalone worker file can be imported in Node and during SSR: nothing touches `Worker`, `window` or `document` at import time.
+The package is ESM only, targets ES2022 and ships its own types. Every entry except the standalone worker files can be imported in Node and during SSR: nothing touches `Worker`, `window` or `document` at import time.
 
 ## Entries
 
 | Entry | Exports | Worker literal in the build |
 |---|---|---|
-| `video-fps-probe` | `createProbe`, `analyze`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, every type on this page except `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions`, `VideoFpsState` and the check types (`CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `FrameSizeRule`, `RangeRule`, `RatioValue`, `RatePolicy`) and the preset types (`ProviderPreset`, `PresetSourceKind`) | the own worker |
-| `video-fps-probe/lazy` | `lazyProbe`, `lazyProbeFrom`, `LazyProbe`, `ProbeOptions` | the own worker |
+| `video-fps-probe` | `createProbe`, `analyze`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, every type on this page except `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions`, `VideoFpsState` and the check types (`CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `FrameSizeRule`, `RangeRule`, `RatioValue`, `RatePolicy`) and the preset types (`ProviderPreset`, `PresetSourceKind`) | the two own workers |
+| `video-fps-probe/lazy` | `lazyProbe`, `lazyProbeFrom`, `LazyProbe`, `ProbeOptions` | the two own workers |
 | `video-fps-probe/client` | `createProbeClient`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, every type on this page except `InThreadOptions`, `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions`, `VideoFpsState` and the check types (`CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `FrameSizeRule`, `RangeRule`, `RatioValue`, `RatePolicy`) and the preset types (`ProviderPreset`, `PresetSourceKind`) | none |
 | `video-fps-probe/client/lazy` | `lazyProbeClient`, `lazyProbeFrom`, `ClientOptions`, `LazyProbe`, `Probe` | none |
 | `video-fps-probe/check` | `check`, `CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `FrameSizeRule`, `RangeRule`, `RatioValue`, `RatePolicy` | none |
@@ -22,10 +22,11 @@ The package is ESM only, targets ES2022 and ships its own types. Every entry exc
 | `video-fps-probe/engines/mp4box` | the mp4box.js engine module (`run`, `containers`, `analyzeWithMp4box`, `MP4BOX_VERSION`) | none |
 | `video-fps-probe/engines/mediabunny` | the mediabunny engine module (`run`, `containers`, `analyzeWithMediabunny`, `MEDIABUNNY_VERSION`, `NATIVE_STATS_MAX_PACKETS`) | none |
 | `video-fps-probe/standalone/own.worker.js` | a classic worker file, no imports, serving own | it is the worker |
+| `video-fps-probe/standalone/own-isobmff.worker.js`, `video-fps-probe/standalone/own-matroska.worker.js` | classic worker files, no imports, serving own for one container family each, for `byContainer` | they are the workers |
 
 There are two flavors because bundlers emit a worker file for every `new Worker(new URL(..., import.meta.url))` they see in the module graph, whether or not it runs:
 
-- **Default flavor** (`video-fps-probe`, `video-fps-probe/lazy`): the own engine and its prebuilt worker are built in. Use it unless you build your own worker.
+- **Default flavor** (`video-fps-probe`, `video-fps-probe/lazy`): the own engine and its two prebuilt workers, one per container family, are built in. Use it unless you build your own worker.
 - **Client flavor** (`video-fps-probe/client`, `video-fps-probe/client/lazy`): no worker is built in. You pass a worker, `'inline'`, or prebuilt descriptors. A host with its own worker uses this flavor so the unused own worker is never emitted.
 
 The `mp4box` and `mediabunny` descriptors each carry their own prebuilt worker, which serves that engine and own. `rvfc`, `worker-runtime` and `engines/*` never reach a worker literal, and `check` and `presets` import no other module. `check-dist` enforces all of this on every build.
@@ -60,8 +61,11 @@ interface ClientOptions<E, W> extends BaseOptions<W | IdOf<E[number]> | 'own'> {
 interface CustomWorker<W extends WorkerEngineId> {
   create: () => Worker; // keep the new Worker(new URL(...)) literal here, in your code
   engines: readonly W[]; // the engines your worker serves: 'own' | 'mp4box' | 'mediabunny'
+  byContainer?: Readonly<Partial<Record<ContainerFamily, () => Worker>>>; // own only: a worker per container family
 }
 ```
+
+`byContainer` runs own on the worker of the file's container family, picked by the first 4 bytes of the file like the own workers of the default flavor ([routing](#workers-queues-and-timeouts)). A family without a worker, and every other engine, stays on `create`. It applies only when `engines` lists own, and it is ignored without a `Worker` global, where own runs in the calling thread. The [split standalone files](#standalone-worker) are made for it.
 
 Own must be routable: list it on the custom worker, pass `worker: 'inline'`, or register a prebuilt `mp4box()` or `mediabunny()` descriptor (each also serves own). Otherwise `createProbeClient` throws `ProbeError('engine-not-registered')`.
 
@@ -71,7 +75,7 @@ Own must be routable: list it on the custom worker, pass `worker: 'inline'`, or 
 |---|---|---|---|
 | `engine` | engine id | `'own'` | default engine of `analyze` and `tryAnalyze` |
 | `fallback` | engine ids | `[]` | default fallback chain, tried in order after `engine` |
-| `workers` | number | `1` | workers per worker kind (own, mp4box, mediabunny, custom); values below 1 or not finite give 1 |
+| `workers` | number | `1` | workers per worker kind (the ISO BMFF and the Matroska worker of own, mp4box, mediabunny, custom, each `byContainer` worker); values below 1 or not finite give 1 |
 | `idleTimeoutMs` | number | `30_000` | an idle worker is terminated after this; `0` keeps workers alive |
 | `timeoutMs` | number | none | per attempt, from the moment a worker takes the job; also bounds the warm request of `prewarm()` |
 | `defaults` | `WireOptions` | none | parser options merged under every call's own options |
@@ -123,20 +127,21 @@ interface CallOptions<Id> extends WireOptions {
 - **`analyze`** resolves with the result of the first engine of the chain (`engine`, then `fallback`, duplicates removed). A file that cannot be analysed is a result with `error` set, not a rejection. A probe rejects only with a `ProbeError`: an abort, a timeout, a failed worker, or an engine that is not registered. So does a lazy stub whose own load fails: `ProbeError('worker-failed')` with `reason: 'load'` and the import error as `cause` ([Lazy stubs](#lazy-stubs)).
 - **Fallback.** With a chain of two or more, the next engine runs when the current one returns an error, no video track or no frame rate, skips the container (mp4box on WebM), times out or crashes. An abort stops the chain at once. If every engine fails, the result of the last engine that returned one comes back, with `attempts` listing the others (`{ engine, error }`); if none returned a result, the last error rejects.
 - **`tryAnalyze`** is `analyze` that resolves `null` instead of rejecting.
-- **`prewarm`** loads ahead of the first file: the probe client (for a stub), the worker, and the parser chunks for `containers` (default `['isobmff']`), for `engines` (default: the probe's `engine`). One warm request goes to each worker kind; in-thread engines load their chunks. It never rejects.
+- **`prewarm`** loads ahead of the first file: the probe client (for a stub), the worker, and the parser chunks for `containers` (default `['isobmff']`), for `engines` (default: the probe's `engine`). Own in the default flavor, and own with `byContainer`, starts only the worker of each family in `containers`, so `containers: []` starts none of them. One warm request goes to each worker kind, with the engines it serves and the union of their containers; in-thread engines load their chunks. It never rejects.
 - **`dispose`** terminates idle workers now. Busy workers finish their job; the next call starts new workers.
 - **`destroy`** rejects every queued and running job with `ProbeError('aborted')` and terminates every worker. After it, `analyze` and `compare` reject with `ProbeError('aborted')`, `tryAnalyze` resolves `null`, and `prewarm` does nothing.
 
 ### Workers, queues and timeouts
 
-Each worker kind has its own pool of `workers` workers, started on demand. Jobs queue first in, first out.
+Each worker kind has its own pool of `workers` workers, started on demand. Jobs queue first in, first out. With `workers: 1`, the default flavor can run one MP4 and one WebM at once, one on each own worker.
 
 - **Timeout.** `timeoutMs` starts when a worker takes the job, not while it waits in the queue. When it fires, the call rejects with `ProbeError('timeout')`, the worker is terminated at once (it is presumed stuck), and the next job starts a new worker. In the calling thread (`'inline'`, rvfc) the call rejects and the engine's signal is aborted.
 - **Abort.** A queued job is removed and rejected at once. A running job is rejected at once and its worker gets a `cancel`; the worker is reused when it acknowledges, or terminated after 1.5 s. Pass one `signal` to every call of a batch to cancel the whole batch, queued jobs included.
 - **Main-thread loads.** Neither `signal` nor `timeoutMs` covers code downloaded on the main thread: the probe client of a lazy stub, and the fallback, compare and inline chunks. A stalled download keeps the call pending; only `destroy()` ends it. The worker script and the chunks a worker loads do count toward `timeoutMs`.
 - **Crashes.** A worker `error` event after the worker's first reply rejects its job with `ProbeError('worker-failed')`, `reason: 'crash'` and the event's message, and the worker is replaced on the next job.
 - **Load failures.** Any `error` event before the worker's first reply means the worker script cannot run: it did not load (a 404 after a redeploy, a network error, a wrong MIME type, a static import that failed), did not parse (syntax the browser does not support, or a 404 page served as `text/html` and parsed as a classic worker, which Chromium reports as `Uncaught SyntaxError: Unexpected token '<'`), or threw before it could reply. It rejects with `ProbeError('worker-failed')`, `reason: 'load'` and the message `worker script failed to load or parse; the app may have been redeployed`, followed by `: ` and the event's message when the event has one, with the event as `cause`. While another worker of that kind is still running, the job goes back to the front of the queue and waits for it, and no further worker of that kind starts until the next call. When the failed worker was the last one, its job and every queued job of that kind reject with that error at once, instead of each starting a worker that would fail the same way. The next call starts a new worker, so a load failure is retried, not remembered.
-- **Routing of own.** Own runs on the custom worker if it lists own; otherwise on the worker of the default engine when that engine also serves own (mp4box, mediabunny); otherwise on the own worker; otherwise on the worker of the first registered descriptor that also serves own. Inline, the same order picks the in-thread modules, with the built-in in-thread own last. So `createProbe({ engines: [mp4box()], engine: 'mp4box', fallback: ['own'] })` starts one worker for both engines.
+- **Routing read.** Own in the default flavor, and own with `byContainer`, picks its worker by reading the first 4 bytes of the file on the main thread: `1A 45 DF A3` (the EBML magic) goes to the Matroska worker; everything else, ISO BMFF, an unknown or empty file, a read that fails or a value that is not a `Blob`, goes to the ISO BMFF worker, which answers an unknown file with the same error result as the combined worker of 0.2.0. The read is bounded by `signal` and `destroy()`, not by `timeoutMs`, which still starts when a worker takes the job, and it is not counted in `io`. Jobs of one worker kind queue in the order their reads complete. A missing worker file of one family rejects only the jobs of that family with `reason: 'load'`.
+- **Routing of own.** Own runs on the custom worker if it lists own; otherwise on the worker of the default engine when that engine also serves own (mp4box, mediabunny); otherwise on the own worker of the file's container family; otherwise on the worker of the first registered descriptor that also serves own. Inline, the same order picks the in-thread modules, with the built-in in-thread own last. So `createProbe({ engines: [mp4box()], engine: 'mp4box', fallback: ['own'] })` starts one worker for both engines.
 - **Inline.** In the calling thread each engine loads as a lazy chunk. An engine listed only on a custom worker (mp4box or mediabunny without its descriptor) cannot run there and rejects with `ProbeError('unsupported-environment')`.
 
 ### Cancellation and failing open
@@ -323,6 +328,18 @@ import { lazyProbeClient } from 'video-fps-probe/client/lazy';
 import ownWorkerUrl from 'video-fps-probe/standalone/own.worker.js?url'; // Vite; other bundlers: copy the file and use its URL
 
 export const probe = lazyProbeClient({ worker: { create: () => new Worker(ownWorkerUrl), engines: ['own'] } });
+```
+
+`video-fps-probe/standalone/own-isobmff.worker.js` and `own-matroska.worker.js` are the two own workers of the default flavor as classic scripts, about 21 and 24 KB gzip against about 36 KB for `own.worker.js`. Each reads one container family and returns an error result with the container for the other one. Register them with `byContainer`, so a first file loads only the file of its family:
+
+```ts
+import { lazyProbeClient } from 'video-fps-probe/client/lazy';
+import isobmffWorkerUrl from 'video-fps-probe/standalone/own-isobmff.worker.js?url';
+import matroskaWorkerUrl from 'video-fps-probe/standalone/own-matroska.worker.js?url';
+
+export const probe = lazyProbeClient({
+  worker: { create: () => new Worker(isobmffWorkerUrl), engines: ['own'], byContainer: { matroska: () => new Worker(matroskaWorkerUrl) } },
+});
 ```
 
 ## Results

@@ -447,3 +447,11 @@ Tests, fixtures, tooling, CI, the demo and the docs that report on them; nothing
 
 - Bundler matrix and peers job (0.3.0): Vite 6, webpack 5, Rspack, Next.js 16 on Turbopack and webpack, a pnpm install and a Yarn PnP install.
 - Demo: no prewarm before the first file. Prewarming on load or on idle would move about 19.5 KB of lazy loads onto every page view, and a tab that sits unused across a deploy still needs the reload banner.
+
+## 15. 0.3.0 design notes
+
+### One own worker per container family
+
+The default flavor runs own on two workers, one per container family, and the client picks the worker from the first 4 bytes of the file. 4 bytes are enough because they decide exactly the first branch of `sniff()` in `src/core/sniff.ts`: an empty head is unknown, a head that starts with the EBML magic `1A 45 DF A3` is Matroska, and nothing else ever is. Every other head, an ISO BMFF box, an unknown or foreign signature, a file of 1 to 3 bytes, goes to the ISO BMFF worker, whose own sniff then reads 1024 bytes and either analyzes the file or returns the same `not a recognised container` error as the combined worker of 0.2.0. So the route never disagrees with the worker's sniff, and `tests/unit/route.test.ts` checks it on the head of every fixture file, on short and foreign heads and on 10,000 random heads. A read that fails, an aborted read and a value that is not a `Blob` also go to the ISO BMFF worker, so `familyOf` never rejects and the worker still answers a non-Blob with its `protocol` error.
+
+Each worker imports its parser statically and reaches neither the other parser nor the loaders of `core/analyze.ts` (`analyzeWith` in `core/dispatch.ts` holds the shared body). `check-dist` checks that on `dist/`, the size matrix on the sourcemaps of every consumer build. Two separate worker builds each hold a copy of the reader, the runtime and the statistics, so a session that analyzes both families loads about 8 KB more than 0.2.0 in the default configuration; a host that wants one worker can keep the 0.2.0 layout with a custom worker that serves `ownEngine`.

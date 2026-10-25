@@ -4,9 +4,10 @@ How the package ships its workers, what each bundler needs, and what is verified
 
 ## How the workers are shipped
 
-- The default flavor (`video-fps-probe`, `video-fps-probe/lazy`) and the `mp4box` and `mediabunny` descriptors each contain one worker reference in the standard form: `new Worker(new URL('../worker/own.worker.js', import.meta.url), { type: 'module' })`. Bundlers that understand this form copy the worker, build it, and split the parsers it loads with `import()` into lazy chunks.
+- The default flavor (`video-fps-probe`, `video-fps-probe/lazy`) contains two worker references in the standard form, one per container family of the own engine: `new Worker(new URL('../worker/own-isobmff.worker.js', import.meta.url), { type: 'module' })` and the same for `own-matroska.worker.js`. The `mp4box` and `mediabunny` descriptors each contain one. Bundlers that understand this form copy each worker, build it, and split what it loads with `import()` into lazy chunks.
+- The default flavor reads the first 4 bytes of a file on the main thread to pick the own worker of its container family, so a first file loads only that worker. Each worker holds its parser and the statistics; the rate profile core and, for Matroska, the ffprobe frame rate estimate are lazy chunks.
 - A bundler emits the worker for every such reference in the module graph, even code that never runs. That is why the client flavor (`video-fps-probe/client`, `video-fps-probe/client/lazy`) has no reference at all: a host that brings its own worker does not ship the unused prebuilt one.
-- For bundlers that do not understand the form, `video-fps-probe/standalone/own.worker.js` is the own worker as one classic script with no imports.
+- For bundlers that do not understand the form, `video-fps-probe/standalone/own.worker.js` is the own worker as one classic script with no imports, and `own-isobmff.worker.js` and `own-matroska.worker.js` are the two per-container workers as classic scripts, for `byContainer` ([api](api.md#standalone-worker)).
 
 ## Status
 
@@ -41,7 +42,7 @@ The default flavor runs own on one worker per container family, picked by the fi
 
 <!-- tables:vite:end -->
 
-**Recommended: `worker.format: 'es'`.** Vite builds workers as `'iife'` by default, and an iife worker cannot split, so without the option the own worker is one file with both parsers. Module workers run on the whole browser floor of the package (Chrome and Edge 94, Firefox 114, Safari 15.4). The option applies to every worker of the host app.
+**Recommended: `worker.format: 'es'`.** Vite builds workers as `'iife'` by default, and an iife worker cannot split, so without the option each own worker is one file that also inlines the rate profile core and, for Matroska, the ffprobe frame rate estimate. Module workers run on the whole browser floor of the package (Chrome and Edge 94, Firefox 114, Safari 15.4). The option applies to every worker of the host app.
 
 ```js
 // vite.config.js
@@ -97,6 +98,18 @@ import { lazyProbeClient } from 'video-fps-probe/client/lazy';
 
 export const probe = lazyProbeClient({
   worker: { create: () => new Worker('/assets/own.worker.js'), engines: ['own'] },
+});
+```
+
+**Two standalone workers.** To load only the worker of the file's container family, as the default flavor does, copy `own-isobmff.worker.js` and `own-matroska.worker.js` from the same folder instead and register the Matroska one with `byContainer`:
+
+```ts
+export const probe = lazyProbeClient({
+  worker: {
+    create: () => new Worker('/assets/own-isobmff.worker.js'),
+    engines: ['own'],
+    byContainer: { matroska: () => new Worker('/assets/own-matroska.worker.js') },
+  },
 });
 ```
 
@@ -156,7 +169,8 @@ const viaBlob = (): Worker => {
 export const probe = lazyProbeClient({ worker: { create: viaBlob, engines: ['own'] } });
 ```
 
-- Only the classic standalone file works this way: a module worker cannot call `importScripts`, and the chunk imports of the prebuilt workers would resolve against the blob URL.
+- Only the classic standalone files work this way: a module worker cannot call `importScripts`, and the chunk imports of the prebuilt workers would resolve against the blob URL.
+- The two per-container files work the same way: build one trampoline per file and pass the Matroska one as `byContainer: { matroska: () => viaBlob(matroskaWorkerUrl) }`, with `viaBlob` taking the URL.
 - `importScripts` fetches the file in no-cors mode, so the CDN needs no CORS headers. Only a cross-origin isolated page (`Cross-Origin-Embedder-Policy: require-corp`) needs the CDN to send `Cross-Origin-Resource-Policy: cross-origin`.
 - Under a Content Security Policy, `worker-src` must allow `blob:` and `script-src` the CDN origin ([above](#content-security-policy)).
 - This recipe is documented, not tested in CI.
@@ -167,16 +181,16 @@ Bundlers name the worker files and every lazy chunk by a content hash, and many 
 
 - The probe client of a lazy stub, the worker script, a chunk the worker loads for an engine, or a main-thread chunk of the probe: `ProbeError('worker-failed')` with `reason: 'load'` ([Errors](api.md#errors)), and `tryAnalyze` resolves `null`. For a main-thread chunk the message is the browser's dynamic-import error, which is also the `cause`. A worker script that returns 404 has the message `worker script failed to load or parse; the app may have been redeployed`, followed by the browser's error when it gives one (a 404 page parsed as a classic worker is a `SyntaxError`).
 
-A worker that started before the deploy keeps serving its jobs, but a parser or engine chunk it has not loaded yet is gone too: own reports that as `result.error` with the import error's message (the demo runs its deploy check on that message too), a library engine as `reason: 'load'`. With the blob trampoline of the [CDN recipe](#scripts-on-a-cdn-origin), a missing standalone file is an uncaught `NetworkError` inside the worker before its first reply, so it reports as `reason: 'load'` with the browser's `importScripts` message after the load message.
+The own workers of the default flavor hold their parsers, so a missing own worker file is a `reason: 'load'` for the jobs of its container family only: after a deploy, MKV jobs can fail while MP4 jobs, whose worker already runs, keep working, and the next call retries. A worker that started before the deploy keeps serving its jobs, but a chunk it has not loaded yet is gone too: in a custom worker that serves own, a missing parser chunk comes back as `result.error` with the import error's message (the demo runs its deploy check on that message too), a library engine as `reason: 'load'`. With the blob trampoline of the [CDN recipe](#scripts-on-a-cdn-origin), a missing standalone file is an uncaught `NetworkError` inside the worker before its first reply, so it reports as `reason: 'load'` with the browser's `importScripts` message after the load message.
 
 What helps, from the most to the least robust; they combine:
 
 - **Keep the old assets for a while.** Upload the new hashed files next to the old ones and delete files older than a day or so, instead of replacing the directory. A stale tab then keeps loading the files it knows. Hosts that swap the whole site at once, such as GitHub Pages, cannot do this.
 - **Reload on the error.** Treat `e.reason === 'load'` as a possible new deploy: fetch the page's HTML with `cache: 'no-store'`, compare its entry script with the running one, and offer a reload when they differ. The [demo](../demo/README.md#deploying-to-github-pages) does this and shows one banner instead of an error per file. Vite also dispatches `vite:preloadError` on `window` when a dynamic import of the host's own code fails.
-- **Load early.** Call `prewarm()` when the upload dialog opens or on the first interaction, so the probe client, the worker and the MP4 parser load before the user picks files. This narrows the window, but a tab that stays open across a deploy without using the probe still loads everything afterwards.
+- **Load early.** Call `prewarm()` when the upload dialog opens or on the first interaction, so the probe client and the ISO BMFF worker of own load before the user picks files (`containers: ['isobmff', 'matroska']` starts both own workers). This narrows the window, but a tab that stays open across a deploy without using the probe still loads everything afterwards.
 
 ## SSR and the lazy main-thread chunks
 
-- Every entry except the standalone worker file imports in Node without side effects; `check-dist` imports each one in plain Node on every `npm pack` and in CI.
+- Every entry except the standalone worker files imports in Node without side effects; `check-dist` imports each one in plain Node on every `npm pack` and in CI.
 - Without a `Worker` global (SSR, Node) a probe runs its engines inline, in the calling thread. So both flavors also contain lazy chunks with the worker runtime and the parsers for that thread, and the root `analyze()` uses them too.
 - A browser with a `Worker` global downloads those chunks only for `worker: 'inline'` or a root `analyze()` call. They are part of what a build emits (the Vite 8 note above), not of what a page loads.

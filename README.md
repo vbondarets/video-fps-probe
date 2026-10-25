@@ -41,7 +41,7 @@ track?.isVfr;
 track?.rateProfile?.summary; // for example 'Uneven: 5 fps for 4 s, 200 fps for 4 s'
 ```
 
-The first call loads the probe client, the worker and the parser of the sniffed container; `probe.prewarm()` loads them ahead, for example when an upload dialog opens. `createProbe()` from `video-fps-probe` is the probe without the stub; `summarize(result)` flattens the primary track.
+The first call loads the probe client and the own worker of the file's container family, picked by its first 4 bytes, with the parser inside; `probe.prewarm()` loads them ahead, for example when an upload dialog opens. `createProbe()` from `video-fps-probe` is the probe without the stub; `summarize(result)` flattens the primary track.
 
 ## React
 
