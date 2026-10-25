@@ -247,7 +247,9 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   const t = typeof found === 'string' ? null : found;
   const add = (rule: string, s: CheckSeverity, expected: CheckExpected, actual: number | string | boolean | null, message: string): number =>
     violations.push({ rule, severity: s, expected, actual, message: `${rule}: ${message}` });
-  const unknown = (rule: string, missing: string): unknown => violations.some((v) => v.rule === rule) || add(rule, 'unknown', null, null, `unknown, ${t ? `no ${missing}` : found}`);
+  const unknown = (rule: string, missing: string): unknown =>
+    violations.some((v) => v.rule === rule) ||
+    add(rule, 'unknown', null, null, `unknown, ${t || rule === 'fileSize' || rule === 'containers' ? `no ${missing}${failure ? `; ${failure}` : ''}` : found}`);
 
   const limits = (
     group: string,

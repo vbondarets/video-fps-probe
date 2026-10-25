@@ -423,6 +423,20 @@ describe('check: verdict, severity and failing open', () => {
     expect(() => check(result(), { frameSize: { fooWidth: 1 } } as unknown as CheckRules)).toThrow(new TypeError('frameSize.fooWidth: not a rule; expected one of minWidth, maxWidth, minHeight, maxHeight, minShortSide, maxShortSide, minLongSide, maxLongSide'));
   });
 
+  it('names the missing file size or container instead of the missing track, which those rules do not need', () => {
+    const messages = (r: FileResult | null) => check(r, { fileSize: { max: 1e9 }, containers: ['mp4'], fps: { min: 24 } }).violations.map((v) => v.message);
+    expect(messages(result({}, { videoTracks: [], primaryTrackId: null, size: undefined, container: 'unknown' }))).toEqual(['fps: unknown, no video track', 'fileSize: unknown, no file size', 'containers: unknown, no container']);
+    expect(messages(JSON.parse('{"videoTracks":[]}') as FileResult)).toEqual(['fps: unknown, no video track', 'fileSize: unknown, no file size', 'containers: unknown, no container']);
+    expect(messages(JSON.parse('{"name":"x.mp4"}') as FileResult)).toEqual(['fps: unknown, the result has no videoTracks list', 'fileSize: unknown, no file size', 'containers: unknown, no container']);
+    expect(messages(result({}, { error: 'moov box not found', size: Number.NaN, container: 'unknown' }))).toEqual([
+      'fps: unknown, the analysis failed: moov box not found',
+      'fileSize: unknown, no file size; the analysis failed: moov box not found',
+      'containers: unknown, no container; the analysis failed: moov box not found',
+    ]);
+    expect(messages(null)).toEqual(['fps: unknown, the analysis failed: no result', 'fileSize: unknown, no file size; the analysis failed: no result', 'containers: unknown, no container; the analysis failed: no result']);
+    expect(messages(result({}, { size: undefined }))).toEqual(['fileSize: unknown, no file size']);
+  });
+
   it('is unknown without a video track', () => {
     expect(check(result({}, { videoTracks: [], primaryTrackId: null }), { fps: { min: 24 } }).violations[0]!.message).toBe('fps: unknown, no video track');
   });
