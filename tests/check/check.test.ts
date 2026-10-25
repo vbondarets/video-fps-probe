@@ -497,7 +497,7 @@ describe('check: verdict, severity and failing open', () => {
     const all: CheckRules = { fps: { min: 24 }, duration: { max: 30 }, frameSize: { minWidth: 1 }, codecs: ['h264'], audio: 'required', vfr: 'reject', uneven: 'reject' };
     const report = check(JSON.parse(json) as FileResult, all);
     expect(report.verdict).toBe('unknown');
-    expect(report.violations.map((v) => v.message)).toEqual(['fps', 'duration', 'frameSize', 'codecs', 'audio', 'vfr', 'uneven'].map((rule) => `${rule}: unknown, ${why}`));
+    expect(report.violations.map((v) => v.message)).toEqual(['fps', 'duration', 'frameSize', 'codecs', 'audio', 'vfr', 'uneven'].map((rule) => `${rule}: unknown, ${rule === 'audio' ? 'no audio track count' : why}`));
   });
 
   it('judges a track whose fields have the wrong types without throwing, as unknown where it cannot read them', () => {
@@ -788,5 +788,15 @@ describe('check: committed fixtures', () => {
   it('is unknown for a file that is not a video', async () => {
     expect(check(await run('corrupt_png_named.mp4'), { fps: { min: 24 }, containers: ['mp4'] }).verdict).toBe('unknown');
     expect(check(await run('audio_only_aac.mp4'), { fps: { min: 24 } }).violations[0]!.message).toBe('fps: unknown, no video track');
+  });
+
+  it('judges audio without a video track, as audio_only.m4a has none', async () => {
+    const audioOnly = await run('audio_only.m4a');
+    expect(audioOnly.videoTracks).toEqual([]);
+    expect(check(audioOnly, { audio: 'required' })).toEqual({ verdict: 'pass', violations: [] });
+    expect(check(audioOnly, { audio: 'forbidden' }).violations).toEqual([{ rule: 'audio', severity: 'fail', expected: 'forbidden', actual: true, message: 'audio: forbidden, the file has an audio track' }]);
+    expect(check(audioOnly, { audio: 'required', fps: { min: 24 } }).violations.map((v) => v.message)).toEqual(['fps: unknown, no video track']);
+    expect(check({ ...audioOnly, engine: 'rvfc' }, { audio: 'required' }).violations.map((v) => v.message)).toEqual(['audio: unknown, no audio track count (the rvfc engine reports none)']);
+    expect(check({ ...audioOnly, error: 'moov box not found' }, { audio: 'required' }).violations.map((v) => v.message)).toEqual(['audio: unknown, no audio track count; the analysis failed: moov box not found']);
   });
 });

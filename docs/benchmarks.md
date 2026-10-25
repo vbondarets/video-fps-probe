@@ -395,7 +395,7 @@ export default defineConfig({ worker: { format: 'es' } });
 | iife-nosplit | `video-fps-probe/lazy` | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.66 KB** | 38.92 KB | 38.92 KB | - | 1 | ok (4 budgets) |
 | react | `video-fps-probe/lazy` + `video-fps-probe/react` (React 19.3.1) | format: 'es' | **1.64 KB** | 23.60 KB | 40.77 KB | - | 1 | ok (9 budgets) |
 | react18 | `video-fps-probe/lazy` + `video-fps-probe/react` (React 18.3.1) | format: 'es' | **1.64 KB** | 23.60 KB | 40.77 KB | - | 1 | ok (4 budgets) |
-| check | `video-fps-probe/lazy` + `video-fps-probe/check` | format: 'es' | **4.44 KB** | 23.60 KB | 40.76 KB | - | 1 | ok (5 budgets) |
+| check | `video-fps-probe/lazy` + `video-fps-probe/check` | format: 'es' | **4.45 KB** | 23.60 KB | 40.77 KB | - | 1 | ok (5 budgets) |
 | preset | `video-fps-probe/lazy` + `video-fps-probe/check` + `video-fps-probe/presets` (klingO1ReferenceVideo) | format: 'es' | **4.80 KB** | 23.60 KB | 40.76 KB | - | 1 | ok (6 budgets) |
 | standalone worker file | `video-fps-probe/standalone/own.worker.js` | - | - | 35.95 KB | 35.95 KB | - | 1 file, no imports | ok |
 

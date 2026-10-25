@@ -86,6 +86,7 @@ const POLICIES: readonly RatePolicy[] = ['allow', 'warn', 'reject'];
 const SOURCES: readonly FpsSource[] = ['avg', 'ffprobe', 'nominal', 'dominant'];
 const AUDIO_ENGINES: readonly string[] = ['own', 'mp4box', 'mediabunny'];
 const RANGE = ['min', 'max'];
+const FILE_RULES: readonly string[] = ['fileSize', 'containers', 'audio'];
 const GROUP_KEYS: Record<(typeof GROUPS)[number], readonly string[]> = {
   fps: [...RANGE, 'exact', 'oneOf', 'source'],
   duration: RANGE,
@@ -252,7 +253,7 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
     violations.push({ rule, severity: s, expected, actual, message: `${rule}: ${message}` });
   const unknown = (rule: string, missing: string): unknown =>
     violations.some((v) => v.rule === rule) ||
-    add(rule, 'unknown', null, null, `unknown, ${t || rule === 'fileSize' || rule === 'containers' ? `no ${missing}${failure ? `; ${failure}` : ''}` : found}`);
+    add(rule, 'unknown', null, null, `unknown, ${t || FILE_RULES.includes(rule) ? `no ${missing}${failure ? `; ${failure}` : ''}` : found}`);
 
   const limits = (
     group: string,
@@ -323,7 +324,7 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
     const engine: unknown = result?.engine;
     const counts = AUDIO_ENGINES.includes(engine as string);
     const n = result?.audioTrackCount;
-    const audio = t && counts && Number.isSafeInteger(n) && n! >= 0 ? n! > 0 : null;
+    const audio = !failure && counts && Number.isSafeInteger(n) && n! >= 0 ? n! > 0 : null;
     const required = rules.audio === 'required';
     if (audio === null) unknown('audio', `audio track count${!counts && typeof engine === 'string' ? ` (the ${engine} engine reports none)` : ''}`);
     else if (audio !== required) add('audio', severity, rules.audio, audio, `${rules.audio}, the file has ${required ? 'no' : 'an'} audio track`);
