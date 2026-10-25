@@ -9,6 +9,9 @@ import { parseArgs } from 'node:util';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SOURCES = join(REPO_ROOT, 'tests', 'consumers', 'fixtures');
 const INSTALLED = ['vite', 'mp4box', 'mediabunny', 'react', 'react-dom'];
+const REACT_18 = '18.3.1';
+const SHARED = ['vite.base.ts', 'react-app.ts'];
+const DEV_DEPENDENCIES = JSON.parse(readFileSync(join(REPO_ROOT, 'package.json'), 'utf8')).devDependencies;
 const NPM_ENV = { ...process.env, npm_config_update_notifier: 'false' };
 
 const ES = "format: 'es'";
@@ -56,6 +59,8 @@ export const FIXTURES = [
     singleFileWorkers: true,
     mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/'],
   },
+  { name: 'react', imports: ['./lazy', './react'], note: `React ${DEV_DEPENDENCIES.react}`, worker: ES, engines: ['own'], workers: ['own.worker'], mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/', 'video-fps-probe/dist/engines/'] },
+  { name: 'react18', imports: ['./lazy', './react'], note: `React ${REACT_18}`, worker: ES, engines: ['own'], workers: ['own.worker'], mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/', 'video-fps-probe/dist/engines/'] },
 ];
 
 export function consumersDir(arg) {
@@ -94,15 +99,19 @@ export function setup(dir) {
     if (userconfig) writeFileSync(join(userconfig, '.npmrc'), '');
     const mode = userconfig ? `--offline --userconfig "${join(userconfig, '.npmrc')}"` : '--prefer-offline';
     execSync(`npm install ${mode} --no-audit --no-fund --no-package-lock`, { cwd: dir, env: NPM_ENV, stdio: 'inherit' });
+    const react18 = join(dir, 'react18');
+    mkdirSync(react18, { recursive: true });
+    writeFileSync(join(react18, 'package.json'), `${JSON.stringify({ name: 'video-fps-probe-consumers-react18', private: true, dependencies: { react: REACT_18, 'react-dom': REACT_18 } }, null, 2)}\n`);
+    execSync(`npm install ${mode} --no-audit --no-fund --no-package-lock`, { cwd: react18, env: NPM_ENV, stdio: 'inherit' });
   } finally {
     if (userconfig) rmSync(userconfig, { recursive: true, force: true });
   }
-  console.log(`installed ${filename}, ${INSTALLED.map((n) => `${n}@${dependencies[n]}`).join(', ')} into ${dir}${offline ? ' from the npm cache only' : ''}`);
+  console.log(`installed ${filename}, ${INSTALLED.map((n) => `${n}@${dependencies[n]}`).join(', ')} into ${dir}, and react@${REACT_18} with react-dom@${REACT_18} into ${join(dir, 'react18')}${offline ? ' from the npm cache only' : ''}`);
 }
 
 export function copyFixtures(dir, names = FIXTURES.map((f) => f.name)) {
   mkdirSync(join(dir, 'fixtures'), { recursive: true });
-  cpSync(join(SOURCES, 'vite.base.ts'), join(dir, 'fixtures', 'vite.base.ts'));
+  for (const file of SHARED) cpSync(join(SOURCES, file), join(dir, 'fixtures', file));
   for (const name of names) {
     const root = fixtureRoot(dir, name);
     rmSync(root, { recursive: true, force: true });
@@ -171,7 +180,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   else if (command === 'serve') await serve(dir, values.port ? Number(values.port) : CONSUMERS_PORT);
   else {
     console.error('Usage: node scripts/consumers.mjs setup|build|serve [--dir <consumers dir>] [--only <fixture,...>] [--port <n>]');
-    console.error('CONSUMERS_OFFLINE=1 isolates only the npm install step of setup: it installs from the npm cache only (npm install --offline) with an empty npmrc as --userconfig.');
+    console.error('CONSUMERS_OFFLINE=1 isolates only the npm install steps of setup (the tarball with Vite and the peers, and React 18 for the react18 fixture): they install from the npm cache only (npm install --offline) with an empty npmrc as --userconfig.');
     console.error("Not isolated: npm run build:lib, the npm pack --dry-run of check-dist and npm pack run with your npm config, any token included. They fetch no packages and the script runs them with npm_config_update_notifier=false, so npm's update check does not contact the registry. An outer npm run consumers:setup is not covered: set update-notifier=false for it.");
     process.exitCode = 2;
   }

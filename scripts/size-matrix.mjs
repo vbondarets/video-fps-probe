@@ -9,6 +9,7 @@ import { discover, measure, scanReferences } from './size-report.mjs';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const KB = 1000;
 const PACKAGE_SOURCE = 'node_modules/video-fps-probe/';
+const REACT_SOURCE = `${PACKAGE_SOURCE}dist/react/`;
 
 const RESET = 'The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.';
 const PROMISE = 'User-facing promise of the package, accepted by the owner on 2026-10-23 when the demo budget moved to 101.5 KB: the default configuration adds at most 1 KB to the critical path and the first MP4 loads at most 24 KB lazily.';
@@ -98,12 +99,30 @@ export const BUDGETS = {
     { key: 'worker:own.worker', limit: 36 * KB, why: `With worker.format iife and codeSplitting false the own worker is one file: both parsers, the statistics and the rate profile core are inlined. Design estimate 35.0 KB; measured 32.11 KB. ${RESET} Raised from 35.5 KB to 36 KB in 0.2.0, measured 35.65 KB, as in the zero-config configuration.` },
     { key: 'lazyTotal', limit: 79.5 * KB, why: `As in the zero-config configuration. Measured 70.75 KB. ${RESET} Raised from 78 KB to 79 KB in 0.2.0, measured 78.66 KB, as in the zero-config configuration. Raised again to 79.5 KB, measured 79.06 KB, as in the zero-config configuration.` },
   ],
+  react: [
+    { key: 'trigger', limit: 2 * KB, why: `The package code in the entry chunk of a React host that imports video-fps-probe/react next to video-fps-probe/lazy: the lazyProbe stub, ProbeError and the React entry. React and ReactDOM are host code and are not counted. Measured 1.63 KB. ${RESET}` },
+    { key: 'react', limit: 1.5 * KB, why: `The part of the critical path the React entry adds: VideoFpsProvider, useVideoFps and the framework-free store that caches by Blob, then by engine and options, and aborts on unmount. Design estimate 1.5 KB; measured 1.17 KB. ${RESET}` },
+    { key: 'client', limit: 3 * KB, why: 'As in the default configuration: the React entry adds nothing to the probe client. Measured 2.90 KB.' },
+    { key: 'worker:own.worker', limit: 4.5 * KB, why: 'As in the default configuration. Measured 4.18 KB.' },
+    { key: 'summary', limit: 0.5 * KB, why: `The summarize module, which the store imports with import() in parallel with the first analysis, so it stays off the critical path. Measured 0.43 KB. ${RESET}` },
+    { key: 'firstMp4', limit: 24 * KB, why: 'The first MP4 as in the default configuration: the probe client, the own worker entry, the statistics chunk and the ISO BMFF parser. Measured 23.60 KB.' },
+    { key: 'firstMp4Summary', limit: 24.5 * KB, why: 'What the first MP4 of a React host loads lazily: the first MP4 of the default configuration plus the summary module of the store. The 24 KB promise of the default configuration plus the 0.5 KB summary budget. Measured 24.03 KB.' },
+    { key: 'allOwn', limit: 41 * KB, why: 'As in the default configuration. Measured 40.57 KB.' },
+    { key: 'lazyTotal', limit: 82 * KB, why: 'As in the default configuration plus the summary module. Measured 81.32 KB.' },
+  ],
+  react18: [
+    { key: 'trigger', limit: 2 * KB, why: 'As in the react configuration, built with React 18.3.1 and ReactDOM 18.3.1. Measured 1.63 KB.' },
+    { key: 'react', limit: 1.5 * KB, why: 'As in the react configuration: the React entry is the same code for React 18 and 19. Measured 1.17 KB.' },
+    { key: 'firstMp4Summary', limit: 24.5 * KB, why: 'As in the react configuration. Measured 24.03 KB.' },
+    { key: 'lazyTotal', limit: 82 * KB, why: 'As in the react configuration. Measured 81.32 KB.' },
+  ],
 };
 
 export const STANDALONE_BUDGET = { limit: 36 * KB, why: `dist/standalone/own.worker.js: the own worker as one minified IIFE file with no imports, built by rolldown. Design estimate 35.0 KB; measured 32.04 KB. ${RESET} Raised from 35.5 KB to 36 KB in 0.2.0, measured 35.58 KB, when the ffprobe frame rate estimate, which the file inlines, began to read the H.264 slice headers that decide the decoder delay (0.64 KB gzip).` };
 
 const LABELS = {
   trigger: 'critical path (package code in the entry chunk)',
+  react: 'React entry (the provider and hooks in the entry chunk, React not counted)',
   entry: 'entry chunk with the preload helper',
   client: 'probe client (lazy)',
   isobmff: 'ISO BMFF parser (in the own worker)',
@@ -118,6 +137,8 @@ const LABELS = {
   engineShared: 'shared engine chunk',
   pageEngineShared: 'shared engine chunk (main thread, inline mode)',
   rvfc: 'rVFC engine (main thread)',
+  summary: 'summary module of the React store (lazy, main thread)',
+  firstMp4Summary: 'first MP4 analysis with the React summary, lazy total',
 };
 
 const CLASSES = [
@@ -130,6 +151,7 @@ const CLASSES = [
   ['segments', /video-fps-probe\/dist\/core\/segments\.js$/],
   ['rfps', /video-fps-probe\/dist\/core\/rfps\.js$/],
   ['engineShared', /video-fps-probe\/dist\/engines\/(?:common|counting)\.js$/],
+  ['summary', /video-fps-probe\/dist\/api\/summary\.js$/],
 ];
 
 const USAGE = `Usage: node scripts/size-matrix.mjs [--dir <consumers dir>] [--check] [--out <dir>]
@@ -239,10 +261,13 @@ export function measureFixture(dir, fixture) {
 
   const entry = found.main ? closureOf(found.main, fileSet, texts, { dynamic: false }) : new Set();
   let trigger = 0;
+  let react = 0;
   for (const f of entry) {
     const map = maps.get(f);
-    if (map) trigger += gzipOf(Buffer.from(codeFromSources(texts.get(f), map, (s) => s.includes(PACKAGE_SOURCE))));
-    else problems.push(`${f}: no sourcemap`);
+    if (map) {
+      trigger += gzipOf(Buffer.from(codeFromSources(texts.get(f), map, (s) => s.includes(PACKAGE_SOURCE))));
+      if (fixture.imports.includes('./react')) react += gzipOf(Buffer.from(codeFromSources(texts.get(f), map, (s) => s.includes(REACT_SOURCE))));
+    } else problems.push(`${f}: no sourcemap`);
   }
   const without = (set) => new Set([...set].filter((f) => !entry.has(f)));
   const clientFiles = new Set();
@@ -291,6 +316,7 @@ export function measureFixture(dir, fixture) {
   const metrics = {
     entry: sum(entry),
     trigger,
+    react: fixture.imports.includes('./react') ? react : null,
     client: clientFiles.size > 0 ? sum(without(clientFiles)) : null,
     isobmff: ownWorker?.byClass.isobmff ? sum(ownWorker.byClass.isobmff) : null,
     matroska: ownWorker?.byClass.matroska ? sum(ownWorker.byClass.matroska) : null,
@@ -303,9 +329,14 @@ export function measureFixture(dir, fixture) {
     engineShared: engineShared > 0 ? engineShared : null,
     rvfc: rvfcFiles.length > 0 ? sum(rvfcFiles) : null,
     pageEngineShared: pageEngineShared.length > 0 ? sum(pageEngineShared) : null,
+    summary: null,
+    firstMp4Summary: null,
     lazyTotal: sum(without(new Set(files))),
   };
   if (fixture.singleFileWorkers && ownWorker) metrics.firstMp4 = metrics.allOwn = sum(without(new Set([...clientFiles, ownWorker.file])));
+  const summaryFiles = [...mainThread].filter((f) => classOf(f) === 'summary');
+  if (summaryFiles.length > 0) metrics.summary = sum(without(new Set(summaryFiles.flatMap((f) => [...closureOf(f, fileSet, texts, { dynamic: false })]))));
+  if (metrics.summary !== null && metrics.firstMp4 !== null) metrics.firstMp4Summary = metrics.firstMp4 + metrics.summary;
 
   const leaks = [];
   for (const f of files) {
@@ -415,6 +446,13 @@ export function renderMarkdown(matrix) {
     `The host's worker option decides the first MP4: ${cell(matrixMetric(matrix, 'default', 'firstMp4'))} with \`worker: { format: 'es' }\` (default), ${cell(matrixMetric(matrix, 'zero-config', 'firstMp4'))} with no worker option (zero-config), because Vite's default worker format is 'iife'.${same}`,
   );
   out.push('');
+  const react = matrix.fixtures.filter((f) => f.metrics.react !== null && f.metrics.react !== undefined);
+  if (react.length > 0) {
+    out.push(
+      `In ${react.map((f) => `${f.name} (${f.note})`).join(' and ')} the entry chunk also holds React and ReactDOM, which a React host ships anyway, so its column is not a package cost. The critical path counts the package code only, and the React entry is ${new Set(react.map((f) => cell(f.metrics.react))).size === 1 ? `${cell(react[0].metrics.react)} of it in each` : react.map((f) => `${cell(f.metrics.react)} of it in ${f.name}`).join(' and ')}. The first analysis also fetches the ${cell(react[0].metrics.summary)} summary module of the store, in parallel with the probe client.`,
+    );
+    out.push('');
+  }
   out.push('## Budgets (gzip)');
   out.push('');
   out.push('| Configuration | Budget | Limit | Actual | Headroom | Status |');

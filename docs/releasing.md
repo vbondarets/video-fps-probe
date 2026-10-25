@@ -31,6 +31,6 @@ gh release create v0.2.0 --title 0.2.0 --notes "$(node scripts/release-prep.mjs 
    - stages exactly the files that changed, and fails when the run changed any other file.
 4. **npm** commits the bump with the staged files and tags it.
 
-The consumer install needs the pinned Vite, peers and React in the npm cache, which `npm ci` leaves there. `CONSUMERS_DIR` places the consumer fixtures on a disk with room (default: the OS temp directory).
+The consumer install needs the pinned Vite, peers and React in the npm cache, which `npm ci` leaves there. React 18.3.1 and ReactDOM 18.3.1 of the `react18` fixture are not dev dependencies, so `npm ci` does not cache them: install them once into a scratch directory with an empty user config (`npm install react@18.3.1 react-dom@18.3.1 --userconfig <an empty file>`), which caches them without sending your registry credentials. `CONSUMERS_DIR` places the consumer fixtures on a disk with room (default: the OS temp directory).
 
 When a step fails, npm stops before the commit and the tag. The bump and the regenerated files stay in the working tree: fix the cause, discard them (`git restore --staged --worktree -- .`) and run the command again.
