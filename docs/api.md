@@ -65,7 +65,7 @@ interface CustomWorker<W extends WorkerEngineId> {
 }
 ```
 
-`byContainer` runs own on the worker of the file's container family, picked by the first 4 bytes of the file like the own workers of the default flavor ([routing](#workers-queues-and-timeouts)). A family without a worker, and every other engine, stays on `create`. It applies only when `engines` lists own, and it is ignored without a `Worker` global, where own runs in the calling thread. The [split standalone files](#standalone-worker) are made for it. `lazyProbeClient` loads the routing by container family as a chunk of its own, about 0.4 KB gzip, right after the probe client, and only with `byContainer`.
+`byContainer` runs own on the worker of the file's container family, picked by the first 4 bytes of the file like the own workers of the default flavor ([routing](#workers-queues-and-timeouts)). A family without a worker, and every other engine, stays on `create`. It applies only when `engines` lists own, and it is ignored without a `Worker` global, where own runs in the calling thread. The [split standalone files](#standalone-worker) are made for it. `lazyProbeClient` loads the routing by container family as a chunk of its own, about 0.4 KB gzip, right after the probe client, and only with `byContainer`; `createProbeClient` loads the same chunk on the first own analysis, and only with `byContainer`.
 
 Own must be routable: list it on the custom worker, pass `worker: 'inline'`, or register a prebuilt `mp4box()` or `mediabunny()` descriptor (each also serves own). Otherwise `createProbeClient` throws `ProbeError('engine-not-registered')`.
 

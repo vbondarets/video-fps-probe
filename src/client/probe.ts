@@ -4,7 +4,7 @@ import type { ContainerFamily, EngineDescriptor, EngineModule, WorkerEngineId } 
 import type { AnalyzeRequest, WireOptions } from '../worker/protocol.ts';
 import type { InlineReply } from './inline.ts';
 import { WorkerPool, workerFailed, type RunOptions } from './pool.ts';
-import type { SplitRoute } from './route.ts';
+import type { SplitRoute } from './split.ts';
 import type { BaseOptions, CallOptions, CustomWorker, Probe, ProbeResult } from './types.ts';
 
 export interface CoreOptions extends BaseOptions<EngineId> {

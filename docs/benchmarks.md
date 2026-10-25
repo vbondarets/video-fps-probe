@@ -9,7 +9,7 @@ The measurements behind the [README](../README.md): accuracy against ffprobe, sp
 - **Accuracy.** The own parsers were checked against ffprobe 8.1.1 on 131 fixtures, 119 made with ffmpeg and 12 MediaRecorder recordings from headless Chromium (126 committed, 5 large local files; phone, camera, screen recorder, Firefox and Safari output is not in the corpus, see Limitations): 2087 field checks, 2003 exact, 13 within tolerance (9 of them a definition difference by design: the measured average of a Matroska file that stores no duration for its last frame, which avgFps gives the median interval and ffprobe its own estimate), 0 known deviations with a recorded reason, 0 mismatches, 71 not applicable.
 - **Reads.** Median 1 read per committed fixture, at most 1. The 3 h, 648000-frame MP4 (12.42 MiB) takes 2 reads and 2.56 MiB (20.6% of the file).
 - **Speed.** In Chrome headless shell 156, warm: median 0.80 ms per file in the worker and 1.40 ms from file pick to rendered result; the 3 h file takes 3.50 ms. A 604.42 MB 1080p MP4 with the moov at the end takes 2 reads (75.0 KiB) and 1.40 ms; the same stream in Matroska takes 110 ms in auto mode (126 reads; a probe, so no frame count until "Scan all frames"). Measured on an earlier build, so these figures are not current ([Speed](#speed)).
-- **Size.** A default install (`video-fps-probe/lazy`) adds 0.66 KB gzip to a host app's critical path. Its first MP4 file loads 22.73 KB lazily when the host's Vite config sets `worker: { format: 'es' }`, and 24.48 KB with Vite's default worker format, 'iife', which builds each of the two own workers as one file ([Package size](#package-size)). The demo page plus its first MP4 result loads 100.45 KB gzip (page, probe client, worker entry, shared statistics chunk, ISO BMFF parser); the first Matroska result 99.91 KB, or 103.49 KB for a file without DefaultDuration, such as a MediaRecorder recording, which also loads the ffprobe frame rate estimate.
+- **Size.** A default install (`video-fps-probe/lazy`) adds 0.66 KB gzip to a host app's critical path. Its first MP4 file loads 22.73 KB lazily when the host's Vite config sets `worker: { format: 'es' }`, and 24.47 KB with Vite's default worker format, 'iife', which builds each of the two own workers as one file ([Package size](#package-size)). The demo page plus its first MP4 result loads 100.34 KB gzip (page, probe client, worker entry, shared statistics chunk, ISO BMFF parser); the first Matroska result 99.79 KB, or 103.38 KB for a file without DefaultDuration, such as a MediaRecorder recording, which also loads the ffprobe frame rate estimate.
 - **Embedding.** In a host app with a 1.95 MB gzip initial load, prewarming the worker when the upload dialog opens makes the first result on fast 4G take 4.10 ms instead of 347 ms ([Embedding in an existing app](#embedding-in-an-existing-app)). Measured on an earlier build whose worker entry and parser chunks differ from the current ones, so these figures are not current.
 - **Same result in Node and Chrome.** 116 of 116 files give identical results field by field (timing excluded).
 - **Machine.** Windows 10 Pro, Intel Core i7-10700KF (16 threads), 32 GiB, Node v24.20.0, Chrome headless shell 156; ffprobe 8.1.1-full_build-www.gyan.dev.
@@ -372,9 +372,9 @@ Per-file timings for every fixture, the library engines and the cold start are i
 
 <!-- tables:package:start -->
 
-**A default install adds 0.66 KB gzip to the host app's critical path:** the package code in the entry chunk of a Vite 8.3.5 app that imports `video-fps-probe/lazy` (with Vite's preload helper, which any app with a dynamic import already has, that entry chunk is 1.39 KB). With `worker: { format: 'es' }` in the host's Vite config the first MP4 or MOV file then loads 22.73 KB lazily: the probe client and the ISO BMFF worker of own, which holds its parser and the statistics. The first MKV or WebM file without DefaultDuration loads 25.63 KB: the probe client, the Matroska worker and the ffprobe frame rate estimate. Every own path together is 48.70 KB, because each worker holds its own copy of the runtime and the statistics. Without a worker option Vite builds workers as 'iife', which cannot split, so each own worker is one file, and the first MP4 loads 24.48 KB and the first MKV 27.17 KB (zero-config). mp4box.js and mediabunny are only in the build when their entries are imported. Everything the default build emits outside the entry chunk is 89.22 KB, because it also holds main-thread copies of the parsers, the statistics and the worker runtime. The default flavor keeps them as an in-thread own for environments without a `Worker` global (SSR, Node) and for `worker: 'inline'`; the client flavor keeps them for `worker: 'inline'` and for environments without a `Worker` global; the root `analyze()` always runs in the calling thread on them. A browser with a `Worker` global never fetches them otherwise.
+**A default install adds 0.66 KB gzip to the host app's critical path:** the package code in the entry chunk of a Vite 8.3.5 app that imports `video-fps-probe/lazy` (with Vite's preload helper, which any app with a dynamic import already has, that entry chunk is 1.39 KB). With `worker: { format: 'es' }` in the host's Vite config the first MP4 or MOV file then loads 22.73 KB lazily: the probe client and the ISO BMFF worker of own, which holds its parser and the statistics. The first MKV or WebM file without DefaultDuration loads 25.63 KB: the probe client, the Matroska worker and the ffprobe frame rate estimate. Every own path together is 48.69 KB, because each worker holds its own copy of the runtime and the statistics. Without a worker option Vite builds workers as 'iife', which cannot split, so each own worker is one file, and the first MP4 loads 24.47 KB and the first MKV 27.17 KB (zero-config). mp4box.js and mediabunny are only in the build when their entries are imported. Everything the default build emits outside the entry chunk is 89.22 KB, because it also holds main-thread copies of the parsers, the statistics and the worker runtime. The default flavor keeps them as an in-thread own for environments without a `Worker` global (SSR, Node) and for `worker: 'inline'`; the client flavor keeps them for `worker: 'inline'` and for environments without a `Worker` global; the root `analyze()` always runs in the calling thread on them. A browser with a `Worker` global never fetches them otherwise.
 
-Recommended: one line in the host's Vite config, so the own workers keep the rate profile core and the ffprobe frame rate estimate as lazy chunks and the first MP4 loads 22.73 KB instead of 24.48 KB. Module workers run on the whole package floor (Chrome and Edge 94, Firefox 114, Safari 15.4).
+Recommended: one line in the host's Vite config, so the own workers keep the rate profile core and the ffprobe frame rate estimate as lazy chunks and the first MP4 loads 22.73 KB instead of 24.47 KB. Module workers run on the whole package floor (Chrome and Edge 94, Firefox 114, Safari 15.4).
 
 ```js
 import { defineConfig } from 'vite';
@@ -384,19 +384,20 @@ export default defineConfig({ worker: { format: 'es' } });
 
 | Configuration | Imports | Vite worker option | Critical path | First MP4, lazy | First MKV, lazy | All own paths, lazy | Engine chunks, lazy | Worker files | Budgets |
 |---|---|---|---:|---:|---:|---:|---:|---:|---|
-| **default** | `video-fps-probe/lazy` | format: 'es' (recommended) | **0.66 KB** | 22.73 KB | 25.63 KB | 48.70 KB | - | 2 | ok (13 budgets) |
-| zero-config | `video-fps-probe/lazy` | none, so Vite's default format: 'iife' | **0.67 KB** | 24.48 KB | 27.17 KB | 48.37 KB | - | 2 | ok (8 budgets) |
-| custom | `video-fps-probe/client/lazy` + `video-fps-probe/worker-runtime` (host worker serving own) | format: 'es' | **0.68 KB** | 23.63 KB | 26.75 KB | 40.80 KB | - | 1 | ok (6 budgets) |
+| **default** | `video-fps-probe/lazy` | format: 'es' (recommended) | **0.66 KB** | 22.73 KB | 25.63 KB | 48.69 KB | - | 2 | ok (13 budgets) |
+| zero-config | `video-fps-probe/lazy` | none, so Vite's default format: 'iife' | **0.67 KB** | 24.47 KB | 27.17 KB | 48.36 KB | - | 2 | ok (8 budgets) |
+| custom | `video-fps-probe/client/lazy` + `video-fps-probe/worker-runtime` (host worker serving own) | format: 'es' | **0.67 KB** | 23.63 KB | 26.74 KB | 40.79 KB | - | 1 | ok (6 budgets) |
+| custom-eager | `video-fps-probe/client` + `video-fps-probe/worker-runtime` (host worker serving own, createProbeClient in the entry chunk) | format: 'es' | **2.97 KB** | 20.70 KB | 23.82 KB | 37.87 KB | - | 1 | ok (5 budgets) |
 | mp4box | `video-fps-probe/lazy` + `video-fps-probe/mp4box` | format: 'es' | **0.89 KB** | 22.76 KB | 25.66 KB | 48.73 KB | mp4box 44.86 KB | 3 | ok (5 budgets) |
-| mediabunny | `video-fps-probe/lazy` + `video-fps-probe/mediabunny` | format: 'es' | **0.90 KB** | 22.76 KB | 25.66 KB | 48.73 KB | mediabunny 53.97 KB | 3 | ok (5 budgets) |
-| rvfc | `video-fps-probe/lazy` + `video-fps-probe/rvfc` | format: 'es' | **0.76 KB** | 22.75 KB | 25.65 KB | 48.71 KB | rVFC 2.19 KB | 2 | ok (4 budgets) |
-| all | `video-fps-probe/lazy` + `video-fps-probe/mp4box` + `video-fps-probe/mediabunny` + `video-fps-probe/rvfc` | format: 'es' | **1.01 KB** | 22.77 KB | 25.68 KB | 48.74 KB | mp4box 44.86 KB, mediabunny 53.97 KB, rVFC 2.19 KB | 4 | ok (18 budgets) |
+| mediabunny | `video-fps-probe/lazy` + `video-fps-probe/mediabunny` | format: 'es' | **0.89 KB** | 22.76 KB | 25.66 KB | 48.73 KB | mediabunny 53.97 KB | 3 | ok (5 budgets) |
+| rvfc | `video-fps-probe/lazy` + `video-fps-probe/rvfc` | format: 'es' | **0.77 KB** | 22.74 KB | 25.64 KB | 48.71 KB | rVFC 2.19 KB | 2 | ok (4 budgets) |
+| all | `video-fps-probe/lazy` + `video-fps-probe/mp4box` + `video-fps-probe/mediabunny` + `video-fps-probe/rvfc` | format: 'es' | **1.01 KB** | 22.77 KB | 25.67 KB | 48.74 KB | mp4box 44.86 KB, mediabunny 53.97 KB, rVFC 2.19 KB | 4 | ok (18 budgets) |
 | standalone-url | `video-fps-probe/client/lazy` + `video-fps-probe/standalone/own.worker.js?url` (classic worker from the standalone file) | none needed: the file is copied as an asset | **0.71 KB** | 38.88 KB | 38.88 KB | 38.88 KB | - | 1 | ok (6 budgets) |
-| standalone-split-url | `video-fps-probe/client/lazy` + `video-fps-probe/standalone/own-isobmff.worker.js?url` + `video-fps-probe/standalone/own-matroska.worker.js?url` (classic workers from the split standalone files, with byContainer) | none needed: the files are copied as assets | **0.74 KB** | 24.50 KB | 27.16 KB | 48.31 KB | - | 2 | ok (9 budgets) |
-| iife-nosplit | `video-fps-probe/lazy` | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.67 KB** | 24.48 KB | 27.17 KB | 48.37 KB | - | 2 | ok (8 budgets) |
+| standalone-split-url | `video-fps-probe/client/lazy` + `video-fps-probe/standalone/own-isobmff.worker.js?url` + `video-fps-probe/standalone/own-matroska.worker.js?url` (classic workers from the split standalone files, with byContainer) | none needed: the files are copied as assets | **0.74 KB** | 24.50 KB | 27.16 KB | 48.30 KB | - | 2 | ok (9 budgets) |
+| iife-nosplit | `video-fps-probe/lazy` | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.67 KB** | 24.47 KB | 27.17 KB | 48.36 KB | - | 2 | ok (8 budgets) |
 | react | `video-fps-probe/lazy` + `video-fps-probe/react` (React 19.3.1) | format: 'es' | **1.64 KB** | 22.73 KB | 25.63 KB | 48.70 KB | - | 2 | ok (10 budgets) |
-| react18 | `video-fps-probe/lazy` + `video-fps-probe/react` (React 18.3.1) | format: 'es' | **1.64 KB** | 22.73 KB | 25.63 KB | 48.70 KB | - | 2 | ok (4 budgets) |
-| check | `video-fps-probe/lazy` + `video-fps-probe/check` | format: 'es' | **4.45 KB** | 22.73 KB | 25.64 KB | 48.70 KB | - | 2 | ok (5 budgets) |
+| react18 | `video-fps-probe/lazy` + `video-fps-probe/react` (React 18.3.1) | format: 'es' | **1.64 KB** | 22.73 KB | 25.63 KB | 48.69 KB | - | 2 | ok (4 budgets) |
+| check | `video-fps-probe/lazy` + `video-fps-probe/check` | format: 'es' | **4.45 KB** | 22.73 KB | 25.63 KB | 48.69 KB | - | 2 | ok (5 budgets) |
 | preset | `video-fps-probe/lazy` + `video-fps-probe/check` + `video-fps-probe/presets` (klingO1ReferenceVideo) | format: 'es' | **4.80 KB** | 22.73 KB | 25.63 KB | 48.70 KB | - | 2 | ok (6 budgets) |
 | standalone worker file | `video-fps-probe/standalone/own.worker.js` | - | - | 35.95 KB | 35.95 KB | 35.95 KB | - | 1 file, no imports | ok |
 | standalone worker file | `video-fps-probe/standalone/own-isobmff.worker.js` | - | - | 21.15 KB | - | 21.15 KB | - | 1 file, no imports | ok |
@@ -414,18 +415,18 @@ The demo in `demo/` is a React app that consumes the package through a custom wo
 
 | Chunk | Loaded | Raw | gzip -9 | brotli q11 | Budget (gzip) | Headroom | Status |
 |---|---|---:|---:|---:|---:|---:|---|
-| main (React, UI, store) | page load | 238.72 KB | **74.44 KB** | 64.46 KB | 77.00 KB | 2.56 KB | ok |
+| main (React, UI, store) | page load | 238.72 KB | **74.44 KB** | 64.38 KB | 77.00 KB | 2.56 KB | ok |
 | CSS | page load | 4.98 KB | **1.81 KB** | 1.53 KB | not budgeted | - | - |
-| probe client (lazy) | first file | 7.80 KB | **3.36 KB** | 3.10 KB | 3.50 KB | 0.14 KB | ok |
-| probe fallback chain | first call with a fallback chain or a skipped engine | 1.01 KB | **0.64 KB** | 0.55 KB | not budgeted | - | - |
-| probe compare (agreement rules) | first probe.compare | 2.60 KB | **1.32 KB** | 1.20 KB | not budgeted | - | - |
+| probe client (lazy) | first file | 7.47 KB | **3.25 KB** | 3.00 KB | 3.50 KB | 0.26 KB | ok |
+| probe fallback chain | first call with a fallback chain or a skipped engine | 1.01 KB | **0.64 KB** | 0.56 KB | not budgeted | - | - |
+| probe compare (agreement rules) | first probe.compare | 2.60 KB | **1.32 KB** | 1.21 KB | not budgeted | - | - |
 | in-thread engine runner | first main-thread engine run (rVFC) | 1.09 KB | **0.64 KB** | 0.55 KB | not budgeted | - | - |
 | shared by the lazy client parts and rVFC (result builders, sniffing): `abort` | with the fallback chain, compare, rVFC or the own engine in this thread | 0.10 KB | **0.11 KB** | 0.09 KB | not budgeted | - | - |
 | shared by the lazy client parts and rVFC (result builders, sniffing): `result` | with the fallback chain, compare, rVFC or the own engine in this thread | 0.71 KB | **0.38 KB** | 0.33 KB | not budgeted | - | - |
 | shared by the lazy client parts and rVFC (result builders, sniffing): `sniff` | with the fallback chain, compare, rVFC or the own engine in this thread | 2.12 KB | **0.99 KB** | 0.89 KB | not budgeted | - | - |
-| own engine in this thread (runtime and parser copies for worker inline): `isobmff` | only with worker inline or without a Worker global (own engine in this thread) | 30.82 KB | **12.23 KB** | 11.04 KB | not budgeted | - | - |
-| own engine in this thread (runtime and parser copies for worker inline): `matroska` | only with worker inline or without a Worker global (own engine in this thread) | 30.92 KB | **11.93 KB** | 10.86 KB | not budgeted | - | - |
-| own engine in this thread (runtime and parser copies for worker inline): `rfps` | only with worker inline or without a Worker global (own engine in this thread) | 7.31 KB | **3.60 KB** | 3.36 KB | not budgeted | - | - |
+| own engine in this thread (runtime and parser copies for worker inline): `isobmff` | only with worker inline or without a Worker global (own engine in this thread) | 30.82 KB | **12.23 KB** | 11.05 KB | not budgeted | - | - |
+| own engine in this thread (runtime and parser copies for worker inline): `matroska` | only with worker inline or without a Worker global (own engine in this thread) | 30.92 KB | **11.93 KB** | 10.84 KB | not budgeted | - | - |
+| own engine in this thread (runtime and parser copies for worker inline): `rfps` | only with worker inline or without a Worker global (own engine in this thread) | 7.31 KB | **3.60 KB** | 3.35 KB | not budgeted | - | - |
 | own engine in this thread (runtime and parser copies for worker inline): `runtime` | only with worker inline or without a Worker global (own engine in this thread) | 6.14 KB | **2.56 KB** | 2.37 KB | not budgeted | - | - |
 | own engine in this thread (runtime and parser copies for worker inline): `segments` | only with worker inline or without a Worker global (own engine in this thread) | 3.35 KB | **1.84 KB** | 1.71 KB | not budgeted | - | - |
 | own engine in this thread (runtime and parser copies for worker inline): `stats` | only with worker inline or without a Worker global (own engine in this thread) | 10.32 KB | **4.34 KB** | 3.96 KB | not budgeted | - | - |
@@ -438,16 +439,17 @@ The demo in `demo/` is a React app that consumes the package through a custom wo
 | rate profile panel (UI) | first card with a rate profile | 2.17 KB | **0.94 KB** | 0.85 KB | 1.50 KB | 0.56 KB | ok |
 | device info and JSON export | on idle after the first result, or the first export (footer device line, JSON export) | 5.02 KB | **2.29 KB** | 2.02 KB | not budgeted | - | - |
 | sample file loader | click on Try sample files | 0.36 KB | **0.28 KB** | 0.24 KB | not budgeted | - | - |
-| rVFC fallback | click on Run (approximate) | 4.24 KB | **2.19 KB** | 1.98 KB | 2.50 KB | 0.30 KB | ok |
-| Compare panel | first open of a Compare engines panel | 2.92 KB | **1.22 KB** | 1.10 KB | not budgeted | - | - |
+| rVFC fallback | click on Run (approximate) | 4.24 KB | **2.20 KB** | 1.99 KB | 2.50 KB | 0.30 KB | ok |
+| Compare panel | first open of a Compare engines panel | 2.92 KB | **1.22 KB** | 1.11 KB | not budgeted | - | - |
 | mp4box.js engine | Compare engines on an MP4 or MOV card | 187.93 KB | **43.73 KB** | 37.41 KB | not budgeted | - | - |
 | mediabunny engine | Compare engines | 201.10 KB | **52.88 KB** | 44.48 KB | not budgeted | - | - |
 | shared by mp4box and mediabunny | with mp4box or mediabunny | 3.01 KB | **1.50 KB** | 1.35 KB | not budgeted | - | - |
-| initial: main + CSS + worker entry |  | 254.12 KB | **80.58 KB** | 69.94 KB | 83.00 KB | 2.42 KB | ok |
-| first MP4 analysis: initial + probe client + statistics + ISO BMFF parser |  | 302.87 KB | **100.45 KB** | 87.98 KB | 103.00 KB | 2.55 KB | ok |
-| first VFR MP4 analysis: first MP4 + rate profile core |  | 306.22 KB | **102.30 KB** | 89.70 KB | 105.00 KB | 2.70 KB | ok |
-| first Matroska analysis: initial + probe client + statistics + Matroska parser |  | 302.55 KB | **99.91 KB** | 87.58 KB | 102.00 KB | 2.09 KB | ok |
-| first Matroska analysis without DefaultDuration: first Matroska + ffprobe frame rate estimate |  | 309.87 KB | **103.49 KB** | 90.92 KB | 105.50 KB | 2.01 KB | ok |
+| other | lazy | 0.56 KB | **0.38 KB** | 0.33 KB | not budgeted | - | - |
+| initial: main + CSS + worker entry |  | 254.12 KB | **80.58 KB** | 69.86 KB | 83.00 KB | 2.42 KB | ok |
+| first MP4 analysis: initial + probe client + statistics + ISO BMFF parser |  | 302.55 KB | **100.34 KB** | 87.80 KB | 103.00 KB | 2.66 KB | ok |
+| first VFR MP4 analysis: first MP4 + rate profile core |  | 305.90 KB | **102.18 KB** | 89.51 KB | 105.00 KB | 2.82 KB | ok |
+| first Matroska analysis: initial + probe client + statistics + Matroska parser |  | 302.23 KB | **99.79 KB** | 87.39 KB | 102.00 KB | 2.21 KB | ok |
+| first Matroska analysis without DefaultDuration: first Matroska + ffprobe frame rate estimate |  | 309.55 KB | **103.38 KB** | 90.74 KB | 105.50 KB | 2.12 KB | ok |
 
 <!-- tables:bundle:end -->
 
@@ -507,7 +509,7 @@ Node: `npm run compare` (`analyze()` on `fs.openAsBlob`), median of 3 runs per f
 | Time per file, Chrome headless shell 156 (median; geometric mean vs own) | 0.80 ms | 1.30 ms (1.46x own) | 0.90 ms (1.26x own) | 2.01 s (max 8.88 s) |
 | 3 h CFR MP4, 12.42 MiB | 2 reads, 2.56 MiB; Node 3.50 ms, Chrome 3.50 ms | 3 reads, 2.56 MiB; Node 164 ms, Chrome 151 ms | 3 reads, 2.73 MiB; Node 680 ms, Chrome 422 ms | not measured |
 | 1 h VFR MP4, 3.76 MiB | 2 reads, 1.53 MiB; Node 59.0 ms, Chrome 62.4 ms | 3 reads, 1.53 MiB; Node 71.0 ms, Chrome 51.1 ms | 3 reads, 1.70 MiB; Node 212 ms, Chrome 117 ms | not measured |
-| gzip, loaded on demand | probe client 3.36 KB + worker entry 4.33 KB + statistics 4.30 KB + ISO BMFF 12.22 KB or Matroska 11.67 KB | 43.73 KB + 1.50 KB shared | 52.88 KB + 1.50 KB shared | 2.19 KB |
+| gzip, loaded on demand | probe client 3.25 KB + worker entry 4.33 KB + statistics 4.30 KB + ISO BMFF 12.22 KB or Matroska 11.67 KB | 43.73 KB + 1.50 KB shared | 52.88 KB + 1.50 KB shared | 2.20 KB |
 | Main risk | own code to maintain; cases outside the corpus are flagged, not verified | last sample duration overridden; must be fed box by box; no Matroska | adapter: packet-rate average, edit-trimmed packets counted as presented; whole-cluster Matroska reads | needs a visible tab and a playable codec; wrong on VFR; seconds per file |
 
 <!-- tables:approaches:end -->
@@ -630,7 +632,7 @@ The thresholds are constants in `src/core/segments.ts` and `src/core/stats.ts`. 
 
 <!-- tables:profile:start -->
 
-The profile code is 1.84 KB gzip in the worker and the panel 0.94 KB on the main thread, both lazy. The first VFR MP4 loads 102.30 KB gzip, 1.84 KB more than a CFR one (budget 105.00 KB). Times are the whole analysis, profile included.
+The profile code is 1.84 KB gzip in the worker and the panel 0.94 KB on the main thread, both lazy. The first VFR MP4 loads 102.18 KB gzip, 1.84 KB more than a CFR one (budget 105.00 KB). Times are the whole analysis, profile included.
 
 | File | Rate profile | Frames | Min to max FPS | Node ms | Chrome headless shell 156 ms |
 |---|---|---:|---|---:|---:|

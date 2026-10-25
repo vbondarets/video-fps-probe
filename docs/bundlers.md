@@ -31,12 +31,12 @@ Measured with Vite 8.3.5 on production builds installed from the packed tarball 
 
 | Fixture | Imports | Vite worker option | Critical path | First MP4, lazy | First MKV, lazy | All own paths, lazy | Worker files |
 |---|---|---|---:|---:|---:|---:|---|
-| default | `video-fps-probe/lazy` | format: 'es' | **0.66 KB** | 22.73 KB | 25.63 KB | 48.70 KB | own-isobmff.worker (1 lazy chunk), own-matroska.worker (2 lazy chunks) |
-| zero-config | `video-fps-probe/lazy` | none, so Vite's default format: 'iife' | **0.67 KB** | 24.48 KB | 27.17 KB | 48.37 KB | own-isobmff.worker (0 lazy chunks), own-matroska.worker (0 lazy chunks) |
-| iife-nosplit | `video-fps-probe/lazy` | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.67 KB** | 24.48 KB | 27.17 KB | 48.37 KB | own-isobmff.worker (0 lazy chunks), own-matroska.worker (0 lazy chunks) |
-| custom | `video-fps-probe/client/lazy` + `video-fps-probe/worker-runtime` | format: 'es' | **0.68 KB** | 23.63 KB | 26.75 KB | 40.80 KB | fps.worker (5 lazy chunks) |
+| default | `video-fps-probe/lazy` | format: 'es' | **0.66 KB** | 22.73 KB | 25.63 KB | 48.69 KB | own-isobmff.worker (1 lazy chunk), own-matroska.worker (2 lazy chunks) |
+| zero-config | `video-fps-probe/lazy` | none, so Vite's default format: 'iife' | **0.67 KB** | 24.47 KB | 27.17 KB | 48.36 KB | own-isobmff.worker (0 lazy chunks), own-matroska.worker (0 lazy chunks) |
+| iife-nosplit | `video-fps-probe/lazy` | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.67 KB** | 24.47 KB | 27.17 KB | 48.36 KB | own-isobmff.worker (0 lazy chunks), own-matroska.worker (0 lazy chunks) |
+| custom | `video-fps-probe/client/lazy` + `video-fps-probe/worker-runtime` | format: 'es' | **0.67 KB** | 23.63 KB | 26.74 KB | 40.79 KB | fps.worker (5 lazy chunks) |
 | standalone-url | `video-fps-probe/client/lazy` + `video-fps-probe/standalone/own.worker.js?url` | none needed: the file is copied as an asset | **0.71 KB** | 38.88 KB | 38.88 KB | 38.88 KB | own.worker (0 lazy chunks) |
-| standalone-split-url | `video-fps-probe/client/lazy` + `video-fps-probe/standalone/own-isobmff.worker.js?url` + `video-fps-probe/standalone/own-matroska.worker.js?url` | none needed: the files are copied as assets | **0.74 KB** | 24.50 KB | 27.16 KB | 48.31 KB | own-isobmff.worker (0 lazy chunks), own-matroska.worker (0 lazy chunks) |
+| standalone-split-url | `video-fps-probe/client/lazy` + `video-fps-probe/standalone/own-isobmff.worker.js?url` + `video-fps-probe/standalone/own-matroska.worker.js?url` | none needed: the files are copied as assets | **0.74 KB** | 24.50 KB | 27.16 KB | 48.30 KB | own-isobmff.worker (0 lazy chunks), own-matroska.worker (0 lazy chunks) |
 
 The default flavor runs own on one worker per container family, picked by the first four bytes of the file. With format 'es' each worker holds its parser and the statistics, and keeps the rate profile core and, for Matroska, the ffprobe frame rate estimate as lazy chunks; with 'iife' each is one file. A custom worker built from `video-fps-probe/worker-runtime` keeps the 0.2.0 layout: a small entry that loads one parser per container. In Vite 8.3.5 the zero-config and iife-nosplit own workers are byte-identical: with format 'iife' Vite already inlines the worker's dynamic imports, so `codeSplitting: false` changes nothing for this package. Everything the default build emits outside the entry chunk is 89.22 KB, because it also holds the main-thread copies of the runtime and parsers ([SSR](#ssr-and-the-lazy-main-thread-chunks)). The full matrix, engines included, is in [benchmarks.md](benchmarks.md#package-size).
 
@@ -64,7 +64,7 @@ export default defineConfig({
 });
 ```
 
-The package itself needs no `optimizeDeps` entry in Vite 8: worker URLs inside pre-bundled dependencies work since Vite 8.0.0 (vitejs/vite#21434).
+The package itself needs no `optimizeDeps` entry in Vite 8: worker URLs inside pre-bundled dependencies work since Vite 8.0.0 (vitejs/vite#21434). One exception: with `createProbeClient` imported statically and a host worker built from `video-fps-probe/worker-runtime`, Vite discovers `video-fps-probe/worker-runtime` when the worker first starts and reloads the page, so add it to `optimizeDeps.include`, as the custom-eager consumer fixture does. With `lazyProbeClient` (the custom fixture) the page does not reload.
 
 ## Vite 5 to 7
 

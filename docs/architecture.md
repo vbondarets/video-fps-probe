@@ -102,10 +102,10 @@ Each engine module exports `run` and `containers` (the `EngineModule` contract).
 | Path | Role |
 |---|---|
 | `client/probe.ts` | `createProbeCore`: builds the route of every engine, owns the pools, runs `analyze`, `tryAnalyze`, `prewarm`, `dispose` and `destroy`; it takes the split routes as `split` and imports none of them |
-| `client/create.ts` | `createProbeClient`: `createProbeCore` with the split routes of `route.ts` |
+| `client/create.ts` | `createProbeClient`: `createProbeCore` with split routes whose runner imports `route.ts` on the first own analysis, so it imports none of `route.ts` statically |
 | `client/probe-client.ts` | `loadProbeClient`, the factory of `lazyProbeClient`: `createProbeCore`, after an `import()` of `route.ts` only for a custom worker with `byContainer` |
-| `client/route.ts` | `splitRoute`: the route of the own workers and of `byContainer`, whose runner picks the pool of a family with `familyOf(file, signal)` (the first 4 bytes of the file; never rejects) and whose `warmPools` gives `prewarm` the pool of each family it is given; `createProbe` and `createProbeClient` import it statically, `loadProbeClient` only for `byContainer`, so the client of `lazyProbeClient` without `byContainer` holds none of it |
-| `client/family-pool.ts` | `familyPools`: the pool of a container family on a split route, the worker of the family or else the worker of the route, and the `warmPools` built on it; imported by `route.ts` |
+| `client/route.ts` | `runByHead`, the runner of a split route: it picks the pool of a family with `familyOf(file, signal)` (the first 4 bytes of the file; never rejects); `splitRoute`, the route of the own workers and of `byContainer` with that runner. `createProbe` imports it statically, `loadProbeClient` only for `byContainer` and `createProbeClient` on the first own analysis with `byContainer`, so a custom worker without `byContainer` loads none of it |
+| `client/split.ts` | `splitBy(runner)`: a split route, whose pool of a container family is the worker of the family or else the worker of the route, and whose `warmPools` gives `prewarm` the pool of each family it is given without reading a file |
 | `client/pool.ts` | `WorkerPool`: one pool per worker kind, queue, timeouts, cancel, idle termination |
 | `client/fallback.ts` | `runChain`: the fallback chain, `attempts`, skipped results; a lazy chunk loaded only for chains or skips |
 | `client/compare.ts` | `compare`: per-engine outcomes and the agreement; a lazy chunk |
@@ -223,8 +223,8 @@ probe.analyze(file)
 | Chunk | Contents | Loaded by | When |
 |---|---|---|---|
 | stub | `lazyStub` and the lazy entry | the host's entry chunk | page load (the critical path) |
-| probe client | `client/probe.ts`, `pool.ts` and, in the default flavor, `route.ts`, `family-pool.ts` and the own descriptor; for `lazyProbeClient`, `client/probe-client.ts` | `import()` in the stub | first call or `prewarm()` |
-| split routing | `client/route.ts` and `family-pool.ts`, for a custom worker of `lazyProbeClient` | `import()` in the client, only with `byContainer` | right after the client, before the routes are built |
+| probe client | `client/probe.ts`, `pool.ts` and, in the default flavor, `route.ts`, `split.ts` and the own descriptor; for `lazyProbeClient`, `client/probe-client.ts`; for `createProbeClient`, `client/create.ts` and `split.ts` | `import()` in the stub | first call or `prewarm()` |
+| split routing | `client/route.ts`, with `split.ts` for `lazyProbeClient`, for a custom worker of the client flavor | `import()` in the client, only with `byContainer` | right after the client, before the routes are built (`lazyProbeClient`); on the first own analysis (`createProbeClient`) |
 | own worker of a family | `worker/own-isobmff.worker.ts` or `own-matroska.worker.ts`: runtime, reader, sniff, options, result builders, the statistics and that family's parser | the worker literal of the family, default flavor | first file of that family |
 | fallback, compare, inline | `client/fallback.ts`, `client/compare.ts` with `api/agreement.ts`, `client/inline.ts` | `import()` in the client | first chain or skip, first `compare`, first in-thread run |
 | worker entry | runtime, reader, sniff, options, result builders | the worker literal of the kind (mp4box, mediabunny, a custom worker) | first job of that kind |

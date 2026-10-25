@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EngineModule } from '../../src/plugins/types.ts';
 import { FakeWorker } from './fake-worker.ts';
-import { customWorker, fakeModule, mp4File } from './probe-helpers.ts';
+import { customWorker, fakeModule, mp4File, webmFile } from './probe-helpers.ts';
 
 interface Deferred<T> {
   promise: Promise<T>;
@@ -21,7 +21,7 @@ const fetchFailed = () => new TypeError('Failed to fetch dynamically imported mo
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 const settledByNextTick = <T>(p: Promise<T>): Promise<T> => Promise.race([p, tick().then(() => Promise.reject(new Error('still pending on the next tick')))]);
 
-type Gates = Partial<Record<'compare' | 'fallback' | 'inline', Promise<unknown>>>;
+type Gates = Partial<Record<'compare' | 'fallback' | 'inline' | 'route', Promise<unknown>>>;
 
 async function loadProbe(gates: Gates = {}) {
   vi.resetModules();
@@ -35,6 +35,10 @@ async function loadProbe(gates: Gates = {}) {
   });
   vi.doMock('../../src/client/inline.ts', async (importOriginal) => {
     await gates.inline;
+    return importOriginal();
+  });
+  vi.doMock('../../src/client/route.ts', async (importOriginal) => {
+    await gates.route;
     return importOriginal();
   });
   return (await import('../../src/client/create.ts')).createProbeClient;
@@ -56,6 +60,7 @@ afterEach(async () => {
   vi.doUnmock('../../src/client/compare.ts');
   vi.doUnmock('../../src/client/fallback.ts');
   vi.doUnmock('../../src/client/inline.ts');
+  vi.doUnmock('../../src/client/route.ts');
   vi.unstubAllGlobals();
 });
 
@@ -98,6 +103,26 @@ describe('destroy while a lazy chunk loads', () => {
     const probe = createProbeClient({ worker: customWorker('own', 'mp4box') });
     await expect(probe.analyze(mp4File(), { fallback: ['mp4box'] })).rejects.toMatchObject({ name: 'ProbeError', code: 'worker-failed', reason: 'load' });
     expect(await probe.tryAnalyze(mp4File(), { fallback: ['mp4box'] })).toBeNull();
+  });
+
+  it('rejects an own analysis waiting for the split routing chunk of byContainer with aborted at once, and no worker starts when it arrives', async () => {
+    const chunk = deferred();
+    const createProbeClient = await loadProbe({ route: chunk.promise });
+    const probe = createProbeClient({ worker: { ...customWorker('own'), byContainer: { matroska: FakeWorker.as('matroska') } } });
+    const pending = probe.analyze(webmFile());
+    probe.destroy();
+    await expect(settledByNextTick(pending)).rejects.toMatchObject({ ...aborted, engine: 'own' });
+    chunk.resolve();
+    await tick();
+    expect(FakeWorker.instances).toHaveLength(0);
+  });
+
+  it('reports a split routing chunk that fails to load as worker-failed, with reason load', async () => {
+    const createProbeClient = await loadProbe({ route: failedChunk() });
+    const probe = createProbeClient({ worker: { ...customWorker('own'), byContainer: { matroska: FakeWorker.as('matroska') } } });
+    await expect(probe.analyze(webmFile())).rejects.toMatchObject({ name: 'ProbeError', code: 'worker-failed', reason: 'load', engine: 'own' });
+    expect(await probe.tryAnalyze(mp4File())).toBeNull();
+    expect(FakeWorker.instances).toHaveLength(0);
   });
 
   it('rejects a main-thread engine run waiting for the in-thread runner chunk with aborted at once, and the engine never runs', async () => {

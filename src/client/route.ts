@@ -1,10 +1,7 @@
 import type { ContainerFamily } from '../plugins/types.ts';
-import { familyPools } from './family-pool.ts';
-import type { Lazy, Pools, Route, Runner } from './probe.ts';
+import { splitBy, type HeadRunner } from './split.ts';
 
 export const EBML = [0x1a, 0x45, 0xdf, 0xa3] as const;
-
-export type SplitRoute = (kind: string, byFamily: Readonly<Partial<Record<ContainerFamily, () => Worker>>>, pools: Pools, lazy: Lazy, life: AbortSignal, create?: () => Worker) => Route;
 
 export const familyOf = (file: Blob, signal?: AbortSignal | null): Promise<ContainerFamily> =>
   new Promise((resolve) => {
@@ -21,10 +18,8 @@ export const familyOf = (file: Blob, signal?: AbortSignal | null): Promise<Conta
       .finally(() => signal?.removeEventListener('abort', iso));
   });
 
-export const splitRoute: SplitRoute = (kind, byFamily, pools, lazy, life, create) => {
-  const [pool, warmPools] = familyPools(kind, byFamily, pools, create);
-  const runner: Runner = {
-    run: (request, options) => lazy(familyOf(request.file, options.signal), request.engine).then((family) => (life.aborted ? lazy(Promise.reject(), request.engine) : pool(family).run(request, options))),
-  };
-  return { kind, warmPools, pool: () => runner };
-};
+export const runByHead: HeadRunner = (pool, lazy, life) => ({
+  run: (request, options) => lazy(familyOf(request.file, options.signal), request.engine).then((family) => (life.aborted ? lazy(Promise.reject(), request.engine) : pool(family).run(request, options))),
+});
+
+export const splitRoute = splitBy(runByHead);

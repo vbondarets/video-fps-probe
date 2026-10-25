@@ -23,6 +23,7 @@ export const OWN_WORKERS = { isobmff: 'own-isobmff.worker', matroska: 'own-matro
 const OWN = Object.values(OWN_WORKERS);
 const PREBUILT_OWN = ['video-fps-probe/dist/worker/own.worker.js', 'video-fps-probe/dist/worker/own-isobmff.worker.js', 'video-fps-probe/dist/worker/own-matroska.worker.js'];
 const EAGER_CLIENT = 'video-fps-probe/dist/client/create.js';
+const LAZY_CLIENT = 'video-fps-probe/dist/client/probe-client.js';
 export const SPLIT_ROUTING = 'video-fps-probe/dist/client/route.js';
 export const WORKER_MUST_NOT = {
   [OWN_WORKERS.isobmff]: ['video-fps-probe/dist/core/matroska/', 'video-fps-probe/dist/core/rfps.js', 'video-fps-probe/dist/core/analyze.js'],
@@ -48,6 +49,16 @@ export const FIXTURES = [
     engines: ['own'],
     workers: ['fps.worker'],
     mustNot: ['video-fps-probe/dist/plugins/own.js', ...PREBUILT_OWN, EAGER_CLIENT, 'node_modules/mp4box/', 'node_modules/mediabunny/'],
+    clientMustNot: [SPLIT_ROUTING],
+  },
+  {
+    name: 'custom-eager',
+    imports: ['./client', './worker-runtime'],
+    note: 'host worker serving own, createProbeClient in the entry chunk',
+    worker: ES,
+    engines: ['own'],
+    workers: ['fps.worker'],
+    mustNot: ['video-fps-probe/dist/plugins/own.js', ...PREBUILT_OWN, LAZY_CLIENT, 'node_modules/mp4box/', 'node_modules/mediabunny/'],
     clientMustNot: [SPLIT_ROUTING],
   },
   { name: 'mp4box', imports: ['./lazy', './mp4box'], worker: ES, engines: ['own', 'mp4box'], workers: [...OWN, 'mp4box.worker'], mustNot: ['node_modules/mediabunny/'] },
