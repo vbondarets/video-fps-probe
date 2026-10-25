@@ -392,7 +392,7 @@ export default defineConfig({ worker: { format: 'es' } });
 | standalone-url | `video-fps-probe/client/lazy` + `video-fps-probe/standalone/own.worker.js?url` (classic worker from the standalone file) | none needed: the file is copied as an asset | **0.70 KB** | 38.60 KB | 38.60 KB | - | 1 | ok (6 budgets) |
 | iife-nosplit | `video-fps-probe/lazy` | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.67 KB** | 38.79 KB | 38.79 KB | - | 1 | ok (4 budgets) |
 | react | `video-fps-probe/lazy` + `video-fps-probe/react` (React 19.3.1) | format: 'es' | **1.64 KB** | 23.60 KB | 40.61 KB | - | 1 | ok (9 budgets) |
-| react18 | `video-fps-probe/lazy` + `video-fps-probe/react` (React 18.3.1) | format: 'es' | **1.63 KB** | 23.60 KB | 40.61 KB | - | 1 | ok (4 budgets) |
+| react18 | `video-fps-probe/lazy` + `video-fps-probe/react` (React 18.3.1) | format: 'es' | **1.64 KB** | 23.59 KB | 40.60 KB | - | 1 | ok (4 budgets) |
 | check | `video-fps-probe/lazy` + `video-fps-probe/check` | format: 'es' | **3.29 KB** | 23.60 KB | 40.61 KB | - | 1 | ok (5 budgets) |
 | preset | `video-fps-probe/lazy` + `video-fps-probe/check` + `video-fps-probe/presets` (klingO1ReferenceVideo) | format: 'es' | **3.60 KB** | 23.59 KB | 40.60 KB | - | 1 | ok (6 budgets) |
 | standalone worker file | `video-fps-probe/standalone/own.worker.js` | - | - | 35.80 KB | 35.80 KB | - | 1 file, no imports | ok |

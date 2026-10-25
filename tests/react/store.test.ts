@@ -192,6 +192,27 @@ describe('the framework-free store of video-fps-probe/react', () => {
     expect(b.read().error).toMatchObject({ code: 'worker-failed', reason: 'crash', cause });
   });
 
+  it('settles to the error state when a custom probe throws from analyze synchronously, instead of throwing from subscribe', async () => {
+    const cause = new RangeError('bad options');
+    const timeout = new ProbeError('timeout', 'timed out');
+    const throwing = (error: unknown): Probe<EngineId> => {
+      const analyze = (): never => {
+        throw error;
+      };
+      return { engines: ['own'], analyze, prewarm: async () => {} } as unknown as Probe<EngineId>;
+    };
+    const crash = createVideoFpsStore(throwing(cause));
+    const passed = createVideoFpsStore(throwing(timeout));
+    let a: ReturnType<typeof mount> | null = null;
+    let b: ReturnType<typeof mount> | null = null;
+    expect(() => (a = mount(crash, blob()))).not.toThrow();
+    expect(() => (b = mount(passed, blob()))).not.toThrow();
+    expect(a!.read().status).toBe('pending');
+    await settle();
+    expect(a!.read()).toMatchObject({ status: 'error', result: null, error: { name: 'ProbeError', code: 'worker-failed', reason: 'crash', cause } });
+    expect(b!.read()).toMatchObject({ status: 'error', error: timeout });
+  });
+
   it('settles to the error state, as a crash, when the summary of a result throws', async () => {
     const { probe, calls } = fakeProbe();
     const store = createVideoFpsStore(probe);

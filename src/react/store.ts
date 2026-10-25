@@ -67,7 +67,7 @@ export function createVideoFpsStore(probe: Probe<EngineId>): VideoFpsStore {
       if (e.run === run) set(e, { progress }, true);
     };
     Promise.all([
-      probe.analyze(file, { ...options, signal: run.signal, onProgress }),
+      new Promise<ProbeResult>((done) => done(probe.analyze(file, { ...options, signal: run.signal, onProgress }))),
       loadSummary().catch((error: unknown) => {
         throw failure(error, 'load');
       }),
