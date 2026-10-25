@@ -181,6 +181,13 @@ describe('check: verdict, severity and failing open', () => {
     expect(check(broken, { ...all, fileSize: { max: 200_000_000 } }).verdict).toBe('fail');
   });
 
+  it('ignores a rule group without a bound, a null bound and a display key it does not know', () => {
+    const blank = result({ avgFps: null, width: 0, height: 0 });
+    expect(check(blank, { fps: { source: 'ffprobe' }, duration: {}, display: {}, aspectRatio: {} })).toEqual({ verdict: 'pass', violations: [] });
+    expect(check(result({ avgFps: rate(24000, 1001) }), JSON.parse('{"fps":{"min":24,"max":null},"display":{"maxWidth":null}}') as CheckRules).violations.map((v) => v.rule)).toEqual(['fps.min']);
+    expect(check(result(), { display: { fooWidth: 1, maxwidth: 1 } } as unknown as CheckRules)).toEqual({ verdict: 'pass', violations: [] });
+  });
+
   it('is unknown without a video track', () => {
     expect(check(result({}, { videoTracks: [], primaryTrackId: null }), { fps: { min: 24 } }).violations[0]!.message).toBe('fps: unknown, no video track');
   });

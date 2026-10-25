@@ -122,7 +122,7 @@ function unevenOf(t: VideoTrackResult): boolean | null {
 }
 
 function fit(target: number, rule: FpsRule = {}): [number, number] {
-  const n = (v: RatioValue | undefined): number | null => (v === undefined ? null : value(ratio(v, 'fps')));
+  const n = (v: RatioValue | null | undefined): number | null => (v == null ? null : value(ratio(v, 'fps')));
   const lo = n(rule.min) ?? 0;
   const hi = n(rule.max) ?? Infinity;
   const exact = n(rule.exact);
@@ -145,8 +145,8 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   const unknown = (rule: string, missing: string): number => add(rule, 'unknown', null, null, `unknown, ${error ? `the analysis failed: ${error}` : t ? `no ${missing}` : 'no video track'}`);
 
   const limits = (group: string, rule: Partial<Record<Bound, RatioValue | readonly RatioValue[]>> | undefined, actual: Q | null, shown: number | string, text: string, unit: string, missing: string): void => {
-    if (!rule) return;
-    const bounds = BOUNDS.filter((b) => rule[b] !== undefined).map((b) => [b, rule[b]!, [rule[b]!].flat().map((v) => ratio(v, `${group}.${b}`))] as const);
+    const bounds = BOUNDS.filter((b) => rule?.[b] != null).map((b) => [b, rule![b]!, [rule![b]!].flat().map((v) => ratio(v, `${group}.${b}`))] as const);
+    if (bounds.length === 0) return;
     if (!actual) return void unknown(group, missing);
     for (const [b, expected, qs] of bounds) {
       const c = qs.map((q) => cmp(actual, q));
@@ -176,15 +176,15 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   const w = (turned ? t?.height : t?.width) || 0;
   const h = (turned ? t?.width : t?.height) || 0;
   const sized = w > 0 && h > 0;
-  if (rules.display && !sized) unknown('display', 'display size');
-  else if (rules.display) {
-    const sides: Record<string, number> = { Width: w, Height: h, ShortSide: Math.min(w, h), LongSide: Math.max(w, h) };
-    for (const [key, v] of Object.entries(rules.display)) {
-      const side = sides[key.slice(3)];
+  const sides: Record<string, number> = { Width: w, Height: h, ShortSide: Math.min(w, h), LongSide: Math.max(w, h) };
+  const display = Object.entries(rules.display ?? {}).filter(([key, v]) => typeof v === 'number' && /^(?:min|max)(?:Width|Height|ShortSide|LongSide)$/.test(key));
+  if (display.length > 0 && !sized) unknown('display', 'display size');
+  else
+    for (const [key, v] of display) {
+      const side = sides[key.slice(3)]!;
       const b = key.slice(0, 3) as Bound;
-      if (side !== undefined && typeof v === 'number' && (b === 'min' ? side < v : side > v)) add(`display.${key}`, severity, v, side, `${side} px is ${RELATION[b]} ${v} px (${w}x${h})`);
+      if (b === 'min' ? side < v! : side > v!) add(`display.${key}`, severity, v!, side, `${side} px is ${RELATION[b]} ${v} px (${w}x${h})`);
     }
-  }
   const area: Q = [BigInt(w), BigInt(h)];
   limits('aspectRatio', rules.aspectRatio, sized ? area : null, fraction(area), `${w}x${h} (${round(w / h)})`, '', 'display size');
   limits('pixels', rules.pixels, sized ? [BigInt(w * h), 1n] : null, w * h, `${w * h}`, ' px', 'display size');
