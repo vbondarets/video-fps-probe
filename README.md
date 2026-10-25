@@ -77,6 +77,7 @@ React 18 and 19. `useVideoFps` caches each result by the file and the options, r
 Own, the default, needs nothing else. mp4box.js and mediabunny are optional peers for a second opinion or a fallback, and rVFC estimates by playing the file:
 
 ```ts
+import { lazyProbe } from 'video-fps-probe/lazy';
 import { mediabunny } from 'video-fps-probe/mediabunny'; // npm install mediabunny
 import { mp4box } from 'video-fps-probe/mp4box'; // npm install mp4box
 
@@ -138,6 +139,8 @@ Rules are JSON, such as `{ fps: { min: 24, max: 60 }, duration: { max: 10 }, vfr
 An iife worker cannot split, so without the option the own worker is one file with both parsers:
 
 ```js
+import { defineConfig } from 'vite';
+
 export default defineConfig({ worker: { format: 'es' } });
 ```
 

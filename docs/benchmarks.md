@@ -377,6 +377,8 @@ Per-file timings for every fixture, the library engines and the cold start are i
 Recommended: one line in the host's Vite config, so the own worker splits and the first MP4 loads 23.59 KB instead of 38.92 KB. Module workers run on the whole package floor (Chrome and Edge 94, Firefox 114, Safari 15.4).
 
 ```js
+import { defineConfig } from 'vite';
+
 export default defineConfig({ worker: { format: 'es' } });
 ```
 
