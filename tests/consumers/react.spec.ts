@@ -27,6 +27,42 @@ async function nodeState(name: string): Promise<{ result: ProbeResult; summary: 
   return json({ result, summary: summarize(result) });
 }
 
+for (const mode of ['build', 'dev'] as const) {
+  test(`react under vite ${mode}: a memoized useVideoFps that <Activity> hides during its analysis analyzes again when shown`, async ({ page }) => {
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(`${e.name}: ${e.message}`));
+    page.on('console', (m) => {
+      if (m.type() === 'error') errors.push(m.text());
+    });
+    await page.goto(mode === 'build' ? buildUrl(CONSUMERS_PORT, 'react') : devUrl(CONSUMERS_PORT, 'react'));
+    await page.waitForFunction(() => window.__react !== undefined);
+    const calls = () => page.evaluate(() => window.__react?.calls ?? []);
+    const name = FILES[1];
+    const output = page.locator('#activity output');
+
+    await page.evaluate(() => window.__react?.hold());
+    await page.locator('#activity-file').setInputFiles(join(FILES_DIR, name));
+    await expect.poll(calls).toEqual([{ name, aborted: false }]);
+    await expect(output).toHaveAttribute('data-status', 'pending');
+    await page.locator('#activity-toggle').click();
+    await expect.poll(calls, 'hiding the Activity aborts the held analysis').toEqual([{ name, aborted: true }]);
+    await page.evaluate(() => window.__react?.release());
+    await page.locator('#activity-toggle').click();
+    await expect(output, 'shown again without a re-render of its own').toHaveAttribute('data-status', 'success');
+
+    const state = JSON.parse((await output.getAttribute('data-state')) ?? 'null') as { result: ProbeResult; summary: VideoFpsSummary; error: string | null };
+    const expected = await nodeState(name);
+    expect(state.error).toBeNull();
+    expect(withoutTiming(state.result)).toEqual(withoutTiming(expected.result));
+    expect(state.summary).toEqual(expected.summary);
+    expect(await calls()).toEqual([
+      { name, aborted: true },
+      { name, aborted: false },
+    ]);
+    expect(errors).toEqual([]);
+  });
+}
+
 for (const [fixture, major] of REACT) {
   for (const mode of ['build', 'dev'] as const) {
     const strict = mode === 'dev' ? ', through the double effects of StrictMode' : '';
