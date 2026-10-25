@@ -19,8 +19,8 @@ The critical path is the package code inside the host entry chunk, cut out of th
 | iife-nosplit | video-fps-probe/lazy | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.67 KB** | 1.39 KB | 38.79 KB | 38.79 KB | - | 1 (own.worker) | ok |
 | react | video-fps-probe/lazy + video-fps-probe/react (React 19.3.1) | format: 'es' | **1.64 KB** | 69.85 KB | 23.60 KB | 40.61 KB | - | 1 (own.worker) | ok |
 | react18 | video-fps-probe/lazy + video-fps-probe/react (React 18.3.1) | format: 'es' | **1.64 KB** | 47.25 KB | 23.59 KB | 40.60 KB | - | 1 (own.worker) | ok |
-| check | video-fps-probe/lazy + video-fps-probe/check | format: 'es' | **3.53 KB** | 4.25 KB | 23.60 KB | 40.60 KB | - | 1 (own.worker) | ok |
-| preset | video-fps-probe/lazy + video-fps-probe/check + video-fps-probe/presets (klingO1ReferenceVideo) | format: 'es' | **3.85 KB** | 4.57 KB | 23.60 KB | 40.61 KB | - | 1 (own.worker) | ok |
+| check | video-fps-probe/lazy + video-fps-probe/check | format: 'es' | **3.81 KB** | 4.53 KB | 23.60 KB | 40.60 KB | - | 1 (own.worker) | ok |
+| preset | video-fps-probe/lazy + video-fps-probe/check + video-fps-probe/presets (klingO1ReferenceVideo) | format: 'es' | **4.12 KB** | 4.85 KB | 23.60 KB | 40.61 KB | - | 1 (own.worker) | ok |
 | standalone worker file | video-fps-probe/standalone/own.worker.js | - | - | - | 35.80 KB | 35.80 KB | - | 1 file, no imports | ok |
 
 First MP4: the probe client, the worker entry that serves own, the statistics chunk (requested in parallel with the parser) and the ISO BMFF parser. All own paths adds the Matroska parser, the ffprobe frame rate estimate of a Matroska file without DefaultDuration and the rate profile core. A worker built as iife cannot split, so in zero-config and iife-nosplit the own worker is one file, as the standalone file is in standalone-url, and both columns are the client plus that file.
@@ -29,9 +29,9 @@ The host's worker option decides the first MP4: 23.60 KB with `worker: { format:
 
 In react (React 19.3.1) and react18 (React 18.3.1) the entry chunk also holds React and ReactDOM, which a React host ships anyway, so its column is not a package cost. The critical path counts the package code only, and the React entry is 1.18 KB of it in each. The first analysis also fetches the 0.43 KB summary module of the store, in parallel with the probe client.
 
-In check, 2.97 KB of the 3.53 KB critical path is `check`, imported statically next to the lazy stub. It imports no other module and loads nothing lazily, so the lazy columns equal the default configuration's.
+In check, 3.25 KB of the 3.81 KB critical path is `check`, imported statically next to the lazy stub. It imports no other module and loads nothing lazily, so the lazy columns equal the default configuration's.
 
-In preset, 2.97 KB of the 3.85 KB critical path is `check` and 0.38 KB the one preset it imports (klingO1ReferenceVideo), imported statically next to the lazy stub. Neither entry imports another module or loads anything lazily, so the lazy columns equal the default configuration's.
+In preset, 3.25 KB of the 4.12 KB critical path is `check` and 0.38 KB the one preset it imports (klingO1ReferenceVideo), imported statically next to the lazy stub. Neither entry imports another module or loads anything lazily, so the lazy columns equal the default configuration's.
 
 ## Budgets (gzip)
 
@@ -116,15 +116,15 @@ In preset, 2.97 KB of the 3.85 KB critical path is `check` and 0.38 KB the one p
 | react18 | React entry (the provider and hooks in the entry chunk, React not counted) | 1.50 KB | 1.18 KB | 0.32 KB | ok |
 | react18 | first MP4 analysis with the React summary, lazy total | 24.50 KB | 24.02 KB | 0.47 KB | ok |
 | react18 | emitted lazy total (every file outside the entry chunk) | 82.00 KB | 81.40 KB | 0.60 KB | ok |
-| check | critical path (package code in the entry chunk) | 4.00 KB | 3.53 KB | 0.47 KB | ok |
-| check | check entry (in the entry chunk) | 3.00 KB | 2.97 KB | 0.03 KB | ok |
-| check | entry chunk with the preload helper | 4.50 KB | 4.25 KB | 0.25 KB | ok |
+| check | critical path (package code in the entry chunk) | 5.00 KB | 3.81 KB | 1.19 KB | ok |
+| check | check entry (in the entry chunk) | 4.00 KB | 3.25 KB | 0.75 KB | ok |
+| check | entry chunk with the preload helper | 5.50 KB | 4.53 KB | 0.97 KB | ok |
 | check | first MP4 analysis, lazy total | 24.00 KB | 23.60 KB | 0.40 KB | ok |
-| check | emitted lazy total (every file outside the entry chunk) | 81.00 KB | 80.96 KB | 0.04 KB | ok |
-| preset | critical path (package code in the entry chunk) | 4.00 KB | 3.85 KB | 0.15 KB | ok |
-| preset | check entry (in the entry chunk) | 3.00 KB | 2.97 KB | 0.03 KB | ok |
+| check | emitted lazy total (every file outside the entry chunk) | 81.00 KB | 80.97 KB | 0.03 KB | ok |
+| preset | critical path (package code in the entry chunk) | 5.00 KB | 4.12 KB | 0.88 KB | ok |
+| preset | check entry (in the entry chunk) | 4.00 KB | 3.25 KB | 0.75 KB | ok |
 | preset | presets entry (the imported presets, in the entry chunk) | 0.50 KB | 0.38 KB | 0.12 KB | ok |
-| preset | entry chunk with the preload helper | 5.00 KB | 4.57 KB | 0.43 KB | ok |
+| preset | entry chunk with the preload helper | 6.00 KB | 4.85 KB | 1.15 KB | ok |
 | preset | first MP4 analysis, lazy total | 24.00 KB | 23.60 KB | 0.40 KB | ok |
 | preset | emitted lazy total (every file outside the entry chunk) | 81.00 KB | 80.97 KB | 0.03 KB | ok |
 | standalone | own.worker.js | 36.00 KB | 35.80 KB | 0.20 KB | ok |
@@ -228,15 +228,15 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 - **react18, React entry (the provider and hooks in the entry chunk, React not counted)** (1.50 KB): As in the react configuration: the React entry is the same code for React 18 and 19. Measured 1.17 KB.
 - **react18, first MP4 analysis with the React summary, lazy total** (24.50 KB): As in the react configuration. Measured 24.03 KB.
 - **react18, emitted lazy total (every file outside the entry chunk)** (82.00 KB): As in the react configuration. Measured 81.32 KB.
-- **check, critical path (package code in the entry chunk)** (4.00 KB): The package code in the entry chunk of a host that imports video-fps-probe/check statically next to video-fps-probe/lazy: the lazyProbe stub of the default configuration and check. Measured 3.00 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 3.5 KB to 4 KB in 0.2.0, measured 3.29 KB, with the rule that judges a constant track on 1 ms ticks by its nominal rate and duration, and the validation of every rule value.
-- **check, check entry (in the entry chunk)** (3.00 KB): The part of the critical path the check entry adds: check(result, rules) with its exact rational comparison, the violation messages and suggestedFps. It imports no other module, so nothing of it loads lazily. Design estimate 0.8 to 1.5 KB; measured 2.43 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 2.72 KB in 0.2.0, 2.80 KB before a trim that kept every message, with the rule that judges a constant track on 1 ms ticks by its nominal rate and duration, and the validation of every rule value; the limit stays.
-- **check, entry chunk with the preload helper** (4.50 KB): The trigger of this configuration plus Vite's preload helper. Measured 3.72 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 4.01 KB in 0.2.0 with the larger check; the limit stays.
+- **check, critical path (package code in the entry chunk)** (5.00 KB): The package code in the entry chunk of a host that imports video-fps-probe/check statically next to video-fps-probe/lazy: the lazyProbe stub of the default configuration and check. Measured 3.00 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 3.5 KB to 4 KB in 0.2.0, measured 3.29 KB, with the rule that judges a constant track on 1 ms ticks by its nominal rate and duration, and the validation of every rule value. Raised to 5 KB, measured 3.81 KB, with the NTSC decimals, the 1 ms tick resolution of the frame rate bounds, the message digits, the checks of unknown keys and lists, and the audio rule that fails open.
+- **check, check entry (in the entry chunk)** (4.00 KB): The part of the critical path the check entry adds: check(result, rules) with its exact rational comparison, the violation messages and suggestedFps. It imports no other module, so nothing of it loads lazily. Design estimate 0.8 to 1.5 KB; measured 2.43 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 2.72 KB in 0.2.0, 2.80 KB before a trim that kept every message, with the rule that judges a constant track on 1 ms ticks by its nominal rate and duration, and the validation of every rule value. Raised from 3 KB to 4 KB, measured 3.25 KB, with the NTSC decimals, the 1 ms tick resolution of the frame rate bounds, the message digits, the checks of unknown keys and lists, and the audio rule that fails open.
+- **check, entry chunk with the preload helper** (5.50 KB): The trigger of this configuration plus Vite's preload helper. Measured 3.72 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 4.01 KB in 0.2.0 with the larger check. Raised from 4.5 KB to 5.5 KB, measured 4.53 KB, with the larger check again.
 - **check, first MP4 analysis, lazy total** (24.00 KB): Importing check must not change what the first own analysis loads, so the 24 KB promise of the default configuration applies here too. Measured 23.60 KB.
 - **check, emitted lazy total (every file outside the entry chunk)** (81.00 KB): As in the default configuration: check adds no lazy file. Measured 80.96 KB.
-- **preset, critical path (package code in the entry chunk)** (4.00 KB): The check configuration plus one preset, klingO1ReferenceVideo, imported from video-fps-probe/presets. Measured 3.24 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 3.60 KB in 0.2.0 with the larger check and the size note of the preset; the limit stays.
-- **preset, check entry (in the entry chunk)** (3.00 KB): As in the check configuration. Measured 2.72 KB.
+- **preset, critical path (package code in the entry chunk)** (5.00 KB): The check configuration plus one preset, klingO1ReferenceVideo, imported from video-fps-probe/presets. Measured 3.24 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 3.60 KB in 0.2.0 with the larger check and the size note of the preset. Raised from 4 KB to 5 KB, measured 4.12 KB, with the larger check of the check configuration.
+- **preset, check entry (in the entry chunk)** (4.00 KB): As in the check configuration. Measured 3.25 KB.
 - **preset, presets entry (the imported presets, in the entry chunk)** (0.50 KB): The one imported preset: its name, source, date, note and rules. The six presets together are about 1.5 KB gzip, so this limit also fails a build that stops tree-shaking the presets a host does not import. Design estimate 0.1 to 0.2 KB per preset; measured 0.31 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 0.38 KB in 0.2.0, when each note began to name how its MB is read; the limit stays.
-- **preset, entry chunk with the preload helper** (5.00 KB): The trigger of this configuration plus Vite's preload helper. Measured 3.96 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 4.5 KB to 5 KB in 0.2.0, measured 4.33 KB, with the larger check and the size note of the preset.
+- **preset, entry chunk with the preload helper** (6.00 KB): The trigger of this configuration plus Vite's preload helper. Measured 3.96 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 4.5 KB to 5 KB in 0.2.0, measured 4.33 KB, with the larger check and the size note of the preset. Raised to 6 KB, measured 4.85 KB, with the larger check of the check configuration.
 - **preset, first MP4 analysis, lazy total** (24.00 KB): As in the check configuration. Measured 23.60 KB.
 - **preset, emitted lazy total (every file outside the entry chunk)** (81.00 KB): As in the check configuration. Measured 80.96 KB.
 - **standalone, own.worker.js** (36.00 KB): dist/standalone/own.worker.js: the own worker as one minified IIFE file with no imports, built by rolldown. Design estimate 35.0 KB; measured 32.04 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 35.5 KB to 36 KB in 0.2.0, measured 35.58 KB, when the ffprobe frame rate estimate, which the file inlines, began to read the H.264 slice headers that decide the decoder delay (0.63 KB gzip).
@@ -486,26 +486,26 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | react18 | assets/summary.js | page | summary | 0.43 KB |
 | check | assets/compare.js | page | shared | 1.32 KB |
 | check | assets/fallback.js | page | shared | 0.73 KB |
-| check | assets/index.js | page | shared | 4.25 KB |
+| check | assets/index.js | page | shared | 4.53 KB |
 | check | assets/inline.js | page | shared | 0.63 KB |
-| check | assets/isobmff.js | own.worker | isobmff | 12.21 KB |
 | check | assets/isobmff.js | page | isobmff | 12.23 KB |
+| check | assets/isobmff.js | own.worker | isobmff | 12.21 KB |
 | check | assets/matroska.js | own.worker | matroska | 11.59 KB |
 | check | assets/matroska.js | page | matroska | 11.77 KB |
 | check | assets/own.worker.js | own.worker | shared | 4.18 KB |
 | check | assets/probe.js | page | shared | 2.90 KB |
 | check | assets/result.js | page | shared | 0.38 KB |
-| check | assets/rfps.js | page | rfps | 3.57 KB |
 | check | assets/rfps.js | own.worker | rfps | 3.58 KB |
-| check | assets/runtime.js | page | shared | 2.54 KB |
-| check | assets/segments.js | own.worker | segments | 1.84 KB |
+| check | assets/rfps.js | page | rfps | 3.57 KB |
+| check | assets/runtime.js | page | shared | 2.55 KB |
 | check | assets/segments.js | page | segments | 1.84 KB |
+| check | assets/segments.js | own.worker | segments | 1.84 KB |
 | check | assets/sniff.js | page | shared | 0.99 KB |
-| check | assets/stats.js | own.worker | stats | 4.31 KB |
 | check | assets/stats.js | page | stats | 4.34 KB |
+| check | assets/stats.js | own.worker | stats | 4.31 KB |
 | preset | assets/compare.js | page | shared | 1.32 KB |
 | preset | assets/fallback.js | page | shared | 0.73 KB |
-| preset | assets/index.js | page | shared | 4.57 KB |
+| preset | assets/index.js | page | shared | 4.85 KB |
 | preset | assets/inline.js | page | shared | 0.63 KB |
 | preset | assets/isobmff.js | own.worker | isobmff | 12.21 KB |
 | preset | assets/isobmff.js | page | isobmff | 12.23 KB |
@@ -514,8 +514,8 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | preset | assets/own.worker.js | own.worker | shared | 4.18 KB |
 | preset | assets/probe.js | page | shared | 2.90 KB |
 | preset | assets/result.js | page | shared | 0.38 KB |
+| preset | assets/rfps.js | page | rfps | 3.58 KB |
 | preset | assets/rfps.js | own.worker | rfps | 3.58 KB |
-| preset | assets/rfps.js | page | rfps | 3.57 KB |
 | preset | assets/runtime.js | page | shared | 2.54 KB |
 | preset | assets/segments.js | page | segments | 1.84 KB |
 | preset | assets/segments.js | own.worker | segments | 1.84 KB |

@@ -70,10 +70,13 @@ export interface CheckReport {
 
 type Q = readonly [bigint, bigint];
 type Bound = 'min' | 'max' | 'exact' | 'oneOf';
+type Text = string | ((against: readonly Q[]) => string);
 
 const UNEVEN_SPREAD = 1.075;
 const DECIMATE_FROM = 1.5;
 const SPAN_SLACK_MS = 3n;
+const NOMINAL_SLACK_PER_S = 10_000_000n;
+const NTSC = [24n, 30n, 48n, 60n, 120n];
 const RELATION: Record<Bound, string> = { min: 'below the minimum', max: 'above the maximum', exact: 'not', oneOf: 'not one of' };
 const BOUNDS = Object.keys(RELATION) as Bound[];
 const GROUPS = ['fps', 'duration', 'frameSize', 'aspectRatio', 'pixels', 'fileSize'] as const;
@@ -112,6 +115,18 @@ function ratio(v: unknown, rule: string): Q {
 
 const cmp = (a: Q, b: Q): bigint => a[0] * b[1] - b[0] * a[1];
 
+const ntsc = (v: unknown, q: Q): Q[] => (/[/:]/.test(String(v)) ? [] : NTSC.filter((m) => q[0] * 1000n === q[1] * m * 999n).map((m): Q => [m * 1000n, 1001n]));
+
+const readings = (v: unknown, rule: string): Q[] => {
+  const q = ratio(v, rule);
+  return [q, ...ntsc(v, q)];
+};
+
+function close(n: bigint, a: Q, b: Q, slack: bigint, perSecond: bigint): boolean {
+  const gap = n * (a[1] * b[0] - b[1] * a[0]);
+  return (gap < 0n ? -gap : gap) * perSecond <= slack * a[0] * b[0];
+}
+
 const whole = (x: unknown): x is number => Number.isSafeInteger(x) && (x as number) > 0;
 
 const fromRational = (r: Pick<Rational, 'num' | 'den'> | null | undefined): Q | null => (r && whole(r.num) && whole(r.den) ? [BigInt(r.num), BigInt(r.den)] : null);
@@ -122,12 +137,18 @@ const value = (q: Q): number => Number(q[0]) / Number(q[1]);
 
 const round = (x: number): number => +x.toFixed(3);
 
+function digits(q: Q, against: readonly Q[]): number {
+  let d = 3;
+  while (d < 12 && against.some((b) => value(b).toFixed(d) === value(q).toFixed(d))) d++;
+  return +value(q).toFixed(d);
+}
+
 function fraction(q: Q): string {
   const g = gcd(q[0], q[1]) || 1n;
   return `${q[0] / g}/${q[1] / g}`;
 }
 
-const fpsText = (q: Q): string => (q[0] % q[1] === 0n ? `${q[0] / q[1]}` : `${round(value(q))} (${fraction(q)})`);
+const fpsText = (q: Q, against: readonly Q[] = []): string => (q[0] % q[1] === 0n ? `${q[0] / q[1]}` : `${digits(q, against)} (${fraction(q)})`);
 
 function steady(t: VideoTrackResult): readonly [Q, Q] | null {
   const avg = fromRational(t.avgFps);
@@ -135,8 +156,14 @@ function steady(t: VideoTrackResult): readonly [Q, Q] | null {
   const frames = t.presentedFrames ?? t.frames;
   if (!avg || !nominal || !t.timestampsQuantized || t.isVfr !== false || !whole(frames)) return null;
   const n = BigInt(frames);
-  const gap = n * (avg[1] * nominal[0] - nominal[1] * avg[0]);
-  return (gap < 0n ? -gap : gap) * 1000n <= SPAN_SLACK_MS * avg[0] * nominal[0] ? [nominal, [n * nominal[1], nominal[0]]] : null;
+  return close(n, avg, nominal, SPAN_SLACK_MS, 1000n) ? [nominal, [n * nominal[1], nominal[0]]] : null;
+}
+
+function resolution(t: VideoTrackResult, cfr: readonly [Q, Q] | null): ((x: Q) => boolean) | undefined {
+  const avg = fromRational(t.avgFps);
+  const frames = t.presentedFrames ?? t.frames;
+  if (!avg || !t.timestampsQuantized || t.isVfr !== false || !whole(frames)) return undefined;
+  return cfr ? (x) => close(1n, cfr[0], x, 1n, NOMINAL_SLACK_PER_S) : (x) => close(BigInt(frames), avg, x, SPAN_SLACK_MS, 1000n);
 }
 
 function judgedFps(t: VideoTrackResult, source: FpsSource | undefined, cfr: readonly [Q, Q] | null): Q | null {
@@ -155,7 +182,7 @@ function unevenOf(t: VideoTrackResult): boolean | null {
 function fit(target: number, rule: FpsRule = {}): [number, number] {
   const n = (v: RatioValue | null | undefined): number | null => (v == null ? null : value(ratio(v, 'fps')));
   const lo = n(rule.min) ?? 0;
-  const hi = n(rule.max) ?? Infinity;
+  const hi = rule.max == null ? Infinity : Math.max(...readings(rule.max, 'fps').map(value));
   const exact = n(rule.exact);
   if (exact !== null) return [exact, 0];
   const allowed = [rule.oneOf ?? []].flat().map((v) => n(v)!).filter((v) => v >= lo && v <= hi);
@@ -183,13 +210,16 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   const add = (rule: string, s: CheckSeverity, expected: CheckExpected, actual: number | string | boolean | null, message: string): number => violations.push({ rule, severity: s, expected, actual, message: `${rule}: ${message}` });
   const unknown = (rule: string, missing: string): unknown => violations.some((v) => v.rule === rule) || add(rule, 'unknown', null, null, `unknown, ${error ? `the analysis failed: ${error}` : t ? `no ${missing}` : 'no video track'}`);
 
-  const limits = (group: string, rule: Partial<Record<Bound, RatioValue | readonly RatioValue[]>> | undefined, actual: Q | null, shown: number | string, text: string, unit: string, missing: string, side = ''): void => {
-    const bounds = BOUNDS.filter((b) => rule?.[b] != null).map((b) => [b, rule![b]!, (b === 'oneOf' ? [rule![b]!].flat() : [rule![b]!]).map((v) => ratio(v, `${group}.${b}${side}`))] as const);
+  const limits = (group: string, rule: Partial<Record<Bound, RatioValue | readonly RatioValue[]>> | undefined, actual: Q | null, shown: number | string, text: Text, unit: string, missing: string, side = '', near?: (q: Q) => boolean): void => {
+    const bounds = BOUNDS.filter((b) => rule?.[b] != null).map((b) => {
+      const path = `${group}.${b}${side}`;
+      return [b, rule![b]!, (b === 'oneOf' ? [rule![b]!].flat() : [rule![b]!]).map((v) => (group === 'fps' ? readings(v, path) : [ratio(v, path)]))] as const;
+    });
     if (bounds.length === 0) return;
     if (!actual) return void unknown(group, missing);
-    for (const [b, expected, qs] of bounds) {
-      const c = qs.map((q) => cmp(actual, q));
-      if (b === 'min' ? c[0]! < 0n : b === 'max' ? c[0]! > 0n : !c.includes(0n)) add(`${group}.${b}${side}`, severity, expected, shown, `${text}${unit} is ${RELATION[b]} ${[expected].flat().join(', ')}${unit}`);
+    for (const [b, expected, values] of bounds) {
+      const meets = (q: Q): boolean | undefined => near?.(q) || (b === 'min' ? cmp(actual, q) >= 0n : b === 'max' ? cmp(actual, q) <= 0n : cmp(actual, q) === 0n);
+      if (!values.flat().some(meets)) add(`${group}.${b}${side}`, severity, expected, shown, `${typeof text === 'string' ? text : text(values.flat())}${unit} is ${RELATION[b]} ${[expected].flat().join(', ')}${unit}`);
     }
   };
   const quantity = (x: number | null | undefined): Q | null => (typeof x === 'number' ? decimal(String(x)) : null);
@@ -209,10 +239,11 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
 
   const cfr = t && steady(t);
   const fps = t && judgedFps(t, rules.fps?.source, cfr);
-  limits('fps', rules.fps, fps, fps ? fraction(fps) : '', fps ? fpsText(fps) : '', ' fps', `${rules.fps?.source ?? 'avg'} frame rate`);
+  const near = t && (rules.fps?.source ?? 'avg') === 'avg' ? resolution(t, cfr) : undefined;
+  limits('fps', rules.fps, fps, fps ? fraction(fps) : '', (against) => fpsText(fps!, against), ' fps', `${rules.fps?.source ?? 'avg'} frame rate`, '', near);
   const span = cfr?.[1] ?? quantity(t && (t.durationSec ?? result!.formatDurationSec));
   const seconds = span ? value(span) : 0;
-  limits('duration', rules.duration, span, seconds, `${round(seconds)}`, ' s', 'duration');
+  limits('duration', rules.duration, span, seconds, (against) => `${digits(span!, against)}`, ' s', 'duration');
 
   const size = t ? (Math.abs(t.rotation) % 180 === 90 ? [t.height, t.width] : [t.width, t.height]) : [0, 0];
   const sized = size.every(whole);

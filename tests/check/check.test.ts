@@ -1,7 +1,7 @@
 import { openAsBlob } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { check, type CheckRules } from '../../src/check/index.ts';
+import { check, type CheckRules, type FpsRule } from '../../src/check/index.ts';
 import { analyze } from '../../src/core/analyze.ts';
 import { emptyAnalysis, emptyTrack } from '../../src/core/result.ts';
 import { makeRational } from '../../src/core/rational.ts';
@@ -31,9 +31,9 @@ describe('check: frame rate as exact rationals', () => {
     ['60001/1000 is above a maximum of 60', rate(60001, 1000), { max: 60 }, ['fps.max']],
     ['24000/1001 equals an exact 24000/1001', rate(24000, 1001), { exact: '24000/1001' }, []],
     ['24000/1001 equals an exact 24000:1001', rate(24000, 1001), { exact: '24000:1001' }, []],
-    ['24000/1001 is not an exact 23.976', rate(24000, 1001), { exact: 23.976 }, ['fps.exact']],
+    ['24000/1001 equals an exact 23.976, read as 24000/1001', rate(24000, 1001), { exact: 23.976 }, []],
     ['2997/125 equals an exact 23.976', rate(2997, 125), { exact: 23.976 }, []],
-    ['30000/1001 is above a maximum of 29.97', rate(30000, 1001), { max: 29.97 }, ['fps.max']],
+    ['30000/1001 meets a maximum of 29.97, read as 30000/1001', rate(30000, 1001), { max: 29.97 }, []],
     ['30000/1001 is not one of 24, 25 and 30', rate(30000, 1001), { oneOf: [24, 25, 30] }, ['fps.oneOf']],
     ['30000/1001 is one of 30000/1001 and 30', rate(30000, 1001), { oneOf: ['30000/1001', 30] }, []],
     ['25 is not an exact 24 and above a maximum of 24', rate(25), { exact: 24, max: 24 }, ['fps.max', 'fps.exact']],
@@ -59,6 +59,65 @@ describe('check: frame rate as exact rationals', () => {
     expect(failed(result(track), { fps })).toEqual(expected);
   });
 
+  it.each([
+    ['30000/1001 equals an exact 29.97', rate(30000, 1001), { exact: 29.97 }, []],
+    ['2997/100 equals an exact 29.97 too', rate(2997, 100), { exact: 29.97 }, []],
+    ['2997/100 meets a minimum of 29.97, the lower reading', rate(2997, 100), { min: 29.97 }, []],
+    ['2996/100 is below a minimum of 29.97', rate(2996, 100), { min: 29.97 }, ['fps.min']],
+    ['30 is above a maximum of 29.97', rate(30), { max: 29.97 }, ['fps.max']],
+    ['30000/1001 is not an exact 30', rate(30000, 1001), { exact: 30 }, ['fps.exact']],
+    ['60000/1001 meets a maximum of 59.94 given as a string', rate(60000, 1001), JSON.parse('{"max":"59.94"}') as FpsRule, []],
+    ['60000/1001 equals an exact 59.940 with a trailing zero', rate(60000, 1001), JSON.parse('{"exact":"59.940"}') as FpsRule, []],
+    ['48000/1001 equals an exact 47.952', rate(48000, 1001), { exact: 47.952 }, []],
+    ['120000/1001 meets a maximum of 119.88', rate(120000, 1001), { max: 119.88 }, []],
+    ['30000/1001 is one of 23.976, 29.97 and 59.94', rate(30000, 1001), { oneOf: [23.976, 29.97, 59.94] }, []],
+    ['a fraction stays exact: 30000/1001 is above a maximum of 2997/100', rate(30000, 1001), { max: '2997/100' }, ['fps.max']],
+    ['a decimal that is no NTSC rate stays exact: 30000/1001 is above a maximum of 29.9', rate(30000, 1001), { max: 29.9 }, ['fps.max']],
+  ] as const)('reads a decimal NTSC rate as itself and as its x/1001 rate: %s', (_, avgFps, fps, expected) => {
+    expect(failed(result({ avgFps }), { fps })).toEqual(expected);
+  });
+
+  it('prints the actual value with enough digits to differ from the bound it breaks', () => {
+    const message = (r: FileResult, c: CheckRules) => check(r, c).violations[0]!.message;
+    expect(message(result({ avgFps: rate(749251, 25000) }), { fps: { max: 29.97 } })).toBe('fps.max: 29.97004 (749251/25000) fps is above the maximum 29.97 fps');
+    expect(message(result({ avgFps: rate(2996999, 100000) }), { fps: { min: 29.97 } })).toBe('fps.min: 29.96999 (2996999/100000) fps is below the minimum 29.97 fps');
+    expect(message(result({ avgFps: rate(150001, 2500) }), { fps: { exact: 60 } })).toBe('fps.exact: 60.0004 (150001/2500) fps is not 60 fps');
+    expect(message(result({ durationSec: 30.0004 }), { duration: { max: 30 } })).toBe('duration.max: 30.0004 s is above the maximum 30 s');
+    expect(message(result({ avgFps: rate(24000, 1001) }), { fps: { min: 24 } })).toBe('fps.min: 23.976 (24000/1001) fps is below the minimum 24 fps');
+  });
+
+  describe('on a constant track on 1 ms ticks, within the resolution of its timestamps', () => {
+    const webm5994 = { avgFps: rate(90000, 1501), nominalFps: { ...rate(19001, 317), kind: 'declared' as const }, timestampsQuantized: true, frames: 180, presentedFrames: 180, durationSec: 3.002 };
+    it.each([
+      ["an exact '60000/1001' matches the declared 19001/317", { exact: '60000/1001' }, []],
+      ["a oneOf with '60000/1001' matches it", { oneOf: ['60000/1001', 30] }, []],
+      ['an exact 59.94 matches it', { exact: 59.94 }, []],
+      ['a maximum of 59.94 holds it', { max: 59.94 }, []],
+      ["a maximum of '60000/1001' holds it", { max: '60000/1001' }, []],
+      ['a minimum of 59.94 holds it', { min: 59.94 }, []],
+      ['an exact 60 does not match it', { exact: 60 }, ['fps.exact']],
+      ['a minimum of 60 does not hold it', { min: 60 }, ['fps.min']],
+      ['a maximum of 59.9 does not hold it', { max: 59.9 }, ['fps.max']],
+    ] as const)('%s', (_, fps, expected) => {
+      expect(failed(result(webm5994), { fps })).toEqual(expected);
+    });
+
+    it('compares exactly off 1 ms ticks, on a VFR track and for a source other than the default', () => {
+      expect(failed(result({ ...webm5994, timestampsQuantized: false }), { fps: { exact: '60000/1001' } })).toEqual(['fps.exact']);
+      expect(failed(result({ ...webm5994, avgFpsFfprobe: '19001/317' }), { fps: { exact: '60000/1001', source: 'ffprobe' } })).toEqual(['fps.exact']);
+      expect(failed(result({ ...webm5994, isVfr: true }), { fps: { exact: '60000/1001' } })).toEqual(['fps.exact']);
+    });
+
+    it('holds a track without a nominal rate to the 3 ms its span can be off', () => {
+      const bare = { ...webm5994, nominalFps: null };
+      expect(failed(result(bare), { fps: { exact: '60000/1001' } })).toEqual([]);
+      expect(failed(result(bare), { fps: { oneOf: [24, 59.94] } })).toEqual([]);
+      expect(failed(result(bare), { fps: { exact: 59.5 } })).toEqual(['fps.exact']);
+      expect(failed(result({ ...bare, avgFps: rate(180000, 3006), durationSec: 3.006 }), { fps: { exact: '60000/1001' } })).toEqual([]);
+      expect(failed(result({ ...bare, avgFps: rate(180000, 3007), durationSec: 3.007 }), { fps: { exact: '60000/1001' } })).toEqual(['fps.exact']);
+    });
+  });
+
   it('reports the rule, the expected value, the exact actual value and a message', () => {
     expect(check(result({ avgFps: rate(24000, 1001) }), { fps: { min: 24, max: 60 } })).toEqual({
       verdict: 'fail',
@@ -71,7 +130,7 @@ describe('check: frame rate as exact rationals', () => {
     const vfr = result({ avgFps: rate(29), avgFpsFfprobe: '30000/1001', isVfr: true, dominantFps: { rate: rate(30), share: 0.9 }, minFps: rate(10), maxFps: rate(30) });
     expect(failed(vfr, { fps: { min: 30 } })).toEqual(['fps.min']);
     expect(failed(vfr, { fps: { min: 30, source: 'dominant' } })).toEqual([]);
-    expect(failed(vfr, { fps: { max: 29.97, source: 'ffprobe' } })).toEqual(['fps.max']);
+    expect(failed(vfr, { fps: { max: 29.9, source: 'ffprobe' } })).toEqual(['fps.max']);
     expect(check(vfr, { fps: { min: 24, source: 'nominal' } }).violations).toEqual([{ rule: 'fps', severity: 'unknown', expected: null, actual: null, message: 'fps: unknown, no nominal frame rate' }]);
     const cfr = result({ avgFps: rate(25), nominalFps: { ...rate(25), kind: 'exact' } });
     expect(failed(cfr, { fps: { exact: 25, source: 'dominant' } })).toEqual([]);
@@ -398,6 +457,36 @@ describe('check: committed fixtures', () => {
     expect(check(await run('cfr_h264_60.mp4'), { fps }).verdict).toBe('pass');
     expect(check(await run('cfr_h264_59.94.mp4'), { fps: { min: 60 } }).verdict).toBe('fail');
     expect(check(await run('cfr_vp9_23.976.webm'), { fps, containers: ['webm'] }).violations.map((v) => v.rule)).toEqual(['fps.min']);
+  });
+
+  it.each([
+    ['cfr_vp9_59.94.webm', { exact: '60000/1001' }, 'pass'],
+    ['cfr_vp9_59.94.webm', { oneOf: ['60000/1001'] }, 'pass'],
+    ['cfr_vp9_59.94.webm', { exact: 59.94 }, 'pass'],
+    ['cfr_vp9_59.94.webm', { max: 59.94 }, 'pass'],
+    ['cfr_vp9_59.94.webm', { min: 59.94, max: '60000/1001' }, 'pass'],
+    ['cfr_vp9_59.94.webm', { exact: 60 }, 'fail'],
+    ['cfr_vp9_59.94.webm', { min: 60 }, 'fail'],
+    ['cfr_vp9_59.94.webm', { max: 60 }, 'pass'],
+    ['cfr_h264_59.94.mp4', { exact: '60000/1001' }, 'pass'],
+    ['cfr_h264_59.94.mp4', { max: 59.94 }, 'pass'],
+    ['cfr_h264_29.97.mp4', { max: 29.97 }, 'pass'],
+    ['cfr_h264_29.97.mp4', { exact: 29.97 }, 'pass'],
+    ['cfr_h264_29.97.mp4', { exact: '30000/1001' }, 'pass'],
+    ['cfr_h264_29.97.mp4', { oneOf: [24, 29.97] }, 'pass'],
+    ['cfr_h264_29.97.mp4', { min: 30 }, 'fail'],
+    ['cfr_h264_29.97.mp4', { exact: 30 }, 'fail'],
+    ['cfr_h264_29.97.mp4', { max: '2997/100' }, 'fail'],
+    ['cfr_vp9_29.97.webm', { exact: '30000/1001', max: 29.97 }, 'pass'],
+    ['cfr_h264_23.976.mp4', { exact: 23.976 }, 'pass'],
+    ['cfr_h264_23.976.mp4', { max: 23.976 }, 'pass'],
+    ['cfr_h264_23.976.mp4', { exact: '24000/1001' }, 'pass'],
+    ['cfr_h264_23.976.mp4', { min: 24 }, 'fail'],
+    ['cfr_h264_23.976.mp4', { exact: 24 }, 'fail'],
+    ['cfr_vp9_23.976.webm', { exact: 23.976, max: 23.976 }, 'pass'],
+    ['cfr_vp9_23.976.webm', { min: 24 }, 'fail'],
+  ] as const)('judges NTSC rates of %s: %j is %s', async (name, fps, verdict) => {
+    expect(check(await run(name), { fps }).verdict).toBe(verdict);
   });
 
   it('judges a constant WebM on 1 ms ticks by its nominal rate at whole-number bounds', async () => {
