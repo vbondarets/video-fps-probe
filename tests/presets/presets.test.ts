@@ -47,6 +47,12 @@ describe('presets', () => {
     expect(check(r, JSON.parse(JSON.stringify(preset.rules)) as ProviderPreset['rules'])).toEqual(check(r, preset.rules));
   });
 
+  it.each(ALL.filter(([, p]) => p.rules.fileSize))('%s reads its size limit in MB as MiB and says so in its note', (_, preset) => {
+    const max = preset.rules.fileSize!.max as number;
+    expect(max % 1_048_576).toBe(0);
+    expect(preset.note).toContain(`whether ${max / 1_048_576} MB is decimal or binary; the larger reading, ${max.toLocaleString('en-US')} bytes, is checked`);
+  });
+
   it('warns, without failing, about a preset verified more than 90 days ago', () => {
     const verified = Date.parse('2026-10-25T00:00:00Z');
     expect(stale(verified + 90 * DAY_MS)).toEqual([]);
@@ -65,7 +71,7 @@ describe('presets: a file inside and a file outside each preset', () => {
     ['klingMotionControl', { width: 1280, height: 720, durationSec: 20 }, {}, { durationSec: 31 }, {}, 'fail', ['duration.max']],
     ['runwayAleph2', { durationSec: 10 }, {}, { avgFps: makeRational(60, 1) }, {}, 'fail', ['fps.max']],
     ['veoExtend', { avgFps: makeRational(24, 1), durationSec: 8 }, {}, { avgFps: makeRational(24, 1), width: 1440 }, {}, 'fail', ['aspectRatio.oneOf']],
-    ['wan26ReferenceToVideoFal', { avgFps: makeRational(16, 1) }, {}, {}, { size: 30_000_001 }, 'fail', ['fileSize.max']],
+    ['wan26ReferenceToVideoFal', { avgFps: makeRational(16, 1) }, {}, {}, { size: 31_457_281 }, 'fail', ['fileSize.max']],
     ['seedance2ReferenceVideo', { width: 1280, height: 720, durationSec: 10 }, {}, { width: 3840, height: 2160 }, {}, 'warn', ['pixels.max']],
   ] as const)('%s', (name, inside, insideFile, outside, outsideFile, verdict, rules) => {
     const preset = presets[name];
@@ -73,6 +79,12 @@ describe('presets: a file inside and a file outside each preset', () => {
     const report = check(result(outside, outsideFile), preset.rules);
     expect(report.verdict).toBe(verdict);
     expect(report.violations.map((v) => v.rule)).toEqual(rules);
+  });
+
+  it('passes a file between 200 MB and 200 MiB under Kling O1 and fails a larger one', () => {
+    expect(check(result({}, { size: 205_000_000 }), presets.klingO1ReferenceVideo.rules).verdict).toBe('pass');
+    expect(check(result({}, { size: 209_715_200 }), presets.klingO1ReferenceVideo.rules).verdict).toBe('pass');
+    expect(check(result({}, { size: 209_715_201 }), presets.klingO1ReferenceVideo.rules).violations.map((v) => v.rule)).toEqual(['fileSize.max']);
   });
 
   it('suggests 30 fps for a 60 fps file under Runway Aleph 2.0', () => {
