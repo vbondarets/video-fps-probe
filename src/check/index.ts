@@ -186,7 +186,8 @@ function fit(target: Q, rule: FpsRule = {}): readonly [Q, number] | null {
   const [lo] = list(rule.min);
   const hi = list(rule.max).reduce<Q | undefined>((a, q) => (a && cmp(a, q) > 0 ? a : q), undefined);
   const inside = (q: Q): boolean => (!lo || cmp(q, lo) >= 0) && (!hi || cmp(q, hi) <= 0);
-  const named = rule.exact != null ? list(rule.exact).filter((q) => rule.oneOf == null || list(rule.oneOf).some((o) => cmp(o, q) === 0n)) : rule.oneOf != null ? list(rule.oneOf) : null;
+  const oneOf = rule.oneOf == null ? null : list(rule.oneOf);
+  const named = rule.exact == null ? oneOf : list(rule.exact).filter((q) => !oneOf || oneOf.some((o) => cmp(o, q) === 0n));
   if (named) {
     const nearer = (a: Q, b: Q): bigint => abs(cmp(a, target)) * b[1] - abs(cmp(b, target)) * a[1] || cmp(a, b);
     const best = named.filter(inside).reduce<Q | null>((b, q) => (b && nearer(b, q) <= 0n ? b : q), null);
@@ -196,7 +197,10 @@ function fit(target: Q, rule: FpsRule = {}): readonly [Q, number] | null {
   if (lo && cmp(target, lo) < 0) return [lo, 0];
   if (!hi || cmp(target, hi) <= 0) return [target, 0];
   if (cmp(target, [DECIMATE_FROM[0] * hi[0], DECIMATE_FROM[1] * hi[1]]) >= 0) {
-    for (let k = 2n; k <= 8n; k++) if (cmp([target[0], target[1] * k], hi) <= 0) return lo && cmp([target[0], target[1] * k], lo) < 0 ? [hi, 0] : [[target[0], target[1] * k], Number(k)];
+    for (let k = 2n; k <= 8n; k++) {
+      const q: Q = [target[0], target[1] * k];
+      if (cmp(q, hi) <= 0) return lo && cmp(q, lo) < 0 ? [hi, 0] : [q, Number(k)];
+    }
   }
   return [hi, 0];
 }
@@ -204,20 +208,39 @@ function fit(target: Q, rule: FpsRule = {}): readonly [Q, number] | null {
 export function check(result: FileResult | null | undefined, rules: CheckRules): CheckReport {
   const known = (path: string, v: unknown, keys: readonly string[]): void => {
     if (!v || typeof v !== 'object' || Array.isArray(v)) invalid(path, v, 'an object');
-    for (const k of Object.keys(v as object)) if (!keys.includes(k)) throw new TypeError(`${path === 'rules' ? '' : `${path}.`}${k}: not a rule; expected one of ${keys.join(', ')}`);
+    const prefix = path === 'rules' ? '' : `${path}.`;
+    for (const k of Object.keys(v as object)) if (!keys.includes(k)) throw new TypeError(`${prefix}${k}: not a rule; expected one of ${keys.join(', ')}`);
   };
   known('rules', rules, RULE_KEYS);
   for (const g of GROUPS) if (rules[g] != null) known(g, rules[g], GROUP_KEYS[g]);
-  const choices: Array<[string, unknown, readonly string[]]> = [['fps.source', rules.fps?.source, SOURCES], ['audio', rules.audio, ['required', 'forbidden']], ['vfr', rules.vfr, POLICIES], ['uneven', rules.uneven, POLICIES], ['severity', rules.severity, ['fail', 'warn']]];
+  const choices: Array<[string, unknown, readonly string[]]> = [
+    ['fps.source', rules.fps?.source, SOURCES],
+    ['audio', rules.audio, ['required', 'forbidden']],
+    ['vfr', rules.vfr, POLICIES],
+    ['uneven', rules.uneven, POLICIES],
+    ['severity', rules.severity, ['fail', 'warn']],
+  ];
   for (const [rule, v, list] of choices) if (v != null && !list.includes(v as string)) invalid(rule, v, `one of ${list.join(', ')}`);
   const violations: CheckViolation[] = [];
   const severity = rules.severity === 'warn' ? 'warn' : 'fail';
   const error = result ? result.error : 'no result';
   const t = result && !error && Array.isArray(result.videoTracks) ? (result.videoTracks.find((x) => x.trackId === result.primaryTrackId) ?? null) : null;
-  const add = (rule: string, s: CheckSeverity, expected: CheckExpected, actual: number | string | boolean | null, message: string): number => violations.push({ rule, severity: s, expected, actual, message: `${rule}: ${message}` });
-  const unknown = (rule: string, missing: string): unknown => violations.some((v) => v.rule === rule) || add(rule, 'unknown', null, null, `unknown, ${error ? `the analysis failed: ${error}` : t ? `no ${missing}` : 'no video track'}`);
+  const add = (rule: string, s: CheckSeverity, expected: CheckExpected, actual: number | string | boolean | null, message: string): number =>
+    violations.push({ rule, severity: s, expected, actual, message: `${rule}: ${message}` });
+  const unknown = (rule: string, missing: string): unknown =>
+    violations.some((v) => v.rule === rule) || add(rule, 'unknown', null, null, `unknown, ${error ? `the analysis failed: ${error}` : t ? `no ${missing}` : 'no video track'}`);
 
-  const limits = (group: string, rule: Partial<Record<Bound, RatioValue | readonly RatioValue[]>> | undefined, actual: Q | null, shown: number | string, text: Text, unit: string, missing: string, side = '', near?: (q: Q) => boolean): void => {
+  const limits = (
+    group: string,
+    rule: Partial<Record<Bound, RatioValue | readonly RatioValue[]>> | undefined,
+    actual: Q | null,
+    shown: number | string,
+    text: Text,
+    unit: string,
+    missing: string,
+    side = '',
+    near?: (q: Q) => boolean,
+  ): void => {
     const bounds = BOUNDS.filter((b) => rule?.[b] != null).map((b) => {
       const path = `${group}.${b}${side}`;
       return [b, rule![b]!, (b === 'oneOf' ? [rule![b]!].flat() : [rule![b]!]).map((v) => (group === 'fps' ? readings(v, path) : [ratio(v, path)]))] as const;
@@ -228,7 +251,8 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
       const meets = (q: Q): boolean | undefined => near?.(q) || (b === 'min' ? cmp(actual, q) >= 0n : b === 'max' ? cmp(actual, q) <= 0n : cmp(actual, q) === 0n);
       const listed = [expected].flat();
       const named = listed.length ? `${listed.join(', ')}${unit}` : 'an empty list';
-      if (!values.flat().some(meets)) add(`${group}.${b}${side}`, severity, expected, shown, `${typeof text === 'string' ? text : text(values.flat())}${unit} is ${RELATION[b]} ${named}`);
+      const actualText = typeof text === 'string' ? text : text(values.flat());
+      if (!values.flat().some(meets)) add(`${group}.${b}${side}`, severity, expected, shown, `${actualText}${unit} is ${RELATION[b]} ${named}`);
     }
   };
   const quantity = (x: number | null | undefined): Q | null => (typeof x === 'number' ? decimal(String(x)) : null);
@@ -288,7 +312,8 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
     if (!fitted) report.suggestedFps = { value: null, reason: `${why}, and no frame rate meets every bound of the fps rule` };
     else if (fitted[0][0] > 0n) {
       const [q, k] = fitted;
-      report.suggestedFps = { value: value(q), reason: `${why}: ${fpsOff ? 'convert to' : 're-encode at a constant'} ${fpsText(q)} fps${k > 1 ? `, which keeps 1 of every ${k} frames` : ''}` };
+      const how = k > 1 ? `, which keeps 1 of every ${k} frames` : '';
+      report.suggestedFps = { value: value(q), reason: `${why}: ${fpsOff ? 'convert to' : 're-encode at a constant'} ${fpsText(q)} fps${how}` };
     }
   }
   report.verdict = (['fail', 'unknown', 'warn'] as const).find((s) => violations.some((v) => v.severity === s)) ?? 'pass';
