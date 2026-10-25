@@ -6,16 +6,16 @@ Frame rate, frame count, VFR detection and a rate profile for MP4, MOV, WebM and
 
 ## Install
 
-**Not published yet; install from GitHub or wait for the first npm release.** One registry publish will serve every package manager:
-
 ```
 npm install video-fps-probe
-yarn add video-fps-probe
+yarn add video-fps-probe   # Yarn classic and berry
 pnpm add video-fps-probe
 bun add video-fps-probe
 ```
 
-With npm a git dependency gets no code: `prepack` builds `dist/`, and npm does not run it for git installs. That is verified for npm only; what yarn, pnpm and bun do for a git install is not verified. Install a packed tarball:
+The first npm release is 0.2.0; one publish serves every package manager ([publishing](docs/publishing.md)). The package has no dependencies, and its optional peers are installed only with the entry that imports them: `mp4box` for `video-fps-probe/mp4box`, `mediabunny` for `video-fps-probe/mediabunny`, React 18 or 19 for `video-fps-probe/react`.
+
+For a commit that is not released yet, install a packed tarball. A git dependency gets no code with npm (Yarn, pnpm and bun are not tested): `prepack` builds `dist/`, and npm does not run it for a git install.
 
 ```
 git clone https://github.com/vbondarets/video-fps-probe.git && cd video-fps-probe
