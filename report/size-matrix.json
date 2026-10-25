@@ -259,7 +259,7 @@
           "gzip": 40575,
           "headroom": 425,
           "status": "ok",
-          "why": "Every own path: the probe client, the own worker entry, the statistics, both parsers, the rate profile core and the ffprobe frame rate estimate. Design estimate 37.0 KB; measured 36.24 KB before the estimate was added. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 40 KB to 40.5 KB in 0.2.0, measured 40.34 KB, when the ffprobe frame rate estimate began to read the H.264 slice headers that decide the decoder delay (0.64 KB gzip). Raised again to 41 KB, measured 40.58 KB, when the estimate began to ride the block walk of the exact scan (0.23 KB in the estimate and the Matroska parser)."
+          "why": "Every own path: the probe client, the own worker entry, the statistics, both parsers, the rate profile core and the ffprobe frame rate estimate. Design estimate 37.0 KB; measured 36.24 KB before the estimate was added. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 40 KB to 40.5 KB in 0.2.0, measured 40.34 KB, when the ffprobe frame rate estimate began to read the H.264 slice headers that decide the decoder delay (0.63 KB gzip). Raised again to 41 KB, measured 40.58 KB, when the estimate began to ride the block walk of the exact scan (0.23 KB in the estimate and the Matroska parser)."
         },
         {
           "key": "lazyTotal",
@@ -430,7 +430,7 @@
           "gzip": 35848,
           "headroom": 152,
           "status": "ok",
-          "why": "A Vite 8 app with no worker option builds workers with Vite's default format, 'iife', which cannot split, so the own worker is one file: both parsers, the statistics and the rate profile core are inlined. Measured 32.11 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 35.5 KB to 36 KB in 0.2.0, measured 35.65 KB, when the ffprobe frame rate estimate, which the one-file worker inlines, began to read the H.264 slice headers that decide the decoder delay (0.64 KB gzip)."
+          "why": "A Vite 8 app with no worker option builds workers with Vite's default format, 'iife', which cannot split, so the own worker is one file: both parsers, the statistics and the rate profile core are inlined. Measured 32.11 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 35.5 KB to 36 KB in 0.2.0, measured 35.65 KB, when the ffprobe frame rate estimate, which the one-file worker inlines, began to read the H.264 slice headers that decide the decoder delay (0.63 KB gzip)."
         },
         {
           "key": "firstMp4",
@@ -439,7 +439,7 @@
           "gzip": 38750,
           "headroom": 250,
           "status": "ok",
-          "why": "What the first MP4 loads in a Vite 8 app that keeps the default worker format: the probe client and the one-file own worker. The 24 KB of the default configuration needs worker.format 'es' in the host's Vite config. Measured 34.77 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 38.5 KB to 39 KB in 0.2.0, measured 38.55 KB, because the one-file worker inlines the ffprobe frame rate estimate, which then began to read the H.264 slice headers (0.64 KB gzip)."
+          "why": "What the first MP4 loads in a Vite 8 app that keeps the default worker format: the probe client and the one-file own worker. The 24 KB of the default configuration needs worker.format 'es' in the host's Vite config. Measured 34.77 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 38.5 KB to 39 KB in 0.2.0, measured 38.55 KB, because the one-file worker inlines the ffprobe frame rate estimate, which then began to read the H.264 slice headers (0.63 KB gzip)."
         },
         {
           "key": "lazyTotal",
@@ -2102,7 +2102,7 @@
           "gzip": 38564,
           "headroom": 436,
           "status": "ok",
-          "why": "What the first MP4 loads with the standalone worker: the probe client and the one-file worker. It suits a host whose workers must stay classic scripts. Measured 34.60 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 38.5 KB to 39 KB in 0.2.0, measured 38.56 KB, because the standalone file inlines the ffprobe frame rate estimate, which began to read the H.264 slice headers and to ride the block walk of the exact scan (0.86 KB gzip together)."
+          "why": "What the first MP4 loads with the standalone worker: the probe client and the one-file worker. It suits a host whose workers must stay classic scripts. Measured 34.60 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 38.5 KB to 39 KB in 0.2.0, measured 38.56 KB, because the standalone file inlines the ffprobe frame rate estimate, which began to read the H.264 slice headers and to ride the block walk of the exact scan (0.81 KB gzip together)."
         },
         {
           "key": "lazyTotal",
@@ -2752,7 +2752,7 @@
     "gzip": 35770,
     "limit": 36000,
     "status": "ok",
-    "why": "dist/standalone/own.worker.js: the own worker as one minified IIFE file with no imports, built by rolldown. Design estimate 35.0 KB; measured 32.04 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 35.5 KB to 36 KB in 0.2.0, measured 35.58 KB, when the ffprobe frame rate estimate, which the file inlines, began to read the H.264 slice headers that decide the decoder delay (0.64 KB gzip)."
+    "why": "dist/standalone/own.worker.js: the own worker as one minified IIFE file with no imports, built by rolldown. Design estimate 35.0 KB; measured 32.04 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 35.5 KB to 36 KB in 0.2.0, measured 35.58 KB, when the ffprobe frame rate estimate, which the file inlines, began to read the H.264 slice headers that decide the decoder delay (0.63 KB gzip)."
   },
   "failures": []
 }
