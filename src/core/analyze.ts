@@ -1,9 +1,9 @@
-import { throwIfAborted } from './abort.ts';
-import { resolveOptions } from './options.ts';
-import { BlobReader, type BlobLike } from './reader.ts';
-import { emptyAnalysis } from './result.ts';
-import { sniff, type SniffKind } from './sniff.ts';
-import type { AnalyzeOptions, ContainerAnalysis, ContainerAnalyzer, FileResult, ResolvedAnalyzeOptions } from './types.ts';
+import { analyzeWith } from './dispatch.ts';
+import type { BlobLike } from './reader.ts';
+import type { SniffKind } from './sniff.ts';
+import type { AnalyzeOptions, ContainerAnalyzer, FileResult } from './types.ts';
+
+export { errorMessage, firstReadAhead, isAbortError, SINGLE_READ_MAX_BYTES } from './dispatch.ts';
 
 export type AnalyzerRegistry = Record<Exclude<SniffKind, 'unknown'>, ContainerAnalyzer>;
 
@@ -19,84 +19,12 @@ export const DEFAULT_ANALYZERS: Readonly<AnalyzerRegistry> = {
   matroska: async (reader, opts) => (await DEFAULT_LOADERS.matroska())(reader, opts),
 };
 
-const SNIFF_BYTES = 1024;
-
-export const SINGLE_READ_MAX_BYTES = 1024 * 1024;
-
-export function firstReadAhead(size: number, opts: ResolvedAnalyzeOptions): number {
-  const { perReadMs, bytesPerMs } = opts.costModel;
-  const head = opts.readAhead.head;
-  return size < Math.max(head, Math.min(head + perReadMs * bytesPerMs, SINGLE_READ_MAX_BYTES)) ? size : head;
-}
-
-export function isAbortError(e: unknown): boolean {
-  return typeof e === 'object' && e !== null && 'name' in e && (e as { name: unknown }).name === 'AbortError';
-}
-
-export function errorMessage(e: unknown): string {
-  if (e instanceof Error) return e.message || e.name;
-  return String(e);
-}
-
-function applyAnalysis(target: FileResult, a: ContainerAnalysis): void {
-  target.container = a.container;
-  target.brand = a.brand;
-  target.formatDurationSec = a.formatDurationSec;
-  target.scan = a.scan;
-  target.videoTracks = a.videoTracks;
-  target.audioTrackCount = a.audioTrackCount;
-  target.primaryTrackId = a.primaryTrackId;
-  target.error = a.error;
-  target.warnings = a.warnings;
-}
-
-export async function analyze(
+export function analyze(
   blob: BlobLike,
   name: string,
   opts: AnalyzeOptions = {},
   analyzers: Readonly<AnalyzerRegistry> = DEFAULT_ANALYZERS,
   loaders: Readonly<AnalyzerLoaders> | null = analyzers === DEFAULT_ANALYZERS ? DEFAULT_LOADERS : null,
 ): Promise<FileResult> {
-  const t0 = performance.now();
-  const resolved = resolveOptions(opts);
-  throwIfAborted(resolved.signal);
-  const result: FileResult = {
-    name,
-    size: blob.size,
-    ...emptyAnalysis('unknown'),
-    io: { reads: 0, bytesRead: 0, ms: 0 },
-    engine: 'own',
-  };
-  let reader: BlobReader | null = null;
-  let loadMs = 0;
-  try {
-    reader = new BlobReader(blob, { headWindow: resolved.readAhead.head, signal: resolved.signal });
-    if (reader.size === 0) {
-      result.error = 'not a recognised container: empty file';
-    } else {
-      const head = await reader.bytes(0, Math.min(SNIFF_BYTES, reader.size), firstReadAhead(reader.size, resolved));
-      const sniffed = sniff(head);
-      if (sniffed.kind === 'unknown') {
-        result.error = `not a recognised container: ${sniffed.reason}`;
-      } else {
-        result.container = sniffed.kind === 'isobmff' ? 'mp4' : 'matroska';
-        let analyzer = analyzers[sniffed.kind];
-        if (loaders) {
-          const l0 = performance.now();
-          analyzer = await loaders[sniffed.kind]();
-          loadMs = performance.now() - l0;
-        }
-        applyAnalysis(result, await analyzer(reader, resolved));
-      }
-    }
-  } catch (e) {
-    if (resolved.signal?.aborted || isAbortError(e)) throw e;
-    result.error = errorMessage(e);
-  }
-  if (reader) {
-    result.io.reads = reader.reads;
-    result.io.bytesRead = reader.bytesFetched;
-  }
-  result.io.ms = performance.now() - t0 - loadMs;
-  return result;
+  return analyzeWith(blob, name, opts, loaders ? (kind) => loaders[kind]() : (kind) => analyzers[kind]);
 }
