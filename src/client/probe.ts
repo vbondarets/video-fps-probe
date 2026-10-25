@@ -1,7 +1,7 @@
 import { ProbeError } from '../api/errors.ts';
 import type { EngineId } from '../core/types.ts';
 import type { ContainerFamily, EngineDescriptor, EngineModule, WorkerEngineId } from '../plugins/types.ts';
-import type { JobRequest, WireOptions } from '../worker/protocol.ts';
+import type { AnalyzeRequest, WireOptions } from '../worker/protocol.ts';
 import type { InlineReply } from './inline.ts';
 import { WorkerPool, workerFailed, type RunOptions } from './pool.ts';
 import type { SplitRoute } from './route.ts';
@@ -17,9 +17,13 @@ export type Pools = (key: string, create: () => Worker) => WorkerPool;
 
 export type Lazy = <T>(chunk: Promise<T>, engine: EngineId | null) => Promise<T>;
 
-export type Runner = { run: (request: JobRequest, options?: RunOptions) => Promise<unknown> };
+export type FamilyPool = (family: ContainerFamily) => WorkerPool;
 
-export type Route = { kind: string; pool: () => Runner } | { load: () => Promise<EngineModule> } | { error: ProbeError };
+export type WarmPools = (containers: readonly ContainerFamily[]) => (readonly [WorkerPool, readonly ContainerFamily[]])[];
+
+export type Runner = { run: (request: AnalyzeRequest, options: RunOptions) => Promise<unknown> };
+
+export type Route = { kind: string; pool: () => WorkerPool; warmPools?: undefined } | { kind: string; pool: () => Runner; warmPools: WarmPools } | { load: () => Promise<EngineModule> } | { error: ProbeError };
 
 type SplitDescriptor = EngineDescriptor & { readonly createWorkers?: Readonly<Record<ContainerFamily, () => Worker>> };
 
@@ -126,18 +130,19 @@ export function createProbeCore(options: CoreOptions): Probe<EngineId> {
     async prewarm(o = {}) {
       if (life.signal.aborted) return;
       const containers = o.containers ?? ['isobmff'];
-      const warm = new Map<Runner, WorkerEngineId[]>();
+      const warm = new Map<WorkerPool, readonly [WorkerEngineId[], ContainerFamily[]]>();
       const jobs: Promise<unknown>[] = [];
       for (const id of o.engines ?? [defaultEngine]) {
         const route = routes.get(id);
         if (!route || 'error' in route) continue;
         if ('load' in route) jobs.push(lazy(route.load(), id).then((m) => m.warm?.(containers)));
-        else {
-          const pool = route.pool();
-          warm.set(pool, [...(warm.get(pool) ?? []), id as WorkerEngineId]);
-        }
+        else
+          for (const [pool, families] of route.warmPools ? route.warmPools(containers) : [[route.pool(), containers] as const]) {
+            const [engines, union] = warm.get(pool) ?? [[], []];
+            warm.set(pool, [[...engines, id as WorkerEngineId], [...new Set([...union, ...families])]]);
+          }
       }
-      for (const [pool, engines] of warm) jobs.push(pool.run({ type: 'warm', engines, containers }, { timeoutMs: defaultTimeout }));
+      for (const [pool, [engines, union]] of warm) jobs.push(pool.run({ type: 'warm', engines, containers: union }, { timeoutMs: defaultTimeout }));
       await Promise.allSettled(jobs);
     },
     dispose() {

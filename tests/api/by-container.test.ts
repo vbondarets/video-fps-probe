@@ -44,19 +44,22 @@ describe('custom worker byContainer', () => {
     ]);
   });
 
-  it('prewarms own per container family on the worker of each family, and another engine on the custom worker with all of them', async () => {
+  it('prewarms one request per worker, with the union of the containers of the engines that share it', async () => {
     const probe = createProbeClient({ worker: { create: FakeWorker.as('custom'), engines: ['own', 'mediabunny'], byContainer: { matroska: FakeWorker.as('matroska') } } });
     await probe.prewarm({ engines: ['own', 'mediabunny'], containers: ['isobmff', 'matroska'] });
     expect(FakeWorker.instances.map((w) => [w.label, w.posted])).toEqual([
-      [
-        'custom',
-        [
-          { v: 1, id: 1, type: 'warm', engines: ['own'], containers: ['isobmff'] },
-          { v: 1, id: 2, type: 'warm', engines: ['mediabunny'], containers: ['isobmff', 'matroska'] },
-        ],
-      ],
+      ['custom', [{ v: 1, id: 1, type: 'warm', engines: ['own', 'mediabunny'], containers: ['isobmff', 'matroska'] }]],
       ['matroska', [{ v: 1, id: 1, type: 'warm', engines: ['own'], containers: ['matroska'] }]],
     ]);
+  });
+
+  it('starts one custom worker for prewarm with workers: 2, own on it for a family without a worker and another engine', async () => {
+    const probe = createProbeClient({ worker: { create: FakeWorker.as('custom'), engines: ['own', 'mediabunny'], byContainer: { matroska: FakeWorker.as('matroska') } }, workers: 2 });
+    await probe.prewarm({ engines: ['own', 'mediabunny'], containers: ['isobmff', 'matroska'] });
+    expect(FakeWorker.instances.map((w) => w.label)).toEqual(['custom', 'matroska']);
+    await probe.prewarm({ engines: ['mediabunny', 'own'], containers: ['matroska', 'isobmff'] });
+    expect(FakeWorker.instances.map((w) => w.label)).toEqual(['custom', 'matroska']);
+    expect(FakeWorker.instances[0]!.posted.at(-1)).toEqual({ v: 1, id: 2, type: 'warm', engines: ['mediabunny', 'own'], containers: ['matroska', 'isobmff'] });
   });
 
   it('applies to own only, so a custom worker without own ignores it', async () => {

@@ -104,7 +104,8 @@ Each engine module exports `run` and `containers` (the `EngineModule` contract).
 | `client/probe.ts` | `createProbeCore`: builds the route of every engine, owns the pools, runs `analyze`, `tryAnalyze`, `prewarm`, `dispose` and `destroy`; it takes the split routes as `split` and imports none of them |
 | `client/create.ts` | `createProbeClient`: `createProbeCore` with the split routes of `route.ts` |
 | `client/probe-client.ts` | `loadProbeClient`, the factory of `lazyProbeClient`: `createProbeCore`, after an `import()` of `route.ts` only for a custom worker with `byContainer` |
-| `client/route.ts` | `splitRoute`: the route of the own workers and of `byContainer`, whose runner picks the pool of a family with `familyOf(file, signal)` (the first 4 bytes of the file; never rejects) and sends a warm request to the pool of each family; `createProbe` and `createProbeClient` import it statically, `loadProbeClient` only for `byContainer`, so the client of `lazyProbeClient` without `byContainer` holds none of it |
+| `client/route.ts` | `splitRoute`: the route of the own workers and of `byContainer`, whose runner picks the pool of a family with `familyOf(file, signal)` (the first 4 bytes of the file; never rejects) and whose `warmPools` gives `prewarm` the pool of each family it is given; `createProbe` and `createProbeClient` import it statically, `loadProbeClient` only for `byContainer`, so the client of `lazyProbeClient` without `byContainer` holds none of it |
+| `client/family-pool.ts` | `familyPools`: the pool of a container family on a split route, the worker of the family or else the worker of the route, and the `warmPools` built on it; imported by `route.ts` |
 | `client/pool.ts` | `WorkerPool`: one pool per worker kind, queue, timeouts, cancel, idle termination |
 | `client/fallback.ts` | `runChain`: the fallback chain, `attempts`, skipped results; a lazy chunk loaded only for chains or skips |
 | `client/compare.ts` | `compare`: per-engine outcomes and the agreement; a lazy chunk |
@@ -132,7 +133,7 @@ A worker kind is a worker script: `own-isobmff`, `own-matroska`, `mp4box`, `medi
 - an engine listed on the custom worker runs there;
 - `own` otherwise runs on the worker of the default engine when that descriptor has `loadOwn` (mp4box, mediabunny), else on the own workers, else on any descriptor with `loadOwn`, else in the calling thread when inline;
 - the own workers and a custom worker with `byContainer` give a split route (`splitRoute`): its runner first reads the first 4 bytes of the file with `familyOf`, then takes the pool of that family (`own-isobmff` or `own-matroska`, `custom-<family>` or `custom`). `1A 45 DF A3` goes to the Matroska worker and everything else to the ISO BMFF worker; that is the first branch of `sniff()` exactly, so the route never disagrees with the worker's own sniff. The read is bounded by the call's `signal` and by `destroy()`, and is not counted in `io`. `compare` still groups engines by the route's kind, `own` or `custom`;
-- `prewarm` sends one warm request per route pool, with the engines on it and the containers; the runner of a split route sends it on to the pool of each family it is given, with that family only, so a pool that a split route shares with another engine (`create` for a family without a `byContainer` worker) gets one request from each;
+- `prewarm` sends one warm request per pool, with the engines on it and the union of their containers; a split route adds only the pools of the families it is given, through `warmPools`, so a pool that it shares with another engine (`create` for a family without a `byContainer` worker) gets one request and starts one worker;
 - any other engine runs on its descriptor's worker, or through its `load()` in the calling thread when the descriptor is `thread: 'main'` (rvfc) or the probe is inline;
 - an engine listed only on the custom worker gets an `unsupported-environment` route when the probe is inline.
 
@@ -222,8 +223,8 @@ probe.analyze(file)
 | Chunk | Contents | Loaded by | When |
 |---|---|---|---|
 | stub | `lazyStub` and the lazy entry | the host's entry chunk | page load (the critical path) |
-| probe client | `client/probe.ts`, `pool.ts` and, in the default flavor, `route.ts` and the own descriptor; for `lazyProbeClient`, `client/probe-client.ts` | `import()` in the stub | first call or `prewarm()` |
-| split routing | `client/route.ts`, for a custom worker of `lazyProbeClient` | `import()` in the client, only with `byContainer` | right after the client, before the routes are built |
+| probe client | `client/probe.ts`, `pool.ts` and, in the default flavor, `route.ts`, `family-pool.ts` and the own descriptor; for `lazyProbeClient`, `client/probe-client.ts` | `import()` in the stub | first call or `prewarm()` |
+| split routing | `client/route.ts` and `family-pool.ts`, for a custom worker of `lazyProbeClient` | `import()` in the client, only with `byContainer` | right after the client, before the routes are built |
 | own worker of a family | `worker/own-isobmff.worker.ts` or `own-matroska.worker.ts`: runtime, reader, sniff, options, result builders, the statistics and that family's parser | the worker literal of the family, default flavor | first file of that family |
 | fallback, compare, inline | `client/fallback.ts`, `client/compare.ts` with `api/agreement.ts`, `client/inline.ts` | `import()` in the client | first chain or skip, first `compare`, first in-thread run |
 | worker entry | runtime, reader, sniff, options, result builders | the worker literal of the kind (mp4box, mediabunny, a custom worker) | first job of that kind |
