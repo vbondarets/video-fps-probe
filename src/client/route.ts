@@ -9,9 +9,10 @@ export const familyOf = (file: Blob, signal?: AbortSignal | null): Promise<Conta
     signal?.addEventListener('abort', iso);
     Promise.resolve()
       .then(() => file.slice(0, 4).arrayBuffer())
-      .then((b) => {
+      .then((b): ContainerFamily => {
         const head = new Uint8Array(b);
-        resolve(EBML.every((x, i) => head[i] === x) ? 'matroska' : 'isobmff');
-      }, iso)
+        return EBML.every((x, i) => head[i] === x) ? 'matroska' : 'isobmff';
+      })
+      .then(resolve, iso)
       .finally(() => signal?.removeEventListener('abort', iso));
   });

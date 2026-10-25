@@ -1,6 +1,6 @@
 import { openAsBlob, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { EBML, familyOf } from '../../src/client/route.ts';
 import { EBML_MAGIC, sniff } from '../../src/core/sniff.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
@@ -60,15 +60,61 @@ describe('familyOf', () => {
     expect(matroska).toBeGreaterThan(500);
   });
 
-  it('never rejects: a non-Blob, a read that fails and an aborted read go to the ISO BMFF worker', async () => {
-    expect(await familyOf({} as Blob)).toBe('isobmff');
-    const failing = { slice: () => ({ arrayBuffer: () => Promise.reject(new Error('NotReadableError')) }) } as unknown as Blob;
-    expect(await familyOf(failing)).toBe('isobmff');
+  it('settles ISO BMFF when classifying the head throws, without an unhandled rejection', async () => {
+    for (const value of [-1, Symbol('head'), 2 ** 53]) {
+      const odd = { slice: () => ({ arrayBuffer: () => Promise.resolve(value) }) } as unknown as Blob;
+      expect(await familyOf(odd), String(value)).toBe('isobmff');
+    }
+  });
+
+  it('settles ISO BMFF when the read rejects or throws', async () => {
+    const rejecting = { slice: () => ({ arrayBuffer: () => Promise.reject(new Error('NotReadableError')) }) } as unknown as Blob;
+    expect(await familyOf(rejecting)).toBe('isobmff');
+    const throwing = {
+      slice: () => ({
+        arrayBuffer: () => {
+          throw new Error('NotReadableError');
+        },
+      }),
+    } as unknown as Blob;
+    expect(await familyOf(throwing)).toBe('isobmff');
+  });
+
+  it('settles ISO BMFF for an input that is not a Blob', async () => {
+    for (const input of [{}, null, undefined, 'video.webm', 42, { slice: () => null }]) expect(await familyOf(input as unknown as Blob), String(input)).toBe('isobmff');
+  });
+
+  it('settles ISO BMFF without reading when the signal is aborted before the call', async () => {
+    const slice = vi.fn(() => new Blob([new Uint8Array(EBML)]));
+    expect(await familyOf({ slice } as unknown as Blob, AbortSignal.abort())).toBe('isobmff');
+    expect(slice).not.toHaveBeenCalled();
+  });
+
+  it('settles ISO BMFF when the signal aborts during the read, and a late Matroska head does not change it', async () => {
     const pending = { slice: () => ({ arrayBuffer: () => new Promise<ArrayBuffer>(() => {}) }) } as unknown as Blob;
     const controller = new AbortController();
     const routed = familyOf(pending, controller.signal);
     controller.abort();
     expect(await routed).toBe('isobmff');
-    expect(await familyOf(new Blob([new Uint8Array(EBML)]), AbortSignal.abort())).toBe('isobmff');
+    let finish: (b: ArrayBuffer) => void = () => {};
+    const late = { slice: () => ({ arrayBuffer: () => new Promise<ArrayBuffer>((r) => (finish = r)) }) } as unknown as Blob;
+    const second = new AbortController();
+    const raced = familyOf(late, second.signal);
+    second.abort();
+    finish(new Uint8Array(EBML).buffer);
+    expect(await raced).toBe('isobmff');
+  });
+
+  it('removes its abort listener once the head is read or classifying it fails', async () => {
+    const heads: Blob[] = [new Blob([new Uint8Array(EBML)]), new Blob([]), { slice: () => ({ arrayBuffer: () => Promise.resolve(-1) }) } as unknown as Blob, {} as Blob];
+    for (const [i, head] of heads.entries()) {
+      const controller = new AbortController();
+      const add = vi.spyOn(controller.signal, 'addEventListener');
+      const remove = vi.spyOn(controller.signal, 'removeEventListener');
+      expect(await familyOf(head, controller.signal), String(i)).toBe(i === 0 ? 'matroska' : 'isobmff');
+      await Promise.resolve();
+      expect(add, String(i)).toHaveBeenCalledTimes(1);
+      expect(remove, String(i)).toHaveBeenCalledWith('abort', add.mock.calls[0]![1]);
+    }
   });
 });
