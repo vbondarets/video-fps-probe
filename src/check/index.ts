@@ -79,6 +79,7 @@ const BOUNDS = Object.keys(RELATION) as Bound[];
 const GROUPS = ['fps', 'duration', 'display', 'aspectRatio', 'pixels', 'fileSize'] as const;
 const POLICIES: readonly RatePolicy[] = ['allow', 'warn', 'reject'];
 const SOURCES: readonly FpsSource[] = ['avg', 'ffprobe', 'nominal', 'dominant'];
+const AUDIO_ENGINES: readonly string[] = ['own', 'mp4box', 'mediabunny'];
 
 const invalid = (rule: string, v: unknown, what: string): never => {
   throw new TypeError(`${rule}: ${JSON.stringify(v)} is not ${what}`);
@@ -214,9 +215,10 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   allow('containers', rules.containers, result?.container, 'container');
   allow('codecs', rules.codecs, t?.codecName, 'codec name');
   if (rules.audio) {
-    const audio = t ? result!.audioTrackCount > 0 : null;
+    const counted = t && AUDIO_ENGINES.includes(result!.engine) && Number.isSafeInteger(result!.audioTrackCount);
+    const audio = counted ? result!.audioTrackCount > 0 : null;
     const required = rules.audio === 'required';
-    if (audio === null) unknown('audio', '');
+    if (audio === null) unknown('audio', `audio track count (the ${result?.engine} engine reports none)`);
     else if (audio !== required) add('audio', severity, rules.audio, audio, `${rules.audio}, the file has ${required ? 'no' : 'an'} audio track`);
   }
   const vfr = policy('vfr', t && t.isVfr, 'VFR flag', 'the frame rate is variable');

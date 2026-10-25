@@ -209,6 +209,20 @@ describe('check: allowlists, audio and rate policies', () => {
     expect(failed(result({}, { audioTrackCount: 0 }), { audio: 'forbidden' })).toEqual([]);
   });
 
+  it('fails open on audio for an engine that does not report audio, such as rvfc', () => {
+    const rvfc = (): FileResult => ({ ...result({ avgFps: rate(30) }), ...emptyAnalysis('unknown'), videoTracks: [{ ...emptyTrack(1), width: 1280, height: 720, avgFps: rate(30) }], primaryTrackId: 1, engine: 'rvfc' });
+    expect(rvfc().audioTrackCount).toBe(0);
+    for (const audio of ['required', 'forbidden'] as const) {
+      expect(check(rvfc(), { audio }).violations).toEqual([{ rule: 'audio', severity: 'unknown', expected: null, actual: null, message: 'audio: unknown, no audio track count (the rvfc engine reports none)' }]);
+    }
+    expect(check(rvfc(), { audio: 'required', fps: { max: 60 } }).verdict).toBe('unknown');
+    for (const engine of ['own', 'mp4box', 'mediabunny'] as const) {
+      expect(failed(result({}, { audioTrackCount: 0, engine }), { audio: 'required' }), engine).toEqual(['audio']);
+      expect(failed(result({}, { audioTrackCount: 1, engine }), { audio: 'forbidden' }), engine).toEqual(['audio']);
+    }
+    expect(check(JSON.parse(JSON.stringify({ ...result(), audioTrackCount: undefined })) as FileResult, { audio: 'required' }).verdict).toBe('unknown');
+  });
+
   it('allows, warns about or rejects VFR', () => {
     const vfr = result({ isVfr: true });
     expect(check(vfr, { vfr: 'allow' })).toEqual({ verdict: 'pass', violations: [] });
