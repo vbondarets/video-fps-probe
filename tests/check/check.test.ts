@@ -222,6 +222,42 @@ describe('check: rule validation', () => {
     expect(failed(result({ durationSec: 90 }), JSON.parse('{"duration":{"max":"1e300","min":"1e-300"}}') as CheckRules)).toEqual([]);
   });
 
+  it.each([
+    ['30', true],
+    ['29.97', true],
+    [' 1e3 ', true],
+    ['2.5E-1', true],
+    ['1E+2', true],
+    ['1e-400', true],
+    [`0.${'0'.repeat(398)}1`, true],
+    ['0e400', true],
+    ['1e400', false],
+    ['1e-401', false],
+    ['0e401', false],
+    [`0.${'0'.repeat(400)}1`, false],
+    ['.5', false],
+    ['5.', false],
+    ['+5', false],
+    ['-5', false],
+    ['0x10', false],
+    ['1_000', false],
+    ['1,5', false],
+    ['1e', false],
+    ['e3', false],
+    ['', false],
+    ['Infinity', false],
+  ] as const)('reads the decimal string %j as the docs say: %s', (v, accepted) => {
+    const duration = JSON.parse(JSON.stringify({ duration: { min: v } })) as CheckRules;
+    const fps = JSON.parse(JSON.stringify({ fps: { min: `${v}/1` } })) as CheckRules;
+    if (accepted) {
+      expect(() => check(result(), duration)).not.toThrow();
+      expect(() => check(result(), fps)).not.toThrow();
+    } else {
+      expect(() => check(result(), duration)).toThrow(new TypeError(`duration.min: ${JSON.stringify(v)} is not a non-negative number`));
+      expect(() => check(result(), fps)).toThrow(new TypeError(`fps.min: ${JSON.stringify(`${v}/1`)} is not a non-negative number or 'num/den'`));
+    }
+  });
+
   it('gives one unknown entry for the frame size rule of a track without a size', () => {
     expect(check(result({ width: 0, height: 0 }), { frameSize: { minWidth: 1, maxHeight: 2, minShortSide: 1 } }).violations).toEqual([{ rule: 'frameSize', severity: 'unknown', expected: null, actual: null, message: 'frameSize: unknown, no frame size' }]);
   });
