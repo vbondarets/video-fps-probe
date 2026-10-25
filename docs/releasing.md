@@ -2,7 +2,7 @@
 
 A release is one `npm version` run on a clean `main`. Its lifecycle scripts regenerate everything that depends on the version in the same commit, so the release commit passes CI. The 0.1.0 release commit did not: the bump renamed the demo chunks that read the version and the tarball name in `report/size-matrix.*`, and CI failed on the stale reports.
 
-Publishing to npm is not part of a release yet (`"private": true`).
+Publishing to npm is a separate step after the release, by the owner: [Publishing](publishing.md).
 
 ## Command
 
