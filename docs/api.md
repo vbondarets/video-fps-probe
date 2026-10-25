@@ -521,13 +521,13 @@ interface ProviderPreset {
   readonly sourceKind: PresetSourceKind; // 'gateway': documented by a service that serves another company's model
   readonly verifiedAt: string; // YYYY-MM-DD, the day every number was read again from sourceUrl
   readonly note: string; // what the rules leave out, and why
-  readonly rules: { readonly [K in keyof CheckRules]: Readonly<CheckRules[K]> }; // read-only at every level: every importer shares the preset
+  readonly rules: { readonly [K in keyof CheckRules]: Readonly<CheckRules[K]> }; // typed read-only and frozen at every level: every importer shares the preset
 }
 
 check(result, klingO1ReferenceVideo.rules);
 ```
 
-The published input limits of video generation APIs for a reference or source video, as `check()` rules. Each preset is a named export with no import, so a bundler keeps only the presets a host imports. A rule holds only a limit the source states; a limit the page leaves ambiguous or does not publish is left out, and the note says so. No source says whether its MB is decimal or binary, so a size limit holds the larger reading, MiB (1,048,576 bytes), and the note names it: a file over the limit is over it under either reading, and a file between the two readings passes and may still be refused. A gateway preset, documented by a service such as fal or EvoLink that serves another company's model, has `severity: 'warn'`, because its limits need not be the model owner's. Limits of a request rather than a file, such as the number of reference videos or their total duration, are outside `check()`, which judges one file.
+The published input limits of video generation APIs for a reference or source video, as `check()` rules. Each preset is a named export with no import, so a bundler keeps only the presets a host imports. Every preset is frozen at every level with `Object.freeze` when the module loads, so writing to one throws a `TypeError` in strict mode (all ES modules) instead of changing the limits for every other importer; the freezing call is annotated `/*#__PURE__*/`, so a bundler still drops the presets a host does not import (the `preset` row of the [size matrix](../report/size-matrix.md) holds one preset, and a consumer test finds only its source in the build). A rule holds only a limit the source states; a limit the page leaves ambiguous or does not publish is left out, and the note says so. No source says whether its MB is decimal or binary, so a size limit holds the larger reading, MiB (1,048,576 bytes), and the note names it: a file over the limit is over it under either reading, and a file between the two readings passes and may still be refused. A gateway preset, documented by a service such as fal or EvoLink that serves another company's model, has `severity: 'warn'`, because its limits need not be the model owner's. Limits of a request rather than a file, such as the number of reference videos or their total duration, are outside `check()`, which judges one file.
 
 | Export | Model and input | Source | Rules |
 |---|---|---|---|

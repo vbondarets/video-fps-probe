@@ -20,7 +20,7 @@ The critical path is the package code inside the host entry chunk, cut out of th
 | react | video-fps-probe/lazy + video-fps-probe/react (React 19.3.1) | format: 'es' | **1.64 KB** | 69.85 KB | 23.60 KB | 40.61 KB | - | 1 (own.worker) | ok |
 | react18 | video-fps-probe/lazy + video-fps-probe/react (React 18.3.1) | format: 'es' | **1.64 KB** | 47.25 KB | 23.59 KB | 40.60 KB | - | 1 (own.worker) | ok |
 | check | video-fps-probe/lazy + video-fps-probe/check | format: 'es' | **3.98 KB** | 4.70 KB | 23.60 KB | 40.60 KB | - | 1 (own.worker) | ok |
-| preset | video-fps-probe/lazy + video-fps-probe/check + video-fps-probe/presets (klingO1ReferenceVideo) | format: 'es' | **4.30 KB** | 5.02 KB | 23.60 KB | 40.61 KB | - | 1 (own.worker) | ok |
+| preset | video-fps-probe/lazy + video-fps-probe/check + video-fps-probe/presets (klingO1ReferenceVideo) | format: 'es' | **4.34 KB** | 5.06 KB | 23.60 KB | 40.61 KB | - | 1 (own.worker) | ok |
 | standalone worker file | video-fps-probe/standalone/own.worker.js | - | - | - | 35.80 KB | 35.80 KB | - | 1 file, no imports | ok |
 
 First MP4: the probe client, the worker entry that serves own, the statistics chunk (requested in parallel with the parser) and the ISO BMFF parser. All own paths adds the Matroska parser, the ffprobe frame rate estimate of a Matroska file without DefaultDuration and the rate profile core. A worker built as iife cannot split, so in zero-config and iife-nosplit the own worker is one file, as the standalone file is in standalone-url, and both columns are the client plus that file.
@@ -31,7 +31,7 @@ In react (React 19.3.1) and react18 (React 18.3.1) the entry chunk also holds Re
 
 In check, 3.42 KB of the 3.98 KB critical path is `check`, imported statically next to the lazy stub. It imports no other module and loads nothing lazily, so the lazy columns equal the default configuration's.
 
-In preset, 3.42 KB of the 4.30 KB critical path is `check` and 0.38 KB the one preset it imports (klingO1ReferenceVideo), imported statically next to the lazy stub. Neither entry imports another module or loads anything lazily, so the lazy columns equal the default configuration's.
+In preset, 3.42 KB of the 4.34 KB critical path is `check` and 0.46 KB the one preset it imports (klingO1ReferenceVideo), imported statically next to the lazy stub. Neither entry imports another module or loads anything lazily, so the lazy columns equal the default configuration's.
 
 ## Budgets (gzip)
 
@@ -121,10 +121,10 @@ In preset, 3.42 KB of the 4.30 KB critical path is `check` and 0.38 KB the one p
 | check | entry chunk with the preload helper | 5.50 KB | 4.70 KB | 0.80 KB | ok |
 | check | first MP4 analysis, lazy total | 24.00 KB | 23.60 KB | 0.40 KB | ok |
 | check | emitted lazy total (every file outside the entry chunk) | 81.00 KB | 80.96 KB | 0.04 KB | ok |
-| preset | critical path (package code in the entry chunk) | 5.00 KB | 4.30 KB | 0.70 KB | ok |
+| preset | critical path (package code in the entry chunk) | 5.00 KB | 4.34 KB | 0.66 KB | ok |
 | preset | check entry (in the entry chunk) | 4.00 KB | 3.42 KB | 0.58 KB | ok |
-| preset | presets entry (the imported presets, in the entry chunk) | 0.50 KB | 0.38 KB | 0.12 KB | ok |
-| preset | entry chunk with the preload helper | 6.00 KB | 5.02 KB | 0.98 KB | ok |
+| preset | presets entry (the imported presets, in the entry chunk) | 0.50 KB | 0.46 KB | 0.04 KB | ok |
+| preset | entry chunk with the preload helper | 6.00 KB | 5.06 KB | 0.94 KB | ok |
 | preset | first MP4 analysis, lazy total | 24.00 KB | 23.60 KB | 0.40 KB | ok |
 | preset | emitted lazy total (every file outside the entry chunk) | 81.00 KB | 80.96 KB | 0.04 KB | ok |
 | standalone | own.worker.js | 36.00 KB | 35.80 KB | 0.20 KB | ok |
@@ -503,9 +503,9 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | check | assets/sniff.js | page | shared | 0.99 KB |
 | check | assets/stats.js | own.worker | stats | 4.31 KB |
 | check | assets/stats.js | page | stats | 4.34 KB |
-| preset | assets/compare.js | page | shared | 1.32 KB |
+| preset | assets/compare.js | page | shared | 1.33 KB |
 | preset | assets/fallback.js | page | shared | 0.73 KB |
-| preset | assets/index.js | page | shared | 5.02 KB |
+| preset | assets/index.js | page | shared | 5.06 KB |
 | preset | assets/inline.js | page | shared | 0.63 KB |
 | preset | assets/isobmff.js | own.worker | isobmff | 12.21 KB |
 | preset | assets/isobmff.js | page | isobmff | 12.23 KB |

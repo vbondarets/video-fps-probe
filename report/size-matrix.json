@@ -2996,11 +2996,11 @@
         "own"
       ],
       "metrics": {
-        "entry": 5016,
-        "trigger": 4296,
+        "entry": 5062,
+        "trigger": 4340,
         "react": null,
         "check": 3422,
-        "presets": 381,
+        "presets": 457,
         "client": 2903,
         "isobmff": 12205,
         "matroska": 11590,
@@ -3015,7 +3015,7 @@
         "pageEngineShared": null,
         "summary": null,
         "firstMp4Summary": null,
-        "lazyTotal": 80962
+        "lazyTotal": 80963
       },
       "workers": [
         {
@@ -3027,26 +3027,26 @@
       ],
       "files": [
         {
-          "file": "assets/compare-DqCVaDtH.js",
-          "gzip": 1325,
+          "file": "assets/compare-DtGHuUBX.js",
+          "gzip": 1327,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/fallback-Kd9-368Z.js",
+          "file": "assets/fallback-BzVQh4qn.js",
           "gzip": 732,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/index-CoDObNnX.js",
-          "gzip": 5016,
+          "file": "assets/index-k3hR6z7s.js",
+          "gzip": 5062,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-Bw5Q8ePi.js",
-          "gzip": 633,
+          "file": "assets/inline-DJbJdIGK.js",
+          "gzip": 634,
           "worker": null,
           "class": "shared"
         },
@@ -3057,7 +3057,7 @@
           "class": "isobmff"
         },
         {
-          "file": "assets/isobmff-CBDm-iYo.js",
+          "file": "assets/isobmff-sGM0WQvZ.js",
           "gzip": 12232,
           "worker": null,
           "class": "isobmff"
@@ -3069,8 +3069,8 @@
           "class": "matroska"
         },
         {
-          "file": "assets/matroska-BmzvvOvG.js",
-          "gzip": 11766,
+          "file": "assets/matroska-hI8_IatD.js",
+          "gzip": 11767,
           "worker": null,
           "class": "matroska"
         },
@@ -3081,7 +3081,7 @@
           "class": "shared"
         },
         {
-          "file": "assets/probe-DoaT_0b1.js",
+          "file": "assets/probe-BTPEUVRv.js",
           "gzip": 2903,
           "worker": null,
           "class": "shared"
@@ -3093,8 +3093,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/rfps-DOiPok6o.js",
-          "gzip": 3573,
+          "file": "assets/rfps-7Fk0uSbW.js",
+          "gzip": 3572,
           "worker": null,
           "class": "rfps"
         },
@@ -3105,13 +3105,13 @@
           "class": "rfps"
         },
         {
-          "file": "assets/runtime-B5n-937a.js",
-          "gzip": 2543,
+          "file": "assets/runtime-h5lsYavQ.js",
+          "gzip": 2542,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/segments-CBGPAXVG.js",
+          "file": "assets/segments-CNhTDUJ2.js",
           "gzip": 1844,
           "worker": null,
           "class": "segments"
@@ -3135,8 +3135,8 @@
           "class": "stats"
         },
         {
-          "file": "assets/stats-CiSP2iKM.js",
-          "gzip": 4337,
+          "file": "assets/stats-DpBeRIEn.js",
+          "gzip": 4336,
           "worker": null,
           "class": "stats"
         }
@@ -3153,8 +3153,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 5000,
-          "gzip": 4296,
-          "headroom": 704,
+          "gzip": 4340,
+          "headroom": 660,
           "status": "ok",
           "why": "The check configuration plus one preset, klingO1ReferenceVideo, imported from video-fps-probe/presets. Measured 3.24 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 3.60 KB in 0.2.0 with the larger check and the size note of the preset. Raised from 4 KB to 5 KB, measured 4.12 KB, with the larger check of the check configuration."
         },
@@ -3171,8 +3171,8 @@
           "key": "presets",
           "label": "presets entry (the imported presets, in the entry chunk)",
           "limit": 500,
-          "gzip": 381,
-          "headroom": 119,
+          "gzip": 457,
+          "headroom": 43,
           "status": "ok",
           "why": "The one imported preset: its name, source, date, note and rules. The six presets together are about 1.5 KB gzip, so this limit also fails a build that stops tree-shaking the presets a host does not import. Design estimate 0.1 to 0.2 KB per preset; measured 0.31 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 0.38 KB in 0.2.0, when each note began to name how its MB is read; the limit stays."
         },
@@ -3180,8 +3180,8 @@
           "key": "entry",
           "label": "entry chunk with the preload helper",
           "limit": 6000,
-          "gzip": 5016,
-          "headroom": 984,
+          "gzip": 5062,
+          "headroom": 938,
           "status": "ok",
           "why": "The trigger of this configuration plus Vite's preload helper. Measured 3.96 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 4.5 KB to 5 KB in 0.2.0, measured 4.33 KB, with the larger check and the size note of the preset. Raised to 6 KB, measured 4.85 KB, with the larger check of the check configuration."
         },
@@ -3198,8 +3198,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 81000,
-          "gzip": 80962,
-          "headroom": 38,
+          "gzip": 80963,
+          "headroom": 37,
           "status": "ok",
           "why": "As in the check configuration. Measured 80.96 KB."
         }

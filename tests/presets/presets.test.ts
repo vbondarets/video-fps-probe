@@ -67,6 +67,25 @@ describe('presets', () => {
     expect(rules).toBe(presets.klingO1ReferenceVideo.rules);
   });
 
+  it.each(ALL)('%s is frozen at every level, so no importer can change the shared preset at run time', (_, preset) => {
+    const objects = (o: object): object[] => [o, ...Object.values(o).flatMap((v) => (v && typeof v === 'object' ? objects(v) : []))];
+    expect(objects(preset).every((o) => Object.isFrozen(o))).toBe(true);
+    const rules = preset.rules as Record<string, unknown>;
+    expect(() => {
+      rules.vfr = 'allow';
+    }).toThrow(TypeError);
+    expect(() => {
+      (rules.containers as string[]).push('webm');
+    }).toThrow(TypeError);
+    const group = Object.values(rules).find((v): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v))!;
+    expect(() => {
+      group.max = 1;
+    }).toThrow(TypeError);
+    expect(() => {
+      (preset as { note: string }).note = '';
+    }).toThrow(TypeError);
+  });
+
   it('warns, without failing, about a preset verified more than 90 days ago', () => {
     const verified = Date.parse('2026-10-25T00:00:00Z');
     expect(stale(verified + 90 * DAY_MS)).toEqual([]);
