@@ -2,7 +2,7 @@ import { execFileSync, execSync } from 'node:child_process';
 import { cpSync, createReadStream, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
-import { dirname, extname, join, resolve } from 'node:path';
+import { dirname, extname, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
 
@@ -11,6 +11,7 @@ const SOURCES = join(REPO_ROOT, 'tests', 'consumers', 'fixtures');
 const INSTALLED = ['vite', 'mp4box', 'mediabunny', 'react', 'react-dom'];
 const REACT_18 = '18.3.1';
 const REACT_18_OVERRIDES = { 'js-tokens': '4.0.0', 'loose-envify': '1.4.0', scheduler: '0.23.2' };
+export const REACT_18_PINS = { react: REACT_18, 'react-dom': REACT_18, ...REACT_18_OVERRIDES };
 const SHARED = ['vite.base.ts', 'react-app.ts'];
 const DEV_DEPENDENCIES = JSON.parse(readFileSync(join(REPO_ROOT, 'package.json'), 'utf8')).devDependencies;
 const NPM_ENV = { ...process.env, npm_config_update_notifier: 'false' };
@@ -96,6 +97,46 @@ export function lockedOverrides(direct = INSTALLED) {
   }
   for (const name of direct) pinned.delete(name);
   return Object.fromEntries([...pinned].sort(([a], [b]) => (a < b ? -1 : 1)));
+}
+
+function installedCopies(root) {
+  const copies = [];
+  const walk = (modules) => {
+    if (!existsSync(modules)) return;
+    for (const entry of readdirSync(modules, { withFileTypes: true })) {
+      if (!entry.isDirectory() || entry.name.startsWith('.')) continue;
+      const scope = join(modules, entry.name);
+      const packages = entry.name.startsWith('@') ? readdirSync(scope, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => join(scope, e.name)) : [scope];
+      for (const path of packages) {
+        const manifest = join(path, 'package.json');
+        if (existsSync(manifest)) {
+          const { name, version } = JSON.parse(readFileSync(manifest, 'utf8'));
+          copies.push({ name, version, path });
+        }
+        walk(join(path, 'node_modules'));
+      }
+    }
+  };
+  walk(join(root, 'node_modules'));
+  return copies;
+}
+
+export function pinDrift(dir) {
+  const direct = Object.fromEntries(INSTALLED.map((name) => [name, DEV_DEPENDENCIES[name]]));
+  const problems = [];
+  for (const [root, pins, required] of [
+    [dir, { ...lockedOverrides(), ...direct }, []],
+    [join(dir, 'react18'), REACT_18_PINS, Object.keys(REACT_18_PINS)],
+  ]) {
+    const copies = installedCopies(root);
+    for (const { name, version, path } of copies) {
+      if (Object.hasOwn(pins, name) && pins[name] !== version) problems.push(`consumers: ${name} ${version} is installed at ${relative(dir, path)}, the pin is ${pins[name]}; run npm run consumers:setup`);
+    }
+    for (const name of required) {
+      if (!copies.some((c) => c.name === name)) problems.push(`consumers: ${name} is not installed in ${relative(dir, join(root, 'node_modules')) || 'node_modules'}, the pin is ${pins[name]}; run npm run consumers:setup`);
+    }
+  }
+  return problems;
 }
 
 export function consumersDir(arg) {

@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
-import { FIXTURES, consumersDir, fixtureDist, installedPackage, lockedOverrides } from './consumers.mjs';
+import { FIXTURES, consumersDir, fixtureDist, installedPackage, pinDrift } from './consumers.mjs';
 import { discover, measure, scanReferences } from './size-report.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -411,10 +411,7 @@ export function buildMatrix(dir) {
   };
   const failures = fixtures.flatMap((f) => f.problems.map((p) => (p.startsWith(`${f.name} `) ? p : `${f.name}: ${p}`)));
   if (standalone.status !== 'ok') failures.push(`standalone own.worker.js: ${standalone.status}`);
-  for (const [name, locked] of Object.entries(lockedOverrides())) {
-    const installed = versionOf(dir, name);
-    if (installed !== null && installed !== locked) failures.push(`consumers: ${name} ${installed} is installed, package-lock.json has ${locked}; run npm run consumers:setup`);
-  }
+  failures.push(...pinDrift(dir));
   const tarball = readdirSync(dir).find((f) => f.endsWith('.tgz')) ?? null;
   return {
     generator: 'scripts/size-matrix.mjs',
