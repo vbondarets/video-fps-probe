@@ -17,7 +17,7 @@ export const klingO1ReferenceVideo: ProviderPreset = {
   sourceKind: 'official',
   verifiedAt: '2026-10-25',
   note: 'The feature or base video of the Kling O1 omni video API, one per request. No codec, aspect ratio or audio rule is published for it. The page does not say whether 200 MB is decimal or binary; the larger reading, 209,715,200 bytes, is checked.',
-  rules: { fps: { min: 24, max: 60 }, duration: { min: 3, max: 10 }, display: { minShortSide: 700, maxLongSide: 2160 }, fileSize: { max: 209_715_200 }, containers: ['mp4', 'mov'] },
+  rules: { fps: { min: 24, max: 60 }, duration: { min: 3, max: 10 }, frameSize: { minShortSide: 700, maxLongSide: 2160 }, fileSize: { max: 209_715_200 }, containers: ['mp4', 'mov'] },
 };
 
 export const klingMotionControl: ProviderPreset = {
@@ -26,7 +26,7 @@ export const klingMotionControl: ProviderPreset = {
   sourceKind: 'official',
   verifiedAt: '2026-10-25',
   note: 'The 30 s maximum applies when the character orientation follows the video; it is 10 s when it follows the image. No frame rate rule is published. The page does not say whether 100 MB is decimal or binary; the larger reading, 104,857,600 bytes, is checked.',
-  rules: { duration: { min: 3, max: 30 }, display: { minShortSide: 340, maxLongSide: 3850 }, fileSize: { max: 104_857_600 }, containers: ['mp4', 'mov'] },
+  rules: { duration: { min: 3, max: 30 }, frameSize: { minShortSide: 340, maxLongSide: 3850 }, fileSize: { max: 104_857_600 }, containers: ['mp4', 'mov'] },
 };
 
 export const runwayAleph2: ProviderPreset = {
@@ -44,7 +44,7 @@ export const veoExtend: ProviderPreset = {
   sourceKind: 'official',
   verifiedAt: '2026-10-25',
   note: 'The frame rate must be 24, so 23.976 fails. The resolution must be 720p, 1080p or 4k; 4k is not given in pixels, so only the 720 px short side is checked. No codec or file size limit is published.',
-  rules: { fps: { exact: 24 }, duration: { min: 1, max: 30 }, display: { minShortSide: 720 }, aspectRatio: { oneOf: ['16/9', '9/16'] }, containers: ['mp4'] },
+  rules: { fps: { exact: 24 }, duration: { min: 1, max: 30 }, frameSize: { minShortSide: 720 }, aspectRatio: { oneOf: ['16/9', '9/16'] }, containers: ['mp4'] },
 };
 
 export const wan26ReferenceToVideoFal: ProviderPreset = {
@@ -62,5 +62,5 @@ export const seedance2ReferenceVideo: ProviderPreset = {
   sourceKind: 'gateway',
   verifiedAt: '2026-10-25',
   note: 'As the EvoLink gateway documents it; no first-party page was verified, and the Runware model page gives only the count. Up to 3 videos of at most 15 s together. The 480p, 720p or 1080p list is checked only through the pixel range. The page does not say whether 50 MB is decimal or binary; the larger reading, 52,428,800 bytes, is checked.',
-  rules: { fps: { min: 24, max: 60 }, duration: { min: 2, max: 15 }, display: { minShortSide: 300, maxLongSide: 6000 }, pixels: { min: 409_600, max: 2_086_876 }, aspectRatio: { min: 0.4, max: 2.5 }, fileSize: { max: 52_428_800 }, containers: ['mp4', 'mov'], severity: 'warn' },
+  rules: { fps: { min: 24, max: 60 }, duration: { min: 2, max: 15 }, frameSize: { minShortSide: 300, maxLongSide: 6000 }, pixels: { min: 409_600, max: 2_086_876 }, aspectRatio: { min: 0.4, max: 2.5 }, fileSize: { max: 52_428_800 }, containers: ['mp4', 'mov'], severity: 'warn' },
 };

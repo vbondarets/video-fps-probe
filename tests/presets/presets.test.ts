@@ -57,8 +57,8 @@ describe('presets', () => {
     const mutate = (preset: ProviderPreset): void => {
       // @ts-expect-error a preset's frame rate bound is read-only
       preset.rules.fps!.min = 0;
-      // @ts-expect-error a preset's display bound is read-only
-      preset.rules.display!.maxLongSide = 0;
+      // @ts-expect-error a preset's frame size bound is read-only
+      preset.rules.frameSize!.maxLongSide = 0;
       // @ts-expect-error a preset's rule group is read-only
       preset.rules.fps = {};
     };

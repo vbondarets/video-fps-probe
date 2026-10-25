@@ -15,7 +15,7 @@ interface ConsumerProbe {
 type Check = (result: FileResult | null, rules: CheckRules) => CheckReport;
 
 const DIST = pathToFileURL(join(installedPackage(consumersDir()), 'dist')).href;
-const RULES: CheckRules = { fps: { min: 24, max: 60 }, duration: { max: 30 }, display: { maxLongSide: 3840 }, containers: ['mp4', 'mov'], vfr: 'warn', uneven: 'reject' };
+const RULES: CheckRules = { fps: { min: 24, max: 60 }, duration: { max: 30 }, frameSize: { maxLongSide: 3840 }, containers: ['mp4', 'mov'], vfr: 'warn', uneven: 'reject' };
 const FILES = ['cfr_h264_23.976.mp4', 'cfr_h264_59.94.mp4', 'cfr_vp9_29.97.webm', 'vfr_two_phase_5_200.mp4'];
 const FIXTURES = [
   { name: 'check', verdicts: ['fail', 'pass', 'fail', 'fail'] },

@@ -97,8 +97,8 @@ describe('check: rule validation', () => {
   };
 
   it.each([
-    ['a negative display size', '{"display":{"minWidth":-5}}', "display.minWidth: -5 is not a non-negative number or 'num/den'"],
-    ['a display size that is not a number', '{"display":{"minShortSide":"wide"}}', 'display.minShortSide: "wide" is not a non-negative number or \'num/den\''],
+    ['a negative frame size', '{"frameSize":{"minWidth":-5}}', "frameSize.minWidth: -5 is not a non-negative number or 'num/den'"],
+    ['a frame size that is not a number', '{"frameSize":{"minShortSide":"wide"}}', 'frameSize.minShortSide: "wide" is not a non-negative number or \'num/den\''],
     ['an allowlist entry that is not a string', '{"containers":["mp4",4]}', 'containers: ["mp4",4] is not a list of strings'],
     ['an allowlist that is not a list', '{"codecs":"h264"}', 'codecs: "h264" is not a list of strings'],
     ['an audio rule it does not know', '{"audio":"require"}', 'audio: "require" is not one of required, forbidden'],
@@ -111,10 +111,10 @@ describe('check: rule validation', () => {
     ['rules that are a list', '[{"fps":{"min":24}}]', 'rules: [{"fps":{"min":24}}] is not an object'],
     ['a rule group that is a list', '{"fps":[24,60]}', 'fps: [24,60] is not an object'],
     ['a typo in a bound', '{"fps":{"min":24,"mxa":60}}', 'fps.mxa: not a rule; expected one of min, max, exact, oneOf, source'],
-    ['a display key it does not know', '{"display":{"maxwidth":1080}}', 'display.maxwidth: not a rule; expected one of minWidth, maxWidth, minHeight, maxHeight, minShortSide, maxShortSide, minLongSide, maxLongSide'],
+    ['a frame size key it does not know', '{"frameSize":{"maxwidth":1080}}', 'frameSize.maxwidth: not a rule; expected one of minWidth, maxWidth, minHeight, maxHeight, minShortSide, maxShortSide, minLongSide, maxLongSide'],
     ['an exact bound in a range group', '{"duration":{"exact":3}}', 'duration.exact: not a rule; expected one of min, max'],
     ['a oneOf in a range group', '{"pixels":{"oneOf":[921600]}}', 'pixels.oneOf: not a rule; expected one of min, max'],
-    ['a typo in a rule name', '{"fsp":{"max":60}}', 'fsp: not a rule; expected one of fps, duration, display, aspectRatio, pixels, fileSize, containers, codecs, audio, vfr, uneven, severity'],
+    ['a typo in a rule name', '{"fsp":{"max":60}}', 'fsp: not a rule; expected one of fps, duration, frameSize, aspectRatio, pixels, fileSize, containers, codecs, audio, vfr, uneven, severity'],
     ['a bound given as a list', '{"fps":{"min":[24]}}', 'fps.min: [24] is not a non-negative number or \'num/den\''],
     ['an exact rate given as a list', '{"fps":{"exact":[24,25]}}', 'fps.exact: [24,25] is not a non-negative number or \'num/den\''],
     ['a bound of the wrong type', '{"duration":{"max":true}}', 'duration.max: true is not a non-negative number or \'num/den\''],
@@ -126,35 +126,35 @@ describe('check: rule validation', () => {
     expect(thrown(() => check(result(), undefined as unknown as CheckRules))).toEqual(new TypeError('rules: undefined is not an object'));
   });
 
-  it('judges a display size given as a decimal string, as every other bound', () => {
-    expect(failed(result(), JSON.parse('{"display":{"minShortSide":"2000","maxLongSide":"1920"}}') as CheckRules)).toEqual(['display.minShortSide']);
+  it('judges a frame size given as a decimal string, as every other bound', () => {
+    expect(failed(result(), JSON.parse('{"frameSize":{"minShortSide":"2000","maxLongSide":"1920"}}') as CheckRules)).toEqual(['frameSize.minShortSide']);
   });
 
-  it('gives one unknown entry for the display rule of a track without a size', () => {
-    expect(check(result({ width: 0, height: 0 }), { display: { minWidth: 1, maxHeight: 2, minShortSide: 1 } }).violations).toEqual([{ rule: 'display', severity: 'unknown', expected: null, actual: null, message: 'display: unknown, no display size' }]);
+  it('gives one unknown entry for the frame size rule of a track without a size', () => {
+    expect(check(result({ width: 0, height: 0 }), { frameSize: { minWidth: 1, maxHeight: 2, minShortSide: 1 } }).violations).toEqual([{ rule: 'frameSize', severity: 'unknown', expected: null, actual: null, message: 'frameSize: unknown, no frame size' }]);
   });
 });
 
-describe('check: bounds of the display size', () => {
+describe('check: bounds of the frame size', () => {
   it('reports the side, the bound and the size', () => {
-    expect(check(result({ width: 699, height: 1000 }), { display: { minShortSide: 700 } }).violations).toEqual([{ rule: 'display.minShortSide', severity: 'fail', expected: 700, actual: 699, message: 'display.minShortSide: 699 px is below the minimum 700 px' }]);
+    expect(check(result({ width: 699, height: 1000 }), { frameSize: { minShortSide: 700 } }).violations).toEqual([{ rule: 'frameSize.minShortSide', severity: 'fail', expected: 700, actual: 699, message: 'frameSize.minShortSide: 699 px is below the minimum 700 px' }]);
   });
 });
 
-describe('check: duration, display size, aspect ratio, pixels and file size', () => {
+describe('check: duration, frame size, aspect ratio, pixels and file size', () => {
   it.each([
     ['3 s meets a minimum of 3', { durationSec: 3 }, { duration: { min: 3 } }, []],
     ['2.999 s is below a minimum of 3', { durationSec: 2.999 }, { duration: { min: 3 } }, ['duration.min']],
     ['10 s meets a maximum of 10', { durationSec: 10 }, { duration: { max: 10 } }, []],
     ['10.001 s is above a maximum of 10', { durationSec: 10.001 }, { duration: { max: 10 } }, ['duration.max']],
-    ['1920x1080 rotated by 90 is 1080 wide', { rotation: 90 }, { display: { maxWidth: 1080, minHeight: 1920 } }, []],
-    ['1920x1080 rotated by 90 is above a maximum height of 1080', { rotation: 90 }, { display: { maxHeight: 1080 } }, ['display.maxHeight']],
-    ['1920x1080 rotated by -90 swaps too', { rotation: -90 }, { display: { maxWidth: 1080 } }, []],
-    ['1920x1080 rotated by 270 swaps too', { rotation: 270 }, { display: { maxWidth: 1080 } }, []],
-    ['1920x1080 rotated by 180 does not swap', { rotation: 180 }, { display: { maxWidth: 1080 } }, ['display.maxWidth']],
-    ['699x1000 is below a short side of 700', { width: 699, height: 1000 }, { display: { minShortSide: 700, maxLongSide: 2160 } }, ['display.minShortSide']],
-    ['700x2160 meets a short side of 700 and a long side of 2160', { width: 700, height: 2160 }, { display: { minShortSide: 700, maxLongSide: 2160 } }, []],
-    ['2161x1000 is above a long side of 2160', { width: 2161, height: 1000 }, { display: { minWidth: 700, maxWidth: 2161, maxLongSide: 2160 } }, ['display.maxLongSide']],
+    ['1920x1080 rotated by 90 is 1080 wide', { rotation: 90 }, { frameSize: { maxWidth: 1080, minHeight: 1920 } }, []],
+    ['1920x1080 rotated by 90 is above a maximum height of 1080', { rotation: 90 }, { frameSize: { maxHeight: 1080 } }, ['frameSize.maxHeight']],
+    ['1920x1080 rotated by -90 swaps too', { rotation: -90 }, { frameSize: { maxWidth: 1080 } }, []],
+    ['1920x1080 rotated by 270 swaps too', { rotation: 270 }, { frameSize: { maxWidth: 1080 } }, []],
+    ['1920x1080 rotated by 180 does not swap', { rotation: 180 }, { frameSize: { maxWidth: 1080 } }, ['frameSize.maxWidth']],
+    ['699x1000 is below a short side of 700', { width: 699, height: 1000 }, { frameSize: { minShortSide: 700, maxLongSide: 2160 } }, ['frameSize.minShortSide']],
+    ['700x2160 meets a short side of 700 and a long side of 2160', { width: 700, height: 2160 }, { frameSize: { minShortSide: 700, maxLongSide: 2160 } }, []],
+    ['2161x1000 is above a long side of 2160', { width: 2161, height: 1000 }, { frameSize: { minWidth: 700, maxWidth: 2161, maxLongSide: 2160 } }, ['frameSize.maxLongSide']],
     ['16/9 meets a maximum of 16:9', {}, { aspectRatio: { max: '16:9' } }, []],
     ['16/9 is above a maximum of 1.7777', {}, { aspectRatio: { max: 1.7777 } }, ['aspectRatio.max']],
     ['1080x1920 is one of 16/9 and 9/16', { rotation: 90 }, { aspectRatio: { oneOf: ['16/9', '9/16'] } }, []],
@@ -182,10 +182,10 @@ describe('check: duration, display size, aspect ratio, pixels and file size', ()
   });
 
   it('treats a size that is not a whole number as missing, instead of throwing', () => {
-    const sizes: CheckRules = { display: { minWidth: 1 }, aspectRatio: { max: 2 }, pixels: { max: 1e7 } };
+    const sizes: CheckRules = { frameSize: { minWidth: 1 }, aspectRatio: { max: 2 }, pixels: { max: 1e7 } };
     for (const track of [{ width: 853.33 }, { height: Number.NaN }, { width: Number.POSITIVE_INFINITY }, { width: -1920 }]) {
       expect(check(result(track), sizes).violations.map((v) => [v.rule, v.severity]), JSON.stringify(track)).toEqual([
-        ['display', 'unknown'],
+        ['frameSize', 'unknown'],
         ['aspectRatio', 'unknown'],
         ['pixels', 'unknown'],
       ]);
@@ -287,7 +287,7 @@ describe('check: verdict, severity and failing open', () => {
 
   it('judges only the file size and the container of a result with an error', () => {
     const broken = result({}, { error: 'moov box not found', size: 300_000_000 });
-    const all: CheckRules = { fps: { min: 24 }, duration: { max: 30 }, display: { maxLongSide: 2160 }, pixels: { max: 1 }, codecs: ['h264'], audio: 'required', vfr: 'reject', uneven: 'reject' };
+    const all: CheckRules = { fps: { min: 24 }, duration: { max: 30 }, frameSize: { maxLongSide: 2160 }, pixels: { max: 1 }, codecs: ['h264'], audio: 'required', vfr: 'reject', uneven: 'reject' };
     expect(check(broken, all).verdict).toBe('unknown');
     expect(check(broken, all).violations.every((v) => v.severity === 'unknown' && v.message.endsWith('the analysis failed: moov box not found'))).toBe(true);
     expect(failed(broken, { ...all, fileSize: { max: 200_000_000 }, containers: ['mov'] })).toEqual(['fileSize.max', 'containers']);
@@ -296,9 +296,9 @@ describe('check: verdict, severity and failing open', () => {
 
   it('ignores a rule group without a bound and a null bound, and throws for a key it does not know', () => {
     const blank = result({ avgFps: null, width: 0, height: 0 });
-    expect(check(blank, { fps: { source: 'ffprobe' }, duration: {}, display: {}, aspectRatio: {} })).toEqual({ verdict: 'pass', violations: [] });
-    expect(check(result({ avgFps: rate(24000, 1001) }), JSON.parse('{"fps":{"min":24,"max":null},"display":{"maxWidth":null},"audio":null}') as CheckRules).violations.map((v) => v.rule)).toEqual(['fps.min']);
-    expect(() => check(result(), { display: { fooWidth: 1 } } as unknown as CheckRules)).toThrow(new TypeError('display.fooWidth: not a rule; expected one of minWidth, maxWidth, minHeight, maxHeight, minShortSide, maxShortSide, minLongSide, maxLongSide'));
+    expect(check(blank, { fps: { source: 'ffprobe' }, duration: {}, frameSize: {}, aspectRatio: {} })).toEqual({ verdict: 'pass', violations: [] });
+    expect(check(result({ avgFps: rate(24000, 1001) }), JSON.parse('{"fps":{"min":24,"max":null},"frameSize":{"maxWidth":null},"audio":null}') as CheckRules).violations.map((v) => v.rule)).toEqual(['fps.min']);
+    expect(() => check(result(), { frameSize: { fooWidth: 1 } } as unknown as CheckRules)).toThrow(new TypeError('frameSize.fooWidth: not a rule; expected one of minWidth, maxWidth, minHeight, maxHeight, minShortSide, maxShortSide, minLongSide, maxLongSide'));
   });
 
   it('is unknown without a video track', () => {
@@ -366,7 +366,7 @@ describe('check: JSON', () => {
   const all: CheckRules = rules({
     fps: { min: '24000/1001', max: 60, oneOf: [24, '30000/1001', 30, 60], source: 'avg' },
     duration: { min: 2, max: 30 },
-    display: { minWidth: 300, maxWidth: 6000, minHeight: 300, maxHeight: 6000, minShortSide: 480, maxLongSide: 3000 },
+    frameSize: { minWidth: 300, maxWidth: 6000, minHeight: 300, maxHeight: 6000, minShortSide: 480, maxLongSide: 3000 },
     aspectRatio: { min: 0.4, max: '2.5:1' },
     pixels: { min: 409_600, max: 2_086_876 },
     fileSize: { max: 50_000_000 },
@@ -385,7 +385,7 @@ describe('check: JSON', () => {
       expect(check(r, JSON.parse(JSON.stringify(all)) as CheckRules)).toEqual(report);
       expect(JSON.parse(JSON.stringify(report))).toEqual(report);
     }
-    expect(check(inputs[1]!, all).violations.map((v) => v.rule)).toEqual(['fps.oneOf', 'display.maxLongSide', 'pixels.max', 'fileSize.max', 'containers', 'codecs', 'audio', 'vfr', 'uneven']);
+    expect(check(inputs[1]!, all).violations.map((v) => v.rule)).toEqual(['fps.oneOf', 'frameSize.maxLongSide', 'pixels.max', 'fileSize.max', 'containers', 'codecs', 'audio', 'vfr', 'uneven']);
   });
 });
 

@@ -21,7 +21,7 @@ export interface AspectRatioRule extends RangeRule<RatioValue> {
   oneOf?: readonly RatioValue[];
 }
 
-export interface DisplayRule {
+export interface FrameSizeRule {
   minWidth?: number;
   maxWidth?: number;
   minHeight?: number;
@@ -35,7 +35,7 @@ export interface DisplayRule {
 export interface CheckRules {
   fps?: FpsRule;
   duration?: RangeRule;
-  display?: DisplayRule;
+  frameSize?: FrameSizeRule;
   aspectRatio?: AspectRatioRule;
   pixels?: RangeRule;
   fileSize?: RangeRule;
@@ -76,7 +76,7 @@ const DECIMATE_FROM = 1.5;
 const SPAN_SLACK_MS = 3n;
 const RELATION: Record<Bound, string> = { min: 'below the minimum', max: 'above the maximum', exact: 'not', oneOf: 'not one of' };
 const BOUNDS = Object.keys(RELATION) as Bound[];
-const GROUPS = ['fps', 'duration', 'display', 'aspectRatio', 'pixels', 'fileSize'] as const;
+const GROUPS = ['fps', 'duration', 'frameSize', 'aspectRatio', 'pixels', 'fileSize'] as const;
 const POLICIES: readonly RatePolicy[] = ['allow', 'warn', 'reject'];
 const SOURCES: readonly FpsSource[] = ['avg', 'ffprobe', 'nominal', 'dominant'];
 const AUDIO_ENGINES: readonly string[] = ['own', 'mp4box', 'mediabunny'];
@@ -84,7 +84,7 @@ const RANGE = ['min', 'max'];
 const GROUP_KEYS: Record<(typeof GROUPS)[number], readonly string[]> = {
   fps: [...RANGE, 'exact', 'oneOf', 'source'],
   duration: RANGE,
-  display: ['Width', 'Height', 'ShortSide', 'LongSide'].flatMap((side) => RANGE.map((b) => b + side)),
+  frameSize: ['Width', 'Height', 'ShortSide', 'LongSide'].flatMap((side) => RANGE.map((b) => b + side)),
   aspectRatio: [...RANGE, 'oneOf'],
   pixels: RANGE,
   fileSize: RANGE,
@@ -218,13 +218,13 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   const sized = size.every(whole);
   const [w, h] = sized ? size : [0, 0];
   const sides = { Width: w, Height: h, ShortSide: Math.min(w, h), LongSide: Math.max(w, h) };
-  const d = rules.display as Record<string, RatioValue | undefined> | undefined;
+  const d = rules.frameSize as Record<string, RatioValue | undefined> | undefined;
   for (const [side, x] of Object.entries(sides)) {
-    limits('display', { min: d?.[`min${side}`], max: d?.[`max${side}`] }, sized ? [BigInt(x), 1n] : null, x, `${x}`, ' px', 'display size', side);
+    limits('frameSize', { min: d?.[`min${side}`], max: d?.[`max${side}`] }, sized ? [BigInt(x), 1n] : null, x, `${x}`, ' px', 'frame size', side);
   }
   const area: Q = [BigInt(w), BigInt(h)];
-  limits('aspectRatio', rules.aspectRatio, sized ? area : null, fraction(area), `${w}x${h} (${round(w / h)})`, '', 'display size');
-  limits('pixels', rules.pixels, sized ? [BigInt(w) * BigInt(h), 1n] : null, w * h, `${w * h}`, ' px', 'display size');
+  limits('aspectRatio', rules.aspectRatio, sized ? area : null, fraction(area), `${w}x${h} (${round(w / h)})`, '', 'frame size');
+  limits('pixels', rules.pixels, sized ? [BigInt(w) * BigInt(h), 1n] : null, w * h, `${w * h}`, ' px', 'frame size');
   limits('fileSize', rules.fileSize, quantity(result?.size), result?.size ?? '', `${result?.size}`, ' bytes', 'file size');
   allow('containers', rules.containers, result?.container, 'container');
   allow('codecs', rules.codecs, t?.codecName, 'codec name');
