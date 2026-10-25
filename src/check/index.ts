@@ -58,7 +58,7 @@ export interface CheckViolation {
 }
 
 export interface SuggestedFps {
-  value: number;
+  value: number | null;
   reason: string;
 }
 
@@ -73,7 +73,7 @@ type Bound = 'min' | 'max' | 'exact' | 'oneOf';
 type Text = string | ((against: readonly Q[]) => string);
 
 const UNEVEN_SPREAD = 1.075;
-const DECIMATE_FROM = 1.5;
+const DECIMATE_FROM: Q = [3n, 2n];
 const SPAN_SLACK_MS = 3n;
 const NOMINAL_SLACK_PER_S = 10_000_000n;
 const NTSC = [24n, 30n, 48n, 60n, 120n];
@@ -179,18 +179,25 @@ function unevenOf(t: VideoTrackResult): boolean | null {
   return t.isVfr === false || (t.minFps && t.maxFps && t.maxFps.value <= t.minFps.value * UNEVEN_SPREAD) ? false : null;
 }
 
-function fit(target: number, rule: FpsRule = {}): [number, number] {
-  const n = (v: RatioValue | null | undefined): number | null => (v == null ? null : value(ratio(v, 'fps')));
-  const lo = n(rule.min) ?? 0;
-  const hi = rule.max == null ? Infinity : Math.max(...readings(rule.max, 'fps').map(value));
-  const exact = n(rule.exact);
-  if (exact !== null) return [exact, 0];
-  const allowed = [rule.oneOf ?? []].flat().map((v) => n(v)!).filter((v) => v >= lo && v <= hi);
-  const distance = (v: number): number => Math.abs(v - target) + v * 1e-9;
-  if (allowed.length > 0) return [allowed.reduce((best, v) => (distance(v) < distance(best) ? v : best)), 0];
-  if (target < lo) return [lo, 0];
-  if (target <= hi) return [target, 0];
-  if (target >= hi * DECIMATE_FROM) for (let k = 2; k <= 8; k++) if (target / k <= hi) return target / k >= lo ? [target / k, k] : [hi, 0];
+const abs = (x: bigint): bigint => (x < 0n ? -x : x);
+
+function fit(target: Q, rule: FpsRule = {}): readonly [Q, number] | null {
+  const list = (v: unknown): Q[] => (v == null ? [] : [v].flat().flatMap((x) => readings(x, 'fps')));
+  const [lo] = list(rule.min);
+  const hi = list(rule.max).reduce<Q | undefined>((a, q) => (a && cmp(a, q) > 0 ? a : q), undefined);
+  const inside = (q: Q): boolean => (!lo || cmp(q, lo) >= 0) && (!hi || cmp(q, hi) <= 0);
+  const named = rule.exact != null ? list(rule.exact).filter((q) => rule.oneOf == null || list(rule.oneOf).some((o) => cmp(o, q) === 0n)) : rule.oneOf != null ? list(rule.oneOf) : null;
+  if (named) {
+    const nearer = (a: Q, b: Q): bigint => abs(cmp(a, target)) * b[1] - abs(cmp(b, target)) * a[1] || cmp(a, b);
+    const best = named.filter(inside).reduce<Q | null>((b, q) => (b && nearer(b, q) <= 0n ? b : q), null);
+    return best && [best, 0];
+  }
+  if (lo && hi && cmp(lo, hi) > 0) return null;
+  if (lo && cmp(target, lo) < 0) return [lo, 0];
+  if (!hi || cmp(target, hi) <= 0) return [target, 0];
+  if (cmp(target, [DECIMATE_FROM[0] * hi[0], DECIMATE_FROM[1] * hi[1]]) >= 0) {
+    for (let k = 2n; k <= 8n; k++) if (cmp([target[0], target[1] * k], hi) <= 0) return lo && cmp([target[0], target[1] * k], lo) < 0 ? [hi, 0] : [[target[0], target[1] * k], Number(k)];
+  }
   return [hi, 0];
 }
 
@@ -219,7 +226,9 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
     if (!actual) return void unknown(group, missing);
     for (const [b, expected, values] of bounds) {
       const meets = (q: Q): boolean | undefined => near?.(q) || (b === 'min' ? cmp(actual, q) >= 0n : b === 'max' ? cmp(actual, q) <= 0n : cmp(actual, q) === 0n);
-      if (!values.flat().some(meets)) add(`${group}.${b}${side}`, severity, expected, shown, `${typeof text === 'string' ? text : text(values.flat())}${unit} is ${RELATION[b]} ${[expected].flat().join(', ')}${unit}`);
+      const listed = [expected].flat();
+      const named = listed.length ? `${listed.join(', ')}${unit}` : 'an empty list';
+      if (!values.flat().some(meets)) add(`${group}.${b}${side}`, severity, expected, shown, `${typeof text === 'string' ? text : text(values.flat())}${unit} is ${RELATION[b]} ${named}`);
     }
   };
   const quantity = (x: number | null | undefined): Q | null => (typeof x === 'number' ? decimal(String(x)) : null);
@@ -273,9 +282,14 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   const fpsOff = violations.some((v) => v.rule.startsWith('fps.'));
   if (t && (fpsOff || vfr || uneven)) {
     const constant = fpsOff ? fps : (fromRational(t.dominantFps?.rate) ?? fromRational(t.nominalFps));
-    const [v, k] = fit(constant ? value(constant) : Math.round(t.avgFps?.value ?? 0), rules.fps);
-    const how = k > 1 ? `, which keeps 1 of every ${k} frames` : '';
-    if (v > 0) report.suggestedFps = { value: v, reason: fpsOff ? `${fpsText(fps!)} fps is not allowed: convert to ${round(v)} fps${how}` : `the frame rate is ${vfr ? 'variable' : 'uneven'}: re-encode at a constant ${round(v)} fps${how}` };
+    const avg = Math.round(t.avgFps?.value ?? 0);
+    const fitted = fit(constant ?? [whole(avg) ? BigInt(avg) : 0n, 1n], rules.fps);
+    const why = fpsOff ? `${fpsText(fps!, fitted ? [fitted[0]] : [])} fps is not allowed` : `the frame rate is ${vfr ? 'variable' : 'uneven'}`;
+    if (!fitted) report.suggestedFps = { value: null, reason: `${why}, and no frame rate meets every bound of the fps rule` };
+    else if (fitted[0][0] > 0n) {
+      const [q, k] = fitted;
+      report.suggestedFps = { value: value(q), reason: `${why}: ${fpsOff ? 'convert to' : 're-encode at a constant'} ${fpsText(q)} fps${k > 1 ? `, which keeps 1 of every ${k} frames` : ''}` };
+    }
   }
   report.verdict = (['fail', 'unknown', 'warn'] as const).find((s) => violations.some((v) => v.severity === s)) ?? 'pass';
   return report;

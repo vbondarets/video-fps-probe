@@ -479,7 +479,7 @@ interface CheckViolation {
 }
 
 interface SuggestedFps {
-  value: number;
+  value: number | null; // null when no rate meets every bound of the fps rule
   reason: string;
 }
 
@@ -498,7 +498,7 @@ interface CheckReport {
 
 **Failing open.** `check(null, rules)` is `unknown`, so the result of `tryAnalyze` goes straight in. A result with an `error`, without a video track, or without `videoTracks` at all (a partial or older JSON result), judges only `fileSize` (the Blob's size) and `containers` (the sniffed container, unless it is `'unknown'`); every other rule is unknown. A `fail` is a limit the file breaks for certain; an `unknown` means the probe could not tell, and an upload flow that fails open sends the file and lets the server decide.
 
-**suggestedFps.** Set when a frame rate bound, `vfr` or `uneven` is broken (as a failure or a warning). `value` is a rate that the `fps` rule allows and `reason` says what to do: `exact` when set, else the nearest `oneOf` rate between `min` and `max` (the lower one on a tie), else `min` for a slower track, else, for a track at least 1.5 times `max`, its rate divided by the smallest whole number from 2 to 8 that brings it under `max` (120 to 60, 50 to 25 and 59.94 to 29.97 each keep 1 of every 2 frames), else `max`. A VFR or uneven track whose rate passes gets its dominant or nominal rate, else its rounded average, fitted the same way.
+**suggestedFps.** Set when a frame rate bound, `vfr` or `uneven` is broken (as a failure or a warning). `value` is a rate that every bound of the `fps` rule allows, as a number, and `reason` says what to do and names that rate exactly (`convert to 29.97 (30000/1001) fps`): the `exact` rate when it is between `min` and `max` and in `oneOf` (of an NTSC decimal, the reading nearer the track's rate), else the nearest `oneOf` rate between `min` and `max` (the lower one on a tie), else `min` for a slower track, else, for a track at least 1.5 times `max`, its rate divided by the smallest whole number from 2 to 8 that brings it under `max` (120 to 60, 50 to 25 and 59.94 to 29.97 each keep 1 of every 2 frames), else `max`. A VFR or uneven track whose rate passes gets its dominant or nominal rate, else its rounded average, fitted the same way. When no rate meets every bound, as with an empty `oneOf`, a `min` above the `max`, an `exact` rate outside them or outside `oneOf`, or no `oneOf` rate between them, `value` is null and `reason` says so: `50 fps is not allowed, and no frame rate meets every bound of the fps rule`; an empty `oneOf` fails every file with `fps.oneOf: 50 fps is not one of an empty list`.
 
 ```ts
 const report = check(await probe.tryAnalyze(file), { fps: { min: 24, max: 60 }, duration: { min: 3, max: 10 }, vfr: 'warn' });

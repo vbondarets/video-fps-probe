@@ -389,7 +389,11 @@ describe('check: suggestedFps', () => {
     ['raises 24000/1001 to a minimum of 24', rate(24000, 1001), { min: 24, max: 60 }, 24, '23.976 (24000/1001) fps is not allowed: convert to 24 fps'],
     ['halves 120 to a maximum of 60', rate(120), { min: 24, max: 60 }, 60, '120 fps is not allowed: convert to 60 fps, which keeps 1 of every 2 frames'],
     ['halves 50 under a maximum of 30', rate(50), { min: 24, max: 30 }, 25, '50 fps is not allowed: convert to 25 fps, which keeps 1 of every 2 frames'],
-    ['halves 60000/1001 under a maximum of 30', rate(60000, 1001), { max: 30 }, 30000 / 1001, '59.94 (60000/1001) fps is not allowed: convert to 29.97 fps, which keeps 1 of every 2 frames'],
+    ['halves 60000/1001 under a maximum of 30', rate(60000, 1001), { max: 30 }, 30000 / 1001, '59.94 (60000/1001) fps is not allowed: convert to 29.97 (30000/1001) fps, which keeps 1 of every 2 frames'],
+    ['takes the x/1001 reading of an exact NTSC decimal nearer to the rate', rate(30), { exact: 29.97 }, 30000 / 1001, '30 fps is not allowed: convert to 29.97 (30000/1001) fps'],
+    ['names the exact rate of a minimum given as a fraction', rate(29), { min: '30000/1001' }, 30000 / 1001, '29 fps is not allowed: convert to 29.97 (30000/1001) fps'],
+    ['takes the nearest oneOf rate inside min and max', rate(60), { oneOf: [24, 30, 60], max: 50 }, 30, '60 fps is not allowed: convert to 30 fps'],
+    ['prints a rate just above the maximum with enough digits to differ from it', rate(150001, 2500), { max: 60 }, 60, '60.0004 (150001/2500) fps is not allowed: convert to 60 fps'],
     ['retimes 60.06 to a maximum of 60', rate(6006, 100), { max: 60 }, 60, '60.06 (3003/50) fps is not allowed: convert to 60 fps'],
     ['retimes 40 to a maximum of 30', rate(40), { max: 30 }, 30, '40 fps is not allowed: convert to 30 fps'],
     ['takes an exact rate', rate(30), { exact: 24 }, 24, '30 fps is not allowed: convert to 24 fps'],
@@ -412,6 +416,62 @@ describe('check: suggestedFps', () => {
     expect(check(vfr, { vfr: 'reject' }).suggestedFps).toEqual({ value: 30, reason: 'the frame rate is variable: re-encode at a constant 30 fps' });
     expect(check(result({ avgFps: rate(2987, 100), isVfr: true }), { vfr: 'warn' }).suggestedFps).toEqual({ value: 30, reason: 'the frame rate is variable: re-encode at a constant 30 fps' });
     expect(check(result({ avgFps: rate(23, 1), isVfr: true, dominantFps: { rate: rate(24000, 1001), share: 0.8 } }), { fps: { min: 24 }, vfr: 'reject' }).suggestedFps).toEqual({ value: 24, reason: '23 fps is not allowed: convert to 24 fps' });
+  });
+
+  it.each([
+    ['an empty oneOf', { oneOf: [] }],
+    ['a oneOf without a rate between min and max', { oneOf: [24, 30], min: 25, max: 29 }],
+    ['a minimum above the maximum', { min: 30, max: 24 }],
+    ['an exact rate above the maximum', { exact: 24, max: 23 }],
+    ['an exact rate outside the oneOf', { exact: 24, oneOf: [25] }],
+  ] as const)('suggests no rate, with a reason, for %s', (_, fps) => {
+    const report = check(result({ avgFps: rate(50) }), { fps });
+    expect(report.verdict).toBe('fail');
+    expect(report.suggestedFps).toEqual({ value: null, reason: '50 fps is not allowed, and no frame rate meets every bound of the fps rule' });
+  });
+
+  it('names an empty oneOf in its message', () => {
+    expect(check(result({ avgFps: rate(30) }), { fps: { oneOf: [] } }).violations).toEqual([{ rule: 'fps.oneOf', severity: 'fail', expected: [], actual: '30/1', message: 'fps.oneOf: 30 fps is not one of an empty list' }]);
+    expect(check(result({ avgFps: rate(30), isVfr: true }), { fps: { oneOf: [] }, vfr: 'reject' }).suggestedFps).toEqual({ value: null, reason: '30 fps is not allowed, and no frame rate meets every bound of the fps rule' });
+    expect(check(result({ avgFps: rate(30), isVfr: true }), { fps: { min: 31, max: 30 }, vfr: 'reject' }).suggestedFps).toEqual({ value: null, reason: '30 fps is not allowed, and no frame rate meets every bound of the fps rule' });
+    expect(check(result({ avgFps: rate(30), isVfr: true }), { fps: { min: 24, max: 25, oneOf: [30] }, vfr: 'reject' }).suggestedFps?.value).toBeNull();
+  });
+
+  it('never suggests a rate the fps rule forbids, and suggests one whenever a rate is allowed', () => {
+    const named = (reason: string): Rational | null => {
+      const m = / (?:convert to|re-encode at a constant) (\d+(?:\.\d+)?)(?: \((\d+)\/(\d+)\))? fps/.exec(reason);
+      return m ? (m[2] ? rate(+m[2], +m[3]!) : rate(+m[1]!)) : null;
+    };
+    const candidates = [...Array.from({ length: 240 }, (_, i) => rate(i + 1)), ...[24, 30, 48, 60, 120].map((m) => rate(m * 1000, 1001)), rate(2997, 100), rate(2997, 125)];
+    const passes = (fps: CheckRules['fps'], r: Rational): boolean => check(result({ avgFps: r }), { fps }).verdict === 'pass';
+    const options = { min: [undefined, 24, 30, 29.97], max: [undefined, 25, 30, 60, 29.97], exact: [undefined, 24, 30, 23.976], oneOf: [undefined, [], [24, 30], [50, 60], [29.97]] };
+    let suggested = 0;
+    let none = 0;
+    for (const min of options.min)
+      for (const max of options.max)
+        for (const exact of options.exact)
+          for (const oneOf of options.oneOf) {
+            const fps = { min, max, exact, oneOf };
+            for (const avgFps of [rate(23), rate(30), rate(48), rate(120), rate(60000, 1001)]) {
+              for (const report of [check(result({ avgFps }), { fps }), check(result({ avgFps, isVfr: true }), { fps, vfr: 'reject' })]) {
+                const s = report.suggestedFps;
+                if (!s) continue;
+                const label = JSON.stringify({ fps, avgFps, s });
+                if (s.value === null) {
+                  none++;
+                  expect(candidates.filter((r) => passes(fps, r)), label).toEqual([]);
+                } else {
+                  suggested++;
+                  const r = named(s.reason);
+                  expect(r, label).not.toBeNull();
+                  expect(r!.value, label).toBeCloseTo(s.value, 9);
+                  expect(passes(fps, r!), label).toBe(true);
+                }
+              }
+            }
+          }
+    expect(suggested).toBeGreaterThan(500);
+    expect(none).toBeGreaterThan(100);
   });
 
   it('suggests nothing when the rate passes or is unknown', () => {

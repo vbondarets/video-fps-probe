@@ -2782,18 +2782,18 @@
         "own"
       ],
       "metrics": {
-        "entry": 4527,
-        "trigger": 3810,
+        "entry": 4701,
+        "trigger": 3979,
         "react": null,
-        "check": 3251,
+        "check": 3420,
         "presets": null,
-        "client": 2901,
+        "client": 2900,
         "isobmff": 12205,
         "matroska": 11590,
         "segments": 1844,
         "rfps": 3575,
-        "firstMp4": 23596,
-        "allOwn": 40605,
+        "firstMp4": 23595,
+        "allOwn": 40604,
         "mp4box": null,
         "mediabunny": null,
         "engineShared": null,
@@ -2801,7 +2801,7 @@
         "pageEngineShared": null,
         "summary": null,
         "firstMp4Summary": null,
-        "lazyTotal": 80973
+        "lazyTotal": 80971
       },
       "workers": [
         {
@@ -2813,39 +2813,39 @@
       ],
       "files": [
         {
-          "file": "assets/compare-BOOmQA5Y.js",
-          "gzip": 1325,
+          "file": "assets/compare-BrcAnZEw.js",
+          "gzip": 1326,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/fallback-Cehe65QF.js",
-          "gzip": 735,
+          "file": "assets/fallback-_IrOxnER.js",
+          "gzip": 736,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/index-u3N9L6jh.js",
-          "gzip": 4527,
+          "file": "assets/index-NkTXKB8p.js",
+          "gzip": 4701,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-Bn1xgAok.js",
-          "gzip": 634,
+          "file": "assets/inline-ClVQNUO1.js",
+          "gzip": 635,
           "worker": null,
           "class": "shared"
-        },
-        {
-          "file": "assets/isobmff-B8kXWIHZ.js",
-          "gzip": 12234,
-          "worker": null,
-          "class": "isobmff"
         },
         {
           "file": "assets/isobmff-BTlZkYMO.js",
           "gzip": 12205,
           "worker": "own.worker",
+          "class": "isobmff"
+        },
+        {
+          "file": "assets/isobmff-CLeMxHE7.js",
+          "gzip": 12233,
+          "worker": null,
           "class": "isobmff"
         },
         {
@@ -2855,8 +2855,8 @@
           "class": "matroska"
         },
         {
-          "file": "assets/matroska-zwIZIYKt.js",
-          "gzip": 11767,
+          "file": "assets/matroska-DC89Nmiw.js",
+          "gzip": 11768,
           "worker": null,
           "class": "matroska"
         },
@@ -2867,8 +2867,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/probe-zQfgEM9E.js",
-          "gzip": 2901,
+          "file": "assets/probe-DjWaBckH.js",
+          "gzip": 2900,
           "worker": null,
           "class": "shared"
         },
@@ -2879,26 +2879,26 @@
           "class": "shared"
         },
         {
+          "file": "assets/rfps-D_67a1OF.js",
+          "gzip": 3573,
+          "worker": null,
+          "class": "rfps"
+        },
+        {
           "file": "assets/rfps-DerqVKow.js",
           "gzip": 3575,
           "worker": "own.worker",
           "class": "rfps"
         },
         {
-          "file": "assets/rfps-udCsSNpm.js",
-          "gzip": 3574,
-          "worker": null,
-          "class": "rfps"
-        },
-        {
-          "file": "assets/runtime-CLv_v1G3.js",
-          "gzip": 2548,
+          "file": "assets/runtime-ClJdSZs5.js",
+          "gzip": 2545,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/segments-D0vS00wT.js",
-          "gzip": 1845,
+          "file": "assets/segments-9_1AzpW_.js",
+          "gzip": 1844,
           "worker": null,
           "class": "segments"
         },
@@ -2915,15 +2915,15 @@
           "class": "shared"
         },
         {
-          "file": "assets/stats-BUm77mRT.js",
-          "gzip": 4336,
-          "worker": null,
-          "class": "stats"
-        },
-        {
           "file": "assets/stats-BpRErjel.js",
           "gzip": 4307,
           "worker": "own.worker",
+          "class": "stats"
+        },
+        {
+          "file": "assets/stats-DhpOimPM.js",
+          "gzip": 4337,
+          "worker": null,
           "class": "stats"
         }
       ],
@@ -2939,8 +2939,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 5000,
-          "gzip": 3810,
-          "headroom": 1190,
+          "gzip": 3979,
+          "headroom": 1021,
           "status": "ok",
           "why": "The package code in the entry chunk of a host that imports video-fps-probe/check statically next to video-fps-probe/lazy: the lazyProbe stub of the default configuration and check. Measured 3.00 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 3.5 KB to 4 KB in 0.2.0, measured 3.29 KB, with the rule that judges a constant track on 1 ms ticks by its nominal rate and duration, and the validation of every rule value. Raised to 5 KB, measured 3.81 KB, with the NTSC decimals, the 1 ms tick resolution of the frame rate bounds, the message digits, the checks of unknown keys and lists, and the audio rule that fails open."
         },
@@ -2948,8 +2948,8 @@
           "key": "check",
           "label": "check entry (in the entry chunk)",
           "limit": 4000,
-          "gzip": 3251,
-          "headroom": 749,
+          "gzip": 3420,
+          "headroom": 580,
           "status": "ok",
           "why": "The part of the critical path the check entry adds: check(result, rules) with its exact rational comparison, the violation messages and suggestedFps. It imports no other module, so nothing of it loads lazily. Design estimate 0.8 to 1.5 KB; measured 2.43 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 2.72 KB in 0.2.0, 2.80 KB before a trim that kept every message, with the rule that judges a constant track on 1 ms ticks by its nominal rate and duration, and the validation of every rule value. Raised from 3 KB to 4 KB, measured 3.25 KB, with the NTSC decimals, the 1 ms tick resolution of the frame rate bounds, the message digits, the checks of unknown keys and lists, and the audio rule that fails open."
         },
@@ -2957,8 +2957,8 @@
           "key": "entry",
           "label": "entry chunk with the preload helper",
           "limit": 5500,
-          "gzip": 4527,
-          "headroom": 973,
+          "gzip": 4701,
+          "headroom": 799,
           "status": "ok",
           "why": "The trigger of this configuration plus Vite's preload helper. Measured 3.72 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 4.01 KB in 0.2.0 with the larger check. Raised from 4.5 KB to 5.5 KB, measured 4.53 KB, with the larger check again."
         },
@@ -2966,8 +2966,8 @@
           "key": "firstMp4",
           "label": "first MP4 analysis, lazy total",
           "limit": 24000,
-          "gzip": 23596,
-          "headroom": 404,
+          "gzip": 23595,
+          "headroom": 405,
           "status": "ok",
           "why": "Importing check must not change what the first own analysis loads, so the 24 KB promise of the default configuration applies here too. Measured 23.60 KB."
         },
@@ -2975,8 +2975,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 81000,
-          "gzip": 80973,
-          "headroom": 27,
+          "gzip": 80971,
+          "headroom": 29,
           "status": "ok",
           "why": "As in the default configuration: check adds no lazy file. Measured 80.96 KB."
         }
@@ -2996,10 +2996,10 @@
         "own"
       ],
       "metrics": {
-        "entry": 4846,
-        "trigger": 4122,
+        "entry": 5015,
+        "trigger": 4294,
         "react": null,
-        "check": 3251,
+        "check": 3420,
         "presets": 381,
         "client": 2902,
         "isobmff": 12205,
@@ -3015,7 +3015,7 @@
         "pageEngineShared": null,
         "summary": null,
         "firstMp4Summary": null,
-        "lazyTotal": 80973
+        "lazyTotal": 80970
       },
       "workers": [
         {
@@ -3027,39 +3027,39 @@
       ],
       "files": [
         {
-          "file": "assets/compare-C-0ZSuZr.js",
-          "gzip": 1324,
+          "file": "assets/compare-CxotgE8E.js",
+          "gzip": 1328,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/fallback-jqaPzGNt.js",
+          "file": "assets/fallback-D432ZYKk.js",
           "gzip": 734,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/index-zNXq3tAO.js",
-          "gzip": 4846,
+          "file": "assets/index-H3Az5Wbn.js",
+          "gzip": 5015,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-DStNBVkY.js",
+          "file": "assets/inline-CnDyTSuV.js",
           "gzip": 634,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/isobmff-BTlZkYMO.js",
-          "gzip": 12205,
-          "worker": "own.worker",
+          "file": "assets/isobmff-B3hIaN8f.js",
+          "gzip": 12234,
+          "worker": null,
           "class": "isobmff"
         },
         {
-          "file": "assets/isobmff-CIqeQm5U.js",
-          "gzip": 12234,
-          "worker": null,
+          "file": "assets/isobmff-BTlZkYMO.js",
+          "gzip": 12205,
+          "worker": "own.worker",
           "class": "isobmff"
         },
         {
@@ -3069,8 +3069,8 @@
           "class": "matroska"
         },
         {
-          "file": "assets/matroska-wOeCxvDP.js",
-          "gzip": 11770,
+          "file": "assets/matroska-BaU3j1SX.js",
+          "gzip": 11767,
           "worker": null,
           "class": "matroska"
         },
@@ -3081,7 +3081,7 @@
           "class": "shared"
         },
         {
-          "file": "assets/probe-yrUhqUr9.js",
+          "file": "assets/probe-BEkIB9dI.js",
           "gzip": 2902,
           "worker": null,
           "class": "shared"
@@ -3093,8 +3093,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/rfps-D84zxsYQ.js",
-          "gzip": 3575,
+          "file": "assets/rfps-CAr9anP-.js",
+          "gzip": 3572,
           "worker": null,
           "class": "rfps"
         },
@@ -3105,13 +3105,13 @@
           "class": "rfps"
         },
         {
-          "file": "assets/runtime-BFpouFHd.js",
+          "file": "assets/runtime-DFSUtGSE.js",
           "gzip": 2545,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/segments-CrZD3SA5.js",
+          "file": "assets/segments-D5PbmTgh.js",
           "gzip": 1844,
           "worker": null,
           "class": "segments"
@@ -3135,8 +3135,8 @@
           "class": "stats"
         },
         {
-          "file": "assets/stats-ChUqCYxB.js",
-          "gzip": 4337,
+          "file": "assets/stats-Dg_eV7D1.js",
+          "gzip": 4336,
           "worker": null,
           "class": "stats"
         }
@@ -3153,8 +3153,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 5000,
-          "gzip": 4122,
-          "headroom": 878,
+          "gzip": 4294,
+          "headroom": 706,
           "status": "ok",
           "why": "The check configuration plus one preset, klingO1ReferenceVideo, imported from video-fps-probe/presets. Measured 3.24 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 3.60 KB in 0.2.0 with the larger check and the size note of the preset. Raised from 4 KB to 5 KB, measured 4.12 KB, with the larger check of the check configuration."
         },
@@ -3162,8 +3162,8 @@
           "key": "check",
           "label": "check entry (in the entry chunk)",
           "limit": 4000,
-          "gzip": 3251,
-          "headroom": 749,
+          "gzip": 3420,
+          "headroom": 580,
           "status": "ok",
           "why": "As in the check configuration. Measured 3.25 KB."
         },
@@ -3180,8 +3180,8 @@
           "key": "entry",
           "label": "entry chunk with the preload helper",
           "limit": 6000,
-          "gzip": 4846,
-          "headroom": 1154,
+          "gzip": 5015,
+          "headroom": 985,
           "status": "ok",
           "why": "The trigger of this configuration plus Vite's preload helper. Measured 3.96 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 4.5 KB to 5 KB in 0.2.0, measured 4.33 KB, with the larger check and the size note of the preset. Raised to 6 KB, measured 4.85 KB, with the larger check of the check configuration."
         },
@@ -3198,8 +3198,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 81000,
-          "gzip": 80973,
-          "headroom": 27,
+          "gzip": 80970,
+          "headroom": 30,
           "status": "ok",
           "why": "As in the check configuration. Measured 80.96 KB."
         }
