@@ -170,6 +170,17 @@ describe('check: duration, display size, aspect ratio, pixels and file size', ()
     expect(check(result(track), { duration: { max: 30 } }).violations).toEqual([{ rule: 'duration.max', severity: 'fail', expected: 30, actual: 901 / 30, message: 'duration.max: 30.033 s is above the maximum 30 s' }]);
   });
 
+  it('treats a size that is not a whole number as missing, instead of throwing', () => {
+    const sizes: CheckRules = { display: { minWidth: 1 }, aspectRatio: { max: 2 }, pixels: { max: 1e7 } };
+    for (const track of [{ width: 853.33 }, { height: Number.NaN }, { width: Number.POSITIVE_INFINITY }, { width: -1920 }]) {
+      expect(check(result(track), sizes).violations.map((v) => [v.rule, v.severity]), JSON.stringify(track)).toEqual([
+        ['display', 'unknown'],
+        ['aspectRatio', 'unknown'],
+        ['pixels', 'unknown'],
+      ]);
+    }
+  });
+
   it('uses the format duration when the track has none', () => {
     expect(failed(result({ durationSec: null }, { formatDurationSec: 31 }), { duration: { max: 30 } })).toEqual(['duration.max']);
   });
@@ -186,6 +197,7 @@ describe('check: allowlists, audio and rate policies', () => {
     expect(failed(result({}, { container: 'mov' }), { containers: ['mp4', 'mov'] })).toEqual([]);
     expect(failed(result({ codecName: 'vp9' }), { codecs: ['h264', 'hevc'] })).toEqual(['codecs']);
     expect(failed(result(), { codecs: ['H264'] })).toEqual([]);
+    expect(failed(result({ codecName: 'HEVC' }), { codecs: ['hevc'] })).toEqual([]);
     expect(check(result({ codecName: 'unknown' }), { codecs: ['h264'] }).verdict).toBe('unknown');
     expect(check(result({}, { container: 'unknown' }), { containers: ['mp4'] }).violations[0]).toMatchObject({ rule: 'containers', severity: 'unknown', message: 'containers: unknown, no container' });
   });

@@ -181,7 +181,7 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
     if (list == null) return;
     if (!Array.isArray(list) || list.some((x) => typeof x !== 'string')) invalid(rule, list, 'a list of strings');
     if (!actual || actual === 'unknown') unknown(rule, missing);
-    else if (!list.some((x) => x.toLowerCase() === actual)) add(rule, severity, list, actual, `${actual} is not one of ${list.join(', ')}`);
+    else if (!list.some((x) => x.toLowerCase() === actual.toLowerCase())) add(rule, severity, list, actual, `${actual} is not one of ${list.join(', ')}`);
   };
   const policy = (rule: 'vfr' | 'uneven', state: boolean | null, missing: string, message: string): boolean => {
     const p = rules[rule];
@@ -199,9 +199,9 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   limits('duration', rules.duration, span, seconds, `${round(seconds)}`, ' s', 'duration');
 
   const turned = t ? Math.abs(t.rotation) % 180 === 90 : false;
-  const w = (turned ? t?.height : t?.width) || 0;
-  const h = (turned ? t?.width : t?.height) || 0;
-  const sized = w > 0 && h > 0;
+  const size = [turned ? t?.height : t?.width, turned ? t?.width : t?.height];
+  const sized = size.every((x) => Number.isSafeInteger(x) && x! > 0);
+  const [w, h] = sized ? (size as number[]) : [0, 0];
   const sides = { Width: w, Height: h, ShortSide: Math.min(w, h), LongSide: Math.max(w, h) };
   for (const side of SIDES) {
     const x = sides[side];
@@ -209,7 +209,7 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   }
   const area: Q = [BigInt(w), BigInt(h)];
   limits('aspectRatio', rules.aspectRatio, sized ? area : null, fraction(area), `${w}x${h} (${round(w / h)})`, '', 'display size');
-  limits('pixels', rules.pixels, sized ? [BigInt(w * h), 1n] : null, w * h, `${w * h}`, ' px', 'display size');
+  limits('pixels', rules.pixels, sized ? [BigInt(w) * BigInt(h), 1n] : null, w * h, `${w * h}`, ' px', 'display size');
   limits('fileSize', rules.fileSize, quantity(result?.size), result?.size ?? '', `${result?.size}`, ' bytes', 'file size');
   allow('containers', rules.containers, result?.container, 'container');
   allow('codecs', rules.codecs, t?.codecName, 'codec name');
