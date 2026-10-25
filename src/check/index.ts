@@ -74,9 +74,8 @@ type Bound = 'min' | 'max' | 'exact' | 'oneOf';
 const UNEVEN_SPREAD = 1.075;
 const DECIMATE_FROM = 1.5;
 const SPAN_SLACK_MS = 3n;
-const BOUNDS: readonly Bound[] = ['min', 'max', 'exact', 'oneOf'];
 const RELATION: Record<Bound, string> = { min: 'below the minimum', max: 'above the maximum', exact: 'not', oneOf: 'not one of' };
-const SIDES = ['Width', 'Height', 'ShortSide', 'LongSide'] as const;
+const BOUNDS = Object.keys(RELATION) as Bound[];
 const GROUPS = ['fps', 'duration', 'display', 'aspectRatio', 'pixels', 'fileSize'] as const;
 const POLICIES: readonly RatePolicy[] = ['allow', 'warn', 'reject'];
 const SOURCES: readonly FpsSource[] = ['avg', 'ffprobe', 'nominal', 'dominant'];
@@ -94,7 +93,7 @@ function decimal(s: string): Q | null {
 }
 
 function ratio(v: unknown, rule: string): Q {
-  const parts = typeof v === 'number' ? [String(v)] : typeof v === 'string' ? v.split(/[/:]/) : [];
+  const parts = typeof v === 'number' || typeof v === 'string' ? String(v).split(/[/:]/) : [];
   const [a, b] = parts.map(decimal);
   const q: Q | null = a && parts.length === 1 ? a : a && b && parts.length === 2 ? [a[0] * b[1], a[1] * b[0]] : null;
   return q && q[1] !== 0n ? q : invalid(rule, v, "a non-negative number or 'num/den'");
@@ -102,8 +101,9 @@ function ratio(v: unknown, rule: string): Q {
 
 const cmp = (a: Q, b: Q): bigint => a[0] * b[1] - b[0] * a[1];
 
-const fromRational = (r: Pick<Rational, 'num' | 'den'> | null | undefined): Q | null =>
-  r && Number.isSafeInteger(r.num) && Number.isSafeInteger(r.den) && r.num > 0 && r.den > 0 ? [BigInt(r.num), BigInt(r.den)] : null;
+const whole = (x: unknown): x is number => Number.isSafeInteger(x) && (x as number) > 0;
+
+const fromRational = (r: Pick<Rational, 'num' | 'den'> | null | undefined): Q | null => (r && whole(r.num) && whole(r.den) ? [BigInt(r.num), BigInt(r.den)] : null);
 
 const gcd = (a: bigint, b: bigint): bigint => (b === 0n ? a : gcd(b, a % b));
 
@@ -122,16 +122,17 @@ function steady(t: VideoTrackResult): readonly [Q, Q] | null {
   const avg = fromRational(t.avgFps);
   const nominal = fromRational(t.nominalFps);
   const frames = t.presentedFrames ?? t.frames;
-  if (!avg || !nominal || !t.timestampsQuantized || t.isVfr !== false || !Number.isSafeInteger(frames)) return null;
-  const n = BigInt(frames!);
+  if (!avg || !nominal || !t.timestampsQuantized || t.isVfr !== false || !whole(frames)) return null;
+  const n = BigInt(frames);
   const gap = n * (avg[1] * nominal[0] - nominal[1] * avg[0]);
   return (gap < 0n ? -gap : gap) * 1000n <= SPAN_SLACK_MS * avg[0] * nominal[0] ? [nominal, [n * nominal[1], nominal[0]]] : null;
 }
 
 function judgedFps(t: VideoTrackResult, source: FpsSource | undefined, cfr: readonly [Q, Q] | null): Q | null {
   const m = /^(\d+)\/(\d+)$/.exec(t.avgFpsFfprobe ?? '');
-  if (source === 'ffprobe') return m ? fromRational({ num: Number(m[1]), den: Number(m[2]) }) : null;
-  if (source === 'nominal' || source === 'dominant') return fromRational(source === 'nominal' ? t.nominalFps : (t.dominantFps?.rate ?? (t.isVfr === false ? t.nominalFps : null)));
+  if (source === 'ffprobe') return m && fromRational({ num: +m[1]!, den: +m[2]! });
+  if (source === 'nominal') return fromRational(t.nominalFps);
+  if (source === 'dominant') return fromRational(t.dominantFps?.rate ?? (t.isVfr === false ? t.nominalFps : null));
   return cfr?.[0] ?? fromRational(t.avgFps);
 }
 
@@ -176,7 +177,7 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
       if (b === 'min' ? c[0]! < 0n : b === 'max' ? c[0]! > 0n : !c.includes(0n)) add(`${group}.${b}${side}`, severity, expected, shown, `${text}${unit} is ${RELATION[b]} ${[expected].flat().join(', ')}${unit}`);
     }
   };
-  const quantity = (x: number | null | undefined): Q | null => (typeof x === 'number' && x >= 0 && Number.isFinite(x) ? decimal(String(x)) : null);
+  const quantity = (x: number | null | undefined): Q | null => (typeof x === 'number' ? decimal(String(x)) : null);
   const allow = (rule: 'containers' | 'codecs', list: readonly string[] | undefined, actual: string | null | undefined, missing: string): void => {
     if (list == null) return;
     if (!Array.isArray(list) || list.some((x) => typeof x !== 'string')) invalid(rule, list, 'a list of strings');
@@ -198,14 +199,13 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   const seconds = span ? value(span) : 0;
   limits('duration', rules.duration, span, seconds, `${round(seconds)}`, ' s', 'duration');
 
-  const turned = t ? Math.abs(t.rotation) % 180 === 90 : false;
-  const size = [turned ? t?.height : t?.width, turned ? t?.width : t?.height];
-  const sized = size.every((x) => Number.isSafeInteger(x) && x! > 0);
-  const [w, h] = sized ? (size as number[]) : [0, 0];
+  const size = t ? (Math.abs(t.rotation) % 180 === 90 ? [t.height, t.width] : [t.width, t.height]) : [0, 0];
+  const sized = size.every(whole);
+  const [w, h] = sized ? size : [0, 0];
   const sides = { Width: w, Height: h, ShortSide: Math.min(w, h), LongSide: Math.max(w, h) };
-  for (const side of SIDES) {
-    const x = sides[side];
-    limits('display', { min: rules.display?.[`min${side}`], max: rules.display?.[`max${side}`] }, sized ? [BigInt(x), 1n] : null, x, `${x}`, ' px', 'display size', side);
+  const d = rules.display as Record<string, RatioValue | undefined> | undefined;
+  for (const [side, x] of Object.entries(sides)) {
+    limits('display', { min: d?.[`min${side}`], max: d?.[`max${side}`] }, sized ? [BigInt(x), 1n] : null, x, `${x}`, ' px', 'display size', side);
   }
   const area: Q = [BigInt(w), BigInt(h)];
   limits('aspectRatio', rules.aspectRatio, sized ? area : null, fraction(area), `${w}x${h} (${round(w / h)})`, '', 'display size');
@@ -230,7 +230,6 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
     const how = k > 1 ? `, which keeps 1 of every ${k} frames` : '';
     if (v > 0) report.suggestedFps = { value: v, reason: fpsOff ? `${fpsText(fps!)} fps is not allowed: convert to ${round(v)} fps${how}` : `the frame rate is ${vfr ? 'variable' : 'uneven'}: re-encode at a constant ${round(v)} fps${how}` };
   }
-  const has = (s: CheckSeverity): boolean => violations.some((v) => v.severity === s);
-  report.verdict = has('fail') ? 'fail' : has('unknown') ? 'unknown' : has('warn') ? 'warn' : 'pass';
+  report.verdict = (['fail', 'unknown', 'warn'] as const).find((s) => violations.some((v) => v.severity === s)) ?? 'pass';
   return report;
 }
