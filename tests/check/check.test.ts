@@ -506,6 +506,13 @@ describe('check: suggestedFps', () => {
     ['takes an exact rate', rate(30), { exact: 24 }, 24, '30 fps is not allowed: convert to 24 fps'],
     ['takes the nearest allowed rate', rate(26), { oneOf: [24, 30] }, 24, '26 fps is not allowed: convert to 24 fps'],
     ['takes the lower of two equally near rates', rate(27), { oneOf: [24, 30] }, 24, '27 fps is not allowed: convert to 24 fps'],
+    ['takes the nearest standard rate under a maximum of 29.97, not 60 divided by 3', rate(60), { max: 29.97 }, 30000 / 1001, '60 fps is not allowed: convert to 29.97 (30000/1001) fps'],
+    ['takes the nearest standard rate under a maximum of 29.97 given as a string', rate(60), JSON.parse('{"max":"29.97"}') as FpsRule, 30000 / 1001, '60 fps is not allowed: convert to 29.97 (30000/1001) fps'],
+    ['halves 100 to the standard 50 under a maximum of 60, before the nearer 60', rate(100), { max: 60 }, 50, '100 fps is not allowed: convert to 50 fps, which keeps 1 of every 2 frames'],
+    ['takes a standard rate above a minimum that is none', rate(20), { min: 26 }, 30000 / 1001, '20 fps is not allowed: convert to 29.97 (30000/1001) fps'],
+    ['takes a standard rate below a maximum that is none', rate(40), { max: 35 }, 30, '40 fps is not allowed: convert to 30 fps'],
+    ['halves 30 under a maximum below every standard rate', rate(30), { max: 20 }, 15, '30 fps is not allowed: convert to 15 fps, which keeps 1 of every 2 frames'],
+    ['takes the maximum when no standard rate is between the bounds', rate(70), { min: 61, max: 62 }, 62, '70 fps is not allowed: convert to 62 fps'],
   ] as const)('%s', (_, avgFps, fps, value, reason) => {
     expect(check(result({ avgFps }), { fps }).suggestedFps).toEqual({ value, reason });
   });
@@ -551,7 +558,7 @@ describe('check: suggestedFps', () => {
     };
     const candidates = [...Array.from({ length: 240 }, (_, i) => rate(i + 1)), ...[24, 30, 48, 60, 120].map((m) => rate(m * 1000, 1001)), rate(2997, 100), rate(2997, 125)];
     const passes = (fps: CheckRules['fps'], r: Rational): boolean => check(result({ avgFps: r }), { fps }).verdict === 'pass';
-    const options = { min: [undefined, 24, 30, 29.97], max: [undefined, 25, 30, 60, 29.97], exact: [undefined, 24, 30, 23.976], oneOf: [undefined, [], [24, 30], [50, 60], [29.97]] };
+    const options = { min: [undefined, 24, 30, 29.97, 26], max: [undefined, 25, 30, 60, 29.97, 20], exact: [undefined, 24, 30, 23.976], oneOf: [undefined, [], [24, 30], [50, 60], [29.97]] };
     let suggested = 0;
     let none = 0;
     for (const min of options.min)
@@ -559,7 +566,7 @@ describe('check: suggestedFps', () => {
         for (const exact of options.exact)
           for (const oneOf of options.oneOf) {
             const fps = { min, max, exact, oneOf };
-            for (const avgFps of [rate(23), rate(30), rate(48), rate(120), rate(60000, 1001)]) {
+            for (const avgFps of [rate(23), rate(30), rate(48), rate(50), rate(60), rate(100), rate(120), rate(60000, 1001)]) {
               for (const report of [check(result({ avgFps }), { fps }), check(result({ avgFps, isVfr: true }), { fps, vfr: 'reject' })]) {
                 const s = report.suggestedFps;
                 if (!s) continue;

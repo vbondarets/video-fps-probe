@@ -77,6 +77,7 @@ const DECIMATE_FROM: Q = [3n, 2n];
 const SPAN_SLACK_MS = 3n;
 const NOMINAL_SLACK_PER_S = 10_000_000n;
 const NTSC = [24n, 30n, 48n, 60n, 120n];
+const STANDARD: Q[] = [...[24n, 25n, 30n, 48n, 50n, 60n, 100n, 120n].map((m): Q => [m, 1n]), ...NTSC.map((m): Q => [m * 1000n, 1001n])];
 const RELATION: Record<Bound, string> = { min: 'below the minimum', max: 'above the maximum', exact: 'not', oneOf: 'not one of' };
 const BOUNDS = Object.keys(RELATION) as Bound[];
 const GROUPS = ['fps', 'duration', 'frameSize', 'aspectRatio', 'pixels', 'fileSize'] as const;
@@ -199,23 +200,28 @@ function fit(target: Q, rule: FpsRule = {}): readonly [Q, number] | null {
   const [lo] = list(rule.min);
   const hi = list(rule.max).reduce<Q | undefined>((a, q) => (a && cmp(a, q) > 0 ? a : q), undefined);
   const inside = (q: Q): boolean => (!lo || cmp(q, lo) >= 0) && (!hi || cmp(q, hi) <= 0);
+  const nearer = (a: Q, b: Q): bigint => abs(cmp(a, target)) * b[1] - abs(cmp(b, target)) * a[1] || cmp(a, b);
+  const nearest = (qs: Q[]): Q | null => qs.filter(inside).reduce<Q | null>((b, q) => (b && nearer(b, q) <= 0n ? b : q), null);
+  const divided = (keep: (q: Q) => boolean): readonly [Q, number] | undefined => {
+    for (let k = 2n; k <= 8n; k++) {
+      const q: Q = [target[0], target[1] * k];
+      if (keep(q)) return [q, Number(k)];
+    }
+  };
   const oneOf = rule.oneOf == null ? null : list(rule.oneOf);
   const named = rule.exact == null ? oneOf : list(rule.exact).filter((q) => !oneOf || oneOf.some((o) => cmp(o, q) === 0n));
   if (named) {
-    const nearer = (a: Q, b: Q): bigint => abs(cmp(a, target)) * b[1] - abs(cmp(b, target)) * a[1] || cmp(a, b);
-    const best = named.filter(inside).reduce<Q | null>((b, q) => (b && nearer(b, q) <= 0n ? b : q), null);
+    const best = nearest(named);
     return best && [best, 0];
   }
   if (lo && hi && cmp(lo, hi) > 0) return null;
+  if (inside(target)) return [target, 0];
+  const standard = nearest(STANDARD);
+  if (standard) return divided((q) => STANDARD.some((s) => inside(s) && cmp(s, q) === 0n)) ?? [standard, 0];
   if (lo && cmp(target, lo) < 0) return [lo, 0];
-  if (!hi || cmp(target, hi) <= 0) return [target, 0];
-  if (cmp(target, [DECIMATE_FROM[0] * hi[0], DECIMATE_FROM[1] * hi[1]]) >= 0) {
-    for (let k = 2n; k <= 8n; k++) {
-      const q: Q = [target[0], target[1] * k];
-      if (cmp(q, hi) <= 0) return lo && cmp(q, lo) < 0 ? [hi, 0] : [q, Number(k)];
-    }
-  }
-  return [hi, 0];
+  const top = hi!;
+  const under = cmp(target, [DECIMATE_FROM[0] * top[0], DECIMATE_FROM[1] * top[1]]) >= 0 ? divided((q) => cmp(q, top) <= 0) : undefined;
+  return under && !(lo && cmp(under[0], lo) < 0) ? under : [top, 0];
 }
 
 export function check(result: FileResult | null | undefined, rules: CheckRules): CheckReport {
