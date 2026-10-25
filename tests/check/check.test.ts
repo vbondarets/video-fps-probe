@@ -279,6 +279,25 @@ describe('check: verdict, severity and failing open', () => {
   it('is unknown without a video track', () => {
     expect(check(result({}, { videoTracks: [], primaryTrackId: null }), { fps: { min: 24 } }).violations[0]!.message).toBe('fps: unknown, no video track');
   });
+
+  it('is unknown, without throwing, for a partial or older result without videoTracks', () => {
+    const rulesAll: CheckRules = { fps: { min: 24 }, duration: { max: 30 }, pixels: { max: 1 }, codecs: ['h264'], fileSize: { max: 100 }, vfr: 'reject' };
+    for (const json of ['{"name":"x.mp4","size":50}', '{"name":"x.mp4","size":50,"videoTracks":null,"primaryTrackId":1}', '{"size":50,"error":null,"container":"mp4"}']) {
+      const partial = JSON.parse(json) as FileResult;
+      expect(() => check(partial, rulesAll), json).not.toThrow();
+      const report = check(partial, rulesAll);
+      expect(report.verdict, json).toBe('unknown');
+      expect(report.violations.map((v) => [v.rule, v.severity]), json).toEqual([
+        ['fps', 'unknown'],
+        ['duration', 'unknown'],
+        ['pixels', 'unknown'],
+        ['codecs', 'unknown'],
+        ['vfr', 'unknown'],
+      ]);
+      expect(report.violations[0]!.message).toBe('fps: unknown, no video track');
+    }
+    expect(check(JSON.parse('{"size":500}') as FileResult, { fileSize: { max: 100 } }).verdict).toBe('fail');
+  });
 });
 
 describe('check: suggestedFps', () => {

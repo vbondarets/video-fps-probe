@@ -164,7 +164,7 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   const violations: CheckViolation[] = [];
   const severity = rules.severity === 'warn' ? 'warn' : 'fail';
   const error = result ? result.error : 'no result';
-  const t = result && !error ? (result.videoTracks.find((x) => x.trackId === result.primaryTrackId) ?? null) : null;
+  const t = result && !error && Array.isArray(result.videoTracks) ? (result.videoTracks.find((x) => x.trackId === result.primaryTrackId) ?? null) : null;
   const add = (rule: string, s: CheckSeverity, expected: CheckExpected, actual: number | string | boolean | null, message: string): number => violations.push({ rule, severity: s, expected, actual, message: `${rule}: ${message}` });
   const unknown = (rule: string, missing: string): unknown => violations.some((v) => v.rule === rule) || add(rule, 'unknown', null, null, `unknown, ${error ? `the analysis failed: ${error}` : t ? `no ${missing}` : 'no video track'}`);
 
