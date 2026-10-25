@@ -65,15 +65,18 @@ async function nodeAnalyze(name: string, engine: WorkerEngine): Promise<ProbeRes
   return analyze(await openAsBlob(join(FILES_DIR, name)), { name, engine: descriptor });
 }
 
-async function browserAnalyze(page: Page, name: string, engine: WorkerEngine): Promise<ProbeResult> {
+async function browserAnalyze(page: Page, name: string, engine: WorkerEngine, batched = true): Promise<ProbeResult> {
   await page.locator('#file').setInputFiles(join(FILES_DIR, name));
-  return page.evaluate(async (engine) => {
-    const file = document.querySelector<HTMLInputElement>('#file')?.files?.[0];
-    if (!file) throw new Error('no file picked');
-    const picked = window as unknown as { __picked?: File[] };
-    (picked.__picked ??= []).push(file);
-    return (window.__probe as ConsumerProbe).analyze(file, { engine });
-  }, engine);
+  return page.evaluate(
+    async ([engine, batched]) => {
+      const file = document.querySelector<HTMLInputElement>('#file')?.files?.[0];
+      if (!file) throw new Error('no file picked');
+      const picked = window as unknown as { __picked?: File[] };
+      if (batched) (picked.__picked ??= []).push(file);
+      return (window.__probe as ConsumerProbe).analyze(file, { engine });
+    },
+    [engine, batched] as const,
+  );
 }
 
 async function browserFailure(page: Page, name: string): Promise<{ code: unknown; reason: unknown } | null> {
@@ -120,7 +123,7 @@ const firstLine = (e: unknown) => (e instanceof Error ? e.message : String(e)).s
 async function libraryOutcome(page: Page, name: string, engine: WorkerEngine): Promise<LibraryOutcome> {
   try {
     const expected: Record<string, unknown> = withoutTiming(await nodeAnalyze(name, engine));
-    const actual = await browserAnalyze(page, name, engine);
+    const actual = await browserAnalyze(page, name, engine, false);
     if (actual.engine !== engine || actual.error !== null) return { outcome: 'error', detail: actual.error ?? `ran on ${actual.engine}` };
     const measured: Record<string, unknown> = withoutTiming(actual);
     const fields = [...new Set([...Object.keys(expected), ...Object.keys(measured)])].filter((k) => !isDeepStrictEqual(plain(measured[k]), plain(expected[k])));
@@ -157,7 +160,6 @@ for (const fixture of FIXTURES) {
           if (!FAMILIES[engine].includes(file.family)) continue;
           if (LIBRARY_REPORT && engine !== 'own') {
             library.push({ browser: browserName, fixture: fixture.name, mode, file: file.name, engine, ...(await libraryOutcome(page, file.name, engine)) });
-            runs++;
             continue;
           }
           const expected = await nodeAnalyze(file.name, engine);
@@ -192,7 +194,8 @@ for (const fixture of FIXTURES) {
           expect(error, `${name} with rvfc`).toBe(rvfcSupported ? null : RVFC_UNSUPPORTED);
         }
       }
-      for (const name of fixture.workers) expect(workerUrls.some((url) => url.includes(name)), `a ${name} worker ran (started: ${workerUrls.join(', ') || 'none'})`).toBe(true);
+      const libraryWorkers = LIBRARY_REPORT ? engines.filter((e) => e !== 'own').map((e) => `${e}.worker`) : [];
+      for (const name of fixture.workers.filter((w) => !libraryWorkers.includes(w))) expect(workerUrls.some((url) => url.includes(name)), `a ${name} worker ran (started: ${workerUrls.join(', ') || 'none'})`).toBe(true);
       if (mode === 'build') {
         const routing = requested.filter((url) => holdsSplitRouting(fixture.name, url));
         if (fixture.byContainer) expect(routing, 'the split routing chunk loads once with byContainer').toHaveLength(1);
