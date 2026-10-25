@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { GENERATED, changelogSection, gitIdentity, localDate, releaseChangelog, unreleasedIntro } from '../../scripts/release-prep.mjs';
+import { GENERATED, changelogSection, gitIdentity, localDate, publishCheck, releaseChangelog, unreleasedIntro } from '../../scripts/release-prep.mjs';
 import { TARGETS } from '../../scripts/readme-tables.ts';
 
 const CHANGELOG = ['# Changelog', '', 'Intro.', '', '## Unreleased', '', '### Added', '', '- A thing.', '', '## 0.1.0 - 2026-10-24', '', 'First release.', ''].join('\n');
@@ -56,5 +56,29 @@ describe('release changelog', () => {
 
   it('stages every file the doc tables write', () => {
     for (const { path } of TARGETS) expect(GENERATED).toContain(path);
+  });
+});
+
+describe('publish check of the Release workflow', () => {
+  it('passes a tag that matches the version and picks the dist-tag', () => {
+    expect(publishCheck({ version: '0.2.0', private: false }, 'v0.2.0', '11.5.1')).toBe('latest');
+    expect(publishCheck({ version: '0.3.0' }, 'v0.3.0', '11.19.0')).toBe('latest');
+    expect(publishCheck({ version: '1.0.0-rc.1' }, 'v1.0.0-rc.1', '12.0.0')).toBe('next');
+  });
+
+  it('names every reason a tag cannot be published', () => {
+    expect(() => publishCheck({ version: '0.2.0' }, '0.2.0', '11.19.0')).toThrow('not publishable: the tag 0.2.0 is not v0.2.0, the version in package.json');
+    expect(() => publishCheck({ version: '0.2.0', private: true }, 'v0.2.0', '11.19.0')).toThrow('not publishable: package.json has "private": true, which npm refuses to publish');
+    for (const npm of ['11.5.0', '11.4.9', '10.9.2', 'x']) {
+      expect(() => publishCheck({ version: '0.2.0' }, 'v0.2.0', npm), npm).toThrow(`not publishable: npm ${npm} is older than 11.5.1, the first version with trusted publishing`);
+    }
+    expect(() => publishCheck({ version: '0.2.1', private: true }, 'v0.2.0', '10.0.0')).toThrow(/is not v0\.2\.1.*; package\.json has "private": true.*; npm 10\.0\.0 is older/);
+  });
+
+  it('runs the tag check from the Release workflow before npm publish', () => {
+    const workflow = readFileSync(new URL('../../.github/workflows/release.yml', import.meta.url), 'utf8');
+    expect(workflow).toContain('node scripts/release-prep.mjs --publish-check "$TAG"');
+    expect(workflow.indexOf('--publish-check')).toBeLessThan(workflow.indexOf('npm publish'));
+    expect(workflow).not.toMatch(/^\s+(push|pull_request|release):/m);
   });
 });

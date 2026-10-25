@@ -10,7 +10,7 @@ const UNRELEASED = '## Unreleased';
 const BUMPED = ['package.json', 'package-lock.json'];
 export const GENERATED = ['CHANGELOG.md', 'report/size.md', 'report/size.json', 'report/size-matrix.md', 'report/size-matrix.json', 'README.md', 'docs/benchmarks.md', 'docs/bundlers.md', 'report/README.md'];
 
-const USAGE = `Usage: node scripts/release-prep.mjs [--preversion | --notes <version>]
+const USAGE = `Usage: node scripts/release-prep.mjs [--preversion | --notes <version> | --publish-check <tag>]
 
   (no option)        the npm "version" step, after npm bumped package.json and package-lock.json:
                      moves the CHANGELOG Unreleased section under the new version and today's date
@@ -22,6 +22,11 @@ const USAGE = `Usage: node scripts/release-prep.mjs [--preversion | --notes <ver
                      an unset git user.name or user.email, prints the git identity of the release
                      commit and runs the fast gates
   --notes <version>  prints the CHANGELOG section of a version, for the GitHub Release
+  --publish-check <tag>
+                     the check of the Release workflow before npm publish: fails unless the tag is
+                     v plus the package.json version, "private" is not true and npm is 11.5.1 or
+                     later (trusted publishing), and prints the dist-tag: next for a prerelease,
+                     else latest
 
 Release: npm version minor -m "chore(release): bumped the version to %s" (docs/releasing.md).
 `;
@@ -91,6 +96,19 @@ export function changelogSection(text, version) {
   return section(lines, start).body.join('\n').trim();
 }
 
+const TRUSTED_NPM = [11, 5, 1];
+
+export function publishCheck(manifest, tag, npmVersion) {
+  const problems = [];
+  if (tag !== `v${manifest.version}`) problems.push(`the tag ${tag} is not v${manifest.version}, the version in package.json`);
+  if (manifest.private === true) problems.push('package.json has "private": true, which npm refuses to publish');
+  const npm = String(npmVersion).split('.').map((n) => parseInt(n, 10));
+  const newer = TRUSTED_NPM.findIndex((n, i) => npm[i] !== n);
+  if (!(newer === -1 || npm[newer] > TRUSTED_NPM[newer])) problems.push(`npm ${npmVersion} is older than ${TRUSTED_NPM.join('.')}, the first version with trusted publishing`);
+  if (problems.length > 0) throw new Error(`not publishable: ${problems.join('; ')}`);
+  return manifest.version.includes('-') ? 'next' : 'latest';
+}
+
 export function localDate(now = new Date()) {
   const pad = (n) => String(n).padStart(2, '0');
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
@@ -146,12 +164,16 @@ function version() {
 }
 
 function main() {
-  const { values } = parseArgs({ options: { preversion: { type: 'boolean', default: false }, notes: { type: 'string' }, help: { type: 'boolean', default: false } }, strict: true });
+  const { values } = parseArgs({
+    options: { preversion: { type: 'boolean', default: false }, notes: { type: 'string' }, 'publish-check': { type: 'string' }, help: { type: 'boolean', default: false } },
+    strict: true,
+  });
   if (values.help) {
     console.log(USAGE);
     return 0;
   }
-  if (values.notes) console.log(changelogSection(read('CHANGELOG.md'), values.notes));
+  if (values['publish-check']) console.log(publishCheck(JSON.parse(read('package.json')), values['publish-check'], execSync('npm --version', { env: NPM_ENV, encoding: 'utf8' }).trim()));
+  else if (values.notes) console.log(changelogSection(read('CHANGELOG.md'), values.notes));
   else if (values.preversion) preversion();
   else version();
   return 0;

@@ -1,0 +1,70 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The tag to publish to npm, such as v0.3.0 (docs/publishing.md)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify the tag
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: refs/tags/${{ inputs.tag }}
+    permissions:
+      contents: read
+
+  publish:
+    name: Publish to npm
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout the tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+
+      - name: Check the tag, the version, private and npm 11.5.1 or later
+        id: check
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          dist_tag="$(node scripts/release-prep.mjs --publish-check "$TAG")"
+          echo "npm $(npm --version), publishing $TAG with the dist-tag $dist_tag"
+          echo "dist-tag=$dist_tag" >> "$GITHUB_OUTPUT"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Publish (prepack builds dist and runs check-dist)
+        env:
+          DIST_TAG: ${{ steps.check.outputs.dist-tag }}
+        run: |
+          if [ "$DIST_TAG" = next ]; then
+            npm publish --access public --tag next
+          else
+            npm publish --access public
+          fi
