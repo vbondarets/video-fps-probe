@@ -638,5 +638,6 @@ The package follows semantic versioning, with these rules:
 - **Minor**: new optional result fields, new engines or entries, new options.
 - **Major**: removing or retyping a field, a new major of a peer, or a higher browser floor.
 - Items marked experimental here (`compare`, `CompareResult`, the native `mp4box`, `mediabunny` and `rvfc` details on `ProbeResult`) can change in a minor release.
+- The rules of a preset follow its source: when a provider changes its published limits, the preset changes with them in the next minor release, with the new `verifiedAt` and a changelog entry. Pin your own rules if they must not move.
 
 The package stays on 0.x until a production consumer has completed a release cycle with it; during 0.x a minor release may contain breaking changes, listed in the [changelog](../CHANGELOG.md).
