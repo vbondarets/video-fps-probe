@@ -108,6 +108,17 @@ describe('check: rule validation', () => {
     ['a frame rate source it does not know', '{"fps":{"min":24,"source":"mean"}}', 'fps.source: "mean" is not one of avg, ffprobe, nominal, dominant'],
     ['a rule group that is not an object', '{"fps":24}', 'fps: 24 is not an object'],
     ['rules that are not an object', 'null', 'rules: null is not an object'],
+    ['rules that are a list', '[{"fps":{"min":24}}]', 'rules: [{"fps":{"min":24}}] is not an object'],
+    ['a rule group that is a list', '{"fps":[24,60]}', 'fps: [24,60] is not an object'],
+    ['a typo in a bound', '{"fps":{"min":24,"mxa":60}}', 'fps.mxa: not a rule; expected one of min, max, exact, oneOf, source'],
+    ['a display key it does not know', '{"display":{"maxwidth":1080}}', 'display.maxwidth: not a rule; expected one of minWidth, maxWidth, minHeight, maxHeight, minShortSide, maxShortSide, minLongSide, maxLongSide'],
+    ['an exact bound in a range group', '{"duration":{"exact":3}}', 'duration.exact: not a rule; expected one of min, max'],
+    ['a oneOf in a range group', '{"pixels":{"oneOf":[921600]}}', 'pixels.oneOf: not a rule; expected one of min, max'],
+    ['a typo in a rule name', '{"fsp":{"max":60}}', 'fsp: not a rule; expected one of fps, duration, display, aspectRatio, pixels, fileSize, containers, codecs, audio, vfr, uneven, severity'],
+    ['a bound given as a list', '{"fps":{"min":[24]}}', 'fps.min: [24] is not a non-negative number or \'num/den\''],
+    ['an exact rate given as a list', '{"fps":{"exact":[24,25]}}', 'fps.exact: [24,25] is not a non-negative number or \'num/den\''],
+    ['a bound of the wrong type', '{"duration":{"max":true}}', 'duration.max: true is not a non-negative number or \'num/den\''],
+    ['a oneOf entry of the wrong type', '{"aspectRatio":{"oneOf":["16/9",{}]}}', 'aspectRatio.oneOf: {} is not a non-negative number or \'num/den\''],
   ])('throws a TypeError naming the rule for %s, whatever the result', (_, json, message) => {
     for (const r of [result(), result({}, { error: 'moov box not found' }), null]) {
       expect(thrown(() => check(r, JSON.parse(json) as CheckRules)), json).toEqual(new TypeError(message));
@@ -283,11 +294,11 @@ describe('check: verdict, severity and failing open', () => {
     expect(check(broken, { ...all, fileSize: { max: 200_000_000 } }).verdict).toBe('fail');
   });
 
-  it('ignores a rule group without a bound, a null bound and a display key it does not know', () => {
+  it('ignores a rule group without a bound and a null bound, and throws for a key it does not know', () => {
     const blank = result({ avgFps: null, width: 0, height: 0 });
     expect(check(blank, { fps: { source: 'ffprobe' }, duration: {}, display: {}, aspectRatio: {} })).toEqual({ verdict: 'pass', violations: [] });
-    expect(check(result({ avgFps: rate(24000, 1001) }), JSON.parse('{"fps":{"min":24,"max":null},"display":{"maxWidth":null}}') as CheckRules).violations.map((v) => v.rule)).toEqual(['fps.min']);
-    expect(check(result(), { display: { fooWidth: 1, maxwidth: 1 } } as unknown as CheckRules)).toEqual({ verdict: 'pass', violations: [] });
+    expect(check(result({ avgFps: rate(24000, 1001) }), JSON.parse('{"fps":{"min":24,"max":null},"display":{"maxWidth":null},"audio":null}') as CheckRules).violations.map((v) => v.rule)).toEqual(['fps.min']);
+    expect(() => check(result(), { display: { fooWidth: 1 } } as unknown as CheckRules)).toThrow(new TypeError('display.fooWidth: not a rule; expected one of minWidth, maxWidth, minHeight, maxHeight, minShortSide, maxShortSide, minLongSide, maxLongSide'));
   });
 
   it('is unknown without a video track', () => {

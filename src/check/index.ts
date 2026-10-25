@@ -80,6 +80,16 @@ const GROUPS = ['fps', 'duration', 'display', 'aspectRatio', 'pixels', 'fileSize
 const POLICIES: readonly RatePolicy[] = ['allow', 'warn', 'reject'];
 const SOURCES: readonly FpsSource[] = ['avg', 'ffprobe', 'nominal', 'dominant'];
 const AUDIO_ENGINES: readonly string[] = ['own', 'mp4box', 'mediabunny'];
+const RANGE = ['min', 'max'];
+const GROUP_KEYS: Record<(typeof GROUPS)[number], readonly string[]> = {
+  fps: [...RANGE, 'exact', 'oneOf', 'source'],
+  duration: RANGE,
+  display: ['Width', 'Height', 'ShortSide', 'LongSide'].flatMap((side) => RANGE.map((b) => b + side)),
+  aspectRatio: [...RANGE, 'oneOf'],
+  pixels: RANGE,
+  fileSize: RANGE,
+};
+const RULE_KEYS: readonly string[] = [...GROUPS, 'containers', 'codecs', 'audio', 'vfr', 'uneven', 'severity'];
 
 const invalid = (rule: string, v: unknown, what: string): never => {
   throw new TypeError(`${rule}: ${JSON.stringify(v)} is not ${what}`);
@@ -158,8 +168,12 @@ function fit(target: number, rule: FpsRule = {}): [number, number] {
 }
 
 export function check(result: FileResult | null | undefined, rules: CheckRules): CheckReport {
-  if (!rules || typeof rules !== 'object') invalid('rules', rules, 'an object');
-  for (const g of GROUPS) if (rules[g] != null && typeof rules[g] !== 'object') invalid(g, rules[g], 'an object');
+  const known = (path: string, v: unknown, keys: readonly string[]): void => {
+    if (!v || typeof v !== 'object' || Array.isArray(v)) invalid(path, v, 'an object');
+    for (const k of Object.keys(v as object)) if (!keys.includes(k)) throw new TypeError(`${path === 'rules' ? '' : `${path}.`}${k}: not a rule; expected one of ${keys.join(', ')}`);
+  };
+  known('rules', rules, RULE_KEYS);
+  for (const g of GROUPS) if (rules[g] != null) known(g, rules[g], GROUP_KEYS[g]);
   const choices: Array<[string, unknown, readonly string[]]> = [['fps.source', rules.fps?.source, SOURCES], ['audio', rules.audio, ['required', 'forbidden']], ['vfr', rules.vfr, POLICIES], ['uneven', rules.uneven, POLICIES], ['severity', rules.severity, ['fail', 'warn']]];
   for (const [rule, v, list] of choices) if (v != null && !list.includes(v as string)) invalid(rule, v, `one of ${list.join(', ')}`);
   const violations: CheckViolation[] = [];
@@ -170,7 +184,7 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   const unknown = (rule: string, missing: string): unknown => violations.some((v) => v.rule === rule) || add(rule, 'unknown', null, null, `unknown, ${error ? `the analysis failed: ${error}` : t ? `no ${missing}` : 'no video track'}`);
 
   const limits = (group: string, rule: Partial<Record<Bound, RatioValue | readonly RatioValue[]>> | undefined, actual: Q | null, shown: number | string, text: string, unit: string, missing: string, side = ''): void => {
-    const bounds = BOUNDS.filter((b) => rule?.[b] != null).map((b) => [b, rule![b]!, [rule![b]!].flat().map((v) => ratio(v, `${group}.${b}${side}`))] as const);
+    const bounds = BOUNDS.filter((b) => rule?.[b] != null).map((b) => [b, rule![b]!, (b === 'oneOf' ? [rule![b]!].flat() : [rule![b]!]).map((v) => ratio(v, `${group}.${b}${side}`))] as const);
     if (bounds.length === 0) return;
     if (!actual) return void unknown(group, missing);
     for (const [b, expected, qs] of bounds) {
