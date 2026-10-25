@@ -111,6 +111,19 @@ const results = await Promise.race([checks, late]); // null, or null entries: up
 
 `tryAnalyze` resolves `null` where `analyze` rejects. `timeoutMs` counts per job once a worker takes it and the signal cancels queued and running jobs, but neither covers main-thread chunk downloads: hence `prewarm()` and the race. A probe and a lazy stub reject only with a `ProbeError`; code that did not load, such as a chunk that is gone after a redeploy, has `reason: 'load'`. [Details](docs/api.md#cancellation-and-failing-open).
 
+## Check before upload
+
+```ts
+import { check } from 'video-fps-probe/check';
+import { klingO1ReferenceVideo } from 'video-fps-probe/presets';
+
+const report = check(await probe.tryAnalyze(file, { timeoutMs: 3000 }), klingO1ReferenceVideo.rules);
+if (report.verdict === 'fail') showErrors(report.violations, report.suggestedFps?.reason); // for example 'convert to 24 fps'
+else upload(file); // 'pass', 'warn', or 'unknown': no result, an error or a missing field fails open
+```
+
+Rules are JSON, such as `{ fps: { min: 24, max: 60 }, duration: { max: 10 }, vfr: 'warn' }`, and frame rates compare as exact rationals: 23.976 fps (`24000/1001`) is below a minimum of 24, 59.94 meets a maximum of 60. The presets hold the published input limits of Kling O1 and Motion Control, Runway Aleph 2.0, Veo 3.1, Wan 2.6 on fal and Seedance 2.0 (from a gateway, so it only warns), each with its source and the day it was verified ([check](docs/api.md#check), [presets](docs/api.md#presets)).
+
 ## Size
 
 <!-- tables:size:start -->
