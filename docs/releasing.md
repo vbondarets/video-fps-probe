@@ -20,7 +20,7 @@ git push --follow-tags
 - `git push --follow-tags` pushes `main` and the annotated tag `vX.Y.Z` that `npm version` creates.
 ## GitHub Release
 
-The GitHub Release comes after the npm publish: create it once `npm view video-fps-probe dist-tags` shows the version, so GitHub never lists a release that npm does not have. Its notes are the CHANGELOG section of the version, written to a file: `--notes <version> --out <file>` writes the section as UTF-8 with LF line ends, prints the absolute path of the file, and fails when the version has no section or an empty one. `release-notes.md` in the repository root is git-ignored, so the file never makes the tree dirty for the next `preversion`.
+The GitHub Release comes after the npm publish: create it once `npm view video-fps-probe dist-tags` shows the version, so GitHub never lists a release that npm does not have. Its notes are the CHANGELOG section of the version, written to a file: `--notes <version> --out <file>` writes the section as UTF-8 with LF line ends, prints the absolute path of the file, and fails when the version has no section or an empty one. A GitHub Release does not resolve a relative link such as `docs/api.md#check` against the repository, so the file points each one at the file of the tag (`https://github.com/vbondarets/video-fps-probe/blob/v0.2.0/docs/api.md#check`), from `repository` in `package.json`. `release-notes.md` in the repository root is git-ignored, so the file never makes the tree dirty for the next `preversion`.
 
 Bash (Git Bash, Linux, macOS):
 

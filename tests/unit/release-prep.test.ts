@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { GENERATED, changelogSection, gitIdentity, localDate, publicManifest, publishCheck, releaseChangelog, unreleasedIntro, writeNotes } from '../../scripts/release-prep.mjs';
+import { GENERATED, changelogSection, gitIdentity, localDate, publicManifest, publishCheck, releaseChangelog, releaseNotes, repositoryUrl, unreleasedIntro, writeNotes } from '../../scripts/release-prep.mjs';
 import { TARGETS } from '../../scripts/readme-tables.ts';
 
 const CHANGELOG = ['# Changelog', '', 'Intro.', '', '## Unreleased', '', '### Added', '', '- A thing.', '', '## 0.1.0 - 2026-10-24', '', 'First release.', ''].join('\n');
@@ -79,21 +79,38 @@ describe('release notes file', () => {
     }
   };
 
+  const REPO = 'https://github.com/vbondarets/video-fps-probe';
+
   it('writes the section of a version with LF line ends and a final newline, and returns the absolute path', () => {
     inTemp((dir) => {
       const released = releaseChangelog(CHANGELOG.replace(/\n/g, '\r\n'), '0.2.0', '2026-11-02');
-      const path = writeNotes(released, '0.2.0', join(dir, 'notes.md'));
+      const path = writeNotes(released, '0.2.0', join(dir, 'notes.md'), REPO);
       expect(path).toBe(join(dir, 'notes.md'));
       expect(readFileSync(path, 'utf8')).toBe('### Added\n\n- A thing.\n');
-      expect(readFileSync(writeNotes(released, '0.1.0', join(dir, 'old.md')), 'utf8')).toBe('First release.\n');
+      expect(readFileSync(writeNotes(released, '0.1.0', join(dir, 'old.md'), REPO), 'utf8')).toBe('First release.\n');
     });
+  });
+
+  it('points relative links at the files of the tag, and keeps absolute links and anchors', () => {
+    const text = '## 0.2.0 - 2026-11-02\n\n- [React](docs/api.md#react), [notes](./docs/implementation-notes.md), [site](https://example.com/a), [mail](mailto:a@b.c), [here](#fixed).\n';
+    expect(releaseNotes(text, '0.2.0', REPO)).toBe(
+      `- [React](${REPO}/blob/v0.2.0/docs/api.md#react), [notes](${REPO}/blob/v0.2.0/docs/implementation-notes.md), [site](https://example.com/a), [mail](mailto:a@b.c), [here](#fixed).`,
+    );
+  });
+
+  it('reads the GitHub URL of the repository from package.json', () => {
+    expect(repositoryUrl({ repository: { url: 'git+https://github.com/vbondarets/video-fps-probe.git' } })).toBe(REPO);
+    expect(repositoryUrl({ repository: `${REPO}/` })).toBe(REPO);
+    expect(repositoryUrl(JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as { repository: { url: string } })).toBe(REPO);
+    expect(() => repositoryUrl({})).toThrow('the repository of package.json, undefined, is not a GitHub https URL');
+    expect(() => repositoryUrl({ repository: 'git@github.com:vbondarets/video-fps-probe.git' })).toThrow(/is not a GitHub https URL/);
   });
 
   it('refuses a missing version, an empty section and an empty path', () => {
     inTemp((dir) => {
-      expect(() => writeNotes(CHANGELOG, '0.3.0', join(dir, 'notes.md'))).toThrow(/no 0.3.0 section/);
-      expect(() => writeNotes('## Unreleased\n\n## 0.2.0 - 2026-11-02\n\n## 0.1.0\n', '0.2.0', join(dir, 'notes.md'))).toThrow('the 0.2.0 section of CHANGELOG.md is empty: no release notes to write');
-      expect(() => writeNotes(CHANGELOG, '0.1.0', '')).toThrow('--out needs the path of the release notes file');
+      expect(() => writeNotes(CHANGELOG, '0.3.0', join(dir, 'notes.md'), REPO)).toThrow(/no 0.3.0 section/);
+      expect(() => writeNotes('## Unreleased\n\n## 0.2.0 - 2026-11-02\n\n## 0.1.0\n', '0.2.0', join(dir, 'notes.md'), REPO)).toThrow('the 0.2.0 section of CHANGELOG.md is empty: no release notes to write');
+      expect(() => writeNotes(CHANGELOG, '0.1.0', '', REPO)).toThrow('--out needs the path of the release notes file');
     });
   });
 
@@ -103,7 +120,10 @@ describe('release notes file', () => {
       const printed = execFileSync(process.execPath, [fileURLToPath(new URL('../../scripts/release-prep.mjs', import.meta.url)), '--notes', '0.1.0', '--out', out], { encoding: 'utf8' });
       expect(printed).toBe(`${out}\n`);
       const committed = readFileSync(new URL('../../CHANGELOG.md', import.meta.url), 'utf8');
-      expect(readFileSync(out, 'utf8')).toBe(`${changelogSection(committed, '0.1.0')}\n`);
+      const written = readFileSync(out, 'utf8');
+      expect(written).toBe(`${releaseNotes(committed, '0.1.0', REPO)}\n`);
+      expect(written).toContain(`](${REPO}/blob/v0.1.0/docs/api.md)`);
+      expect(written).not.toMatch(/\]\((?!https:\/\/)/);
     });
   });
 

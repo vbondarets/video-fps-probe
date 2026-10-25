@@ -22,7 +22,8 @@ const USAGE = `Usage: node scripts/release-prep.mjs [--preversion | --notes <ver
                      "private": true in package.json or an unset git user.name or user.email, prints
                      the git identity of the release commit and runs the fast gates
   --notes <version>  prints the CHANGELOG section of a version, for the GitHub Release
-  --out <file>       with --notes: writes the section to <file> (UTF-8, LF line ends) instead and
+  --out <file>       with --notes: writes the section to <file> (UTF-8, LF line ends) instead,
+                     with its relative links pointing at the files of the tag on GitHub, and
                      prints the absolute path, for gh release create --notes-file <file>
   --publish-check <tag>
                      the check of the Release workflow before npm publish: fails unless the tag is
@@ -102,9 +103,21 @@ export function changelogSection(text, version) {
   return section(lines, start).body.join('\n').trim();
 }
 
-export function writeNotes(text, version, out) {
+export function repositoryUrl(manifest) {
+  const url = typeof manifest.repository === 'string' ? manifest.repository : manifest.repository?.url;
+  const match = /^(?:git\+)?(https:\/\/github\.com\/[^/\s]+\/[^/\s]+?)(?:\.git)?\/?$/.exec(url ?? '');
+  if (!match) throw new Error(`the repository of package.json, ${JSON.stringify(url)}, is not a GitHub https URL`);
+  return match[1];
+}
+
+export function releaseNotes(text, version, repository) {
   const notes = changelogSection(text, version);
   if (!notes) throw new Error(`the ${version} section of CHANGELOG.md is empty: no release notes to write`);
+  return notes.replace(/\]\((?![a-z][a-z\d+.-]*:|#)([^)\s]+)\)/gi, (_, target) => `](${repository}/blob/v${version}/${target.replace(/^\.\//, '')})`);
+}
+
+export function writeNotes(text, version, out, repository) {
+  const notes = releaseNotes(text, version, repository);
   if (!out) throw new Error('--out needs the path of the release notes file');
   const path = resolve(out);
   writeFileSync(path, `${notes}\n`);
@@ -190,7 +203,7 @@ function main() {
   }
   if (values.out !== undefined && !values.notes) throw new Error('--out <file> writes the release notes and needs --notes <version>');
   if (values['publish-check']) console.log(publishCheck(JSON.parse(read('package.json')), values['publish-check'], execSync('npm --version', { env: NPM_ENV, encoding: 'utf8' }).trim()));
-  else if (values.notes && values.out !== undefined) console.log(writeNotes(read('CHANGELOG.md'), values.notes, values.out));
+  else if (values.notes && values.out !== undefined) console.log(writeNotes(read('CHANGELOG.md'), values.notes, values.out, repositoryUrl(JSON.parse(read('package.json')))));
   else if (values.notes) console.log(changelogSection(read('CHANGELOG.md'), values.notes));
   else if (values.preversion) preversion();
   else version();
