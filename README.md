@@ -13,7 +13,7 @@ pnpm add video-fps-probe
 bun add video-fps-probe
 ```
 
-The first npm release is 0.2.0; one publish serves every package manager ([publishing](docs/publishing.md)). The package has no dependencies, and its optional peers are installed only with the entry that imports them: `mp4box` for `video-fps-probe/mp4box`, `mediabunny` for `video-fps-probe/mediabunny`, React 18 or 19 for `video-fps-probe/react`.
+The first npm release is 0.2.0; one publish serves every package manager ([publishing](docs/publishing.md)), and CI tests the install with npm (pnpm and Yarn PnP join the matrix in 0.3.0). The package has no dependencies. Its peers are optional and no package manager installs them for you: install one yourself, only for the entry you import: `mp4box` for `video-fps-probe/mp4box`, `mediabunny` for `video-fps-probe/mediabunny`, React 18 or 19 for `video-fps-probe/react`.
 
 For a commit that is not released yet, install a packed tarball. A git dependency gets no code with npm (Yarn, pnpm and bun are not tested): `prepack` builds `dist/`, and npm does not run it for a git install.
 
