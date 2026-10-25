@@ -98,15 +98,16 @@ export function setup(dir) {
   try {
     if (userconfig) writeFileSync(join(userconfig, '.npmrc'), '');
     const mode = userconfig ? `--offline --userconfig "${join(userconfig, '.npmrc')}"` : '--prefer-offline';
-    execSync(`npm install ${mode} --no-audit --no-fund --no-package-lock`, { cwd: dir, env: NPM_ENV, stdio: 'inherit' });
+    execSync(`npm install ${mode} --strict-peer-deps --no-audit --no-fund --no-package-lock`, { cwd: dir, env: NPM_ENV, stdio: 'inherit' });
     const react18 = join(dir, 'react18');
     mkdirSync(react18, { recursive: true });
-    writeFileSync(join(react18, 'package.json'), `${JSON.stringify({ name: 'video-fps-probe-consumers-react18', private: true, dependencies: { react: REACT_18, 'react-dom': REACT_18 } }, null, 2)}\n`);
-    execSync(`npm install ${mode} --no-audit --no-fund --no-package-lock`, { cwd: react18, env: NPM_ENV, stdio: 'inherit' });
+    writeFileSync(join(react18, 'package.json'), `${JSON.stringify({ name: 'video-fps-probe-consumers-react18', private: true, dependencies: { react: REACT_18, 'react-dom': REACT_18, 'video-fps-probe': `file:../${filename}` } }, null, 2)}\n`);
+    rmSync(installedPackage(react18), { recursive: true, force: true });
+    execSync(`npm install ${mode} --strict-peer-deps --no-audit --no-fund --no-package-lock`, { cwd: react18, env: NPM_ENV, stdio: 'inherit' });
   } finally {
     if (userconfig) rmSync(userconfig, { recursive: true, force: true });
   }
-  console.log(`installed ${filename}, ${INSTALLED.map((n) => `${n}@${dependencies[n]}`).join(', ')} into ${dir}, and react@${REACT_18} with react-dom@${REACT_18} into ${join(dir, 'react18')}${offline ? ' from the npm cache only' : ''}`);
+  console.log(`installed ${filename}, ${INSTALLED.map((n) => `${n}@${dependencies[n]}`).join(', ')} into ${dir}, and ${filename} with react@${REACT_18} and react-dom@${REACT_18} into ${join(dir, 'react18')}${offline ? ' from the npm cache only' : ''}`);
 }
 
 export function copyFixtures(dir, names = FIXTURES.map((f) => f.name)) {
@@ -180,7 +181,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   else if (command === 'serve') await serve(dir, values.port ? Number(values.port) : CONSUMERS_PORT);
   else {
     console.error('Usage: node scripts/consumers.mjs setup|build|serve [--dir <consumers dir>] [--only <fixture,...>] [--port <n>]');
-    console.error('CONSUMERS_OFFLINE=1 isolates only the npm install steps of setup (the tarball with Vite and the peers, and React 18 for the react18 fixture): they install from the npm cache only (npm install --offline) with an empty npmrc as --userconfig.');
+    console.error('CONSUMERS_OFFLINE=1 isolates only the npm install steps of setup (the tarball with Vite and the peers, and the tarball with React 18 for the react18 fixture; both run with --strict-peer-deps, so a peer range of the package that React 19 or 18 does not satisfy fails the install): they install from the npm cache only (npm install --offline) with an empty npmrc as --userconfig.');
     console.error("Not isolated: npm run build:lib, the npm pack --dry-run of check-dist and npm pack run with your npm config, any token included. They fetch no packages and the script runs them with npm_config_update_notifier=false, so npm's update check does not contact the registry. An outer npm run consumers:setup is not covered: set update-notifier=false for it.");
     process.exitCode = 2;
   }
