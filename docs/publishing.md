@@ -19,7 +19,7 @@ The package has no dependencies. mp4box, mediabunny and React are optional peers
 |---|---|---|
 | `video-fps-probe/mp4box` | `mp4box` | `^2.4.1` |
 | `video-fps-probe/mediabunny` | `mediabunny` | `^1.62.0` |
-| `video-fps-probe/react` | `react` (and `react-dom`) | `>=18` |
+| `video-fps-probe/react` | `react` (and `react-dom`) | `^18.0.0 \|\| ^19.0.0` |
 
 ## First publish (0.2.0), from the owner's machine
 

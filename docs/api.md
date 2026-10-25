@@ -173,7 +173,7 @@ Progress phases: `fragments` (ISO BMFF, every 64 fragments), `matroska-exact` (b
 
 ## React
 
-`video-fps-probe/react` puts a probe behind React hooks: a provider that takes the probe, a hook that analyzes a file and re-renders with its state, and two helpers. It works with React 18 and 19, an optional peer (`>=18`), and needs nothing else.
+`video-fps-probe/react` puts a probe behind React hooks: a provider that takes the probe, a hook that analyzes a file and re-renders with its state, and two helpers. It works with React 18 and 19, an optional peer (`^18.0.0 || ^19.0.0`, widened in the release that tests the next React major), and needs nothing else.
 
 ```tsx
 import { useState } from 'react';
