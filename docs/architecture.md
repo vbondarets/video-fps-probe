@@ -230,13 +230,14 @@ Where a bundler places modules shared by several lazy chunks can change between 
 2. Runs `tsc -p tsconfig.lib.json`: per-module ES2022 output with declarations.
 3. Rewrites worker URLs from `.worker.ts` to `.worker.js` in the emitted JavaScript.
 4. Rewrites relative `.ts` specifiers to `.js` in the emitted `.d.ts` files (TypeScript 6 rewrites them only in JavaScript).
-5. Builds `dist/standalone/own.worker.js` with rolldown: one minified IIFE file, no code splitting.
+5. Deletes every `.d.ts` that the types of no export or `typesVersions` target reach through `import`, `export ... from` or `import()` types: the declarations of the parsers, the statistics and the worker files, which the `exports` map gives no way to import.
+6. Builds `dist/standalone/own.worker.js` with rolldown: one minified IIFE file, no code splitting.
 
 **`scripts/check-dist.mjs`** (`npm run check:package` after publint, and `prepack`) fails on any of:
 
 - a file outside the whitelist (`dist/{index,lazy,analyze,probe}` and `dist/{core,engines,worker,client,api,plugins,react,standalone}/**` as `.js` and `.d.ts`), or a pack listing with anything but those plus `package.json`, `README.md`, `LICENSE` and `CHANGELOG.md`;
 - an unpacked package size above the cap (`UNPACKED_CAP`, 470 KB, README and CHANGELOG included; in 0.2.0 it went from 450 to 460 KB when the H.264 slice header check of the ffprobe frame rate estimate took the package to 450.1 KB, and to 470 KB when `video-fps-probe/react` took it past 460 KB). The cap bounds the install footprint in `node_modules`, not the size of a host bundle: a bundler takes only the modules a host imports, and the size matrix below budgets that. It leaves room for the README and the CHANGELOG, which grow with every release;
-- an export or `typesVersions` target that does not exist, an import that does not resolve inside `dist/`, a `.ts` specifier, a `.d.ts` import without a `.d.ts` behind it;
+- an export or `typesVersions` target that does not exist, an import that does not resolve inside `dist/`, a `.ts` specifier, a `.d.ts` import without a `.d.ts` behind it, a `.d.ts` that no exported entry's types reach;
 - a worker reference that is not a literal `.js` URL to an existing file, or a literal outside the three plugin modules; the literal hygiene above;
 - peer isolation: the static closure of the entries and plugins reaching a parser, an engine adapter or a bare `mp4box` or `mediabunny` import; a peer imported anywhere but the two engine adapters, or by a `.d.ts`;
 - `import.meta.env`, the demo's test hook, a DOM global in a worker file;

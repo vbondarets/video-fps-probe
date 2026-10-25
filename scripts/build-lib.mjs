@@ -3,6 +3,7 @@ import { readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { declarationClosure } from './check-dist.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(REPO_ROOT, 'dist');
@@ -56,8 +57,11 @@ async function main() {
   const dts = files.filter((f) => f.endsWith('.d.ts'));
   const urls = rewrite(js, WORKER_URL, '$1$2$3.js$2');
   const specifiers = rewrite(dts, DTS_SPECIFIER, '$1$2.js$1');
+  const reached = declarationClosure(DIST, JSON.parse(readFileSync(join(REPO_ROOT, 'package.json'), 'utf8')));
+  const unreached = dts.filter((f) => !reached.has(posix(relative(DIST, f))));
+  for (const f of unreached) rmSync(f);
   await buildStandalone();
-  console.log(`built ${posix(relative(REPO_ROOT, DIST))}: ${js.length} js, ${dts.length} d.ts, worker URLs rewritten in ${urls} files, d.ts specifiers in ${specifiers} files, ${posix(relative(REPO_ROOT, STANDALONE_FILE))}`);
+  console.log(`built ${posix(relative(REPO_ROOT, DIST))}: ${js.length} js, ${dts.length - unreached.length} d.ts, worker URLs rewritten in ${urls} files, d.ts specifiers in ${specifiers} files, ${unreached.length} d.ts no exported entry's types reach left out, ${posix(relative(REPO_ROOT, STANDALONE_FILE))}`);
 }
 
 await main();

@@ -136,6 +136,26 @@ function exportedEntries(manifest) {
   return entries;
 }
 
+function typedEntries(manifest) {
+  const targets = [manifest.types, ...Object.values(manifest.exports ?? {}).map((e) => (typeof e === 'object' && e !== null ? e.types : null)), ...Object.values(manifest.typesVersions?.['*'] ?? {}).flat()];
+  return [...new Set(targets.filter((t) => typeof t === 'string' && t.endsWith('.d.ts')).map((t) => t.replace(/^(?:\.\/)?dist\//, '')))];
+}
+
+export function declarationClosure(dist, manifest) {
+  const seen = new Set(typedEntries(manifest).filter((f) => existsSync(join(dist, f))));
+  for (const stack = [...seen]; stack.length > 0; ) {
+    const file = stack.pop();
+    for (const { specifier } of moduleSpecifiers(readFileSync(join(dist, file), 'utf8'), file)) {
+      if (specifier === null || bare(specifier)) continue;
+      const target = posix(join(dirname(file), specifier)).replace(/\.js$/, '.d.ts');
+      if (seen.has(target) || !existsSync(join(dist, target))) continue;
+      seen.add(target);
+      stack.push(target);
+    }
+  }
+  return seen;
+}
+
 function ssrImport(dist, files) {
   const urls = files.map((f) => pathToFileURL(join(dist, f)).href);
   const script = `for (const url of ${JSON.stringify(urls)}) { try { await import(url); } catch (e) { console.log(url + ': ' + (e && e.message)); process.exitCode = 1; } }`;
@@ -169,6 +189,10 @@ export function checkDist({ pack = true, ssr = true, repo = REPO_ROOT } = {}) {
   }
   for (const [key, entry] of Object.entries(manifest.exports ?? {})) {
     if (typeof entry === 'string' && entry !== './package.json' && !existsSync(join(repo, entry))) fail(`export ${key} points at a missing file ${entry}`);
+  }
+  if (typedEntries(manifest).length > 0) {
+    const reached = declarationClosure(dist, manifest);
+    for (const f of files) if (f.endsWith('.d.ts') && !reached.has(f)) fail(`${f}: no exported entry's types reach it, so build-lib leaves it out`);
   }
 
   for (const [file, text] of texts) {
@@ -320,6 +344,12 @@ export function runSelfTest() {
     expectProblem('a module outside react/ importing react fails', problemsOf({ ...react, 'client/index.js': "import { useMemo } from 'react';\nexport const x = useMemo;\n" }), 'client/index.js: imports react outside react/', true);
     expectProblem('a module outside react/ importing react-dom/client fails', problemsOf({ ...react, 'core/x.js': "export const load = () => import('react-dom/client');\n" }), 'core/x.js: imports react-dom/client outside react/', true);
     expectProblem('a .d.ts outside react/ importing react fails', problemsOf({ ...react, 'api/x.d.ts': "export type X = import('react').ReactNode;\n" }), 'api/x.d.ts: imports react outside react/', true);
+
+    writeFileSync(join(repo, 'package.json'), `${JSON.stringify({ name: 'check-dist-self-test', exports: { '.': { types: './dist/index.d.ts', default: './dist/index.js' } } })}\n`);
+    const typed = { 'index.js': "export { x } from './core/x.js';\n", 'index.d.ts': "export type { X } from './core/types.js';\n", 'core/x.js': 'export const x = 1;\n', 'core/types.d.ts': "export type X = import('./rational.js').R;\n", 'core/rational.d.ts': 'export type R = number;\n' };
+    expectProblem('declaration files reached through export and import() types pass', problemsOf(typed), "no exported entry's types reach", false);
+    expectProblem('a declaration file no exported types reach fails', problemsOf({ ...typed, 'core/stats.d.ts': 'export declare const s: number;\n' }), "core/stats.d.ts: no exported entry's types reach it", true);
+    expectProblem('the closure keeps what the entry types reach', [...declarationClosure(join(repo, 'dist'), JSON.parse(readFileSync(join(repo, 'package.json'), 'utf8')))].sort(), 'core/rational.d.ts', true);
   } finally {
     rmSync(repo, { recursive: true, force: true });
   }
