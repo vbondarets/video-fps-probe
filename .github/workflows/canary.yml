@@ -1,0 +1,86 @@
+name: Canary
+
+on:
+  schedule:
+    - cron: '23 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: canary
+  cancel-in-progress: true
+
+jobs:
+  canary:
+    name: Latest mp4box, mediabunny, Vite and rolldown
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+    env:
+      HOME: /root
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Place the consumers directory outside the workspace
+        run: echo "CONSUMERS_DIR=$RUNNER_TEMP/consumers" >> "$GITHUB_ENV"
+
+      - name: Install the latest mp4box and mediabunny for the comparison, without saving them
+        run: npm install --no-save --ignore-scripts --no-audit --no-fund mp4box@latest mediabunny@latest
+
+      - name: Compare the own engine and every library arm against committed ffprobe references
+        id: compare
+        run: node scripts/compare-ffprobe.ts --out .canary/compare
+
+      - name: Pack the package and install the tarball with the latest Vite, rolldown and peers
+        if: ${{ !cancelled() }}
+        run: |
+          node scripts/consumers.mjs setup --latest
+          mkdir -p .canary
+          cp "$CONSUMERS_DIR/latest.json" .canary/
+
+      - name: Check that nothing changed the committed manifests
+        if: ${{ !cancelled() }}
+        run: git diff --exit-code -- package.json package-lock.json
+
+      - name: Build the consumer fixtures
+        id: build
+        if: ${{ !cancelled() }}
+        run: node scripts/consumers.mjs build
+
+      - name: Check the size budgets of the package size matrix
+        id: matrix
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: node scripts/size-matrix.mjs --check --out .canary/size-matrix
+
+      - name: Run the consumer smoke tests (Chromium, Firefox, WebKit)
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: npm run test:consumers
+
+      - name: Write the changes of the library arms to the job summary
+        if: ${{ !cancelled() && steps.compare.outcome != 'skipped' }}
+        run: node scripts/canary-summary.mjs --measured .canary/compare/accuracy.json --matrix .canary/size-matrix/size-matrix.json --summary "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the canary reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: canary-reports
+          path: |
+            .canary
+            .playwright/consumers-results
+          if-no-files-found: warn

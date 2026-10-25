@@ -17,6 +17,10 @@ export function lockedOverrides(direct?: string[]): Record<string, string>;
 
 export const REACT_18_PINS: Record<string, string>;
 
+export const LATEST: string[];
+
+export function latestPins(dir: string): Record<string, string> | null;
+
 export function pinDrift(dir: string): string[];
 
 export function consumersDir(arg?: string): string;
@@ -31,7 +35,7 @@ export function buildUrl(port: number, name: string): string;
 
 export function devUrl(port: number, name: string): string;
 
-export function setup(dir: string): void;
+export function setup(dir: string, options?: { latest?: boolean }): void;
 
 export function copyFixtures(dir: string, names?: string[]): void;
 

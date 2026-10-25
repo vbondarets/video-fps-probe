@@ -324,7 +324,8 @@ interface ExportDocument {
 |---|---|
 | `scripts/build-lib.mjs`, `scripts/check-dist.mjs` | the library build and the package checks above |
 | `scripts/src-aliases.mjs` | package exports mapped to `src/` for the demo, the TypeScript paths and vitest; `--check` |
-| `scripts/consumers.mjs`, `scripts/size-matrix.mjs` | consumer fixtures from the packed tarball and the package size matrix |
+| `scripts/consumers.mjs`, `scripts/size-matrix.mjs` | consumer fixtures from the packed tarball and the package size matrix; `setup --latest` installs the latest Vite, rolldown, mp4box and mediabunny for the canary |
+| `scripts/canary-summary.mjs` | the job summary of the canary: each arm of a comparison run against the committed `report/accuracy.json`, fixture by fixture; exit 1 when an own check changed |
 | `scripts/size-report.mjs` | chunk sizes and budgets of the demo build (`demo/dist`), the request chain check |
 | `scripts/compare-ffprobe.ts`, `scripts/compare/` | compares engines with the ffprobe references and writes `report/accuracy.*`; exit 1 on an unexpected own mismatch |
 | `scripts/bench/` | Chrome DevTools Protocol drivers: `run-bench.mjs` (timings, Node identity check, screenshots) and `integration.mjs` (cost of embedding in a host SPA); they drive the demo through its test hook |
@@ -345,3 +346,4 @@ interface ExportDocument {
 | consumers (`npm run test:consumers`) | Playwright Chromium, Firefox and WebKit against the consumer fixtures under `vite build` and `vite dev` | results equal Node `analyze` from the same tarball; no dev reload when an engine first runs |
 | benchmark (`npm run bench`, `scripts/bench/integration.mjs`) | installed Chrome (and Edge) over the DevTools Protocol, real file input | timings, bytes, memory, main-thread blocking, Node identity of every result |
 | CI ([ci.yml](../.github/workflows/ci.yml)) | Ubuntu | job Verify: typecheck, lint, aliases, vitest, comparison, demo build, size budgets, generated tables; job Node 22.12: vitest, `build:lib`, dist parity and API types on the lowest supported Node; job Package: check-dist self-test, `build:lib`, publint and check-dist, attw, dist parity and API types; job End-to-end: the demo suite in three browsers; job Consumers: the size matrix, the generated tables and the smoke test from the packed tarball |
+| Canary ([canary.yml](../.github/workflows/canary.yml)) | Ubuntu, weekly and by hand | the latest mp4box and mediabunny in the comparison, the latest Vite, rolldown and peers in the consumer fixtures: the comparison of every arm, the size matrix and the smoke test; red only when an own result changes or a size check fails; the changes of the library arms go to the job summary |

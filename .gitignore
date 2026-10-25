@@ -15,6 +15,7 @@ fixtures/large/
 *.local
 report/*.local.*
 /release-notes.md
+/.canary/
 
 # Playwright output
 .playwright/

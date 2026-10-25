@@ -15,6 +15,8 @@ export const REACT_18_PINS = { react: REACT_18, 'react-dom': REACT_18, ...REACT_
 const SHARED = ['vite.base.ts', 'react-app.ts'];
 const DEV_DEPENDENCIES = JSON.parse(readFileSync(join(REPO_ROOT, 'package.json'), 'utf8')).devDependencies;
 const NPM_ENV = { ...process.env, npm_config_update_notifier: 'false' };
+export const LATEST = ['vite', 'mp4box', 'mediabunny', 'rolldown'];
+const LATEST_FILE = 'latest.json';
 
 const ES = "format: 'es'";
 
@@ -121,11 +123,19 @@ function installedCopies(root) {
   return copies;
 }
 
+export function latestPins(dir) {
+  const path = join(dir, LATEST_FILE);
+  return existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : null;
+}
+
+const lockedFor = (latest) => (latest ? lockedOverrides(INSTALLED.filter((name) => !LATEST.includes(name))) : lockedOverrides());
+
 export function pinDrift(dir) {
-  const direct = Object.fromEntries(INSTALLED.map((name) => [name, DEV_DEPENDENCIES[name]]));
+  const latest = latestPins(dir);
+  const direct = { ...Object.fromEntries(INSTALLED.map((name) => [name, DEV_DEPENDENCIES[name]])), ...latest };
   const problems = [];
   for (const [root, pins, required] of [
-    [dir, { ...lockedOverrides(), ...direct }, []],
+    [dir, { ...lockedFor(latest), ...direct }, []],
     [join(dir, 'react18'), REACT_18_PINS, Object.keys(REACT_18_PINS)],
   ]) {
     const copies = installedCopies(root);
@@ -153,38 +163,55 @@ function viteBin(dir) {
   return bin;
 }
 
-export function setup(dir) {
+function emptyUserconfig() {
+  const home = mkdtempSync(join(tmpdir(), 'video-fps-probe-npmrc-'));
+  writeFileSync(join(home, '.npmrc'), '');
+  return home;
+}
+
+function resolveLatest(userconfig) {
+  const flags = `--json --prefer-online --userconfig "${join(userconfig, '.npmrc')}"`;
+  return Object.fromEntries(LATEST.map((name) => [name, JSON.parse(execSync(`npm view ${name}@latest version ${flags}`, { cwd: REPO_ROOT, env: NPM_ENV, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] }))]));
+}
+
+export function setup(dir, { latest = false } = {}) {
   const manifest = JSON.parse(readFileSync(join(REPO_ROOT, 'package.json'), 'utf8'));
+  const offline = process.env.CONSUMERS_OFFLINE === '1';
+  if (latest && offline) throw new Error('--latest resolves the latest versions on the registry, so it cannot run with CONSUMERS_OFFLINE=1');
   mkdirSync(dir, { recursive: true });
+  rmSync(join(dir, LATEST_FILE), { force: true });
   for (const f of readdirSync(dir)) if (f.endsWith('.tgz')) rmSync(join(dir, f));
   execSync('npm run build:lib', { cwd: REPO_ROOT, env: NPM_ENV, stdio: 'inherit' });
   execFileSync(process.execPath, [join(REPO_ROOT, 'scripts', 'check-dist.mjs')], { cwd: REPO_ROOT, stdio: 'inherit' });
   const out = execSync(`npm pack --ignore-scripts --json --pack-destination "${dir}"`, { cwd: REPO_ROOT, env: NPM_ENV, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
   const [{ filename }] = JSON.parse(out);
   const dependencies = { 'video-fps-probe': `file:./${filename}` };
-  for (const name of INSTALLED) {
-    const version = manifest.devDependencies[name];
-    if (!version) throw new Error(`${name} is not a devDependency of ${manifest.name}`);
-    dependencies[name] = version;
-  }
-  const overrides = lockedOverrides();
-  writeFileSync(join(dir, 'package.json'), `${JSON.stringify({ name: 'video-fps-probe-consumers', private: true, type: 'module', dependencies, overrides }, null, 2)}\n`);
-  rmSync(join(dir, 'node_modules', 'video-fps-probe'), { recursive: true, force: true });
-  const offline = process.env.CONSUMERS_OFFLINE === '1';
-  const userconfig = offline ? mkdtempSync(join(tmpdir(), 'video-fps-probe-npmrc-')) : null;
+  const userconfig = offline || latest ? emptyUserconfig() : null;
   try {
-    if (userconfig) writeFileSync(join(userconfig, '.npmrc'), '');
-    const mode = userconfig ? `--offline --userconfig "${join(userconfig, '.npmrc')}"` : '--prefer-offline';
-    execSync(`npm install ${mode} --strict-peer-deps --no-audit --no-fund --no-package-lock`, { cwd: dir, env: NPM_ENV, stdio: 'inherit' });
+    const pins = latest ? resolveLatest(userconfig) : null;
+    for (const name of INSTALLED) {
+      const version = manifest.devDependencies[name];
+      if (!version) throw new Error(`${name} is not a devDependency of ${manifest.name}`);
+      dependencies[name] = pins?.[name] ?? version;
+    }
+    const overrides = { ...lockedFor(pins), ...(pins && { rolldown: pins.rolldown }) };
+    writeFileSync(join(dir, 'package.json'), `${JSON.stringify({ name: 'video-fps-probe-consumers', private: true, type: 'module', dependencies, overrides }, null, 2)}\n`);
+    rmSync(join(dir, 'node_modules', 'video-fps-probe'), { recursive: true, force: true });
+    const mode = offline ? `--offline --userconfig "${join(userconfig, '.npmrc')}"` : latest ? `--prefer-online --userconfig "${join(userconfig, '.npmrc')}"` : '--prefer-offline';
+    execSync(`npm install ${mode} ${latest ? '--legacy-peer-deps' : '--strict-peer-deps'} --no-audit --no-fund --no-package-lock`, { cwd: dir, env: NPM_ENV, stdio: 'inherit' });
     const react18 = join(dir, 'react18');
     mkdirSync(react18, { recursive: true });
     writeFileSync(join(react18, 'package.json'), `${JSON.stringify({ name: 'video-fps-probe-consumers-react18', private: true, dependencies: { react: REACT_18, 'react-dom': REACT_18, 'video-fps-probe': `file:../${filename}` }, overrides: REACT_18_OVERRIDES }, null, 2)}\n`);
     rmSync(installedPackage(react18), { recursive: true, force: true });
     execSync(`npm install ${mode} --strict-peer-deps --no-audit --no-fund --no-package-lock`, { cwd: react18, env: NPM_ENV, stdio: 'inherit' });
+    if (pins) writeFileSync(join(dir, LATEST_FILE), `${JSON.stringify(pins, null, 2)}\n`);
+    const pinned = pins
+      ? `the latest ${LATEST.map((n) => `${n}@${pins[n]}`).join(', ')} with React and its ${Object.keys(overrides).length - 1} transitive package(s) at their package-lock.json versions`
+      : `${INSTALLED.map((n) => `${n}@${dependencies[n]}`).join(', ')} with ${Object.keys(overrides).length} transitive packages at their package-lock.json versions (rolldown@${overrides.rolldown})`;
+    console.log(`installed ${filename}, ${pinned} into ${dir}, and ${filename} with react@${REACT_18} and react-dom@${REACT_18} into ${join(dir, 'react18')}${offline ? ' from the npm cache only' : ''}`);
   } finally {
     if (userconfig) rmSync(userconfig, { recursive: true, force: true });
   }
-  console.log(`installed ${filename}, ${INSTALLED.map((n) => `${n}@${dependencies[n]}`).join(', ')} with ${Object.keys(overrides).length} transitive packages at their package-lock.json versions (rolldown@${overrides.rolldown}) into ${dir}, and ${filename} with react@${REACT_18} and react-dom@${REACT_18} into ${join(dir, 'react18')}${offline ? ' from the npm cache only' : ''}`);
 }
 
 export function copyFixtures(dir, names = FIXTURES.map((f) => f.name)) {
@@ -250,14 +277,15 @@ export async function serve(dir, port) {
 export const CONSUMERS_PORT = Number(process.env.CONSUMERS_PORT || 4400);
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const { values, positionals } = parseArgs({ options: { dir: { type: 'string' }, only: { type: 'string' }, port: { type: 'string' } }, allowPositionals: true, strict: true });
+  const { values, positionals } = parseArgs({ options: { dir: { type: 'string' }, only: { type: 'string' }, port: { type: 'string' }, latest: { type: 'boolean', default: false } }, allowPositionals: true, strict: true });
   const dir = consumersDir(values.dir);
   const [command] = positionals;
-  if (command === 'setup') setup(dir);
+  if (command === 'setup') setup(dir, { latest: values.latest });
   else if (command === 'build') build(dir, values.only ? values.only.split(',') : undefined);
   else if (command === 'serve') await serve(dir, values.port ? Number(values.port) : CONSUMERS_PORT);
   else {
-    console.error('Usage: node scripts/consumers.mjs setup|build|serve [--dir <consumers dir>] [--only <fixture,...>] [--port <n>]');
+    console.error('Usage: node scripts/consumers.mjs setup|build|serve [--dir <consumers dir>] [--only <fixture,...>] [--port <n>] [--latest]');
+    console.error(`setup --latest installs the latest ${LATEST.join(', ')} instead of their package-lock.json versions, for the weekly canary. It resolves them on the registry with an empty npmrc as --userconfig, installs with --legacy-peer-deps, so that a latest peer outside the peer range of the package still installs, and writes them to latest.json in the consumers directory; the size matrix then checks the install against those versions. A setup without --latest deletes latest.json.`);
     console.error('CONSUMERS_OFFLINE=1 isolates only the npm install steps of setup (the tarball with Vite and the peers, and the tarball with React 18 for the react18 fixture; both run with --strict-peer-deps, so a peer range of the package that React 19 or 18 does not satisfy fails the install): they install from the npm cache only (npm install --offline) with an empty npmrc as --userconfig.');
     console.error("Not isolated: npm run build:lib, the npm pack --dry-run of check-dist and npm pack run with your npm config, any token included. They fetch no packages and the script runs them with npm_config_update_notifier=false, so npm's update check does not contact the registry. An outer npm run consumers:setup is not covered: set update-notifier=false for it.");
     process.exitCode = 2;

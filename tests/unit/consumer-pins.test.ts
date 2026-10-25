@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { lockedOverrides, pinDrift, REACT_18_PINS } from '../../scripts/consumers.mjs';
+import { LATEST, latestPins, lockedOverrides, pinDrift, REACT_18_PINS } from '../../scripts/consumers.mjs';
 
 const dirs: string[] = [];
 
@@ -43,6 +43,15 @@ describe('consumers: pinned versions', () => {
         .map((path, i) => `consumers: rolldown 0.0.${i + 1} is installed at ${join(path)}, the pin is ${rolldown}; run npm run consumers:setup`)
         .sort(),
     );
+  });
+
+  it('checks a --latest install against latest.json instead of package-lock.json', () => {
+    const latest = { vite: '99.0.0', mp4box: '99.1.0', mediabunny: '99.2.0', rolldown: '99.3.0' };
+    const dir = consumers({ 'node_modules/vite': latest.vite, 'node_modules/rolldown': latest.rolldown, 'node_modules/vite/node_modules/rolldown': rolldown, 'node_modules/mp4box': latest.mp4box, ...react18() });
+    writeFileSync(join(dir, 'latest.json'), JSON.stringify(latest));
+    expect(latestPins(dir)).toEqual(latest);
+    expect(LATEST.every((name) => Object.hasOwn(latest, name))).toBe(true);
+    expect(pinDrift(dir)).toEqual([`consumers: rolldown ${rolldown} is installed at ${join('node_modules/vite/node_modules/rolldown')}, the pin is ${latest.rolldown}; run npm run consumers:setup`]);
   });
 
   it('fails a react18 package at another version, nested or not, and one that is missing', () => {
