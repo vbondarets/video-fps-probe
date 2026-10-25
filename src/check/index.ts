@@ -144,8 +144,9 @@ function primaryTrack(result: FileResult): VideoTrackResult | string {
   return (track as VideoTrackResult) || `no primary track: primaryTrackId ${id === undefined ? 'is missing' : `${JSON.stringify(id)} matches no video track`}`;
 }
 
-const failedWith = (e: unknown): string =>
-  `the analysis failed${typeof e === 'string' && e.trim() ? `: ${e}` : `, and its error is ${typeof e === 'string' ? 'blank' : Array.isArray(e) ? 'a list' : `of type ${typeof e}`}`}`;
+const errorKind = (e: unknown): string => (typeof e === 'string' ? 'blank' : Array.isArray(e) ? 'a list' : `of type ${typeof e}`);
+
+const failedWith = (e: unknown): string => `the analysis failed${typeof e === 'string' && e.trim() ? `: ${e}` : `, and its error is ${errorKind(e)}`}`;
 
 const fromRational = (r: Pick<Rational, 'num' | 'den'> | null | undefined): Q | null => (r && whole(r.num) && whole(r.den) ? [BigInt(r.num), BigInt(r.den)] : null);
 
