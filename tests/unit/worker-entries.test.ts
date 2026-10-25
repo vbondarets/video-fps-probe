@@ -40,6 +40,19 @@ describe('prebuilt worker entries', () => {
     for (const engine of ['mp4box', 'mediabunny']) expect(await send({ type: 'analyze', file, name: 'a.mp4', engine })).toMatchObject({ type: 'error', code: 'unknown-engine' });
   });
 
+  it.each([
+    ['own-isobmff', MP4, WEBM, 'the own ISO BMFF worker does not read Matroska'],
+    ['own-matroska', WEBM, MP4, 'the own Matroska worker does not read ISO BMFF'],
+  ])('the %s worker serves own for its container family and answers warm', async (entry, served, refused, error) => {
+    const send = await serveEntry(`../../src/worker/${entry}.worker.ts`);
+    const file = await openAsBlob(served);
+    expect(await send({ type: 'analyze', file, name: 'a', engine: 'own' })).toMatchObject({ type: 'result', result: { name: 'a', engine: 'own', error: null } });
+    expect(await send({ type: 'analyze', file: await openAsBlob(refused), name: 'b', engine: 'own' })).toMatchObject({ type: 'result', result: { name: 'b', engine: 'own', error } });
+    for (const engine of ['mp4box', 'mediabunny']) expect(await send({ type: 'analyze', file, name: 'a', engine })).toMatchObject({ type: 'error', code: 'unknown-engine' });
+    expect(await send({ type: 'warm', engines: ['own'], containers: ['isobmff', 'matroska'] })).toMatchObject({ type: 'warmed' });
+    expect(await send({ type: 'analyze', file: 'not a blob', name: 'c', engine: 'own' })).toMatchObject({ type: 'error', code: 'protocol' });
+  });
+
   it('the mp4box worker serves own and mp4box, and skips Matroska for mp4box', async () => {
     const send = await serveEntry('../../src/worker/mp4box.worker.ts');
     const file = await openAsBlob(MP4);
