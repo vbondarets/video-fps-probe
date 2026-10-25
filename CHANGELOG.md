@@ -10,6 +10,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ### Changed
 
+- **Behaviour change:** the default flavor runs own on one worker per container family, `own-isobmff.worker` and `own-matroska.worker`, picked by reading the first 4 bytes of the file on the main thread. The first MP4 loads about 22.7 KB instead of 23.6 KB, and about 24.4 KB instead of 38.9 KB with Vite's default worker format ([size matrix](report/size-matrix.md)).
+- The first WebM or MKV without DefaultDuration, such as a MediaRecorder recording, loads about 25.6 KB (26.7 KB in 0.2.0), and about 27.1 KB instead of 38.9 KB with Vite's default worker format.
+- `workers` counts per worker kind, so `workers: 1` can run one MP4 and one WebM at once. `prewarm()` starts the worker of each container family it is given: ISO BMFF by default, nothing for `containers: []`.
+- A missing own worker file, such as a 404 after a redeploy, rejects only the jobs of its container family with `reason: 'load'`, and the next call retries; in 0.2.0 a missing parser chunk came back as an error string in the result.
+- Service worker precache lists that name `own.worker` need both new worker files. A host that wants one own worker can keep the 0.2.0 layout with a custom worker that runs `serveProbeWorker({ own: ownEngine })` from `video-fps-probe/worker-runtime`.
 - CI also runs the unit, fixture and package tests on Node 22.12, the lowest version the package supports, next to Node 24; 0.2.0 tested Node 24 only.
 
 ## 0.2.0 - 2026-10-25

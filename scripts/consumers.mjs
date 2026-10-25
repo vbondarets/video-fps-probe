@@ -19,15 +19,17 @@ export const LATEST = ['vite', 'mp4box', 'mediabunny', 'rolldown'];
 const LATEST_FILE = 'latest.json';
 
 const ES = "format: 'es'";
+export const OWN_WORKERS = { isobmff: 'own-isobmff.worker', matroska: 'own-matroska.worker' };
+const OWN = Object.values(OWN_WORKERS);
 
 export const FIXTURES = [
-  { name: 'default', imports: ['./lazy'], worker: ES, engines: ['own'], workers: ['own.worker'], mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/', 'video-fps-probe/dist/engines/'] },
+  { name: 'default', imports: ['./lazy'], worker: ES, engines: ['own'], workers: OWN, mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/', 'video-fps-probe/dist/engines/'] },
   {
     name: 'zero-config',
     imports: ['./lazy'],
     worker: "none, so Vite's default format: 'iife'",
     engines: ['own'],
-    workers: ['own.worker'],
+    workers: OWN,
     singleFileWorkers: true,
     mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/', 'video-fps-probe/dist/engines/'],
   },
@@ -40,10 +42,10 @@ export const FIXTURES = [
     workers: ['fps.worker'],
     mustNot: ['video-fps-probe/dist/plugins/own.js', 'video-fps-probe/dist/worker/own.worker.js', 'node_modules/mp4box/', 'node_modules/mediabunny/'],
   },
-  { name: 'mp4box', imports: ['./lazy', './mp4box'], worker: ES, engines: ['own', 'mp4box'], workers: ['own.worker', 'mp4box.worker'], mustNot: ['node_modules/mediabunny/'] },
-  { name: 'mediabunny', imports: ['./lazy', './mediabunny'], worker: ES, engines: ['own', 'mediabunny'], workers: ['own.worker', 'mediabunny.worker'], mustNot: ['node_modules/mp4box/'] },
-  { name: 'rvfc', imports: ['./lazy', './rvfc'], worker: ES, engines: ['own', 'rvfc'], workers: ['own.worker'], mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/'] },
-  { name: 'all', imports: ['./lazy', './mp4box', './mediabunny', './rvfc'], worker: ES, engines: ['own', 'mp4box', 'mediabunny', 'rvfc'], workers: ['own.worker', 'mp4box.worker', 'mediabunny.worker'], mustNot: [] },
+  { name: 'mp4box', imports: ['./lazy', './mp4box'], worker: ES, engines: ['own', 'mp4box'], workers: [...OWN, 'mp4box.worker'], mustNot: ['node_modules/mediabunny/'] },
+  { name: 'mediabunny', imports: ['./lazy', './mediabunny'], worker: ES, engines: ['own', 'mediabunny'], workers: [...OWN, 'mediabunny.worker'], mustNot: ['node_modules/mp4box/'] },
+  { name: 'rvfc', imports: ['./lazy', './rvfc'], worker: ES, engines: ['own', 'rvfc'], workers: OWN, mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/'] },
+  { name: 'all', imports: ['./lazy', './mp4box', './mediabunny', './rvfc'], worker: ES, engines: ['own', 'mp4box', 'mediabunny', 'rvfc'], workers: [...OWN, 'mp4box.worker', 'mediabunny.worker'], mustNot: [] },
   {
     name: 'standalone-url',
     imports: ['./client/lazy', './standalone/own.worker.js?url'],
@@ -59,14 +61,14 @@ export const FIXTURES = [
     imports: ['./lazy'],
     worker: "format: 'iife', rolldownOptions.output.codeSplitting: false",
     engines: ['own'],
-    workers: ['own.worker'],
+    workers: OWN,
     singleFileWorkers: true,
     mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/'],
   },
-  { name: 'react', imports: ['./lazy', './react'], note: `React ${DEV_DEPENDENCIES.react}`, worker: ES, engines: ['own'], workers: ['own.worker'], mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/', 'video-fps-probe/dist/engines/'] },
-  { name: 'react18', imports: ['./lazy', './react'], note: `React ${REACT_18}`, worker: ES, engines: ['own'], workers: ['own.worker'], mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/', 'video-fps-probe/dist/engines/'] },
-  { name: 'check', imports: ['./lazy', './check'], worker: ES, engines: ['own'], workers: ['own.worker'], mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/', 'video-fps-probe/dist/engines/'] },
-  { name: 'preset', imports: ['./lazy', './check', './presets'], note: 'klingO1ReferenceVideo', worker: ES, engines: ['own'], workers: ['own.worker'], mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/', 'video-fps-probe/dist/engines/'] },
+  { name: 'react', imports: ['./lazy', './react'], note: `React ${DEV_DEPENDENCIES.react}`, worker: ES, engines: ['own'], workers: OWN, mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/', 'video-fps-probe/dist/engines/'] },
+  { name: 'react18', imports: ['./lazy', './react'], note: `React ${REACT_18}`, worker: ES, engines: ['own'], workers: OWN, mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/', 'video-fps-probe/dist/engines/'] },
+  { name: 'check', imports: ['./lazy', './check'], worker: ES, engines: ['own'], workers: OWN, mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/', 'video-fps-probe/dist/engines/'] },
+  { name: 'preset', imports: ['./lazy', './check', './presets'], note: 'klingO1ReferenceVideo', worker: ES, engines: ['own'], workers: OWN, mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/', 'video-fps-probe/dist/engines/'] },
 ];
 
 function lockPath(packages, from, name) {

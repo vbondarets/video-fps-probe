@@ -9,6 +9,8 @@ export interface ConsumerFixture {
   mustNot: string[];
 }
 
+export const OWN_WORKERS: Record<'isobmff' | 'matroska', string>;
+
 export const FIXTURES: ConsumerFixture[];
 
 export const CONSUMERS_PORT: number;

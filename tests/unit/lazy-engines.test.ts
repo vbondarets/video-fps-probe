@@ -54,11 +54,12 @@ describe('lazy engine peers', () => {
     const { rvfc } = await import('../../src/plugins/rvfc.ts');
     const descriptors = [ownDescriptor, mp4box(), mediabunny(), rvfc()];
     expect(descriptors.map((d) => [d.id, d.thread, typeof d.createWorker])).toEqual([
-      ['own', 'worker', 'function'],
+      ['own', 'worker', 'undefined'],
       ['mp4box', 'worker', 'function'],
       ['mediabunny', 'worker', 'function'],
       ['rvfc', 'main', 'undefined'],
     ]);
+    expect(Object.keys(ownDescriptor.createWorkers)).toEqual(['isobmff', 'matroska']);
     expect(loads).toEqual({ mp4box: 0, mediabunny: 0 });
   });
 
@@ -67,8 +68,10 @@ describe('lazy engine peers', () => {
     const { ownDescriptor } = await import('../../src/plugins/own.ts');
     const { mp4box } = await import('../../src/plugins/mp4box.ts');
     const { mediabunny } = await import('../../src/plugins/mediabunny.ts');
-    for (const d of [ownDescriptor, mp4box(), mediabunny()]) d.createWorker!();
-    expect(RecordingWorker.created.map(({ url }) => url.pathname.split('/').slice(-2).join('/'))).toEqual(['worker/own.worker.ts', 'worker/mp4box.worker.ts', 'worker/mediabunny.worker.ts']);
+    ownDescriptor.createWorkers.isobmff();
+    ownDescriptor.createWorkers.matroska();
+    for (const d of [mp4box(), mediabunny()]) d.createWorker!();
+    expect(RecordingWorker.created.map(({ url }) => url.pathname.split('/').slice(-2).join('/'))).toEqual(['worker/own-isobmff.worker.ts', 'worker/own-matroska.worker.ts', 'worker/mp4box.worker.ts', 'worker/mediabunny.worker.ts']);
     for (const { url, options } of RecordingWorker.created) {
       expect(options).toEqual({ type: 'module' });
       expect(existsSync(fileURLToPath(url))).toBe(true);

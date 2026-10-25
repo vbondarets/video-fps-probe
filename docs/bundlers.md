@@ -28,15 +28,15 @@ Verified means the consumer smoke test (`npm run test:consumers`): every fixture
 
 Measured with Vite 8.3.5 on production builds installed from the packed tarball (gzip -9, KB = 1000 bytes; the fixtures are in `tests/consumers/fixtures/`):
 
-| Fixture | Imports | Vite worker option | Critical path | First MP4, lazy | All own paths, lazy | Worker files |
-|---|---|---|---:|---:|---:|---|
-| default | `video-fps-probe/lazy` | format: 'es' | **0.67 KB** | 23.61 KB | 40.78 KB | own.worker (5 lazy chunks) |
-| zero-config | `video-fps-probe/lazy` | none, so Vite's default format: 'iife' | **0.66 KB** | 38.94 KB | 38.94 KB | own.worker (0 lazy chunks) |
-| iife-nosplit | `video-fps-probe/lazy` | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.66 KB** | 38.94 KB | 38.94 KB | own.worker (0 lazy chunks) |
-| custom | `video-fps-probe/client/lazy` + `video-fps-probe/worker-runtime` | format: 'es' | **0.67 KB** | 23.50 KB | 40.66 KB | fps.worker (5 lazy chunks) |
-| standalone-url | `video-fps-probe/client/lazy` + `video-fps-probe/standalone/own.worker.js?url` | none needed: the file is copied as an asset | **0.70 KB** | 38.75 KB | 38.75 KB | own.worker (0 lazy chunks) |
+| Fixture | Imports | Vite worker option | Critical path | First MP4, lazy | First MKV, lazy | All own paths, lazy | Worker files |
+|---|---|---|---:|---:|---:|---:|---|
+| default | `video-fps-probe/lazy` | format: 'es' | **0.67 KB** | 22.66 KB | 25.56 KB | 48.63 KB | own-isobmff.worker (1 lazy chunk), own-matroska.worker (2 lazy chunks) |
+| zero-config | `video-fps-probe/lazy` | none, so Vite's default format: 'iife' | **0.67 KB** | 24.41 KB | 27.10 KB | 48.29 KB | own-isobmff.worker (0 lazy chunks), own-matroska.worker (0 lazy chunks) |
+| iife-nosplit | `video-fps-probe/lazy` | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.67 KB** | 24.41 KB | 27.10 KB | 48.29 KB | own-isobmff.worker (0 lazy chunks), own-matroska.worker (0 lazy chunks) |
+| custom | `video-fps-probe/client/lazy` + `video-fps-probe/worker-runtime` | format: 'es' | **0.68 KB** | 23.79 KB | 26.90 KB | 40.95 KB | fps.worker (5 lazy chunks) |
+| standalone-url | `video-fps-probe/client/lazy` + `video-fps-probe/standalone/own.worker.js?url` | none needed: the file is copied as an asset | **0.71 KB** | 39.04 KB | 39.04 KB | 39.04 KB | own.worker (0 lazy chunks) |
 
-With format 'es' the own worker entry stays small and loads one parser per container; with 'iife' it is one file with both parsers. In Vite 8.3.5 the zero-config and iife-nosplit own workers are byte-identical: with format 'iife' Vite already inlines the worker's dynamic imports, so `codeSplitting: false` changes nothing for this package. Everything the default build emits outside the entry chunk is 81.31 KB, because it also holds the main-thread copies of the runtime and parsers ([SSR](#ssr-and-the-lazy-main-thread-chunks)). The full matrix, engines included, is in [benchmarks.md](benchmarks.md#package-size).
+The default flavor runs own on one worker per container family, picked by the first four bytes of the file. With format 'es' each worker holds its parser and the statistics, and keeps the rate profile core and, for Matroska, the ffprobe frame rate estimate as lazy chunks; with 'iife' each is one file. A custom worker built from `video-fps-probe/worker-runtime` keeps the 0.2.0 layout: a small entry that loads one parser per container. In Vite 8.3.5 the zero-config and iife-nosplit own workers are byte-identical: with format 'iife' Vite already inlines the worker's dynamic imports, so `codeSplitting: false` changes nothing for this package. Everything the default build emits outside the entry chunk is 89.16 KB, because it also holds the main-thread copies of the runtime and parsers ([SSR](#ssr-and-the-lazy-main-thread-chunks)). The full matrix, engines included, is in [benchmarks.md](benchmarks.md#package-size).
 
 <!-- tables:vite:end -->
 

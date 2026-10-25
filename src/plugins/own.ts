@@ -1,8 +1,11 @@
-import type { EngineDescriptor } from './types.ts';
+import type { ContainerFamily, EngineDescriptor } from './types.ts';
 
-export const ownDescriptor: EngineDescriptor<'own'> = {
+export const ownDescriptor: EngineDescriptor<'own'> & { readonly createWorkers: Readonly<Record<ContainerFamily, () => Worker>> } = {
   id: 'own',
   thread: 'worker',
-  createWorker: () => new Worker(new URL('../worker/own.worker.ts', import.meta.url), { type: 'module' }),
+  createWorkers: {
+    isobmff: () => new Worker(new URL('../worker/own-isobmff.worker.ts', import.meta.url), { type: 'module' }),
+    matroska: () => new Worker(new URL('../worker/own-matroska.worker.ts', import.meta.url), { type: 'module' }),
+  },
   load: async () => (await import('../worker/runtime.ts')).ownEngine,
 };

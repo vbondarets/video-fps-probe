@@ -6,7 +6,7 @@ import * as root from '../../src/index.ts';
 import { mp4box } from '../../src/plugins/mp4box.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
 import { fakeResult, FakeWorker } from './fake-worker.ts';
-import { analyzed, mp4File } from './probe-helpers.ts';
+import { analyzed, mp4File, webmFile } from './probe-helpers.ts';
 
 const MP4 = join(FILES_DIR, 'cfr_h264_30.mp4');
 const WEBM = join(FILES_DIR, 'cfr_vp9_30.webm');
@@ -28,12 +28,16 @@ describe('root entry', () => {
 });
 
 describe('createProbe', () => {
-  it('runs own on the prebuilt own worker', async () => {
+  it('runs own on the prebuilt worker of the container family', async () => {
     vi.stubGlobal('Worker', FakeWorker);
     const probe = root.createProbe();
     expect(probe.engines).toEqual(['own']);
     expect(await probe.analyze(mp4File('a.mp4'))).toEqual(fakeResult('a.mp4'));
-    expect(FakeWorker.instances.map(entryOf)).toEqual(['own.worker.ts']);
+    expect(FakeWorker.instances.map(entryOf)).toEqual(['own-isobmff.worker.ts']);
+    expect(await probe.analyze(webmFile('a.webm'))).toEqual(fakeResult('a.webm'));
+    expect(await probe.analyze(mp4File('b.mp4'))).toEqual(fakeResult('b.mp4'));
+    expect(FakeWorker.instances.map(entryOf)).toEqual(['own-isobmff.worker.ts', 'own-matroska.worker.ts']);
+    expect(FakeWorker.instances.map((w) => analyzed(w).map((m) => (m.type === 'analyze' ? m.name : null)))).toEqual([['a.mp4', 'b.mp4'], ['a.webm']]);
   });
 
   it('spawns exactly one worker for an mp4box probe with an own fallback', async () => {
@@ -52,7 +56,7 @@ describe('createProbe', () => {
     const probe = root.createProbe({ engines: [mp4box()] });
     await probe.analyze(mp4File());
     await probe.analyze(mp4File(), { engine: 'mp4box' });
-    expect(FakeWorker.instances.map(entryOf)).toEqual(['own.worker.ts', 'mp4box.worker.ts']);
+    expect(FakeWorker.instances.map(entryOf)).toEqual(['own-isobmff.worker.ts', 'mp4box.worker.ts']);
   });
 
   it('analyzes in this thread with worker inline, and without a Worker global, exactly as the core does', async () => {

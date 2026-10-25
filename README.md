@@ -131,12 +131,12 @@ Rules are JSON, such as `{ fps: { min: 24, max: 60 }, duration: { max: 10 }, vfr
 
 **0.67 KB gzip on the critical path**: the package code in the entry chunk of a Vite 8.3.5 app that imports `video-fps-probe/lazy` (1.40 KB with Vite's preload helper). The rest loads lazily, on the first file:
 
-| Host Vite config | Critical path | First MP4 | All own paths | Worker files |
-|---|---:|---:|---:|---:|
-| `worker: { format: 'es' }` (recommended) | **0.67 KB** | 23.61 KB | 40.78 KB | 1 |
-| none (Vite's default, 'iife') | **0.66 KB** | 38.94 KB | 38.94 KB | 1 |
+| Host Vite config | Critical path | First MP4 | First MKV | All own paths | Worker files |
+|---|---:|---:|---:|---:|---:|
+| `worker: { format: 'es' }` (recommended) | **0.67 KB** | 22.66 KB | 25.56 KB | 48.63 KB | 2 |
+| none (Vite's default, 'iife') | **0.67 KB** | 24.41 KB | 27.10 KB | 48.29 KB | 2 |
 
-An iife worker cannot split, so without the option the own worker is one file with both parsers:
+Own runs on one worker per container family, picked by the first four bytes of the file, so a first file loads only the worker of its family. An iife worker cannot split, so without the option each own worker is one file with its lazy parts inlined:
 
 ```js
 import { defineConfig } from 'vite';

@@ -240,7 +240,7 @@ describe('lazy entries', () => {
     expect(FakeWorker.instances.map((w) => w.label)).toEqual(['custom']);
     await stub.prewarm();
     expect(loads).toEqual({ root: 1, client: 1 });
-    expect(String(FakeWorker.instances[1].label)).toMatch(/\/worker\/own\.worker\.ts$/);
+    expect(String(FakeWorker.instances[1].label)).toMatch(/\/worker\/own-isobmff\.worker\.ts$/);
     expect(FakeWorker.instances[1].posted).toEqual([{ v: 1, id: 1, type: 'warm', engines: ['own'], containers: ['isobmff'] }]);
     expect(stub.engines).toEqual(['own']);
   });
