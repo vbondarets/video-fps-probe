@@ -95,7 +95,7 @@ const GROUP_KEYS: Record<(typeof GROUPS)[number], readonly string[]> = {
 const RULE_KEYS: readonly string[] = [...GROUPS, 'containers', 'codecs', 'audio', 'vfr', 'uneven', 'severity'];
 
 const invalid = (rule: string, v: unknown, what: string): never => {
-  throw new TypeError(`${rule}: ${JSON.stringify(v)} is not ${what}`);
+  throw new TypeError(`${rule}: ${typeof v === 'number' ? v : JSON.stringify(v)} is not ${what}`);
 };
 
 function decimal(s: string): Q | null {
@@ -106,11 +106,12 @@ function decimal(s: string): Q | null {
   return e >= 0 ? [n * 10n ** BigInt(e), 1n] : [n, 10n ** BigInt(-e)];
 }
 
-function ratio(v: unknown, rule: string): Q {
+function ratio(v: unknown, rule: string, amount = false): Q {
   const parts = typeof v === 'number' || typeof v === 'string' ? String(v).split(/[/:]/) : [];
   const [a, b] = parts.map(decimal);
-  const q: Q | null = a && parts.length === 1 ? a : a && b && parts.length === 2 ? [a[0] * b[1], a[1] * b[0]] : null;
-  return q && q[1] !== 0n ? q : invalid(rule, v, "a non-negative number or 'num/den'");
+  const q: Q | null = a && parts.length === 1 ? a : a && b && parts.length === 2 && !amount ? [a[0] * b[1], a[1] * b[0]] : null;
+  const ratios = parts.length > 1 ? "; 'num/den' and 'num:den' ratios are for fps and aspectRatio" : '';
+  return q && q[1] !== 0n ? q : invalid(rule, v, amount ? `a non-negative number${ratios}` : "a non-negative number or 'num/den'");
 }
 
 const cmp = (a: Q, b: Q): bigint => a[0] * b[1] - b[0] * a[1];
@@ -255,7 +256,7 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   ): void => {
     const bounds = BOUNDS.filter((b) => rule?.[b] != null).map((b) => {
       const path = `${group}.${b}${side}`;
-      return [b, rule![b]!, (b === 'oneOf' ? [rule![b]!].flat() : [rule![b]!]).map((v) => (group === 'fps' ? readings(v, path) : [ratio(v, path)]))] as const;
+      return [b, rule![b]!, (b === 'oneOf' ? [rule![b]!].flat() : [rule![b]!]).map((v) => (group === 'fps' ? readings(v, path) : [ratio(v, path, group !== 'aspectRatio')]))] as const;
     });
     if (bounds.length === 0) return;
     if (!actual) return void unknown(group, missing);

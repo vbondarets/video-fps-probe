@@ -156,8 +156,8 @@ describe('check: rule validation', () => {
   };
 
   it.each([
-    ['a negative frame size', '{"frameSize":{"minWidth":-5}}', "frameSize.minWidth: -5 is not a non-negative number or 'num/den'"],
-    ['a frame size that is not a number', '{"frameSize":{"minShortSide":"wide"}}', 'frameSize.minShortSide: "wide" is not a non-negative number or \'num/den\''],
+    ['a negative frame size', '{"frameSize":{"minWidth":-5}}', 'frameSize.minWidth: -5 is not a non-negative number'],
+    ['a frame size that is not a number', '{"frameSize":{"minShortSide":"wide"}}', 'frameSize.minShortSide: "wide" is not a non-negative number'],
     ['an allowlist entry that is not a string', '{"containers":["mp4",4]}', 'containers: ["mp4",4] is not a list of strings'],
     ['an allowlist that is not a list', '{"codecs":"h264"}', 'codecs: "h264" is not a list of strings'],
     ['an audio rule it does not know', '{"audio":"require"}', 'audio: "require" is not one of required, forbidden'],
@@ -176,7 +176,7 @@ describe('check: rule validation', () => {
     ['a typo in a rule name', '{"fsp":{"max":60}}', 'fsp: not a rule; expected one of fps, duration, frameSize, aspectRatio, pixels, fileSize, containers, codecs, audio, vfr, uneven, severity'],
     ['a bound given as a list', '{"fps":{"min":[24]}}', 'fps.min: [24] is not a non-negative number or \'num/den\''],
     ['an exact rate given as a list', '{"fps":{"exact":[24,25]}}', 'fps.exact: [24,25] is not a non-negative number or \'num/den\''],
-    ['a bound of the wrong type', '{"duration":{"max":true}}', 'duration.max: true is not a non-negative number or \'num/den\''],
+    ['a bound of the wrong type', '{"duration":{"max":true}}', 'duration.max: true is not a non-negative number'],
     ['a oneOf entry of the wrong type', '{"aspectRatio":{"oneOf":["16/9",{}]}}', 'aspectRatio.oneOf: {} is not a non-negative number or \'num/den\''],
   ])('throws a TypeError naming the rule for %s, whatever the result', (_, json, message) => {
     for (const r of [result(), result({}, { error: 'moov box not found' }), null]) {
@@ -187,6 +187,28 @@ describe('check: rule validation', () => {
 
   it('judges a frame size given as a decimal string, as every other bound', () => {
     expect(failed(result(), JSON.parse('{"frameSize":{"minShortSide":"2000","maxLongSide":"1920"}}') as CheckRules)).toEqual(['frameSize.minShortSide']);
+    expect(failed(result({ durationSec: 90 }), JSON.parse('{"duration":{"min":"60","max":"1e2"},"pixels":{"max":"2073600.0"},"fileSize":{"max":"1000000"}}') as CheckRules)).toEqual([]);
+  });
+
+  it.each([
+    ['duration.min', '{"duration":{"min":"1:30"}}', '"1:30"'],
+    ['duration.max', '{"duration":{"max":"1/30"}}', '"1/30"'],
+    ['frameSize.minLongSide', '{"frameSize":{"minLongSide":"16:9"}}', '"16:9"'],
+    ['pixels.min', '{"pixels":{"min":"1920/1080"}}', '"1920/1080"'],
+    ['fileSize.max', '{"fileSize":{"max":"200:1"}}', '"200:1"'],
+  ])('throws a TypeError naming %s for a ratio where a number is expected', (path, json, shown) => {
+    expect(() => check(result(), JSON.parse(json) as CheckRules)).toThrow(new TypeError(`${path}: ${shown} is not a non-negative number; 'num/den' and 'num:den' ratios are for fps and aspectRatio`));
+  });
+
+  it('accepts only finite numbers in the number groups, and prints the number it refuses', () => {
+    for (const [v, shown] of [[Number.POSITIVE_INFINITY, 'Infinity'], [Number.NaN, 'NaN'], [-1, '-1']] as const) {
+      for (const group of ['duration', 'pixels', 'fileSize'] as const) {
+        expect(() => check(result(), { [group]: { max: v } }), `${group} ${shown}`).toThrow(new TypeError(`${group}.max: ${shown} is not a non-negative number`));
+      }
+      expect(() => check(result(), { frameSize: { maxWidth: v } }), shown).toThrow(new TypeError(`frameSize.maxWidth: ${shown} is not a non-negative number`));
+    }
+    expect(() => check(result(), { fps: { max: Number.NaN } })).toThrow(new TypeError("fps.max: NaN is not a non-negative number or 'num/den'"));
+    expect(failed(result(), { aspectRatio: { min: '16:9' }, fps: { exact: '30:1' } })).toEqual([]);
   });
 
   it('gives one unknown entry for the frame size rule of a track without a size', () => {
