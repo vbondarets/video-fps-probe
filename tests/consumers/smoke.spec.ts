@@ -1,9 +1,9 @@
-import { mkdirSync, openAsBlob, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, openAsBlob, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
 import { expect, test, type Page } from '@playwright/test';
-import { CONSUMERS_PORT, FIXTURES, OWN_WORKERS, SPLIT_ROUTING, buildUrl, consumersDir, devUrl, installedPackage } from '../../scripts/consumers.mjs';
+import { CONSUMERS_PORT, FIXTURES, OWN_WORKERS, SPLIT_ROUTING, buildUrl, consumersDir, devUrl, fixtureDist, installedPackage } from '../../scripts/consumers.mjs';
 import type { EngineDescriptor, ProbeResult } from '../../src/index.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
 
@@ -50,6 +50,14 @@ const RVFC_UNSUPPORTED = 'requestVideoFrameCallback unsupported';
 
 const DIST = pathToFileURL(join(installedPackage(consumersDir()), 'dist')).href;
 const LIBRARY_REPORT = process.env.CONSUMERS_LIBRARY_REPORT ? resolve(process.env.CONSUMERS_LIBRARY_REPORT) : null;
+
+function holdsSplitRouting(fixture: string, url: string): boolean {
+  const prefix = `/${fixture}/`;
+  const path = decodeURIComponent(new URL(url).pathname);
+  if (!path.startsWith(prefix) || !/\.m?js$/.test(path)) return false;
+  const map = join(fixtureDist(consumersDir(), fixture), `${path.slice(prefix.length)}.map`);
+  return existsSync(map) && (JSON.parse(readFileSync(map, 'utf8')) as { sources: string[] }).sources.some((s) => s.includes(SPLIT_ROUTING));
+}
 
 async function nodeAnalyze(name: string, engine: WorkerEngine): Promise<ProbeResult> {
   const { analyze } = (await import(`${DIST}/index.js`)) as PackageRoot;
@@ -186,7 +194,7 @@ for (const fixture of FIXTURES) {
       }
       for (const name of fixture.workers) expect(workerUrls.some((url) => url.includes(name)), `a ${name} worker ran (started: ${workerUrls.join(', ') || 'none'})`).toBe(true);
       if (mode === 'build') {
-        const routing = requested.filter((url) => /\/assets\/route-[\w-]+\.js$/.test(url));
+        const routing = requested.filter((url) => holdsSplitRouting(fixture.name, url));
         if (fixture.byContainer) expect(routing, 'the split routing chunk loads once with byContainer').toHaveLength(1);
         if (fixture.clientMustNot?.includes(SPLIT_ROUTING)) expect(routing, 'a custom worker without byContainer never loads the split routing').toEqual([]);
       }
