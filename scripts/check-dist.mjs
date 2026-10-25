@@ -250,7 +250,7 @@ export function checkDist({ pack = true, ssr = true, repo = REPO_ROOT } = {}) {
   const edges = graph(files, texts);
   const has = (f) => texts.has(f);
   for (const root of PURE_ENTRIES.filter(has)) for (const edge of edges.get(root) ?? []) fail(`${root}: imports ${edge.specifier} at run time, a main-thread rule entry imports nothing`);
-  const hygieneRoots = ['client/index.js', 'client/lazy.js', 'react/index.js','plugins/rvfc.js', 'worker/runtime.js', ...files.filter((f) => /^engines\/[^/]+\.js$/.test(f))].filter(has);
+  const hygieneRoots = ['client/index.js', 'client/lazy.js', 'react/index.js', 'plugins/rvfc.js', 'worker/runtime.js', ...files.filter((f) => /^engines\/[^/]+\.js$/.test(f))].filter(has);
   for (const root of hygieneRoots) {
     const reached = closure(edges, root, { dynamic: true }).files;
     for (const host of LITERAL_HOSTS) if (reached.has(host)) fail(`literal hygiene: ${root} reaches ${host}`);
