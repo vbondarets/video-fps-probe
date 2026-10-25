@@ -18,6 +18,10 @@ const PEER_ENGINES = ['engines/mp4box.js', 'engines/mediabunny.js'];
 const PARSER_DIRS = ['core/isobmff/', 'core/matroska/'];
 const PEERS = ['mp4box', 'mediabunny'];
 const PURE_ENTRIES = ['check/index.js', 'presets/index.js'];
+export const SPLIT_WORKERS = {
+  'worker/own-isobmff.worker.js': ['core/matroska/', 'core/rfps.js', 'core/analyze.js'],
+  'worker/own-matroska.worker.js': ['core/isobmff/', 'core/analyze.js'],
+};
 const WORKER_CALL = /\bnew\s+(?:Worker|SharedWorker)\s*\(/g;
 const WORKER_LITERAL = /^new\s+(?:Worker|SharedWorker)\s*\(\s*new\s+URL\s*\(\s*(?:'([^']+)'|"([^"]+)")\s*,\s*import\.meta\.url\s*\)/;
 const WORKER_ASSET = /^(?:worker\/[^/]+\.worker\.js|standalone\/.+)$/;
@@ -250,7 +254,7 @@ export function checkDist({ pack = true, ssr = true, repo = REPO_ROOT } = {}) {
   const edges = graph(files, texts);
   const has = (f) => texts.has(f);
   for (const root of PURE_ENTRIES.filter(has)) for (const edge of edges.get(root) ?? []) fail(`${root}: imports ${edge.specifier} at run time, a main-thread rule entry imports nothing`);
-  const hygieneRoots = ['client/index.js', 'client/lazy.js', 'react/index.js', 'plugins/rvfc.js', 'worker/runtime.js', ...files.filter((f) => /^engines\/[^/]+\.js$/.test(f))].filter(has);
+  const hygieneRoots = ['client/index.js', 'client/lazy.js', 'react/index.js', 'plugins/rvfc.js', 'worker/runtime.js', ...Object.keys(SPLIT_WORKERS), ...files.filter((f) => /^engines\/[^/]+\.js$/.test(f))].filter(has);
   for (const root of hygieneRoots) {
     const reached = closure(edges, root, { dynamic: true }).files;
     for (const host of LITERAL_HOSTS) if (reached.has(host)) fail(`literal hygiene: ${root} reaches ${host}`);
@@ -261,6 +265,10 @@ export function checkDist({ pack = true, ssr = true, repo = REPO_ROOT } = {}) {
         if (target && WORKER_ASSET.test(target)) fail(`literal hygiene: ${root} reaches new URL('${url}', import.meta.url) in ${f}, which targets ${target}`);
       }
     }
+  }
+
+  for (const [root, forbidden] of Object.entries(SPLIT_WORKERS).filter(([root]) => has(root))) {
+    for (const f of closure(edges, root, { dynamic: true }).files) if (forbidden.some((p) => (p.endsWith('/') ? f.startsWith(p) : f === p))) fail(`worker isolation: ${root} reaches ${f}`);
   }
 
   const isolationRoots = ['index.js', 'lazy.js', 'react/index.js', ...files.filter((f) => /^(?:client|plugins)\/[^/]+\.js$/.test(f))].filter(has);
@@ -339,6 +347,18 @@ export function runSelfTest() {
     expectProblem('worker/runtime.js with a new URL of a worker file and a query fails', problemsOf({ ...assets, 'worker/runtime.js': "export const url = new URL('./own.worker.js?worker', import.meta.url);\n" }), 'literal hygiene: worker/runtime.js reaches', true);
     expectProblem('the worker literal in plugins/own.js passes when no hygiene root reaches it', problemsOf({ ...assets, 'client/index.js': 'export const x = 1;\n', 'plugins/own.js': "export const start = () => new Worker(new URL('../worker/own.worker.js', import.meta.url), { type: 'module' });\n" }), 'literal hygiene', false);
     expectProblem('a new URL of a file outside worker/ and standalone/ passes', problemsOf({ ...assets, 'client/index.js': "export const url = new URL('../core/table.js', import.meta.url);\n" }), 'literal hygiene', false);
+
+    const serve = { 'worker/serve.js': 'export const serve = () => {};\n', 'worker/single.js': 'export const single = () => {};\n', 'core/stats.js': 'export const s = 1;\n', 'core/segments.js': 'export const g = 1;\n', 'core/rfps.js': 'export const r = 1;\n', 'core/analyze.js': 'export const a = 1;\n' };
+    const isoParser = { 'core/isobmff/index.js': "import './boxes.js';\nimport '../stats.js';\nexport const parse = () => import('../segments.js');\n", 'core/isobmff/boxes.js': 'export const b = 1;\n' };
+    const mkvParser = { 'core/matroska/index.js': "import '../stats.js';\nexport const parse = () => [import('../segments.js'), import('../rfps.js')];\n" };
+    const entry = (parser) => `import { serve } from './serve.js';\nimport { single } from './single.js';\nimport { parse } from '../core/${parser}/index.js';\nserve(single(parse));\n`;
+    const split = { ...serve, ...isoParser, ...mkvParser, 'worker/own-isobmff.worker.js': entry('isobmff'), 'worker/own-matroska.worker.js': entry('matroska') };
+    expectProblem('per-container workers that reach only their own parser pass', problemsOf(split), 'worker isolation', false);
+    expectProblem('the ISO BMFF worker reaching the Matroska parser through import() fails', problemsOf({ ...split, 'worker/single.js': "export const single = () => import('../core/matroska/index.js');\n" }), 'worker isolation: worker/own-isobmff.worker.js reaches core/matroska/index.js', true);
+    expectProblem('the ISO BMFF worker reaching the ffprobe estimate fails', problemsOf({ ...split, 'core/isobmff/boxes.js': "export const b = () => import('../rfps.js');\n" }), 'worker isolation: worker/own-isobmff.worker.js reaches core/rfps.js', true);
+    expectProblem('the Matroska worker reaching the ISO BMFF parser fails', problemsOf({ ...split, 'worker/serve.js': "import '../core/isobmff/boxes.js';\nexport const serve = () => {};\n" }), 'worker isolation: worker/own-matroska.worker.js reaches core/isobmff/boxes.js', true);
+    expectProblem('a per-container worker reaching the parser loaders of analyze.js fails', problemsOf({ ...split, 'worker/single.js': "import '../core/analyze.js';\nexport const single = () => {};\n" }), 'worker isolation: worker/own-matroska.worker.js reaches core/analyze.js', true);
+    expectProblem('a per-container worker reaching a worker literal fails the literal hygiene', problemsOf({ ...split, 'plugins/own.js': "export const start = () => new Worker(new URL('../worker/own-isobmff.worker.js', import.meta.url), { type: 'module' });\n", 'worker/serve.js': "import '../plugins/own.js';\nexport const serve = () => {};\n" }), 'literal hygiene: worker/own-isobmff.worker.js reaches plugins/own.js', true);
 
     const react = { 'react/index.js': "'use client';\nimport { useMemo } from 'react';\nexport const x = useMemo;\n", 'react/index.d.ts': "import type { ReactNode } from 'react';\nexport type X = ReactNode;\n" };
     expectProblem('react/ importing react with use client first passes', problemsOf(react), 'react', false);
