@@ -34,6 +34,7 @@ const loadOwnInThread = async (): Promise<EngineModule> => (await import('../wor
 export function createProbeCore(options: CoreOptions): Probe<EngineId> {
   const { worker, engines: descriptors = [], engine: defaultEngine = 'own', fallback: defaultFallback = [], workers, idleTimeoutMs, timeoutMs: defaultTimeout, defaults } = options;
   const custom = typeof worker === 'object' ? worker : null;
+  const byContainer = custom?.byContainer;
   const inline = worker === 'inline' || typeof Worker === 'undefined';
   const pools = new Map<string, WorkerPool>();
   const byId = new Map<EngineId, EngineDescriptor>();
@@ -54,20 +55,29 @@ export function createProbeCore(options: CoreOptions): Probe<EngineId> {
     return pool;
   };
   const poolOf = (kind: string, create: () => Worker): Route => ({ kind, pool: () => poolFor(kind, create) });
-  const splitOf = (kind: string, byFamily: (family: ContainerFamily) => readonly [string, () => Worker]): Route => ({ kind, split: true, pool: (family) => poolFor(...byFamily(family!)) });
+  const splitOf = (kind: string, byFamily: Partial<Record<ContainerFamily, () => Worker>>, create?: () => Worker): Route => ({
+    kind,
+    split: true,
+    pool: (family) => {
+      const own = byFamily[family!];
+      return own ? poolFor(`${kind}-${family}`, own) : poolFor(kind, create!);
+    },
+  });
   const servedBy = (d: SplitDescriptor | undefined, key: 'load' | 'loadOwn'): Route | null => {
     const load = d?.[key];
     if (!d || !load) return null;
     if (inline || d.thread !== 'worker') return { load };
     const split = d.createWorkers;
-    return d.createWorker ? poolOf(d.id, d.createWorker) : split ? splitOf(d.id, (f) => [`${d.id}-${f}`, split[f]]) : { load };
+    return d.createWorker ? poolOf(d.id, d.createWorker) : split ? splitOf(d.id, split) : { load };
   };
   const routeOf = (id: EngineId): Route | null => {
     const listed: Route | null = !custom?.engines.includes(id as WorkerEngineId)
       ? null
       : inline
         ? { error: new ProbeError('unsupported-environment', `engine ${id} runs in a worker and Worker is not available`, { engine: id }) }
-        : poolOf('custom', custom.create);
+        : id === 'own' && byContainer
+          ? splitOf('custom', byContainer, custom.create)
+          : poolOf('custom', custom.create);
     if (listed && 'pool' in listed) return listed;
     const route =
       id === 'own'

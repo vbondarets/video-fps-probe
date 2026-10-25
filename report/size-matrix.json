@@ -22,18 +22,18 @@
       ],
       "metrics": {
         "entry": 1396,
-        "trigger": 667,
+        "trigger": 668,
         "react": null,
         "check": null,
         "presets": null,
-        "client": 3215,
+        "client": 3245,
         "isobmff": 12004,
         "matroska": 11347,
         "segments": 1810,
         "rfps": 3617,
-        "firstMp4": 22659,
-        "firstMkv": 25561,
-        "allOwn": 48626,
+        "firstMp4": 22689,
+        "firstMkv": 25591,
+        "allOwn": 48656,
         "mp4box": null,
         "mediabunny": null,
         "engineShared": null,
@@ -41,7 +41,7 @@
         "pageEngineShared": null,
         "summary": null,
         "firstMp4Summary": null,
-        "lazyTotal": 89157
+        "lazyTotal": 89194
       },
       "workers": [
         {
@@ -59,38 +59,38 @@
       ],
       "files": [
         {
-          "file": "assets/compare-D4K7mKD4.js",
-          "gzip": 1327,
+          "file": "assets/compare-jdpd4vua.js",
+          "gzip": 1325,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/fallback-BuqdCwa4.js",
-          "gzip": 733,
+          "file": "assets/fallback-Bhe5uUm8.js",
+          "gzip": 734,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/index-Clj9KANs.js",
+          "file": "assets/index-C893PbG0.js",
           "gzip": 1396,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-BnOkJ3SV.js",
-          "gzip": 633,
+          "file": "assets/inline-DWLExAVa.js",
+          "gzip": 634,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/isobmff-B-oDyeqe.js",
-          "gzip": 12233,
+          "file": "assets/isobmff-gEp7kra8.js",
+          "gzip": 12234,
           "worker": null,
           "class": "isobmff"
         },
         {
-          "file": "assets/matroska-DGOiJE6S.js",
-          "gzip": 11898,
+          "file": "assets/matroska-BGHuhJwe.js",
+          "gzip": 11900,
           "worker": null,
           "class": "matroska"
         },
@@ -107,8 +107,8 @@
           "class": "matroska"
         },
         {
-          "file": "assets/probe-LO8xY3zb.js",
-          "gzip": 3215,
+          "file": "assets/probe-5SIIVpo6.js",
+          "gzip": 3245,
           "worker": null,
           "class": "shared"
         },
@@ -119,8 +119,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/rfps-DoMkB75Z.js",
-          "gzip": 3600,
+          "file": "assets/rfps-DxC_NgD7.js",
+          "gzip": 3602,
           "worker": null,
           "class": "rfps"
         },
@@ -131,8 +131,8 @@
           "class": "rfps"
         },
         {
-          "file": "assets/runtime-Bl8LoIsR.js",
-          "gzip": 2556,
+          "file": "assets/runtime-Cj6pRO_z.js",
+          "gzip": 2558,
           "worker": null,
           "class": "shared"
         },
@@ -143,15 +143,15 @@
           "class": "segments"
         },
         {
-          "file": "assets/segments-BW3YIXHy.js",
-          "gzip": 1810,
-          "worker": "own-isobmff.worker",
+          "file": "assets/segments-BGoOIu8d.js",
+          "gzip": 1844,
+          "worker": null,
           "class": "segments"
         },
         {
-          "file": "assets/segments-Bvz_2KYJ.js",
-          "gzip": 1844,
-          "worker": null,
+          "file": "assets/segments-BW3YIXHy.js",
+          "gzip": 1810,
+          "worker": "own-isobmff.worker",
           "class": "segments"
         },
         {
@@ -161,7 +161,7 @@
           "class": "shared"
         },
         {
-          "file": "assets/stats-BtTLy5_p.js",
+          "file": "assets/stats-CLM5zhZa.js",
           "gzip": 4337,
           "worker": null,
           "class": "stats"
@@ -179,8 +179,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 1000,
-          "gzip": 667,
-          "headroom": 333,
+          "gzip": 668,
+          "headroom": 332,
           "status": "ok",
           "why": "User-facing promise of the package, accepted by the owner on 2026-10-23 when the demo budget moved to 101.5 KB: the default configuration adds at most 1 KB to the critical path and the first MP4 loads at most 24 KB lazily. This row is the first half: the package code in the host entry chunk (the lazyProbe stub, ProbeError and the engine list), cut out of the entry chunk by its sourcemap. Vite's preload helper is not counted here, because every Vite app with a dynamic import already has it; the entry chunk row counts it. Design estimate 1.0 KB; measured 0.67 KB, and measured plus 10 percent rounded up to 0.5 KB is also 1.0 KB. Not re-set in 0.2.0, measured 0.67 KB: the promise stays the limit, which the 3 percent rule leaves to every other row."
         },
@@ -197,8 +197,8 @@
           "key": "client",
           "label": "probe client (lazy)",
           "limit": 3500,
-          "gzip": 3215,
-          "headroom": 285,
+          "gzip": 3245,
+          "headroom": 255,
           "status": "ok",
           "why": "The probe client fetched on the first file: createProbe, engine routing, the worker pool and the own descriptor with its two worker literals. Design estimate 3.5 KB; measured 2.67 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 2.90 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass. Raised from 3 KB to 3.5 KB in 0.3.0, measured 3.21 KB, for the second worker literal, the four-byte read that picks the worker of a container family, the routes split by family and the prewarm per family. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
         },
@@ -260,8 +260,8 @@
           "key": "firstMp4",
           "label": "first MP4 analysis, lazy total",
           "limit": 24000,
-          "gzip": 22659,
-          "headroom": 1341,
+          "gzip": 22689,
+          "headroom": 1311,
           "status": "ok",
           "why": "User-facing promise of the package, accepted by the owner on 2026-10-23 when the demo budget moved to 101.5 KB: the default configuration adds at most 1 KB to the critical path and the first MP4 loads at most 24 KB lazily. This row is the second half: everything the first MP4 or MOV file loads lazily, which is the probe client and the ISO BMFF worker of own, which holds the parser and the statistics. With the own engine on one worker per container family, a first file loads only the worker of its family, with its parser and the statistics inside the worker file. Measured 23.26 KB. Measured plus 10 percent would be 26.0 KB, so the promise stays the limit instead: it is the tighter one and it is what the README states. Not re-set in 0.2.0, measured 23.60 KB: the promise stays the limit, which the 3 percent rule leaves to every other row."
         },
@@ -269,8 +269,8 @@
           "key": "firstMkv",
           "label": "first MKV or WebM analysis without DefaultDuration, lazy total",
           "limit": 26500,
-          "gzip": 25561,
-          "headroom": 939,
+          "gzip": 25591,
+          "headroom": 909,
           "status": "ok",
           "why": "Everything the first MKV or WebM file loads lazily, in the worst case of a track without DefaultDuration, such as a MediaRecorder recording: the probe client, the Matroska worker of own, which holds the parser and the statistics, and the ffprobe frame rate estimate it fetches for such a track. With the own engine on one worker per container family, a first file loads only the worker of its family, with its parser and the statistics inside the worker file. Design estimate 26.6 KB; 0.2.0 loaded 26.71 KB for the same file through the shared own worker; measured 25.56 KB. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
         },
@@ -278,8 +278,8 @@
           "key": "allOwn",
           "label": "all own paths, lazy total",
           "limit": 50500,
-          "gzip": 48626,
-          "headroom": 1874,
+          "gzip": 48656,
+          "headroom": 1844,
           "status": "ok",
           "why": "Every own path: the probe client, both own workers with their parsers and statistics, the rate profile core of each and the ffprobe frame rate estimate. Design estimate 37.0 KB; measured 36.24 KB before the estimate was added. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 40 KB to 40.5 KB in 0.2.0, measured 40.34 KB, when the ffprobe frame rate estimate began to read the H.264 slice headers that decide the decoder delay (0.63 KB gzip). Raised again to 41 KB, measured 40.58 KB, when the estimate began to ride the block walk of the exact scan (0.23 KB in the estimate and the Matroska parser). Measured 40.76 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass. Raised from 42 KB to 50.5 KB in 0.3.0, measured 48.63 KB, because the two workers are separate builds and each holds its own copy of the reader, the worker runtime, the statistics and the rate profile core; a session that analyzes one container family loads only its worker. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
         },
@@ -287,8 +287,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 92000,
-          "gzip": 89157,
-          "headroom": 2843,
+          "gzip": 89194,
+          "headroom": 2806,
           "status": "ok",
           "why": "Every JavaScript file the build emits outside the entry chunk, fetched or not: the probe client with its compare and fallback chunks, the own worker with its chunks, and the main-thread copies of the parsers, the statistics, the sniffer and the worker runtime. The default flavor keeps them as an in-thread own for environments without a Worker global (SSR, Node) and for worker: 'inline'; a root analyze(), not imported here, always runs in the calling thread on the same copies. A browser with a Worker global never fetches them otherwise, so the lazy totals above leave them out. This row bounds what the package adds to the deploy and the CDN. Measured 72.20 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 79.5 KB to 81 KB in 0.2.0, measured 80.43 KB, when the ffprobe frame rate estimate began to read the H.264 slice headers: the build emits that code twice, in the own worker and in the main-thread copy. Measured 81.27 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass. Raised from 84 KB to 92 KB in 0.3.0, measured 89.16 KB, for the copies of the reader, the worker runtime, the statistics and the rate profile core in the second own worker. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
         }
@@ -306,19 +306,19 @@
         "own"
       ],
       "metrics": {
-        "entry": 1395,
-        "trigger": 667,
+        "entry": 1394,
+        "trigger": 665,
         "react": null,
         "check": null,
         "presets": null,
-        "client": 3214,
+        "client": 3243,
         "isobmff": 12013,
         "matroska": 11370,
         "segments": 1728,
         "rfps": 3524,
-        "firstMp4": 24407,
-        "firstMkv": 27101,
-        "allOwn": 48294,
+        "firstMp4": 24436,
+        "firstMkv": 27130,
+        "allOwn": 48323,
         "mp4box": null,
         "mediabunny": null,
         "engineShared": null,
@@ -326,7 +326,7 @@
         "pageEngineShared": null,
         "summary": null,
         "firstMp4Summary": null,
-        "lazyTotal": 88820
+        "lazyTotal": 88851
       },
       "workers": [
         {
@@ -344,37 +344,37 @@
       ],
       "files": [
         {
-          "file": "assets/compare-DWpOhIys.js",
-          "gzip": 1324,
+          "file": "assets/compare-CT95HIa7.js",
+          "gzip": 1322,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/fallback-wa9mn7Uc.js",
-          "gzip": 732,
+          "file": "assets/fallback-Cb0waflJ.js",
+          "gzip": 734,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/index-BaxjERCF.js",
-          "gzip": 1395,
+          "file": "assets/index-B7GsJoI7.js",
+          "gzip": 1394,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-GsKYeqRV.js",
-          "gzip": 632,
+          "file": "assets/inline-CXa_d1cP.js",
+          "gzip": 634,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/isobmff-DJ78gxid.js",
-          "gzip": 12233,
+          "file": "assets/isobmff-C8knUKqX.js",
+          "gzip": 12232,
           "worker": null,
           "class": "isobmff"
         },
         {
-          "file": "assets/matroska-DVjRuZKE.js",
+          "file": "assets/matroska-BaanAScM.js",
           "gzip": 11897,
           "worker": null,
           "class": "matroska"
@@ -392,8 +392,8 @@
           "class": "matroska"
         },
         {
-          "file": "assets/probe-BIjhNU2p.js",
-          "gzip": 3214,
+          "file": "assets/probe-d-uOs4M5.js",
+          "gzip": 3243,
           "worker": null,
           "class": "shared"
         },
@@ -404,19 +404,19 @@
           "class": "shared"
         },
         {
-          "file": "assets/rfps-CoBGtisd.js",
+          "file": "assets/rfps-DrpZ4vh_.js",
           "gzip": 3601,
           "worker": null,
           "class": "rfps"
         },
         {
-          "file": "assets/runtime-jnIHdKlh.js",
-          "gzip": 2557,
+          "file": "assets/runtime-QEoinoaM.js",
+          "gzip": 2558,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/segments-C-rkEgvp.js",
+          "file": "assets/segments-BZCbbHMM.js",
           "gzip": 1844,
           "worker": null,
           "class": "segments"
@@ -428,7 +428,7 @@
           "class": "shared"
         },
         {
-          "file": "assets/stats-CAawVmHc.js",
+          "file": "assets/stats-BrPphDqN.js",
           "gzip": 4336,
           "worker": null,
           "class": "stats"
@@ -446,8 +446,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 1000,
-          "gzip": 667,
-          "headroom": 333,
+          "gzip": 665,
+          "headroom": 335,
           "status": "ok",
           "why": "As in the default configuration: the worker option does not change the entry chunk. Measured 0.67 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 0.66 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -455,8 +455,8 @@
           "key": "entry",
           "label": "entry chunk with the preload helper",
           "limit": 1500,
-          "gzip": 1395,
-          "headroom": 105,
+          "gzip": 1394,
+          "headroom": 106,
           "status": "ok",
           "why": "As in the default configuration: the worker option does not change the entry chunk. Measured 1.40 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 1.39 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -482,8 +482,8 @@
           "key": "firstMp4",
           "label": "first MP4 analysis, lazy total",
           "limit": 25000,
-          "gzip": 24407,
-          "headroom": 593,
+          "gzip": 24436,
+          "headroom": 564,
           "status": "ok",
           "why": "What the first MP4 loads in a Vite 8 app that keeps the default worker format: the probe client and the one-file ISO BMFF worker of own. User-facing promise of 0.3.0, accepted by the owner in the 0.3.0 design: the zero-config first MP4 loads at most 25 KB. It was 38.92 KB in 0.2.0, with one worker file holding both parsers. Design estimate 24.4 to 25.1 KB; measured 24.41 KB. Measured plus 3 percent would be 25.5 KB, so the promise stays the limit."
         },
@@ -491,8 +491,8 @@
           "key": "firstMkv",
           "label": "first MKV or WebM analysis without DefaultDuration, lazy total",
           "limit": 28000,
-          "gzip": 27101,
-          "headroom": 899,
+          "gzip": 27130,
+          "headroom": 870,
           "status": "ok",
           "why": "What the first MKV or WebM file loads in a Vite 8 app that keeps the default worker format: the probe client and the one-file Matroska worker of own, which inlines the ffprobe frame rate estimate and the rate profile core. Design estimate 27.6 KB; 0.2.0 loaded 38.92 KB; measured 27.10 KB. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
         },
@@ -500,8 +500,8 @@
           "key": "allOwn",
           "label": "all own paths, lazy total",
           "limit": 50000,
-          "gzip": 48294,
-          "headroom": 1706,
+          "gzip": 48323,
+          "headroom": 1677,
           "status": "ok",
           "why": "Both one-file own workers and the probe client, what a session that analyzes both container families loads. Measured 48.29 KB. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
         },
@@ -509,8 +509,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 92000,
-          "gzip": 88820,
-          "headroom": 3180,
+          "gzip": 88851,
+          "headroom": 3149,
           "status": "ok",
           "why": "As in the default configuration, with the two one-file own workers instead of the worker entries and their chunks. Measured 70.75 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 78 KB to 79 KB in 0.2.0, measured 78.66 KB, for the H.264 slice header check of the ffprobe frame rate estimate, in the worker and in the main-thread copy. Raised again to 79.5 KB, measured 79.06 KB, when the estimate began to ride the block walk of the exact scan. Measured 79.44 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass. Raised from 82 KB to 92 KB in 0.3.0, measured 88.82 KB, for the second one-file own worker. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
         }
@@ -529,19 +529,19 @@
         "own"
       ],
       "metrics": {
-        "entry": 1463,
-        "trigger": 676,
+        "entry": 1460,
+        "trigger": 670,
         "react": null,
         "check": null,
         "presets": null,
-        "client": 3085,
+        "client": 3112,
         "isobmff": 12205,
         "matroska": 11717,
         "segments": 1846,
         "rfps": 3602,
-        "firstMp4": 23788,
-        "firstMkv": 26902,
-        "allOwn": 40953,
+        "firstMp4": 23815,
+        "firstMkv": 26929,
+        "allOwn": 40980,
         "mp4box": null,
         "mediabunny": null,
         "engineShared": null,
@@ -549,7 +549,7 @@
         "pageEngineShared": null,
         "summary": null,
         "firstMp4Summary": null,
-        "lazyTotal": 81492
+        "lazyTotal": 81512
       },
       "workers": [
         {
@@ -561,14 +561,14 @@
       ],
       "files": [
         {
-          "file": "assets/compare-CWY1BDL1.js",
-          "gzip": 1329,
+          "file": "assets/compare-DtFOFSRi.js",
+          "gzip": 1328,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/fallback-D1I4f1Bv.js",
-          "gzip": 732,
+          "file": "assets/fallback-CR0yLHa1.js",
+          "gzip": 731,
           "worker": null,
           "class": "shared"
         },
@@ -579,27 +579,27 @@
           "class": "shared"
         },
         {
-          "file": "assets/index-D4wTFvlG.js",
-          "gzip": 1463,
+          "file": "assets/index-iddSkXjO.js",
+          "gzip": 1460,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-Bu1XKszb.js",
+          "file": "assets/inline-jyQaepNK.js",
           "gzip": 633,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/isobmff-CHkx8NDu.js",
-          "gzip": 12235,
-          "worker": null,
-          "class": "isobmff"
-        },
-        {
           "file": "assets/isobmff-DokYUHBp.js",
           "gzip": 12205,
           "worker": "fps.worker",
+          "class": "isobmff"
+        },
+        {
+          "file": "assets/isobmff-TnNjNIOc.js",
+          "gzip": 12233,
+          "worker": null,
           "class": "isobmff"
         },
         {
@@ -609,14 +609,14 @@
           "class": "matroska"
         },
         {
-          "file": "assets/matroska-Dx3CBvoX.js",
-          "gzip": 11899,
+          "file": "assets/matroska-DAq5AMUX.js",
+          "gzip": 11898,
           "worker": null,
           "class": "matroska"
         },
         {
-          "file": "assets/probe-D6XAGKGF.js",
-          "gzip": 3085,
+          "file": "assets/probe-COIByIZL.js",
+          "gzip": 3112,
           "worker": null,
           "class": "shared"
         },
@@ -633,27 +633,27 @@
           "class": "rfps"
         },
         {
-          "file": "assets/rfps-iTb9h4Af.js",
+          "file": "assets/rfps-DvH2E1DB.js",
           "gzip": 3601,
           "worker": null,
           "class": "rfps"
         },
         {
-          "file": "assets/runtime-qohLQRKE.js",
-          "gzip": 2559,
+          "file": "assets/runtime-OIN21p7K.js",
+          "gzip": 2558,
           "worker": null,
           "class": "shared"
+        },
+        {
+          "file": "assets/segments-CD0N2Lal.js",
+          "gzip": 1844,
+          "worker": null,
+          "class": "segments"
         },
         {
           "file": "assets/segments-D64OkLZC.js",
           "gzip": 1846,
           "worker": "fps.worker",
-          "class": "segments"
-        },
-        {
-          "file": "assets/segments-DF12mv3I.js",
-          "gzip": 1844,
-          "worker": null,
           "class": "segments"
         },
         {
@@ -663,8 +663,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/stats-CCj1zO7-.js",
-          "gzip": 4337,
+          "file": "assets/stats-D7MfUTbr.js",
+          "gzip": 4336,
           "worker": null,
           "class": "stats"
         },
@@ -688,8 +688,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 1000,
-          "gzip": 676,
-          "headroom": 324,
+          "gzip": 670,
+          "headroom": 330,
           "status": "ok",
           "why": "The lazyProbeClient stub in the host entry chunk. The host's worker literal is host code and is not counted. Design estimate 1.0 KB; measured 0.68 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 0.67 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -697,8 +697,8 @@
           "key": "entry",
           "label": "entry chunk with the preload helper",
           "limit": 2000,
-          "gzip": 1463,
-          "headroom": 537,
+          "gzip": 1460,
+          "headroom": 540,
           "status": "ok",
           "why": "The lazyProbeClient stub, Vite's preload helper and the host's worker literal. Measured 1.47 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 1.46 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -706,8 +706,8 @@
           "key": "client",
           "label": "probe client (lazy)",
           "limit": 3500,
-          "gzip": 3085,
-          "headroom": 415,
+          "gzip": 3112,
+          "headroom": 388,
           "status": "ok",
           "why": "The probe client fetched on the first file, without the own descriptor and its worker literal, which the host replaces with its own worker. Measured 2.56 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 2.80 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass. Raised from 3 KB to 3.5 KB in 0.3.0, measured 3.08 KB, for the routes split by container family, which this flavor builds in although a custom worker without them does not use them. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
         },
@@ -724,8 +724,8 @@
           "key": "firstMp4",
           "label": "first MP4 analysis, lazy total",
           "limit": 24500,
-          "gzip": 23788,
-          "headroom": 712,
+          "gzip": 23815,
+          "headroom": 685,
           "status": "ok",
           "why": "A host worker that serves own holds the same code as the prebuilt own worker, so its first MP4 loads what the first MP4 of the default configuration loads, whose row keeps the 24 KB promise as its limit. Measured 23.15 KB. Measured 23.49 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -733,8 +733,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 84000,
-          "gzip": 81492,
-          "headroom": 2508,
+          "gzip": 81512,
+          "headroom": 2488,
           "status": "ok",
           "why": "As in the default configuration, with the host worker instead of the prebuilt own worker. In the client flavor the main-thread copies are there for worker: 'inline' and for environments without a Worker global, where own runs in the calling thread; a browser with a Worker global never fetches them otherwise. Measured 72.11 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 79.5 KB to 80.5 KB in 0.2.0, measured 80.33 KB, for the H.264 slice header check of the ffprobe frame rate estimate, in the host worker and in the main-thread copy. Raised again to 81 KB, measured 80.79 KB, when the estimate began to ride the block walk of the exact scan. Measured 81.18 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         }
@@ -754,19 +754,19 @@
         "mp4box"
       ],
       "metrics": {
-        "entry": 1740,
-        "trigger": 889,
+        "entry": 1739,
+        "trigger": 887,
         "react": null,
         "check": null,
         "presets": null,
-        "client": 3249,
+        "client": 3279,
         "isobmff": 12004,
         "matroska": 11347,
         "segments": 1810,
         "rfps": 3617,
-        "firstMp4": 22693,
-        "firstMkv": 25595,
-        "allOwn": 48660,
+        "firstMp4": 22723,
+        "firstMkv": 25625,
+        "allOwn": 48690,
         "mp4box": 44856,
         "mediabunny": null,
         "engineShared": null,
@@ -774,7 +774,7 @@
         "pageEngineShared": null,
         "summary": null,
         "firstMp4Summary": null,
-        "lazyTotal": 217330
+        "lazyTotal": 217359
       },
       "workers": [
         {
@@ -798,26 +798,26 @@
       ],
       "files": [
         {
-          "file": "assets/compare-CNa0dYLk.js",
-          "gzip": 1325,
+          "file": "assets/compare-Cc41KS3t.js",
+          "gzip": 1324,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/fallback-Bjsyiypc.js",
-          "gzip": 734,
+          "file": "assets/fallback-jfNlgB5t.js",
+          "gzip": 735,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/index-CgORX6FH.js",
-          "gzip": 1740,
+          "file": "assets/index-Bi7I8s7K.js",
+          "gzip": 1739,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-DA3xkm2G.js",
-          "gzip": 636,
+          "file": "assets/inline-KuQWC4gv.js",
+          "gzip": 634,
           "worker": null,
           "class": "shared"
         },
@@ -828,14 +828,14 @@
           "class": "isobmff"
         },
         {
-          "file": "assets/isobmff-KhmbbPpv.js",
+          "file": "assets/isobmff-PHhAs0hQ.js",
           "gzip": 12223,
           "worker": null,
           "class": "isobmff"
         },
         {
-          "file": "assets/matroska-XNo7M97W.js",
-          "gzip": 11867,
+          "file": "assets/matroska-CLZx9jOl.js",
+          "gzip": 11868,
           "worker": null,
           "class": "matroska"
         },
@@ -852,7 +852,7 @@
           "class": "mp4box"
         },
         {
-          "file": "assets/mp4box-nmA6mcLN.js",
+          "file": "assets/mp4box-Cw5nw7op.js",
           "gzip": 44860,
           "worker": null,
           "class": "mp4box"
@@ -882,8 +882,8 @@
           "class": "matroska"
         },
         {
-          "file": "assets/probe-11zDkn6Z.js",
-          "gzip": 3249,
+          "file": "assets/probe-D5pcbTj2.js",
+          "gzip": 3279,
           "worker": null,
           "class": "shared"
         },
@@ -906,7 +906,7 @@
           "class": "rfps"
         },
         {
-          "file": "assets/rfps-k9T8bhfm.js",
+          "file": "assets/rfps-D5ofKgJX.js",
           "gzip": 3600,
           "worker": null,
           "class": "rfps"
@@ -918,7 +918,7 @@
           "class": "rfps"
         },
         {
-          "file": "assets/runtime-CozGk3JD.js",
+          "file": "assets/runtime-CQ4r62Qr.js",
           "gzip": 1136,
           "worker": null,
           "class": "shared"
@@ -936,15 +936,15 @@
           "class": "segments"
         },
         {
-          "file": "assets/segments-BvBsUQRm.js",
-          "gzip": 1844,
-          "worker": null,
-          "class": "segments"
-        },
-        {
           "file": "assets/segments-CDkszgA1.js",
           "gzip": 1844,
           "worker": "mp4box.worker",
+          "class": "segments"
+        },
+        {
+          "file": "assets/segments-CErQzg4D.js",
+          "gzip": 1844,
+          "worker": null,
           "class": "segments"
         },
         {
@@ -954,7 +954,7 @@
           "class": "shared"
         },
         {
-          "file": "assets/stats-BiGP-ns8.js",
+          "file": "assets/stats-Bd_jvtGx.js",
           "gzip": 4338,
           "worker": null,
           "class": "stats"
@@ -976,8 +976,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 1000,
-          "gzip": 889,
-          "headroom": 111,
+          "gzip": 887,
+          "headroom": 113,
           "status": "ok",
           "why": "The default trigger plus the mp4box descriptor and its worker literal. Design estimate the default plus 0.5 KB; measured 0.90 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 0.89 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -985,8 +985,8 @@
           "key": "entry",
           "label": "entry chunk with the preload helper",
           "limit": 2000,
-          "gzip": 1740,
-          "headroom": 260,
+          "gzip": 1739,
+          "headroom": 261,
           "status": "ok",
           "why": "The trigger of this configuration plus Vite's preload helper. Measured 1.75 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 1.74 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -1021,8 +1021,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 224000,
-          "gzip": 217330,
-          "headroom": 6670,
+          "gzip": 217359,
+          "headroom": 6641,
           "status": "ok",
           "why": "As in the default configuration plus the mp4box worker, which carries its own copies of the own parsers because it also serves own, and the main-thread copy of the mp4box engine, which runs in the calling thread only with worker: 'inline' or without a Worker global. Measured 195.93 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 209.47 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass. Raised from 216 KB to 224 KB in 0.3.0, measured 217.33 KB, for the second own worker. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
         }
@@ -1042,19 +1042,19 @@
         "mediabunny"
       ],
       "metrics": {
-        "entry": 1744,
-        "trigger": 895,
+        "entry": 1742,
+        "trigger": 893,
         "react": null,
         "check": null,
         "presets": null,
-        "client": 3244,
+        "client": 3276,
         "isobmff": 12004,
         "matroska": 11347,
         "segments": 1810,
         "rfps": 3617,
-        "firstMp4": 22688,
-        "firstMkv": 25590,
-        "allOwn": 48655,
+        "firstMp4": 22720,
+        "firstMkv": 25622,
+        "allOwn": 48687,
         "mp4box": null,
         "mediabunny": 53973,
         "engineShared": null,
@@ -1062,7 +1062,7 @@
         "pageEngineShared": null,
         "summary": null,
         "firstMp4Summary": null,
-        "lazyTotal": 234326
+        "lazyTotal": 234347
       },
       "workers": [
         {
@@ -1092,28 +1092,34 @@
           "class": "shared"
         },
         {
-          "file": "assets/compare-B_8QXXpx.js",
+          "file": "assets/compare-Zcz-R2Vx.js",
           "gzip": 1323,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/fallback-C0e_dV_v.js",
-          "gzip": 731,
+          "file": "assets/fallback-DDhkxQP6.js",
+          "gzip": 732,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/index-DoXbseTu.js",
-          "gzip": 1744,
+          "file": "assets/index-Cjiz-7eF.js",
+          "gzip": 1742,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-CIwbezuk.js",
-          "gzip": 632,
+          "file": "assets/inline-Duh0DHlg.js",
+          "gzip": 633,
           "worker": null,
           "class": "shared"
+        },
+        {
+          "file": "assets/isobmff-CJ1LqMTX.js",
+          "gzip": 12229,
+          "worker": null,
+          "class": "isobmff"
         },
         {
           "file": "assets/isobmff-DlPMol84.js",
@@ -1122,10 +1128,10 @@
           "class": "isobmff"
         },
         {
-          "file": "assets/isobmff-j8mjk2Ak.js",
-          "gzip": 12231,
+          "file": "assets/matroska-DlD3VOsm.js",
+          "gzip": 11868,
           "worker": null,
-          "class": "isobmff"
+          "class": "matroska"
         },
         {
           "file": "assets/matroska-ZC1FCPkk.js",
@@ -1134,21 +1140,15 @@
           "class": "matroska"
         },
         {
-          "file": "assets/matroska-t_b61-uc.js",
-          "gzip": 11869,
+          "file": "assets/mediabunny-ByHj2fLU.js",
+          "gzip": 53041,
           "worker": null,
-          "class": "matroska"
+          "class": "mediabunny"
         },
         {
           "file": "assets/mediabunny-Csr_sU14.js",
           "gzip": 53973,
           "worker": "mediabunny.worker",
-          "class": "mediabunny"
-        },
-        {
-          "file": "assets/mediabunny-RADHmmb1.js",
-          "gzip": 53044,
-          "worker": null,
           "class": "mediabunny"
         },
         {
@@ -1176,8 +1176,8 @@
           "class": "matroska"
         },
         {
-          "file": "assets/probe-DP_5iOcD.js",
-          "gzip": 3244,
+          "file": "assets/probe-Dsbgbd7f.js",
+          "gzip": 3276,
           "worker": null,
           "class": "shared"
         },
@@ -1194,8 +1194,8 @@
           "class": "rfps"
         },
         {
-          "file": "assets/rfps-DkTlPvrw.js",
-          "gzip": 3604,
+          "file": "assets/rfps-B5sKUBPk.js",
+          "gzip": 3600,
           "worker": null,
           "class": "rfps"
         },
@@ -1206,8 +1206,8 @@
           "class": "rfps"
         },
         {
-          "file": "assets/runtime-cxQp5FOQ.js",
-          "gzip": 2320,
+          "file": "assets/runtime-D6ChN_aQ.js",
+          "gzip": 2321,
           "worker": null,
           "class": "shared"
         },
@@ -1218,15 +1218,15 @@
           "class": "segments"
         },
         {
-          "file": "assets/segments-B27Fb_UG.js",
-          "gzip": 1846,
-          "worker": null,
-          "class": "segments"
-        },
-        {
           "file": "assets/segments-BQ14Bbtt.js",
           "gzip": 1845,
           "worker": "mediabunny.worker",
+          "class": "segments"
+        },
+        {
+          "file": "assets/segments-BSMoreYF.js",
+          "gzip": 1844,
+          "worker": null,
           "class": "segments"
         },
         {
@@ -1242,8 +1242,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/stats-BQGDoXLJ.js",
-          "gzip": 4341,
+          "file": "assets/stats-BtRuCtv8.js",
+          "gzip": 4339,
           "worker": null,
           "class": "stats"
         },
@@ -1264,8 +1264,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 1000,
-          "gzip": 895,
-          "headroom": 105,
+          "gzip": 893,
+          "headroom": 107,
           "status": "ok",
           "why": "The default trigger plus the mediabunny descriptor and its worker literal. Design estimate the default plus 0.5 KB; measured 0.90 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 0.89 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -1273,8 +1273,8 @@
           "key": "entry",
           "label": "entry chunk with the preload helper",
           "limit": 2000,
-          "gzip": 1744,
-          "headroom": 256,
+          "gzip": 1742,
+          "headroom": 258,
           "status": "ok",
           "why": "The trigger of this configuration plus Vite's preload helper. Measured 1.75 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 1.74 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -1309,8 +1309,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 241500,
-          "gzip": 234326,
-          "headroom": 7174,
+          "gzip": 234347,
+          "headroom": 7153,
           "status": "ok",
           "why": "As in the mp4box configuration, with the mediabunny worker and engine. Measured 212.89 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 226.44 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass. Raised from 233.5 KB to 241.5 KB in 0.3.0, measured 234.33 KB, for the second own worker. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
         }
@@ -1330,27 +1330,27 @@
         "rvfc"
       ],
       "metrics": {
-        "entry": 1582,
-        "trigger": 766,
+        "entry": 1581,
+        "trigger": 763,
         "react": null,
         "check": null,
         "presets": null,
-        "client": 3232,
+        "client": 3263,
         "isobmff": 12004,
         "matroska": 11347,
         "segments": 1810,
         "rfps": 3617,
-        "firstMp4": 22676,
-        "firstMkv": 25578,
-        "allOwn": 48643,
+        "firstMp4": 22707,
+        "firstMkv": 25609,
+        "allOwn": 48674,
         "mp4box": null,
         "mediabunny": null,
         "engineShared": null,
-        "rvfc": 2193,
+        "rvfc": 2191,
         "pageEngineShared": null,
         "summary": null,
         "firstMp4Summary": null,
-        "lazyTotal": 91479
+        "lazyTotal": 91504
       },
       "workers": [
         {
@@ -1374,38 +1374,38 @@
           "class": "shared"
         },
         {
-          "file": "assets/compare-Ds7SJq0b.js",
-          "gzip": 1326,
+          "file": "assets/compare-BVmnXRC1.js",
+          "gzip": 1323,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/fallback-B7Syp2bC.js",
-          "gzip": 734,
+          "file": "assets/fallback-CS_z1i3A.js",
+          "gzip": 732,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/index-DT_qSRRN.js",
-          "gzip": 1582,
+          "file": "assets/index-lNJdek-e.js",
+          "gzip": 1581,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-CiwKKIzm.js",
-          "gzip": 633,
+          "file": "assets/inline-D8ITfiZh.js",
+          "gzip": 631,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/isobmff-Cyse8-fX.js",
-          "gzip": 12233,
+          "file": "assets/isobmff-B-oRDQD2.js",
+          "gzip": 12235,
           "worker": null,
           "class": "isobmff"
         },
         {
-          "file": "assets/matroska-CyAv6mCC.js",
-          "gzip": 11914,
+          "file": "assets/matroska-C5fVIc1P.js",
+          "gzip": 11915,
           "worker": null,
           "class": "matroska"
         },
@@ -1422,8 +1422,8 @@
           "class": "matroska"
         },
         {
-          "file": "assets/probe-CIBhikYq.js",
-          "gzip": 3232,
+          "file": "assets/probe-c5tqH3Kq.js",
+          "gzip": 3263,
           "worker": null,
           "class": "shared"
         },
@@ -1434,8 +1434,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/rfps-CzuzGNna.js",
-          "gzip": 3603,
+          "file": "assets/rfps-BO_KmGWh.js",
+          "gzip": 3602,
           "worker": null,
           "class": "rfps"
         },
@@ -1446,22 +1446,16 @@
           "class": "rfps"
         },
         {
-          "file": "assets/runtime-7ciqXt1Y.js",
+          "file": "assets/runtime-D-J9RKDK.js",
           "gzip": 2543,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/rvfc-B1sRHLBF.js",
-          "gzip": 2193,
+          "file": "assets/rvfc-dsdlcex5.js",
+          "gzip": 2191,
           "worker": null,
           "class": "rvfc"
-        },
-        {
-          "file": "assets/segments-0y8faKif.js",
-          "gzip": 1844,
-          "worker": null,
-          "class": "segments"
         },
         {
           "file": "assets/segments-4ayXa2jL.js",
@@ -1476,14 +1470,20 @@
           "class": "segments"
         },
         {
+          "file": "assets/segments-uRAlBeXW.js",
+          "gzip": 1844,
+          "worker": null,
+          "class": "segments"
+        },
+        {
           "file": "assets/sniff-DecauIFI.js",
           "gzip": 989,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/stats-1Wpl6JpU.js",
-          "gzip": 4334,
+          "file": "assets/stats-D2Yj1Auq.js",
+          "gzip": 4335,
           "worker": null,
           "class": "stats"
         }
@@ -1499,8 +1499,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 1000,
-          "gzip": 766,
-          "headroom": 234,
+          "gzip": 763,
+          "headroom": 237,
           "status": "ok",
           "why": "The default trigger plus the rvfc descriptor, which has no worker literal. Measured 0.77 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 0.77 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -1508,8 +1508,8 @@
           "key": "entry",
           "label": "entry chunk with the preload helper",
           "limit": 2000,
-          "gzip": 1582,
-          "headroom": 418,
+          "gzip": 1581,
+          "headroom": 419,
           "status": "ok",
           "why": "The trigger of this configuration plus Vite's preload helper. Measured 1.59 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 1.58 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -1517,8 +1517,8 @@
           "key": "rvfc",
           "label": "rVFC engine (main thread)",
           "limit": 2500,
-          "gzip": 2193,
-          "headroom": 307,
+          "gzip": 2191,
+          "headroom": 309,
           "status": "ok",
           "why": "The requestVideoFrameCallback engine, a main-thread chunk loaded on its first run. Design estimate 2.5 KB; measured 2.19 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 2.19 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -1526,8 +1526,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 94500,
-          "gzip": 91479,
-          "headroom": 3021,
+          "gzip": 91504,
+          "headroom": 2996,
           "status": "ok",
           "why": "As in the default configuration plus the main-thread rVFC engine. Measured 74.52 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 82 KB to 83 KB in 0.2.0, measured 82.76 KB, for the H.264 slice header check of the ffprobe frame rate estimate, in the worker and in the main-thread copy. Raised again to 83.5 KB, measured 83.21 KB, when the estimate began to ride the block walk of the exact scan. Measured 83.60 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass. Raised from 86.5 KB to 94.5 KB in 0.3.0, measured 91.48 KB, for the second own worker. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
         }
@@ -1551,27 +1551,27 @@
         "rvfc"
       ],
       "metrics": {
-        "entry": 1909,
-        "trigger": 1010,
+        "entry": 1912,
+        "trigger": 1013,
         "react": null,
         "check": null,
         "presets": null,
-        "client": 3261,
+        "client": 3290,
         "isobmff": 12004,
         "matroska": 11347,
         "segments": 1810,
         "rfps": 3617,
-        "firstMp4": 22705,
-        "firstMkv": 25607,
-        "allOwn": 48672,
+        "firstMp4": 22734,
+        "firstMkv": 25636,
+        "allOwn": 48701,
         "mp4box": 44856,
         "mediabunny": 53973,
         "engineShared": null,
-        "rvfc": 2192,
-        "pageEngineShared": 1508,
+        "rvfc": 2190,
+        "pageEngineShared": 1509,
         "summary": null,
         "firstMp4Summary": null,
-        "lazyTotal": 364059
+        "lazyTotal": 364071
       },
       "workers": [
         {
@@ -1607,32 +1607,32 @@
           "class": "shared"
         },
         {
-          "file": "assets/compare-CInyMKUB.js",
-          "gzip": 1326,
+          "file": "assets/compare-BUV6M_4k.js",
+          "gzip": 1319,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/counting-Bl6Cks_0.js",
-          "gzip": 1508,
+          "file": "assets/counting-DlC4enAQ.js",
+          "gzip": 1509,
           "worker": null,
           "class": "engineShared"
         },
         {
-          "file": "assets/fallback-CUGnUlXG.js",
-          "gzip": 733,
+          "file": "assets/fallback-DNlmaGm6.js",
+          "gzip": 729,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/index-Bxh06Qlj.js",
-          "gzip": 1909,
+          "file": "assets/index-BaUmnlsp.js",
+          "gzip": 1912,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-C9tEe1P_.js",
-          "gzip": 634,
+          "file": "assets/inline-Ca1LYsJ5.js",
+          "gzip": 631,
           "worker": null,
           "class": "shared"
         },
@@ -1643,8 +1643,8 @@
           "class": "isobmff"
         },
         {
-          "file": "assets/isobmff-DAaZqPd7.js",
-          "gzip": 12217,
+          "file": "assets/isobmff-DREf05SX.js",
+          "gzip": 12218,
           "worker": null,
           "class": "isobmff"
         },
@@ -1655,15 +1655,15 @@
           "class": "isobmff"
         },
         {
-          "file": "assets/matroska-CagiVhH2.js",
-          "gzip": 11868,
-          "worker": null,
-          "class": "matroska"
-        },
-        {
           "file": "assets/matroska-ZC1FCPkk.js",
           "gzip": 11722,
           "worker": "mediabunny.worker",
+          "class": "matroska"
+        },
+        {
+          "file": "assets/matroska-o21XKf_t.js",
+          "gzip": 11868,
+          "worker": null,
           "class": "matroska"
         },
         {
@@ -1673,7 +1673,7 @@
           "class": "matroska"
         },
         {
-          "file": "assets/mediabunny-Ck7utbIP.js",
+          "file": "assets/mediabunny-CH8vzjKS.js",
           "gzip": 52055,
           "worker": null,
           "class": "mediabunny"
@@ -1691,7 +1691,7 @@
           "class": "shared"
         },
         {
-          "file": "assets/mp4box-Bt4PEqHC.js",
+          "file": "assets/mp4box-C93_W7BD.js",
           "gzip": 43829,
           "worker": null,
           "class": "mp4box"
@@ -1727,8 +1727,8 @@
           "class": "matroska"
         },
         {
-          "file": "assets/probe-DY_0OqmC.js",
-          "gzip": 3261,
+          "file": "assets/probe-etxggfU1.js",
+          "gzip": 3290,
           "worker": null,
           "class": "shared"
         },
@@ -1757,8 +1757,8 @@
           "class": "rfps"
         },
         {
-          "file": "assets/rfps-D2vhcswW.js",
-          "gzip": 3602,
+          "file": "assets/rfps-DwFOgUDi.js",
+          "gzip": 3603,
           "worker": null,
           "class": "rfps"
         },
@@ -1769,14 +1769,14 @@
           "class": "rfps"
         },
         {
-          "file": "assets/runtime-Wjojse50.js",
-          "gzip": 1149,
+          "file": "assets/runtime-SHtOhY7Y.js",
+          "gzip": 1147,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/rvfc-yCyz7J8w.js",
-          "gzip": 2192,
+          "file": "assets/rvfc-D9dURAKU.js",
+          "gzip": 2190,
           "worker": null,
           "class": "rvfc"
         },
@@ -1793,12 +1793,6 @@
           "class": "segments"
         },
         {
-          "file": "assets/segments-BQRJ3vic.js",
-          "gzip": 1844,
-          "worker": null,
-          "class": "segments"
-        },
-        {
           "file": "assets/segments-BW3YIXHy.js",
           "gzip": 1810,
           "worker": "own-isobmff.worker",
@@ -1811,16 +1805,16 @@
           "class": "segments"
         },
         {
+          "file": "assets/segments-wwXh0edi.js",
+          "gzip": 1845,
+          "worker": null,
+          "class": "segments"
+        },
+        {
           "file": "assets/sniff-DecauIFI.js",
           "gzip": 989,
           "worker": null,
           "class": "shared"
-        },
-        {
-          "file": "assets/stats-Nv1YeT7a.js",
-          "gzip": 4341,
-          "worker": null,
-          "class": "stats"
         },
         {
           "file": "assets/stats-Uj8yVrpC.js",
@@ -1833,6 +1827,12 @@
           "gzip": 4314,
           "worker": "mediabunny.worker",
           "class": "stats"
+        },
+        {
+          "file": "assets/stats-_lJX0BJ3.js",
+          "gzip": 4338,
+          "worker": null,
+          "class": "stats"
         }
       ],
       "mustNot": [],
@@ -1843,8 +1843,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 1500,
-          "gzip": 1010,
-          "headroom": 490,
+          "gzip": 1013,
+          "headroom": 487,
           "status": "ok",
           "why": "The default trigger plus the mp4box, mediabunny and rvfc descriptors. Measured 1.02 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 1.01 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -1852,8 +1852,8 @@
           "key": "entry",
           "label": "entry chunk with the preload helper",
           "limit": 2000,
-          "gzip": 1909,
-          "headroom": 91,
+          "gzip": 1912,
+          "headroom": 88,
           "status": "ok",
           "why": "The trigger of this configuration plus Vite's preload helper. Measured 1.92 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 1.91 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -1861,8 +1861,8 @@
           "key": "client",
           "label": "probe client (lazy)",
           "limit": 3500,
-          "gzip": 3261,
-          "headroom": 239,
+          "gzip": 3290,
+          "headroom": 210,
           "status": "ok",
           "why": "As in the default configuration. Measured 2.71 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 2.95 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -1924,8 +1924,8 @@
           "key": "rvfc",
           "label": "rVFC engine (main thread)",
           "limit": 2500,
-          "gzip": 2192,
-          "headroom": 308,
+          "gzip": 2190,
+          "headroom": 310,
           "status": "ok",
           "why": "As in the rvfc configuration. Measured 2.19 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 2.19 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -1969,8 +1969,8 @@
           "key": "firstMp4",
           "label": "first MP4 analysis, lazy total",
           "limit": 24500,
-          "gzip": 22705,
-          "headroom": 1795,
+          "gzip": 22734,
+          "headroom": 1766,
           "status": "ok",
           "why": "Registering engines must not change what the first own analysis loads; the default configuration row keeps the 24 KB promise as its limit. Measured 23.31 KB. Measured 23.65 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -1978,8 +1978,8 @@
           "key": "allOwn",
           "label": "all own paths, lazy total",
           "limit": 50500,
-          "gzip": 48672,
-          "headroom": 1828,
+          "gzip": 48701,
+          "headroom": 1799,
           "status": "ok",
           "why": "As in the default configuration. Measured 36.29 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 40 KB to 40.5 KB in 0.2.0, measured 40.38 KB, as in the default configuration. Raised again to 41 KB, measured 40.62 KB, as in the default configuration. Measured 40.81 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass. Raised from 42.5 KB to 50.5 KB in 0.3.0, measured 48.67 KB, as in the default configuration. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
         },
@@ -1996,8 +1996,8 @@
           "key": "pageEngineShared",
           "label": "shared engine chunk (main thread, inline mode)",
           "limit": 2000,
-          "gzip": 1508,
-          "headroom": 492,
+          "gzip": 1509,
+          "headroom": 491,
           "status": "ok",
           "why": "The counting code mp4box and mediabunny share, which becomes a main-thread chunk of its own when both are registered. It loads only when an engine runs in this thread (worker: 'inline', SSR, no Worker global). Measured 1.51 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 1.51 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -2005,8 +2005,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 367000,
-          "gzip": 364059,
-          "headroom": 2941,
+          "gzip": 364071,
+          "headroom": 2929,
           "status": "ok",
           "why": "Every worker with its own copies of the own parsers, the main-thread copies of every engine and the shared engine chunk, which run in the calling thread only with worker: 'inline' or without a Worker global (rVFC always runs there). Measured 338.19 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 356.18 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         }
@@ -2030,14 +2030,14 @@
         "react": null,
         "check": null,
         "presets": null,
-        "client": 3089,
+        "client": 3111,
         "isobmff": null,
         "matroska": null,
         "segments": null,
         "rfps": null,
-        "firstMp4": 39043,
-        "firstMkv": 39043,
-        "allOwn": 39043,
+        "firstMp4": 39065,
+        "firstMkv": 39065,
+        "allOwn": 39065,
         "mp4box": null,
         "mediabunny": null,
         "engineShared": null,
@@ -2045,7 +2045,7 @@
         "pageEngineShared": null,
         "summary": null,
         "firstMp4Summary": null,
-        "lazyTotal": 79583
+        "lazyTotal": 79604
       },
       "workers": [
         {
@@ -2057,37 +2057,37 @@
       ],
       "files": [
         {
-          "file": "assets/compare-CSDS3SHW.js",
-          "gzip": 1329,
+          "file": "assets/compare-DP0no6Jc.js",
+          "gzip": 1327,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/fallback-B8SXR6bX.js",
+          "file": "assets/fallback-hcHseR6h.js",
           "gzip": 734,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/index-DFLAXpYp.js",
+          "file": "assets/index-DXPDMh7N.js",
           "gzip": 1454,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-97Z4P7IL.js",
-          "gzip": 634,
+          "file": "assets/inline-z5jSoalz.js",
+          "gzip": 635,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/isobmff-CJ6rsqfj.js",
+          "file": "assets/isobmff-DMlYdY7O.js",
           "gzip": 12233,
           "worker": null,
           "class": "isobmff"
         },
         {
-          "file": "assets/matroska-D9u5RJDL.js",
+          "file": "assets/matroska-Dd-ghI9R.js",
           "gzip": 11900,
           "worker": null,
           "class": "matroska"
@@ -2099,8 +2099,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/probe-BE62MsqX.js",
-          "gzip": 3089,
+          "file": "assets/probe-DZjs7DjH.js",
+          "gzip": 3111,
           "worker": null,
           "class": "shared"
         },
@@ -2111,19 +2111,19 @@
           "class": "shared"
         },
         {
-          "file": "assets/rfps-D9w1EBBL.js",
+          "file": "assets/rfps-IyX0iogk.js",
           "gzip": 3601,
           "worker": null,
           "class": "rfps"
         },
         {
-          "file": "assets/runtime-DLpzdL-9.js",
-          "gzip": 2559,
+          "file": "assets/runtime-CzMXQ1R-.js",
+          "gzip": 2558,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/segments-CwZQSgPf.js",
+          "file": "assets/segments-CSVpd2rv.js",
           "gzip": 1844,
           "worker": null,
           "class": "segments"
@@ -2135,8 +2135,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/stats-BrJhHAeh.js",
-          "gzip": 4336,
+          "file": "assets/stats-BH0hTMm-.js",
+          "gzip": 4337,
           "worker": null,
           "class": "stats"
         }
@@ -2172,8 +2172,8 @@
           "key": "client",
           "label": "probe client (lazy)",
           "limit": 3500,
-          "gzip": 3089,
-          "headroom": 411,
+          "gzip": 3111,
+          "headroom": 389,
           "status": "ok",
           "why": "As in the custom configuration. Measured 2.56 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 2.79 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass. Raised from 3 KB to 3.5 KB in 0.3.0, measured 3.09 KB, as in the custom configuration. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
         },
@@ -2190,8 +2190,8 @@
           "key": "firstMp4",
           "label": "first MP4 analysis, lazy total",
           "limit": 40000,
-          "gzip": 39043,
-          "headroom": 957,
+          "gzip": 39065,
+          "headroom": 935,
           "status": "ok",
           "why": "What the first MP4 loads with the standalone worker: the probe client and the one-file worker. It suits a host whose workers must stay classic scripts. Measured 34.60 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 38.5 KB to 39 KB in 0.2.0, measured 38.56 KB, because the standalone file inlines the ffprobe frame rate estimate, which began to read the H.264 slice headers and to ride the block walk of the exact scan (0.81 KB gzip together). Measured 38.74 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -2199,8 +2199,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 82000,
-          "gzip": 79583,
-          "headroom": 2417,
+          "gzip": 79604,
+          "headroom": 2396,
           "status": "ok",
           "why": "As in the custom configuration, with the standalone file as the worker. Measured 70.56 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 78 KB to 79 KB in 0.2.0, measured 78.48 KB, for the H.264 slice header check of the ffprobe frame rate estimate, in the standalone file and in the main-thread copy. Measured 79.26 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         }
@@ -2218,19 +2218,19 @@
         "own"
       ],
       "metrics": {
-        "entry": 1395,
-        "trigger": 667,
+        "entry": 1394,
+        "trigger": 665,
         "react": null,
         "check": null,
         "presets": null,
-        "client": 3214,
+        "client": 3243,
         "isobmff": 12013,
         "matroska": 11370,
         "segments": 1728,
         "rfps": 3524,
-        "firstMp4": 24407,
-        "firstMkv": 27101,
-        "allOwn": 48294,
+        "firstMp4": 24436,
+        "firstMkv": 27130,
+        "allOwn": 48323,
         "mp4box": null,
         "mediabunny": null,
         "engineShared": null,
@@ -2238,7 +2238,7 @@
         "pageEngineShared": null,
         "summary": null,
         "firstMp4Summary": null,
-        "lazyTotal": 88820
+        "lazyTotal": 88851
       },
       "workers": [
         {
@@ -2256,37 +2256,37 @@
       ],
       "files": [
         {
-          "file": "assets/compare-DWpOhIys.js",
-          "gzip": 1324,
+          "file": "assets/compare-CT95HIa7.js",
+          "gzip": 1322,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/fallback-wa9mn7Uc.js",
-          "gzip": 732,
+          "file": "assets/fallback-Cb0waflJ.js",
+          "gzip": 734,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/index-BaxjERCF.js",
-          "gzip": 1395,
+          "file": "assets/index-B7GsJoI7.js",
+          "gzip": 1394,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-GsKYeqRV.js",
-          "gzip": 632,
+          "file": "assets/inline-CXa_d1cP.js",
+          "gzip": 634,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/isobmff-DJ78gxid.js",
-          "gzip": 12233,
+          "file": "assets/isobmff-C8knUKqX.js",
+          "gzip": 12232,
           "worker": null,
           "class": "isobmff"
         },
         {
-          "file": "assets/matroska-DVjRuZKE.js",
+          "file": "assets/matroska-BaanAScM.js",
           "gzip": 11897,
           "worker": null,
           "class": "matroska"
@@ -2304,8 +2304,8 @@
           "class": "matroska"
         },
         {
-          "file": "assets/probe-BIjhNU2p.js",
-          "gzip": 3214,
+          "file": "assets/probe-d-uOs4M5.js",
+          "gzip": 3243,
           "worker": null,
           "class": "shared"
         },
@@ -2316,19 +2316,19 @@
           "class": "shared"
         },
         {
-          "file": "assets/rfps-CoBGtisd.js",
+          "file": "assets/rfps-DrpZ4vh_.js",
           "gzip": 3601,
           "worker": null,
           "class": "rfps"
         },
         {
-          "file": "assets/runtime-jnIHdKlh.js",
-          "gzip": 2557,
+          "file": "assets/runtime-QEoinoaM.js",
+          "gzip": 2558,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/segments-C-rkEgvp.js",
+          "file": "assets/segments-BZCbbHMM.js",
           "gzip": 1844,
           "worker": null,
           "class": "segments"
@@ -2340,7 +2340,7 @@
           "class": "shared"
         },
         {
-          "file": "assets/stats-CAawVmHc.js",
+          "file": "assets/stats-BrPphDqN.js",
           "gzip": 4336,
           "worker": null,
           "class": "stats"
@@ -2357,8 +2357,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 1000,
-          "gzip": 667,
-          "headroom": 333,
+          "gzip": 665,
+          "headroom": 335,
           "status": "ok",
           "why": "As in the default configuration. Measured 0.67 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 0.66 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -2366,8 +2366,8 @@
           "key": "entry",
           "label": "entry chunk with the preload helper",
           "limit": 1500,
-          "gzip": 1395,
-          "headroom": 105,
+          "gzip": 1394,
+          "headroom": 106,
           "status": "ok",
           "why": "As in the default configuration. Measured 1.40 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 1.39 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -2393,8 +2393,8 @@
           "key": "firstMp4",
           "label": "first MP4 analysis, lazy total",
           "limit": 25000,
-          "gzip": 24407,
-          "headroom": 593,
+          "gzip": 24436,
+          "headroom": 564,
           "status": "ok",
           "why": "As in the zero-config configuration, whose row holds the 25 KB promise of 0.3.0. Measured 24.41 KB."
         },
@@ -2402,8 +2402,8 @@
           "key": "firstMkv",
           "label": "first MKV or WebM analysis without DefaultDuration, lazy total",
           "limit": 28000,
-          "gzip": 27101,
-          "headroom": 899,
+          "gzip": 27130,
+          "headroom": 870,
           "status": "ok",
           "why": "As in the zero-config configuration. Measured 27.10 KB. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
         },
@@ -2411,8 +2411,8 @@
           "key": "allOwn",
           "label": "all own paths, lazy total",
           "limit": 50000,
-          "gzip": 48294,
-          "headroom": 1706,
+          "gzip": 48323,
+          "headroom": 1677,
           "status": "ok",
           "why": "As in the zero-config configuration. Measured 48.29 KB. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
         },
@@ -2420,8 +2420,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 92000,
-          "gzip": 88820,
-          "headroom": 3180,
+          "gzip": 88851,
+          "headroom": 3149,
           "status": "ok",
           "why": "As in the zero-config configuration. Measured 70.75 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 78 KB to 79 KB in 0.2.0, measured 78.66 KB, as in the zero-config configuration. Raised again to 79.5 KB, measured 79.06 KB, as in the zero-config configuration. Measured 79.44 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass. Raised from 82 KB to 92 KB in 0.3.0, measured 88.82 KB, as in the zero-config configuration. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
         }
@@ -2440,27 +2440,27 @@
         "own"
       ],
       "metrics": {
-        "entry": 69849,
-        "trigger": 1638,
+        "entry": 69853,
+        "trigger": 1639,
         "react": 1181,
         "check": null,
         "presets": null,
-        "client": 3215,
+        "client": 3246,
         "isobmff": 12004,
         "matroska": 11347,
         "segments": 1810,
         "rfps": 3617,
-        "firstMp4": 22659,
-        "firstMkv": 25561,
-        "allOwn": 48626,
+        "firstMp4": 22690,
+        "firstMkv": 25592,
+        "allOwn": 48657,
         "mp4box": null,
         "mediabunny": null,
         "engineShared": null,
         "rvfc": null,
         "pageEngineShared": null,
         "summary": 430,
-        "firstMp4Summary": 23089,
-        "lazyTotal": 89587
+        "firstMp4Summary": 23120,
+        "lazyTotal": 89619
       },
       "workers": [
         {
@@ -2478,38 +2478,38 @@
       ],
       "files": [
         {
-          "file": "assets/compare-BL7aUorW.js",
-          "gzip": 1324,
+          "file": "assets/compare-CV5S7tpK.js",
+          "gzip": 1326,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/fallback-B8z-mZeU.js",
-          "gzip": 734,
+          "file": "assets/fallback-Dz4ZAm4a.js",
+          "gzip": 733,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/index-DI_uEj2z.js",
-          "gzip": 69849,
+          "file": "assets/index-qZFikGR7.js",
+          "gzip": 69853,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline--5qbmv0Y.js",
-          "gzip": 632,
+          "file": "assets/inline-hUiqpPfx.js",
+          "gzip": 635,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/isobmff-D67z5vzF.js",
+          "file": "assets/isobmff-DLNxPV9f.js",
           "gzip": 12233,
           "worker": null,
           "class": "isobmff"
         },
         {
-          "file": "assets/matroska-DzrWj6Eu.js",
-          "gzip": 11898,
+          "file": "assets/matroska-Bp5ainDe.js",
+          "gzip": 11899,
           "worker": null,
           "class": "matroska"
         },
@@ -2526,8 +2526,8 @@
           "class": "matroska"
         },
         {
-          "file": "assets/probe-D1FdSEai.js",
-          "gzip": 3215,
+          "file": "assets/probe-Czf6L-jg.js",
+          "gzip": 3246,
           "worker": null,
           "class": "shared"
         },
@@ -2538,8 +2538,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/rfps-BJ8p5wem.js",
-          "gzip": 3603,
+          "file": "assets/rfps-C51PU4Zp.js",
+          "gzip": 3600,
           "worker": null,
           "class": "rfps"
         },
@@ -2550,8 +2550,8 @@
           "class": "rfps"
         },
         {
-          "file": "assets/runtime-cvSX0Rc9.js",
-          "gzip": 2556,
+          "file": "assets/runtime-DGnYwYs4.js",
+          "gzip": 2557,
           "worker": null,
           "class": "shared"
         },
@@ -2568,8 +2568,8 @@
           "class": "segments"
         },
         {
-          "file": "assets/segments-Cdj7bEVT.js",
-          "gzip": 1845,
+          "file": "assets/segments-Cd8pcnT4.js",
+          "gzip": 1844,
           "worker": null,
           "class": "segments"
         },
@@ -2580,8 +2580,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/stats-okXoW7my.js",
-          "gzip": 4336,
+          "file": "assets/stats-Dx7s530q.js",
+          "gzip": 4335,
           "worker": null,
           "class": "stats"
         },
@@ -2604,8 +2604,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 2000,
-          "gzip": 1638,
-          "headroom": 362,
+          "gzip": 1639,
+          "headroom": 361,
           "status": "ok",
           "why": "The package code in the entry chunk of a React host that imports video-fps-probe/react next to video-fps-probe/lazy: the lazyProbe stub, ProbeError and the React entry. React and ReactDOM are host code and are not counted. Measured 1.63 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 1.64 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -2622,8 +2622,8 @@
           "key": "client",
           "label": "probe client (lazy)",
           "limit": 3500,
-          "gzip": 3215,
-          "headroom": 285,
+          "gzip": 3246,
+          "headroom": 254,
           "status": "ok",
           "why": "As in the default configuration: the React entry adds nothing to the probe client. Measured 2.90 KB. Measured 2.90 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass. Raised from 3 KB to 3.5 KB in 0.3.0, measured 3.21 KB, as in the default configuration. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
         },
@@ -2658,8 +2658,8 @@
           "key": "firstMp4",
           "label": "first MP4 analysis, lazy total",
           "limit": 24500,
-          "gzip": 22659,
-          "headroom": 1841,
+          "gzip": 22690,
+          "headroom": 1810,
           "status": "ok",
           "why": "The first MP4 as in the default configuration: the probe client and the ISO BMFF worker of own. Measured 23.60 KB. Measured 23.60 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass. Measured 22.66 KB in 0.3.0."
         },
@@ -2667,8 +2667,8 @@
           "key": "firstMp4Summary",
           "label": "first MP4 analysis with the React summary, lazy total",
           "limit": 25000,
-          "gzip": 23089,
-          "headroom": 1911,
+          "gzip": 23120,
+          "headroom": 1880,
           "status": "ok",
           "why": "What the first MP4 of a React host loads lazily: the first MP4 of the default configuration plus the summary module of the store. It was set to the 24 KB promise of the default configuration plus the 0.5 KB summary budget. Measured 24.03 KB. Measured 24.03 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -2676,8 +2676,8 @@
           "key": "allOwn",
           "label": "all own paths, lazy total",
           "limit": 50500,
-          "gzip": 48626,
-          "headroom": 1874,
+          "gzip": 48657,
+          "headroom": 1843,
           "status": "ok",
           "why": "As in the default configuration. Measured 40.57 KB. Measured 40.77 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass. Raised from 42 KB to 50.5 KB in 0.3.0, measured 48.63 KB, as in the default configuration. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
         },
@@ -2685,8 +2685,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 92500,
-          "gzip": 89587,
-          "headroom": 2913,
+          "gzip": 89619,
+          "headroom": 2881,
           "status": "ok",
           "why": "As in the default configuration plus the summary module. Measured 81.32 KB. Measured 81.72 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass. Raised from 84.5 KB to 92.5 KB in 0.3.0, measured 89.59 KB, as in the default configuration. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
         }
@@ -2705,27 +2705,27 @@
         "own"
       ],
       "metrics": {
-        "entry": 47253,
+        "entry": 47254,
         "trigger": 1639,
         "react": 1180,
         "check": null,
         "presets": null,
-        "client": 3214,
+        "client": 3244,
         "isobmff": 12004,
         "matroska": 11347,
         "segments": 1810,
         "rfps": 3617,
-        "firstMp4": 22658,
-        "firstMkv": 25560,
-        "allOwn": 48625,
+        "firstMp4": 22688,
+        "firstMkv": 25590,
+        "allOwn": 48655,
         "mp4box": null,
         "mediabunny": null,
         "engineShared": null,
         "rvfc": null,
         "pageEngineShared": null,
         "summary": 430,
-        "firstMp4Summary": 23088,
-        "lazyTotal": 89579
+        "firstMp4Summary": 23118,
+        "lazyTotal": 89625
       },
       "workers": [
         {
@@ -2743,38 +2743,38 @@
       ],
       "files": [
         {
-          "file": "assets/compare-EI8mqyqo.js",
-          "gzip": 1323,
+          "file": "assets/compare-CBOHcDH9.js",
+          "gzip": 1325,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/fallback-Dii9KQsQ.js",
-          "gzip": 730,
+          "file": "assets/fallback-FvvVglj_.js",
+          "gzip": 733,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/index-ki-aGflS.js",
-          "gzip": 47253,
+          "file": "assets/index-Js0h8K1S.js",
+          "gzip": 47254,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-BAcRvSCS.js",
-          "gzip": 631,
+          "file": "assets/inline-DRoRmTnd.js",
+          "gzip": 633,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/isobmff-CPP_rcVb.js",
-          "gzip": 12234,
+          "file": "assets/isobmff-DpOccNyW.js",
+          "gzip": 12236,
           "worker": null,
           "class": "isobmff"
         },
         {
-          "file": "assets/matroska-CKdfNgjf.js",
-          "gzip": 11898,
+          "file": "assets/matroska-B8ePsk1s.js",
+          "gzip": 11902,
           "worker": null,
           "class": "matroska"
         },
@@ -2791,8 +2791,8 @@
           "class": "matroska"
         },
         {
-          "file": "assets/probe-Wf6jUw0W.js",
-          "gzip": 3214,
+          "file": "assets/probe-k1H8JNQd.js",
+          "gzip": 3244,
           "worker": null,
           "class": "shared"
         },
@@ -2803,8 +2803,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/rfps-BbDokyTT.js",
-          "gzip": 3602,
+          "file": "assets/rfps-BAqWXDiH.js",
+          "gzip": 3604,
           "worker": null,
           "class": "rfps"
         },
@@ -2815,8 +2815,8 @@
           "class": "rfps"
         },
         {
-          "file": "assets/runtime-Dz31HDSQ.js",
-          "gzip": 2555,
+          "file": "assets/runtime-DRKYXKhg.js",
+          "gzip": 2556,
           "worker": null,
           "class": "shared"
         },
@@ -2833,8 +2833,8 @@
           "class": "segments"
         },
         {
-          "file": "assets/segments-DLGjUQWX.js",
-          "gzip": 1844,
+          "file": "assets/segments-uiVcQ5Y-.js",
+          "gzip": 1845,
           "worker": null,
           "class": "segments"
         },
@@ -2845,8 +2845,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/stats-iwKhmGL6.js",
-          "gzip": 4337,
+          "file": "assets/stats-DFYyk_9K.js",
+          "gzip": 4336,
           "worker": null,
           "class": "stats"
         },
@@ -2887,8 +2887,8 @@
           "key": "firstMp4Summary",
           "label": "first MP4 analysis with the React summary, lazy total",
           "limit": 25000,
-          "gzip": 23088,
-          "headroom": 1912,
+          "gzip": 23118,
+          "headroom": 1882,
           "status": "ok",
           "why": "As in the react configuration. Measured 24.03 KB. Measured 24.03 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -2896,8 +2896,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 92500,
-          "gzip": 89579,
-          "headroom": 2921,
+          "gzip": 89625,
+          "headroom": 2875,
           "status": "ok",
           "why": "As in the react configuration. Measured 81.32 KB. Measured 81.73 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass. Raised from 84.5 KB to 92.5 KB in 0.3.0, measured 89.58 KB, as in the react configuration. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
         }
@@ -2921,14 +2921,14 @@
         "react": null,
         "check": 3888,
         "presets": null,
-        "client": 3218,
+        "client": 3245,
         "isobmff": 12004,
         "matroska": 11347,
         "segments": 1810,
         "rfps": 3617,
-        "firstMp4": 22662,
-        "firstMkv": 25564,
-        "allOwn": 48629,
+        "firstMp4": 22689,
+        "firstMkv": 25591,
+        "allOwn": 48656,
         "mp4box": null,
         "mediabunny": null,
         "engineShared": null,
@@ -2936,7 +2936,7 @@
         "pageEngineShared": null,
         "summary": null,
         "firstMp4Summary": null,
-        "lazyTotal": 89173
+        "lazyTotal": 89188
       },
       "workers": [
         {
@@ -2954,38 +2954,38 @@
       ],
       "files": [
         {
-          "file": "assets/compare-DYBMYmc8.js",
+          "file": "assets/compare-BrjSwx3S.js",
           "gzip": 1326,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/fallback-DeYoV2fG.js",
-          "gzip": 735,
+          "file": "assets/fallback-B80Sk1WW.js",
+          "gzip": 734,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/index-BLf1QZAk.js",
+          "file": "assets/index-DTEYYRwP.js",
           "gzip": 5168,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-CS35Q5k5.js",
+          "file": "assets/inline-CBc8Z_SV.js",
           "gzip": 634,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/isobmff-Br9LkpgX.js",
-          "gzip": 12234,
+          "file": "assets/isobmff-DImY6QCG.js",
+          "gzip": 12232,
           "worker": null,
           "class": "isobmff"
         },
         {
-          "file": "assets/matroska-BpgcPFU1.js",
-          "gzip": 11900,
+          "file": "assets/matroska-BdZzomPu.js",
+          "gzip": 11898,
           "worker": null,
           "class": "matroska"
         },
@@ -3002,8 +3002,8 @@
           "class": "matroska"
         },
         {
-          "file": "assets/probe-rDOP6f18.js",
-          "gzip": 3218,
+          "file": "assets/probe-Bak2IiEk.js",
+          "gzip": 3245,
           "worker": null,
           "class": "shared"
         },
@@ -3014,8 +3014,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/rfps-Dh6KsEBw.js",
-          "gzip": 3602,
+          "file": "assets/rfps-BggIe9Fr.js",
+          "gzip": 3601,
           "worker": null,
           "class": "rfps"
         },
@@ -3026,8 +3026,8 @@
           "class": "rfps"
         },
         {
-          "file": "assets/runtime-VbED52XS.js",
-          "gzip": 2560,
+          "file": "assets/runtime-Rkag5dt_.js",
+          "gzip": 2557,
           "worker": null,
           "class": "shared"
         },
@@ -3044,8 +3044,8 @@
           "class": "segments"
         },
         {
-          "file": "assets/segments-CJ5_BJa3.js",
-          "gzip": 1845,
+          "file": "assets/segments-MYN7CIEu.js",
+          "gzip": 1844,
           "worker": null,
           "class": "segments"
         },
@@ -3056,8 +3056,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/stats-CX0_4w5N.js",
-          "gzip": 4338,
+          "file": "assets/stats-ju8Ztn4C.js",
+          "gzip": 4336,
           "worker": null,
           "class": "stats"
         }
@@ -3101,8 +3101,8 @@
           "key": "firstMp4",
           "label": "first MP4 analysis, lazy total",
           "limit": 24500,
-          "gzip": 22662,
-          "headroom": 1838,
+          "gzip": 22689,
+          "headroom": 1811,
           "status": "ok",
           "why": "Importing check must not change what the first own analysis loads; the default configuration row keeps the 24 KB promise as its limit. Measured 23.60 KB. Measured 23.60 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -3110,8 +3110,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 92000,
-          "gzip": 89173,
-          "headroom": 2827,
+          "gzip": 89188,
+          "headroom": 2812,
           "status": "ok",
           "why": "As in the default configuration: check adds no lazy file. Measured 80.96 KB. Measured 81.28 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass. Raised from 84 KB to 92 KB in 0.3.0, measured 89.17 KB, as in the default configuration. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
         }
@@ -3131,19 +3131,19 @@
         "own"
       ],
       "metrics": {
-        "entry": 5522,
-        "trigger": 4800,
+        "entry": 5524,
+        "trigger": 4801,
         "react": null,
         "check": 3888,
         "presets": 455,
-        "client": 3216,
+        "client": 3243,
         "isobmff": 12004,
         "matroska": 11347,
         "segments": 1810,
         "rfps": 3617,
-        "firstMp4": 22660,
-        "firstMkv": 25562,
-        "allOwn": 48627,
+        "firstMp4": 22687,
+        "firstMkv": 25589,
+        "allOwn": 48654,
         "mp4box": null,
         "mediabunny": null,
         "engineShared": null,
@@ -3151,7 +3151,7 @@
         "pageEngineShared": null,
         "summary": null,
         "firstMp4Summary": null,
-        "lazyTotal": 89161
+        "lazyTotal": 89192
       },
       "workers": [
         {
@@ -3169,38 +3169,38 @@
       ],
       "files": [
         {
-          "file": "assets/compare-CuqKumMD.js",
-          "gzip": 1324,
+          "file": "assets/compare-CeO_eHat.js",
+          "gzip": 1326,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/fallback-LCc-a6jE.js",
+          "file": "assets/fallback-CyHBO98c.js",
           "gzip": 733,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/index-BkwPwxJb.js",
-          "gzip": 5522,
+          "file": "assets/index-Dgoj0J9L.js",
+          "gzip": 5524,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/inline-DKB5TiMA.js",
-          "gzip": 633,
+          "file": "assets/inline-CnK1UekR.js",
+          "gzip": 632,
           "worker": null,
           "class": "shared"
         },
         {
-          "file": "assets/isobmff-DSHJYRK8.js",
+          "file": "assets/isobmff-BlPvM2rD.js",
           "gzip": 12234,
           "worker": null,
           "class": "isobmff"
         },
         {
-          "file": "assets/matroska-D3RgRWbh.js",
-          "gzip": 11899,
+          "file": "assets/matroska-CiPkJC11.js",
+          "gzip": 11900,
           "worker": null,
           "class": "matroska"
         },
@@ -3217,8 +3217,8 @@
           "class": "matroska"
         },
         {
-          "file": "assets/probe-Dnh6sZwX.js",
-          "gzip": 3216,
+          "file": "assets/probe-DqOGUUQy.js",
+          "gzip": 3243,
           "worker": null,
           "class": "shared"
         },
@@ -3229,7 +3229,7 @@
           "class": "shared"
         },
         {
-          "file": "assets/rfps-oRODsHfw.js",
+          "file": "assets/rfps-D_4CYCzR.js",
           "gzip": 3602,
           "worker": null,
           "class": "rfps"
@@ -3241,7 +3241,7 @@
           "class": "rfps"
         },
         {
-          "file": "assets/runtime-F2sxdZEC.js",
+          "file": "assets/runtime-DA_9dv0W.js",
           "gzip": 2559,
           "worker": null,
           "class": "shared"
@@ -3259,7 +3259,7 @@
           "class": "segments"
         },
         {
-          "file": "assets/segments-Bb-zguPw.js",
+          "file": "assets/segments-DyC93k4J.js",
           "gzip": 1844,
           "worker": null,
           "class": "segments"
@@ -3271,8 +3271,8 @@
           "class": "shared"
         },
         {
-          "file": "assets/stats-NC75HWkr.js",
-          "gzip": 4336,
+          "file": "assets/stats-CHKEyuE7.js",
+          "gzip": 4338,
           "worker": null,
           "class": "stats"
         }
@@ -3289,8 +3289,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 5000,
-          "gzip": 4800,
-          "headroom": 200,
+          "gzip": 4801,
+          "headroom": 199,
           "status": "ok",
           "why": "The check configuration plus one preset, klingO1ReferenceVideo, imported from video-fps-probe/presets. Measured 3.24 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 3.60 KB in 0.2.0 with the larger check and the size note of the preset. Raised from 4 KB to 5 KB, measured 4.12 KB, with the larger check of the check configuration. Measured 4.34 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass. Raised from 4.5 KB to 5 KB, measured 4.51 KB, when check began to judge malformed results and missing policy flags as unknown."
         },
@@ -3316,8 +3316,8 @@
           "key": "entry",
           "label": "entry chunk with the preload helper",
           "limit": 6000,
-          "gzip": 5522,
-          "headroom": 478,
+          "gzip": 5524,
+          "headroom": 476,
           "status": "ok",
           "why": "The trigger of this configuration plus Vite's preload helper. Measured 3.96 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 4.5 KB to 5 KB in 0.2.0, measured 4.33 KB, with the larger check and the size note of the preset. Raised to 6 KB, measured 4.85 KB, with the larger check of the check configuration. Measured 5.06 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass. Raised from 5.5 KB to 6 KB by the same rule, measured 5.43 KB, after check began to judge malformed results, missing policy flags and ratio strings in the number groups, and to prefer standard rates in suggestedFps."
         },
@@ -3325,8 +3325,8 @@
           "key": "firstMp4",
           "label": "first MP4 analysis, lazy total",
           "limit": 24500,
-          "gzip": 22660,
-          "headroom": 1840,
+          "gzip": 22687,
+          "headroom": 1813,
           "status": "ok",
           "why": "As in the check configuration. Measured 23.60 KB. Measured 23.60 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
         },
@@ -3334,8 +3334,8 @@
           "key": "lazyTotal",
           "label": "emitted lazy total (every file outside the entry chunk)",
           "limit": 92000,
-          "gzip": 89161,
-          "headroom": 2839,
+          "gzip": 89192,
+          "headroom": 2808,
           "status": "ok",
           "why": "As in the check configuration. Measured 80.96 KB. Measured 81.29 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass. Raised from 84 KB to 92 KB in 0.3.0, measured 89.16 KB, as in the check configuration. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
         }

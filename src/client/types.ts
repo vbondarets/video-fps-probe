@@ -24,6 +24,7 @@ export interface ProbeOptions<E extends readonly EngineDescriptor[] = []> extend
 export interface CustomWorker<W extends WorkerEngineId> {
   create: () => Worker;
   engines: readonly W[];
+  byContainer?: Readonly<Partial<Record<ContainerFamily, () => Worker>>>;
 }
 
 export interface ClientOptions<E extends readonly EngineDescriptor[] = [], W extends WorkerEngineId = never> extends BaseOptions<NoInfer<W | IdOf<E[number]> | 'own'>> {

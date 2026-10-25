@@ -6,6 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ### Added
 
+- `byContainer` on a custom worker: `{ create, engines, byContainer: { matroska: () => new Worker(...) } }` runs own on the worker of the file's container family, and every other engine and family on `create` ([api](docs/api.md)).
 - A weekly canary builds the package with the latest mp4box, mediabunny, Vite and rolldown: the comparison against ffprobe, the size budgets and the browser smoke test. It fails only when the own engine or a size check changes, and lists what changed in the library arms.
 
 ### Changed
