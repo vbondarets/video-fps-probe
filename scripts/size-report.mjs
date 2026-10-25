@@ -33,9 +33,9 @@ export const BUDGETS = {
   },
   matroska: {
     label: 'Matroska parser chunk',
-    limit: 12 * KB,
+    limit: 12.5 * KB,
     required: true,
-    why: 'Own Matroska and WebM parser, fetched by the worker only when a file sniffs as EBML. Measured 10.73 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB.',
+    why: 'Own Matroska and WebM parser, fetched by the worker only when a file sniffs as EBML. Measured 10.73 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB. Raised from 12 KB to 12.5 KB in 0.2.0, measured 11.68 KB with 0.33 KB of headroom left, to the measurement plus 3 percent, rounded up to 0.5 KB, the rule of every demo row with less than 0.5 KB of headroom in 0.2.0.',
   },
   'parser-shared': {
     label: 'shared statistics chunk',
@@ -47,19 +47,19 @@ export const BUDGETS = {
     label: 'lazy rVFC fallback',
     limit: 2.5 * KB,
     required: false,
-    why: 'Loaded on demand from the main chunk. Measured 1.94 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB.',
+    why: 'Loaded on demand from the main chunk. Measured 1.94 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB. Re-checked in 0.2.0, measured 2.20 KB with 0.30 KB of headroom left: the measurement plus 3 percent, rounded up to 0.5 KB, the rule of every demo row with less than 0.5 KB of headroom in 0.2.0, is the same 2.5 KB.',
   },
   segments: {
     label: 'lazy rate profile core (segments)',
     limit: 2 * KB,
     required: false,
-    why: 'Segmentation, anomalies, uneven flag and sparkline buckets. Fetched by the worker only for a timeline with unequal frame rates (VFR), after the parser chunk. Measured 1.79 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB. Not required: when the chunk is merged into another one, that chunk budget catches the growth.',
+    why: 'Segmentation, anomalies, uneven flag and sparkline buckets. Fetched by the worker only for a timeline with unequal frame rates (VFR), after the parser chunk. Measured 1.79 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB. Re-checked in 0.2.0, measured 1.85 KB with 0.15 KB of headroom left: the measurement plus 3 percent, rounded up to 0.5 KB, the rule of every demo row with less than 0.5 KB of headroom in 0.2.0, is the same 2 KB. Not required: when the chunk is merged into another one, that chunk budget catches the growth.',
   },
   rfps: {
     label: 'lazy ffprobe frame rate estimate (rfps)',
     limit: 4 * KB,
     required: false,
-    why: 'The ffprobe avg_frame_rate and r_frame_rate estimate for a Matroska or WebM file without DefaultDuration, fetched by the Matroska parser chunk only for such a file, in probe and exact mode. Measured 2.75 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB. Raised from 3.5 KB to 4.0 KB in 0.2.0 by the same rule, measured 3.52 KB, when the estimate began to read the H.264 slice headers that decide the decoder delay and to ride the block walk of the exact scan instead of a walk of its own. Not required: a build whose Matroska files never need it still emits it, and when the chunk is merged into the parser, the Matroska budget catches the growth.',
+    why: 'The ffprobe avg_frame_rate and r_frame_rate estimate for a Matroska or WebM file without DefaultDuration, fetched by the Matroska parser chunk only for such a file, in probe and exact mode. Measured 2.75 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB. Raised from 3.5 KB to 4.0 KB in 0.2.0 by the same rule, measured 3.52 KB, when the estimate began to read the H.264 slice headers that decide the decoder delay and to ride the block walk of the exact scan instead of a walk of its own. Re-checked in 0.2.0, measured 3.59 KB with 0.41 KB of headroom left: the measurement plus 3 percent, rounded up to 0.5 KB, the rule of every demo row with less than 0.5 KB of headroom in 0.2.0, is the same 4 KB. Not required: a build whose Matroska files never need it still emits it, and when the chunk is merged into the parser, the Matroska budget catches the growth.',
   },
   client: {
     label: 'lazy probe client',
@@ -101,7 +101,7 @@ export const BUDGETS = {
     label: 'first Matroska analysis (initial + client + Matroska + shared chunks)',
     limit: 102 * KB,
     required: true,
-    why: `The demo page plus the first MKV or WebM result. Measured 98.87 KB when set; the previous limit was 100 KB. ${DEMO_RESET} Counts the lazy probe client and the shared statistics chunk too, so the component limits (83 + 3.5 + 5 + 12 = 103.5 KB) add up to more than this limit and it can trip while every component is within its own limit.`,
+    why: `The demo page plus the first MKV or WebM result. Measured 98.87 KB when set; the previous limit was 100 KB. ${DEMO_RESET} Counts the lazy probe client and the shared statistics chunk too, so the component limits (83 + 3.5 + 5 + 12.5 = 104 KB) add up to more than this limit and it can trip while every component is within its own limit.`,
   },
 };
 

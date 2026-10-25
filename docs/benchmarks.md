@@ -427,7 +427,7 @@ The demo in `demo/` is a React app that consumes the package through a custom wo
 | worker entry (reader, sniffing, worker runtime) | first file | 10.39 KB | **4.32 KB** | 3.94 KB | 5.00 KB | 0.68 KB | ok |
 | shared by the parsers and engines (timeline statistics) | with the first parser, in parallel, once per worker | 10.21 KB | **4.29 KB** | 3.92 KB | 5.00 KB | 0.70 KB | ok |
 | ISO BMFF parser | first MP4 or MOV file, once per worker | 30.75 KB | **12.22 KB** | 11.02 KB | 13.50 KB | 1.28 KB | ok |
-| Matroska parser | first WebM or MKV file, once per worker | 30.42 KB | **11.68 KB** | 10.63 KB | 12.00 KB | 0.33 KB | ok |
+| Matroska parser | first WebM or MKV file, once per worker | 30.42 KB | **11.68 KB** | 10.63 KB | 12.50 KB | 0.82 KB | ok |
 | ffprobe frame rate estimate (Matroska without DefaultDuration) | lazy | 7.32 KB | **3.59 KB** | 3.34 KB | 4.00 KB | 0.41 KB | ok |
 | rate profile core (segments, anomalies, sparkline buckets) | first VFR timeline, once per worker | 3.35 KB | **1.84 KB** | 1.71 KB | 2.00 KB | 0.15 KB | ok |
 | rate profile panel (UI) | first card with a rate profile | 2.17 KB | **0.94 KB** | 0.85 KB | 1.50 KB | 0.56 KB | ok |
