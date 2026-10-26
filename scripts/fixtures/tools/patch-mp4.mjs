@@ -6,6 +6,7 @@
 //   node patch-mp4.mjs sparse <in> <out> <holeBytes>   build a sparse file: ftyp + 64-bit mdat(hole + payload) + moov with co64 offsets beyond 4 GiB
 //   node patch-mp4.mjs mehd   <in> <out> <hex64>       append a version 1 'mehd' holding the 64-bit value to mvex (moof-relative data offsets; tfra offsets are shifted)
 //   node patch-mp4.mjs elst64 <in> <out> <hex64>       rewrite the first elst as version 1 and set the segment duration of its first media edit (moov after mdat)
+//   node patch-mp4.mjs mvhd64|tkhd64|mdhd64 <in> <out> <hex64>  rewrite the first mvhd, tkhd or mdhd as version 1 with the 64-bit duration (moov after mdat)
 //   node patch-mp4.mjs trailer <in> <out> <hex>        append the bytes after the last top-level box
 //   node patch-mp4.mjs stsd2  <in> <out> <WxH>         add a copy of the only sample entry with the size WxH and point the second half of the samples to it (one chunk split in two; moov after mdat)
 // The first three modes need the non-faststart layout ftyp [wide|free] mdat moov.
@@ -135,6 +136,35 @@ if (mode === 'stsd2') {
   const state = {};
   const moovBuf = edit(src, moov.pos, moov.pos + moov.size, (type, box) => splitSampleEntry(box, type, state, holeArg.split('x').map(Number)), () => null);
   if (!state.first) throw new Error('no sample tables');
+  const final = replaceMoov(src, moovBuf);
+  fs.writeFileSync(outFile, final);
+  console.log(`${mode}: wrote ${outFile} (${final.length} bytes, was ${src.length})`);
+  process.exit(0);
+}
+
+if (mode === 'mvhd64' || mode === 'tkhd64' || mode === 'mdhd64') {
+  const target = mode.slice(0, 4);
+  const top = topBoxes(src);
+  const moov = top.find((b) => b.type === 'moov');
+  if (moov.pos < top.find((b) => b.type === 'mdat').pos) throw new Error('moov is before mdat (faststart): chunk offsets would move');
+  let done = false;
+  const moovBuf = edit(src, moov.pos, moov.pos + moov.size, (type, box) => {
+    if (type !== target || done) return null;
+    done = true;
+    if (box.readUInt8(8) !== 0) throw new Error(`${type} is not version 0`);
+    const before = type === 'tkhd' ? 8 : 4;
+    const out = Buffer.alloc(box.length + 12);
+    out.writeUInt32BE(out.length, 0);
+    out.write(type, 4, 'latin1');
+    out.writeUInt32BE(0x01000000 | box.readUIntBE(9, 3), 8);
+    out.writeBigUInt64BE(BigInt(box.readUInt32BE(12)), 12);
+    out.writeBigUInt64BE(BigInt(box.readUInt32BE(16)), 20);
+    box.copy(out, 28, 20, 20 + before);
+    out.writeBigUInt64BE(BigInt('0x' + holeArg), 28 + before);
+    box.copy(out, 36 + before, 24 + before);
+    return out;
+  }, () => null);
+  if (!done) throw new Error(`no ${target}`);
   const final = replaceMoov(src, moovBuf);
   fs.writeFileSync(outFile, final);
   console.log(`${mode}: wrote ${outFile} (${final.length} bytes, was ${src.length})`);

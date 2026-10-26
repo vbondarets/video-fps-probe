@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -361,6 +362,49 @@ describe('an all-ones elst duration on an edit that trims the start', () => {
     expect(Math.abs(result.formatDurationSec! - Number(probeOf(ref).format!.duration))).toBeLessThanOrEqual(1e-6);
     const [stream] = realVideoStreams(ref);
     assertTrack(track, stream!, detailOf(ref, stream!.index), movie!.tracks[0]!, movie!, {}, true);
+  });
+});
+
+describe('all-ones mvhd, tkhd and mdhd version 1 durations against ffprobe 8.1.1', () => {
+  const source = 'cfr_h264_30.mp4';
+  const same = { time_base: '1/15360', start_pts: 0, nb_frames: '90', nb_read_frames: '90', nb_read_packets: '90', avg_frame_rate: '30/1', r_frame_rate: '30/1' };
+  const recorded = [
+    ['mvhd64', 'a024910518a8bdc7d7c691f1f0b52829189b0183c248cac633d055a038264189', { duration: '3.000000' }, { ...same, duration_ts: 46080, duration: '3.000000' }],
+    ['tkhd64', '901d0c1693db5733fdae29a41118a04e2ee6e1fb668bdd94223f0925e21a6239', { duration: '3.000000' }, { ...same, duration_ts: 46080, duration: '3.000000' }],
+    ['mdhd64', 'defd7c66958497ffc2910e9ded288f5cc94922be625e3354978b3d75cca01e33', { duration: 'N/A' }, { ...same, duration_ts: 0, duration: '0.000000' }],
+  ] as const;
+  let dir = '';
+
+  beforeAll(() => {
+    dir = mkdtempSync(join(process.env.FPS_PROBE_SCRATCH ?? tmpdir(), 'fps-probe-header64-'));
+  });
+
+  afterAll(() => {
+    if (dir) rmSync(dir, { recursive: true, force: true });
+  });
+
+  test.each(recorded)('%s of %s: the values ffprobe 8.1.1 printed for the same bytes, -count_frames included', async (mode, sha256, format, stream) => {
+    const name = `cfr_h264_30_${mode}.mp4`;
+    const patched = join(dir, name);
+    const tool = join(REPO_ROOT, 'scripts', 'fixtures', 'tools', 'patch-mp4.mjs');
+    const run = spawnSync(process.execPath, [tool, mode, join(FILES_DIR, source), patched, 'ffffffffffffffff'], { encoding: 'utf8' });
+    expect(run.status, run.stderr).toBe(0);
+    expect(createHash('sha256').update(readFileSync(patched)).digest('hex')).toBe(sha256);
+    const { result } = await analyzeFixture(patched, name);
+    const track = result.videoTracks[0]!;
+    expect(result.error).toBeNull();
+    expect([...result.warnings, ...track.warnings]).toEqual([]);
+    expect(result.formatDurationSec).toBe(known(format.duration));
+    expect(`1/${track.timescale}`).toBe(stream.time_base);
+    expect(Math.round(track.startSec! * track.timescale)).toBe(stream.start_pts);
+    expect(Math.round(track.durationSec! * track.timescale)).toBe(stream.duration_ts);
+    expect(track.durationSec).toBe(Number(stream.duration));
+    expect([track.frames, track.presentedFrames, track.frames].map(String)).toEqual([stream.nb_frames, stream.nb_read_frames, stream.nb_read_packets]);
+    expect([track.avgFpsFfprobe, track.rFpsFfprobe]).toEqual([stream.avg_frame_rate, stream.r_frame_rate]);
+    if (stream.duration_ts > 0) {
+      const original = (await analyzeFixture(fixturePath(source)!, name)).result;
+      expect({ ...result, size: 0, io: null }).toEqual({ ...original, size: 0, io: null });
+    }
   });
 });
 
