@@ -932,8 +932,8 @@ describe('64-bit all-ones durations', () => {
     const plain = await run(bytes(ftyp(), moov(trak(CFR30()))));
     const ones = await run(bytes(ftyp(), moov(trak({ ...CFR30(), extra: [elst64(ALL_ONES, 0n)] }))));
     expect(ones.error).toBeNull();
-    expect(ones.warnings).toEqual(['ffprobe 8.1.1 rejects this file: an elst segment duration of -1']);
-    expect(ones.videoTracks[0].warnings).toEqual(['elst segment duration 0xffffffffffffffff is unknown: the edit lasts to the end']);
+    expect(ones.warnings).toEqual(['ffprobe 8.1.1 rejects this file: an elst duration of -1']);
+    expect(ones.videoTracks[0].warnings).toEqual(['unknown elst duration: the edit lasts to the end']);
     expect(ones.videoTracks[0]).toMatchObject({ avgFpsFfprobe: null, rFpsFfprobe: null });
     sameExceptWarnings(ones, plain, true);
     const bframes: TrakSpec = { id: 1, ts: 30000, stts: [[90, 1001]], ctts: [[90, 2002]], sync: [1, 31, 61] };
@@ -943,6 +943,17 @@ describe('64-bit all-ones durations', () => {
     expect(unknown.videoTracks[0].durationSec).toBeCloseTo(3.003, 9);
     sameExceptWarnings(unknown, real, true);
     expect((await run(bytes(ftyp(), moov(trak({ ...CFR30(), extra: [elst64(2n ** 60n, 0n)] }))))).error).toMatch(/^unsupported: box 'elst' at \d+ holds a value above 2\^53-1$/);
+  });
+
+  test('an all-ones elst version 1 duration on an empty edit is ignored instead of delaying the track; ffprobe 8.1.1 fails the file', async () => {
+    const edits = (...entries: [bigint, bigint][]): Bytes => box('edts', fullBox('elst', 1, 0, u32(entries.length), ...entries.flatMap(([d, t]) => [u64(d), u64(BigInt.asUintN(64, t)), u32(0x10000)])));
+    const media = await run(bytes(ftyp(), moov(trak({ ...CFR30(), extra: [edits([3000n, 0n])] }))));
+    const ones = await run(bytes(ftyp(), moov(trak({ ...CFR30(), extra: [edits([ALL_ONES, -1n], [3000n, 0n])] }))));
+    expect(ones.error).toBeNull();
+    expect(ones.warnings).toEqual(['ffprobe 8.1.1 rejects this file: an elst duration of -1']);
+    expect(ones.videoTracks[0].warnings).toEqual(['unknown elst duration: the empty edit is ignored']);
+    expect(ones.videoTracks[0]).toMatchObject({ startSec: 0, presentedFrames: 90, avgFpsFfprobe: null, rFpsFfprobe: null });
+    sameExceptWarnings(ones, media, true);
   });
 
   test('all-ones mvhd, tkhd and mdhd version 1 durations keep the file; ffprobe 8.1.1 reads the mdhd one as 0', async () => {

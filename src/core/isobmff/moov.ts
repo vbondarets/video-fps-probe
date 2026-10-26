@@ -125,16 +125,17 @@ function parseElst(dv: DataView, h: BoxHeader, tr: IsoTrack, ctx: ParseContext, 
     tr.edits = [];
   }
   const at = ctx.base + h.start;
-  const duration = (o: number): number => {
-    if (dv.getUint32(o) !== UINT32_ALL_ONES || dv.getUint32(o + 4) !== UINT32_ALL_ONES) return boxU64(dv, o, 'elst', at);
-    tr.warnings.push('elst segment duration 0xffffffffffffffff is unknown: the edit lasts to the end');
-    movie.ffprobeReject ??= { moof: -1, reason: 'rejects this file: an elst segment duration of -1' };
-    return Number.MAX_SAFE_INTEGER;
-  };
   for (let i = 0; i < n; i++) {
     const o = p + 8 + i * size;
-    if (v === 1) tr.edits.push({ duration: duration(o), mediaTime: boxI64(dv, o + 8, 'elst', at), rate: dv.getInt32(o + 16) / 65536 });
-    else tr.edits.push({ duration: dv.getUint32(o), mediaTime: dv.getInt32(o + 4), rate: dv.getInt32(o + 8) / 65536 });
+    if (v === 1) {
+      const mediaTime = boxI64(dv, o + 8, 'elst', at);
+      const unknown = dv.getBigInt64(o) === -1n;
+      if (unknown) {
+        tr.warnings.push(`unknown elst duration: ${mediaTime === -1 ? 'the empty edit is ignored' : 'the edit lasts to the end'}`);
+        movie.ffprobeReject ??= { moof: -1, reason: 'rejects this file: an elst duration of -1' };
+      }
+      tr.edits.push({ duration: !unknown ? boxU64(dv, o, 'elst', at) : mediaTime === -1 ? 0 : Number.MAX_SAFE_INTEGER, mediaTime, rate: dv.getInt32(o + 16) / 65536 });
+    } else tr.edits.push({ duration: dv.getUint32(o), mediaTime: dv.getInt32(o + 4), rate: dv.getInt32(o + 8) / 65536 });
   }
 }
 

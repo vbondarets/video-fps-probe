@@ -40,7 +40,7 @@ const deviations: Deviations = JSON.parse(readFileSync(DEVIATIONS_PATH, 'utf8'))
 
 const SUBSTITUTE_REFS: Record<string, { ref: string; warning: RegExp }> = {
   'corrupt_stts_count_huge.mp4': { ref: 'cfr_h264_30.mp4', warning: /declares \d+ entries/ },
-  'corrupt_elst64_all_ones.mp4': { ref: 'cfr_h264_30.mp4', warning: /^elst segment duration 0xffffffffffffffff is unknown: the edit lasts to the end$/m },
+  'corrupt_elst64_all_ones.mp4': { ref: 'cfr_h264_30.mp4', warning: /^unknown elst duration: the edit lasts to the end$/m },
 };
 
 const EXACT_WARNINGS: Record<string, { file: string[]; track: string[] }> = {
