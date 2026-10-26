@@ -7,14 +7,14 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 ### Added
 
 - `byContainer` on a custom worker: `{ create, engines, byContainer: { matroska: () => new Worker(...) } }` runs own on the worker of the file's container family, and every other engine and family on `create` ([api](docs/api.md)).
-- `video-fps-probe/standalone/own-isobmff.worker.js` and `own-matroska.worker.js`: the two own workers as classic scripts with no imports, about 21.2 and 23.8 KB gzip, for `byContainer`. The combined `own.worker.js` stays.
-- `lazyProbeClient` and `createProbeClient` load the routing by container family only with `byContainer`, as a chunk of about 0.4 KB gzip, so a custom worker without it loads none of it: about 23.7 KB for the first MP4 with `lazyProbeClient` (23.5 KB in 0.2.0).
+- `video-fps-probe/standalone/own-isobmff.worker.js` and `own-matroska.worker.js`: the two own workers as classic scripts with no imports, about 21.4 and 23.9 KB gzip, for `byContainer`. The combined `own.worker.js` stays.
+- `lazyProbeClient` and `createProbeClient` load the routing by container family only with `byContainer`, as a chunk of about 0.4 KB gzip, so a custom worker without it loads none of it: about 23.8 KB for the first MP4 with `lazyProbeClient` (23.5 KB in 0.2.0).
 - A weekly canary builds the package with the latest mp4box, mediabunny, Vite and rolldown: the comparison against ffprobe, the size budgets and the browser smoke test. It fails only when an own result changes or a size check fails, never when only a library arm changes: its smoke test asserts own only, and the job summary lists what changed in the library arms, in the comparison and in the browsers.
 
 ### Changed
 
-- **Behaviour change:** own runs on one worker per container family, `own-isobmff.worker` or `own-matroska.worker`, picked by the file's first 4 bytes. The first MP4 loads about 22.8 KB (23.6 KB in 0.2.0), or 24.6 KB instead of 38.9 KB with Vite's default worker format ([size matrix](report/size-matrix.md)).
-- The first WebM or MKV without DefaultDuration, such as a MediaRecorder recording, loads about 25.6 KB (26.7 KB in 0.2.0), and about 27.2 KB instead of 38.9 KB with Vite's default worker format.
+- **Behaviour change:** own runs on one worker per container family, `own-isobmff.worker` or `own-matroska.worker`, picked by the file's first 4 bytes. The first MP4 loads about 22.9 KB (23.6 KB in 0.2.0), or 24.7 KB instead of 38.9 KB with Vite's default worker format ([size matrix](report/size-matrix.md)).
+- The first WebM or MKV without DefaultDuration, such as a MediaRecorder recording, loads about 25.7 KB (26.7 KB in 0.2.0), and about 27.2 KB instead of 38.9 KB with Vite's default worker format.
 - `workers` counts per worker kind, so `workers: 1` can run one MP4 and one WebM at once. `prewarm()` starts the worker of each container family it is given: ISO BMFF by default, nothing for `containers: []`.
 - A missing own worker file, such as a 404 after a redeploy, rejects only the jobs of its container family with `reason: 'load'`, and the next call retries; in 0.2.0 a missing parser chunk came back as an error string in the result.
 - Service worker precache lists that name `own.worker` need both new worker files. A host that wants one own worker can keep the 0.2.0 layout with a custom worker that runs `serveProbeWorker({ own: ownEngine })` from `video-fps-probe/worker-runtime`.
@@ -26,6 +26,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 - A version 1 `mehd` or `elst` holding 0xFFFFFFFFFFFFFFFF, an unknown duration, failed the whole file with `unsupported: ... above 2^53-1`. `mehd` is now ignored, as ffprobe does, and such an edit lasts to the end of the media with a warning; ffprobe 8.1.1 fails that file, so `avgFpsFfprobe` and `rFpsFfprobe` are null.
 - Bytes after the moov that are not a box, such as the trailer of some phone MOV files, marked the file truncated, and the warning held raw NUL characters. They now end the walk with `ignored trailing data at N: not a box`, and every warning has its NUL and other control characters replaced by `?`.
+- A file that could not be read, such as a picked file that was changed or deleted since (`NotReadableError`, `InvalidStateError`) or got shorter while it was read, gave `corrupt file: ...` for MP4 and MOV and the browser's bare message for WebM and MKV. `result.error` now reads `file read failed: <error>` for every container ([api](docs/api.md#proberesult-and-fileresult)).
 
 ## 0.2.0 - 2026-10-25
 

@@ -32,6 +32,13 @@ export class EndOfFileError extends Error {
   }
 }
 
+export class FileReadError extends Error {
+  constructor(message: string, cause?: unknown) {
+    super(`file read failed: ${message}`, { cause });
+    this.name = 'FileReadError';
+  }
+}
+
 interface CachedWindow {
   off: number;
   buf: Uint8Array;
@@ -100,12 +107,18 @@ export class BlobReader {
     const end = Math.min(this.size, offset + length);
     if (end === offset) return new Uint8Array(0);
     this.checkAbort();
-    const ab = await this.#source.slice(offset, end).arrayBuffer();
+    let ab: ArrayBuffer;
+    try {
+      ab = await this.#source.slice(offset, end).arrayBuffer();
+    } catch (e) {
+      this.checkAbort();
+      throw (e as Error | null)?.name === 'AbortError' ? e : new FileReadError(String(e), e);
+    }
     this.checkAbort();
     this.#reads++;
     this.#transferred += ab.byteLength;
     if (ab.byteLength !== end - offset) {
-      throw new EndOfFileError(`short read at ${offset}: expected ${end - offset} bytes, got ${ab.byteLength}`);
+      throw new FileReadError(`short read at ${offset}: expected ${end - offset} bytes, got ${ab.byteLength}`);
     }
     this.#cover(offset, end);
     return new Uint8Array(ab);

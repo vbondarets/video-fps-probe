@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   BlobReader,
   EndOfFileError,
+  FileReadError,
   ascii,
   fourcc,
   i64,
@@ -170,13 +171,14 @@ describe('BlobReader primitive read', () => {
     expect(r.size).toBe(size);
   });
 
-  it('throws on a short read', async () => {
+  it('throws a read failure on a short read', async () => {
     const blobLike: BlobLike = {
       size: 100,
       slice: () => ({ arrayBuffer: async () => new ArrayBuffer(10) }),
     };
     const r = new BlobReader(blobLike);
-    await expect(r.read(0, 50)).rejects.toBeInstanceOf(EndOfFileError);
+    await expect(r.read(0, 50)).rejects.toBeInstanceOf(FileReadError);
+    await expect(r.read(0, 50)).rejects.toThrow('file read failed: short read at 0: expected 50 bytes, got 10');
   });
 });
 
