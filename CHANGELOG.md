@@ -19,7 +19,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 - A missing own worker file, such as a 404 after a redeploy, rejects only the jobs of its container family with `reason: 'load'`, and the next call retries; in 0.2.0 a missing parser chunk came back as an error string in the result.
 - Service worker precache lists that name `own.worker` need both new worker files. A host that wants one own worker can keep the 0.2.0 layout with a custom worker that runs `serveProbeWorker({ own: ownEngine })` from `video-fps-probe/worker-runtime`.
 - `video-fps-probe/presets/sources.json` holds the source page of every preset, keyed by the name of the export (`sources.klingO1ReferenceVideo`). `sourceUrl` is deprecated, not removed: every preset keeps it with the same page, so a 0.2.0 consumer still works, and it will be removed in the next major, which leaves the URL strings that supply-chain scanners such as Socket report in `sources.json` only ([presets](docs/api.md#presets)).
-- The installed package grows from about 442 KB to 569 KB unpacked, mostly for the two new standalone files; a bundler still takes only what the app imports.
+- The installed package grows from about 442 KB to 570 KB unpacked, mostly for the two new standalone files; a bundler still takes only what the app imports.
 - CI also runs the unit, fixture and package tests on Node 22.12, the lowest version the package supports, next to Node 24; 0.2.0 tested Node 24 only.
 - `require('video-fps-probe')` from CommonJS is tested: the package test `require()`s the packed tarball on Node 22.12 and 24 and compiles a TypeScript project with `module` `commonjs` and `moduleResolution` `node10`, as a NestJS 11 app has, with TypeScript 6.0.3 and 5.9.3; the Jest setup it needs is documented ([CommonJS](docs/api.md#commonjs)).
 - Still 0 mismatches against ffprobe 8.1.1, now on 130 committed fixtures: the new ones are byte patches of ffmpeg output with header values that other parsers fail on ([fixtures](fixtures/README.md#header-values-other-parsers-trip-on-section-o)).
@@ -44,6 +44,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 - The corpus has real recordings from Chromium's MediaRecorder only: none from Firefox, Safari, phones, cameras or screen recorders.
 - A regular cadence such as 2:3 pulldown is VFR, but its rate profile reads as Steady.
 - `check` judges the stored frame size: the sample aspect ratio of a `pasp` box or a Matroska DisplayWidth is not applied.
+- `check` judges the format duration of a WebM or Matroska track when it is within one frame interval of the measured span, the interval of `dominantFps`, else of `nominalFps` on a constant track, else of `avgFps`. The result holds no median interval, so a recording without a dominant rate, such as the Chromium ones, takes its average interval of about 27 ms rather than its median of 17 ms; 0.4.0 is to expose a median frame interval and use it in `check()` ([check](docs/api.md#check)).
 - rVFC needs playback: a visible foreground tab, a playable codec and seconds per file.
 - Files above 2^53 bytes, `cmov` headers and a moov above 256 MiB are rejected as error results.
 - In `auto` mode a large Matroska file gets a sampled probe unless the exact scan is predicted to take at most 150 ms.

@@ -905,6 +905,33 @@ describe('check: committed fixtures', () => {
     expect(failed(webm({ ...constant, isVfr: true }, 3.03), { duration: { min: 3.03 } })).toEqual([]);
   });
 
+  it('takes the first of the dominant rate, a constant nominal rate and the average that is not null, and keeps the span when that one is no rate', () => {
+    const webm = (track: Partial<VideoTrackResult>, formatDurationSec: number) => result({ durationSec: 3, ...track }, { container: 'webm', formatDurationSec });
+    const constantDominant = { isVfr: false, avgFps: rate(24), nominalFps: { ...rate(24), kind: 'declared' as const }, dominantFps: { rate: rate(60), share: 0.9 } };
+    expect(failed(webm(constantDominant, 3.016), { duration: { min: 3.016 } })).toEqual([]);
+    expect(failed(webm(constantDominant, 3.03), { duration: { min: 3.03 } })).toEqual(['duration.min']);
+    const constantWithoutNominal = { isVfr: false, avgFps: rate(24), nominalFps: null };
+    expect(failed(webm(constantWithoutNominal, 3.041), { duration: { min: 3.041 } })).toEqual([]);
+    expect(failed(webm(constantWithoutNominal, 3.042), { duration: { min: 3.042 } })).toEqual(['duration.min']);
+    const unknownVfr = { isVfr: null, avgFps: rate(24), nominalFps: { ...rate(60), kind: 'declared' as const } };
+    expect(failed(webm(unknownVfr, 3.041), { duration: { min: 3.041 } })).toEqual([]);
+    const notARate = { isVfr: true, avgFps: rate(30), dominantFps: { rate: { num: 0, den: 1, value: 0 }, share: 0.9 } };
+    expect(failed(webm(notARate, 3.001), { duration: { min: 3.001 } })).toEqual(['duration.min']);
+    expect(failed(webm({ isVfr: true, avgFps: null, nominalFps: null }, 3.001), { duration: { min: 3.001 } })).toEqual(['duration.min']);
+  });
+
+  it.each(['rec_chromium_av1.webm', 'rec_chromium_h264.mkv', 'rec_chromium_vp8.webm', 'rec_chromium_vp9.webm'])('%s: without a dominant rate takes its average frame interval of about 27 ms, not the median of 17 ms between its packets', async (name) => {
+    const r = await run(name);
+    const t = r.videoTracks.find((x) => x.trackId === r.primaryTrackId)!;
+    expect([t.dominantFps, t.isVfr]).toEqual([null, true]);
+    expect(t.avgFps!.den / t.avgFps!.num).toBeCloseTo(0.0272, 4);
+    const judged = (gap: number): boolean => {
+      const format = +(t.durationSec! - gap).toFixed(6);
+      return check({ ...r, formatDurationSec: format }, { duration: { min: format, max: format } }).verdict === 'pass';
+    };
+    expect([0.017, 0.018, 0.027, 0.028].map(judged)).toEqual([true, true, true, false]);
+  });
+
   it('judges the 3 s of a constant 60 fps WebM whose 1 ms ticks span 2.999 s', async () => {
     const w60 = await run('cfr_vp9_60.webm');
     expect(w60.videoTracks[0]!.durationSec).toBe(2.999);
