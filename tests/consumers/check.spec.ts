@@ -36,7 +36,7 @@ test('the preset build bundles the imported preset only', async () => {
   const all = Object.values(await presets());
   expect(all.length).toBe(6);
   expect(all.filter((p) => code.includes(p.note)).map((p) => p.name)).toEqual(['Kling O1 reference video']);
-  expect(code.includes('https://')).toBe(false);
+  expect(all.filter((p) => code.includes(p.sourceUrl)).map((p) => p.name)).toEqual(['Kling O1 reference video']);
 });
 
 for (const fixture of FIXTURES) {

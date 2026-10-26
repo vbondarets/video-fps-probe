@@ -28,14 +28,15 @@ describe('presets', () => {
     expect(ALL.map(([name]) => name).sort()).toEqual(['klingMotionControl', 'klingO1ReferenceVideo', 'runwayAleph2', 'seedance2ReferenceVideo', 'veoExtend', 'wan26ReferenceToVideoFal']);
   });
 
-  it('lists the https source of every preset, and of nothing else, in sources.json, so no JavaScript file of the package holds a URL', () => {
+  it('lists the https source of every preset, and of nothing else, in sources.json, as the deprecated sourceUrl of the preset', () => {
     expect(Object.keys(SOURCES).sort()).toEqual(ALL.map(([name]) => name).sort());
     for (const [name, url] of Object.entries(SOURCES)) expect(new URL(url).protocol, name).toBe('https:');
-    expect(ALL.filter(([, preset]) => JSON.stringify(preset).includes('://')).map(([name]) => name)).toEqual([]);
+    expect(Object.fromEntries(ALL.map(([name, preset]) => [name, preset.sourceUrl]))).toEqual(SOURCES);
   });
 
-  it.each(ALL)('%s has a name, a source kind, a verification date and a note', (_, preset) => {
+  it.each(ALL)('%s has a name, an https source, a source kind, a verification date and a note', (_, preset) => {
     expect(preset.name.length).toBeGreaterThan(0);
+    expect(new URL(preset.sourceUrl).protocol).toBe('https:');
     expect(['official', 'gateway']).toContain(preset.sourceKind);
     expect(preset.verifiedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(new Date(`${preset.verifiedAt}T00:00:00Z`).toISOString().slice(0, 10)).toBe(preset.verifiedAt);

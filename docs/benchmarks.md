@@ -402,7 +402,7 @@ export default defineConfig({ worker: { format: 'es' } });
 | react | `video-fps-probe/lazy` + `video-fps-probe/react` (React 19.3.1) | format: 'es' | **1.64 KB** | 22.70 KB | 25.54 KB | 48.58 KB | - | 2 | ok (10 budgets) |
 | react18 | `video-fps-probe/lazy` + `video-fps-probe/react` (React 18.3.1) | format: 'es' | **1.64 KB** | 22.70 KB | 25.54 KB | 48.58 KB | - | 2 | ok (4 budgets) |
 | check | `video-fps-probe/lazy` + `video-fps-probe/check` | format: 'es' | **4.51 KB** | 22.71 KB | 25.54 KB | 48.58 KB | - | 2 | ok (5 budgets) |
-| preset | `video-fps-probe/lazy` + `video-fps-probe/check` + `video-fps-probe/presets` (klingO1ReferenceVideo) | format: 'es' | **4.82 KB** | 22.70 KB | 25.54 KB | 48.58 KB | - | 2 | ok (6 budgets) |
+| preset | `video-fps-probe/lazy` + `video-fps-probe/check` + `video-fps-probe/presets` (klingO1ReferenceVideo) | format: 'es' | **4.86 KB** | 22.70 KB | 25.54 KB | 48.58 KB | - | 2 | ok (6 budgets) |
 | standalone worker file | `video-fps-probe/standalone/own.worker.js` | - | - | 35.93 KB | 35.93 KB | 35.93 KB | - | 1 file, no imports | ok |
 | standalone worker file | `video-fps-probe/standalone/own-isobmff.worker.js` | - | - | 21.11 KB | - | 21.11 KB | - | 1 file, no imports | ok |
 | standalone worker file | `video-fps-probe/standalone/own-matroska.worker.js` | - | - | - | 23.73 KB | 23.73 KB | - | 1 file, no imports | ok |

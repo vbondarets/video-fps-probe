@@ -125,7 +125,7 @@ if (report.verdict === 'fail') showErrors(report.violations, report.suggestedFps
 else upload(file); // 'pass', 'warn', or 'unknown': no result, an error or a missing field fails open
 ```
 
-Rules are JSON, such as `{ fps: { min: 24, max: 60 }, duration: { max: 10 }, vfr: 'warn' }`, and frame rates compare as exact rationals: 23.976 fps (`24000/1001`) is below a minimum of 24, 59.94 meets a maximum of 60. The presets hold the published input limits of Kling O1 and Motion Control, Runway Aleph 2.0, Veo 3.1, and Wan 2.6 on fal and Seedance 2.0 on EvoLink (gateways, so they only warn), each with the day it was verified; their source pages are in `video-fps-probe/presets/sources.json`, where `sources[name]` replaces the `sourceUrl` of 0.2.0 ([check](docs/api.md#check), [presets](docs/api.md#presets)).
+Rules are JSON, such as `{ fps: { min: 24, max: 60 }, duration: { max: 10 }, vfr: 'warn' }`, and frame rates compare as exact rationals: 23.976 fps (`24000/1001`) is below a minimum of 24, 59.94 meets a maximum of 60. The presets hold the published input limits of Kling O1 and Motion Control, Runway Aleph 2.0, Veo 3.1, and Wan 2.6 on fal and Seedance 2.0 on EvoLink (gateways, so they only warn), each with its source and the day it was verified; the source pages are also in `video-fps-probe/presets/sources.json`, where `sources[name]` replaces the deprecated `sourceUrl` ([check](docs/api.md#check), [presets](docs/api.md#presets)).
 
 ## Size
 
@@ -148,7 +148,7 @@ export default defineConfig({ worker: { format: 'es' } });
 
 Engines cost nothing until imported. Importing a descriptor grows the critical path a little, from 0.66 KB to 0.89 KB with mp4box or mediabunny, 0.76 KB with rVFC and 1.01 KB with all three, and the engine itself loads lazily: mp4box 44.92 KB, mediabunny 54.05 KB, rVFC 2.19 KB. Gzip -9 of production builds from the packed tarball, budgeted in CI; every configuration is in [docs/benchmarks.md](docs/benchmarks.md#package-size).
 
-`video-fps-probe/react` adds 1.20 KB to the critical path for the provider, `useVideoFps` and its store (React itself not counted); its first analysis also fetches a 0.43 KB summary module, in parallel with the probe client. `video-fps-probe/check` adds 3.95 KB when imported statically, and nothing lazily; one preset from `video-fps-probe/presets` adds 0.41 KB.
+`video-fps-probe/react` adds 1.20 KB to the critical path for the provider, `useVideoFps` and its store (React itself not counted); its first analysis also fetches a 0.43 KB summary module, in parallel with the probe client. `video-fps-probe/check` adds 3.95 KB when imported statically, and nothing lazily; one preset from `video-fps-probe/presets` adds 0.46 KB.
 
 <!-- tables:size:end -->
 

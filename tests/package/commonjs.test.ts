@@ -43,6 +43,13 @@ async function main(path: string): Promise<void> {
 void main(process.argv[2]!);
 `;
 
+const CONSUMER_020 = `import { klingO1ReferenceVideo, type ProviderPreset } from 'video-fps-probe/presets';
+
+const preset: ProviderPreset = klingO1ReferenceVideo;
+const url: string = klingO1ReferenceVideo.sourceUrl;
+process.stdout.write(JSON.stringify({ url, again: preset.sourceUrl }));
+`;
+
 const NEST_LIKE: ts.CompilerOptions = {
   module: ts.ModuleKind.CommonJS,
   moduleResolution: ts.ModuleResolutionKind.Node10,
@@ -95,5 +102,24 @@ describe('the packed tarball from CommonJS', () => {
     expect(problems).toEqual([]);
     expect(program.emit().emitSkipped).toBe(false);
     expect(runNode(dir, join('out', 'consumer.js'))).toEqual(expected);
+  });
+
+  it('a 0.2.0 consumer that reads preset.sourceUrl compiles, sees it deprecated and gets the page of presets/sources.json', () => {
+    const source = join(dir, 'consumer-020.ts');
+    writeFileSync(source, CONSUMER_020);
+    const program = ts.createProgram([source], { ...NEST_LIKE, outDir: join(dir, 'out-020') });
+    expect(ts.getPreEmitDiagnostics(program).map((d) => ts.flattenDiagnosticMessageText(d.messageText, ' '))).toEqual([]);
+    const checker = program.getTypeChecker();
+    const tags: string[] = [];
+    const visit = (node: ts.Node): void => {
+      if (ts.isPropertyAccessExpression(node) && node.name.text === 'sourceUrl') {
+        for (const tag of checker.getSymbolAtLocation(node.name)?.getJsDocTags(checker) ?? []) tags.push(`@${tag.name} ${ts.displayPartsToString(tag.text)}`);
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(program.getSourceFile(source)!);
+    expect(tags).toEqual(Array(2).fill('@deprecated Use video-fps-probe/presets/sources.json; sourceUrl will be removed in the next major.'));
+    expect(program.emit().emitSkipped).toBe(false);
+    expect(runNode(dir, join('out-020', 'consumer-020.js'))).toEqual({ url: sources.klingO1ReferenceVideo, again: sources.klingO1ReferenceVideo });
   });
 });
