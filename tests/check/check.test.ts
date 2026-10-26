@@ -808,6 +808,36 @@ describe('check: committed fixtures', () => {
     expect(check(await run('cfr_vp9_59.94.webm'), { duration: { min: 3.003 } })).toEqual({ verdict: 'pass', violations: [] });
   });
 
+  it('passes the format duration ffprobe prints on every VFR WebM or Matroska file whose measured span is within a frame of it', async () => {
+    const judged: string[] = [];
+    for (const name of readdirSync(FILES_DIR)) {
+      const r = await run(name);
+      const t = r.videoTracks.find((x) => x.trackId === r.primaryTrackId);
+      const printed = Number((loadRef(name) as { probe?: { format?: { duration?: string } } } | null)?.probe?.format?.duration);
+      if ((r.container !== 'webm' && r.container !== 'matroska') || !t?.isVfr || !t.minFps || !Number.isFinite(printed)) continue;
+      if (Math.abs(printed - t.durationSec!) * t.minFps.value > 1) continue;
+      judged.push(name);
+      expect(check(r, { duration: { min: printed, max: printed } }), `${name}: ffprobe ${printed} s, measured ${t.durationSec} s`).toEqual({ verdict: 'pass', violations: [] });
+    }
+    expect(judged).toEqual(expect.arrayContaining(['vfr_screenrec_ts1000.webm', 'late_25_to_12.5.webm', 'rec_chromium_vp8.webm', 'rec_chromium_h264.mkv']));
+    const screen = await run('vfr_screenrec_ts1000.webm');
+    expect(screen.videoTracks[0]!.durationSec).toBe(5.999);
+    expect(check(screen, { duration: { min: 6 } })).toEqual({ verdict: 'pass', violations: [] });
+    expect(check(screen, { duration: { max: 5.999 } }).violations.map((v) => [v.rule, v.actual])).toEqual([['duration.max', 6]]);
+  });
+
+  it('keeps the measured span of a WebM or Matroska track when the format duration is more than a frame off, and of every MP4 track', () => {
+    const vfr = { isVfr: true, durationSec: 3, minFps: rate(30), avgFps: rate(30) };
+    const webm = (formatDurationSec: number, container: FileResult['container'] = 'webm') => result(vfr, { container, formatDurationSec });
+    expect(failed(webm(3.03), { duration: { min: 3.03 } })).toEqual([]);
+    expect(failed(webm(3.03, 'matroska'), { duration: { min: 3.03 } })).toEqual([]);
+    expect(failed(webm(2.98), { duration: { max: 2.98 } })).toEqual([]);
+    expect(failed(webm(6), { duration: { min: 6 } })).toEqual(['duration.min']);
+    expect(failed(webm(10), { duration: { max: 3 } })).toEqual([]);
+    expect(failed(webm(3.03, 'mp4'), { duration: { min: 3.03 } })).toEqual(['duration.min']);
+    expect(failed(result({ ...vfr, minFps: null }, { container: 'webm', formatDurationSec: 3.001 }), { duration: { min: 3.001 } })).toEqual(['duration.min']);
+  });
+
   it('judges the 3 s of a constant 60 fps WebM whose 1 ms ticks span 2.999 s', async () => {
     const w60 = await run('cfr_vp9_60.webm');
     expect(w60.videoTracks[0]!.durationSec).toBe(2.999);
