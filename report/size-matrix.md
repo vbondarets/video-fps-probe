@@ -21,8 +21,8 @@ The critical path is the package code inside the host entry chunk, cut out of th
 | iife-nosplit | video-fps-probe/lazy | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.66 KB** | 1.39 KB | 24.43 KB | 27.07 KB | 48.23 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
 | react | video-fps-probe/lazy + video-fps-probe/react (React 19.3.1) | format: 'es' | **1.64 KB** | 69.86 KB | 22.70 KB | 25.54 KB | 48.58 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
 | react18 | video-fps-probe/lazy + video-fps-probe/react (React 18.3.1) | format: 'es' | **1.64 KB** | 47.26 KB | 22.70 KB | 25.54 KB | 48.58 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
-| check | video-fps-probe/lazy + video-fps-probe/check | format: 'es' | **4.51 KB** | 5.23 KB | 22.71 KB | 25.54 KB | 48.58 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
-| preset | video-fps-probe/lazy + video-fps-probe/check + video-fps-probe/presets (klingO1ReferenceVideo) | format: 'es' | **4.86 KB** | 5.58 KB | 22.70 KB | 25.54 KB | 48.58 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
+| check | video-fps-probe/lazy + video-fps-probe/check | format: 'es' | **4.52 KB** | 5.24 KB | 22.70 KB | 25.54 KB | 48.58 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
+| preset | video-fps-probe/lazy + video-fps-probe/check + video-fps-probe/presets (klingO1ReferenceVideo) | format: 'es' | **4.87 KB** | 5.59 KB | 22.70 KB | 25.54 KB | 48.58 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
 | standalone worker file | video-fps-probe/standalone/own.worker.js | - | - | - | 35.93 KB | 35.93 KB | 35.93 KB | - | 1 file, no imports | ok |
 | standalone worker file | video-fps-probe/standalone/own-isobmff.worker.js | - | - | - | 21.11 KB | - | 21.11 KB | - | 1 file, no imports | ok |
 | standalone worker file | video-fps-probe/standalone/own-matroska.worker.js | - | - | - | - | 23.73 KB | 23.73 KB | - | 1 file, no imports | ok |
@@ -33,9 +33,9 @@ The host's worker option decides the first MP4: 22.71 KB with `worker: { format:
 
 In react (React 19.3.1) and react18 (React 18.3.1) the entry chunk also holds React and ReactDOM, which a React host ships anyway, so its column is not a package cost. The critical path counts the package code only, and the React entry is 1.20 KB of it in each. The first analysis also fetches the 0.43 KB summary module of the store, in parallel with the probe client.
 
-In check, 3.95 KB of the 4.51 KB critical path is `check`, imported statically next to the lazy stub. It imports no other module and loads nothing lazily, so the lazy columns equal the default configuration's.
+In check, 3.96 KB of the 4.52 KB critical path is `check`, imported statically next to the lazy stub. It imports no other module and loads nothing lazily, so the lazy columns equal the default configuration's.
 
-In preset, 3.95 KB of the 4.86 KB critical path is `check` and 0.46 KB the one preset it imports (klingO1ReferenceVideo), imported statically next to the lazy stub. Neither entry imports another module or loads anything lazily, so the lazy columns equal the default configuration's.
+In preset, 3.96 KB of the 4.87 KB critical path is `check` and 0.46 KB the one preset it imports (klingO1ReferenceVideo), imported statically next to the lazy stub. Neither entry imports another module or loads anything lazily, so the lazy columns equal the default configuration's.
 
 ## Budgets (gzip)
 
@@ -145,16 +145,16 @@ In preset, 3.95 KB of the 4.86 KB critical path is `check` and 0.46 KB the one p
 | react18 | React entry (the provider and hooks in the entry chunk, React not counted) | 1.50 KB | 1.20 KB | 0.30 KB | ok |
 | react18 | first MP4 analysis with the React summary, lazy total | 25.00 KB | 23.13 KB | 1.87 KB | ok |
 | react18 | emitted lazy total (every file outside the entry chunk) | 92.50 KB | 89.56 KB | 2.94 KB | ok |
-| check | critical path (package code in the entry chunk) | 5.00 KB | 4.51 KB | 0.49 KB | ok |
-| check | check entry (in the entry chunk) | 4.50 KB | 3.95 KB | 0.55 KB | ok |
-| check | entry chunk with the preload helper | 5.50 KB | 5.23 KB | 0.27 KB | ok |
-| check | first MP4 analysis, lazy total | 24.50 KB | 22.71 KB | 1.79 KB | ok |
-| check | emitted lazy total (every file outside the entry chunk) | 92.00 KB | 89.15 KB | 2.85 KB | ok |
-| preset | critical path (package code in the entry chunk) | 5.00 KB | 4.86 KB | 0.14 KB | ok |
-| preset | check entry (in the entry chunk) | 4.50 KB | 3.95 KB | 0.55 KB | ok |
+| check | critical path (package code in the entry chunk) | 5.00 KB | 4.52 KB | 0.48 KB | ok |
+| check | check entry (in the entry chunk) | 4.50 KB | 3.96 KB | 0.54 KB | ok |
+| check | entry chunk with the preload helper | 5.50 KB | 5.24 KB | 0.26 KB | ok |
+| check | first MP4 analysis, lazy total | 24.50 KB | 22.70 KB | 1.80 KB | ok |
+| check | emitted lazy total (every file outside the entry chunk) | 92.00 KB | 89.13 KB | 2.87 KB | ok |
+| preset | critical path (package code in the entry chunk) | 5.00 KB | 4.87 KB | 0.13 KB | ok |
+| preset | check entry (in the entry chunk) | 4.50 KB | 3.96 KB | 0.54 KB | ok |
 | preset | presets entry (the imported presets, in the entry chunk) | 0.50 KB | 0.46 KB | 0.04 KB | ok |
-| preset | entry chunk with the preload helper | 6.00 KB | 5.58 KB | 0.42 KB | ok |
-| preset | first MP4 analysis, lazy total | 24.50 KB | 22.70 KB | 1.80 KB | ok |
+| preset | entry chunk with the preload helper | 6.00 KB | 5.59 KB | 0.41 KB | ok |
+| preset | first MP4 analysis, lazy total | 24.50 KB | 22.70 KB | 1.79 KB | ok |
 | preset | emitted lazy total (every file outside the entry chunk) | 92.00 KB | 89.14 KB | 2.86 KB | ok |
 | standalone | own.worker.js | 37.50 KB | 35.93 KB | 1.57 KB | ok |
 | standalone | own-isobmff.worker.js | 22.00 KB | 21.11 KB | 0.89 KB | ok |
@@ -576,27 +576,27 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | react18 | assets/sniff.js | page | shared | 0.99 KB |
 | react18 | assets/stats.js | page | stats | 4.34 KB |
 | react18 | assets/summary.js | page | summary | 0.43 KB |
-| check | assets/compare.js | page | shared | 1.33 KB |
+| check | assets/compare.js | page | shared | 1.32 KB |
 | check | assets/fallback.js | page | shared | 0.75 KB |
-| check | assets/index.js | page | shared | 5.23 KB |
+| check | assets/index.js | page | shared | 5.24 KB |
 | check | assets/inline.js | page | shared | 0.66 KB |
 | check | assets/isobmff.js | page | isobmff | 12.29 KB |
-| check | assets/matroska.js | page | matroska | 11.94 KB |
+| check | assets/matroska.js | page | matroska | 11.93 KB |
 | check | assets/own-isobmff.worker.js | own-isobmff.worker | isobmff | 19.42 KB |
 | check | assets/own-matroska.worker.js | own-matroska.worker | matroska | 18.64 KB |
-| check | assets/probe.js | page | shared | 3.29 KB |
+| check | assets/probe.js | page | shared | 3.28 KB |
 | check | assets/result.js | page | shared | 0.38 KB |
 | check | assets/rfps.js | page | rfps | 3.60 KB |
 | check | assets/rfps.js | own-matroska.worker | rfps | 3.62 KB |
-| check | assets/runtime.js | page | shared | 2.45 KB |
-| check | assets/segments.js | own-matroska.worker | segments | 1.81 KB |
+| check | assets/runtime.js | page | shared | 2.46 KB |
 | check | assets/segments.js | page | segments | 1.84 KB |
+| check | assets/segments.js | own-matroska.worker | segments | 1.81 KB |
 | check | assets/segments.js | own-isobmff.worker | segments | 1.81 KB |
 | check | assets/sniff.js | page | shared | 0.99 KB |
-| check | assets/stats.js | page | stats | 4.34 KB |
+| check | assets/stats.js | page | stats | 4.33 KB |
 | preset | assets/compare.js | page | shared | 1.32 KB |
 | preset | assets/fallback.js | page | shared | 0.75 KB |
-| preset | assets/index.js | page | shared | 5.58 KB |
+| preset | assets/index.js | page | shared | 5.59 KB |
 | preset | assets/inline.js | page | shared | 0.66 KB |
 | preset | assets/isobmff.js | page | isobmff | 12.29 KB |
 | preset | assets/matroska.js | page | matroska | 11.93 KB |
@@ -606,10 +606,10 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | preset | assets/result.js | page | shared | 0.38 KB |
 | preset | assets/rfps.js | page | rfps | 3.60 KB |
 | preset | assets/rfps.js | own-matroska.worker | rfps | 3.62 KB |
-| preset | assets/runtime.js | page | shared | 2.46 KB |
+| preset | assets/runtime.js | page | shared | 2.45 KB |
 | preset | assets/segments.js | own-matroska.worker | segments | 1.81 KB |
-| preset | assets/segments.js | page | segments | 1.84 KB |
 | preset | assets/segments.js | own-isobmff.worker | segments | 1.81 KB |
+| preset | assets/segments.js | page | segments | 1.84 KB |
 | preset | assets/sniff.js | page | shared | 0.99 KB |
 | preset | assets/stats.js | page | stats | 4.34 KB |
 

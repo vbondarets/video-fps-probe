@@ -189,9 +189,9 @@ function resolution(t: VideoTrackResult, cfr: readonly [Q, Q] | null): ((x: Q) =
 function printedDuration(t: VideoTrackResult, result: FileResult): number | null | undefined {
   const span = t.durationSec;
   const format = result.formatDurationSec;
-  const slowest = fromRational(t.minFps);
+  const typical = fromRational(t.dominantFps?.rate ?? (t.isVfr === false ? t.nominalFps : null) ?? t.avgFps);
   const matroska = result.container === 'webm' || result.container === 'matroska';
-  return matroska && typeof span === 'number' && typeof format === 'number' && slowest && Math.abs(format - span) * value(slowest) <= 1 ? format : (span ?? format);
+  return matroska && typeof span === 'number' && typeof format === 'number' && typical && Math.abs(format - span) * value(typical) <= 1 ? format : (span ?? format);
 }
 
 function judgedFps(t: VideoTrackResult, source: FpsSource | undefined, cfr: readonly [Q, Q] | null): Q | null {
