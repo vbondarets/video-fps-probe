@@ -26,7 +26,7 @@ tests/                             vitest suites, e2e, consumer fixtures and dis
 | Path | Role |
 |---|---|
 | `types.ts` | Result model (`FileResult`, `VideoTrackResult`, `Rational`, `Provenance`, `ScanDepth`), options (`AnalyzeOptions`, `CostModel` with `perReadMs`, `bytesPerMs`, `perBlockMs`) and the `ContainerAnalyzer` contract |
-| `reader.ts` | `BlobReader`: the only IO path. One primitive `read(offset, length)` over `Blob.slice().arrayBuffer()`, `readMany` with bounded concurrency, `view()` / `viewExact()` / `bytes()` over up to 4 cached windows, IO counters, abort checks and big-endian DataView helpers (`u8` .. `u64`, `i64`, `fourcc`). 64-bit values above 2^53-1 are rejected |
+| `reader.ts` | `BlobReader`: the only IO path. One primitive `read(offset, length)` over `Blob.slice().arrayBuffer()`, `readMany` with bounded concurrency, `view()` / `bytes()` over up to 4 cached windows, the read count and unique bytes, abort checks and big-endian DataView helpers (`u8` .. `u64`, `i64`, `fourcc`). 64-bit values above 2^53-1 are rejected |
 | `rational.ts` | Exact BigInt port of FFmpeg `av_reduce`, `avgFrameRate(ts, N, D)`, ffprobe-style `num/den` strings |
 | `stats.ts` | `analyzeTimeline`: container-independent timeline statistics (research 4.3). Input is run-length segments (MP4) or a PTS array (Matroska); output is average, presented frames, duplicates, tail exclusion, VFR rule, min/max, nominal and dominant rate, plus a deferred rate profile job when the frame intervals differ by more than 7.5%. `rateProfileOf(job)` loads `segments.ts` and runs the job |
 | `segments.ts` | `rateProfile`: CUSUM segmentation of the frame intervals, anomalies (rate change, freeze, gap, burst), the uneven flag, the summary line and the sparkline buckets. Lazy chunk, imported only by `rateProfileOf` |
@@ -277,7 +277,7 @@ type ContainerAnalysis = Omit<FileResult, 'name' | 'size' | 'io' | 'engine'>;
 ```
 
 - Export the analyzer by name from the parser's `index.ts` (`analyzeIsoBmff`, `analyzeMatroska`): `analyze.ts` loads it with a dynamic import.
-- Do all IO through `reader` (`view`, `viewExact`, `bytes`, `read`, `readMany`). Never touch the Blob directly, or the IO counters and abort checks are bypassed.
+- Do all IO through `reader` (`view`, `bytes`, `read`, `readMany`). Never touch the Blob directly, or the IO counters and abort checks are bypassed.
 - Offsets are Numbers. Never apply 32-bit bit operations to offsets or sizes; decode 64-bit fields with `u64` / `i64`, which reject values above 2^53-1.
 - Throw (or return `error`) for files that cannot be analysed; `analyze` keeps the sniffed container kind on a throw. Return partial results with `warnings` when the header is usable.
 - Set `container` precisely (`mp4` vs `mov` from the ftyp brand, `webm` vs `matroska` from DocType) and `brand` to the major brand or DocType.

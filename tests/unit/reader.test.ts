@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   BlobReader,
-  EndOfFileError,
   FileReadError,
   ascii,
   fourcc,
@@ -53,7 +52,6 @@ describe('BlobReader windows', () => {
     expect(same(v, bytes, 60 * KiB)).toBe(true);
     expect(r.reads).toBe(2);
     expect(r.bytesFetched).toBe(70 * KiB);
-    expect(r.bytesTransferred).toBe(70 * KiB);
   });
 
   it('counts unique bytes when windows overlap', async () => {
@@ -63,7 +61,6 @@ describe('BlobReader windows', () => {
     await r.view(100 * KiB, 16, 32 * KiB);
     await r.view(16 * KiB - 8, 64, 0);
     expect(r.reads).toBe(3);
-    expect(r.bytesTransferred).toBe(64 * KiB + 64);
     expect(r.bytesFetched).toBe(64 * KiB);
   });
 
@@ -89,7 +86,6 @@ describe('BlobReader windows', () => {
     expect(v.byteLength).toBe(4);
     expect(same(v, bytes, 996)).toBe(true);
     expect((await r.view(1000, 8)).byteLength).toBe(0);
-    await expect(r.viewExact(996, 32)).rejects.toBeInstanceOf(EndOfFileError);
     await expect(r.view(1001, 8)).rejects.toBeInstanceOf(RangeError);
   });
 
@@ -109,7 +105,6 @@ describe('BlobReader primitive read', () => {
     expect(Array.from(a)).toEqual(Array.from(bytes.subarray(100, 150)));
     await r.read(100, 50);
     expect(r.reads).toBe(2);
-    expect(r.bytesTransferred).toBe(100);
     expect(r.bytesFetched).toBe(50);
     expect((await r.read(10 * KiB, 4)).length).toBe(0);
     expect(r.reads).toBe(2);

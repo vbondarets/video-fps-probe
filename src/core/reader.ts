@@ -15,22 +15,9 @@ export interface BlobReaderOptions {
   signal?: AbortSignal | null;
 }
 
-export interface ReaderStats {
-  reads: number;
-  bytesFetched: number;
-  bytesTransferred: number;
-}
-
 export const DEFAULT_HEAD_WINDOW = 64 * 1024;
 export const DEFAULT_MAX_WINDOWS = 4;
 export const MAX_SAFE_OFFSET = Number.MAX_SAFE_INTEGER;
-
-export class EndOfFileError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'EndOfFileError';
-  }
-}
 
 export class FileReadError extends Error {
   constructor(message: string, cause?: unknown) {
@@ -68,7 +55,6 @@ export class BlobReader {
   #covered: Interval[] = [];
   #reads = 0;
   #unique = 0;
-  #transferred = 0;
 
   constructor(source: BlobLike, options: BlobReaderOptions = {}) {
     assertSafeCount(source.size, 'blob size');
@@ -86,14 +72,6 @@ export class BlobReader {
 
   get bytesFetched(): number {
     return this.#unique;
-  }
-
-  get bytesTransferred(): number {
-    return this.#transferred;
-  }
-
-  stats(): ReaderStats {
-    return { reads: this.#reads, bytesFetched: this.#unique, bytesTransferred: this.#transferred };
   }
 
   checkAbort(): void {
@@ -116,7 +94,6 @@ export class BlobReader {
     }
     this.checkAbort();
     this.#reads++;
-    this.#transferred += ab.byteLength;
     if (ab.byteLength !== end - offset) {
       throw new FileReadError(`short read at ${offset}: expected ${end - offset} bytes, got ${ab.byteLength}`);
     }
@@ -182,21 +159,9 @@ export class BlobReader {
     return new DataView(buf.buffer, buf.byteOffset, end - offset);
   }
 
-  async viewExact(offset: number, length: number, readAhead: number = this.headWindow): Promise<DataView> {
-    const dv = await this.view(offset, length, readAhead);
-    if (dv.byteLength < length) {
-      throw new EndOfFileError(`unexpected end of file: wanted ${length} bytes at ${offset}, file size ${this.size}`);
-    }
-    return dv;
-  }
-
   async bytes(offset: number, length: number, readAhead: number = this.headWindow): Promise<Uint8Array> {
     const dv = await this.view(offset, length, readAhead);
     return new Uint8Array(dv.buffer, dv.byteOffset, dv.byteLength);
-  }
-
-  clearCache(): void {
-    this.#windows = [];
   }
 
   #cover(start: number, end: number): void {
