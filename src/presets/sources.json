@@ -1,0 +1,8 @@
+{
+  "klingO1ReferenceVideo": "https://kling.ai/document-api/api/video/o1/video-omni.md",
+  "klingMotionControl": "https://kling.ai/document-api/api/video/motion-control.md",
+  "runwayAleph2": "https://docs.dev.runwayml.com/assets/inputs",
+  "veoExtend": "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/video/extend-a-veo-video",
+  "wan26ReferenceToVideoFal": "https://fal.ai/models/wan/v2.6/reference-to-video/api",
+  "seedance2ReferenceVideo": "https://evolink.ai/docs/en/api-manual/video-series/seedance2.0/seedance-2.0-reference-to-video"
+}

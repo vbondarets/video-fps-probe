@@ -1,4 +1,4 @@
-import { openAsBlob } from 'node:fs';
+import { openAsBlob, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { check, type CheckRules } from '../../src/check/index.ts';
@@ -8,11 +8,12 @@ import { makeRational } from '../../src/core/rational.ts';
 import type { FileResult, VideoTrackResult } from '../../src/core/types.ts';
 import * as presets from '../../src/presets/index.ts';
 import type { ProviderPreset } from '../../src/presets/index.ts';
-import { FILES_DIR } from '../helpers/fixtures.ts';
+import { FILES_DIR, REPO_ROOT } from '../helpers/fixtures.ts';
 
 const STALE_AFTER_DAYS = 90;
 const DAY_MS = 86_400_000;
 const ALL = Object.entries(presets) as Array<[string, ProviderPreset]>;
+const SOURCES = JSON.parse(readFileSync(join(REPO_ROOT, 'src', 'presets', 'sources.json'), 'utf8')) as Record<string, string>;
 
 const ageInDays = (preset: ProviderPreset, now: number): number => Math.floor((now - Date.parse(`${preset.verifiedAt}T00:00:00Z`)) / DAY_MS);
 const stale = (now: number): Array<[string, ProviderPreset]> => ALL.filter(([, p]) => ageInDays(p, now) > STALE_AFTER_DAYS);
@@ -27,9 +28,14 @@ describe('presets', () => {
     expect(ALL.map(([name]) => name).sort()).toEqual(['klingMotionControl', 'klingO1ReferenceVideo', 'runwayAleph2', 'seedance2ReferenceVideo', 'veoExtend', 'wan26ReferenceToVideoFal']);
   });
 
-  it.each(ALL)('%s has a name, an https source, a source kind, a verification date and a note', (_, preset) => {
+  it('lists the https source of every preset, and of nothing else, in sources.json, so no JavaScript file of the package holds a URL', () => {
+    expect(Object.keys(SOURCES).sort()).toEqual(ALL.map(([name]) => name).sort());
+    for (const [name, url] of Object.entries(SOURCES)) expect(new URL(url).protocol, name).toBe('https:');
+    expect(ALL.filter(([, preset]) => JSON.stringify(preset).includes('://')).map(([name]) => name)).toEqual([]);
+  });
+
+  it.each(ALL)('%s has a name, a source kind, a verification date and a note', (_, preset) => {
     expect(preset.name.length).toBeGreaterThan(0);
-    expect(new URL(preset.sourceUrl).protocol).toBe('https:');
     expect(['official', 'gateway']).toContain(preset.sourceKind);
     expect(preset.verifiedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(new Date(`${preset.verifiedAt}T00:00:00Z`).toISOString().slice(0, 10)).toBe(preset.verifiedAt);
@@ -95,7 +101,7 @@ describe('presets', () => {
       expect(ageInDays(preset, verified + STALE_AFTER_DAYS * DAY_MS + DAY_MS - 1), name).toBe(STALE_AFTER_DAYS);
     }
     for (const [name, preset] of stale(Date.now())) {
-      const message = `${name} was verified on ${preset.verifiedAt}, ${ageInDays(preset, Date.now())} days ago: verify it again against ${preset.sourceUrl}`;
+      const message = `${name} was verified on ${preset.verifiedAt}, ${ageInDays(preset, Date.now())} days ago: verify it again against ${SOURCES[name]}`;
       if (process.env.GITHUB_ACTIONS) console.log(`::warning title=Stale preset::${message}`);
       else console.warn(`stale preset: ${message}`);
     }

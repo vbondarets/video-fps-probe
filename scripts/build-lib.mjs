@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,6 +8,7 @@ import { declarationClosure } from './check-dist.mjs';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(REPO_ROOT, 'dist');
 export const STANDALONE = ['own.worker', 'own-isobmff.worker', 'own-matroska.worker'];
+const JSON_ENTRIES = ['presets/sources.json'];
 
 const WORKER_URL = /(new\s+URL\(\s*)(['"])([^'"]+\.worker)\.ts\2/g;
 const DTS_SPECIFIER = /(['"])(\.{1,2}\/[^'"]+)\.ts\1/g;
@@ -66,7 +67,8 @@ async function main() {
   const unreached = dts.filter((f) => !reached.has(posix(relative(DIST, f))));
   for (const f of unreached) rmSync(f);
   const standalone = await buildStandalone();
-  console.log(`built ${posix(relative(REPO_ROOT, DIST))}: ${js.length} js, ${dts.length - unreached.length} d.ts, worker URLs rewritten in ${urls} files, d.ts specifiers in ${specifiers} files, ${unreached.length} d.ts no exported entry's types reach left out, ${standalone.join(', ')}`);
+  for (const file of JSON_ENTRIES) copyFileSync(join(REPO_ROOT, 'src', file), join(DIST, file));
+  console.log(`built ${posix(relative(REPO_ROOT, DIST))}: ${js.length} js, ${JSON_ENTRIES.length} json, ${dts.length - unreached.length} d.ts, worker URLs rewritten in ${urls} files, d.ts specifiers in ${specifiers} files, ${unreached.length} d.ts no exported entry's types reach left out, ${standalone.join(', ')}`);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();

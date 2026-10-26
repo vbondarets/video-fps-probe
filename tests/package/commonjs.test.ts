@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { check } from '../../src/check/index.ts';
 import { analyze } from '../../src/index.ts';
 import { klingO1ReferenceVideo } from '../../src/presets/index.ts';
+import sources from '../../src/presets/sources.json' with { type: 'json' };
 import { FILES_DIR, REPO_ROOT } from '../helpers/fixtures.ts';
 
 const PACKAGE = 'video-fps-probe';
@@ -18,11 +19,12 @@ const { openAsBlob } = require('node:fs');
 const { analyze, ProbeError } = require('video-fps-probe');
 const { check } = require('video-fps-probe/check');
 const { klingO1ReferenceVideo } = require('video-fps-probe/presets');
+const sources = require('video-fps-probe/presets/sources.json');
 
 (async () => {
   const result = await analyze(await openAsBlob(process.argv[2]), { name: 'cfr_h264_30.mp4' });
   const report = check(result, klingO1ReferenceVideo.rules);
-  process.stdout.write(JSON.stringify({ probeError: typeof ProbeError, result: { ...result, io: null }, report }));
+  process.stdout.write(JSON.stringify({ probeError: typeof ProbeError, result: { ...result, io: null }, report, source: sources.klingO1ReferenceVideo }));
 })();
 `;
 
@@ -30,11 +32,12 @@ const CONSUMER_TS = `import { openAsBlob } from 'node:fs';
 import { analyze, ProbeError, type ProbeResult } from 'video-fps-probe';
 import { check, type CheckReport } from 'video-fps-probe/check';
 import { klingO1ReferenceVideo } from 'video-fps-probe/presets';
+import sources from 'video-fps-probe/presets/sources.json';
 
 async function main(path: string): Promise<void> {
   const result: ProbeResult = await analyze(await openAsBlob(path), { name: 'cfr_h264_30.mp4' });
   const report: CheckReport = check(result, klingO1ReferenceVideo.rules);
-  process.stdout.write(JSON.stringify({ probeError: typeof ProbeError, result: { ...result, io: null }, report }));
+  process.stdout.write(JSON.stringify({ probeError: typeof ProbeError, result: { ...result, io: null }, report, source: sources.klingO1ReferenceVideo }));
 }
 
 void main(process.argv[2]!);
@@ -49,6 +52,7 @@ const NEST_LIKE: ts.CompilerOptions = {
   strictNullChecks: true,
   skipLibCheck: true,
   esModuleInterop: true,
+  resolveJsonModule: true,
   allowSyntheticDefaultImports: true,
   experimentalDecorators: true,
   emitDecoratorMetadata: true,
@@ -70,7 +74,7 @@ describe('the packed tarball from CommonJS', () => {
     for (const name of NODE_TYPES) cpSync(join(REPO_ROOT, 'node_modules', name), join(dir, 'node_modules', name), { recursive: true });
     writeFileSync(join(dir, 'package.json'), JSON.stringify({ name: 'commonjs-consumer', private: true, type: 'commonjs' }));
     const result = await analyze(await openAsBlob(FIXTURE), { name: 'cfr_h264_30.mp4' });
-    expected = JSON.parse(JSON.stringify({ probeError: 'function', result: { ...result, io: null }, report: check(result, klingO1ReferenceVideo.rules) }));
+    expected = JSON.parse(JSON.stringify({ probeError: 'function', result: { ...result, io: null }, report: check(result, klingO1ReferenceVideo.rules), source: sources.klingO1ReferenceVideo }));
   });
 
   afterAll(() => {

@@ -7,7 +7,7 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const TSCONFIGS = ['tsconfig.app.json', 'tsconfig.test.json'];
 const DIST_TARGET = /^\.\/dist\/(.+)\.js$/;
 
-const skipped = (key) => key === './package.json' || key.startsWith('./standalone/');
+const skipped = (key) => key === './package.json' || key.startsWith('./standalone/') || key.endsWith('.json');
 
 export function sourceMap(root = REPO_ROOT) {
   const { name, exports = {} } = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));

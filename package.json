@@ -54,6 +54,9 @@
       "presets": [
         "dist/presets/index.d.ts"
       ],
+      "presets/sources.json": [
+        "dist/presets/sources.json"
+      ],
       "mp4box": [
         "dist/plugins/mp4box.d.ts"
       ],
@@ -103,6 +106,7 @@
       "types": "./dist/presets/index.d.ts",
       "default": "./dist/presets/index.js"
     },
+    "./presets/sources.json": "./dist/presets/sources.json",
     "./mp4box": {
       "types": "./dist/plugins/mp4box.d.ts",
       "default": "./dist/plugins/mp4box.js"

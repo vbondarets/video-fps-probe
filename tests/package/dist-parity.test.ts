@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import * as src from '../../src/index.ts';
 import type { ProbeResult } from '../../src/index.ts';
+import sources from '../../src/presets/sources.json' with { type: 'json' };
 import { FILES_DIR, loadManifest } from '../helpers/fixtures.ts';
 
 const DIST_ENTRY = new URL('../../dist/index.js', import.meta.url).href;
@@ -24,6 +25,11 @@ describe('dist parity', () => {
     expect(matroska.length).toBeGreaterThan(10);
     expect(dist.analyze).not.toBe(src.analyze);
     expect(Object.keys(dist).sort()).toEqual(Object.keys(src).sort());
+  });
+
+  it('ships the preset sources as dist/presets/sources.json, importable with a JSON import attribute', async () => {
+    const shipped = (await import(new URL('../../dist/presets/sources.json', import.meta.url).href, { with: { type: 'json' } })) as { default: unknown };
+    expect(shipped.default).toEqual(sources);
   });
 
   it.each(fixtures.map((e) => e.name))('%s: dist analyze equals src analyze', async (name) => {
