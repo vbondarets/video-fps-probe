@@ -7,19 +7,19 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 ### Added
 
 - `byContainer` on a custom worker: `{ create, engines, byContainer: { matroska: () => new Worker(...) } }` runs own on the worker of the file's container family, and every other engine and family on `create` ([api](docs/api.md)).
-- `video-fps-probe/standalone/own-isobmff.worker.js` and `own-matroska.worker.js`: the two own workers as classic scripts with no imports, about 21.4 and 23.9 KB gzip, for `byContainer`. The combined `own.worker.js` stays.
-- `lazyProbeClient` and `createProbeClient` load the routing by container family only with `byContainer`, as a chunk of about 0.4 KB gzip, so a custom worker without it loads none of it: about 23.8 KB for the first MP4 with `lazyProbeClient` (23.5 KB in 0.2.0).
+- `video-fps-probe/standalone/own-isobmff.worker.js` and `own-matroska.worker.js`: the two own workers as classic scripts with no imports, about 21.1 and 23.7 KB gzip, for `byContainer`. The combined `own.worker.js` stays.
+- `lazyProbeClient` and `createProbeClient` load the routing by container family only with `byContainer`, as a chunk of about 0.4 KB gzip, so a custom worker without it loads none of it: about 23.6 KB for the first MP4 with `lazyProbeClient` (23.5 KB in 0.2.0).
 - A weekly canary builds the package with the latest mp4box, mediabunny, Vite and rolldown: the comparison against ffprobe, the size budgets and the browser smoke test. It fails only when an own result changes or a size check fails, never when only a library arm changes: its smoke test asserts own only, and the job summary lists what changed in the library arms, in the comparison and in the browsers.
 
 ### Changed
 
-- **Behaviour change:** own runs on one worker per container family, `own-isobmff.worker` or `own-matroska.worker`, picked by the file's first 4 bytes. The first MP4 loads about 22.9 KB (23.6 KB in 0.2.0), or 24.7 KB instead of 38.9 KB with Vite's default worker format ([size matrix](report/size-matrix.md)).
-- The first WebM or MKV without DefaultDuration, such as a MediaRecorder recording, loads about 25.7 KB (26.7 KB in 0.2.0), and about 27.2 KB instead of 38.9 KB with Vite's default worker format.
+- **Behaviour change:** own runs on one worker per container family, `own-isobmff.worker` or `own-matroska.worker`, picked by the file's first 4 bytes. The first MP4 loads about 22.7 KB (23.6 KB in 0.2.0), or 24.4 KB instead of 38.9 KB with Vite's default worker format ([size matrix](report/size-matrix.md)).
+- The first WebM or MKV without DefaultDuration, such as a MediaRecorder recording, loads about 25.5 KB (26.7 KB in 0.2.0), and about 27.1 KB instead of 38.9 KB with Vite's default worker format.
 - `workers` counts per worker kind, so `workers: 1` can run one MP4 and one WebM at once. `prewarm()` starts the worker of each container family it is given: ISO BMFF by default, nothing for `containers: []`.
 - A missing own worker file, such as a 404 after a redeploy, rejects only the jobs of its container family with `reason: 'load'`, and the next call retries; in 0.2.0 a missing parser chunk came back as an error string in the result.
 - Service worker precache lists that name `own.worker` need both new worker files. A host that wants one own worker can keep the 0.2.0 layout with a custom worker that runs `serveProbeWorker({ own: ownEngine })` from `video-fps-probe/worker-runtime`.
 - **Behaviour change:** the presets no longer carry `sourceUrl`. The source pages moved to `video-fps-probe/presets/sources.json`, keyed by the name of the export (`sources.klingO1ReferenceVideo` instead of `klingO1ReferenceVideo.sourceUrl`), so no JavaScript file of the package holds a URL string, which supply-chain scanners such as Socket report ([presets](docs/api.md#presets)).
-- The installed package grows from about 442 KB to 568 KB unpacked, mostly for the two new standalone files; a bundler still takes only what the app imports.
+- The installed package grows from about 442 KB to 567 KB unpacked, mostly for the two new standalone files; a bundler still takes only what the app imports.
 - CI also runs the unit, fixture and package tests on Node 22.12, the lowest version the package supports, next to Node 24; 0.2.0 tested Node 24 only.
 - `require('video-fps-probe')` from CommonJS is tested: the package test `require()`s the packed tarball on Node 22.12 and 24 and compiles a TypeScript project with `module` `commonjs` and `moduleResolution` `node10`, as a NestJS 11 app has; the Jest setup it needs is documented ([CommonJS](docs/api.md#commonjs)).
 - Still 0 mismatches against ffprobe 8.1.1, now on 130 committed fixtures: the new ones are byte patches of ffmpeg output with header values that other parsers fail on ([fixtures](fixtures/README.md#header-values-other-parsers-trip-on-section-o)).
