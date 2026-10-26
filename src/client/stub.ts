@@ -4,7 +4,7 @@ import type { EngineDescriptor } from '../plugins/types.ts';
 import type { LazyProbe, Probe } from './types.ts';
 
 export const knownEngines = <Id extends EngineId>(worker: { readonly engines: readonly EngineId[] } | string | undefined, descriptors: readonly EngineDescriptor[] = []): Id[] =>
-  [...new Set(['own', ...(typeof worker === 'object' ? worker.engines : []), ...descriptors.map((d) => d.id)])] as Id[];
+  [...new Set(['own', ...((worker as { readonly engines?: readonly EngineId[] } | undefined)?.engines ?? []), ...descriptors.map((d) => d.id)])] as Id[];
 
 export function lazyStub<Id extends EngineId>(factory: () => Promise<Probe<Id>>, known: readonly Id[]): LazyProbe<Id> {
   let probe: Probe<Id> | null = null;

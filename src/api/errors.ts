@@ -20,7 +20,7 @@ export class ProbeError extends Error {
   declare readonly reason?: 'load' | 'crash';
 
   constructor(code: ProbeErrorCode, message: string, options: ProbeErrorOptions = {}) {
-    super(message, options.cause === undefined ? undefined : { cause: options.cause });
+    super(message, options.cause === undefined ? undefined : options);
     this.name = 'ProbeError';
     this.code = code;
     this.engine = options.engine ?? null;
