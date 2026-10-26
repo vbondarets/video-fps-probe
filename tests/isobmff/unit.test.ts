@@ -957,3 +957,36 @@ describe('64-bit all-ones durations', () => {
     expect(media.videoTracks[0]).toMatchObject({ frames: 90, presentedFrames: 90, durationSec: 0, avgFpsFfprobe: '30/1' });
   });
 });
+
+describe('data after moov', () => {
+  const CONTROL = /[\0-\x1f\x7f-\x9f]/;
+  const mdat = (n: number): Bytes => box('mdat', zeros(n));
+  const everyWarning = (r: FileResult): string[] => [...r.warnings, ...r.videoTracks.flatMap((t) => t.warnings)];
+  const moovAtEnd = bytes(ftyp('qt  '), mdat(80_000), moov(trak({ ...CFR30(), chunkOffset: 40 })));
+
+  test('a trailer that is not a box after a complete moov and mdat is ignored instead of marking the file truncated', async () => {
+    const plain = await run(moovAtEnd);
+    const trailers = [[0x7f, 0xff, 0xff, 0xff, ...zeros(12)], [...u32(256), ...zeros(12)], [...u32(0x10000), 1, 2, 3, 0x9b, ...zeros(8)]];
+    for (const trailer of trailers) {
+      const r = await run(bytes(moovAtEnd, trailer));
+      expect(r.warnings).toEqual([`ignored trailing data at ${moovAtEnd.length}: not a box`]);
+      expect({ ...r, size: 0, io: null, warnings: [] }).toEqual({ ...plain, size: 0, io: null, warnings: [] });
+    }
+  });
+
+  test('a cut mdat after a faststart moov is still a truncation', async () => {
+    const head = bytes(ftyp(), moov(trak({ ...CFR30(), chunkOffset: 0 })));
+    const fast = bytes(ftyp(), moov(trak({ ...CFR30(), chunkOffset: head.length + 8 })), mdat(900));
+    const cut = await run(fast.subarray(0, fast.length - 450));
+    expect(cut.warnings).toEqual([`'mdat' at ${head.length} is truncated`]);
+    expect(cut.videoTracks[0]).toMatchObject({ frames: 90, presentedFrames: 45 });
+  });
+
+  test('warnings never carry NUL or other control characters from the file', async () => {
+    const enc = visualEntry('enc\u0001', 160, 90, box('sinf', box('frma', [0, 0x61, 0x76, 0x63]), box('schm', zeros(12))));
+    const r = await run(bytes(moovAtEnd.subarray(0, moovAtEnd.length - moov(trak({ ...CFR30(), chunkOffset: 40 })).length), moov(trak({ ...CFR30(), chunkOffset: 40, entry: enc })), [...u32(64), 0, 0, 0, 0, ...zeros(4)]));
+    expect(everyWarning(r).join('\n')).toMatch(/encrypted: enc\? of \?avc/);
+    expect(everyWarning(r).filter((w) => CONTROL.test(w))).toEqual([]);
+  });
+});
+

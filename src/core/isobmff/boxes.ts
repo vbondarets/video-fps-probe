@@ -7,7 +7,7 @@ export class IsoBmffError extends Error {
   }
 }
 
-function printable(type: string): string {
+export function printable(type: string): string {
   return type.replace(/[^\x20-\x7e]/g, '?');
 }
 

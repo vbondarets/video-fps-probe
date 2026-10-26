@@ -400,3 +400,14 @@ describe('auto mode cost plan', () => {
     expect(estimateScan(region, null, 0)).toBeNull();
   });
 });
+
+describe('strings from the file in warnings', () => {
+  it('replace NUL and other control characters, so a warning stays printable', async () => {
+    const bytes = concat(ebmlHeader('web\u0001m'), segment([info(), tracks({ number: 1, codecId: 'V_\u0007X' }), ...cfrClusters({ frames: 30, periodMs: 40 })]));
+    const r = await run(bytes, { matroskaMode: 'auto' });
+    expect(warnings(r)).toMatch(/unexpected DocType 'web\?m'/);
+    expect(warnings(r)).toMatch(/V_\?X/);
+    expect(warnings(r)).not.toMatch(/[\0-\x1f\x7f-\x9f]/);
+  });
+});
+

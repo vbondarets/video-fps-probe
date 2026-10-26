@@ -6,15 +6,15 @@ The measurements behind the [README](../README.md): accuracy against ffprobe, sp
 
 <!-- tables:headline:start -->
 
-- **Accuracy.** The own parsers were checked against ffprobe 8.1.1 on 133 fixtures, 121 made with ffmpeg and 12 MediaRecorder recordings from headless Chromium (128 committed, 5 large local files; phone, camera, screen recorder, Firefox and Safari output is not in the corpus, see Limitations): 2105 field checks, 2021 exact, 13 within tolerance (9 of them a definition difference by design: the measured average of a Matroska file that stores no duration for its last frame, which avgFps gives the median interval and ffprobe its own estimate), 0 known deviations with a recorded reason, 0 mismatches, 71 not applicable.
+- **Accuracy.** The own parsers were checked against ffprobe 8.1.1 on 134 fixtures, 122 made with ffmpeg and 12 MediaRecorder recordings from headless Chromium (129 committed, 5 large local files; phone, camera, screen recorder, Firefox and Safari output is not in the corpus, see Limitations): 2122 field checks, 2038 exact, 13 within tolerance (9 of them a definition difference by design: the measured average of a Matroska file that stores no duration for its last frame, which avgFps gives the median interval and ffprobe its own estimate), 0 known deviations with a recorded reason, 0 mismatches, 71 not applicable.
 - **Reads.** Median 1 read per committed fixture, at most 1. The 3 h, 648000-frame MP4 (12.42 MiB) takes 2 reads and 2.56 MiB (20.6% of the file).
 - **Speed.** In Chrome headless shell 156, warm: median 0.80 ms per file in the worker and 1.40 ms from file pick to rendered result; the 3 h file takes 3.50 ms. A 604.42 MB 1080p MP4 with the moov at the end takes 2 reads (75.0 KiB) and 1.40 ms; the same stream in Matroska takes 110 ms in auto mode (126 reads; a probe, so no frame count until "Scan all frames"). Measured on an earlier build, so these figures are not current ([Speed](#speed)).
-- **Size.** A default install (`video-fps-probe/lazy`) adds 0.67 KB gzip to a host app's critical path. Its first MP4 file loads 22.78 KB lazily when the host's Vite config sets `worker: { format: 'es' }`, and 24.54 KB with Vite's default worker format, 'iife', which builds each of the two own workers as one file ([Package size](#package-size)). The demo page plus its first MP4 result loads 100.38 KB gzip (page, probe client, worker entry, shared statistics chunk, ISO BMFF parser); the first Matroska result 99.79 KB, or 103.38 KB for a file without DefaultDuration, such as a MediaRecorder recording, which also loads the ffprobe frame rate estimate.
+- **Size.** A default install (`video-fps-probe/lazy`) adds 0.67 KB gzip to a host app's critical path. Its first MP4 file loads 22.86 KB lazily when the host's Vite config sets `worker: { format: 'es' }`, and 24.64 KB with Vite's default worker format, 'iife', which builds each of the two own workers as one file ([Package size](#package-size)). The demo page plus its first MP4 result loads 100.46 KB gzip (page, probe client, worker entry, shared statistics chunk, ISO BMFF parser); the first Matroska result 99.84 KB, or 103.43 KB for a file without DefaultDuration, such as a MediaRecorder recording, which also loads the ffprobe frame rate estimate.
 - **Embedding.** In a host app with a 1.95 MB gzip initial load, prewarming the worker when the upload dialog opens makes the first result on fast 4G take 4.10 ms instead of 347 ms ([Embedding in an existing app](#embedding-in-an-existing-app)). Measured on an earlier build whose worker entry and parser chunks differ from the current ones, so these figures are not current.
 - **Same result in Node and Chrome.** 116 of 116 files give identical results field by field (timing excluded).
 - **Machine.** Windows 10 Pro, Intel Core i7-10700KF (16 threads), 32 GiB, Node v24.20.0, Chrome headless shell 156; ffprobe 8.1.1-full_build-www.gyan.dev.
 
-The accuracy figures (133 fixtures, 2105 checks) and the large-file rows come from runs with `--with-large`, so they include 5 local large files that are not committed (2 long files, 3 1080p files of 604 MB). The Node and Chrome identity count (116 of 116) is from the last browser bench, which ran before 17 of the committed fixtures were added. On the 128 committed fixtures alone, `npm run compare -- --no-write` (without the flag it overwrites `report/accuracy.*`) reproduces the own engine at 2020 checks: 1942 exact, 13 within tolerance (9 of them a definition difference by design: the measured average of a Matroska file that stores no duration for its last frame, which avgFps gives the median interval and ffprobe its own estimate), 0 known deviations, 0 mismatches and 65 not applicable.
+The accuracy figures (134 fixtures, 2122 checks) and the large-file rows come from runs with `--with-large`, so they include 5 local large files that are not committed (2 long files, 3 1080p files of 604 MB). The Node and Chrome identity count (116 of 116) is from the last browser bench, which ran before 18 of the committed fixtures were added. On the 129 committed fixtures alone, `npm run compare -- --no-write` (without the flag it overwrites `report/accuracy.*`) reproduces the own engine at 2037 checks: 1959 exact, 13 within tolerance (9 of them a definition difference by design: the measured average of a Matroska file that stores no duration for its last frame, which avgFps gives the median interval and ffprobe its own estimate), 0 known deviations, 0 mismatches and 65 not applicable.
 
 <!-- tables:headline:end -->
 
@@ -34,12 +34,12 @@ The libraries run in five informational arms, so that a difference is not charge
 
 | Arm | Library | Role | Fixtures | Checks | exact | within-tol | known deviation | wrong | definition differs | unverified | not provided | unsupported container | n/a |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| own parsers | this package | gating | 133 | 2105 | 2021 | 13 | 0 | 0 | 0 | 0 | 0 | 0 | 71 |
-| mp4box.js, idiomatic | mp4box.js 2.4.1 | informational | 133 | 1545 | 728 | 0 | 0 | 4 | 38 | 4 | 547 | 110 | 114 |
-| mp4box.js, tuned adapter | mp4box.js 2.4.1 | informational | 133 | 1559 | 1387 | 4 | 2 | 9 | 18 | 0 | 0 | 110 | 29 |
-| mediabunny, idiomatic | mediabunny 1.62.1 | informational | 133 | 2077 | 1455 | 0 | 0 | 13 | 111 | 5 | 216 | 0 | 277 |
-| mediabunny, full scan | mediabunny 1.62.1 | informational | 133 | 2077 | 1649 | 0 | 0 | 13 | 156 | 5 | 174 | 0 | 80 |
-| mediabunny, tuned adapter | mediabunny 1.62.1 | informational | 133 | 2105 | 1861 | 10 | 2 | 16 | 88 | 3 | 57 | 0 | 68 |
+| own parsers | this package | gating | 134 | 2122 | 2038 | 13 | 0 | 0 | 0 | 0 | 0 | 0 | 71 |
+| mp4box.js, idiomatic | mp4box.js 2.4.1 | informational | 134 | 1562 | 737 | 0 | 0 | 4 | 38 | 4 | 554 | 110 | 115 |
+| mp4box.js, tuned adapter | mp4box.js 2.4.1 | informational | 134 | 1576 | 1404 | 4 | 2 | 9 | 18 | 0 | 0 | 110 | 29 |
+| mediabunny, idiomatic | mediabunny 1.62.1 | informational | 134 | 2094 | 1469 | 0 | 0 | 13 | 111 | 5 | 218 | 0 | 278 |
+| mediabunny, full scan | mediabunny 1.62.1 | informational | 134 | 2094 | 1665 | 0 | 0 | 13 | 156 | 5 | 175 | 0 | 80 |
+| mediabunny, tuned adapter | mediabunny 1.62.1 | informational | 134 | 2122 | 1878 | 10 | 2 | 16 | 88 | 3 | 57 | 0 | 68 |
 
 - **own parsers**: analyze() of src/core, the engine this package ships.
 - **mp4box.js, idiomatic**: README recipe: createFile(), appendBuffer() of 1 MiB chunks at the offset it asks for until onReady, then its info fields (codec, video width and height, nb_samples, track and movie duration over timescale); no frame rate, by design.
@@ -50,22 +50,22 @@ The libraries run in five informational arms, so that a difference is not charge
 
 | Arm | Files | Fixtures | Checks | exact | wrong | definition differs | unverified | not provided | unsupported container |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| own parsers | ISO BMFF (MP4, MOV) | 89 | 1435 | 1403 | 0 | 0 | 0 | 0 | 0 |
+| own parsers | ISO BMFF (MP4, MOV) | 90 | 1452 | 1420 | 0 | 0 | 0 | 0 | 0 |
 | own parsers | Matroska, WebM | 40 | 666 | 614 | 0 | 0 | 0 | 0 | 0 |
 | own parsers | not a video container | 4 | 4 | 4 | 0 | 0 | 0 | 0 | 0 |
-| mp4box.js, idiomatic | ISO BMFF (MP4, MOV) | 89 | 1421 | 715 | 4 | 38 | 4 | 547 | 0 |
+| mp4box.js, idiomatic | ISO BMFF (MP4, MOV) | 90 | 1438 | 724 | 4 | 38 | 4 | 554 | 0 |
 | mp4box.js, idiomatic | Matroska, WebM | 40 | 120 | 9 | 0 | 0 | 0 | 0 | 110 |
 | mp4box.js, idiomatic | not a video container | 4 | 4 | 4 | 0 | 0 | 0 | 0 | 0 |
-| mp4box.js, tuned adapter | ISO BMFF (MP4, MOV) | 89 | 1435 | 1374 | 9 | 18 | 0 | 0 | 0 |
+| mp4box.js, tuned adapter | ISO BMFF (MP4, MOV) | 90 | 1452 | 1391 | 9 | 18 | 0 | 0 | 0 |
 | mp4box.js, tuned adapter | Matroska, WebM | 40 | 120 | 9 | 0 | 0 | 0 | 0 | 110 |
 | mp4box.js, tuned adapter | not a video container | 4 | 4 | 4 | 0 | 0 | 0 | 0 | 0 |
-| mediabunny, idiomatic | ISO BMFF (MP4, MOV) | 89 | 1407 | 1062 | 9 | 55 | 5 | 167 | 0 |
+| mediabunny, idiomatic | ISO BMFF (MP4, MOV) | 90 | 1424 | 1076 | 9 | 55 | 5 | 169 | 0 |
 | mediabunny, idiomatic | Matroska, WebM | 40 | 666 | 389 | 4 | 56 | 0 | 49 | 0 |
 | mediabunny, idiomatic | not a video container | 4 | 4 | 4 | 0 | 0 | 0 | 0 | 0 |
-| mediabunny, full scan | ISO BMFF (MP4, MOV) | 89 | 1407 | 1197 | 9 | 83 | 5 | 85 | 0 |
+| mediabunny, full scan | ISO BMFF (MP4, MOV) | 90 | 1424 | 1213 | 9 | 83 | 5 | 86 | 0 |
 | mediabunny, full scan | Matroska, WebM | 40 | 666 | 448 | 4 | 73 | 0 | 89 | 0 |
 | mediabunny, full scan | not a video container | 4 | 4 | 4 | 0 | 0 | 0 | 0 | 0 |
-| mediabunny, tuned adapter | ISO BMFF (MP4, MOV) | 89 | 1435 | 1342 | 14 | 23 | 3 | 16 | 0 |
+| mediabunny, tuned adapter | ISO BMFF (MP4, MOV) | 90 | 1452 | 1359 | 14 | 23 | 3 | 16 | 0 |
 | mediabunny, tuned adapter | Matroska, WebM | 40 | 666 | 515 | 2 | 65 | 0 | 41 | 0 |
 | mediabunny, tuned adapter | not a video container | 4 | 4 | 4 | 0 | 0 | 0 | 0 | 0 |
 
@@ -77,10 +77,10 @@ The libraries run in five informational arms, so that a difference is not charge
 
 **Where the libraries win**, from the same reports:
 
-- A library arm is exact or within tolerance where the own parsers are not (all 133 fixtures, the 5 large local files included): `late_30_to_60.mp4` `nominalFps`: exact (30/1 (exact)) in `mediabunny-idiomatic` (whose `isVfr` on this track is wrong); own n/a: not CFR: ffprobe derives r_frame_rate from heuristics (stages 2-4); `big_1080p.mkv` `avgFps.measured`: exact (30/1) in `mediabunny-full`; own n/a: no exact scan (scan=probe): a measured average is not produced; `big_1080p.mkv` `frames`: exact (1800) in `mediabunny-full` and `mediabunny-tuned`; own n/a: no exact scan (scan=probe, provenance=none): the count is not a block count; `big_1080p.mkv` `presentedFrames`: exact (1800) in `mediabunny-tuned`; own n/a: no exact scan (scan=probe); `big_1080p.mkv` `startSec`: exact (0.000000) in `mediabunny-idiomatic` and `mediabunny-full` and `mediabunny-tuned`; own n/a (0.000000, the same value): no exact scan (scan=probe).
-- Fewer bytes read than the own parsers, on the committed files that both the arm and the own parsers open, then the large local files: mp4box.js, tuned adapter 60 of 82; mediabunny, idiomatic 8 of 121; mediabunny, full scan 6 of 121; mediabunny, tuned adapter 2 of 122.
-- Fewer reads than the own parsers, on the committed files that both the arm and the own parsers open, then the large local files: mediabunny, tuned adapter 0 of 122, and `big_1080p.mkv` 122 against 126.
-- Faster than the own parsers in Node (median of the runs; the library arms run each large file once), on the committed files that both the arm and the own parsers open, then the large local files: mp4box.js, idiomatic 11 of 82, and `long_vfr_1h_screenrec.mp4` 32.5 ms against 56.8 ms; mp4box.js, tuned adapter 6 of 82; mediabunny, idiomatic 7 of 121, and `long_vfr_1h_screenrec.mp4` 23.6 ms against 56.8 ms; mediabunny, full scan 11 of 121; mediabunny, tuned adapter 12 of 122.
+- A library arm is exact or within tolerance where the own parsers are not (all 134 fixtures, the 5 large local files included): `late_30_to_60.mp4` `nominalFps`: exact (30/1 (exact)) in `mediabunny-idiomatic` (whose `isVfr` on this track is wrong); own n/a: not CFR: ffprobe derives r_frame_rate from heuristics (stages 2-4); `big_1080p.mkv` `avgFps.measured`: exact (30/1) in `mediabunny-full`; own n/a: no exact scan (scan=probe): a measured average is not produced; `big_1080p.mkv` `frames`: exact (1800) in `mediabunny-full` and `mediabunny-tuned`; own n/a: no exact scan (scan=probe, provenance=none): the count is not a block count; `big_1080p.mkv` `presentedFrames`: exact (1800) in `mediabunny-tuned`; own n/a: no exact scan (scan=probe); `big_1080p.mkv` `startSec`: exact (0.000000) in `mediabunny-idiomatic` and `mediabunny-full` and `mediabunny-tuned`; own n/a (0.000000, the same value): no exact scan (scan=probe).
+- Fewer bytes read than the own parsers, on the committed files that both the arm and the own parsers open, then the large local files: mp4box.js, tuned adapter 61 of 83; mediabunny, idiomatic 8 of 122; mediabunny, full scan 6 of 122; mediabunny, tuned adapter 2 of 123.
+- Fewer reads than the own parsers, on the committed files that both the arm and the own parsers open, then the large local files: mediabunny, tuned adapter 0 of 123, and `big_1080p.mkv` 122 against 126.
+- Faster than the own parsers in Node (median of the runs; the library arms run each large file once), on the committed files that both the arm and the own parsers open, then the large local files: mp4box.js, idiomatic 9 of 83, and `long_vfr_1h_screenrec.mp4` 32.9 ms against 57.3 ms; mp4box.js, tuned adapter 8 of 83; mediabunny, idiomatic 7 of 122, and `long_vfr_1h_screenrec.mp4` 11.4 ms against 57.3 ms; mediabunny, full scan 13 of 122; mediabunny, tuned adapter 18 of 123.
 - Faster than the own parsers in Chrome headless shell 156 (mp4box.js, tuned adapter): 2 of 78 files warm; `long_vfr_1h_screenrec.mp4` 51.1 ms against 62.4 ms.
 - Faster than the own parsers in Chrome headless shell 156 (mediabunny, tuned adapter): 3 of 107 files warm.
 
@@ -94,7 +94,7 @@ The table below shows the primary track of every fixture. Frames are app / ffpro
 
 <!-- tables:accuracy:start -->
 
-<details><summary>Own parsers: all 133 fixtures</summary>
+<details><summary>Own parsers: all 134 fixtures</summary>
 
 | Fixture | Category | ffprobe avg_frame_rate | App average | Frames app / ffprobe | Min to max FPS | VFR | Verdict | Reads | Bytes read | Chrome headless shell 156 ms |
 |---|---|---|---|---|---|---|---|---:|---:|---:|
@@ -214,6 +214,7 @@ The table below shows the primary track of every fixture. Frames are app / ffpro
 | `late_freeze_10s.mkv` | vfr | 25/1 | 25/1; measured 625/26 | 6250 / 6250 | 0.100 to 25.000 | yes | all exact (16) | 1 | 144.0 KiB (100%) | - |
 | `fmp4_mehd_all_ones.mp4` | fmp4 | 30000/1001 | 30000/1001 | 120 / 120 | 29.970 to 29.970 | no | all exact (17) | 1 | 116.7 KiB (100%) | - |
 | `corrupt_elst64_all_ones.mp4` | corrupt | fails: Track 0, edit 0: Invalid edit list duration=-1 | ok, 1 video track | - | - | - | expected outcome (manifest) | 1 | 86.7 KiB (100%) | - |
+| `mov_trailing_junk.mov` | mov | 30000/1001 | 30000/1001 | 90 / 90 | 29.970 to 29.970 | no | all exact (17) | 1 | 86.4 KiB (100%) | - |
 | `rec_chromium_vp8.webm` | recorder | 60000/1001 | 60000/1001; measured 166000/4509 | 166 / 166 | 1.449 to 333.3 | yes | 15 exact; within tolerance: avgFps.measured | 1 | 86.9 KiB (100%) | - |
 | `rec_chromium_vp8_sliced.webm` | recorder | 60/1 | 60/1; measured 83000/2253 | 166 / 166 | 1.456 to 142.9 | yes | 15 exact; within tolerance: avgFps.measured | 1 | 86.2 KiB (100%) | - |
 | `rec_chromium_vp9.webm` | recorder | 60/1 | 60/1; measured 41500/1127 | 166 / 166 | 1.433 to 125.0 | yes | 15 exact; within tolerance: avgFps.measured | 1 | 55.0 KiB (100%) | - |
@@ -284,20 +285,20 @@ Each cell is the arm's value and its verdict, or the outcome of a mismatch. The 
 
 | File | Arm | Average | Min FPS | Max FPS | VFR flag | Node ms |
 |---|---|---|---|---|---|---:|
-| `late_30_to_60.mp4` | own parsers | 360/11 (32.727), exact | 30/1 (30.000), exact | 60/1 (60.000), exact | true, exact | 0.46 |
-| `late_30_to_60.mp4` | mediabunny, idiomatic | 30/1 (30.000), definition differs | 30/1 (30.000), exact | 30/1 (30.000), definition differs | false, wrong | 1.30 |
-| `late_30_to_60.mp4` | mediabunny, full scan | 431940/13199 (32.725), definition differs | 30/1 (30.000), exact | 60/1 (60.000), exact | true, exact | 9.85 |
-| `late_30_to_60.mp4` | mediabunny, tuned adapter | 360/11 (32.727), exact | 30/1 (30.000), exact | 60/1 (60.000), exact | true, exact | 4.83 |
-| `late_30_to_60.mp4` | mp4box.js, tuned adapter | 360/11 (32.727), exact | 30/1 (30.000), exact | 60/1 (60.000), exact | true, exact | 1.54 |
-| `late_25_to_12.5.webm` | own parsers | 150000/6499 (23.080), exact | 25/2 (12.500), exact | 25/1 (25.000), exact | true, exact | 3.21 |
-| `late_25_to_12.5.webm` | mediabunny, idiomatic | 25/1 (25.000), n/a | 25/1 (25.000), definition differs | 25/1 (25.000), exact | false, wrong | 1.97 |
-| `late_25_to_12.5.webm` | mediabunny, full scan | 149975/6498 (23.080), definition differs | 25/2 (12.500), exact | 25/1 (25.000), exact | true, exact | 9.59 |
-| `late_25_to_12.5.webm` | mediabunny, tuned adapter | 25000/1083 (23.084), definition differs | 25/2 (12.500), exact | 25/1 (25.000), exact | true, exact | 5.53 |
+| `late_30_to_60.mp4` | own parsers | 360/11 (32.727), exact | 30/1 (30.000), exact | 60/1 (60.000), exact | true, exact | 0.43 |
+| `late_30_to_60.mp4` | mediabunny, idiomatic | 30/1 (30.000), definition differs | 30/1 (30.000), exact | 30/1 (30.000), definition differs | false, wrong | 1.28 |
+| `late_30_to_60.mp4` | mediabunny, full scan | 431940/13199 (32.725), definition differs | 30/1 (30.000), exact | 60/1 (60.000), exact | true, exact | 10.7 |
+| `late_30_to_60.mp4` | mediabunny, tuned adapter | 360/11 (32.727), exact | 30/1 (30.000), exact | 60/1 (60.000), exact | true, exact | 4.80 |
+| `late_30_to_60.mp4` | mp4box.js, tuned adapter | 360/11 (32.727), exact | 30/1 (30.000), exact | 60/1 (60.000), exact | true, exact | 1.34 |
+| `late_25_to_12.5.webm` | own parsers | 150000/6499 (23.080), exact | 25/2 (12.500), exact | 25/1 (25.000), exact | true, exact | 3.18 |
+| `late_25_to_12.5.webm` | mediabunny, idiomatic | 25/1 (25.000), n/a | 25/1 (25.000), definition differs | 25/1 (25.000), exact | false, wrong | 1.90 |
+| `late_25_to_12.5.webm` | mediabunny, full scan | 149975/6498 (23.080), definition differs | 25/2 (12.500), exact | 25/1 (25.000), exact | true, exact | 10.0 |
+| `late_25_to_12.5.webm` | mediabunny, tuned adapter | 25000/1083 (23.084), definition differs | 25/2 (12.500), exact | 25/1 (25.000), exact | true, exact | 5.85 |
 | `late_25_to_12.5.webm` | mp4box.js, tuned adapter | does not read the container |  |  |  |  |
-| `late_freeze_10s.mkv` | own parsers | 625/26 (24.038), exact | 25/251 (0.100), exact | 25/1 (25.000), exact | true, exact | 2.05 |
+| `late_freeze_10s.mkv` | own parsers | 625/26 (24.038), exact | 25/251 (0.100), exact | 25/1 (25.000), exact | true, exact | 1.99 |
 | `late_freeze_10s.mkv` | mediabunny, idiomatic | 25/1 (25.000), n/a | 25/1 (25.000), definition differs | 25/1 (25.000), exact | false, wrong | 1.80 |
-| `late_freeze_10s.mkv` | mediabunny, full scan | 156225/6499 (24.038), definition differs | 25/251 (0.100), exact | 25/1 (25.000), exact | true, exact | 10.5 |
-| `late_freeze_10s.mkv` | mediabunny, tuned adapter | 625/26 (24.038), exact | 25/251 (0.100), exact | 25/1 (25.000), exact | true, exact | 5.74 |
+| `late_freeze_10s.mkv` | mediabunny, full scan | 156225/6499 (24.038), definition differs | 25/251 (0.100), exact | 25/1 (25.000), exact | true, exact | 10.7 |
+| `late_freeze_10s.mkv` | mediabunny, tuned adapter | 625/26 (24.038), exact | 25/251 (0.100), exact | 25/1 (25.000), exact | true, exact | 5.96 |
 | `late_freeze_10s.mkv` | mp4box.js, tuned adapter | does not read the container |  |  |  |  |
 
 <!-- tables:late:end -->
@@ -343,21 +344,21 @@ Node: `npm run compare` (`analyze()` on `fs.openAsBlob`), median of 3 runs per f
 | File | What it is | Size | Duration | Frames | Reads | Bytes read | Node ms | Chrome headless shell 156 ms | Chrome headless shell 156 UI ms |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|
 | `av_h264_aac_faststart.mp4` | MP4, moov before mdat (faststart) | 101.4 KiB | 3 s | 90 | 1 | 101.4 KiB (100%) | 0.31 | 0.80 | 1.50 |
-| `av_h264_aac.mp4` | same file, moov at the end | 101.4 KiB | 3 s | 90 | 1 | 101.4 KiB (100%) | 0.44 | 0.80 | 1.40 |
-| `mp4_bf_elst.mp4` | MP4 with B-frames and an edit list | 35.8 KiB | 3.003 s | 90 | 1 | 35.8 KiB (100%) | 0.31 | 0.80 | 1.40 |
-| `fmp4_frag_duration.mp4` | fragmented MP4 | 117.2 KiB | 4.004 s | 120 | 1 | 117.2 KiB (100%) | 0.45 | 0.80 | 1.40 |
-| `frag_vfr_global_sidx.mp4` | fragmented VFR MP4 with a global sidx | 121.0 KiB | 4.967 s | 140 | 1 | 121.0 KiB (100%) | 0.48 | 0.90 | 1.60 |
-| `vfr_screenrec_ts1000.mp4` | VFR screen recording, timescale 1000 | 188.6 KiB | 6.004 s | 246 | 1 | 188.6 KiB (100%) | 0.77 | 1.10 | 2.00 |
+| `av_h264_aac.mp4` | same file, moov at the end | 101.4 KiB | 3 s | 90 | 1 | 101.4 KiB (100%) | 0.38 | 0.80 | 1.40 |
+| `mp4_bf_elst.mp4` | MP4 with B-frames and an edit list | 35.8 KiB | 3.003 s | 90 | 1 | 35.8 KiB (100%) | 0.27 | 0.80 | 1.40 |
+| `fmp4_frag_duration.mp4` | fragmented MP4 | 117.2 KiB | 4.004 s | 120 | 1 | 117.2 KiB (100%) | 0.40 | 0.80 | 1.40 |
+| `frag_vfr_global_sidx.mp4` | fragmented VFR MP4 with a global sidx | 121.0 KiB | 4.967 s | 140 | 1 | 121.0 KiB (100%) | 0.50 | 0.90 | 1.60 |
+| `vfr_screenrec_ts1000.mp4` | VFR screen recording, timescale 1000 | 188.6 KiB | 6.004 s | 246 | 1 | 188.6 KiB (100%) | 0.80 | 1.10 | 2.00 |
 | `cfr_vp9_30.webm` | WebM, VP9 | 70.7 KiB | 3 s | 90 | 1 | 70.7 KiB (100%) | 0.47 | 0.70 | 1.40 |
-| `vp9_unknown_clusters.webm` | WebM with unknown-size clusters (live) | 71.9 KiB | - | 90 | 1 | 71.9 KiB (100%) | 0.41 | 0.80 | 1.50 |
-| `h264_vfr_remux.mkv` | Matroska, stream-copied VFR with BlockGroups | 200.0 KiB | 6 s | 260 | 1 | 200.0 KiB (100%) | 0.85 | 1.20 | 2.00 |
-| `corrupt_trunc_no_moov.mp4` | interrupted recording, no moov (error) | 85.6 KiB | - | - | 1 | 85.6 KiB (100%) | 0.25 | 0.70 | 1.10 |
-| `long_cfr_3h_60fps.mp4` | long CFR MP4, moov at the end | 12.42 MiB | 3 h | 648000 | 2 | 2.56 MiB (20.6%) | 5.53 | 3.50 | 4.20 |
-| `long_vfr_1h_screenrec.mp4` | long VFR screen recording MP4 | 3.76 MiB | 1 h | 133920 | 2 | 1.53 MiB (40.7%) | 56.8 | 62.4 | 63.8 |
-| `big_1080p_moov_end.mp4` | 1080p MP4 of 1 min, moov at the end | 576.42 MiB | 1 min | 1800 | 2 | 75.0 KiB (0.01%) | 0.65 | 1.40 | 2.10 |
-| `big_1080p_faststart.mp4` | same file, faststart | 576.42 MiB | 1 min | 1800 | 1 | 64.0 KiB (0.01%) | 0.34 | 0.60 | 1.30 |
-| `big_1080p.mkv` | same stream in Matroska (auto mode) | 576.43 MiB | 1 min | - | 126 | 16.51 MiB (2.86%) | 87.8 | 110 | 111 |
-| **all 128 committed fixtures** | median per file; bytes are totals | 13.17 MiB |  |  | 1 (max 1) | 13.17 MiB (100%) | 0.41 | 0.80 | 1.40 |
+| `vp9_unknown_clusters.webm` | WebM with unknown-size clusters (live) | 71.9 KiB | - | 90 | 1 | 71.9 KiB (100%) | 0.46 | 0.80 | 1.50 |
+| `h264_vfr_remux.mkv` | Matroska, stream-copied VFR with BlockGroups | 200.0 KiB | 6 s | 260 | 1 | 200.0 KiB (100%) | 0.86 | 1.20 | 2.00 |
+| `corrupt_trunc_no_moov.mp4` | interrupted recording, no moov (error) | 85.6 KiB | - | - | 1 | 85.6 KiB (100%) | 0.28 | 0.70 | 1.10 |
+| `long_cfr_3h_60fps.mp4` | long CFR MP4, moov at the end | 12.42 MiB | 3 h | 648000 | 2 | 2.56 MiB (20.6%) | 3.61 | 3.50 | 4.20 |
+| `long_vfr_1h_screenrec.mp4` | long VFR screen recording MP4 | 3.76 MiB | 1 h | 133920 | 2 | 1.53 MiB (40.7%) | 57.3 | 62.4 | 63.8 |
+| `big_1080p_moov_end.mp4` | 1080p MP4 of 1 min, moov at the end | 576.42 MiB | 1 min | 1800 | 2 | 75.0 KiB (0.01%) | 0.43 | 1.40 | 2.10 |
+| `big_1080p_faststart.mp4` | same file, faststart | 576.42 MiB | 1 min | 1800 | 1 | 64.0 KiB (0.01%) | 0.26 | 0.60 | 1.30 |
+| `big_1080p.mkv` | same stream in Matroska (auto mode) | 576.43 MiB | 1 min | - | 126 | 16.51 MiB (2.86%) | 90.1 | 110 | 111 |
+| **all 129 committed fixtures** | median per file; bytes are totals | 13.25 MiB |  |  | 1 (max 1) | 13.25 MiB (100%) | 0.41 | 0.80 | 1.40 |
 
 - Cold start, Chrome headless shell 156: the app is ready 118 ms after navigation; 111 files picked at once on a fresh profile show all results after 281 ms (median of 248 ms over reloads, range 214 to 263 ms).
 
@@ -374,9 +375,9 @@ Per-file timings for every fixture, the library engines and the cold start are i
 
 <!-- tables:package:start -->
 
-**A default install adds 0.67 KB gzip to the host app's critical path:** the package code in the entry chunk of a Vite 8.3.5 app that imports `video-fps-probe/lazy` (with Vite's preload helper, which any app with a dynamic import already has, that entry chunk is 1.40 KB). With `worker: { format: 'es' }` in the host's Vite config the first MP4 or MOV file then loads 22.78 KB lazily: the probe client and the ISO BMFF worker of own, which holds its parser and the statistics. The first MKV or WebM file without DefaultDuration loads 25.63 KB: the probe client, the Matroska worker and the ffprobe frame rate estimate. Every own path together is 48.74 KB, because each worker holds its own copy of the runtime and the statistics. Without a worker option Vite builds workers as 'iife', which cannot split, so each own worker is one file, and the first MP4 loads 24.54 KB and the first MKV 27.17 KB (zero-config). mp4box.js and mediabunny are only in the build when their entries are imported. Everything the default build emits outside the entry chunk is 89.33 KB, because it also holds main-thread copies of the parsers, the statistics and the worker runtime. The default flavor keeps them as an in-thread own for environments without a `Worker` global (SSR, Node) and for `worker: 'inline'`; the client flavor keeps them for `worker: 'inline'` and for environments without a `Worker` global; the root `analyze()` always runs in the calling thread on them. A browser with a `Worker` global never fetches them otherwise.
+**A default install adds 0.67 KB gzip to the host app's critical path:** the package code in the entry chunk of a Vite 8.3.5 app that imports `video-fps-probe/lazy` (with Vite's preload helper, which any app with a dynamic import already has, that entry chunk is 1.40 KB). With `worker: { format: 'es' }` in the host's Vite config the first MP4 or MOV file then loads 22.86 KB lazily: the probe client and the ISO BMFF worker of own, which holds its parser and the statistics. The first MKV or WebM file without DefaultDuration loads 25.68 KB: the probe client, the Matroska worker and the ffprobe frame rate estimate. Every own path together is 48.88 KB, because each worker holds its own copy of the runtime and the statistics. Without a worker option Vite builds workers as 'iife', which cannot split, so each own worker is one file, and the first MP4 loads 24.64 KB and the first MKV 27.22 KB (zero-config). mp4box.js and mediabunny are only in the build when their entries are imported. Everything the default build emits outside the entry chunk is 89.56 KB, because it also holds main-thread copies of the parsers, the statistics and the worker runtime. The default flavor keeps them as an in-thread own for environments without a `Worker` global (SSR, Node) and for `worker: 'inline'`; the client flavor keeps them for `worker: 'inline'` and for environments without a `Worker` global; the root `analyze()` always runs in the calling thread on them. A browser with a `Worker` global never fetches them otherwise.
 
-Recommended: one line in the host's Vite config, so the own workers keep the rate profile core and the ffprobe frame rate estimate as lazy chunks and the first MP4 loads 22.78 KB instead of 24.54 KB. Module workers run on the whole package floor (Chrome and Edge 94, Firefox 114, Safari 15.4).
+Recommended: one line in the host's Vite config, so the own workers keep the rate profile core and the ffprobe frame rate estimate as lazy chunks and the first MP4 loads 22.86 KB instead of 24.64 KB. Module workers run on the whole package floor (Chrome and Edge 94, Firefox 114, Safari 15.4).
 
 ```js
 import { defineConfig } from 'vite';
@@ -386,24 +387,24 @@ export default defineConfig({ worker: { format: 'es' } });
 
 | Configuration | Imports | Vite worker option | Critical path | First MP4, lazy | First MKV, lazy | All own paths, lazy | Engine chunks, lazy | Worker files | Budgets |
 |---|---|---|---:|---:|---:|---:|---:|---:|---|
-| **default** | `video-fps-probe/lazy` | format: 'es' (recommended) | **0.67 KB** | 22.78 KB | 25.63 KB | 48.74 KB | - | 2 | ok (13 budgets) |
-| zero-config | `video-fps-probe/lazy` | none, so Vite's default format: 'iife' | **0.66 KB** | 24.54 KB | 27.17 KB | 48.43 KB | - | 2 | ok (8 budgets) |
-| custom | `video-fps-probe/client/lazy` + `video-fps-probe/worker-runtime` (host worker serving own) | format: 'es' | **0.67 KB** | 23.67 KB | 26.75 KB | 40.84 KB | - | 1 | ok (6 budgets) |
-| custom-eager | `video-fps-probe/client` + `video-fps-probe/worker-runtime` (host worker serving own, createProbeClient in the entry chunk) | format: 'es' | **2.97 KB** | 20.74 KB | 23.82 KB | 37.91 KB | - | 1 | ok (5 budgets) |
-| mp4box | `video-fps-probe/lazy` + `video-fps-probe/mp4box` | format: 'es' | **0.89 KB** | 22.81 KB | 25.66 KB | 48.77 KB | mp4box 44.86 KB | 3 | ok (5 budgets) |
-| mediabunny | `video-fps-probe/lazy` + `video-fps-probe/mediabunny` | format: 'es' | **0.89 KB** | 22.80 KB | 25.66 KB | 48.77 KB | mediabunny 53.97 KB | 3 | ok (5 budgets) |
-| rvfc | `video-fps-probe/lazy` + `video-fps-probe/rvfc` | format: 'es' | **0.77 KB** | 22.79 KB | 25.65 KB | 48.76 KB | rVFC 2.19 KB | 2 | ok (4 budgets) |
-| all | `video-fps-probe/lazy` + `video-fps-probe/mp4box` + `video-fps-probe/mediabunny` + `video-fps-probe/rvfc` | format: 'es' | **1.01 KB** | 22.82 KB | 25.67 KB | 48.78 KB | mp4box 44.86 KB, mediabunny 53.97 KB, rVFC 2.19 KB | 4 | ok (18 budgets) |
-| standalone-url | `video-fps-probe/client/lazy` + `video-fps-probe/standalone/own.worker.js?url` (classic worker from the standalone file) | none needed: the file is copied as an asset | **0.70 KB** | 38.92 KB | 38.92 KB | 38.92 KB | - | 1 | ok (6 budgets) |
-| standalone-split-url | `video-fps-probe/client/lazy` + `video-fps-probe/standalone/own-isobmff.worker.js?url` + `video-fps-probe/standalone/own-matroska.worker.js?url` (classic workers from the split standalone files, with byContainer) | none needed: the files are copied as assets | **0.73 KB** | 24.55 KB | 27.16 KB | 48.36 KB | - | 2 | ok (9 budgets) |
-| iife-nosplit | `video-fps-probe/lazy` | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.66 KB** | 24.54 KB | 27.17 KB | 48.43 KB | - | 2 | ok (8 budgets) |
-| react | `video-fps-probe/lazy` + `video-fps-probe/react` (React 19.3.1) | format: 'es' | **1.64 KB** | 22.78 KB | 25.63 KB | 48.74 KB | - | 2 | ok (10 budgets) |
-| react18 | `video-fps-probe/lazy` + `video-fps-probe/react` (React 18.3.1) | format: 'es' | **1.64 KB** | 22.77 KB | 25.63 KB | 48.74 KB | - | 2 | ok (4 budgets) |
-| check | `video-fps-probe/lazy` + `video-fps-probe/check` | format: 'es' | **4.45 KB** | 22.77 KB | 25.63 KB | 48.74 KB | - | 2 | ok (5 budgets) |
-| preset | `video-fps-probe/lazy` + `video-fps-probe/check` + `video-fps-probe/presets` (klingO1ReferenceVideo) | format: 'es' | **4.80 KB** | 22.77 KB | 25.63 KB | 48.74 KB | - | 2 | ok (6 budgets) |
-| standalone worker file | `video-fps-probe/standalone/own.worker.js` | - | - | 36.00 KB | 36.00 KB | 36.00 KB | - | 1 file, no imports | ok |
-| standalone worker file | `video-fps-probe/standalone/own-isobmff.worker.js` | - | - | 21.20 KB | - | 21.20 KB | - | 1 file, no imports | ok |
-| standalone worker file | `video-fps-probe/standalone/own-matroska.worker.js` | - | - | - | 23.80 KB | 23.80 KB | - | 1 file, no imports | ok |
+| **default** | `video-fps-probe/lazy` | format: 'es' (recommended) | **0.67 KB** | 22.86 KB | 25.68 KB | 48.88 KB | - | 2 | ok (13 budgets) |
+| zero-config | `video-fps-probe/lazy` | none, so Vite's default format: 'iife' | **0.66 KB** | 24.64 KB | 27.22 KB | 48.58 KB | - | 2 | ok (8 budgets) |
+| custom | `video-fps-probe/client/lazy` + `video-fps-probe/worker-runtime` (host worker serving own) | format: 'es' | **0.68 KB** | 23.77 KB | 26.80 KB | 40.93 KB | - | 1 | ok (6 budgets) |
+| custom-eager | `video-fps-probe/client` + `video-fps-probe/worker-runtime` (host worker serving own, createProbeClient in the entry chunk) | format: 'es' | **2.97 KB** | 20.84 KB | 23.88 KB | 38.00 KB | - | 1 | ok (5 budgets) |
+| mp4box | `video-fps-probe/lazy` + `video-fps-probe/mp4box` | format: 'es' | **0.89 KB** | 22.89 KB | 25.72 KB | 48.92 KB | mp4box 44.86 KB | 3 | ok (5 budgets) |
+| mediabunny | `video-fps-probe/lazy` + `video-fps-probe/mediabunny` | format: 'es' | **0.89 KB** | 22.89 KB | 25.72 KB | 48.92 KB | mediabunny 53.97 KB | 3 | ok (5 budgets) |
+| rvfc | `video-fps-probe/lazy` + `video-fps-probe/rvfc` | format: 'es' | **0.77 KB** | 22.87 KB | 25.70 KB | 48.90 KB | rVFC 2.19 KB | 2 | ok (4 budgets) |
+| all | `video-fps-probe/lazy` + `video-fps-probe/mp4box` + `video-fps-probe/mediabunny` + `video-fps-probe/rvfc` | format: 'es' | **1.01 KB** | 22.91 KB | 25.74 KB | 48.93 KB | mp4box 44.86 KB, mediabunny 53.97 KB, rVFC 2.19 KB | 4 | ok (18 budgets) |
+| standalone-url | `video-fps-probe/client/lazy` + `video-fps-probe/standalone/own.worker.js?url` (classic worker from the standalone file) | none needed: the file is copied as an asset | **0.71 KB** | 39.00 KB | 39.00 KB | 39.00 KB | - | 1 | ok (6 budgets) |
+| standalone-split-url | `video-fps-probe/client/lazy` + `video-fps-probe/standalone/own-isobmff.worker.js?url` + `video-fps-probe/standalone/own-matroska.worker.js?url` (classic workers from the split standalone files, with byContainer) | none needed: the files are copied as assets | **0.74 KB** | 24.65 KB | 27.21 KB | 48.51 KB | - | 2 | ok (9 budgets) |
+| iife-nosplit | `video-fps-probe/lazy` | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.66 KB** | 24.64 KB | 27.22 KB | 48.58 KB | - | 2 | ok (8 budgets) |
+| react | `video-fps-probe/lazy` + `video-fps-probe/react` (React 19.3.1) | format: 'es' | **1.64 KB** | 22.86 KB | 25.69 KB | 48.88 KB | - | 2 | ok (10 budgets) |
+| react18 | `video-fps-probe/lazy` + `video-fps-probe/react` (React 18.3.1) | format: 'es' | **1.64 KB** | 22.86 KB | 25.69 KB | 48.88 KB | - | 2 | ok (4 budgets) |
+| check | `video-fps-probe/lazy` + `video-fps-probe/check` | format: 'es' | **4.45 KB** | 22.86 KB | 25.69 KB | 48.88 KB | - | 2 | ok (5 budgets) |
+| preset | `video-fps-probe/lazy` + `video-fps-probe/check` + `video-fps-probe/presets` (klingO1ReferenceVideo) | format: 'es' | **4.80 KB** | 22.86 KB | 25.69 KB | 48.88 KB | - | 2 | ok (6 budgets) |
+| standalone worker file | `video-fps-probe/standalone/own.worker.js` | - | - | 36.08 KB | 36.08 KB | 36.08 KB | - | 1 file, no imports | ok |
+| standalone worker file | `video-fps-probe/standalone/own-isobmff.worker.js` | - | - | 21.30 KB | - | 21.30 KB | - | 1 file, no imports | ok |
+| standalone worker file | `video-fps-probe/standalone/own-matroska.worker.js` | - | - | - | 23.86 KB | 23.86 KB | - | 1 file, no imports | ok |
 
 Measured by `npm run size:matrix` on production builds of the fixtures in `tests/consumers/fixtures/`, installed from the packed tarball into a directory outside the repository with mp4box 2.4.1 and mediabunny 1.62.1; gzip -9, KB = 1000 bytes. The critical path is the package code in the entry chunk, cut out by the hidden sourcemap. CI fails when a budget is exceeded, a configuration builds an unexpected worker file, or a sourcemap lists a module that must not be there (mp4box or mediabunny where they are not imported, the prebuilt own worker in the custom-worker build); [report/size-matrix.md](../report/size-matrix.md) lists every budget with its reason.
 
@@ -420,38 +421,38 @@ The demo in `demo/` is a React app that consumes the package through a custom wo
 | main (React, UI, store) | page load | 238.72 KB | **74.44 KB** | 64.44 KB | 77.00 KB | 2.56 KB | ok |
 | CSS | page load | 4.98 KB | **1.81 KB** | 1.53 KB | not budgeted | - | - |
 | probe client (lazy) | first file | 7.47 KB | **3.24 KB** | 3.00 KB | 3.50 KB | 0.26 KB | ok |
-| probe fallback chain | first call with a fallback chain or a skipped engine | 1.01 KB | **0.64 KB** | 0.55 KB | not budgeted | - | - |
-| probe compare (agreement rules) | first probe.compare | 2.60 KB | **1.32 KB** | 1.20 KB | not budgeted | - | - |
+| probe fallback chain | first call with a fallback chain or a skipped engine | 1.01 KB | **0.64 KB** | 0.56 KB | not budgeted | - | - |
+| probe compare (agreement rules) | first probe.compare | 2.60 KB | **1.32 KB** | 1.21 KB | not budgeted | - | - |
 | in-thread engine runner | first main-thread engine run (rVFC) | 1.09 KB | **0.63 KB** | 0.55 KB | not budgeted | - | - |
 | shared by the lazy client parts and rVFC (result builders, sniffing): `abort` | with the fallback chain, compare, rVFC or the own engine in this thread | 0.10 KB | **0.11 KB** | 0.09 KB | not budgeted | - | - |
 | shared by the lazy client parts and rVFC (result builders, sniffing): `result` | with the fallback chain, compare, rVFC or the own engine in this thread | 0.71 KB | **0.38 KB** | 0.33 KB | not budgeted | - | - |
 | shared by the lazy client parts and rVFC (result builders, sniffing): `sniff` | with the fallback chain, compare, rVFC or the own engine in this thread | 2.12 KB | **0.99 KB** | 0.89 KB | not budgeted | - | - |
-| own engine in this thread (runtime and parser copies for worker inline): `isobmff` | only with worker inline or without a Worker global (own engine in this thread) | 30.94 KB | **12.28 KB** | 11.09 KB | not budgeted | - | - |
-| own engine in this thread (runtime and parser copies for worker inline): `matroska` | only with worker inline or without a Worker global (own engine in this thread) | 30.92 KB | **11.93 KB** | 10.84 KB | not budgeted | - | - |
+| own engine in this thread (runtime and parser copies for worker inline): `isobmff` | only with worker inline or without a Worker global (own engine in this thread) | 31.05 KB | **12.32 KB** | 11.12 KB | not budgeted | - | - |
+| own engine in this thread (runtime and parser copies for worker inline): `matroska` | only with worker inline or without a Worker global (own engine in this thread) | 30.92 KB | **11.93 KB** | 10.82 KB | not budgeted | - | - |
 | own engine in this thread (runtime and parser copies for worker inline): `rfps` | only with worker inline or without a Worker global (own engine in this thread) | 7.31 KB | **3.60 KB** | 3.35 KB | not budgeted | - | - |
-| own engine in this thread (runtime and parser copies for worker inline): `runtime` | only with worker inline or without a Worker global (own engine in this thread) | 6.14 KB | **2.56 KB** | 2.36 KB | not budgeted | - | - |
-| own engine in this thread (runtime and parser copies for worker inline): `segments` | only with worker inline or without a Worker global (own engine in this thread) | 3.35 KB | **1.84 KB** | 1.71 KB | not budgeted | - | - |
-| own engine in this thread (runtime and parser copies for worker inline): `stats` | only with worker inline or without a Worker global (own engine in this thread) | 10.32 KB | **4.34 KB** | 3.96 KB | not budgeted | - | - |
-| worker entry (reader, sniffing, worker runtime) | first file | 10.42 KB | **4.33 KB** | 3.94 KB | 5.00 KB | 0.67 KB | ok |
-| shared by the parsers and engines (timeline statistics) | with the first parser, in parallel, once per worker | 10.21 KB | **4.29 KB** | 3.93 KB | 5.00 KB | 0.70 KB | ok |
-| ISO BMFF parser | first MP4 or MOV file, once per worker | 30.87 KB | **12.26 KB** | 11.07 KB | 13.50 KB | 1.24 KB | ok |
-| Matroska parser | first WebM or MKV file, once per worker | 30.42 KB | **11.67 KB** | 10.64 KB | 12.50 KB | 0.83 KB | ok |
+| own engine in this thread (runtime and parser copies for worker inline): `runtime` | only with worker inline or without a Worker global (own engine in this thread) | 6.25 KB | **2.62 KB** | 2.42 KB | not budgeted | - | - |
+| own engine in this thread (runtime and parser copies for worker inline): `segments` | only with worker inline or without a Worker global (own engine in this thread) | 3.35 KB | **1.84 KB** | 1.70 KB | not budgeted | - | - |
+| own engine in this thread (runtime and parser copies for worker inline): `stats` | only with worker inline or without a Worker global (own engine in this thread) | 10.32 KB | **4.34 KB** | 3.95 KB | not budgeted | - | - |
+| worker entry (reader, sniffing, worker runtime) | first file | 10.53 KB | **4.38 KB** | 3.99 KB | 5.00 KB | 0.62 KB | ok |
+| shared by the parsers and engines (timeline statistics) | with the first parser, in parallel, once per worker | 10.21 KB | **4.30 KB** | 3.93 KB | 5.00 KB | 0.70 KB | ok |
+| ISO BMFF parser | first MP4 or MOV file, once per worker | 30.98 KB | **12.30 KB** | 11.11 KB | 13.50 KB | 1.20 KB | ok |
+| Matroska parser | first WebM or MKV file, once per worker | 30.42 KB | **11.67 KB** | 10.63 KB | 12.50 KB | 0.83 KB | ok |
 | ffprobe frame rate estimate (Matroska without DefaultDuration) | lazy | 7.32 KB | **3.59 KB** | 3.34 KB | 4.00 KB | 0.41 KB | ok |
-| rate profile core (segments, anomalies, sparkline buckets) | first VFR timeline, once per worker | 3.35 KB | **1.84 KB** | 1.72 KB | 2.00 KB | 0.15 KB | ok |
-| rate profile panel (UI) | first card with a rate profile | 2.17 KB | **0.93 KB** | 0.85 KB | 1.50 KB | 0.57 KB | ok |
+| rate profile core (segments, anomalies, sparkline buckets) | first VFR timeline, once per worker | 3.35 KB | **1.84 KB** | 1.71 KB | 2.00 KB | 0.16 KB | ok |
+| rate profile panel (UI) | first card with a rate profile | 2.17 KB | **0.94 KB** | 0.85 KB | 1.50 KB | 0.56 KB | ok |
 | device info and JSON export | on idle after the first result, or the first export (footer device line, JSON export) | 5.02 KB | **2.29 KB** | 2.02 KB | not budgeted | - | - |
 | sample file loader | click on Try sample files | 0.36 KB | **0.28 KB** | 0.24 KB | not budgeted | - | - |
 | rVFC fallback | click on Run (approximate) | 4.24 KB | **2.19 KB** | 1.98 KB | 2.50 KB | 0.31 KB | ok |
 | Compare panel | first open of a Compare engines panel | 2.92 KB | **1.22 KB** | 1.10 KB | not budgeted | - | - |
 | mp4box.js engine | Compare engines on an MP4 or MOV card | 187.93 KB | **43.73 KB** | 37.36 KB | not budgeted | - | - |
-| mediabunny engine | Compare engines | 201.10 KB | **52.88 KB** | 44.49 KB | not budgeted | - | - |
+| mediabunny engine | Compare engines | 201.10 KB | **52.88 KB** | 44.51 KB | not budgeted | - | - |
 | shared by mp4box and mediabunny | with mp4box or mediabunny | 3.01 KB | **1.50 KB** | 1.35 KB | not budgeted | - | - |
 | other | lazy | 0.56 KB | **0.38 KB** | 0.33 KB | not budgeted | - | - |
-| initial: main + CSS + worker entry |  | 254.12 KB | **80.58 KB** | 69.91 KB | 83.00 KB | 2.42 KB | ok |
-| first MP4 analysis: initial + probe client + statistics + ISO BMFF parser |  | 302.67 KB | **100.38 KB** | 87.90 KB | 103.00 KB | 2.62 KB | ok |
-| first VFR MP4 analysis: first MP4 + rate profile core |  | 306.02 KB | **102.22 KB** | 89.61 KB | 105.00 KB | 2.78 KB | ok |
-| first Matroska analysis: initial + probe client + statistics + Matroska parser |  | 302.23 KB | **99.79 KB** | 87.47 KB | 102.00 KB | 2.21 KB | ok |
-| first Matroska analysis without DefaultDuration: first Matroska + ffprobe frame rate estimate |  | 309.55 KB | **103.38 KB** | 90.81 KB | 105.50 KB | 2.12 KB | ok |
+| initial: main + CSS + worker entry |  | 254.23 KB | **80.63 KB** | 69.96 KB | 83.00 KB | 2.37 KB | ok |
+| first MP4 analysis: initial + probe client + statistics + ISO BMFF parser |  | 302.90 KB | **100.46 KB** | 87.99 KB | 103.00 KB | 2.54 KB | ok |
+| first VFR MP4 analysis: first MP4 + rate profile core |  | 306.25 KB | **102.31 KB** | 89.70 KB | 105.00 KB | 2.69 KB | ok |
+| first Matroska analysis: initial + probe client + statistics + Matroska parser |  | 302.34 KB | **99.84 KB** | 87.52 KB | 102.00 KB | 2.16 KB | ok |
+| first Matroska analysis without DefaultDuration: first Matroska + ffprobe frame rate estimate |  | 309.66 KB | **103.43 KB** | 90.86 KB | 105.50 KB | 2.07 KB | ok |
 
 <!-- tables:bundle:end -->
 
@@ -502,16 +503,16 @@ Node: `npm run compare` (`analyze()` on `fs.openAsBlob`), median of 3 runs per f
 |  | Own parsers (this repo) | mp4box.js 2.4.1 (tuned adapter) | mediabunny 1.62.1 (tuned adapter) | requestVideoFrameCallback (Chrome headless shell 156) |
 |---|---|---|---|---|
 | Containers | MP4, MOV, WebM, Matroska | MP4, MOV | MP4, MOV, WebM, Matroska | whatever the browser can play |
-| Checks vs ffprobe, all fixtures (own: verdicts; libraries: outcome of each non-match) | 2105 checks: 2021 exact, 0 known deviation, 0 mismatch | tuned: 1559 checks: 1387 exact, 9 wrong, 18 definition differs, 0 unverified, 0 not provided, 110 unsupported container; idiomatic: 1545 checks: 728 exact, 4 wrong, 38 definition differs, 4 unverified, 547 not provided, 110 unsupported container | tuned: 2105 checks: 1861 exact, 16 wrong, 88 definition differs, 3 unverified, 57 not provided, 0 unsupported container; idiomatic: 2077 checks: 1455 exact, 13 wrong, 111 definition differs, 5 unverified, 216 not provided, 0 unsupported container | no ffprobe-equivalent fields |
+| Checks vs ffprobe, all fixtures (own: verdicts; libraries: outcome of each non-match) | 2122 checks: 2038 exact, 0 known deviation, 0 mismatch | tuned: 1576 checks: 1404 exact, 9 wrong, 18 definition differs, 0 unverified, 0 not provided, 110 unsupported container; idiomatic: 1562 checks: 737 exact, 4 wrong, 38 definition differs, 4 unverified, 554 not provided, 110 unsupported container | tuned: 2122 checks: 1878 exact, 16 wrong, 88 definition differs, 3 unverified, 57 not provided, 0 unsupported container; idiomatic: 2094 checks: 1469 exact, 13 wrong, 111 definition differs, 5 unverified, 218 not provided, 0 unsupported container | no ffprobe-equivalent fields |
 | Frame-rate checks: own mismatches, library checks wrong | MP4: 0; MKV: 0 | MP4: 3 tuned, 1 idiomatic; MKV: not supported | MP4: 7 tuned, 4 idiomatic; MKV: 2 tuned, 4 idiomatic | 9 of 11 estimates equal ffprobe's average; VFR files off by -10.0% and +292.3%; 2 of 13 files did not play |
-| Bytes read, 85 committed MP4/MOV files | 8.72 MiB of 8.72 MiB (100%) | 5.39 MiB of 8.72 MiB (61.8%) | 8.34 MiB of 8.72 MiB (95.7%) | the media element streams the file |
+| Bytes read, 86 committed MP4/MOV files | 8.80 MiB of 8.80 MiB (100%) | 5.45 MiB of 8.80 MiB (61.9%) | 8.43 MiB of 8.80 MiB (95.7%) | the media element streams the file |
 | Bytes read, 40 committed WebM/MKV files | 4.39 MiB of 4.39 MiB (100%) | not supported | 4.39 MiB of 4.39 MiB (100%) | the media element streams the file |
 | Reads per file, median / max | 1 / 1 | 2 / 3 | 1 / 5 | n/a |
-| Time per file, Node 24 (median; geometric mean vs own) | 0.41 ms | 0.62 ms (1.61x own) | 0.54 ms (1.28x own) | needs a browser |
+| Time per file, Node 24 (median; geometric mean vs own) | 0.41 ms | 0.62 ms (1.52x own) | 0.51 ms (1.22x own) | needs a browser |
 | Time per file, Chrome headless shell 156 (median; geometric mean vs own) | 0.80 ms | 1.30 ms (1.46x own) | 0.90 ms (1.26x own) | 2.01 s (max 8.88 s) |
-| 3 h CFR MP4, 12.42 MiB | 2 reads, 2.56 MiB; Node 5.53 ms, Chrome 3.50 ms | 3 reads, 2.56 MiB; Node 173 ms, Chrome 151 ms | 3 reads, 2.73 MiB; Node 639 ms, Chrome 422 ms | not measured |
-| 1 h VFR MP4, 3.76 MiB | 2 reads, 1.53 MiB; Node 56.8 ms, Chrome 62.4 ms | 3 reads, 1.53 MiB; Node 69.0 ms, Chrome 51.1 ms | 3 reads, 1.70 MiB; Node 170 ms, Chrome 117 ms | not measured |
-| gzip, loaded on demand | probe client 3.24 KB + worker entry 4.33 KB + statistics 4.29 KB + ISO BMFF 12.26 KB or Matroska 11.67 KB | 43.73 KB + 1.50 KB shared | 52.88 KB + 1.50 KB shared | 2.19 KB |
+| 3 h CFR MP4, 12.42 MiB | 2 reads, 2.56 MiB; Node 3.61 ms, Chrome 3.50 ms | 3 reads, 2.56 MiB; Node 168 ms, Chrome 151 ms | 3 reads, 2.73 MiB; Node 684 ms, Chrome 422 ms | not measured |
+| 1 h VFR MP4, 3.76 MiB | 2 reads, 1.53 MiB; Node 57.3 ms, Chrome 62.4 ms | 3 reads, 1.53 MiB; Node 68.2 ms, Chrome 51.1 ms | 3 reads, 1.70 MiB; Node 171 ms, Chrome 117 ms | not measured |
+| gzip, loaded on demand | probe client 3.24 KB + worker entry 4.38 KB + statistics 4.30 KB + ISO BMFF 12.30 KB or Matroska 11.67 KB | 43.73 KB + 1.50 KB shared | 52.88 KB + 1.50 KB shared | 2.19 KB |
 | Main risk | own code to maintain; cases outside the corpus are flagged, not verified | last sample duration overridden; must be fed box by box; no Matroska | adapter: packet-rate average, edit-trimmed packets counted as presented; whole-cluster Matroska reads | needs a visible tab and a playable codec; wrong on VFR; seconds per file |
 
 <!-- tables:approaches:end -->
@@ -579,15 +580,15 @@ Below the single-read size the layout no longer changes the read count (faststar
 
 | File | Size | Reads | Bytes read | Node ms | Chrome ms |
 |---|---:|---:|---:|---:|---:|
-| `mov_nobf_faststart.mov` | 86.4 KiB | 1 | 86.4 KiB | 0.40 | 0.70 |
-| `mov_nobf_default.mov` | 86.4 KiB | 1 | 86.4 KiB | 0.39 | 0.80 |
+| `mov_nobf_faststart.mov` | 86.4 KiB | 1 | 86.4 KiB | 0.41 | 0.70 |
+| `mov_nobf_default.mov` | 86.4 KiB | 1 | 86.4 KiB | 0.38 | 0.80 |
 | `av_h264_aac_faststart.mp4` | 101.4 KiB | 1 | 101.4 KiB | 0.31 | 0.80 |
-| `av_h264_aac.mp4` | 101.4 KiB | 1 | 101.4 KiB | 0.44 | 0.80 |
+| `av_h264_aac.mp4` | 101.4 KiB | 1 | 101.4 KiB | 0.38 | 0.80 |
 
 | Committed fixtures read in | Files | Median bytes read | Node ms (median) | Chrome ms (median) |
 |---|---:|---:|---:|---:|
 | 0 reads | 1 | 0 B | 0.00 | 0.00 |
-| 1 read | 127 | 86.7 KiB | 0.41 | 0.80 |
+| 1 read | 128 | 86.6 KiB | 0.41 | 0.80 |
 
 <!-- tables:reads:end -->
 
@@ -634,18 +635,18 @@ The thresholds are constants in `src/core/segments.ts` and `src/core/stats.ts`. 
 
 <!-- tables:profile:start -->
 
-The profile code is 1.84 KB gzip in the worker and the panel 0.93 KB on the main thread, both lazy. The first VFR MP4 loads 102.22 KB gzip, 1.84 KB more than a CFR one (budget 105.00 KB). Times are the whole analysis, profile included.
+The profile code is 1.84 KB gzip in the worker and the panel 0.94 KB on the main thread, both lazy. The first VFR MP4 loads 102.31 KB gzip, 1.84 KB more than a CFR one (budget 105.00 KB). Times are the whole analysis, profile included.
 
 | File | Rate profile | Frames | Min to max FPS | Node ms | Chrome headless shell 156 ms |
 |---|---|---:|---|---:|---:|
-| `vfr_two_phase_5_200.mp4` | 2 steady segments, 5 fps for 4 s then 200 fps for 4 s; 1 rate change; uneven | 820 | 5.000 to 200.0 | 1.01 | 1.20 |
-| `vfr_two_phase_5_200.mkv` | the same stream in Matroska: the same 2 segments | 820 | 5.000 to 200.0 | 1.99 | 1.80 |
-| `vfr_freeze_2s.mp4` | 1 steady segment at 30 fps; 1 freeze of 2 s at 1.967 s; uneven | 120 | 0.500 to 30.000 | 0.41 | 0.90 |
-| `vfr_concat_10_30_60.mp4` | 3 steady segments at 10, 30 and 60 fps, 2 s each; 2 rate changes; uneven | 200 | 10.000 to 60.000 | 0.60 | 0.90 |
-| `vfr_screenrec_ts1000.mp4` | 1 steady segment at 60 fps; 2 gaps of about 1 s; uneven | 246 | 2.959 to 100.0 | 0.77 | 1.10 |
-| `vfr_pulldown_2_3.mp4` | 1 steady segment at 24 fps (a 2:3 cadence is not uneven) | 120 | 20.000 to 30.000 | 0.60 | 1.00 |
-| `cfr_h264_30.mp4` | none: all intervals equal, the chunk is not loaded | 90 | 30.000 to 30.000 | 0.35 | 0.80 |
-| `long_vfr_1h_screenrec.mp4` | 60 fps for 3598 s plus a 1.5 s variable tail; 1439 gaps (50 listed); uneven | 133920 | 2.941 to 100.0 | 56.8 | 62.4 |
+| `vfr_two_phase_5_200.mp4` | 2 steady segments, 5 fps for 4 s then 200 fps for 4 s; 1 rate change; uneven | 820 | 5.000 to 200.0 | 0.80 | 1.20 |
+| `vfr_two_phase_5_200.mkv` | the same stream in Matroska: the same 2 segments | 820 | 5.000 to 200.0 | 1.72 | 1.80 |
+| `vfr_freeze_2s.mp4` | 1 steady segment at 30 fps; 1 freeze of 2 s at 1.967 s; uneven | 120 | 0.500 to 30.000 | 0.40 | 0.90 |
+| `vfr_concat_10_30_60.mp4` | 3 steady segments at 10, 30 and 60 fps, 2 s each; 2 rate changes; uneven | 200 | 10.000 to 60.000 | 0.58 | 0.90 |
+| `vfr_screenrec_ts1000.mp4` | 1 steady segment at 60 fps; 2 gaps of about 1 s; uneven | 246 | 2.959 to 100.0 | 0.80 | 1.10 |
+| `vfr_pulldown_2_3.mp4` | 1 steady segment at 24 fps (a 2:3 cadence is not uneven) | 120 | 20.000 to 30.000 | 0.64 | 1.00 |
+| `cfr_h264_30.mp4` | none: all intervals equal, the chunk is not loaded | 90 | 30.000 to 30.000 | 0.36 | 0.80 |
+| `long_vfr_1h_screenrec.mp4` | 60 fps for 3598 s plus a 1.5 s variable tail; 1439 gaps (50 listed); uneven | 133920 | 2.941 to 100.0 | 57.3 | 62.4 |
 
 <!-- tables:profile:end -->
 
@@ -738,7 +739,7 @@ Tested:
 | Category | Fixtures | Committed | Expected outcome | Covers |
 |---|---:|---:|---|---|
 | cfr | 23 | 23 | ok | H.264 MP4 and VP9 WebM at film, PAL, NTSC and high frame rates |
-| mov | 11 | 11 | ok | MOV and MP4 with and without B-frames, edit lists (empty edit, trimmed start), faststart |
+| mov | 12 | 12 | ok | MOV and MP4 with and without B-frames, edit lists (empty edit, trimmed start), faststart |
 | codec | 9 | 9 | ok | HEVC (hvc1, hev1), AV1, VP8, VP9 and ProRes in MP4, MOV, WebM and Matroska |
 | fmp4 | 16 | 16 | ok | fragmented MP4: empty moov, default-base-is-moof, CMAF, DASH, sidx, hybrid |
 | matroska | 2 | 2 | ok | H.264 in Matroska, WebM without DefaultDuration |
@@ -755,7 +756,7 @@ Tested:
 | long | 2 | 0 | ok | long CFR and VFR MP4 (generated, not committed) |
 | big | 3 | 0 | ok |  |
 | sparse | 1 | 0 | ok | sparse MP4 above 4 GiB with 64-bit offsets (generated, not committed) |
-| **total** | 134 | 128 |  |  |
+| **total** | 135 | 129 |  |  |
 
 <!-- tables:corpus:end -->
 

@@ -133,8 +133,8 @@ Rules are JSON, such as `{ fps: { min: 24, max: 60 }, duration: { max: 10 }, vfr
 
 | Host Vite config | Critical path | First MP4 | First MKV | All own paths | Worker files |
 |---|---:|---:|---:|---:|---:|
-| `worker: { format: 'es' }` (recommended) | **0.67 KB** | 22.78 KB | 25.63 KB | 48.74 KB | 2 |
-| none (Vite's default, 'iife') | **0.66 KB** | 24.54 KB | 27.17 KB | 48.43 KB | 2 |
+| `worker: { format: 'es' }` (recommended) | **0.67 KB** | 22.86 KB | 25.68 KB | 48.88 KB | 2 |
+| none (Vite's default, 'iife') | **0.66 KB** | 24.64 KB | 27.22 KB | 48.58 KB | 2 |
 
 Own runs on one worker per container family, picked by the first four bytes of the file, so a first file loads only the worker of its family. An iife worker cannot split, so without the option each own worker is one file with its lazy parts inlined:
 
@@ -154,9 +154,9 @@ Engines cost nothing until imported. Importing a descriptor grows the critical p
 
 <!-- tables:accuracy-summary:start -->
 
-**0 mismatches against ffprobe 8.1.1** on the 128 committed fixtures: 2020 field checks, 1942 exact, 13 within tolerance (9 of them a definition difference by design: the measured average of a Matroska file that stores no duration for its last frame, which avgFps gives the median interval and ffprobe its own estimate), 0 known deviations with a recorded reason, 65 not applicable. The same comparison runs mp4box.js 2.4.1 and mediabunny 1.62.1 in 5 arms (their idiomatic recipes, mediabunny with a full scan, and this package's tuned adapters) and sorts each difference into wrong, definition differs, unverified, not provided or unsupported container; the [accuracy section](docs/benchmarks.md#accuracy-vs-ffprobe) has the outcomes and where the libraries win.
+**0 mismatches against ffprobe 8.1.1** on the 129 committed fixtures: 2037 field checks, 1959 exact, 13 within tolerance (9 of them a definition difference by design: the measured average of a Matroska file that stores no duration for its last frame, which avgFps gives the median interval and ffprobe its own estimate), 0 known deviations with a recorded reason, 65 not applicable. The same comparison runs mp4box.js 2.4.1 and mediabunny 1.62.1 in 5 arms (their idiomatic recipes, mediabunny with a full scan, and this package's tuned adapters) and sorts each difference into wrong, definition differs, unverified, not provided or unsupported container; the [accuracy section](docs/benchmarks.md#accuracy-vs-ffprobe) has the outcomes and where the libraries win.
 
-Of the 128 committed fixtures, 116 are synthetic files made with ffmpeg and 12 are real MediaRecorder recordings from headless Chromium, committed as recorded; per-engine tables, speed and method: [docs/benchmarks.md](docs/benchmarks.md).
+Of the 129 committed fixtures, 117 are synthetic files made with ffmpeg and 12 are real MediaRecorder recordings from headless Chromium, committed as recorded; per-engine tables, speed and method: [docs/benchmarks.md](docs/benchmarks.md).
 
 <!-- tables:accuracy-summary:end -->
 

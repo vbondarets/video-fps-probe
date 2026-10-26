@@ -28,16 +28,19 @@ export function errorMessage(e: unknown): string {
   return String(e);
 }
 
+const printable = (warnings: string[]): string[] => warnings.map((w) => w.replace(/[\0-\x1f\x7f-\x9f]/g, '?'));
+
 function applyAnalysis(target: FileResult, a: ContainerAnalysis): void {
   target.container = a.container;
   target.brand = a.brand;
   target.formatDurationSec = a.formatDurationSec;
   target.scan = a.scan;
   target.videoTracks = a.videoTracks;
+  for (const t of a.videoTracks) t.warnings = printable(t.warnings);
   target.audioTrackCount = a.audioTrackCount;
   target.primaryTrackId = a.primaryTrackId;
   target.error = a.error;
-  target.warnings = a.warnings;
+  target.warnings = printable(a.warnings);
 }
 
 export async function analyzeWith(blob: BlobLike, name: string, opts: AnalyzeOptions, analyzerOf: AnalyzerOf): Promise<FileResult> {

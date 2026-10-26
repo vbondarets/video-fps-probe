@@ -1,15 +1,15 @@
 # Fixtures
 
-Test corpus for the FPS probe, measured with ffprobe 8.1.1. 116 videos are built with ffmpeg 8.1.1 from lavfi
+Test corpus for the FPS probe, measured with ffprobe 8.1.1. 117 videos are built with ffmpeg 8.1.1 from lavfi
 test sources (`testsrc2`, `sine`), and 12 are real MediaRecorder recordings of a canvas animation made by this
-repository in headless Chromium, so there is no third-party content. 128 core fixtures (about 13.8 MB) are
+repository in headless Chromium, so there is no third-party content. 129 core fixtures (about 13.9 MB) are
 committed; six optional heavy ones are generated on demand.
 
 ## Layout
 
 | Path | Content | Committed |
 | --- | --- | --- |
-| `files/` | the 128 core fixtures | yes |
+| `files/` | the 129 core fixtures | yes |
 | `large/` | optional `--with-long`, `--with-sparse` and `--with-big` files | no (git-ignored) |
 | `manifest.tsv` | one row per fixture, optional ones included | yes |
 | `ref/<file name>.ref.json` | ffprobe ground truth per fixture | yes |
@@ -65,7 +65,7 @@ lying `entry_count` by the box size and warns, while ffprobe fails on it (`ok: f
 | --- | --- | --- |
 | `cfr` | 23 | constant rates 23.976 to 240 fps, H.264 in MP4 and VP9 in WebM, exact rationals; two WebM files stream-copied to MP4 (timescale 16000, 1 ms grid) and 240 fps at timescale 600 |
 | `vfr` | 22 | variable rate made by concat, `setpts`, `select`, `mpdecimate`, `setts` (2:3 pulldown) and stream copy, in MP4, MOV, WebM, fragmented MP4 and Matroska, plus the four rate profile fixtures and the three late-change fixtures below, a first frame held 2 s with B-frames and a `-ss -c copy` trim of a VFR file |
-| `mov` | 11 | QuickTime and MP4 muxing variants, B-frames, edit lists (empty edit, trimmed start), faststart |
+| `mov` | 12 | QuickTime and MP4 muxing variants, B-frames, edit lists (empty edit, trimmed start), faststart, bytes after the moov that are not a box |
 | `fmp4` | 16 | fragmented MP4: `empty_moov`, `default_base_moof`, `global_sidx`, `dash`, `cmaf`, hybrid, DASH segments, plus two fragmented VFR files where ffprobe under-reads the fragments, a file with one fragment removed (tfdt gap), plain DASH output with B-frames (global sidx with a non-zero earliest presentation time) and an all-ones `mehd` |
 | `codec` | 9 | HEVC (`hvc1`, `hev1`, in Matroska), AV1, VP8, VP9, ProRes |
 | `matroska` | 2 | plain Matroska H.264, WebM without `DefaultDuration` |
@@ -116,6 +116,7 @@ Byte patches of ffmpeg output by `scripts/fixtures/tools/patch-mp4.mjs`, for hea
 | --- | --- | --- | --- |
 | `fmp4_mehd_all_ones.mp4` | `fmp4_default_base_moof.mp4` with a version 1 `mehd` of 0xFFFFFFFFFFFFFFFF appended to `mvex` (mode `mehd`; the data offsets are relative to each moof and the tfra offsets are shifted) | never reads `mehd`: the same values as the source file | ignores `mehd`: the same values as the source file |
 | `corrupt_elst64_all_ones.mp4` | `cfr_h264_30.mp4` with its `elst` rewritten as version 1 and the segment duration 0xFFFFFFFFFFFFFFFF (mode `elst64`; the moov follows the mdat, so the chunk offsets stay valid) | fails: `Invalid edit list duration=-1`, `error reading header` | reads the edit as lasting to the end and warns; the values of `cfr_h264_30.mp4`, with `avgFpsFfprobe` and `rFpsFfprobe` null |
+| `mov_trailing_junk.mov` | `mov_nobf_default.mov`, whose moov is the last box, with 16 bytes appended: a size of 0x7FFFFFFF, past the end of the file, and a type of four NUL bytes (mode `trailer`) | skips them: the same values as the source file | ignores them with `ignored trailing data at 88446: not a box`, so the file is not truncated: the same values as the source file |
 
 The commands are in section O of `scripts/fixtures/generate-fixtures.sh`.
 

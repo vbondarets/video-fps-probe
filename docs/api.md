@@ -366,7 +366,7 @@ type ProbeResult = FileResult & {
 | `audioTrackCount` | number | audio tracks seen |
 | `primaryTrackId` | number or null | the track the summary uses: the enabled ISO BMFF track with the most samples, or the first Matroska video track |
 | `error` | string or null | why the file could not be analysed, for example `not a recognised container: PNG image` |
-| `warnings` | string[] | file-level warnings in plain words |
+| `warnings` | string[] | file-level warnings in plain words; NUL and other control characters from the file are replaced by `?` |
 | `io` | `{ reads, bytesRead, ms }` | `Blob.slice()` reads, unique bytes read, and the analysis time in the thread that ran it (chunk loading excluded) |
 | `engine` | `'own' \| 'mp4box' \| 'mediabunny' \| 'rvfc'` | which engine produced the result |
 
