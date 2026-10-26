@@ -121,7 +121,7 @@ Byte patches of ffmpeg output by `scripts/fixtures/tools/patch-mp4.mjs`, for hea
 
 The commands are in section O of `scripts/fixtures/generate-fixtures.sh`.
 
-Three more patches of `cfr_h264_30.mp4` are written by `tests/isobmff/fixtures.test.ts` rather than committed: its `mvhd`, `tkhd` or `mdhd` rewritten as version 1 with the duration 0xFFFFFFFFFFFFFFFF (modes `mvhd64`, `tkhd64` and `mdhd64`). The test checks the SHA-256 of each file and compares the app with what ffprobe 8.1.1 printed for those bytes with `-count_frames`: the `mvhd` and `tkhd` files give the values of the source file, and the `mdhd` one 90 frames at 30/1 with a stream duration of 0 and no format duration.
+Three more patches of `cfr_h264_30.mp4` are written by `tests/isobmff/fixtures.test.ts` rather than committed: its `mvhd`, `tkhd` or `mdhd` rewritten as version 1 with the duration 0xFFFFFFFFFFFFFFFF (modes `mvhd64`, `tkhd64` and `mdhd64`). The test checks the SHA-256 of each file and compares the app with what ffprobe 8.1.1 printed for those bytes with `-count_frames -count_packets`: the `mvhd` and `tkhd` files give the values of the source file, and the `mdhd` one 90 frames at 30/1 with a stream duration of 0 and no format duration.
 
 ## Browser recordings (Tier R)
 

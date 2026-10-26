@@ -383,7 +383,7 @@ describe('all-ones mvhd, tkhd and mdhd version 1 durations against ffprobe 8.1.1
     if (dir) rmSync(dir, { recursive: true, force: true });
   });
 
-  test.each(recorded)('%s of %s: the values ffprobe 8.1.1 printed for the same bytes, -count_frames included', async (mode, sha256, format, stream) => {
+  test.each(recorded)('%s of %s: the values ffprobe 8.1.1 printed for the same bytes with -count_frames -count_packets', async (mode, sha256, format, stream) => {
     const name = `cfr_h264_30_${mode}.mp4`;
     const patched = join(dir, name);
     const tool = join(REPO_ROOT, 'scripts', 'fixtures', 'tools', 'patch-mp4.mjs');
