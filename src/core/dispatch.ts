@@ -28,7 +28,7 @@ export function errorMessage(e: unknown): string {
   return String(e);
 }
 
-const printable = (warnings: string[]): string[] => warnings.map((w) => w.replace(/[\0-\x1f\x7f-\x9f]/g, '?'));
+const printable = (warnings: string[]): string[] => warnings.map((w) => w.replace(/[^\x20-\x7e\xa0-￿]/g, '?'));
 
 function applyAnalysis(target: FileResult, a: ContainerAnalysis): void {
   target.container = a.container;

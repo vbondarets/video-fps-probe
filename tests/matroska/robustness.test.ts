@@ -407,7 +407,7 @@ describe('strings from the file in warnings', () => {
     const r = await run(bytes, { matroskaMode: 'auto' });
     expect(warnings(r)).toMatch(/unexpected DocType 'web\?m'/);
     expect(warnings(r)).toMatch(/V_\?X/);
-    expect(warnings(r)).not.toMatch(/[\0-\x1f\x7f-\x9f]/);
+    expect(warnings(r).split(' | ').filter((w) => /[^\x20-\x7e\xa0-￿]/.test(w))).toEqual([]);
   });
 });
 
