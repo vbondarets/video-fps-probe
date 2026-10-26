@@ -557,7 +557,8 @@ type PresetSourceKind = 'official' | 'gateway';
 
 interface ProviderPreset {
   readonly name: string;
-  readonly sourceUrl: string; // deprecated: use video-fps-probe/presets/sources.json; sourceUrl will be removed in the next major
+  /** @deprecated Use video-fps-probe/presets/sources.json; sourceUrl will be removed in the next major. */
+  readonly sourceUrl: string;
   readonly sourceKind: PresetSourceKind; // 'gateway': documented by a service that serves another company's model
   readonly verifiedAt: string; // YYYY-MM-DD, the day every number was read again from the source page
   readonly note: string; // what the rules leave out, and why
