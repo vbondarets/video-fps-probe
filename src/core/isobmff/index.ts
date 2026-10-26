@@ -39,7 +39,7 @@ export interface IsoBmffDetails {
 }
 
 function isAbort(e: unknown, reader: BlobReader): boolean {
-  return reader.signal?.aborted === true || (typeof e === 'object' && e !== null && (e as { name?: unknown }).name === 'AbortError');
+  return reader.signal?.aborted === true || (e as { name?: unknown } | null)?.name === 'AbortError';
 }
 
 function containerOf(movie: IsoMovie): ContainerKind {

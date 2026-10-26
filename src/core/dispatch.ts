@@ -20,7 +20,7 @@ export function firstReadAhead(size: number, opts: ResolvedAnalyzeOptions): numb
 }
 
 export function isAbortError(e: unknown): boolean {
-  return typeof e === 'object' && e !== null && 'name' in e && (e as { name: unknown }).name === 'AbortError';
+  return (e as { name?: unknown } | null)?.name === 'AbortError';
 }
 
 export function errorMessage(e: unknown): string {
