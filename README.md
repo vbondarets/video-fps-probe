@@ -100,6 +100,8 @@ const result = await analyze(await openAsBlob(path), { name: path }); // in the 
 
 In-thread `analyze()` is tested on Node 24, the version in `.nvmrc`, and on Node 22.12, the lowest supported version: CI runs the unit, fixture and package tests on both. The example needs `fs.openAsBlob`, available since Node 19.8 and stable in Node 24. Files above 4 GiB need a `BlobLike` in Node 24 ([in-thread analyze](docs/api.md#in-thread-analyze)). The type declarations name DOM types such as `Worker` and `HTMLElement`, so a TypeScript project for Node needs `"DOM"` in `lib` or `skipLibCheck: true`.
 
+CommonJS works on Node 22.12 and newer, which load ES modules from `require()`: `const { analyze } = require('video-fps-probe')`, the subpaths included, and a TypeScript project with `"module": "commonjs"` and `moduleResolution` `node10`, such as a NestJS 11 app. The package test checks both from the packed tarball on Node 22.12 and 24. Jest needs the package transformed or native ES modules ([CommonJS](docs/api.md#commonjs)).
+
 ## Cancellation, timeouts and failing open
 
 ```ts

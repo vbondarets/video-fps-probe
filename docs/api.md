@@ -2,7 +2,7 @@
 
 Everything the package exports, by entry, with options, defaults, errors and the result schema. The [README](../README.md) has the short version; [bundlers.md](bundlers.md) covers worker setup per bundler, and [architecture.md](architecture.md) how the pieces fit together.
 
-The package is ESM only, targets ES2022 and ships its own types. Every entry except the standalone worker files can be imported in Node and during SSR: nothing touches `Worker`, `window` or `document` at import time.
+The package is ESM only, targets ES2022 and ships its own types. Every entry except the standalone worker files can be imported in Node and during SSR: nothing touches `Worker`, `window` or `document` at import time. CommonJS code can `require()` the entries on Node 22.12 and newer ([CommonJS](#commonjs)).
 
 ## Entries
 
@@ -262,6 +262,25 @@ interface BlobLike {
 ```
 
 Runs in the calling thread, without a worker: for Node, scripts and tests. `analyze(await fs.openAsBlob(path), { name: path })` in Node; in Node 24 `openAsBlob` wraps the size of files above 4 GiB modulo 2^32, so pass a `BlobLike` over a file handle for those. The parser chunks load with `import()` on first use. `{ engine: mp4box() }` or `{ engine: mediabunny() }` runs that library instead (the peer must be installed). With own it rejects on an abort (the signal's reason, or an `AbortError`) and, with the import error as it is, when the chunk with the worker runtime fails to load. A parser or statistics chunk that fails to load is not a rejection: own returns a result whose `error` is the import error's message. A library engine also rejects when its chunk fails to load, and rvfc without a host or a DOM. The type declarations name DOM types such as `Worker` and `HTMLElement`, so a TypeScript project for Node compiles them with `"DOM"` in `lib` or with `skipLibCheck: true`; without either, `tsc` reports `TS2304: Cannot find name 'Worker'`.
+
+### CommonJS
+
+Node 22.12 and newer load an ES module from `require()` (`require(esm)`), so CommonJS code takes the package as it is, every entry included; no entry has a top-level `await`. Node 22.12 prints an `ExperimentalWarning` for it, Node 24 prints nothing. Older Node versions need `await import('video-fps-probe')` from CommonJS.
+
+```js
+const { openAsBlob } = require('node:fs');
+const { analyze } = require('video-fps-probe');
+const { check } = require('video-fps-probe/check');
+const { klingO1ReferenceVideo } = require('video-fps-probe/presets');
+
+openAsBlob(path)
+  .then((blob) => analyze(blob, { name: path }))
+  .then((result) => console.log(check(result, klingO1ReferenceVideo.rules).verdict));
+```
+
+A TypeScript project that compiles to CommonJS, such as a NestJS 11 app (`"module": "commonjs"`, `moduleResolution` `node10`, `skipLibCheck: true`), writes `import { analyze } from 'video-fps-probe'` and gets a `require()` in its output. `moduleResolution: node10` reads no `exports` map, so the package also lists every subpath's types under `typesVersions`; TypeScript 6.0 needs `"ignoreDeprecations": "6.0"` for `node10`, TypeScript 5.9 does not. `tests/package/commonjs.test.ts` installs the packed tarball, `require()`s it from a `.cjs` file and compiles such a project, runs `analyze` on an MP4 and `check` with a preset, and compares both with the source, on Node 24 and on Node 22.12 in CI.
+
+Jest runs CommonJS tests through its own module loader, not Node's `require(esm)`, so `require('video-fps-probe')` fails there with an ESM syntax error. Either let babel-jest or ts-jest transform the package, with `transformIgnorePatterns: ['/node_modules/(?!video-fps-probe/)']` and a transform for the `import.meta.url` of the worker URLs (for example `babel-plugin-transform-import-meta`), or run Jest on native ES modules (`node --experimental-vm-modules`). Neither Jest setup is tested here.
 
 ## Engines
 
