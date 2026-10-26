@@ -43,6 +43,12 @@ const SUBSTITUTE_REFS: Record<string, { ref: string; warning: RegExp }> = {
   'corrupt_elst64_all_ones.mp4': { ref: 'cfr_h264_30.mp4', warning: /^elst segment duration 0xffffffffffffffff is unknown: the edit lasts to the end$/m },
 };
 
+const EXACT_WARNINGS: Record<string, { file: string[]; track: string[] }> = {
+  'mov_trailing_junk.mov': { file: ['ignored trailing data at 88446: not a box'], track: [] },
+  'fmp4_mehd_all_ones.mp4': { file: [], track: [] },
+  'mp4_stsd_two_entries.mp4': { file: [], track: ['2 sample descriptions, first used'] },
+};
+
 const ERROR_MESSAGES: Record<string, string> = {
   'corrupt_trunc_no_moov.mp4': 'incomplete file: no moov',
   'corrupt_trunc_moov_partial.mp4': 'incomplete file: moov is truncated',
@@ -242,6 +248,11 @@ function assertFixture(row: ManifestEntry, analysed: Analysed): void {
   expect(result.container).toBe(row.container);
   expect(result.scan).toBe('exact');
   expect(movie).not.toBeNull();
+  const exact = EXACT_WARNINGS[row.name];
+  if (exact) {
+    expect(result.warnings).toEqual(exact.file);
+    expect(result.videoTracks.map((t) => t.warnings)).toEqual([exact.track]);
+  }
   const ownRef = loadRef(row.name);
   expect(ownRef).not.toBeNull();
   const substitute = SUBSTITUTE_REFS[row.name];

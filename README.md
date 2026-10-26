@@ -135,8 +135,8 @@ Rules are JSON, such as `{ fps: { min: 24, max: 60 }, duration: { max: 10 }, vfr
 
 | Host Vite config | Critical path | First MP4 | First MKV | All own paths | Worker files |
 |---|---:|---:|---:|---:|---:|
-| `worker: { format: 'es' }` (recommended) | **0.66 KB** | 22.77 KB | 25.56 KB | 48.67 KB | 2 |
-| none (Vite's default, 'iife') | **0.66 KB** | 24.52 KB | 27.11 KB | 48.34 KB | 2 |
+| `worker: { format: 'es' }` (recommended) | **0.66 KB** | 22.78 KB | 25.56 KB | 48.68 KB | 2 |
+| none (Vite's default, 'iife') | **0.66 KB** | 24.53 KB | 27.11 KB | 48.34 KB | 2 |
 
 Own runs on one worker per container family, picked by the first four bytes of the file, so a first file loads only the worker of its family. An iife worker cannot split, so without the option each own worker is one file with its lazy parts inlined:
 

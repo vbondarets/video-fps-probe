@@ -3,7 +3,7 @@ import { emptyAnalysis, emptyTrack } from '../result.ts';
 import { analyzeTimeline, rateProfileOf, type ProfileJob } from '../stats.ts';
 import { toFfprobeString } from '../rational.ts';
 import type { ContainerAnalysis, ContainerKind, ResolvedAnalyzeOptions, VideoTrackResult } from '../types.ts';
-import { IsoBmffError, printable, readBoxHeader, type BoxHeader } from './boxes.ts';
+import { IsoBmffError, readBoxHeader, type BoxHeader } from './boxes.ts';
 import { codecNameFor, isVideoFourcc } from './codecs.ts';
 import { newMovie, type IsoMovie, type IsoTrack, type TopBox } from './model.ts';
 import { parseMoof, parseSidx } from './moof.ts';
@@ -86,11 +86,10 @@ async function walk(reader: BlobReader, opts: ResolvedAnalyzeOptions, movie: Iso
     if (!rel) break;
     const h: BoxHeader = { ...rel, start: pos, end: Math.min(pos + rel.size, size) };
     const boxEnd = pos + rel.size;
-    const trailer = rel.truncated && sawMoov && printable(h.type) !== h.type;
-    if (trailer) movie.warnings.push(`ignored trailing data at ${pos}: not a box`);
-    else if (rel.truncated) {
+    const trailer = rel.truncated && sawMoov && h.type !== 'mdat' && h.type !== 'moof';
+    if (rel.truncated) {
       movie.truncated = true;
-      movie.warnings.push(`'${h.type}' at ${pos} is truncated`);
+      movie.warnings.push(trailer ? `ignored trailing data at ${pos}: not a box` : `'${h.type}' at ${pos} is truncated`);
     }
     const top: TopBox = { type: h.type, start: pos, end: h.end, sidx: null };
     movie.topLevel.push(top);

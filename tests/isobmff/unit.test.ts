@@ -967,7 +967,9 @@ describe('data after moov', () => {
 
   test('a trailer that is not a box after a complete moov and mdat is ignored instead of marking the file truncated', async () => {
     const plain = await run(moovAtEnd);
-    const trailers = [[0x7f, 0xff, 0xff, 0xff, ...zeros(12)], [...u32(256), ...zeros(12)], [...u32(0x10000), 1, 2, 3, 0x9b, ...zeros(8)]];
+    const junk = [0x4a, 0x55, 0x4e, 0x4b];
+    const free = [0x66, 0x72, 0x65, 0x65];
+    const trailers = [[0x7f, 0xff, 0xff, 0xff, ...zeros(12)], [...u32(256), ...zeros(12)], [...u32(0x10000), 1, 2, 3, 0x9b, ...zeros(8)], [0x7f, 0xff, 0xff, 0xff, ...junk, ...zeros(8)], [...u32(0x10000), ...free, 1, 2, 3, 4]];
     for (const trailer of trailers) {
       const r = await run(bytes(moovAtEnd, trailer));
       expect(r.warnings).toEqual([`ignored trailing data at ${moovAtEnd.length}: not a box`]);
@@ -981,6 +983,15 @@ describe('data after moov', () => {
     const cut = await run(fast.subarray(0, fast.length - 450));
     expect(cut.warnings).toEqual([`'mdat' at ${head.length} is truncated`]);
     expect(cut.videoTracks[0]).toMatchObject({ frames: 90, presentedFrames: 45 });
+  });
+
+  test('samples that a cut trailer after moov holds are still cut, with a truncation warning on the track', async () => {
+    const head = bytes(ftyp(), moov(trak({ ...CFR30(), chunkOffset: 0 })));
+    const fast = bytes(ftyp(), moov(trak({ ...CFR30(), chunkOffset: head.length + 8 })), box('free', zeros(900)));
+    const cut = await run(fast.subarray(0, fast.length - 450));
+    expect(cut.warnings).toEqual([`ignored trailing data at ${head.length}: not a box`]);
+    expect(cut.videoTracks[0]).toMatchObject({ frames: 90, presentedFrames: 45 });
+    expect(cut.videoTracks[0].warnings).toEqual(['truncated: 45 of 90 samples complete']);
   });
 
   test('warnings never carry NUL or other control characters from the file', async () => {
