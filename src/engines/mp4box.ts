@@ -8,7 +8,7 @@ import { sniff } from '../core/sniff.ts';
 import { analyzeTimeline, type EditWindow, type TimelineSegment } from '../core/stats.ts';
 import type { AnalyzeOptions, ContainerKind, VideoTrackResult } from '../core/types.ts';
 import type { ContainerFamily, EngineModule } from '../plugins/types.ts';
-import { applyStats, codecNameFromFourcc, errorMessage, ffprobeRotation, isAbort, newResult } from './common.ts';
+import { applyStats, codecNameFromFourcc, errorMessage, ffprobeRotation, isAbort, newResult, printableWarnings } from './common.ts';
 import { CountingBlob, now } from './counting.ts';
 import type { Mp4boxNative, Mp4boxResult, Mp4boxTrackNative } from './types.ts';
 
@@ -444,6 +444,7 @@ export async function analyzeWithMp4box(blob: BlobLike, name: string, opts: Anal
     result.error = errorMessage(e);
   }
   result.io = counted.io(t0);
+  printableWarnings(result);
   return result;
 }
 

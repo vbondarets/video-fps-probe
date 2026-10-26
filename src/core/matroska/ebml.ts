@@ -146,7 +146,7 @@ const utf8 = new TextDecoder();
 export function readString(b: Uint8Array, p: number, n: number): string {
   let e = p;
   while (e < p + n && b[e] !== 0) e++;
-  return utf8.decode(b.subarray(p, e));
+  return utf8.decode(b.subarray(p, e)).replace(/[^\x20-\x7e\xa0-\uffff]/g, '?');
 }
 
 export interface Child {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { analyzeTimeline } from '../../src/core/stats.ts';
 import { emptyTrack } from '../../src/core/result.ts';
-import { applyStats, approxRational, codecNameFromFourcc, errorMessage, ffprobeRotation, isAbort, newResult } from '../../src/engines/common.ts';
+import { applyStats, approxRational, codecNameFromFourcc, errorMessage, ffprobeRotation, isAbort, newResult, printableWarnings } from '../../src/engines/common.ts';
 
 describe('approxRational', () => {
   it('recovers common frame rates from doubles', () => {
@@ -66,6 +66,17 @@ describe('result helpers', () => {
     expect(track.isVfr).toBe(false);
     expect(track.isStill).toBe(false);
     expect(track.provenance.minFps).toBe('exact');
+  });
+
+  it('replaces NUL and other control characters in the file and track warnings, and keeps other text', () => {
+    const r = newResult('a.webm', 10, 'mediabunny');
+    const track = emptyTrack(1);
+    track.warnings.push('codec V_\u0007X', 'tag \u00a9day \u4e2d\u6587');
+    r.videoTracks.push(track);
+    r.warnings.push('mediabunny log: box \u0000\u0001ab\u007f\u0085');
+    printableWarnings(r);
+    expect(r.warnings).toEqual(['mediabunny log: box ??ab??']);
+    expect(r.videoTracks[0].warnings).toEqual(['codec V_?X', 'tag \u00a9day \u4e2d\u6587']);
   });
 
   it('marks single-sample tracks as stills', () => {

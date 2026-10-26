@@ -7,7 +7,7 @@ import { emptyTrack } from '../core/result.ts';
 import { analyzeTimeline } from '../core/stats.ts';
 import type { AnalyzeOptions, ContainerKind, VideoTrackResult } from '../core/types.ts';
 import type { EngineModule } from '../plugins/types.ts';
-import { applyStats, approxRational, codecNameFromFourcc, errorMessage, isAbort, newResult } from './common.ts';
+import { applyStats, approxRational, codecNameFromFourcc, errorMessage, isAbort, newResult, printableWarnings } from './common.ts';
 import { CountingBlob, elapsed, now } from './counting.ts';
 import type { MediabunnyNative, MediabunnyResult, MediabunnyTrackNative } from './types.ts';
 
@@ -239,6 +239,7 @@ export async function analyzeWithMediabunny(blob: BlobLike, name: string, opts: 
     result.error = errorMessage(e);
   }
   if (result.mediabunny === undefined) result.io = counted.io(t0);
+  printableWarnings(result);
   return result;
 }
 

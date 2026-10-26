@@ -230,5 +230,5 @@ export function ascii(dv: DataView, p: number, length: number): string {
 }
 
 export function fourcc(dv: DataView, p: number): string {
-  return ascii(dv, p, 4);
+  return ascii(dv, p, 4).replace(/[^ -~]/g, '?');
 }

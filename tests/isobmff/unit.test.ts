@@ -960,7 +960,7 @@ describe('64-bit all-ones durations', () => {
 });
 
 describe('data after moov', () => {
-  const CONTROL = /[^\x20-\x7e\xa0-￿]/;
+  const CONTROL = /[^\x20-\x7e\xa0-\uffff]/;
   const mdat = (n: number): Bytes => box('mdat', zeros(n));
   const everyWarning = (r: FileResult): string[] => [...r.warnings, ...r.videoTracks.flatMap((t) => t.warnings)];
   const moovAtEnd = bytes(ftyp('qt  '), mdat(80_000), moov(trak({ ...CFR30(), chunkOffset: 40 })));

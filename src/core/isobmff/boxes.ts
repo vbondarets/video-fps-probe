@@ -7,10 +7,6 @@ export class IsoBmffError extends Error {
   }
 }
 
-function printable(type: string): string {
-  return type.replace(/[^\x20-\x7e]/g, '?');
-}
-
 export interface BoxHeader {
   type: string;
   start: number;
@@ -32,14 +28,14 @@ export function readBoxHeader(dv: DataView, p: number, parentEnd: number, base =
   if (size32 === 1) {
     if (p + 16 > avail) return null;
     const big = dv.getBigUint64(p + 8);
-    if (big > BigInt(Number.MAX_SAFE_INTEGER)) throw new IsoBmffError(`corrupt file: box '${printable(type)}' at ${base + p} has a size above 2^53-1`);
+    if (big > BigInt(Number.MAX_SAFE_INTEGER)) throw new IsoBmffError(`corrupt file: box '${type}' at ${base + p} has a size above 2^53-1`);
     size = Number(big);
     headerSize = 16;
   } else if (size32 === 0) {
     size = parentEnd - p;
   }
   if (type === 'uuid') headerSize += 16;
-  if (size < headerSize) throw new IsoBmffError(`corrupt file: box '${printable(type)}' at ${base + p} is smaller than its header`);
+  if (size < headerSize) throw new IsoBmffError(`corrupt file: box '${type}' at ${base + p} is smaller than its header`);
   const end = p + size;
   return { type, start: p, size, headerSize, end: Math.min(end, parentEnd), truncated: end > parentEnd };
 }
@@ -62,14 +58,14 @@ export function* childBoxes(dv: DataView, start: number, end: number, warnings?:
 
 export function boxU64(dv: DataView, p: number, box: string, at: number): number {
   const v = dv.getBigUint64(p);
-  if (v > BigInt(Number.MAX_SAFE_INTEGER)) throw new IsoBmffError(`unsupported: box '${printable(box)}' at ${at} holds a value above 2^53-1`);
+  if (v > BigInt(Number.MAX_SAFE_INTEGER)) throw new IsoBmffError(`unsupported: box '${box}' at ${at} holds a value above 2^53-1`);
   return Number(v);
 }
 
 export function boxI64(dv: DataView, p: number, box: string, at: number): number {
   const v = dv.getBigInt64(p);
   if (v > BigInt(Number.MAX_SAFE_INTEGER) || v < -BigInt(Number.MAX_SAFE_INTEGER)) {
-    throw new IsoBmffError(`unsupported: box '${printable(box)}' at ${at} holds a value beyond 2^53-1`);
+    throw new IsoBmffError(`unsupported: box '${box}' at ${at} holds a value beyond 2^53-1`);
   }
   return Number(v);
 }

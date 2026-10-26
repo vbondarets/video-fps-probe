@@ -60,6 +60,13 @@ export function newResult(name: string, size: number, engine: EngineId): FileRes
   return { name, size, ...emptyAnalysis('unknown'), io: { reads: 0, bytesRead: 0, ms: 0 }, engine };
 }
 
+const printable = (warnings: string[]): string[] => warnings.map((w) => w.replace(/[^\x20-\x7e\xa0-\uffff]/g, '?'));
+
+export function printableWarnings(result: FileResult): void {
+  result.warnings = printable(result.warnings);
+  for (const t of result.videoTracks) t.warnings = printable(t.warnings);
+}
+
 export function ffprobeRotation(matrix: ArrayLike<number>): number {
   const a = matrix[0] / 65536;
   const b = matrix[1] / 65536;

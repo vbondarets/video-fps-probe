@@ -394,7 +394,7 @@ type ProbeResult = FileResult & {
 
 | Field | Meaning |
 |---|---|
-| `trackId`, `fourccOrCodecId`, `codecName` | track id, sample entry or CodecID, and ffprobe's `codec_name` |
+| `trackId`, `fourccOrCodecId`, `codecName` | track id, sample entry or CodecID (own reads a byte outside printable ASCII, or a control character in a CodecID, as `?`), and ffprobe's `codec_name` |
 | `width`, `height`, `rotation`, `timescale` | stored frame size in pixels (the sample aspect ratio is not applied), rotation in degrees as ffprobe reports it, ticks per second |
 | `frames` | stored samples or blocks (ffprobe `nb_frames`, or `nb_read_packets` for fragmented MP4 and Matroska) |
 | `presentedFrames` | frames inside the first non-empty edit (ffprobe `nb_read_frames`); equals `frames` without an edit list |
@@ -412,7 +412,7 @@ type ProbeResult = FileResult & {
 | `isStill` | a single frame or a still image track |
 | `rateProfile` | `RateProfile` or null; only for tracks whose intervals differ by more than 7.5% and not only by timestamp rounding (Matroska only after an exact scan) |
 | `provenance` | `Partial<Record<TrackField, Provenance>>`: where each value came from |
-| `warnings` | track-level warnings in plain words |
+| `warnings` | track-level warnings in plain words; NUL and other control characters from the file are replaced by `?` |
 
 `Rational` is `{ num, den, value }`, reduced exactly the way FFmpeg's `av_reduce` does. The exact rules and how each value maps to ffprobe are in [benchmarks.md](benchmarks.md#ffprobe-equivalence).
 

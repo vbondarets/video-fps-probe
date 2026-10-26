@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { afterAll, describe, expect, it } from 'vitest';
 import { analyzeWithMp4box } from '../../src/engines/mp4box.ts';
 import type { Mp4boxResult } from '../../src/engines/types.ts';
@@ -128,6 +129,21 @@ describe('analyzeWithMp4box on representative fixtures', () => {
     expectContract(result, 'mp4box', name, size);
     expect(result.error).not.toBeNull();
     expect(result.videoTracks).toEqual([]);
+  });
+
+  it('replaces NUL and other control characters in the warnings mp4box logs', async () => {
+    const bytes = readFileSync(fixturePath('cfr_h264_30.mp4')!);
+    const moovAt = bytes.indexOf('moov', 0, 'latin1') - 4;
+    const moovSize = bytes.readUInt32BE(moovAt);
+    expect(moovAt + moovSize).toBe(bytes.length);
+    const child = Buffer.from([0, 0, 0, 16, 0x00, 0x01, 0x61, 0x62, ...new Array<number>(8).fill(0)]);
+    const file = Buffer.concat([bytes, child]);
+    file.writeUInt32BE(moovSize + child.length, moovAt);
+    const result = await analyzeWithMp4box(new Blob([file]), 'control.mp4');
+    expect(result.error).toBeNull();
+    const warnings = [...result.warnings, ...result.videoTracks.flatMap((t) => t.warnings)];
+    expect(warnings.join('\n')).toMatch(/Invalid box type: '\?\?ab'/);
+    expect(warnings.filter((w) => /[^\x20-\x7e\xa0-\uffff]/.test(w))).toEqual([]);
   });
 
   it('reports progress phases', async () => {
