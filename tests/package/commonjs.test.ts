@@ -1,9 +1,9 @@
 import { execFileSync, execSync } from 'node:child_process';
 import { cpSync, mkdirSync, mkdtempSync, openAsBlob, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import ts from 'typescript';
-import ts59 from 'typescript59';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { check } from '../../src/check/index.ts';
 import { analyze } from '../../src/index.ts';
@@ -51,7 +51,43 @@ const url: string = klingO1ReferenceVideo.sourceUrl;
 process.stdout.write(JSON.stringify({ url, again: preset.sourceUrl }));
 `;
 
-const COMPILERS = [ts, ts59 as unknown as typeof ts];
+const TS59 = '5.9.3';
+const TS59_DIR = join(REPO_ROOT, 'tests', 'package', 'ts59');
+
+function loadTs59(): typeof ts | null {
+  try {
+    const compiler = createRequire(import.meta.url)(join(TS59_DIR, 'node_modules', 'typescript')) as typeof ts;
+    return compiler.version === TS59 ? compiler : null;
+  } catch {
+    return null;
+  }
+}
+
+function installTs59(): string {
+  const home = mkdtempSync(join(tmpdir(), 'ts59-npmrc-'));
+  writeFileSync(join(home, '.npmrc'), '');
+  try {
+    execSync(`npm ci --offline --no-audit --no-fund --userconfig "${join(home, '.npmrc')}"`, { cwd: TS59_DIR, env: { ...process.env, npm_config_update_notifier: 'false' }, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    return '';
+  } catch (e) {
+    return String((e as { stderr?: string }).stderr || e).trim().split('\n')[0]!;
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+}
+
+function ts59(): typeof ts | string {
+  const installed = loadTs59();
+  if (installed) return installed;
+  const failure = installTs59();
+  return loadTs59() ?? `TypeScript ${TS59} is not installed in tests/package/ts59 and the npm cache lacks it${failure ? ` (${failure})` : ''}: run npm ci --prefix tests/package/ts59`;
+}
+
+const TS59_OR_REASON = ts59();
+const SKIPPED_TS59 = typeof TS59_OR_REASON === 'string' ? TS59_OR_REASON : null;
+if (SKIPPED_TS59 && process.env.CI) throw new Error(SKIPPED_TS59);
+if (SKIPPED_TS59) console.warn(`skipping the TypeScript ${TS59} cases of the CommonJS package test: ${SKIPPED_TS59}`);
+const COMPILERS = typeof TS59_OR_REASON === 'string' ? [ts] : [ts, TS59_OR_REASON];
 
 const nestLike = (compiler: typeof ts): ts.CompilerOptions => ({
   module: compiler.ModuleKind.CommonJS,
@@ -126,7 +162,7 @@ describe('the packed tarball from CommonJS', () => {
     expect(runNode(dir, join(`out-020-${version}`, 'consumer-020.js'))).toEqual({ url: sources.klingO1ReferenceVideo, again: sources.klingO1ReferenceVideo });
   });
 
-  it('covers TypeScript 6.0.3, the one of the repo, and 5.9.3', () => {
-    expect(COMPILERS.map((compiler) => compiler.version)).toEqual(['6.0.3', '5.9.3']);
+  it.skipIf(SKIPPED_TS59 !== null)(`covers TypeScript 6.0.3, the one of the repo, and ${TS59} from tests/package/ts59`, () => {
+    expect(COMPILERS.map((compiler) => compiler.version)).toEqual(['6.0.3', TS59]);
   });
 });

@@ -1,0 +1,8 @@
+{
+  "name": "video-fps-probe-ts59",
+  "private": true,
+  "description": "TypeScript 5.9.3 for the CommonJS package test",
+  "dependencies": {
+    "typescript": "5.9.3"
+  }
+}

@@ -109,6 +109,9 @@ jobs:
       - name: Build the library
         run: npm run build:lib
 
+      - name: Install TypeScript 5.9.3 for the CommonJS package test
+        run: npm ci --prefix tests/package/ts59
+
       - name: Check dist parity and the api.md types against the packed tarball
         run: npm run test:package
 
@@ -143,6 +146,9 @@ jobs:
 
       - name: Check the package types (attw)
         run: npm run check:types
+
+      - name: Install TypeScript 5.9.3 for the CommonJS package test
+        run: npm ci --prefix tests/package/ts59
 
       - name: Check dist parity and the api.md types against the packed tarball
         run: npm run test:package
