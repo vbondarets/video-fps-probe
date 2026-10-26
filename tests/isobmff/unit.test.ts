@@ -91,8 +91,8 @@ function visualEntry(fourcc: string, w = 160, h = 90, ...children: Uint8Array[])
   return box(fourcc, zeros(6), u16(1), zeros(16), u16(w), u16(h), u32(0x480000), u32(0x480000), u32(0), u16(1), zeros(32), u16(24), u16(0xffff), ...children);
 }
 
-function stsd(entry: Uint8Array): Bytes {
-  return fullBox('stsd', 0, 0, u32(1), entry);
+function stsd(...entries: Uint8Array[]): Bytes {
+  return fullBox('stsd', 0, 0, u32(entries.length), ...entries);
 }
 
 function stts(entries: Array<[number, number]>, declared = entries.length): Bytes {
@@ -140,6 +140,7 @@ interface TrakSpec {
   extra?: Uint8Array[];
   trackHeader?: Uint8Array;
   mediaHeader?: Uint8Array;
+  moreEntries?: Uint8Array[];
 }
 
 function trak(spec: TrakSpec): Bytes {
@@ -148,7 +149,7 @@ function trak(spec: TrakSpec): Bytes {
   const count = entries.reduce((n, [c]) => n + c, 0);
   const dur = entries.reduce((n, [c, d]) => n + c * d, 0);
   const tables = [
-    stsd(spec.entry ?? visualEntry('avc1')),
+    stsd(spec.entry ?? visualEntry('avc1'), ...(spec.moreEntries ?? [])),
     stts(entries, spec.sttsDeclared),
     ...(spec.ctts ? [ctts(spec.ctts)] : []),
     ...(spec.sync ? [stss(spec.sync)] : []),
@@ -987,6 +988,19 @@ describe('data after moov', () => {
     const r = await run(bytes(moovAtEnd.subarray(0, moovAtEnd.length - moov(trak({ ...CFR30(), chunkOffset: 40 })).length), moov(trak({ ...CFR30(), chunkOffset: 40, entry: enc })), [...u32(64), 0, 0, 0, 0, ...zeros(4)]));
     expect(everyWarning(r).join('\n')).toMatch(/encrypted: enc\? of \?avc/);
     expect(everyWarning(r).filter((w) => CONTROL.test(w))).toEqual([]);
+  });
+});
+
+describe('several sample descriptions', () => {
+  test('the first gives the codec and the size, and frames and rates still come from stts when samples point to the second', async () => {
+    const tables = [fullBox('stsz', 0, 0, u32(10), u32(90)), fullBox('stsc', 0, 0, u32(2), u32(1), u32(45), u32(1), u32(2), u32(45), u32(2)), fullBox('stco', 0, 0, u32(2), u32(0), u32(450))];
+    const one = await run(bytes(ftyp(), moov(trak(CFR30()))));
+    const two = await run(bytes(ftyp(), moov(trak({ ...CFR30(), moreEntries: [visualEntry('avc1', 320, 180)], tables }))));
+    expect(two.error).toBeNull();
+    expect(two.videoTracks[0].warnings).toEqual(['2 sample descriptions, first used']);
+    expect(two.videoTracks[0]).toMatchObject({ width: 160, height: 90, codecName: 'h264', frames: 90, presentedFrames: 90, avgFpsFfprobe: '30/1', rFpsFfprobe: '30/1', durationSec: 3, isVfr: false });
+    const strip = (r: FileResult) => ({ ...r, size: 0, io: null, videoTracks: r.videoTracks.map((t) => ({ ...t, warnings: [] })) });
+    expect(strip(two)).toEqual(strip(one));
   });
 });
 

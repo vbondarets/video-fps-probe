@@ -347,7 +347,7 @@ interface ExportDocument {
 | `scripts/readme-tables.ts` | rewrites the generated blocks of the README, `docs/benchmarks.md`, `docs/bundlers.md` and `report/README.md` from the JSON reports |
 | `scripts/release-prep.mjs` | the `preversion` and `version` steps of `npm version`: gates, the CHANGELOG section and every report the version moves, staged into the release commit ([releasing](releasing.md)); the release notes file of the GitHub Release (`--notes <version> --out <file>`) and the tag check of the Release workflow (`--publish-check <tag>`) |
 | `scripts/fixtures/` | fixture generator, reference extraction and patch tools |
-| `fixtures/` | `files/` (129 committed fixtures), `manifest.tsv`, `ref/*.ref.json` (ffprobe 8.1.1), `known-deviations/*.json`, `large/` (git-ignored) |
+| `fixtures/` | `files/` (130 committed fixtures), `manifest.tsv`, `ref/*.ref.json` (ffprobe 8.1.1), `known-deviations/*.json`, `large/` (git-ignored) |
 | `report/` | generated accuracy, size, size matrix, browser benchmark and integration cost reports, and the hand-written average-user model |
 
 ## Test layers

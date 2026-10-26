@@ -297,13 +297,15 @@ note late_25_to_12.5.webm webm vfr ok "late change in WebM (VP9): 5500 frames at
 "${FF[@]}" -f lavfi -i "testsrc2=size=64x36:rate=25:duration=250" -vf "settb=1/90000,setpts='(N+gt(N,5999)*250)*3600'" "${LATEV[@]}" "${VFR[@]}" -enc_time_base:v 1/90000 "${BX[@]}" -f matroska late_freeze_10s.mkv
 note late_freeze_10s.mkv matroska vfr ok "late freeze in Matroska (H.264): 25 fps, frame 5999 held 10.04 s at 239.96 s, then 250 more frames; 6250 frames over 260 s"
 
-# ---------- O. Header values other parsers trip on: 64-bit all-ones durations, data after moov ----------
+# ---------- O. Header values other parsers trip on: 64-bit all-ones durations, data after moov, two sample descriptions ----------
 node "$TOOLS/patch-mp4.mjs" mehd fmp4_default_base_moof.mp4 fmp4_mehd_all_ones.mp4 ffffffffffffffff > /dev/null
 note fmp4_mehd_all_ones.mp4 mp4 fmp4 ok "fmp4_default_base_moof.mp4 with a version 1 mehd of 0xFFFFFFFFFFFFFFFF (unknown fragment duration) in mvex: ffprobe never reads mehd, the app ignores it"
 node "$TOOLS/patch-mp4.mjs" elst64 cfr_h264_30.mp4 corrupt_elst64_all_ones.mp4 ffffffffffffffff > /dev/null
 note corrupt_elst64_all_ones.mp4 mp4 corrupt ok "cfr_h264_30.mp4 with its elst rewritten as version 1 and a segment duration of 0xFFFFFFFFFFFFFFFF: the app reads the edit as lasting to the end and warns; ffprobe fails (invalid edit list duration -1)"
 node "$TOOLS/patch-mp4.mjs" trailer mov_nobf_default.mov mov_trailing_junk.mov 7fffffff000000000000000000000000 > /dev/null
 note mov_trailing_junk.mov mov mov ok "mov_nobf_default.mov (moov at the end) with 16 bytes appended that are not a box: a size of 0x7FFFFFFF, past the end of the file, and a type of four NUL bytes, like the trailer of a phone MOV: the walk ignores them, so the file is not truncated"
+node "$TOOLS/patch-mp4.mjs" stsd2 cfr_h264_30.mp4 mp4_stsd_two_entries.mp4 320x180 > /dev/null
+note mp4_stsd_two_entries.mp4 mp4 mov ok "cfr_h264_30.mp4 with a copy of its avc1 sample entry that says 320x180 and its one chunk split in two, so samples 46 to 90 point to the second description: ffprobe reads both entries and prints the decoded 160x90; frames and rates come from stts"
 
 # ---------- R. Browser recordings (Tier R): made by record-mediarecorder.mjs, not by this script; rows, and a copy into another root ----------
 # Real MediaRecorder output of a canvas animation (rAF, a 0.6 s freeze, a 15 fps timer, rAF again), 320x180 at

@@ -7,6 +7,7 @@
 //   node patch-mp4.mjs mehd   <in> <out> <hex64>       append a version 1 'mehd' holding the 64-bit value to mvex (moof-relative data offsets; tfra offsets are shifted)
 //   node patch-mp4.mjs elst64 <in> <out> <hex64>       rewrite the first elst as version 1 and set the segment duration of its first media edit (moov after mdat)
 //   node patch-mp4.mjs trailer <in> <out> <hex>        append the bytes after the last top-level box
+//   node patch-mp4.mjs stsd2  <in> <out> <WxH>         add a copy of the only sample entry with the size WxH and point the second half of the samples to it (one chunk split in two; moov after mdat)
 // The first three modes need the non-faststart layout ftyp [wide|free] mdat moov.
 import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
@@ -29,7 +30,7 @@ function topBoxes(buf) {
 }
 
 const CONT = new Set(['moov', 'trak', 'mdia', 'minf', 'stbl']);
-const EDIT_CONT = new Set(['moov', 'trak', 'edts', 'mvex']);
+const EDIT_CONT = new Set(['moov', 'trak', 'edts', 'mvex', 'mdia', 'minf', 'stbl']);
 
 // Rebuild a box tree, replacing leaf boxes through `leaf` and appending the boxes `extra` returns to a container.
 function edit(buf, start, end, leaf, extra) {
@@ -87,6 +88,57 @@ function shiftTfra(buf, delta) {
 function replaceMoov(buf, moovBuf) {
   const moov = topBoxes(buf).find((b) => b.type === 'moov');
   return Buffer.concat([buf.subarray(0, moov.pos), moovBuf, buf.subarray(moov.pos + moov.size)]);
+}
+
+function splitSampleEntry(box, type, state, [width, height]) {
+  if (type === 'stsd') {
+    if (box.readUInt32BE(12) !== 1) throw new Error('stsd has more than one entry');
+    const entry = box.subarray(16, 16 + box.readUInt32BE(16));
+    const copy = Buffer.from(entry);
+    copy.writeUInt16BE(width, 32);
+    copy.writeUInt16BE(height, 34);
+    const out = Buffer.concat([box.subarray(0, 16 + entry.length), copy, box.subarray(16 + entry.length)]);
+    out.writeUInt32BE(out.length, 0);
+    out.writeUInt32BE(2, 12);
+    return out;
+  }
+  if (type === 'stsz') {
+    if (box.readUInt32BE(12) !== 0) throw new Error('stsz has a constant sample size');
+    state.sizes = Array.from({ length: box.readUInt32BE(16) }, (_, i) => box.readUInt32BE(20 + i * 4));
+  } else if (type === 'stsc') {
+    if (box.readUInt32BE(12) !== 1 || box.readUInt32BE(16) !== 1) throw new Error('stsc is not one run from chunk 1');
+    state.first = Math.floor(box.readUInt32BE(20) / 2);
+    const out = Buffer.alloc(40);
+    out.writeUInt32BE(40, 0);
+    out.write('stsc', 4, 'latin1');
+    out.writeUInt32BE(2, 12);
+    [1, state.first, 1, 2, box.readUInt32BE(20) - state.first, 2].forEach((v, i) => out.writeUInt32BE(v, 16 + i * 4));
+    return out;
+  } else if (type === 'stco') {
+    if (box.readUInt32BE(12) !== 1 || !state.sizes) throw new Error('stco is not one chunk after stsz');
+    const offset = box.readUInt32BE(16);
+    const out = Buffer.alloc(24);
+    out.writeUInt32BE(24, 0);
+    out.write('stco', 4, 'latin1');
+    out.writeUInt32BE(2, 12);
+    out.writeUInt32BE(offset, 16);
+    out.writeUInt32BE(offset + state.sizes.slice(0, state.first).reduce((a, b) => a + b, 0), 20);
+    return out;
+  }
+  return null;
+}
+
+if (mode === 'stsd2') {
+  const top = topBoxes(src);
+  const moov = top.find((b) => b.type === 'moov');
+  if (moov.pos < top.find((b) => b.type === 'mdat').pos) throw new Error('moov is before mdat (faststart): chunk offsets would move');
+  const state = {};
+  const moovBuf = edit(src, moov.pos, moov.pos + moov.size, (type, box) => splitSampleEntry(box, type, state, holeArg.split('x').map(Number)), () => null);
+  if (!state.first) throw new Error('no sample tables');
+  const final = replaceMoov(src, moovBuf);
+  fs.writeFileSync(outFile, final);
+  console.log(`${mode}: wrote ${outFile} (${final.length} bytes, was ${src.length})`);
+  process.exit(0);
 }
 
 if (mode === 'mehd' || mode === 'elst64' || mode === 'trailer') {
