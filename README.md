@@ -125,7 +125,7 @@ if (report.verdict === 'fail') showErrors(report.violations, report.suggestedFps
 else upload(file); // 'pass', 'warn', or 'unknown': no result, an error or a missing field fails open
 ```
 
-Rules are JSON, such as `{ fps: { min: 24, max: 60 }, duration: { max: 10 }, vfr: 'warn' }`, and frame rates compare as exact rationals: 23.976 fps (`24000/1001`) is below a minimum of 24, 59.94 meets a maximum of 60. The presets hold the published input limits of Kling O1 and Motion Control, Runway Aleph 2.0, Veo 3.1, and Wan 2.6 on fal and Seedance 2.0 on EvoLink (gateways, so they only warn), each with the day it was verified; their source pages are in `video-fps-probe/presets/sources.json` ([check](docs/api.md#check), [presets](docs/api.md#presets)).
+Rules are JSON, such as `{ fps: { min: 24, max: 60 }, duration: { max: 10 }, vfr: 'warn' }`, and frame rates compare as exact rationals: 23.976 fps (`24000/1001`) is below a minimum of 24, 59.94 meets a maximum of 60. The presets hold the published input limits of Kling O1 and Motion Control, Runway Aleph 2.0, Veo 3.1, and Wan 2.6 on fal and Seedance 2.0 on EvoLink (gateways, so they only warn), each with the day it was verified; their source pages are in `video-fps-probe/presets/sources.json`, where `sources[name]` replaces the `sourceUrl` of 0.2.0 ([check](docs/api.md#check), [presets](docs/api.md#presets)).
 
 ## Size
 

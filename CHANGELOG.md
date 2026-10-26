@@ -31,7 +31,22 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 - Warnings could hold raw NUL and other control characters from the file, such as a box type in an own or mp4box warning. Every engine now replaces them with `?`, and own does so where it reads a box type, a sample entry code (`fourccOrCodecId`) or a Matroska string such as the CodecID or the DocType.
 - A file that could not be read, such as a picked file that was changed or deleted since (`NotReadableError`, `InvalidStateError`) or got shorter while it was read, gave `corrupt file: ...` for MP4 and MOV and the browser's bare message for WebM and MKV. `result.error` now reads `file read failed: <error>` for every container ([api](docs/api.md#proberesult-and-fileresult)).
 - A `ProbeError` from another copy of the package, such as one from an engine module or a custom probe given to `VideoFpsProvider`, became `worker-failed` in the lazy stubs, main-thread engines, `compare`, fallback chains and the React store. They now recognize it by its name and a string code, as `isAbortError` does, so it keeps its code ([errors](docs/api.md#errors)).
-- `check` judged the `duration` of a VFR WebM or Matroska track by its measured span, up to one frame shorter than the duration ffprobe prints: `vfr_screenrec_ts1000.webm` lasted 5.999 s against 6.000000, so `duration: { min: 6 }` failed it. For a WebM or Matroska track, for which ffprobe prints only the format duration, `check` now judges `formatDurationSec` when it is within one frame interval of the span; `durationSec` keeps the span, the end of the last packet as ffprobe's demuxer reads it ([check](docs/api.md#check)).
+- `check` judged the `duration` of a VFR WebM or Matroska track by its measured span, up to one frame shorter than the duration ffprobe prints: `vfr_screenrec_ts1000.webm` lasted 5.999 s against 6.000000, so `duration: { min: 6 }` failed it. For a WebM or Matroska track, for which ffprobe prints only the format duration, `check` now judges `formatDurationSec` when it is within one frame interval of the span; `durationSec` keeps the measured span ([check](docs/api.md#check)).
+
+### Known limitations
+
+- React 18 and 19 only. React is an optional peer, `^18.0.0 || ^19.0.0`: next to another React major npm refuses the install with `ERESOLVE`, unless you pass `--legacy-peer-deps` or add `"overrides": { "video-fps-probe": { "react": "$react" } }` to your `package.json`.
+- Zero-config Vite (iife workers) builds each own worker as one file with its lazy parts inlined, so the first MP4 loads about 1.7 KB more than with `worker: { format: 'es' }` ([size matrix](report/size-matrix.md)).
+- Only Vite 8 and npm are tested in CI; other bundlers are documented ([bundlers](docs/bundlers.md)), and Yarn, pnpm and bun are expected to work.
+- Browser floors (Chrome and Edge 94, Firefox 114, Safari 15.4, mp4box.js Safari 16.4) are derived, not tested; CI runs Playwright's Chromium, Firefox and WebKit, and in-thread `analyze()` is tested on Node 22.12 and 24.
+- The type declarations name DOM types, so a TypeScript project for Node needs `"DOM"` in `lib` or `skipLibCheck: true`.
+- Jest runs the package only when it transforms it or runs native ES modules; neither setup is tested ([CommonJS](docs/api.md#commonjs)).
+- The corpus has real recordings from Chromium's MediaRecorder only: none from Firefox, Safari, phones, cameras or screen recorders.
+- A regular cadence such as 2:3 pulldown is VFR, but its rate profile reads as Steady.
+- `check` judges the stored frame size: the sample aspect ratio of a `pasp` box or a Matroska DisplayWidth is not applied.
+- rVFC needs playback: a visible foreground tab, a playable codec and seconds per file.
+- Files above 2^53 bytes, `cmov` headers and a moov above 256 MiB are rejected as error results.
+- In `auto` mode a large Matroska file gets a sampled probe unless the exact scan is predicted to take at most 150 ms.
 
 ## 0.2.0 - 2026-10-25
 
