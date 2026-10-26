@@ -1,6 +1,6 @@
 import { fourcc } from '../reader.ts';
 import { boundEntries, boxI64, boxU64, childBoxes, IsoBmffError, readBoxHeader, type BoxHeader } from './boxes.ts';
-import { newTrack, type IsoMovie, type IsoTrack, type TableRef } from './model.ts';
+import { newTrack, TO_MEDIA_END, type IsoMovie, type IsoTrack, type TableRef } from './model.ts';
 
 export const MAX_STTS_DELTA = 4294487295;
 const UINT32_ALL_ONES = 0xffffffff;
@@ -134,7 +134,7 @@ function parseElst(dv: DataView, h: BoxHeader, tr: IsoTrack, ctx: ParseContext, 
         tr.warnings.push(`unknown elst duration: ${mediaTime === -1 ? 'the empty edit is ignored' : 'the edit lasts to the end'}`);
         movie.ffprobeReject ??= { moof: -1, reason: 'rejects this file: an elst duration of -1' };
       }
-      tr.edits.push({ duration: !unknown ? boxU64(dv, o, 'elst', at) : mediaTime === -1 ? 0 : Number.MAX_SAFE_INTEGER, mediaTime, rate: dv.getInt32(o + 16) / 65536 });
+      tr.edits.push({ duration: !unknown ? boxU64(dv, o, 'elst', at) : mediaTime === -1 ? 0 : TO_MEDIA_END, mediaTime, rate: dv.getInt32(o + 16) / 65536 });
     } else tr.edits.push({ duration: dv.getUint32(o), mediaTime: dv.getInt32(o + 4), rate: dv.getInt32(o + 8) / 65536 });
   }
 }

@@ -104,6 +104,8 @@ export interface IsoMovie {
   warnings: string[];
 }
 
+export const TO_MEDIA_END = Number.MAX_SAFE_INTEGER;
+
 export const IDENTITY_MATRIX: readonly number[] = [65536, 0, 0, 0, 65536, 0, 0, 0, 1 << 30];
 
 export function newMovie(fileSize: number): IsoMovie {

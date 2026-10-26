@@ -329,6 +329,41 @@ describe('own ISO BMFF analyzer vs ffprobe 8.1.1 references', () => {
   });
 });
 
+describe('an all-ones elst duration on an edit that trims the start', () => {
+  const source = 'mp4_elst_trim_start.mp4';
+  let dir = '';
+  let patched = '';
+
+  beforeAll(() => {
+    dir = mkdtempSync(join(process.env.FPS_PROBE_SCRATCH ?? tmpdir(), 'fps-probe-elst64-'));
+    patched = join(dir, 'mp4_elst_trim_start_elst64_all_ones.mp4');
+    const tool = join(REPO_ROOT, 'scripts', 'fixtures', 'tools', 'patch-mp4.mjs');
+    const run = spawnSync(process.execPath, [tool, 'elst64', join(FILES_DIR, source), patched, 'ffffffffffffffff'], { encoding: 'utf8' });
+    expect(run.status, run.stderr).toBe(0);
+  });
+
+  afterAll(() => {
+    if (dir) rmSync(dir, { recursive: true, force: true });
+  });
+
+  test('lasts from its media_time to the end of the media, with the frames and durations ffprobe 8.1.1 gives the source file', async () => {
+    const { result, movie } = await analyzeFixture(patched, 'mp4_elst_trim_start_elst64_all_ones.mp4');
+    const original = (await analyzeFixture(fixturePath(source)!, source)).result;
+    expect(result.warnings).toEqual(['ffprobe 8.1.1 rejects this file: an elst duration of -1']);
+    expect(result.videoTracks.map((v) => v.warnings)).toEqual([['unknown elst duration: the edit lasts to the end']]);
+    expect(movie!.tracks[0]!.edits.map((e) => e.mediaTime)).toEqual([23002]);
+    const track = result.videoTracks[0]!;
+    expect(track).toMatchObject({ frames: 90, presentedFrames: 69, startSec: 0, durationSec: 2.303, avgFps: { num: 30000, den: 1001 }, avgFpsFfprobe: null, rFpsFfprobe: null });
+    expect(result.formatDurationSec).toBe(track.durationSec);
+    const same = (r: FileResult) => ({ ...r, name: '', size: 0, io: null, warnings: [], videoTracks: r.videoTracks.map((v) => ({ ...v, warnings: [], avgFpsFfprobe: null, rFpsFfprobe: null })) });
+    expect(same(result)).toEqual(same(original));
+    const ref = loadRef(source)!;
+    expect(Math.abs(result.formatDurationSec! - Number(probeOf(ref).format!.duration))).toBeLessThanOrEqual(1e-6);
+    const [stream] = realVideoStreams(ref);
+    assertTrack(track, stream!, detailOf(ref, stream!.index), movie!.tracks[0]!, movie!, {}, true);
+  });
+});
+
 describe.skipIf(!runLarge)('large ISO BMFF fixtures (FPS_PROBE_LARGE=1)', () => {
   test.each(largeRows)('$name', async (row) => {
     const path = fixturePath(row.name);

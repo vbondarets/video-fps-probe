@@ -1,7 +1,7 @@
 import { INT_MAX, reduceRational, toFfprobeString } from '../rational.ts';
 import type { EditWindow, TimelineSegment } from '../stats.ts';
 import type { Rational } from '../types.ts';
-import type { IsoMovie, IsoTrack, TableRef } from './model.ts';
+import { TO_MEDIA_END, type IsoMovie, type IsoTrack, type TableRef } from './model.ts';
 
 export function rescaleRound(a: number, b: number, c: number): number {
   if (!(c > 0)) return 0;
@@ -81,13 +81,14 @@ export interface EditInfo {
   mediaEdits: number;
 }
 
-export function editInfo(tr: IsoTrack, movieTimescale: number): EditInfo {
+export function editInfo(tr: IsoTrack, movieTimescale: number, totals: SampleTotals): EditInfo {
   let emptyBefore = 0;
   let editSum = 0;
   let mediaEdits = 0;
   let firstMedia: EditInfo['firstMedia'] = null;
+  const mediaEnd = (tr.cttsOffsets?.[0] ?? 0) + totals.moovDuration;
   for (const e of tr.edits) {
-    const d = rescaleRound(e.duration, tr.timescale, movieTimescale);
+    const d = e.duration === TO_MEDIA_END ? Math.max(0, mediaEnd - e.mediaTime) : rescaleRound(e.duration, tr.timescale, movieTimescale);
     editSum += d;
     if (e.mediaTime === -1) {
       if (!firstMedia) emptyBefore += d;

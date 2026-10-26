@@ -240,7 +240,7 @@ function buildVideoTrack(tr: IsoTrack, movie: IsoMovie, opts: ResolvedAnalyzeOpt
   const r = ctx.ffprobeFails || broken ? null : ffprobeStage1Rate(tr, movie, totals.moovSamples, opts.maxExpandedSamples, w);
   t.rFpsFfprobe = r ? toFfprobeString(r) : null;
 
-  const edits = editInfo(tr, movie.timescale);
+  const edits = editInfo(tr, movie.timescale, totals);
   if (!broken) {
     const timing = trackTiming(tr, movie, totals, edits);
     t.durationSec = timing.durationTs / ts;
@@ -335,7 +335,7 @@ function formatDuration(movie: IsoMovie, videoTracks: Set<IsoTrack>): number | n
       continue;
     }
     const totals = sampleTotals(tr);
-    const timing = trackTiming(tr, movie, totals, editInfo(tr, movie.timescale));
+    const timing = trackTiming(tr, movie, totals, editInfo(tr, movie.timescale, totals));
     const d = rescaleRound(timing.durationTs, 1e6, tr.timescale);
     if (timing.startPts !== null) {
       const s = rescaleRound(timing.startPts, 1e6, tr.timescale);

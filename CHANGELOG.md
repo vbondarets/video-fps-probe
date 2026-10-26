@@ -13,7 +13,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ### Changed
 
-- **Behaviour change:** own runs on one worker per container family, `own-isobmff.worker` or `own-matroska.worker`, picked by the file's first 4 bytes. The first MP4 loads about 22.7 KB (23.6 KB in 0.2.0), or 24.4 KB instead of 38.9 KB with Vite's default worker format ([size matrix](report/size-matrix.md)).
+- **Behaviour change:** own runs on one worker per container family, `own-isobmff.worker` or `own-matroska.worker`, picked by the file's first 4 bytes. The first MP4 loads about 22.7 KB (23.6 KB in 0.2.0), or 24.5 KB instead of 38.9 KB with Vite's default worker format ([size matrix](report/size-matrix.md)).
 - The first WebM or MKV without DefaultDuration, such as a MediaRecorder recording, loads about 25.5 KB (26.7 KB in 0.2.0), and about 27.1 KB instead of 38.9 KB with Vite's default worker format.
 - `workers` counts per worker kind, so `workers: 1` can run one MP4 and one WebM at once. `prewarm()` starts the worker of each container family it is given: ISO BMFF by default, nothing for `containers: []`.
 - A missing own worker file, such as a 404 after a redeploy, rejects only the jobs of its container family with `reason: 'load'`, and the next call retries; in 0.2.0 a missing parser chunk came back as an error string in the result.
@@ -26,7 +26,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ### Fixed
 
-- A version 1 `mehd` or `elst` holding 0xFFFFFFFFFFFFFFFF, an unknown duration, failed the whole file with `unsupported: ... above 2^53-1`. `mehd` is now ignored, as ffprobe does. Such an edit lasts to the end of the media and such an empty edit is ignored, each with a warning; ffprobe 8.1.1 fails both files, so `avgFpsFfprobe` and `rFpsFfprobe` are null.
+- A version 1 `mehd` or `elst` holding 0xFFFFFFFFFFFFFFFF, an unknown duration, failed the whole file with `unsupported: ... above 2^53-1`. `mehd` is now ignored, as ffprobe does. Such an edit lasts from its media time to the end of the media, so one that trims the start keeps the trimmed `durationSec` and `formatDurationSec`, and such an empty edit is ignored, each with a warning; ffprobe 8.1.1 fails both files, so `avgFpsFfprobe` and `rFpsFfprobe` are null.
 - A top-level header after the moov that runs past the end of the file, such as the trailer of some phone MOV files, marked the file truncated, and its warning held raw NUL characters. Unless it is an `mdat` or a `moof`, it now ends the walk with `ignored trailing data at N: not a box`, and samples that lie past the end are still cut with a truncation warning on the track.
 - Warnings could hold raw NUL and other control characters from the file, such as a box type in an own or mp4box warning. Every engine now replaces them with `?`, and own does so where it reads a box type, a sample entry code (`fourccOrCodecId`) or a Matroska string such as the CodecID or the DocType.
 - A file that could not be read, such as a picked file that was changed or deleted since (`NotReadableError`, `InvalidStateError`) or got shorter while it was read, gave `corrupt file: ...` for MP4 and MOV and the browser's bare message for WebM and MKV. `result.error` now reads `file read failed: <error>` for every container ([api](docs/api.md#proberesult-and-fileresult)).
