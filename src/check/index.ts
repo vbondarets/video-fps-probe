@@ -157,6 +157,8 @@ const value = (q: Q): number => Number(q[0]) / Number(q[1]);
 
 const round = (x: number): number => +x.toFixed(3);
 
+const micros = (q: Q): bigint => (q[0] * 2_000_000n + q[1]) / (2n * q[1]);
+
 function digits(q: Q, against: readonly Q[]): number {
   let d = 3;
   while (d < 12 && against.some((b) => value(b).toFixed(d) === value(q).toFixed(d))) d++;
@@ -191,7 +193,9 @@ function printedDuration(t: VideoTrackResult, result: FileResult): number | null
   const format = result.formatDurationSec;
   const typical = fromRational(t.dominantFps?.rate ?? (t.isVfr === false ? t.nominalFps : null) ?? t.avgFps);
   const matroska = result.container === 'webm' || result.container === 'matroska';
-  return matroska && typeof span === 'number' && typeof format === 'number' && typical && Math.abs(format - span) * value(typical) <= 1 ? format : (span ?? format);
+  const [a, b] = [span, format].map((x) => (typeof x === 'number' ? decimal(String(x)) : null));
+  const gap = a && b && abs(micros(a) - micros(b));
+  return matroska && typical && gap != null && gap * typical[0] <= 1_000_000n * typical[1] ? format : (span ?? format);
 }
 
 function judgedFps(t: VideoTrackResult, source: FpsSource | undefined, cfr: readonly [Q, Q] | null): Q | null {
@@ -310,7 +314,7 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   const near = t && (rules.fps?.source ?? 'avg') === 'avg' ? resolution(t, cfr) : undefined;
   limits('fps', rules.fps, fps, fps ? fraction(fps) : '', (against) => fpsText(fps!, against), ' fps', `${rules.fps?.source ?? 'avg'} frame rate`, '', near);
   const exact = cfr?.[1] ?? quantity(t && printedDuration(t, result!));
-  const span: Q | null = exact && [(exact[0] * 2_000_000n + exact[1]) / (2n * exact[1]), 1_000_000n];
+  const span: Q | null = exact && [micros(exact), 1_000_000n];
   const seconds = span ? value(span) : 0;
   limits('duration', rules.duration, span, seconds, (against) => `${digits(span!, against)}`, ' s', 'duration');
 

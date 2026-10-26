@@ -810,6 +810,7 @@ describe('check: committed fixtures', () => {
 
   it.each([
     ['late_freeze_10s.mkv', 0.04, 0.039, 0.041],
+    ['late_25_to_12.5.webm', 0.04, 0.04, 0.040001],
     ['vfr_screenrec_ts1000.webm', 0.017, 0.016, 0.018],
     ['rec_chromium_av1.webm', 0.017, 0.016, 0.028],
     ['rec_chromium_h264.mkv', 0.017, 0.016, 0.028],
@@ -821,7 +822,7 @@ describe('check: committed fixtures', () => {
     const span = t.durationSec!;
     const printed = Number((loadRef(name) as { probe?: { format?: { duration?: string } } } | null)?.probe?.format?.duration);
     expect(r.formatDurationSec).toBe(printed);
-    expect(Math.abs(printed - span)).toBeLessThanOrEqual(median);
+    expect(+Math.abs(printed - span).toFixed(6)).toBeLessThanOrEqual(median);
     const judged = (format: number): number => {
       const shifted = { ...r, formatDurationSec: format };
       const at = (d: number): boolean => check(shifted, { duration: { min: d, max: d } }).verdict === 'pass';
@@ -829,9 +830,35 @@ describe('check: committed fixtures', () => {
     };
     const off = (by: number): number => +(span - by).toFixed(6);
     expect(judged(printed)).toBe(printed);
+    expect(check(r, { duration: { min: printed } })).toEqual({ verdict: 'pass', violations: [] });
     expect(judged(off(inside))).toBe(off(inside));
     expect(judged(off(outside))).toBe(span);
-    expect(judged(off(0.5 / t.minFps!.value))).toBe(span);
+    expect(judged(off(1 / t.minFps!.value))).toBe(span);
+  });
+
+  it('passes a minimum of the format duration ffprobe prints on every committed WebM and Matroska file but the audio-only one and the one whose Duration is false', async () => {
+    const passed: string[] = [];
+    const missed: string[] = [];
+    for (const name of readdirSync(FILES_DIR).filter((n) => /.(webm|mkv)$/.test(n))) {
+      const printed = Number((loadRef(name) as { probe?: { format?: { duration?: string } } } | null)?.probe?.format?.duration);
+      if (!Number.isFinite(printed)) continue;
+      (check(await run(name), { duration: { min: printed } }).verdict === 'pass' ? passed : missed).push(name);
+    }
+    expect(missed).toEqual(['audio_only_opus.webm', 'vp9_pipe_t10.webm']);
+    expect(passed).toEqual(expect.arrayContaining(['late_25_to_12.5.webm', 'late_freeze_10s.mkv', 'vfr_screenrec_ts1000.webm', 'rec_chromium_vp9.webm']));
+    expect(passed.length).toBeGreaterThanOrEqual(30);
+  });
+
+  it('judges a format duration exactly one frame interval from the span, and not one a microsecond further, at microsecond resolution', () => {
+    const webm = (durationSec: number, formatDurationSec: number) => result({ isVfr: true, durationSec, minFps: rate(25, 2), avgFps: rate(20), dominantFps: { rate: rate(25), share: 0.9 } }, { container: 'webm', formatDurationSec });
+    expect(Math.abs(260 - 259.96) * 25).toBeGreaterThan(1);
+    expect(failed(webm(259.96, 260), { duration: { min: 260 } })).toEqual([]);
+    expect(failed(webm(0.3, 0.34), { duration: { min: 0.34 } })).toEqual([]);
+    expect(failed(webm(260.04, 260), { duration: { max: 260 } })).toEqual([]);
+    expect(failed(webm(259.9599996, 260), { duration: { min: 260 } })).toEqual([]);
+    expect(failed(webm(259.959999, 260), { duration: { min: 260 } })).toEqual(['duration.min']);
+    expect(failed(webm(260.040001, 260), { duration: { max: 260 } })).toEqual(['duration.max']);
+    expect(failed(webm(259.96, 260.000001), { duration: { min: 260 } })).toEqual(['duration.min']);
   });
 
   it.each(['rec_chromium_av1_sliced.webm', 'rec_chromium_h264_sliced.mkv', 'rec_chromium_vp8_sliced.webm', 'rec_chromium_vp9_sliced.webm', 'rec_chromium_h264.mp4', 'rec_chromium_vp9.mp4', 'rec_chromium_h264_sliced.mp4', 'rec_chromium_vp9_sliced.mp4'])(
