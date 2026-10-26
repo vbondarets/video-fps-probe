@@ -666,7 +666,7 @@ A `ProbeError('worker-failed')` that an in-thread engine throws itself is passed
 
 Problems with the file itself are never errors: they are `result.error` (and `ok: false` in `summarize`). So is a parser or statistics chunk of own that fails to load, in a worker or in the calling thread: own loads them itself and returns the import error's message as `result.error`, so the call resolves and a fallback chain moves on to its next engine. A rate profile chunk that fails to load leaves `rateProfile` null.
 
-Every rejection of a probe or a lazy stub is a `ProbeError`. The guards check the name and the code instead of `instanceof`, so a `ProbeError` from another copy of the package counts too. The probe does the same before it wraps an error: the lazy stubs, main-thread engines, `compare`, fallback chains and the React store pass a `ProbeError` of another copy (from an engine module, a lazy factory or a custom probe given to `VideoFpsProvider`) through with its code, instead of turning it into `worker-failed`.
+Every rejection of a probe or a lazy stub is a `ProbeError`. The guards check the name and the code instead of `instanceof`, so a `ProbeError` from another copy of the package counts too. The probe also goes by the name before it wraps an error (`compare`, fallback chains and main-thread engines by the name and a string code, the lazy stubs and the React store, which sit on the critical path, by the name alone): they pass a `ProbeError` of another copy (from an engine module, a lazy factory or a custom probe given to `VideoFpsProvider`) through with its code, instead of turning it into `worker-failed`.
 
 ## Worker protocol
 
