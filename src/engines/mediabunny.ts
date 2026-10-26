@@ -164,7 +164,16 @@ async function probe(counted: CountingBlob, result: MediabunnyResult, opts: Anal
   ];
   const source = new CustomSource({
     getSize: () => counted.size,
-    read: async (start, end) => new Uint8Array(await counted.slice(start, end).arrayBuffer()),
+    read: async (start, end) => {
+      let ab: ArrayBuffer;
+      try {
+        ab = await counted.slice(start, end).arrayBuffer();
+      } catch (e) {
+        throw isAbort(e, signal) ? e : Error(`file read failed: ${e}`);
+      }
+      if (ab.byteLength !== end - start) throw Error(`file read failed: short read at ${start}: expected ${end - start} bytes, got ${ab.byteLength}`);
+      return new Uint8Array(ab);
+    },
     prefetchProfile: 'fileSystem',
     handleUnhandledError: (e) => {
       unhandled.push(errorMessage(e));
@@ -177,7 +186,8 @@ async function probe(counted: CountingBlob, result: MediabunnyResult, opts: Anal
       format = await input.getFormat();
     } catch (e) {
       if (isAbort(e, signal)) throw e;
-      result.error = `not a recognised container: ${errorMessage(e)}`;
+      const message = errorMessage(e);
+      result.error = message.startsWith('file read failed') ? message : `not a recognised container: ${message}`;
       return;
     }
     result.container = containerOf(format);

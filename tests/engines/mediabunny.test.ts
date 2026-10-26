@@ -1,4 +1,7 @@
+import { openAsBlob } from 'node:fs';
 import { afterAll, describe, expect, it } from 'vitest';
+import { analyze } from '../../src/core/analyze.ts';
+import type { BlobLike } from '../../src/core/reader.ts';
 import { analyzeWithMediabunny, NATIVE_STATS_MAX_PACKETS } from '../../src/engines/mediabunny.ts';
 import type { MediabunnyResult } from '../../src/engines/types.ts';
 import { fixturePath, loadManifest, loadRef } from '../helpers/fixtures.ts';
@@ -141,6 +144,42 @@ describe('analyzeWithMediabunny on representative fixtures', () => {
     expect(result.videoTracks[0].frames!).toBeGreaterThan(NATIVE_STATS_MAX_PACKETS);
     expect(result.mediabunny!.tracks[0].nativeCallSkipped).toBe(true);
     expect(result.io.ms).toBeLessThan(20_000);
+  });
+});
+
+describe('analyzeWithMediabunny on a file that cannot be read', () => {
+  type Failure = (start: number, end: number) => Promise<ArrayBuffer> | null;
+  const failing = async (name: string, fail: Failure): Promise<BlobLike> => {
+    const blob = await openAsBlob(fixturePath(name)!);
+    return { size: blob.size, slice: (start = 0, end = blob.size) => ({ arrayBuffer: () => fail(start, end) ?? blob.slice(start, end).arrayBuffer() }) };
+  };
+  const laterRead = (error: unknown): Failure => (start) => (start > 0 ? Promise.reject(error) : null);
+
+  it.each(['vfr_two_phase_5_200.mp4', 'vfr_two_phase_5_200.webm'])('%s: a NotReadableError or InvalidStateError is a read failure, as in the own engine', async (name) => {
+    for (const error of [new DOMException('The requested file could not be read', 'NotReadableError'), new DOMException('An operation that depends on state cached in an interface object was made', 'InvalidStateError')]) {
+      const result = await analyzeWithMediabunny(await failing(name, laterRead(error)), name);
+      expect(result.error).toBe(`file read failed: ${error.name}: ${error.message}`);
+      expect(result.error).toBe((await analyze(await failing(name, laterRead(error)), name, { costModel: { perReadMs: 0 } })).error);
+      expect(result.videoTracks).toEqual([]);
+    }
+  });
+
+  it('is a read failure on the first read, for a read that throws, for a bare reason and for a short read', async () => {
+    const name = 'vfr_two_phase_5_200.mp4';
+    expect((await analyzeWithMediabunny(await failing(name, () => Promise.reject(new DOMException('gone', 'NotFoundError'))), name)).error).toBe('file read failed: NotFoundError: gone');
+    const thrown = (start: number): null => {
+      if (start > 0) throw new TypeError('detached');
+      return null;
+    };
+    expect((await analyzeWithMediabunny(await failing(name, thrown), name)).error).toBe('file read failed: TypeError: detached');
+    expect((await analyzeWithMediabunny(await failing(name, laterRead('no reason')), name)).error).toBe('file read failed: no reason');
+    const short: Failure = (start, end) => (start > 0 ? Promise.resolve(new ArrayBuffer(end - start - 100)) : null);
+    expect((await analyzeWithMediabunny(await failing(name, short), name)).error).toMatch(/^file read failed: short read at \d+: expected \d+ bytes, got \d+$/);
+  });
+
+  it('still rejects for an abort from the source', async () => {
+    const abort = new DOMException('stop', 'AbortError');
+    await expect(analyzeWithMediabunny(await failing('vfr_two_phase_5_200.webm', laterRead(abort)), 'abort.webm')).rejects.toBe(abort);
   });
 });
 
