@@ -1,4 +1,4 @@
-import { FileReadError, type BlobReader } from '../reader.ts';
+import type { BlobReader } from '../reader.ts';
 import { emptyAnalysis, emptyTrack } from '../result.ts';
 import { analyzeTimeline, rateProfileOf, type ProfileJob } from '../stats.ts';
 import { toFfprobeString } from '../rational.ts';
@@ -377,7 +377,7 @@ export async function analyzeIsoBmffDetailed(reader: BlobReader, opts: ResolvedA
   const fail = (e: unknown): IsoBmffDetails => {
     if (isAbort(e, reader)) throw e;
     const message = e instanceof Error ? e.message : String(e);
-    const analysis = emptyAnalysis(containerOf(movie), e instanceof IsoBmffError || e instanceof FileReadError ? message : `corrupt file: ${message}`);
+    const analysis = emptyAnalysis(containerOf(movie), e instanceof IsoBmffError || message.startsWith(`file read failed`) ? message : `corrupt file: ${message}`);
     analysis.brand = movie.brand;
     analysis.warnings = movie.warnings;
     return { analysis, movie };

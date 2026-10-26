@@ -19,13 +19,6 @@ export const DEFAULT_HEAD_WINDOW = 64 * 1024;
 export const DEFAULT_MAX_WINDOWS = 4;
 export const MAX_SAFE_OFFSET = Number.MAX_SAFE_INTEGER;
 
-export class FileReadError extends Error {
-  constructor(message: string, cause?: unknown) {
-    super(`file read failed: ${message}`, { cause });
-    this.name = 'FileReadError';
-  }
-}
-
 interface CachedWindow {
   off: number;
   buf: Uint8Array;
@@ -90,12 +83,12 @@ export class BlobReader {
       ab = await this.#source.slice(offset, end).arrayBuffer();
     } catch (e) {
       this.checkAbort();
-      throw (e as Error | null)?.name === 'AbortError' ? e : new FileReadError(String(e), e);
+      throw (e as Error | null)?.name === 'AbortError' ? e : Error(`file read failed: ${e}`);
     }
     this.checkAbort();
     this.#reads++;
     if (ab.byteLength !== end - offset) {
-      throw new FileReadError(`short read at ${offset}: expected ${end - offset} bytes, got ${ab.byteLength}`);
+      throw Error(`file read failed: short read at ${offset}: expected ${end - offset} bytes, got ${ab.byteLength}`);
     }
     this.#cover(offset, end);
     return new Uint8Array(ab);

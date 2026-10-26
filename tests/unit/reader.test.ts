@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   BlobReader,
-  FileReadError,
   ascii,
   fourcc,
   i64,
@@ -172,8 +171,7 @@ describe('BlobReader primitive read', () => {
       slice: () => ({ arrayBuffer: async () => new ArrayBuffer(10) }),
     };
     const r = new BlobReader(blobLike);
-    await expect(r.read(0, 50)).rejects.toBeInstanceOf(FileReadError);
-    await expect(r.read(0, 50)).rejects.toThrow('file read failed: short read at 0: expected 50 bytes, got 10');
+    await expect(r.read(0, 50)).rejects.toThrow(/^file read failed: short read at 0: expected 50 bytes, got 10$/);
   });
 });
 
