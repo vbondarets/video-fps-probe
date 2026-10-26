@@ -177,6 +177,22 @@ describe('analyzeWithMediabunny on a file that cannot be read', () => {
     expect((await analyzeWithMediabunny(await failing(name, short), name)).error).toMatch(/^file read failed: short read at \d+: expected \d+ bytes, got \d+$/);
   });
 
+  it.each(['vfr_two_phase_5_200.webm', 'vfr_two_phase_5_200.mkv'])('%s: a read that fails after the header, in the packet walk, is a read failure of the file, not a track warning', async (name) => {
+    const error = new DOMException('The requested file could not be read', 'NotReadableError');
+    let walking = false;
+    let failedReads = 0;
+    const afterHeader: Failure = () => {
+      if (!walking) return null;
+      failedReads++;
+      return Promise.reject(error);
+    };
+    const result = await analyzeWithMediabunny(await failing(name, afterHeader), name, { onProgress: (p) => void (walking ||= p.phase === 'packets') });
+    expect(failedReads).toBeGreaterThan(0);
+    expect(result.error).toBe(`file read failed: ${error.name}: ${error.message}`);
+    expect(result.videoTracks).toEqual([]);
+    expect(result.warnings.filter((w) => w.includes('read failed'))).toEqual([]);
+  });
+
   it('still rejects for an abort from the source', async () => {
     const abort = new DOMException('stop', 'AbortError');
     await expect(analyzeWithMediabunny(await failing('vfr_two_phase_5_200.webm', laterRead(abort)), 'abort.webm')).rejects.toBe(abort);

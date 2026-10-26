@@ -202,7 +202,7 @@ async function probe(counted: CountingBlob, result: MediabunnyResult, opts: Anal
       try {
         works.push(await collectTrack(track, quantized, signal, maxPackets));
       } catch (e) {
-        if (isAbort(e, signal)) throw e;
+        if (isAbort(e, signal) || errorMessage(e).startsWith('file read failed')) throw e;
         result.warnings.push(`track ${track.id}: ${errorMessage(e)}`);
       }
     }
