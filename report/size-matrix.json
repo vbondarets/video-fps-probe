@@ -210,7 +210,7 @@
           "gzip": 19674,
           "headroom": 826,
           "status": "ok",
-          "why": "The prebuilt ISO BMFF worker of own: reader, sniffing, options, the worker runtime, the ISO BMFF parser and the statistics in one file, with the rate profile core as its only lazy chunk. It replaces the own worker entry of 0.2.0 (4.18 KB, with the parser and the statistics as lazy chunks). Design estimate 20.0 to 20.4 KB; measured 19.44 KB. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
+          "why": "The prebuilt ISO BMFF worker of own: reader, sniffing, options, the worker runtime, the ISO BMFF parser and the statistics in one file, with the rate profile core as its only lazy chunk. It replaces the own worker entry of 0.2.0 (4.18 KB, with the parser and the statistics as lazy chunks). Design estimate 20.0 to 20.4 KB; measured 19.44 KB. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB. Measured 19.67 KB once the parser stopped failing a file on an all-ones 64-bit duration or on bytes after the moov that are not a box, and the shared reader and worker runtime began to name read failures and to strip control characters from warnings (0.10 KB in the parser, 0.14 KB in the rest); the limit stays."
         },
         {
           "key": "worker:own-matroska.worker",
@@ -228,7 +228,7 @@
           "gzip": 12099,
           "headroom": 901,
           "status": "ok",
-          "why": "The own MP4 and MOV parser chunk of the own worker. Design estimate 13.5 KB; measured 12.21 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 12.21 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
+          "why": "The own MP4 and MOV parser chunk of the own worker. Design estimate 13.5 KB; measured 12.21 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 12.21 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass. Measured 12.10 KB in 0.3.0 once it stopped failing a file on an all-ones 64-bit duration or on bytes after the moov that are not a box, 0.10 KB more than before; the limit stays."
         },
         {
           "key": "matroska",
@@ -264,7 +264,7 @@
           "gzip": 22959,
           "headroom": 1041,
           "status": "ok",
-          "why": "User-facing promise of the package, accepted by the owner on 2026-10-23 when the demo budget moved to 101.5 KB: the default configuration adds at most 1 KB to the critical path and the first MP4 loads at most 24 KB lazily. This row is the second half: everything the first MP4 or MOV file loads lazily, which is the probe client and the ISO BMFF worker of own, which holds the parser and the statistics. With the own engine on one worker per container family, a first file loads only the worker of its family, with its parser and the statistics inside the worker file. Measured 23.26 KB. Measured plus 10 percent would be 26.0 KB, so the promise stays the limit instead: it is the tighter one and it is what the README states. Not re-set in 0.2.0, measured 23.60 KB: the promise stays the limit, which the 3 percent rule leaves to every other row."
+          "why": "User-facing promise of the package, accepted by the owner on 2026-10-23 when the demo budget moved to 101.5 KB: the default configuration adds at most 1 KB to the critical path and the first MP4 loads at most 24 KB lazily. This row is the second half: everything the first MP4 or MOV file loads lazily, which is the probe client and the ISO BMFF worker of own, which holds the parser and the statistics. With the own engine on one worker per container family, a first file loads only the worker of its family, with its parser and the statistics inside the worker file. Measured 23.26 KB. Measured plus 10 percent would be 26.0 KB, so the promise stays the limit instead: it is the tighter one and it is what the README states. Not re-set in 0.2.0, measured 23.60 KB: the promise stays the limit, which the 3 percent rule leaves to every other row. Measured 22.73 KB in 0.3.0 with one own worker per container family, and 22.96 KB once the parser stopped failing a file on an all-ones 64-bit duration or on bytes after the moov that are not a box, and the shared reader and worker runtime began to name read failures and to strip control characters from warnings."
         },
         {
           "key": "firstMkv",
@@ -487,7 +487,7 @@
           "gzip": 24745,
           "headroom": 255,
           "status": "ok",
-          "why": "What the first MP4 loads in a Vite 8 app that keeps the default worker format: the probe client and the one-file ISO BMFF worker of own. User-facing promise of 0.3.0, accepted by the owner in the 0.3.0 design: the zero-config first MP4 loads at most 25 KB. It was 38.92 KB in 0.2.0, with one worker file holding both parsers. Design estimate 24.4 to 25.1 KB; measured 24.41 KB. Measured plus 3 percent would be 25.5 KB, so the promise stays the limit."
+          "why": "What the first MP4 loads in a Vite 8 app that keeps the default worker format: the probe client and the one-file ISO BMFF worker of own. User-facing promise of 0.3.0, accepted by the owner in the 0.3.0 design: the zero-config first MP4 loads at most 25 KB. It was 38.92 KB in 0.2.0, with one worker file holding both parsers. Design estimate 24.4 to 25.1 KB; measured 24.41 KB. Measured plus 3 percent would be 25.5 KB, so the promise stays the limit. Measured 24.75 KB once the parser stopped failing a file on an all-ones 64-bit duration or on bytes after the moov that are not a box, and the shared reader and worker runtime began to name read failures and to strip control characters from warnings, 0.25 KB under the promise."
         },
         {
           "key": "firstMkv",
