@@ -41,7 +41,7 @@ const hosts = new WeakMap<object, number>();
 let hostCount = 0;
 const loadSummary = () => import('../api/summary.ts');
 const failure = (error: unknown, reason: 'load' | 'crash'): ProbeError =>
-  (error as ProbeError | null)?.name === 'ProbeError' ? (error as ProbeError) : Object.assign(new ProbeError('worker-failed', String(error), { cause: error }), { reason });
+  (error as ProbeError | null)?.name === 'ProbeError' && typeof (error as ProbeError).code === 'string' ? (error as ProbeError) : Object.assign(new ProbeError('worker-failed', String(error), { cause: error }), { reason });
 const sortKeys = (_key: string, v: unknown): unknown => (v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => (a < b ? -1 : 1))) : v);
 
 export function createVideoFpsStore(probe: Probe<EngineId>): VideoFpsStore {

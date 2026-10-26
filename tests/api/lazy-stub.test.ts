@@ -220,6 +220,16 @@ describe('lazyProbeFrom', () => {
     expect('reason' in foreign).toBe(false);
   });
 
+  it('wraps an error that is only named ProbeError, with no string code, as worker-failed', async () => {
+    for (const named of [Object.assign(new Error('no code'), { name: 'ProbeError' }), Object.assign(new Error('number code'), { name: 'ProbeError', code: 7 })]) {
+      const failed = await lazyProbeFrom(() => Promise.reject(named))
+        .load()
+        .catch((e: unknown) => e);
+      expect(failed).toBeInstanceOf(ProbeError);
+      expect(failed).toMatchObject({ code: 'worker-failed', reason: 'load', cause: named });
+    }
+  });
+
   it('keeps tryAnalyze and prewarm from throwing when a loaded probe throws synchronously', async () => {
     const boom = () => {
       throw new TypeError('probe threw');

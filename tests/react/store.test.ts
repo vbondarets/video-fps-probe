@@ -203,6 +203,17 @@ describe('the framework-free store of video-fps-probe/react', () => {
     expect(view.read().error).toMatchObject({ code: 'timeout', message: 'timed out after 5 ms' });
   });
 
+  it('wraps an error that is only named ProbeError, with no string code, as worker-failed', async () => {
+    const { probe, calls } = fakeProbe();
+    const store = createVideoFpsStore(probe);
+    const named = Object.assign(new Error('no code'), { name: 'ProbeError' });
+    const view = mount(store, blob());
+    calls[0].reject(named);
+    await settle();
+    expect(view.read().error).toBeInstanceOf(ProbeError);
+    expect(view.read().error).toMatchObject({ code: 'worker-failed', reason: 'crash', cause: named });
+  });
+
   it('settles to the error state when a custom probe throws from analyze synchronously, instead of throwing from subscribe', async () => {
     const cause = new RangeError('bad options');
     const timeout = new ProbeError('timeout', 'timed out');
