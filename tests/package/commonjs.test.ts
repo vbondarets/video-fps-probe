@@ -3,6 +3,7 @@ import { cpSync, mkdirSync, mkdtempSync, openAsBlob, renameSync, rmSync, writeFi
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import ts from 'typescript';
+import ts59 from 'typescript59';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { check } from '../../src/check/index.ts';
 import { analyze } from '../../src/index.ts';
@@ -50,11 +51,13 @@ const url: string = klingO1ReferenceVideo.sourceUrl;
 process.stdout.write(JSON.stringify({ url, again: preset.sourceUrl }));
 `;
 
-const NEST_LIKE: ts.CompilerOptions = {
-  module: ts.ModuleKind.CommonJS,
-  moduleResolution: ts.ModuleResolutionKind.Node10,
-  ignoreDeprecations: '6.0',
-  target: ts.ScriptTarget.ES2023,
+const COMPILERS = [ts, ts59 as unknown as typeof ts];
+
+const nestLike = (compiler: typeof ts): ts.CompilerOptions => ({
+  module: compiler.ModuleKind.CommonJS,
+  moduleResolution: compiler.ModuleResolutionKind.Node10,
+  ...(compiler.versionMajorMinor === '6.0' && { ignoreDeprecations: '6.0' }),
+  target: compiler.ScriptTarget.ES2023,
   types: ['node'],
   strictNullChecks: true,
   skipLibCheck: true,
@@ -63,7 +66,7 @@ const NEST_LIKE: ts.CompilerOptions = {
   allowSyntheticDefaultImports: true,
   experimentalDecorators: true,
   emitDecoratorMetadata: true,
-};
+});
 
 const runNode = (dir: string, file: string): unknown =>
   JSON.parse(execFileSync(process.execPath, [file, FIXTURE], { cwd: dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
@@ -94,32 +97,36 @@ describe('the packed tarball from CommonJS', () => {
     expect(expected).toMatchObject({ result: { error: null, videoTracks: [{ avgFps: { num: 30, den: 1 }, frames: 90 }] }, report: { verdict: 'fail' } });
   });
 
-  it('a TypeScript project with module commonjs and moduleResolution node10, as a NestJS 11 one, compiles and runs', () => {
+  it.each(COMPILERS.map((compiler) => [compiler.version, compiler] as const))('a TypeScript %s project with module commonjs and moduleResolution node10, as a NestJS 11 one, compiles and runs', (version, compiler) => {
     const source = join(dir, 'consumer.ts');
     writeFileSync(source, CONSUMER_TS);
-    const program = ts.createProgram([source], { ...NEST_LIKE, outDir: join(dir, 'out') });
-    const problems = ts.getPreEmitDiagnostics(program).map((d) => `${d.file ? `${d.file.fileName.slice(dir.length + 1)}: ` : ''}TS${d.code} ${ts.flattenDiagnosticMessageText(d.messageText, ' ')}`);
+    const program = compiler.createProgram([source], { ...nestLike(compiler), outDir: join(dir, `out-${version}`) });
+    const problems = compiler.getPreEmitDiagnostics(program).map((d) => `${d.file ? `${d.file.fileName.slice(dir.length + 1)}: ` : ''}TS${d.code} ${compiler.flattenDiagnosticMessageText(d.messageText, ' ')}`);
     expect(problems).toEqual([]);
     expect(program.emit().emitSkipped).toBe(false);
-    expect(runNode(dir, join('out', 'consumer.js'))).toEqual(expected);
+    expect(runNode(dir, join(`out-${version}`, 'consumer.js'))).toEqual(expected);
   });
 
-  it('a 0.2.0 consumer that reads preset.sourceUrl compiles, sees it deprecated and gets the page of presets/sources.json', () => {
+  it.each(COMPILERS.map((compiler) => [compiler.version, compiler] as const))('a 0.2.0 consumer that reads preset.sourceUrl compiles with TypeScript %s, sees it deprecated and gets the page of presets/sources.json', (version, compiler) => {
     const source = join(dir, 'consumer-020.ts');
     writeFileSync(source, CONSUMER_020);
-    const program = ts.createProgram([source], { ...NEST_LIKE, outDir: join(dir, 'out-020') });
-    expect(ts.getPreEmitDiagnostics(program).map((d) => ts.flattenDiagnosticMessageText(d.messageText, ' '))).toEqual([]);
+    const program = compiler.createProgram([source], { ...nestLike(compiler), outDir: join(dir, `out-020-${version}`) });
+    expect(compiler.getPreEmitDiagnostics(program).map((d) => compiler.flattenDiagnosticMessageText(d.messageText, ' '))).toEqual([]);
     const checker = program.getTypeChecker();
     const tags: string[] = [];
     const visit = (node: ts.Node): void => {
-      if (ts.isPropertyAccessExpression(node) && node.name.text === 'sourceUrl') {
-        for (const tag of checker.getSymbolAtLocation(node.name)?.getJsDocTags(checker) ?? []) tags.push(`@${tag.name} ${ts.displayPartsToString(tag.text)}`);
+      if (compiler.isPropertyAccessExpression(node) && node.name.text === 'sourceUrl') {
+        for (const tag of checker.getSymbolAtLocation(node.name)?.getJsDocTags(checker) ?? []) tags.push(`@${tag.name} ${compiler.displayPartsToString(tag.text)}`);
       }
-      ts.forEachChild(node, visit);
+      compiler.forEachChild(node, visit);
     };
     visit(program.getSourceFile(source)!);
     expect(tags).toEqual(Array(2).fill('@deprecated Use video-fps-probe/presets/sources.json; sourceUrl will be removed in the next major.'));
     expect(program.emit().emitSkipped).toBe(false);
-    expect(runNode(dir, join('out-020', 'consumer-020.js'))).toEqual({ url: sources.klingO1ReferenceVideo, again: sources.klingO1ReferenceVideo });
+    expect(runNode(dir, join(`out-020-${version}`, 'consumer-020.js'))).toEqual({ url: sources.klingO1ReferenceVideo, again: sources.klingO1ReferenceVideo });
+  });
+
+  it('covers TypeScript 6.0.3, the one of the repo, and 5.9.3', () => {
+    expect(COMPILERS.map((compiler) => compiler.version)).toEqual(['6.0.3', '5.9.3']);
   });
 });
