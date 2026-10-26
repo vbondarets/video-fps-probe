@@ -1,6 +1,6 @@
 import { compareResults } from '../api/agreement.ts';
 import { ProbeError } from '../api/errors.ts';
-import { isAbortError } from '../api/guards.ts';
+import { isAbortError, isProbeError } from '../api/guards.ts';
 import type { EngineId } from '../core/types.ts';
 import { failureOf } from './fallback.ts';
 import { nameOf, type CompareContext } from './probe.ts';
@@ -25,7 +25,7 @@ export async function compare<K extends EngineId>(ctx: CompareContext, file: Blo
       return error === null ? { status: 'ok', result, ms } : { status: 'failed', result, error, ms };
     } catch (e) {
       if (isAbortError(e)) throw e;
-      const error = e instanceof ProbeError ? e : Object.assign(new ProbeError('worker-failed', String(e), { engine: id, cause: e }), { reason: 'crash' as const });
+      const error = isProbeError(e) ? e : Object.assign(new ProbeError('worker-failed', String(e), { engine: id, cause: e }), { reason: 'crash' as const });
       if (error.code === 'unsupported-environment') return { status: 'skipped', reason: 'unsupported-environment' };
       return { status: error.code === 'timeout' ? 'timeout' : 'crashed', error };
     }

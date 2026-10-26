@@ -19,7 +19,7 @@ export function lazyStub<Id extends EngineId>(factory: () => Promise<Probe<Id>>,
       },
       (e: unknown) => {
         loading = null;
-        throw e instanceof ProbeError ? e : Object.assign(new ProbeError('worker-failed', String(e), { cause: e }), { reason: 'load' as const });
+        throw (e as ProbeError | null)?.name === 'ProbeError' ? e : Object.assign(new ProbeError('worker-failed', String(e), { cause: e }), { reason: 'load' as const });
       },
     ));
   const loadUnlessDestroyed = () =>

@@ -31,6 +31,9 @@ export function mainDescriptor<Id extends EngineId>(id: Id, module: EngineModule
   return { id, thread: 'main', load: async () => module };
 }
 
+export const foreignProbeError = (code: string, message: string, engine: string | null = null): Error & { code: string; engine: string | null } =>
+  Object.assign(new (class ProbeError extends Error {})(message), { name: 'ProbeError', code, engine });
+
 export const customWorker = <W extends 'own' | 'mp4box' | 'mediabunny'>(...engines: W[]) => ({ create: FakeWorker.as('custom'), engines });
 
 export const analyzed = (w: FakeWorker) => w.posted.filter((m) => m.type === 'analyze');

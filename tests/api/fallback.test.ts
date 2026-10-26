@@ -9,7 +9,7 @@ vi.mock('../../src/client/fallback.ts', async (importOriginal) => {
 
 import { createProbeClient } from '../../src/client/create.ts';
 import { fakeResult, FakeWorker } from './fake-worker.ts';
-import { analyzed, customWorker, fakeModule, mainDescriptor, mp4File } from './probe-helpers.ts';
+import { analyzed, customWorker, fakeModule, foreignProbeError, mainDescriptor, mp4File } from './probe-helpers.ts';
 
 beforeEach(() => {
   vi.stubGlobal('Worker', FakeWorker);
@@ -103,6 +103,13 @@ describe('fallback chain', () => {
     FakeWorker.reset('reply', (m) => ({ type: 'error', message: `${m.type === 'analyze' ? m.engine : ''} unavailable`, aborted: false }));
     const probe = createProbeClient({ worker: customWorker('own', 'mp4box'), fallback: ['mp4box'] });
     await expect(probe.analyze(mp4File())).rejects.toMatchObject({ name: 'ProbeError', code: 'worker-failed', engine: 'mp4box', message: 'mp4box unavailable' });
+  });
+
+  it('rejects with a ProbeError from another copy of the package as it is when it is the last error', async () => {
+    FakeWorker.reset('reply', (m) => ({ type: 'error', message: `${m.type === 'analyze' ? m.engine : ''} unavailable`, aborted: false }));
+    const timeout = foreignProbeError('timeout', 'timed out after 5 ms', 'rvfc');
+    const probe = createProbeClient({ worker: customWorker('own'), engines: [mainDescriptor('rvfc', { containers: 'any', run: () => Promise.reject(timeout) })], fallback: ['rvfc'] });
+    await expect(probe.analyze(mp4File())).rejects.toBe(timeout);
   });
 
   it('stops the chain at once on abort', async () => {

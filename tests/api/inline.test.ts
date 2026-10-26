@@ -3,7 +3,7 @@ import { ProbeError } from '../../src/api/errors.ts';
 import { runInline } from '../../src/client/inline.ts';
 import type { EngineModule } from '../../src/plugins/types.ts';
 import { fakeResult } from './fake-worker.ts';
-import { fakeModule, mp4File, webmFile } from './probe-helpers.ts';
+import { fakeModule, foreignProbeError, mp4File, webmFile } from './probe-helpers.ts';
 
 afterEach(() => {
   vi.useRealTimers();
@@ -70,6 +70,8 @@ describe('runInline', () => {
     const environment = new ProbeError('unsupported-environment', 'needs a DOM', { engine: 'rvfc' });
     await expect(runInline(async () => throwing(environment), mp4File(), 'a.mp4', {}, { engine: 'rvfc', signals: [] })).rejects.toBe(environment);
     await expect(runInline(() => Promise.reject(new Error('chunk failed')), mp4File(), 'a.mp4', {}, { engine: 'mp4box', signals: [] })).rejects.toMatchObject({ code: 'worker-failed', message: 'chunk failed', reason: 'load' });
+    const foreign = foreignProbeError('unsupported-environment', 'needs a DOM', 'rvfc');
+    await expect(runInline(async () => throwing(foreign), mp4File(), 'a.mp4', {}, { engine: 'rvfc', signals: [] })).rejects.toBe(foreign);
   });
 
   it('reports a module that fails to load as a load failure and an engine that throws after it loaded as a crash', async () => {

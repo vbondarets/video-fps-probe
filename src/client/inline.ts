@@ -48,7 +48,7 @@ export function runInline(load: () => Promise<EngineModule>, file: Blob, name: s
       return { type: 'result', result: await module.run(file, name, opts) };
     })().then(
       (reply) => finish(() => resolve(reply)),
-      (e: unknown) => (e instanceof ProbeError ? finish(() => reject(e)) : fail(Object.assign(new ProbeError('worker-failed', e instanceof Error ? e.message || e.name : String(e), { engine, cause: e }), { reason: loading ? ('load' as const) : ('crash' as const) }))),
+      (e: unknown) => ((e as ProbeError | null)?.name === 'ProbeError' && typeof (e as ProbeError).code === 'string' ? finish(() => reject(e)) : fail(Object.assign(new ProbeError('worker-failed', e instanceof Error ? e.message || e.name : String(e), { engine, cause: e }), { reason: loading ? ('load' as const) : ('crash' as const) }))),
     );
   });
 }

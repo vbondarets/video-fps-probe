@@ -3,7 +3,7 @@ import { ProbeError } from '../../src/api/errors.ts';
 import type { EngineId } from '../../src/core/types.ts';
 import type { Probe } from '../../src/client/types.ts';
 import { fakeResult, FakeWorker } from './fake-worker.ts';
-import { customWorker, mainDescriptor, mp4File, workerDescriptor } from './probe-helpers.ts';
+import { customWorker, foreignProbeError, mainDescriptor, mp4File, workerDescriptor } from './probe-helpers.ts';
 
 const loads = vi.hoisted(() => ({ root: 0, client: 0 }));
 
@@ -209,6 +209,15 @@ describe('lazyProbeFrom', () => {
     expect('reason' in option).toBe(false);
     expect(await stub.tryAnalyze(mp4File())).toBeNull();
     expect(factory).toHaveBeenCalledTimes(3);
+  });
+
+  it('passes a ProbeError from another copy of the package through as it is, instead of wrapping it as worker-failed', async () => {
+    const foreign = foreignProbeError('engine-not-registered', 'engine mp4box is not registered', 'mp4box');
+    expect(foreign).not.toBeInstanceOf(ProbeError);
+    const stub = lazyProbeFrom(() => Promise.reject(foreign));
+    await expect(stub.load()).rejects.toBe(foreign);
+    await expect(stub.analyze(mp4File())).rejects.toBe(foreign);
+    expect('reason' in foreign).toBe(false);
   });
 
   it('keeps tryAnalyze and prewarm from throwing when a loaded probe throws synchronously', async () => {

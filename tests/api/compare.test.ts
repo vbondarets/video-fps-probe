@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProbeError } from '../../src/api/errors.ts';
 import { fakeResult, FakeWorker } from './fake-worker.ts';
-import { analyzed, customWorker, fakeModule, mainDescriptor, mp4File, workerDescriptor } from './probe-helpers.ts';
+import { analyzed, customWorker, fakeModule, foreignProbeError, mainDescriptor, mp4File, workerDescriptor } from './probe-helpers.ts';
 
 const loads = vi.hoisted(() => ({ agreement: 0 }));
 
@@ -117,6 +117,15 @@ describe('probe.compare', () => {
     );
     const unloaded = await probe.compare(mp4File(), { engines: ['own', 'mediabunny'] });
     expect(unloaded.outcomes.mediabunny).toMatchObject({ status: 'crashed', error: { code: 'worker-failed', engine: 'mediabunny', reason: 'load' } });
+  });
+
+  it('keeps the code of a ProbeError from another copy of the package instead of reporting a crash', async () => {
+    const rejecting = (e: unknown) => ({ containers: 'any' as const, run: () => Promise.reject(e) });
+    const timeout = foreignProbeError('timeout', 'timed out after 5 ms', 'rvfc');
+    const probe = createProbeClient({ worker: customWorker('own'), engines: [mainDescriptor('rvfc', rejecting(timeout))] });
+    expect((await probe.compare(mp4File(), { engines: ['own', 'rvfc'] })).outcomes.rvfc).toEqual({ status: 'timeout', error: timeout });
+    const environment = createProbeClient({ worker: customWorker('own'), engines: [mainDescriptor('rvfc', rejecting(foreignProbeError('unsupported-environment', 'needs a DOM', 'rvfc')))] });
+    expect((await environment.compare(mp4File(), { engines: ['own', 'rvfc'] })).outcomes.rvfc).toEqual({ status: 'skipped', reason: 'unsupported-environment' });
   });
 
   it('compares against the requested reference and lists the engines that differ', async () => {
