@@ -38,8 +38,9 @@ type Deviations = Record<string, Record<string, string>>;
 const DEVIATIONS_PATH = join(FIXTURES_DIR, 'known-deviations', 'own-isobmff.json');
 const deviations: Deviations = JSON.parse(readFileSync(DEVIATIONS_PATH, 'utf8')) as Deviations;
 
-const SUBSTITUTE_REFS: Record<string, string> = {
-  'corrupt_stts_count_huge.mp4': 'cfr_h264_30.mp4',
+const SUBSTITUTE_REFS: Record<string, { ref: string; warning: RegExp }> = {
+  'corrupt_stts_count_huge.mp4': { ref: 'cfr_h264_30.mp4', warning: /declares \d+ entries/ },
+  'corrupt_elst64_all_ones.mp4': { ref: 'cfr_h264_30.mp4', warning: /^elst segment duration 0xffffffffffffffff is unknown: the edit lasts to the end$/m },
 };
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -246,9 +247,9 @@ function assertFixture(row: ManifestEntry, analysed: Analysed): void {
   const substitute = SUBSTITUTE_REFS[row.name];
   if (substitute) {
     expect(ownRef!.ok).toBe(false);
-    expect(result.warnings.concat(...result.videoTracks.map((t) => t.warnings)).join('\n')).toMatch(/declares \d+ entries/);
+    expect(result.warnings.concat(...result.videoTracks.map((t) => t.warnings)).join('\n')).toMatch(substitute.warning);
   }
-  const ref = substitute ? loadRef(substitute)! : ownRef!;
+  const ref = substitute ? loadRef(substitute.ref)! : ownRef!;
   expect(ref.ok).toBe(true);
   if (READ_BUDGET[row.name] !== undefined) expect(result.io.reads).toBeLessThanOrEqual(READ_BUDGET[row.name]);
 

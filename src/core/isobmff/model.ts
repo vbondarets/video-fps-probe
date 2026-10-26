@@ -96,7 +96,6 @@ export interface IsoMovie {
   chapterTrackIds: Set<number>;
   hasMvex: boolean;
   trex: Map<number, Trex>;
-  mehdDuration: number | null;
   moofCount: number;
   topLevel: TopBox[];
   truncated: boolean;
@@ -121,7 +120,6 @@ export function newMovie(fileSize: number): IsoMovie {
     chapterTrackIds: new Set(),
     hasMvex: false,
     trex: new Map(),
-    mehdDuration: null,
     moofCount: 0,
     topLevel: [],
     truncated: false,

@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "file": "corrupt_elst64_all_ones.mp4",
+  "bytes": 88818,
+  "ffprobeVersion": "ffprobe version 8.1.1-full_build-www.gyan.dev Copyright (c) 2007-2026 the FFmpeg developers",
+  "countFrames": true,
+  "ok": false,
+  "exitCode": 1,
+  "stderr": [
+    "Track 0, edit 0: Invalid edit list duration=-1",
+    "error reading header",
+    "<file>: Invalid data found when processing input"
+  ],
+  "probeExit": 1,
+  "probeErr": "Track 0, edit 0: Invalid edit list duration=-1"
+}

@@ -13,13 +13,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ### Changed
 
-- **Behaviour change:** own runs on one worker per container family, `own-isobmff.worker` or `own-matroska.worker`, picked by the file's first 4 bytes. The first MP4 loads about 22.7 KB (23.6 KB in 0.2.0), or 24.4 KB instead of 38.9 KB with Vite's default worker format ([size matrix](report/size-matrix.md)).
+- **Behaviour change:** own runs on one worker per container family, `own-isobmff.worker` or `own-matroska.worker`, picked by the file's first 4 bytes. The first MP4 loads about 22.7 KB (23.6 KB in 0.2.0), or 24.5 KB instead of 38.9 KB with Vite's default worker format ([size matrix](report/size-matrix.md)).
 - The first WebM or MKV without DefaultDuration, such as a MediaRecorder recording, loads about 25.6 KB (26.7 KB in 0.2.0), and about 27.1 KB instead of 38.9 KB with Vite's default worker format.
 - `workers` counts per worker kind, so `workers: 1` can run one MP4 and one WebM at once. `prewarm()` starts the worker of each container family it is given: ISO BMFF by default, nothing for `containers: []`.
 - A missing own worker file, such as a 404 after a redeploy, rejects only the jobs of its container family with `reason: 'load'`, and the next call retries; in 0.2.0 a missing parser chunk came back as an error string in the result.
 - Service worker precache lists that name `own.worker` need both new worker files. A host that wants one own worker can keep the 0.2.0 layout with a custom worker that runs `serveProbeWorker({ own: ownEngine })` from `video-fps-probe/worker-runtime`.
 - The installed package grows from about 442 KB to 563 KB unpacked, mostly for the two new standalone files; a bundler still takes only what the app imports.
 - CI also runs the unit, fixture and package tests on Node 22.12, the lowest version the package supports, next to Node 24; 0.2.0 tested Node 24 only.
+- Still 0 mismatches against ffprobe 8.1.1, now on 128 committed fixtures: the new ones are byte patches of ffmpeg output with header values that other parsers fail on ([fixtures](fixtures/README.md#header-values-other-parsers-trip-on-section-o)).
+
+### Fixed
+
+- A version 1 `mehd` or `elst` holding 0xFFFFFFFFFFFFFFFF, an unknown duration, failed the whole file with `unsupported: ... above 2^53-1`. `mehd` is now ignored, as ffprobe does, and such an edit lasts to the end of the media with a warning; ffprobe 8.1.1 fails that file, so `avgFpsFfprobe` and `rFpsFfprobe` are null.
 
 ## 0.2.0 - 2026-10-25
 

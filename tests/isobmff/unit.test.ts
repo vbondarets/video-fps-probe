@@ -138,6 +138,8 @@ interface TrakSpec {
   tables?: Uint8Array[];
   mdhdDuration?: number;
   extra?: Uint8Array[];
+  trackHeader?: Uint8Array;
+  mediaHeader?: Uint8Array;
 }
 
 function trak(spec: TrakSpec): Bytes {
@@ -154,10 +156,10 @@ function trak(spec: TrakSpec): Bytes {
   ];
   return box(
     'trak',
-    tkhd(spec.id, spec.flags ?? 3, spec.matrix),
+    spec.trackHeader ?? tkhd(spec.id, spec.flags ?? 3, spec.matrix),
     ...(spec.edits ? [elst(spec.edits)] : []),
     ...(spec.extra ?? []),
-    box('mdia', mdhd(ts, spec.mdhdDuration ?? dur), hdlr(spec.handler ?? 'vide'), box('minf', box('stbl', ...tables))),
+    box('mdia', spec.mediaHeader ?? mdhd(ts, spec.mdhdDuration ?? dur), hdlr(spec.handler ?? 'vide'), box('minf', box('stbl', ...tables))),
   );
 }
 
@@ -901,5 +903,57 @@ describe('adversarial review regressions', () => {
     expect(t).toMatchObject({ trackId: 2, durationSec: null, startSec: null, presentedFrames: 0, rFpsFfprobe: null });
     expect(t.warnings.join('\n')).toMatch(/missing mandatory sample tables/);
     expect(r.primaryTrackId).toBe(1);
+  });
+});
+
+describe('64-bit all-ones durations', () => {
+  const ALL_ONES = 0xffffffffffffffffn;
+  const mdat = (n: number): Bytes => box('mdat', zeros(n));
+  const elst64 = (duration: bigint, mediaTime: bigint): Bytes => box('edts', fullBox('elst', 1, 0, u32(1), u64(duration), u64(BigInt.asUintN(64, mediaTime)), u32(0x10000)));
+  const sameExceptWarnings = (a: FileResult, b: FileResult, ffprobeFails = false): void => {
+    const strip = (r: FileResult) => ({ ...r, size: 0, io: null, warnings: [], videoTracks: r.videoTracks.map((t) => ({ ...t, warnings: [], ...(ffprobeFails ? { avgFpsFfprobe: null, rFpsFfprobe: null } : {}) })) });
+    expect(strip(a)).toEqual(strip(b));
+  };
+
+  test('an all-ones mehd is ignored like ffprobe, which never reads mehd', async () => {
+    const trex = fullBox('trex', 0, 0, u32(1), u32(1), u32(512), u32(0), u32(0));
+    const runs = [0, 1, 2].map((i) => moof(i + 1, [traf(0x20000, [], i * 30 * 512, trun(0, 0x201, 30, [...u32(0), ...new Array<number>(30).fill(0).flatMap(() => u32(10))]))]));
+    const file = (...mvexChildren: Uint8Array[]): Bytes => bytes(ftyp('iso5'), moov(trak({ id: 1, stts: [] }), box('mvex', ...mvexChildren)), ...runs.flatMap((m) => [m, mdat(300)]));
+    const plain = await run(file(trex));
+    const ones = await run(file(fullBox('mehd', 1, 0, u64(ALL_ONES)), trex));
+    expect(ones.error).toBeNull();
+    expect(ones.videoTracks[0]).toMatchObject({ frames: 90, presentedFrames: 90, durationSec: 3 });
+    expect(ones).toEqual({ ...plain, size: ones.size, io: ones.io });
+    expect((await run(file(fullBox('mehd', 0, 0, u32(0xffffffff)), trex))).error).toBeNull();
+  });
+
+  test('an all-ones elst version 1 segment duration lasts to the end of the media, with a warning; ffprobe 8.1.1 fails the file', async () => {
+    const plain = await run(bytes(ftyp(), moov(trak(CFR30()))));
+    const ones = await run(bytes(ftyp(), moov(trak({ ...CFR30(), extra: [elst64(ALL_ONES, 0n)] }))));
+    expect(ones.error).toBeNull();
+    expect(ones.warnings).toEqual(['ffprobe 8.1.1 rejects this file: an elst segment duration of -1']);
+    expect(ones.videoTracks[0].warnings).toEqual(['elst segment duration 0xffffffffffffffff is unknown: the edit lasts to the end']);
+    expect(ones.videoTracks[0]).toMatchObject({ avgFpsFfprobe: null, rFpsFfprobe: null });
+    sameExceptWarnings(ones, plain, true);
+    const bframes: TrakSpec = { id: 1, ts: 30000, stts: [[90, 1001]], ctts: [[90, 2002]], sync: [1, 31, 61] };
+    const real = await run(bytes(ftyp(), moov(trak({ ...bframes, edits: [[3003, 2002]] }))));
+    const unknown = await run(bytes(ftyp(), moov(trak({ ...bframes, extra: [elst64(ALL_ONES, 2002n)] }))));
+    expect(unknown.videoTracks[0]).toMatchObject({ presentedFrames: 90, startSec: 0 });
+    expect(unknown.videoTracks[0].durationSec).toBeCloseTo(3.003, 9);
+    sameExceptWarnings(unknown, real, true);
+    expect((await run(bytes(ftyp(), moov(trak({ ...CFR30(), extra: [elst64(2n ** 60n, 0n)] }))))).error).toMatch(/^unsupported: box 'elst' at \d+ holds a value above 2\^53-1$/);
+  });
+
+  test('all-ones mvhd, tkhd and mdhd version 1 durations keep the file; ffprobe 8.1.1 reads the mdhd one as 0', async () => {
+    const mvhd64 = fullBox('mvhd', 1, 0, u64(0n), u64(0n), u32(1000), u64(ALL_ONES), u32(0x10000), u16(0x100), zeros(10), matrix(IDENTITY), zeros(24), u32(2));
+    const tkhd64 = fullBox('tkhd', 1, 3, u64(0n), u64(0n), u32(1), u32(0), u64(ALL_ONES), zeros(8), u16(0), u16(0), u16(0), u16(0), matrix(IDENTITY), u32(160 << 16), u32(90 << 16));
+    const mdhd64 = fullBox('mdhd', 1, 0, u64(0n), u64(0n), u32(15360), u64(ALL_ONES), u16(0x55c4), u16(0));
+    const plain = await run(bytes(ftyp(), moov(trak(CFR30()))));
+    sameExceptWarnings(await run(bytes(ftyp(), box('moov', mvhd64, trak(CFR30())))), plain);
+    sameExceptWarnings(await run(bytes(ftyp(), moov(trak({ ...CFR30(), trackHeader: tkhd64 })))), plain);
+    const media = await run(bytes(ftyp(), moov(trak({ ...CFR30(), mediaHeader: mdhd64 }))));
+    expect(media.error).toBeNull();
+    expect(media.formatDurationSec).toBeNull();
+    expect(media.videoTracks[0]).toMatchObject({ frames: 90, presentedFrames: 90, durationSec: 0, avgFpsFfprobe: '30/1' });
   });
 });

@@ -110,7 +110,7 @@ export function parseCtts(dv: DataView, h: BoxHeader, tr: IsoTrack): void {
   tr.dtsShift = shift;
 }
 
-function parseElst(dv: DataView, h: BoxHeader, tr: IsoTrack, ctx: ParseContext): void {
+function parseElst(dv: DataView, h: BoxHeader, tr: IsoTrack, ctx: ParseContext, movie: IsoMovie): void {
   const p = payload(h);
   if (p + 8 > h.end) return;
   const v = dv.getUint8(p);
@@ -125,9 +125,15 @@ function parseElst(dv: DataView, h: BoxHeader, tr: IsoTrack, ctx: ParseContext):
     tr.edits = [];
   }
   const at = ctx.base + h.start;
+  const duration = (o: number): number => {
+    if (dv.getUint32(o) !== UINT32_ALL_ONES || dv.getUint32(o + 4) !== UINT32_ALL_ONES) return boxU64(dv, o, 'elst', at);
+    tr.warnings.push('elst segment duration 0xffffffffffffffff is unknown: the edit lasts to the end');
+    movie.ffprobeReject ??= { moof: -1, reason: 'rejects this file: an elst segment duration of -1' };
+    return Number.MAX_SAFE_INTEGER;
+  };
   for (let i = 0; i < n; i++) {
     const o = p + 8 + i * size;
-    if (v === 1) tr.edits.push({ duration: boxU64(dv, o, 'elst', at), mediaTime: boxI64(dv, o + 8, 'elst', at), rate: dv.getInt32(o + 16) / 65536 });
+    if (v === 1) tr.edits.push({ duration: duration(o), mediaTime: boxI64(dv, o + 8, 'elst', at), rate: dv.getInt32(o + 16) / 65536 });
     else tr.edits.push({ duration: dv.getUint32(o), mediaTime: dv.getInt32(o + 4), rate: dv.getInt32(o + 8) / 65536 });
   }
 }
@@ -263,7 +269,7 @@ function parseTrak(dv: DataView, h: BoxHeader, movie: IsoMovie, ctx: ParseContex
       tr.id = dv.getUint32(p + (v1 ? 20 : 12));
       tr.matrix = readMatrix(dv, p + (v1 ? 52 : 40));
     } else if (c.type === 'edts') {
-      for (const e of children(dv, c, ctx)) if (e.type === 'elst') parseElst(dv, e, tr, ctx);
+      for (const e of children(dv, c, ctx)) if (e.type === 'elst') parseElst(dv, e, tr, ctx, movie);
     } else if (c.type === 'mdia') {
       parseMdia(dv, c, tr, ctx);
     } else if (c.type === 'tref') {
@@ -299,7 +305,6 @@ export function parseMoov(dv: DataView, h: BoxHeader, movie: IsoMovie, strict: b
         for (const m of children(dv, c, ctx)) {
           const q = payload(m);
           if (m.type === 'trex' && q + 24 <= m.end) movie.trex.set(dv.getUint32(q + 4), { duration: dv.getUint32(q + 12), size: dv.getUint32(q + 16) });
-          else if (m.type === 'mehd' && q + 8 <= m.end) movie.mehdDuration = dv.getUint8(q) === 1 && q + 12 <= m.end ? boxU64(dv, q + 4, 'mehd', base + m.start) : dv.getUint32(q + 4);
         }
         break;
       case 'cmov':
