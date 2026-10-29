@@ -6,54 +6,51 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ### Added
 
-- `byContainer` on a custom worker: `{ create, engines, byContainer: { matroska: () => new Worker(...) } }` runs own on the worker of the file's container family, and every other engine and family on `create` ([api](docs/api.md)).
+- `byContainer` on a custom worker: `{ create, engines, byContainer: { matroska: () => new Worker(...) } }` runs own on the worker of the file's container family, and every other engine and family on `create` ([api](docs/api.md#createprobeclient-client-flavor)).
 - `video-fps-probe/standalone/own-isobmff.worker.js` and `own-matroska.worker.js`: the two own workers as classic scripts with no imports, about 21.1 and 23.7 KB gzip, for `byContainer`. The combined `own.worker.js` stays.
-- `lazyProbeClient` and `createProbeClient` load the routing by container family only with `byContainer`, as a chunk of about 0.4 KB gzip, so a custom worker without it loads none of it: about 23.6 KB for the first MP4 with `lazyProbeClient` (23.5 KB in 0.2.0).
-- A weekly canary builds the package with the latest mp4box, mediabunny, Vite and rolldown: the comparison against ffprobe, the size budgets and the browser smoke test. It fails only when an own result changes or a size check of own code fails, never when only a library arm changes or a budget of mp4box or mediabunny code grows, which the job summary lists with the committed and the canary size: its smoke test asserts own only, and the job summary lists what changed in the library arms, in the comparison and in the browsers.
+- `video-fps-probe/presets/sources.json`: the source page of every preset, keyed by the name of its export, such as `sources.klingO1ReferenceVideo` ([presets](docs/api.md#presets)).
+- CommonJS is tested from the packed tarball: `require()` on Node 22.12 and 24, a TypeScript `commonjs` and `node10` project as in NestJS 11, and a Jest 30 project with babel-jest, with its configuration documented ([Jest](docs/api.md#jest)).
+- Issue templates for bugs and feature requests, and GitHub Discussions for questions and for showing how you use the package ([feedback](README.md#feedback)).
 
 ### Changed
 
-- **Behaviour change:** own runs on one worker per container family, `own-isobmff.worker` or `own-matroska.worker`, picked by the file's first 4 bytes. The first MP4 loads about 22.7 KB (23.6 KB in 0.2.0), or 24.5 KB instead of 38.9 KB with Vite's default worker format ([size matrix](report/size-matrix.md)).
-- The first WebM or MKV without DefaultDuration, such as a MediaRecorder recording, loads about 25.5 KB (26.7 KB in 0.2.0), and about 27.1 KB instead of 38.9 KB with Vite's default worker format.
-- `workers` counts per worker kind, so `workers: 1` can run one MP4 and one WebM at once. `prewarm()` starts the worker of each container family it is given: ISO BMFF by default, nothing for `containers: []`.
-- A missing own worker file, such as a 404 after a redeploy, rejects only the jobs of its container family with `reason: 'load'`, and the next call retries; in 0.2.0 a missing parser chunk came back as an error string in the result.
-- Service worker precache lists that name `own.worker` need both new worker files. A host that wants one own worker can keep the 0.2.0 layout with a custom worker that runs `serveProbeWorker({ own: ownEngine })` from `video-fps-probe/worker-runtime`.
-- `video-fps-probe/presets/sources.json` holds the source page of every preset, keyed by the name of the export (`sources.klingO1ReferenceVideo`). `sourceUrl` is deprecated, not removed: every preset keeps it with the same page, so a 0.2.0 consumer still works, and it will be removed in the next major, which leaves the URL strings that supply-chain scanners such as Socket report in `sources.json` only ([presets](docs/api.md#presets)).
-- The installed package grows from about 442 KB to 570 KB unpacked, mostly for the two new standalone files; a bundler still takes only what the app imports.
-- CI also runs the unit, fixture and package tests on Node 22.12, the lowest version the package supports, next to Node 24; 0.2.0 tested Node 24 only.
-- `require('video-fps-probe')` from CommonJS is tested: the package test `require()`s the packed tarball on Node 22.12 and 24 and compiles a TypeScript project with `module` `commonjs` and `moduleResolution` `node10`, as a NestJS 11 app has, with TypeScript 6.0.3 and 5.9.3. A Jest 30 project with babel-jest runs `analyze` and `check` from the tarball too ([Jest](docs/api.md#jest)).
-- Still 0 mismatches against ffprobe 8.1.1, now on 130 committed fixtures: the new ones are byte patches of ffmpeg output with header values that other parsers fail on ([fixtures](fixtures/README.md#header-values-other-parsers-trip-on-section-o)).
+- **Behaviour change:** own runs on one worker per container family, `own-isobmff.worker` or `own-matroska.worker`, picked by the file's first 4 bytes, so a first file loads only the parser of its family.
+- The first MP4 loads about 22.7 KB gzip (23.6 KB in 0.2.0) and the first WebM or MKV without DefaultDuration 25.5 KB (26.7 KB). With Vite's default worker format they load 24.5 and 27.1 KB instead of 38.9 KB ([size matrix](report/size-matrix.md)).
+- `workers` counts per worker kind, so `workers: 1` can run one MP4 and one WebM at once. `prewarm()` starts the worker of each container family it is given, ISO BMFF by default.
+- A missing own worker file, such as a 404 after a redeploy, rejects only the jobs of its container family with `reason: 'load'`, and the next call retries.
+- Service worker precache lists that name `own.worker` need both new worker files. A custom worker that runs `serveProbeWorker({ own: ownEngine })` from `video-fps-probe/worker-runtime` keeps the 0.2.0 layout.
+- `lazyProbeClient` and `createProbeClient` load the routing by container family, about 0.4 KB, only with `byContainer`, so a custom worker without it loads about 23.6 KB for the first MP4 (23.5 KB in 0.2.0).
+- The installed package is about 569 KB unpacked (442 KB in 0.2.0), mostly for the two new standalone files, which a bundler takes only when imported.
+- Still 0 mismatches against ffprobe 8.1.1, now on 130 committed fixtures ([accuracy](docs/benchmarks.md#accuracy-vs-ffprobe)).
+- CI also tests Node 22.12, the lowest supported version. A weekly canary builds with the latest mp4box, mediabunny, Vite and rolldown and fails only when an own result or an own size budget changes.
+
+### Deprecated
+
+- `sourceUrl` of a preset: use `video-fps-probe/presets/sources.json`. Every preset keeps it, so a 0.2.0 consumer still works, until the next major leaves the URL strings that supply-chain scanners report in `sources.json` only.
 
 ### Fixed
 
-- A version 1 `mehd` or `elst` holding 0xFFFFFFFFFFFFFFFF, an unknown duration, failed the whole file with `unsupported: ... above 2^53-1`. `mehd` is now ignored, as ffprobe does. Such an edit lasts from its media time to the end of the media, so one that trims the start keeps the trimmed `durationSec` and `formatDurationSec`, and such an empty edit is ignored, each with a warning; ffprobe 8.1.1 fails both files, so `avgFpsFfprobe` and `rFpsFfprobe` are null.
-- A top-level header after the moov that runs past the end of the file, such as the trailer of some phone MOV files, marked the file truncated, and its warning held raw NUL characters. Unless it is an `mdat` or a `moof`, it now ends the walk with `ignored trailing data at N: not a box`, and samples that lie past the end are still cut with a truncation warning on the track.
-- Warnings could hold raw NUL and other control characters from the file, such as a box type in an own or mp4box warning. Every engine now replaces them with `?`, and own does so where it reads a box type, a sample entry code (`fourccOrCodecId`) or a Matroska string such as the CodecID or the DocType.
-- A file that could not be read, such as a picked file that was changed or deleted since (`NotReadableError`, `InvalidStateError`) or got shorter while it was read, gave `corrupt file: ...` for MP4 and MOV and the browser's bare message for WebM and MKV. `result.error` now reads `file read failed: <error>` for every container, and from the mediabunny engine too, which gave `not a recognised container: <message>` for a failed first read, the bare message for a later one and only a track warning for one in the packet walk of a WebM or MKV track ([api](docs/api.md#proberesult-and-fileresult)).
-- A `ProbeError` from another copy of the package, such as one from an engine module or a custom probe given to `VideoFpsProvider`, became `worker-failed` in the lazy stubs, main-thread engines, `compare`, fallback chains and the React store. They now recognize it by its name and a string code, as `isAbortError` does, so it keeps its code ([errors](docs/api.md#errors)).
-- `check` judged the `duration` of a VFR WebM or Matroska track by its measured span, up to one frame shorter than the duration ffprobe prints: `vfr_screenrec_ts1000.webm` lasted 5.999 s against 6.000000, so `duration: { min: 6 }` failed it. For a WebM or Matroska track, for which ffprobe prints only the format duration, `check` now judges `formatDurationSec` when it is within one typical frame interval of the span at microsecond resolution, that of `dominantFps`, else of `nominalFps` on a constant track, else of `avgFps`, rather than 1 / `minFps`, which a freeze stretches to seconds; `durationSec` keeps the measured span ([check](docs/api.md#check)).
+- A version 1 `mehd` or `elst` holding 0xFFFFFFFFFFFFFFFF, an unknown duration, failed the whole file. `mehd` is now ignored, as ffprobe does, and such an edit lasts to the end of the media, with a warning.
+- A top-level header after the moov that runs past the end of the file, such as the trailer of some phone MOV files, marked the file truncated. Unless it is an `mdat` or a `moof`, it now ends the walk with a warning, and samples past the end are still cut.
+- Warnings could hold raw NUL and other control characters from the file, such as a box type. Every engine now replaces them with `?`.
+- A file that could not be read, such as a picked file deleted since (`NotReadableError`), now gives `file read failed: <error>` for every container and engine, instead of `corrupt file: ...` or the browser's bare message.
+- A `ProbeError` from another copy of the package, such as one from an engine module or a custom probe given to `VideoFpsProvider`, became `worker-failed`. It now keeps its code everywhere ([errors](docs/api.md#errors)).
+- `check` judged the `duration` of a VFR WebM or Matroska track by its measured span, up to one frame shorter than ffprobe's. It now judges `formatDurationSec` when it is within one typical frame interval of the span ([check](docs/api.md#check)).
 
 ### Known limitations
 
-- React 18 and 19 only. React is an optional peer, `^18.0.0 || ^19.0.0`: next to another React major npm refuses the install with `ERESOLVE`, unless you pass `--legacy-peer-deps` or add `"overrides": { "video-fps-probe": { "react": "$react" } }` to your `package.json`.
-- Zero-config Vite (iife workers) builds each own worker as one file with its lazy parts inlined, so the first MP4 loads about 1.7 KB more than with `worker: { format: 'es' }` ([size matrix](report/size-matrix.md)).
-- Only Vite 8 and npm are tested in CI; other bundlers are documented ([bundlers](docs/bundlers.md)), and Yarn, pnpm and bun are expected to work.
-- Browser floors (Chrome and Edge 94, Firefox 114, Safari 15.4, mp4box.js Safari 16.4) are derived, not tested; CI runs Playwright's Chromium, Firefox and WebKit, and in-thread `analyze()` is tested on Node 22.12 and 24.
-- The type declarations name DOM types, so a TypeScript project for Node needs `"DOM"` in `lib` or `skipLibCheck: true`.
-- Jest needs babel-jest to transform the package, with plugins for `import.meta` and `import()` ([Jest](docs/api.md#jest)).
-- The corpus has real recordings from Chromium's MediaRecorder only: none from Firefox, Safari, phones, cameras or screen recorders.
-- A regular cadence such as 2:3 pulldown is VFR, but its rate profile reads as Steady.
-- `check` judges the stored frame size: the sample aspect ratio of a `pasp` box or a Matroska DisplayWidth is not applied.
-- `check` judges the format duration of a WebM or Matroska track when it is within one frame interval of the measured span, the interval of `dominantFps`, else of `nominalFps` on a constant track, else of `avgFps`. The result holds no median interval, so a recording without a dominant rate, such as the Chromium ones, takes its average interval of about 27 ms rather than its median of 17 ms; 0.4.0 is to expose a median frame interval and use it in `check()` ([check](docs/api.md#check)).
-- rVFC needs playback: a visible foreground tab, a playable codec and seconds per file.
-- Files above 2^53 bytes, `cmov` headers and a moov above 256 MiB are rejected as error results.
-- In `auto` mode a large Matroska file gets a sampled probe unless the exact scan is predicted to take at most 150 ms.
+- React 18 and 19 only: next to another React major npm refuses the install with `ERESOLVE` unless you pass `--legacy-peer-deps` or add `"overrides": { "video-fps-probe": { "react": "$react" } }`.
+- Zero-config Vite (iife workers) builds each own worker as one file, so the first MP4 loads about 1.7 KB more than with `worker: { format: 'es' }`.
+- Only Vite 8 and npm are tested in CI ([bundlers](docs/bundlers.md)). Browser floors (Chrome and Edge 94, Firefox 114, Safari 15.4) are derived, not tested.
+- A TypeScript project for Node needs `"DOM"` in `lib` or `skipLibCheck: true`, and Jest needs babel-jest to transform the package ([Jest](docs/api.md#jest)).
+- For the WebM and Matroska duration `check` takes a frame interval from `dominantFps`, `nominalFps` or `avgFps`, so a recording without a dominant rate uses its average interval, not its median.
+- The corpus has real recordings from Chromium's MediaRecorder only. More, such as 2:3 pulldown reading as Steady, in [benchmarks](docs/benchmarks.md#limitations).
 
 ### Not yet
 
 - 0.3.x: a bundler matrix in CI: webpack 5, Rspack, Next.js, Angular CLI, SvelteKit, Nuxt, Parcel, Bun and Deno, with pnpm, Yarn PnP and bun installs.
-- 0.4.0: a header-only ISO BMFF mode with byte, read and time limits, machine-readable error codes and a container layout field, a Range source for S3 and R2 style object storage (a fetcher function, no SDK dependency), minimal color, HDR and Dolby Vision metadata, the pixel aspect ratio and display size, and a CommonJS build of the server entries only, while the browser entries stay ESM.
-- 0.5.0: a Node entry (`fromPath`, DOM-free types, a `worker_threads` pool), NestJS validators, a CLI, bitrate, GOP and audio details, cadence detection, framework adapters for Vue, Svelte and Angular, and later MPEG-TS and HLS.
+- 0.4.0: a header-only ISO BMFF mode with byte, read and time limits, machine-readable error codes, a container layout field, a Range source for S3 and R2 style storage, minimal color, HDR and Dolby Vision metadata, pixel aspect ratio and display size, and a CommonJS build of the server entries.
+- 0.5.0: a Node entry (`fromPath`, DOM-free types, a `worker_threads` pool), NestJS validators, a CLI, bitrate, GOP and audio details, cadence detection, Vue, Svelte and Angular adapters, and later MPEG-TS and HLS.
 
 ## 0.2.0 - 2026-10-25
 
