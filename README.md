@@ -13,7 +13,7 @@ pnpm add video-fps-probe
 bun add video-fps-probe
 ```
 
-The first npm release is 0.2.0; one publish serves every package manager ([publishing](docs/publishing.md)). npm is the tested package manager: CI installs the packed tarball with npm. Yarn, pnpm and bun are expected to work but are not tested in CI yet (pnpm and Yarn PnP join the matrix in 0.3.0). The package has no dependencies. Its peers are optional and no package manager installs them for you: install one yourself, only for the entry you import: `mp4box` for `video-fps-probe/mp4box`, `mediabunny` for `video-fps-probe/mediabunny`, React 18 or 19 for `video-fps-probe/react`.
+The first npm release is 0.2.0; one publish serves every package manager ([publishing](docs/publishing.md)). npm is the tested package manager: CI installs the packed tarball with npm. Yarn, pnpm and bun are expected to work but are not tested in CI yet (pnpm, Yarn PnP and bun installs join the bundler matrix in 0.3.x). The package has no dependencies. Its peers are optional and no package manager installs them for you: install one yourself, only for the entry you import: `mp4box` for `video-fps-probe/mp4box`, `mediabunny` for `video-fps-probe/mediabunny`, React 18 or 19 for `video-fps-probe/react`.
 
 For a commit that is not released yet, install a packed tarball. A git dependency gets no code with npm (Yarn, pnpm and bun are not tested): `prepack` builds `dist/`, and npm does not run it for a git install.
 
@@ -167,6 +167,12 @@ Of the 130 committed fixtures, 118 are synthetic files made with ffmpeg and 12 a
 Chrome and Edge 94, Firefox 114, Safari and iOS 15.4: floors derived from the features used, not tested on those versions; CI runs Chromium, Firefox and WebKit. mp4box.js needs Safari 16.4; rVFC needs `requestVideoFrameCallback` (Chrome 83, Firefox 132, Safari 15.4), a visible foreground tab and a playable codec. [Details](docs/benchmarks.md#browser-support).
 
 Known limitations: [changelog](CHANGELOG.md#known-limitations), [benchmarks](docs/benchmarks.md#limitations). Development: [demo/README.md](demo/README.md), [scripts](docs/benchmarks.md#reproducing-the-numbers).
+
+## Roadmap
+
+- **0.3.x**: a bundler matrix in CI: webpack 5, Rspack, Next.js, Angular CLI, SvelteKit, Nuxt, Parcel, Bun and Deno, with pnpm, Yarn PnP and bun installs.
+- **0.4.0**: a header-only ISO BMFF mode with byte, read and time limits, machine-readable error codes and a container layout field, a Range source for S3 and R2 style object storage (a fetcher function, no SDK dependency), minimal color, HDR and Dolby Vision metadata, the pixel aspect ratio and display size, and a CommonJS build of the server entries only, while the browser entries stay ESM.
+- **0.5.0**: a Node entry (`fromPath`, DOM-free types, a `worker_threads` pool), NestJS validators, a CLI, bitrate, GOP and audio details, cadence detection, framework adapters for Vue, Svelte and Angular, and later MPEG-TS and HLS.
 
 ## Feedback
 

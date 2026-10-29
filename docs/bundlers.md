@@ -14,12 +14,12 @@ How the package ships its workers, what each bundler needs, and what is verified
 | Bundler | Status | What to set |
 |---|---|---|
 | Vite 8 | **verified in CI**: `vite build` and `vite dev`, Chromium, Firefox and WebKit, installed from the packed tarball | `worker: { format: 'es' }` (recommended); `optimizeDeps.include` for registered peers in dev |
-| Vite 5 to 7 | not verified; the 0.3.0 bundler matrix verifies Vite 6 | also `optimizeDeps: { exclude: ['video-fps-probe'] }` |
-| webpack 5, Rspack | expected to work without configuration (they build `new Worker(new URL(...))` natively); not verified until the 0.3.0 matrix | nothing |
-| Parcel 2 | expected to work without configuration (same form); not in the planned matrix, so it stays unverified | nothing |
-| Next.js | webpack builds expected to work; Turbopack unverified until the 0.3.0 matrix (Next.js 16, both bundlers) | use the probe from `'use client'` modules |
+| Vite 5 to 7 | not verified | also `optimizeDeps: { exclude: ['video-fps-probe'] }` |
+| webpack 5, Rspack | expected to work without configuration (they build `new Worker(new URL(...))` natively); not verified until the 0.3.x bundler matrix | nothing |
+| Parcel 2 | expected to work without configuration (same form); not verified until the 0.3.x bundler matrix | nothing |
+| Next.js | webpack builds expected to work; Turbopack unverified until the 0.3.x bundler matrix | use the probe from `'use client'` modules |
 | esbuild | leaves the worker reference as is, so the prebuilt worker is missing from the output | the standalone worker or a custom worker |
-| Bun | not verified; treat it like esbuild | the standalone worker or a custom worker |
+| Bun | not verified until the 0.3.x bundler matrix, so treat it like esbuild | the standalone worker or a custom worker |
 
 Verified means the consumer smoke test (`npm run test:consumers`): every fixture of `tests/consumers/fixtures/` gives the same results in the browser as Node `analyze` from the same tarball, under `vite build` and `vite dev`, and the dev page must not reload when an engine first runs.
 
@@ -68,7 +68,7 @@ The package itself needs no `optimizeDeps` entry in Vite 8: worker URLs inside p
 
 ## Vite 5 to 7
 
-Not verified yet; the 0.3.0 bundler matrix covers Vite 6. Their dev server pre-bundles dependencies without rewriting the worker URLs inside them, so exclude the package from pre-bundling:
+Not verified. Their dev server pre-bundles dependencies without rewriting the worker URLs inside them, so exclude the package from pre-bundling:
 
 ```js
 export default defineConfig({
@@ -79,13 +79,13 @@ export default defineConfig({
 
 ## webpack 5, Rspack and Parcel
 
-They build `new Worker(new URL('./worker.js', import.meta.url), { type: 'module' })` without configuration, including the worker's own `import()` chunks, so the default flavor and the engine descriptors should work as they are. None of them is verified yet. The 0.3.0 bundler matrix adds webpack 5 and Rspack to CI (with Vite 6, Next.js 16 on Turbopack and webpack, a pnpm install and a Yarn PnP install); Parcel is not in it. If a worker does not load, use the [custom worker](#custom-combined-worker) or the [standalone worker](#esbuild-and-bun).
+They build `new Worker(new URL('./worker.js', import.meta.url), { type: 'module' })` without configuration, including the worker's own `import()` chunks, so the default flavor and the engine descriptors should work as they are. None of them is verified yet. The 0.3.x bundler matrix adds webpack 5, Rspack and Parcel to CI, with Next.js, Angular CLI, SvelteKit, Nuxt, Bun and Deno, and pnpm, Yarn PnP and bun installs. If a worker does not load, use the [custom worker](#custom-combined-worker) or the [standalone worker](#esbuild-and-bun).
 
 ## Next.js
 
 - Create and call the probe in a `'use client'` module. Importing the package on the server is safe, but a probe used during server rendering has no `Worker` and runs inline in Node.
 - With webpack (`next build --webpack`) the webpack 5 notes above apply.
-- Turbopack, the default bundler of current Next.js, is not verified until the 0.3.0 matrix. If the worker does not load there, build with `--webpack`, or use the standalone worker through the client flavor.
+- Turbopack, the default bundler of current Next.js, is not verified until the 0.3.x bundler matrix. If the worker does not load there, build with `--webpack`, or use the standalone worker through the client flavor.
 
 ## esbuild and Bun
 

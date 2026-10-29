@@ -49,6 +49,12 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 - Files above 2^53 bytes, `cmov` headers and a moov above 256 MiB are rejected as error results.
 - In `auto` mode a large Matroska file gets a sampled probe unless the exact scan is predicted to take at most 150 ms.
 
+### Not yet
+
+- 0.3.x: a bundler matrix in CI: webpack 5, Rspack, Next.js, Angular CLI, SvelteKit, Nuxt, Parcel, Bun and Deno, with pnpm, Yarn PnP and bun installs.
+- 0.4.0: a header-only ISO BMFF mode with byte, read and time limits, machine-readable error codes and a container layout field, a Range source for S3 and R2 style object storage (a fetcher function, no SDK dependency), minimal color, HDR and Dolby Vision metadata, the pixel aspect ratio and display size, and a CommonJS build of the server entries only, while the browser entries stay ESM.
+- 0.5.0: a Node entry (`fromPath`, DOM-free types, a `worker_threads` pool), NestJS validators, a CLI, bitrate, GOP and audio details, cadence detection, framework adapters for Vue, Svelte and Angular, and later MPEG-TS and HLS.
+
 ## 0.2.0 - 2026-10-25
 
 ### Added
