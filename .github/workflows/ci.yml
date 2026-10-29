@@ -112,6 +112,9 @@ jobs:
       - name: Install TypeScript 5.9.3 for the CommonJS package test
         run: npm ci --prefix tests/package/ts59
 
+      - name: Install Jest 30.5.2 and Babel 7 for the Jest package test
+        run: npm ci --prefix tests/package/jest-cjs
+
       - name: Check dist parity and the api.md types against the packed tarball
         run: npm run test:package
 
@@ -149,6 +152,9 @@ jobs:
 
       - name: Install TypeScript 5.9.3 for the CommonJS package test
         run: npm ci --prefix tests/package/ts59
+
+      - name: Install Jest 30.5.2 and Babel 7 for the Jest package test
+        run: npm ci --prefix tests/package/jest-cjs
 
       - name: Check dist parity and the api.md types against the packed tarball
         run: npm run test:package

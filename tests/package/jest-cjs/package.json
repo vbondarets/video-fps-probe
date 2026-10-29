@@ -1,0 +1,14 @@
+{
+  "name": "video-fps-probe-jest-cjs",
+  "private": true,
+  "description": "Jest 30 with babel-jest for the CommonJS Jest package test",
+  "type": "commonjs",
+  "dependencies": {
+    "@babel/core": "7.29.7",
+    "@babel/plugin-transform-dynamic-import": "7.29.7",
+    "@babel/plugin-transform-modules-commonjs": "7.29.7",
+    "babel-jest": "30.5.2",
+    "babel-plugin-transform-import-meta": "2.3.3",
+    "jest": "30.5.2"
+  }
+}

@@ -281,7 +281,25 @@ openAsBlob(path)
 
 A TypeScript project that compiles to CommonJS, such as a NestJS 11 app (`"module": "commonjs"`, `moduleResolution` `node10`, `skipLibCheck: true`), writes `import { analyze } from 'video-fps-probe'` and gets a `require()` in its output. `moduleResolution: node10` reads no `exports` map, so the package also lists every subpath's types under `typesVersions`; TypeScript 6.0 needs `"ignoreDeprecations": "6.0"` for `node10`, TypeScript 5.9 does not. `tests/package/commonjs.test.ts` installs the packed tarball, `require()`s it from a `.cjs` file and compiles such a project with TypeScript 6.0.3 and with 5.9.3 (the nested project `tests/package/ts59`, with its own `package.json` and `package-lock.json`, so its `tsc` stays out of the repo's `node_modules/.bin`: CI installs it with `npm ci --prefix tests/package/ts59` before the package tests, which fail in CI without it; locally the test installs it with `npm ci --offline` and an empty npmrc, and skips the 5.9.3 cases with a message when the npm cache lacks it), runs `analyze` on an MP4 and `check` with a preset, and compares both with the source, on Node 24 and on Node 22.12 in CI.
 
-Jest runs CommonJS tests through its own module loader, not Node's `require(esm)`, so `require('video-fps-probe')` fails there with an ESM syntax error. Either let babel-jest or ts-jest transform the package, with `transformIgnorePatterns: ['/node_modules/(?!video-fps-probe/)']` and a transform for the `import.meta.url` of the worker URLs (for example `babel-plugin-transform-import-meta`), or run Jest on native ES modules (`node --experimental-vm-modules`). Neither Jest setup is tested here.
+### Jest
+
+Jest runs CommonJS tests through its own module loader, not Node's `require(esm)`, so `require('video-fps-probe')` fails there with an ESM syntax error. The root entry also reaches `import.meta.url` through the worker URLs of the own engine, which is a syntax error in a CommonJS module even though `analyze` never creates a worker. Test server code against the in-thread `analyze` and `check`, and let babel-jest transform the package:
+
+```js
+// jest.config.cjs, with jest, babel-jest, @babel/core, @babel/plugin-transform-dynamic-import,
+// @babel/plugin-transform-modules-commonjs and babel-plugin-transform-import-meta installed
+module.exports = {
+  testEnvironment: 'node',
+  transformIgnorePatterns: ['/node_modules/(?!video-fps-probe/)'],
+  transform: {
+    '\\.[cm]?js$': ['babel-jest', { plugins: ['babel-plugin-transform-import-meta', '@babel/plugin-transform-dynamic-import', '@babel/plugin-transform-modules-commonjs'] }],
+  },
+};
+```
+
+`transformIgnorePatterns` lets babel-jest into the package, `babel-plugin-transform-import-meta` rewrites `import.meta.url`, and `@babel/plugin-transform-dynamic-import` turns the `import()` of the parser chunks into `require()`, which Jest needs without `--experimental-vm-modules`. A test file then writes `const { analyze } = require('video-fps-probe')` and `const { check } = require('video-fps-probe/check')`. Unit tests that need no real result can instead map the package to a stub of their own, such as `moduleNameMapper: { '^video-fps-probe$': '<rootDir>/test/stubs/video-fps-probe.cjs' }` with an `analyze` that resolves a fixed result.
+
+`tests/package/jest-cjs` proves the first setup. It is a nested project with its own `package.json` and `package-lock.json`, Jest 30.5.2, babel-jest 30.5.2, Babel 7.29.7 and babel-plugin-transform-import-meta 2.3.3, pinned exactly, and the configuration above. `tests/package/jest-cjs.test.ts` installs the packed tarball into it, runs its one Jest test, which calls `analyze` on an MP4 and `check` with a preset, and compares both with the source. CI installs it with `npm ci --prefix tests/package/jest-cjs` before the package tests on Node 24 and 22.12, which fail in CI without it. Locally the test installs it with `npm ci --offline` and an empty npmrc, and skips with a message when the npm cache lacks it. Babel 7 is used because Babel 8 needs Node 22.18 or newer, above the 22.12 floor of the package.
 
 ## Engines
 

@@ -21,7 +21,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 - `video-fps-probe/presets/sources.json` holds the source page of every preset, keyed by the name of the export (`sources.klingO1ReferenceVideo`). `sourceUrl` is deprecated, not removed: every preset keeps it with the same page, so a 0.2.0 consumer still works, and it will be removed in the next major, which leaves the URL strings that supply-chain scanners such as Socket report in `sources.json` only ([presets](docs/api.md#presets)).
 - The installed package grows from about 442 KB to 570 KB unpacked, mostly for the two new standalone files; a bundler still takes only what the app imports.
 - CI also runs the unit, fixture and package tests on Node 22.12, the lowest version the package supports, next to Node 24; 0.2.0 tested Node 24 only.
-- `require('video-fps-probe')` from CommonJS is tested: the package test `require()`s the packed tarball on Node 22.12 and 24 and compiles a TypeScript project with `module` `commonjs` and `moduleResolution` `node10`, as a NestJS 11 app has, with TypeScript 6.0.3 and 5.9.3; the Jest setup it needs is documented ([CommonJS](docs/api.md#commonjs)).
+- `require('video-fps-probe')` from CommonJS is tested: the package test `require()`s the packed tarball on Node 22.12 and 24 and compiles a TypeScript project with `module` `commonjs` and `moduleResolution` `node10`, as a NestJS 11 app has, with TypeScript 6.0.3 and 5.9.3. A Jest 30 project with babel-jest runs `analyze` and `check` from the tarball too ([Jest](docs/api.md#jest)).
 - Still 0 mismatches against ffprobe 8.1.1, now on 130 committed fixtures: the new ones are byte patches of ffmpeg output with header values that other parsers fail on ([fixtures](fixtures/README.md#header-values-other-parsers-trip-on-section-o)).
 
 ### Fixed
@@ -40,7 +40,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 - Only Vite 8 and npm are tested in CI; other bundlers are documented ([bundlers](docs/bundlers.md)), and Yarn, pnpm and bun are expected to work.
 - Browser floors (Chrome and Edge 94, Firefox 114, Safari 15.4, mp4box.js Safari 16.4) are derived, not tested; CI runs Playwright's Chromium, Firefox and WebKit, and in-thread `analyze()` is tested on Node 22.12 and 24.
 - The type declarations name DOM types, so a TypeScript project for Node needs `"DOM"` in `lib` or `skipLibCheck: true`.
-- Jest runs the package only when it transforms it or runs native ES modules; neither setup is tested ([CommonJS](docs/api.md#commonjs)).
+- Jest needs babel-jest to transform the package, with plugins for `import.meta` and `import()` ([Jest](docs/api.md#jest)).
 - The corpus has real recordings from Chromium's MediaRecorder only: none from Firefox, Safari, phones, cameras or screen recorders.
 - A regular cadence such as 2:3 pulldown is VFR, but its rate profile reads as Steady.
 - `check` judges the stored frame size: the sample aspect ratio of a `pasp` box or a Matroska DisplayWidth is not applied.
