@@ -210,7 +210,11 @@ const CLASSES = [
   ['summary', /video-fps-probe\/dist\/api\/summary\.js$/],
 ];
 
-const USAGE = `Usage: node scripts/size-matrix.mjs [--dir <consumers dir>] [--check] [--out <dir>]
+export const THIRD_PARTY_ENGINES = ['mp4box', 'mediabunny'];
+
+export const measuresThirdParty = (fixture, key) => THIRD_PARTY_ENGINES.includes(key) || (key === 'lazyTotal' && fixture.engines.some((e) => THIRD_PARTY_ENGINES.includes(e)));
+
+const USAGE = `Usage: node scripts/size-matrix.mjs [--dir <consumers dir>] [--check] [--out <dir>] [--third-party-informational]
 
 Measures the consumer fixtures built by node scripts/consumers.mjs from the packed tarball.
 
@@ -220,6 +224,11 @@ Measures the consumer fixtures built by node scripts/consumers.mjs from the pack
                 without --out it also exits 1 when report/size-matrix.md or .json differs from this
                 measurement, and writes nothing
   --out <dir>   where size-matrix.md and size-matrix.json are written (default report)
+  --third-party-informational
+                for the canary, with --out: a budget that measures mp4box or mediabunny code (their
+                engine chunks and the emitted lazy total of a configuration with either engine) does
+                not fail when it is over, and size-matrix.json lists every such budget under informational,
+                for the job summary. Every other budget and check still fails as with --check alone.
 
 Without --check the report is written to --out, or to report/ (npm run size:matrix:write).
 `;
@@ -302,7 +311,7 @@ function closureOf(start, fileSet, texts, { dynamic }) {
   return seen;
 }
 
-export function measureFixture(dir, fixture) {
+export function measureFixture(dir, fixture, { thirdPartyInformational = false } = {}) {
   const distDir = fixtureDist(dir, fixture.name);
   if (!existsSync(distDir)) throw new Error(`${posix(relative(dir, distDir))} not found: run node scripts/consumers.mjs build first`);
   const found = discover(distDir);
@@ -441,7 +450,8 @@ export function measureFixture(dir, fixture) {
     let status = 'ok';
     if (gzip === null) status = required ? 'missing' : 'not built';
     else if (gzip > limit) status = 'over';
-    if (status === 'over' || status === 'missing') problems.push(`${fixture.name} ${label}: ${status}${gzip === null ? '' : ` (${kb(gzip)} > ${kb(limit)})`}`);
+    const informational = thirdPartyInformational && status === 'over' && measuresThirdParty(fixture, key);
+    if ((status === 'over' && !informational) || status === 'missing') problems.push(`${fixture.name} ${label}: ${status}${gzip === null ? '' : ` (${kb(gzip)} > ${kb(limit)})`}`);
     return { key, label, limit, gzip, headroom: gzip === null ? null : limit - gzip, status, why };
   });
 
@@ -468,8 +478,8 @@ function versionOf(dir, name) {
   return existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')).version : null;
 }
 
-export function buildMatrix(dir) {
-  const fixtures = FIXTURES.map((f) => measureFixture(dir, f));
+export function buildMatrix(dir, { thirdPartyInformational = false } = {}) {
+  const fixtures = FIXTURES.map((f) => measureFixture(dir, f, { thirdPartyInformational }));
   const standalone = Object.entries(STANDALONE_BUDGETS).map(([file, { limit, why }]) => {
     const path = join(installedPackage(dir), 'dist', 'standalone', file);
     const gzip = existsSync(path) ? gzipOf(readFileSync(path)) : null;
@@ -487,6 +497,9 @@ export function buildMatrix(dir) {
     fixtures,
     standalone,
     failures,
+    ...(thirdPartyInformational && {
+      informational: fixtures.flatMap((f) => f.budgets.filter((b) => measuresThirdParty(f, b.key)).map(({ key, label, limit, gzip, status }) => ({ fixture: f.name, key, label, limit, gzip, status }))),
+    }),
   };
 }
 
@@ -589,20 +602,26 @@ export function renderMarkdown(matrix) {
 
 function main() {
   const { values } = parseArgs({
-    options: { dir: { type: 'string' }, check: { type: 'boolean', default: false }, out: { type: 'string' }, help: { type: 'boolean', default: false } },
+    options: { dir: { type: 'string' }, check: { type: 'boolean', default: false }, out: { type: 'string' }, 'third-party-informational': { type: 'boolean', default: false }, help: { type: 'boolean', default: false } },
     strict: true,
   });
   if (values.help) {
     console.log(USAGE);
     return 0;
   }
+  const thirdPartyInformational = values['third-party-informational'];
+  if (thirdPartyInformational && !values.out) {
+    console.error(`--third-party-informational needs --out: the committed report is measured with every budget enforced\n\n${USAGE}`);
+    return 2;
+  }
   const dir = consumersDir(values.dir);
-  const matrix = buildMatrix(dir);
+  const matrix = buildMatrix(dir, { thirdPartyInformational });
   const outputs = { 'size-matrix.md': renderMarkdown(matrix), 'size-matrix.json': `${JSON.stringify(matrix, null, 2)}\n` };
   for (const f of matrix.fixtures) {
     console.log(`${f.name.padEnd(13)} critical ${kb(f.metrics.trigger).padStart(9)}  first MP4 ${cell(f.metrics.firstMp4).padStart(9)}  workers ${f.workers.length}  ${f.problems.length === 0 ? 'ok' : 'FAIL'}`);
   }
   for (const s of matrix.standalone) console.log(`${'standalone'.padEnd(13)} ${s.file} ${cell(s.gzip)}  ${s.status}`);
+  for (const b of matrix.informational ?? []) if (b.status === 'over') console.log(`INFO: ${b.fixture} ${b.label}: over (${kb(b.gzip)} > ${kb(b.limit)}), a third-party engine budget, informational`);
   const failures = [...matrix.failures];
   if (values.check && !values.out) {
     const reportDir = join(REPO_ROOT, 'report');

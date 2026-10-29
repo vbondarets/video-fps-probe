@@ -55,17 +55,19 @@ jobs:
 
       - name: Check that nothing changed the committed manifests
         if: ${{ !cancelled() }}
-        run: git diff --exit-code -- package.json package-lock.json
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git diff --exit-code HEAD -- package.json package-lock.json
 
       - name: Build the consumer fixtures
         id: build
         if: ${{ !cancelled() }}
         run: node scripts/consumers.mjs build
 
-      - name: Check the size budgets of the package size matrix
+      - name: Check the size budgets of the package size matrix, the budgets of mp4box and mediabunny code informational
         id: matrix
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
-        run: node scripts/size-matrix.mjs --check --out .canary/size-matrix
+        run: node scripts/size-matrix.mjs --check --out .canary/size-matrix --third-party-informational
 
       - name: Run the consumer smoke tests (Chromium, Firefox, WebKit), asserting the own engine only
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
@@ -73,9 +75,9 @@ jobs:
           CONSUMERS_LIBRARY_REPORT: .canary/smoke
         run: npm run test:consumers
 
-      - name: Write the changes of the library arms, in the comparison and in the smoke tests, to the job summary
+      - name: Write the changes of the library arms, in the comparison, the size matrix and the smoke tests, to the job summary
         if: ${{ !cancelled() && steps.compare.outcome != 'skipped' }}
-        run: node scripts/canary-summary.mjs --measured .canary/compare/accuracy.json --matrix .canary/size-matrix/size-matrix.json --smoke .canary/smoke --summary "$GITHUB_STEP_SUMMARY"
+        run: node scripts/canary-summary.mjs --measured .canary/compare/accuracy.json --matrix .canary/size-matrix/size-matrix.json --committed-matrix report/size-matrix.json --smoke .canary/smoke --summary "$GITHUB_STEP_SUMMARY"
 
       - name: Upload the canary reports
         if: ${{ !cancelled() }}

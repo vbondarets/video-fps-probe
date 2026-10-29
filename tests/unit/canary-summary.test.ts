@@ -2,7 +2,9 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { diffReports, outsidePeers, readSmoke, renderSummary, satisfies, type SmokeRun } from '../../scripts/canary-summary.mjs';
+import { diffReports, engineBudgetRows, outsidePeers, readSmoke, renderSummary, satisfies, type EngineBudget, type SmokeRun } from '../../scripts/canary-summary.mjs';
+import { FIXTURES } from '../../scripts/consumers.mjs';
+import { BUDGETS, measuresThirdParty } from '../../scripts/size-matrix.mjs';
 
 const run = (engine: SmokeRun['engine'], outcome: SmokeRun['outcome'], detail: string | null = null, browser = 'chromium'): SmokeRun => ({ browser, fixture: 'all', mode: 'build', file: 'cfr_h264_29.97.mp4', engine, outcome, detail });
 
@@ -15,6 +17,15 @@ const committed = report(
   engine('own', null, [fixture('a.mp4', [check('error', 'exact', 'ok')], [check('avgFps', 'exact', '30/1', 1)]), fixture('large.mp4', [check('error', 'exact', 'ok')])]),
   engine('mp4box-tuned', '2.4.1', [fixture('a.mp4', [check('error', 'exact', 'ok')], [check('frames', 'mismatch', '10', 1), check('frames', 'exact', '20', 2)])]),
 );
+
+const budget = (fixture: string, key: string, label: string, limit: number, gzip: number | null, status: EngineBudget['status'] = gzip !== null && gzip > limit ? 'over' : 'ok'): EngineBudget => ({ fixture, key, label, limit, gzip, status });
+const committedMatrix = {
+  versions: { mp4box: '2.4.1', mediabunny: '1.62.1' },
+  fixtures: [
+    { name: 'mp4box', budgets: [{ key: 'trigger', gzip: 890 }, { key: 'mp4box', gzip: 45120 }, { key: 'lazyTotal', gzip: 222700 }] },
+    { name: 'all', budgets: [{ key: 'mp4box', gzip: 45120 }, { key: 'mediabunny', gzip: 54300 }] },
+  ],
+};
 
 describe('canary summary', () => {
   it('passes when only a library arm changed, on the fixtures both runs have', () => {
@@ -89,6 +100,41 @@ describe('canary summary', () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  it('reports the third-party engine budgets with the committed and the canary size, and passes when only they are over', () => {
+    const matrix = {
+      versions: { vite: '8.3.5', rolldown: '1.2.15', mp4box: '2.5.0', mediabunny: '1.62.1' },
+      failures: [],
+      informational: [budget('mp4box', 'mp4box', 'mp4box engine chunk', 46500, 49910), budget('mp4box', 'lazyTotal', 'emitted lazy total', 224000, 227500), budget('all', 'mediabunny', 'mediabunny engine chunk', 56000, 54300)],
+    };
+    const { markdown, ownChanged } = renderSummary(diffReports(committed, committed), matrix, {}, null, committedMatrix);
+    expect(ownChanged).toBe(false);
+    expect(markdown).toContain('mp4box 2.5.0 and mediabunny 1.62.1: every size budget of own code and every check passes, and 2 third-party engine budget(s) are over their limit, informational.');
+    expect(markdown).toContain('### Third-party engine budgets');
+    expect(markdown).toContain('2 of 3 are over their limit. Committed: report/size-matrix.json, mp4box 2.4.1 and mediabunny 1.62.1. Canary: mp4box 2.5.0 and mediabunny 1.62.1.');
+    expect(markdown).toContain('| mp4box | mp4box engine chunk | 46.50 KB | 45.12 KB | 49.91 KB | +4.79 KB | over |');
+    expect(markdown).toContain('| mp4box | emitted lazy total | 224.00 KB | 222.70 KB | 227.50 KB | +4.80 KB | over |');
+    expect(markdown).toContain('| all | mediabunny engine chunk | 56.00 KB | 54.30 KB | 54.30 KB | 0.00 KB | ok |');
+    expect(markdown.indexOf('### Third-party engine budgets')).toBeLessThan(markdown.indexOf('### Arms against the committed references'));
+  });
+
+  it('keeps the size matrix failures of own code next to the informational engine budgets', () => {
+    const matrix = { versions: {}, failures: ['default client: over (3.60 KB > 3.50 KB)'], informational: [budget('all', 'mp4box', 'mp4box engine chunk', 46500, 44000), budget('mp4box', 'mp4box', 'mp4box engine chunk', 46500, null, 'missing')] };
+    const { markdown } = renderSummary(diffReports(committed, committed), matrix, {}, null, null);
+    expect(markdown).toContain(': 1 size matrix failure(s).\n- default client: over (3.60 KB > 3.50 KB)');
+    expect(markdown).toContain('0 of 2 are over their limit. Committed: report/size-matrix.json, mp4box - and mediabunny -.');
+    expect(markdown).toContain('| all | mp4box engine chunk | 46.50 KB | - | 44.00 KB | - | ok |');
+    expect(markdown).toContain('| mp4box | mp4box engine chunk | 46.50 KB | - | - | - | missing |');
+    expect(engineBudgetRows(matrix, committedMatrix).map((r) => r.before)).toEqual([45120, 45120]);
+    expect(renderSummary(diffReports(committed, committed), { failures: [] }).markdown).not.toContain('Third-party engine budgets');
+  });
+
+  it('treats exactly the engine chunks and the lazy totals with mp4box or mediabunny as third-party budgets', () => {
+    const thirdParty = FIXTURES.flatMap((f) => (BUDGETS[f.name] ?? []).filter((b) => measuresThirdParty(f, b.key)).map((b) => `${f.name} ${b.key}`));
+    expect(thirdParty).toEqual(['mp4box mp4box', 'mp4box lazyTotal', 'mediabunny mediabunny', 'mediabunny lazyTotal', 'all mp4box', 'all mediabunny', 'all lazyTotal']);
+    expect(['trigger', 'worker:mp4box.worker', 'engineShared', 'pageEngineShared', 'firstMp4'].some((key) => measuresThirdParty({ engines: ['own', 'mp4box', 'mediabunny', 'rvfc'] }, key))).toBe(false);
+    expect(measuresThirdParty({ engines: ['own', 'rvfc'] }, 'lazyTotal')).toBe(false);
   });
 
   it('keeps two checks of one field on one track apart', () => {

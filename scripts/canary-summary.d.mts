@@ -24,6 +24,30 @@ export interface SmokeRun {
   detail: string | null;
 }
 
+export interface EngineBudget {
+  fixture: string;
+  key: string;
+  label: string;
+  limit: number;
+  gzip: number | null;
+  status: 'ok' | 'over' | 'missing' | 'not built';
+}
+
+export interface EngineBudgetRow extends EngineBudget {
+  before: number | null;
+}
+
+export interface SummaryMatrix {
+  versions?: Record<string, string | null>;
+  failures: string[];
+  informational?: EngineBudget[];
+}
+
+export interface CommittedMatrix {
+  versions?: Record<string, string | null>;
+  fixtures?: { name: string; budgets: { key: string; gzip: number | null }[] }[];
+}
+
 export function diffReports(committed: unknown, measured: unknown): ArmDiff[];
 
 export function satisfies(version: string, range: string): boolean;
@@ -34,4 +58,8 @@ export function readSmoke(dir: string): SmokeRun[];
 
 export function renderSmoke(runs: readonly SmokeRun[]): string[];
 
-export function renderSummary(arms: ArmDiff[], matrix?: { versions?: Record<string, string | null>; failures: string[] } | null, peers?: Record<string, string>, smoke?: readonly SmokeRun[] | null): { markdown: string; ownChanged: boolean };
+export function engineBudgetRows(matrix: SummaryMatrix | null, committed?: CommittedMatrix | null): EngineBudgetRow[];
+
+export function renderEngineBudgets(rows: readonly EngineBudgetRow[], matrix?: SummaryMatrix | null, committed?: CommittedMatrix | null): string[];
+
+export function renderSummary(arms: ArmDiff[], matrix?: SummaryMatrix | null, peers?: Record<string, string>, smoke?: readonly SmokeRun[] | null, committedMatrix?: CommittedMatrix | null): { markdown: string; ownChanged: boolean };

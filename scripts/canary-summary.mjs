@@ -7,12 +7,14 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const VERDICTS = ['exact', 'within-tol', 'known-deviation', 'mismatch', 'n/a'];
 const LISTED = 40;
 
-const USAGE = `Usage: node scripts/canary-summary.mjs --measured <accuracy.json> [--committed <accuracy.json>] [--matrix <size-matrix.json>] [--smoke <dir>] [--summary <file>]
+const USAGE = `Usage: node scripts/canary-summary.mjs --measured <accuracy.json> [--committed <accuracy.json>] [--matrix <size-matrix.json>] [--committed-matrix <size-matrix.json>] [--smoke <dir>] [--summary <file>]
 
 Compares a compare-ffprobe run against the committed report/accuracy.json, fixture by fixture, on the
 fixtures both runs have, and prints a Markdown summary: per arm the library version, the verdict counts
 and the fixtures whose checks changed. --matrix adds the versions the size matrix measured and its
-failures. --smoke adds the mp4box and mediabunny runs that the consumer smoke test recorded in <dir>
+failures, and, from a size matrix written with --third-party-informational, every budget that measures
+mp4box or mediabunny code with its size in --committed-matrix (default report/size-matrix.json) and
+in the canary. --smoke adds the mp4box and mediabunny runs that the consumer smoke test recorded in <dir>
 with CONSUMERS_LIBRARY_REPORT=<dir>, where it asserts the own engine only: each run that does not equal
 Node analyze from the same tarball. --summary appends the Markdown to a file, such as
 $GITHUB_STEP_SUMMARY, instead of printing it.
@@ -82,6 +84,32 @@ export function outsidePeers(peers, versions) {
     .map(([name, range]) => `${name} ${versions[name]} is outside the peer range ${range} of the package`);
 }
 
+const kb = (n) => (n === null || n === undefined ? '-' : `${(n / 1000).toFixed(2)} KB`);
+
+const change = (before, after) => {
+  if (typeof before !== 'number' || typeof after !== 'number') return '-';
+  const text = kb(Math.abs(after - before));
+  return after > before ? `+${text}` : after < before ? `-${text}` : text;
+};
+
+export function engineBudgetRows(matrix, committed = null) {
+  return (matrix?.informational ?? []).map((b) => ({ ...b, before: committed?.fixtures?.find((f) => f.name === b.fixture)?.budgets.find((x) => x.key === b.key)?.gzip ?? null }));
+}
+
+export function renderEngineBudgets(rows, matrix = null, committed = null) {
+  const versions = (v) => `mp4box ${v?.mp4box ?? '-'} and mediabunny ${v?.mediabunny ?? '-'}`;
+  const over = rows.filter((r) => r.status === 'over').length;
+  return [
+    '### Third-party engine budgets',
+    '',
+    `Informational: these budgets measure mp4box or mediabunny code, so the canary reports them and does not fail on them. CI enforces them with the locked versions. ${over} of ${rows.length} are over their limit. Committed: report/size-matrix.json, ${versions(committed?.versions)}. Canary: ${versions(matrix?.versions)}.`,
+    '',
+    '| Configuration | Budget | Limit | Committed | Canary | Change | Status |',
+    '|---|---|---:|---:|---:|---:|---|',
+    ...rows.map((r) => `| ${r.fixture} | ${r.label} | ${kb(r.limit)} | ${kb(r.before)} | ${kb(r.gzip)} | ${change(r.before, r.gzip)} | ${r.status} |`),
+  ];
+}
+
 const arrow = (a, b) => (a === b ? `${a ?? '-'}` : `${a ?? '-'} → ${b ?? '-'}`);
 
 const cell = (text) => String(text).replaceAll('|', '\\|').replace(/\s+/g, ' ');
@@ -101,7 +129,7 @@ export function renderSmoke(runs) {
   return out;
 }
 
-export function renderSummary(arms, matrix = null, peers = {}, smoke = null) {
+export function renderSummary(arms, matrix = null, peers = {}, smoke = null, committedMatrix = null) {
   const out = ['## Canary', ''];
   const own = arms.filter((a) => a.own);
   const ownChanged = own.some((a) => a.changed.length > 0 || a.loadSkipped.after !== a.loadSkipped.before);
@@ -109,9 +137,13 @@ export function renderSummary(arms, matrix = null, peers = {}, smoke = null) {
   out.push('');
   if (matrix) {
     const v = matrix.versions ?? {};
-    out.push(`Consumer build with Vite ${v.vite ?? '-'}, rolldown ${v.rolldown ?? '-'}, mp4box ${v.mp4box ?? '-'} and mediabunny ${v.mediabunny ?? '-'}: ${matrix.failures.length === 0 ? 'every size budget and check passes.' : `${matrix.failures.length} size matrix failure(s).`}`);
+    const rows = engineBudgetRows(matrix, committedMatrix);
+    const over = rows.filter((r) => r.status === 'over').length;
+    const passes = over === 0 ? 'every size budget and check passes.' : `every size budget of own code and every check passes, and ${over} third-party engine budget(s) are over their limit, informational.`;
+    out.push(`Consumer build with Vite ${v.vite ?? '-'}, rolldown ${v.rolldown ?? '-'}, mp4box ${v.mp4box ?? '-'} and mediabunny ${v.mediabunny ?? '-'}: ${matrix.failures.length === 0 ? passes : `${matrix.failures.length} size matrix failure(s).`}`);
     for (const f of matrix.failures) out.push(`- ${f}`);
     out.push('');
+    if (rows.length > 0) out.push(...renderEngineBudgets(rows, matrix, committedMatrix), '');
   }
   const versions = { ...Object.fromEntries(arms.filter((a) => a.version.after).map((a) => [a.engine.split('-')[0], a.version.after])), ...matrix?.versions };
   const outside = outsidePeers(peers, versions);
@@ -157,7 +189,7 @@ export const readSmoke = (dir) =>
 
 function main() {
   const { values } = parseArgs({
-    options: { measured: { type: 'string' }, committed: { type: 'string' }, matrix: { type: 'string' }, smoke: { type: 'string' }, summary: { type: 'string' }, help: { type: 'boolean', default: false } },
+    options: { measured: { type: 'string' }, committed: { type: 'string' }, matrix: { type: 'string' }, 'committed-matrix': { type: 'string' }, smoke: { type: 'string' }, summary: { type: 'string' }, help: { type: 'boolean', default: false } },
     strict: true,
   });
   if (values.help || !values.measured) {
@@ -166,8 +198,10 @@ function main() {
   }
   const committed = readJson(values.committed ?? join(REPO_ROOT, 'report', 'accuracy.json'));
   const matrix = values.matrix && existsSync(values.matrix) ? readJson(values.matrix) : null;
+  const committedMatrixPath = values['committed-matrix'] ?? join(REPO_ROOT, 'report', 'size-matrix.json');
+  const committedMatrix = existsSync(committedMatrixPath) ? readJson(committedMatrixPath) : null;
   const { peerDependencies = {} } = readJson(join(REPO_ROOT, 'package.json'));
-  const { markdown, ownChanged } = renderSummary(diffReports(committed, readJson(values.measured)), matrix, peerDependencies, values.smoke ? readSmoke(values.smoke) : null);
+  const { markdown, ownChanged } = renderSummary(diffReports(committed, readJson(values.measured)), matrix, peerDependencies, values.smoke ? readSmoke(values.smoke) : null, committedMatrix);
   if (values.summary) appendFileSync(values.summary, `${markdown}\n`);
   else console.log(markdown);
   if (ownChanged) console.error('FAIL: a check of the own engine differs from the committed report/accuracy.json');
