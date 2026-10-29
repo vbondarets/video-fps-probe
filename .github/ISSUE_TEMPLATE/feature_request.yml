@@ -1,0 +1,21 @@
+name: Feature request
+description: A field, a check, an entry or a setup the package does not cover yet
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What you want to measure or check
+      description: The task and why the current results or entries do not cover it.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What it could look like
+      description: An option, a result field, a check rule or an entry, with an example if you have one.
+  - type: textarea
+    id: files
+    attributes:
+      label: Files it concerns
+      description: The containers and codecs, and how such files are made.

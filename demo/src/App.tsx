@@ -171,7 +171,7 @@ export default function App() {
           rate are computed without decoding a single frame. Results are checked against ffprobe 8.1.1.
         </p>
         <p>
-          <a href={REPO}>{REPO}</a>
+          <a href={REPO}>{REPO}</a> · <a href={`${REPO}/discussions`}>Questions and feedback</a>
         </p>
         {envLine && (
           <p className="env mono" data-testid="env-line">

@@ -168,6 +168,10 @@ Chrome and Edge 94, Firefox 114, Safari and iOS 15.4: floors derived from the fe
 
 Known limitations: [changelog](CHANGELOG.md#known-limitations), [benchmarks](docs/benchmarks.md#limitations). Development: [demo/README.md](demo/README.md), [scripts](docs/benchmarks.md#reproducing-the-numbers).
 
+## Feedback
+
+Questions, and how you use the package, go to [GitHub Discussions](https://github.com/vbondarets/video-fps-probe/discussions). For a wrong value or a setup that does not build, open a [bug report](https://github.com/vbondarets/video-fps-probe/issues/new/choose) with the browser or Node version, the container, the Copy JSON output of the demo or the result JSON, and the ffprobe output if you have it. The package and the demo collect no telemetry.
+
 ## License
 
 [MIT](LICENSE). The optional peers have their own licenses: mediabunny is MPL-2.0, mp4box is BSD-3-Clause.

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions
+    url: https://github.com/vbondarets/video-fps-probe/discussions/categories/q-a
+    about: Ask how to set up or read the results in GitHub Discussions.
+  - name: Show how you use it
+    url: https://github.com/vbondarets/video-fps-probe/discussions/categories/show-and-tell
+    about: Share what you check with the package and how, in GitHub Discussions.

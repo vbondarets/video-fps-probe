@@ -1,0 +1,57 @@
+name: Bug report
+description: A wrong or missing value, an error, or a setup that does not build or load
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. The package never uploads a file, so the issue holds only what you paste here. Leave out anything you cannot share publicly.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you ran, what you got and what you expected.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      placeholder: 0.3.0
+    validations:
+      required: true
+  - type: input
+    id: runtime
+    attributes:
+      label: Browser or Node version
+      description: The browser and its version for the probe or the demo, or the Node version for in-thread analyze.
+      placeholder: Chrome 155 on Windows 11, Safari 18 on iOS, Node 24.11
+    validations:
+      required: true
+  - type: input
+    id: container
+    attributes:
+      label: Container and codec
+      description: The container of the file and, if you know it, the video codec and how the file was made (camera, phone, screen recorder, MediaRecorder, ffmpeg command).
+      placeholder: MP4 with H.264 from a phone camera, WebM with VP9 from MediaRecorder
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Result JSON
+      description: The output of Copy JSON in the [demo](https://vbondarets.github.io/video-fps-probe/), or the result JSON from analyze() or the probe.
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: ffprobe
+    attributes:
+      label: ffprobe output, if available
+      description: "For example the output of: ffprobe -v error -show_streams -show_format -count_frames -of json <file>"
+      render: json
+  - type: input
+    id: setup
+    attributes:
+      label: Bundler and package manager, for a build or load problem
+      placeholder: Vite 8 with npm, webpack 5 with pnpm
