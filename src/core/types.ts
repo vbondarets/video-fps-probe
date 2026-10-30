@@ -41,7 +41,8 @@ export type TrackField =
   | 'minFps'
   | 'maxFps'
   | 'isVfr'
-  | 'duplicateTimestamps';
+  | 'duplicateTimestamps'
+  | 'medianFrameInterval';
 
 export type RateSegmentKind = 'steady' | 'variable';
 
@@ -105,6 +106,7 @@ export interface VideoTrackResult {
   timestampsQuantized: boolean;
   isStill: boolean;
   rateProfile?: RateProfile | null;
+  medianFrameInterval?: Rational | null;
   provenance: Partial<Record<TrackField, Provenance>>;
   warnings: string[];
 }

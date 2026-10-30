@@ -141,6 +141,11 @@ export function rateFromTicks(timescale: number, ticks: number): Rational | null
   return ratioOf(timescale, ticks, Number.MAX_SAFE_INTEGER);
 }
 
+export function intervalFromTicks(timescale: number, ticks: number | null): Rational | null {
+  const r = ticks ? rateFromTicks(timescale, ticks) : null;
+  return r && makeRational(r.den, r.num);
+}
+
 export function analyzeTimeline(input: TimelineInput): TimelineStats {
   const warnings: string[] = [];
   const ts = normalizeTimescale(input.timescale, warnings);

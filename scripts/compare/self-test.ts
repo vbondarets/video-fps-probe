@@ -90,6 +90,7 @@ function refFile(streams: RefStream[], over: Partial<RefFile> = {}): RefFile {
 function appTrack(over: Partial<VideoTrackResult> = {}): VideoTrackResult {
   return {
     ...emptyTrack(1),
+    medianFrameInterval: undefined,
     codecName: 'h264',
     width: 160,
     height: 90,
@@ -172,7 +173,7 @@ function oracleTrack(s: RefStream, trackId: number, matroska: boolean): VideoTra
   };
 }
 
-function oracleFields040(s: RefStream): TrackFields040 {
+function oracleFields040(s: RefStream): TrackFields040 & Pick<VideoTrackResult, 'medianFrameInterval'> {
   const median = s.packets?.medianDeltaTicks ?? null;
   const sar = s.sampleAspectRatio;
   return {

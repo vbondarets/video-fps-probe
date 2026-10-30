@@ -3,7 +3,7 @@ import { avgFrameRate, reduceRational, toFfprobeString } from '../rational.ts';
 import type { BlobReader } from '../reader.ts';
 import type { FfprobeRates } from '../rfps.ts';
 import { emptyAnalysis, emptyTrack } from '../result.ts';
-import { analyzeTimeline, rateFromTicks, rateProfileOf, vfrTolerance, type ProfileJob, type TimelineStats } from '../stats.ts';
+import { analyzeTimeline, intervalFromTicks, rateFromTicks, rateProfileOf, vfrTolerance, type ProfileJob, type TimelineStats } from '../stats.ts';
 import type { ContainerAnalysis, Provenance, ResolvedAnalyzeOptions, VideoTrackResult } from '../types.ts';
 import { ID_BLOCK, ID_BLOCK_GROUP, ID_CLUSTER, ID_CRC32, ID_CUES, ID_POSITION, ID_PREV_SIZE, ID_SIMPLE_BLOCK, ID_TIMESTAMP, ID_VOID, readHeader, UNKNOWN_SIZE } from './ebml.ts';
 import { parseMaster, readMatroskaHeader, type MkvHeader, type MkvTrack } from './header.ts';
@@ -87,7 +87,8 @@ function fillRates(r: VideoTrackResult, s: RateStats, prov: Provenance): void {
   r.distinctDeltas = s.distinctDeltas;
   r.duplicateTimestamps = s.duplicateTimestamps;
   r.timestampsQuantized = s.timestampsQuantized;
-  for (const f of ['minFps', 'maxFps', 'isVfr', 'duplicateTimestamps'] as const) r.provenance[f] = prov;
+  r.medianFrameInterval = intervalFromTicks(r.timescale, s.medianDelta);
+  for (const f of ['minFps', 'maxFps', 'isVfr', 'duplicateTimestamps', 'medianFrameInterval'] as const) r.provenance[f] = prov;
 }
 
 function headerTrack(h: MkvHeader, t: MkvTrack): VideoTrackResult {

@@ -1,6 +1,6 @@
 import { codeOf, type BlobReader } from '../reader.ts';
 import { emptyAnalysis, emptyTrack } from '../result.ts';
-import { analyzeTimeline, rateProfileOf, type ProfileJob } from '../stats.ts';
+import { analyzeTimeline, intervalFromTicks, rateProfileOf, type ProfileJob } from '../stats.ts';
 import { toFfprobeString } from '../rational.ts';
 import type { ContainerAnalysis, ContainerKind, ContainerLayout, ResolvedAnalyzeOptions, VideoTrackResult } from '../types.ts';
 import { IsoBmffError, readBoxHeader, type BoxHeader } from './boxes.ts';
@@ -299,6 +299,7 @@ function buildVideoTrack(tr: IsoTrack, movie: IsoMovie, opts: ResolvedAnalyzeOpt
   t.presentedFrames = stats.presentedFrames;
   t.minFps = stats.minFps;
   t.maxFps = stats.maxFps;
+  t.medianFrameInterval = intervalFromTicks(ts, stats.medianDelta);
   t.isVfr = stats.isVfr;
   t.vfrRatio = stats.vfrRatio;
   t.distinctDeltas = stats.distinctDeltas;
@@ -324,6 +325,7 @@ function finishProvenance(t: VideoTrackResult): void {
     p.maxFps = 'exact';
     p.isVfr = 'exact';
     p.duplicateTimestamps = 'exact';
+    p.medianFrameInterval = 'exact';
   }
   if (t.nominalFps) p.nominalFps = 'exact';
   if (t.dominantFps) p.dominantFps = 'exact';

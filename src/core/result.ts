@@ -41,6 +41,7 @@ export function emptyTrack(trackId: number): VideoTrackResult {
     timestampsQuantized: false,
     isStill: false,
     rateProfile: null,
+    medianFrameInterval: null,
     provenance: {},
     warnings: [],
   };

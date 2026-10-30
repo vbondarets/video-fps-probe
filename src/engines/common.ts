@@ -1,6 +1,6 @@
 import { makeRational } from '../core/rational.ts';
 import { emptyAnalysis } from '../core/result.ts';
-import type { TimelineStats } from '../core/stats.ts';
+import { intervalFromTicks, type TimelineStats } from '../core/stats.ts';
 import type { EngineId, FileResult, Provenance, Rational, VideoTrackResult } from '../core/types.ts';
 
 const CODEC_BY_FOURCC: Readonly<Record<string, string>> = {
@@ -113,6 +113,7 @@ export function applyStats(track: VideoTrackResult, stats: TimelineStats, source
   track.dominantFps = stats.dominantFps;
   track.minFps = stats.minFps;
   track.maxFps = stats.maxFps;
+  track.medianFrameInterval = intervalFromTicks(stats.timescale, stats.medianDelta);
   track.isVfr = stats.isVfr;
   track.vfrRatio = stats.vfrRatio;
   track.distinctDeltas = stats.distinctDeltas;
@@ -131,5 +132,6 @@ export function applyStats(track: VideoTrackResult, stats: TimelineStats, source
     maxFps: source,
     isVfr: source,
     duplicateTimestamps: source,
+    medianFrameInterval: source,
   });
 }
