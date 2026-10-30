@@ -97,6 +97,7 @@ export interface FragmentSpec {
   baseDts: number | null;
   count: number;
   duration: number;
+  cts?: number;
 }
 
 export function moof(sequence: number, trafs: FragmentSpec[], dataSize = 0): Bytes {
@@ -105,7 +106,7 @@ export function moof(sequence: number, trafs: FragmentSpec[], dataSize = 0): Byt
       'traf',
       fullBox('tfhd', 0, 0x20000 | 0x8 | 0x10, u32(f.id), u32(f.duration), u32(dataSize > 0 && f.count > 0 ? Math.floor(dataSize / f.count) : 1)),
       ...(f.baseDts === null ? [] : [fullBox('tfdt', 1, 0, u64(f.baseDts))]),
-      fullBox('trun', 0, 0, u32(f.count)),
+      f.cts === undefined ? fullBox('trun', 0, 0, u32(f.count)) : fullBox('trun', 0, 0x800, u32(f.count), ...Array.from({ length: f.count }, () => u32(f.cts!))),
     ),
   );
   return box('moof', fullBox('mfhd', 0, 0, u32(sequence)), ...parts);
@@ -183,47 +184,77 @@ export interface Recording {
   audioTicks: number | null;
 }
 
-export function recording(options: { fragments: number; mdatBytes: number; audio?: boolean; audioLonger?: number; index?: boolean; mehd?: number | bigint | null; sidx?: boolean }): Recording {
+export interface RecordingOptions {
+  fragments: number;
+  mdatBytes: number;
+  audio?: boolean;
+  audioLonger?: number;
+  audioShorter?: number;
+  index?: boolean;
+  mehd?: number | bigint | null;
+  sidx?: boolean | 'fragment';
+  cts?: number;
+  separate?: boolean;
+  free?: Uint8Array[];
+}
+
+export function recording(options: RecordingOptions): Recording {
   const video: TrackSpec = { id: 1, timescale: 15360 };
   const audio: TrackSpec = { id: 2, handler: 'soun', timescale: 48000 };
   const tracks = options.audio ? [video, audio] : [video];
   const trex = tracks.map((t) => ({ id: t.id, duration: t.handler === 'soun' ? 1024 : 512 }));
   const head = bytes(ftyp('iso5'), moov(tracks, [mvex({ trex, mehd: options.mehd })]));
-  const segments: Segment[] = [head];
-  let offset = head.length;
+  const segments: Segment[] = [head, ...(options.free ?? [])];
+  let offset = segments.reduce((n, s) => n + (s instanceof Uint8Array ? s.length : s.zeros), 0);
   const moofOffsets: number[] = [];
+  const audioMoofOffsets: number[] = [];
   let videoDts = 0;
   let audioDts = 0;
   const framesPer = 30;
   const audioPer = 47;
+  const cts = options.cts ?? 0;
   const sidxRefs: Array<[number, number]> = [];
-  const pieces: Array<{ moof: Bytes; mdat: number }> = [];
+  const pieces: Array<{ moof: Bytes; mdat: number; video: boolean; audio: boolean; sidx: Bytes | null }> = [];
   for (let i = 0; i < options.fragments; i++) {
     const last = i === options.fragments - 1;
-    const trafs: FragmentSpec[] = [{ id: 1, baseDts: videoDts, count: framesPer, duration: 512 }];
-    videoDts += framesPer * 512;
+    const v: FragmentSpec = { id: 1, baseDts: videoDts, count: framesPer, duration: 512, cts: options.cts };
+    const groups: FragmentSpec[][] = [[v]];
     if (options.audio) {
-      const extra = last ? (options.audioLonger ?? 0) : 0;
-      trafs.push({ id: 2, baseDts: audioDts, count: audioPer + extra, duration: 1024 });
+      const extra = last ? (options.audioLonger ?? 0) - (options.audioShorter ?? 0) : 0;
+      const a: FragmentSpec = { id: 2, baseDts: audioDts, count: audioPer + extra, duration: 1024 };
       audioDts += (audioPer + extra) * 1024;
+      if (options.separate) groups.push([a]);
+      else groups[0].push(a);
     }
-    const m = moof(i + 1, trafs, options.mdatBytes);
-    pieces.push({ moof: m, mdat: options.mdatBytes });
-    sidxRefs.push([m.length + 8 + options.mdatBytes, framesPer * 512]);
+    let size = 0;
+    for (const g of groups) {
+      const m = moof(pieces.length + 1, g, options.mdatBytes);
+      const hasVideo = g.some((f) => f.id === 1);
+      const s = options.sidx === 'fragment' && hasVideo ? sidx(1, 15360, videoDts + cts, [[m.length + 8 + options.mdatBytes, framesPer * 512]]) : null;
+      pieces.push({ moof: m, mdat: options.mdatBytes, video: hasVideo, audio: g.some((f) => f.id === 2), sidx: s });
+      size += (s?.length ?? 0) + m.length + 8 + options.mdatBytes;
+    }
+    videoDts += framesPer * 512;
+    sidxRefs.push([size, framesPer * 512]);
   }
-  if (options.sidx) {
-    const s = sidx(1, 15360, 0, sidxRefs);
+  if (options.sidx === true) {
+    const s = sidx(1, 15360, cts, sidxRefs);
     segments.push(s);
     offset += s.length;
   }
   for (const p of pieces) {
-    moofOffsets.push(offset);
+    if (p.sidx) {
+      segments.push(p.sidx);
+      offset += p.sidx.length;
+    }
+    if (p.video) moofOffsets.push(offset);
+    if (p.audio) audioMoofOffsets.push(offset);
     segments.push(p.moof, mdatHeader(p.mdat), { zeros: p.mdat });
     offset += p.moof.length + 8 + p.mdat;
   }
   if (options.index !== false) {
     const entries = [{ id: 1, offsets: moofOffsets }];
-    if (options.audio) entries.push({ id: 2, offsets: moofOffsets });
+    if (options.audio) entries.push({ id: 2, offsets: audioMoofOffsets });
     segments.push(mfra(entries));
   }
   return { source: virtualSource(segments), moofOffsets, videoTicks: videoDts, audioTicks: options.audio ? audioDts : null };
