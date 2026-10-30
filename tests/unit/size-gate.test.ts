@@ -145,6 +145,10 @@ const parser = (m: Matrix, family: keyof typeof FAMILIES, by: number) => {
 };
 
 const isoParser = (m: Matrix, by: number) => parser(m, 'isobmff', by);
+const bothParsers = (iso: number, mkv: number) => (m: Matrix) => {
+  parser(m, 'isobmff', iso);
+  parser(m, 'matroska', mkv);
+};
 
 const parserRows = (m: Matrix, family: keyof typeof FAMILIES) => [
   ...m.fixtures.flatMap((f) => [
@@ -437,6 +441,46 @@ describe('size gate against the 0.3.0 baseline', () => {
     const fails = failures(r.err);
     expect(fails).toHaveLength(Object.keys(pair.files).length);
     for (const line of fails) expect(line).toMatch(/^FAIL [\w-]+ file assets\/compare-00000000\.js \(page\): [\d,]+ B is \d+ B above the 0\.3\.0 baseline of [\d,]+ B, stage 3 allows 0 B for a file without a parser or engine \(files\)$/);
+  });
+
+  test('lets both parsers spend the stage 2 shares and fails one byte over on either parser', () => {
+    const ok = at(2, raised('stage-2-both.json', bothParsers(390, 200)));
+    expect(ok.status, ok.err).toBe(0);
+    const allLazy = raw('all', 'lazyTotal') + 4 * 390 + 4 * 200;
+    expect(allLazy).toBeLessThanOrEqual(367000);
+    expect(ok.out).toMatch(new RegExp(`all:lazyTotal +[\\d,]+ +[\\d,]+ +[\\d,]+ +\\+2,360 +2,360 +\\+2,360 +2,360 +${fmt(allLazy)} +367,000 +ok`));
+    for (const [family, iso, mkv] of [
+      ['isobmff', 391, 200],
+      ['matroska', 390, 201],
+    ] as const) {
+      const r = at(2, raised(`stage-2-${family}-over.json`, bothParsers(iso, mkv)));
+      expect(r.status, family).toBe(1);
+      const failed = new Set(failures(r.err).map(failedRow));
+      expect([...failed].sort(), family).toEqual([...new Set([...parserRows(START, family), ...parserFiles(START, family)])].sort());
+    }
+  });
+
+  test('lets both parsers spend the stage 5 shares, under the all:lazyTotal cap only once stage 5 re-sets it', () => {
+    const base = raised('stage-4-both.json', bothParsers(400, 200));
+    const full = raised('stage-5-both.json', bothParsers(450, 250));
+    const capped = at(5, full, base);
+    expect(capped.status).toBe(1);
+    const allLazy = raw('all', 'lazyTotal') + 4 * 450 + 4 * 250;
+    expect(failures(capped.err)).toEqual([`FAIL all:lazyTotal: ${fmt(allLazy)} B as built is above its cap of 367,000 B (emitted lazy total with both engine workers)`]);
+    const reset = (c: GateConfig) => {
+      c.groups.find((g) => g.rows.includes('all:lazyTotal'))!.cap = Math.ceil(allLazy * 1.01);
+    };
+    const ok = run(['--config', configAt(5, base, reset), '--report', full]);
+    expect(ok.status, ok.err).toBe(0);
+    for (const [family, iso, mkv] of [
+      ['isobmff', 451, 250],
+      ['matroska', 450, 251],
+    ] as const) {
+      const r = run(['--config', configAt(5, base, reset), '--report', raised(`stage-5-${family}-over.json`, bothParsers(iso, mkv))]);
+      expect(r.status, family).toBe(1);
+      const failed = new Set(failures(r.err).map(failedRow));
+      expect([...failed].sort(), family).toEqual([...new Set([...parserRows(START, family), ...parserFiles(START, family)])].sort());
+    }
   });
 
   test('lets an engine chunk file grow by the engine share in stage 2', () => {
