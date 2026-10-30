@@ -22,8 +22,8 @@ afterEach(() => {
 });
 
 describe('root entry', () => {
-  it('exports the probe factory, the in-thread analyze, errors, summary and agreement', () => {
-    expect(Object.keys(root).sort()).toEqual(['ProbeError', 'analyze', 'compareResults', 'createProbe', 'isAbortError', 'isTimeoutError', 'summarize']);
+  it('exports the probe factory, the in-thread analyze, errors, error and warning codes, summary and agreement', () => {
+    expect(Object.keys(root).sort()).toEqual(['ProbeError', 'analyze', 'compareResults', 'createProbe', 'errorClass', 'errorCodeOf', 'isAbortError', 'isTimeoutError', 'summarize', 'warningCodeOf', 'warningCodesOf']);
   });
 });
 

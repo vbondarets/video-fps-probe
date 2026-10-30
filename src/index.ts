@@ -1,5 +1,6 @@
 export { analyze, type InThreadOptions } from './analyze.ts';
 export { compareResults, type Agreement, type ComparedField, type ComparedFieldName, type ComparedValue } from './api/agreement.ts';
+export { errorClass, errorCodeOf, warningCodeOf, warningCodesOf, type ErrorClass } from './api/codes.ts';
 export { ProbeError, type ProbeErrorCode } from './api/errors.ts';
 export { isAbortError, isTimeoutError } from './api/guards.ts';
 export { summarize, type VideoFpsSummary } from './api/summary.ts';
