@@ -9,7 +9,7 @@
 //   node patch-mp4.mjs mvhd64|tkhd64|mdhd64 <in> <out> <hex64>  rewrite the first mvhd, tkhd or mdhd as version 1 with the 64-bit duration (moov after mdat)
 //   node patch-mp4.mjs trailer <in> <out> <hex>        append the bytes after the last top-level box
 //   node patch-mp4.mjs stsd2  <in> <out> <WxH>         add a copy of the only sample entry with the size WxH and point the second half of the samples to it (one chunk split in two; moov after mdat)
-//   node patch-mp4.mjs pasp   <in> <out> <h:v>         set the pasp of the first video sample entry, or append one
+//   node patch-mp4.mjs pasp   <in> <out> <h:v>         set the pasp of the first video sample entry, or append one, free renames it to 'free'
 //   node patch-mp4.mjs tkhdsize <in> <out> <WxH>       set the tkhd width and height of the first video track, and rename its pasp to 'free'
 //   node patch-mp4.mjs matrix <in> <out> <a,b,c,d>     set the tkhd matrix scale and shear terms of the first video track, and rename its pasp to 'free'
 //   node patch-mp4.mjs tkhdflags <in> <out> <flags>    set the tkhd flags of the first video track (2 clears the enabled bit)
@@ -232,6 +232,7 @@ function dvRecord(profile, level, compatibility, mdCompression) {
 
 function entryEdit(spec) {
   if (mode === 'pasp') {
+    if (spec === 'free') return (e) => ({ type: e.type, kids: renameKid(e.kids, 'pasp', 'free') });
     const [h, v] = spec.split(':').map(Number);
     const p = Buffer.alloc(8);
     p.writeUInt32BE(h, 0);
