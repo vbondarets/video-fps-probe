@@ -567,7 +567,7 @@ The code travels with the failure, not with its text: every `error` reads as it 
 |---|---|---|
 | `empty-file` | file | `not a recognised container: empty file` |
 | `unrecognised` | file | `not a recognised container: <reason>`, for example `PNG image` |
-| `unsupported-container` | file | a container the engine or worker does not read: `the own Matroska worker does not read ISO BMFF`, `unsupported by <engine>` |
+| `unsupported-container` | file | a container the engine or worker does not read: `the own Matroska worker does not read ISO BMFF`, `unsupported by <engine>`, and `container not read by the header entry: webm` or `matroska` from `video-fps-probe/header` |
 | `unsupported` | file | `unsupported: compressed movie header (cmov)`, a 64-bit box value above 2^53-1 |
 | `too-large` | file | `unsupported: moov larger than 256 MiB`, `corrupt file: moof larger than 64 MiB at <offset>` |
 | `no-header` | file | `incomplete file: no moov`, `no Segment element`, `no Tracks element found` |
@@ -575,7 +575,7 @@ The code travels with the failure, not with its text: every `error` reads as it 
 | `corrupt` | file | every other `corrupt file: ...` of a malformed file, `invalid EBML header`, and a malformed value that stopped the parser |
 | `no-duration` | file | `incomplete header: fragmented file without a sidx, mfra or mehd duration`, from `video-fps-probe/header` only |
 | `byte-limit`, `read-limit`, `time-limit`, `structure-limit` | limit | `limit reached: maxBytes <n> (<m> more bytes needed at offset <o>)`, `limit reached: maxReads <n>`, `limit reached: maxMs <n>`, `limit reached: maxTracks <n>` and `limit reached: maxTopLevelBoxes <n>`, from `video-fps-probe/header` only ([limits](#header-only-analysis)) |
-| `read-failed` | io | `file read failed: <error>` and `file read failed: short read ...` |
+| `read-failed` | io | `file read failed: <error>` and `file read failed: short read ...`, and from `video-fps-probe/header` also an `AbortError` of the source itself while the caller's signal is open and a read that resolves no bytes |
 | `load-failed` | environment | the parser or statistics chunk of own did not load, for example after a redeploy |
 | `engine-failed` | file | a failure of mp4box, mediabunny or rvfc, from `errorCodeOf` only |
 | `internal` | internal | an invalid argument to `analyze` or a probe, such as a `readAhead.head` or `readAhead.fragment` that is not a non-negative safe integer or a `BlobLike` whose `size` is not a non-negative safe integer, and any other exception, a bug in the package. Never a property of the file. In ISO BMFF its text starts with `corrupt file: ` as in 0.3.0, for example `corrupt file: readAhead must be a non-negative safe integer, got -1`. `analyzeHeader` checks every option before it reads and throws a `TypeError` for an invalid one instead, so its `internal` is a bug only |
