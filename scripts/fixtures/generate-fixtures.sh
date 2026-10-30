@@ -332,8 +332,9 @@ S1="$(src 30000/1001 1)"
 H265X=(-c:v libx265 -preset ultrafast -crf 32 -pix_fmt yuv420p10le -x265-params log-level=error:keyint=30 -an)
 PQ="setparams=color_primaries=bt2020:color_trc=smpte2084:colorspace=bt2020nc:range=tv"
 HLG="setparams=color_primaries=bt2020:color_trc=arib-std-b67:colorspace=bt2020nc:range=tv"
-"${FF[@]}" -f lavfi -i "$(src 30000/1001 1 160x120)" -vf setsar=4/3 "${H264[@]}" sar_h264_4x3.mp4
-note sar_h264_4x3.mp4 mp4 sar ok "160x120 with a 4:3 sample aspect ratio in pasp and in the SPS VUI: ffprobe sample_aspect_ratio 4:3, display_aspect_ratio 16:9"
+"${FF[@]}" -f lavfi -i "color=c=gray:size=1440x1080:rate=30000/1001:duration=1" -vf setsar=4/3 "${H264[@]}" sar_h264_4x3.mp4
+note sar_h264_4x3.mp4 mp4 sar ok "1440x1080 gray with a 4:3 sample aspect ratio in pasp and in the SPS VUI: ffprobe sample_aspect_ratio 4:3, display_aspect_ratio 16:9, a display size of 1920x1080"
+"${FF[@]}" -f lavfi -i "$(src 30000/1001 1 160x120)" -vf setsar=4/3 "${H264[@]}" "$W/sar_4x3_160x120.mp4"
 "${FF[@]}" -f lavfi -i "$S1" "${H264[@]}" "$W/sar_base.mp4"
 node "$TOOLS/patch-mp4.mjs" pasp "$W/sar_base.mp4" sar_pasp_only.mp4 4:3 > /dev/null
 note sar_pasp_only.mp4 mp4 sar ok "pasp says 4:3, the SPS VUI says 1:1: ffprobe prints the pasp ratio 4:3 (display 64:27)"
@@ -341,10 +342,10 @@ node "$TOOLS/patch-mp4.mjs" tkhdsize "$W/sar_base.mp4" sar_tkhd_only.mp4 240x90 
 note sar_tkhd_only.mp4 mp4 sar ok "pasp renamed to free, tkhd says 240x90 over a 160x90 stream (VUI 1:1): ffprobe derives 3:2 from the tkhd size"
 node "$TOOLS/patch-mp4.mjs" matrix "$W/sar_base.mp4" sar_matrix_scale.mp4 2,0,0,1 > /dev/null
 note sar_matrix_scale.mp4 mp4 sar ok "pasp renamed to free, tkhd matrix scales x by 2 (VUI 1:1): ffprobe derives 2:1 from the matrix and prints a Display Matrix side data entry"
-node "$TOOLS/patch-mp4.mjs" pasp sar_h264_4x3.mp4 sar_tkhd_fraction.mp4 free > /dev/null
-note sar_tkhd_fraction.mp4 mp4 sar ok "sar_h264_4x3.mp4 with pasp renamed to free: the tkhd width 213.33 (16.16) that ffmpeg wrote for the 4:3 ratio wins over the 4:3 VUI, and ffprobe derives 213:160 from its integer part"
-node "$TOOLS/patch-mp4.mjs" tkhdsize sar_h264_4x3.mp4 sar_vui_only.mp4 160x120 > /dev/null
-note sar_vui_only.mp4 mp4 sar ok "sar_h264_4x3.mp4 with pasp renamed to free and the tkhd size set to the stored 160x120: only the SPS VUI carries the 4:3 ratio, and ffprobe prints it"
+node "$TOOLS/patch-mp4.mjs" pasp "$W/sar_4x3_160x120.mp4" sar_tkhd_fraction.mp4 free > /dev/null
+note sar_tkhd_fraction.mp4 mp4 sar ok "160x120 with a 4:3 sample aspect ratio and pasp renamed to free: the tkhd width 213.33 (16.16) that ffmpeg wrote for the 4:3 ratio wins over the 4:3 VUI, and ffprobe derives 213:160 from its integer part"
+node "$TOOLS/patch-mp4.mjs" tkhdsize "$W/sar_4x3_160x120.mp4" sar_vui_only.mp4 160x120 > /dev/null
+note sar_vui_only.mp4 mp4 sar ok "160x120 with a 4:3 sample aspect ratio, pasp renamed to free and the tkhd size set to the stored 160x120: only the SPS VUI carries the 4:3 ratio, and ffprobe prints it"
 node "$TOOLS/patch-mp4.mjs" matrix sar_tkhd_only.mp4 sar_tkhd_matrix.mp4 2,0,0,1 > /dev/null
 note sar_tkhd_matrix.mp4 mp4 sar ok "sar_tkhd_only.mp4 (tkhd 240x90, 3:2) with the tkhd matrix scaling x by 2: ffprobe prints 2:1, the matrix ratio beats the tkhd size"
 node "$TOOLS/patch-mp4.mjs" pasp sar_tkhd_matrix.mp4 sar_pasp_tkhd_matrix.mp4 4:3 > /dev/null

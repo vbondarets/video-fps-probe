@@ -7,8 +7,8 @@ import { CHECK_SNAPSHOT, OWN_SNAPSHOT, checkReportsOf, ownResultOf, presetEntrie
 import { fixturePath } from '../helpers/fixtures.ts';
 
 const ALLOWED_NEW_WARNINGS: readonly RegExp[] = [];
-const OWN_SHA256 = '6f1006012765c976282d4f4599004d7b8b09d660baf7871e67250ffd572574f1';
-const CHECK_SHA256 = 'c9546ce6ac427a65fb428860007f6a31b493987f6ce2cf133dd0626d0a0dc071';
+const OWN_SHA256 = '76da2feb33ba1a6a73e2cb883e8034dc3866a7f695b3b0bc9582cb5f3e2c54b6';
+const CHECK_SHA256 = '7377ffc8e989366e374a6f6e6cb69d7916f665eb59098332ddd6bc06c0814378';
 
 const own = JSON.parse(readFileSync(OWN_SNAPSHOT, 'utf8')) as OwnSnapshot;
 const checks = JSON.parse(readFileSync(CHECK_SNAPSHOT, 'utf8')) as CheckSnapshot;
