@@ -3,7 +3,7 @@ import { avgFrameRate, reduceRational, toFfprobeString } from '../rational.ts';
 import type { BlobReader } from '../reader.ts';
 import type { FfprobeRates } from '../rfps.ts';
 import { emptyAnalysis, emptyTrack } from '../result.ts';
-import { analyzeTimeline, intervalFromTicks, rateFromTicks, rateProfileOf, vfrTolerance, type ProfileJob, type TimelineStats } from '../stats.ts';
+import { analyzeTimeline, rateFromTicks, rateProfileOf, vfrTolerance, type ProfileJob, type TimelineStats } from '../stats.ts';
 import type { ContainerAnalysis, Provenance, ResolvedAnalyzeOptions, VideoTrackResult } from '../types.ts';
 import { ID_BLOCK, ID_BLOCK_GROUP, ID_CLUSTER, ID_CRC32, ID_CUES, ID_POSITION, ID_PREV_SIZE, ID_SIMPLE_BLOCK, ID_TIMESTAMP, ID_VOID, readHeader, UNKNOWN_SIZE } from './ebml.ts';
 import { parseMaster, readMatroskaHeader, type MkvHeader, type MkvTrack } from './header.ts';
@@ -49,11 +49,11 @@ export function declaredRate(defaultDuration: number): { avg: string; r: string 
   return { avg, r: q.num < q.den * 1000 && q.num > q.den * 5 ? avg : null };
 }
 
-type RateStats = Pick<TimelineStats, 'minFps' | 'maxFps' | 'isVfr' | 'vfrRatio' | 'distinctDeltas' | 'duplicateTimestamps' | 'timestampsQuantized' | 'medianDelta'>;
+type RateStats = Pick<TimelineStats, 'minFps' | 'maxFps' | 'isVfr' | 'vfrRatio' | 'distinctDeltas' | 'duplicateTimestamps' | 'timestampsQuantized' | 'medianDelta' | 'medianFrameInterval'>;
 
 export function mergeRunStats(timescale: number, runs: readonly TimelineStats[]): RateStats {
   const hist = new Map<number, number>();
-  const out: RateStats = { minFps: null, maxFps: null, isVfr: null, vfrRatio: 0, distinctDeltas: 0, duplicateTimestamps: 0, timestampsQuantized: false, medianDelta: null };
+  const out: RateStats = { minFps: null, maxFps: null, isVfr: null, vfrRatio: 0, distinctDeltas: 0, duplicateTimestamps: 0, timestampsQuantized: false, medianDelta: null, medianFrameInterval: null };
   let total = 0;
   for (const r of runs) {
     out.duplicateTimestamps += r.duplicateTimestamps;
@@ -71,6 +71,8 @@ export function mergeRunStats(timescale: number, runs: readonly TimelineStats[])
   let off = 0;
   for (const k of keys) if (Math.abs(k - median) > tol) off += hist.get(k) ?? 0;
   out.medianDelta = median;
+  const rate = rateFromTicks(timescale, median);
+  out.medianFrameInterval = rate && { num: rate.den, den: rate.num, value: rate.den / rate.num };
   out.minFps = rateFromTicks(timescale, keys[keys.length - 1]);
   out.maxFps = rateFromTicks(timescale, keys[0]);
   out.isVfr = total >= 2 && off > 0;
@@ -87,7 +89,7 @@ function fillRates(r: VideoTrackResult, s: RateStats, prov: Provenance): void {
   r.distinctDeltas = s.distinctDeltas;
   r.duplicateTimestamps = s.duplicateTimestamps;
   r.timestampsQuantized = s.timestampsQuantized;
-  r.medianFrameInterval = intervalFromTicks(r.timescale, s.medianDelta);
+  r.medianFrameInterval = s.medianFrameInterval;
   for (const f of ['minFps', 'maxFps', 'isVfr', 'duplicateTimestamps', 'medianFrameInterval'] as const) r.provenance[f] = prov;
 }
 

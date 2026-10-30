@@ -67,6 +67,7 @@ export interface TimelineStats {
   minDelta: number | null;
   maxDelta: number | null;
   medianDelta: number | null;
+  medianFrameInterval: Rational | null;
   meanDelta: number | null;
   tolerance: number | null;
   minFps: Rational | null;
@@ -139,11 +140,6 @@ export function rateFromTicks(timescale: number, ticks: number): Rational | null
   const ns = nanosecondTick(timescale);
   if (ns !== null && ticks > 0 && Number.isSafeInteger(ns * ticks)) return reduceRational(1_000_000_000, ns * ticks, Number.MAX_SAFE_INTEGER);
   return ratioOf(timescale, ticks, Number.MAX_SAFE_INTEGER);
-}
-
-export function intervalFromTicks(timescale: number, ticks: number | null): Rational | null {
-  const r = ticks ? rateFromTicks(timescale, ticks) : null;
-  return r && makeRational(r.den, r.num);
 }
 
 export function analyzeTimeline(input: TimelineInput): TimelineStats {
@@ -222,6 +218,7 @@ function emptyStats(timescale: number, warnings: string[]): TimelineStats {
     minDelta: null,
     maxDelta: null,
     medianDelta: null,
+    medianFrameInterval: null,
     meanDelta: null,
     tolerance: null,
     minFps: null,
@@ -324,6 +321,8 @@ function applyHistogram(base: TimelineStats, hist: Map<number, number>, tickQuan
   base.minDelta = minD;
   base.maxDelta = maxD;
   base.medianDelta = median;
+  const interval = rateFromTicks(ts, median);
+  base.medianFrameInterval = interval && makeRational(interval.den, interval.num);
   base.meanDelta = sum / total;
   base.tolerance = tol;
   base.minFps = rateFromTicks(ts, maxD);
