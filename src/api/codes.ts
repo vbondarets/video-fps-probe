@@ -47,12 +47,13 @@ const CLASS_OF: Readonly<Record<FileErrorCode, ErrorClass>> = {
   internal: 'internal',
 };
 
-const TRUNCATED_BOX = /^'(.{4})' at \d+ is truncated$/;
+const TRUNCATED_BOX = /^'(.{4})' at \d+ is truncated/;
 
 export function errorCodeOf(result: Pick<FileResult, 'error'> & Partial<Pick<FileResult, 'errorCode' | 'engine'>>): FileErrorCode | null {
-  if (result.errorCode !== undefined) return result.errorCode;
-  const error = result.error;
+  if (result?.errorCode !== undefined) return result.errorCode;
+  const error = result?.error;
   if (error === null) return null;
+  if (typeof error !== 'string') return 'internal';
   for (const [prefix, code] of ERROR_PREFIXES) if (error.startsWith(prefix)) return code;
   return result.engine !== undefined && result.engine !== 'own' ? 'engine-failed' : 'internal';
 }
@@ -62,6 +63,7 @@ export function errorClass(code: FileErrorCode): ErrorClass {
 }
 
 export function warningCodeOf(warning: string): WarningCode | null {
+  if (typeof warning !== 'string') return null;
   if (warning.startsWith('invalid mdhd timescale ') || warning.startsWith('invalid timescale ')) return 'invalid-timescale';
   if (warning.startsWith('ignored trailing data at ')) return 'trailing-data';
   const box = TRUNCATED_BOX.exec(warning);
@@ -70,7 +72,8 @@ export function warningCodeOf(warning: string): WarningCode | null {
 
 export function warningCodesOf(result: Pick<FileResult, 'warnings' | 'videoTracks'>): WarningCode[] {
   const codes = new Set<WarningCode>();
-  for (const w of [...result.warnings, ...result.videoTracks.flatMap((t) => t.warnings)]) {
+  const listOf = <T>(value: readonly T[] | null | undefined): readonly T[] => (Array.isArray(value) ? value : []);
+  for (const w of [...listOf(result?.warnings), ...listOf(result?.videoTracks).flatMap((t) => listOf(t?.warnings))]) {
     const code = warningCodeOf(w);
     if (code) codes.add(code);
   }

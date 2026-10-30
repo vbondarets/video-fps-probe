@@ -121,6 +121,7 @@ describe('warningCodeOf', () => {
     expect(warningCodeOf("'mdat' at 3969 is truncated")).toBe('truncated-mdat');
     expect(warningCodeOf("'moov' at 87638 is truncated")).toBe('truncated-box');
     expect(warningCodeOf("'a'b?' at 0 is truncated")).toBe('truncated-box');
+    expect(warningCodeOf("'mdat' at 3969 is truncated, and more")).toBe('truncated-mdat');
     expect(warningCodeOf('ignored trailing data at 88446: not a box')).toBe('trailing-data');
     expect(warningCodeOf("ignored trailing data at 12: corrupt file: box 'abcd' at 12 is smaller than its header")).toBe('trailing-data');
   });
@@ -132,7 +133,6 @@ describe('warningCodeOf', () => {
       'truncated: 53 of 90 samples complete',
       'truncated file: the last Cluster or block ends beyond EOF',
       "corrupt file: box 'sidx' at 100 is truncated",
-      "'mdat' at 3969 is truncated, and more",
       'mdhd timescale 0',
       '',
     ]) {
@@ -160,6 +160,23 @@ describe('warningCodesOf', () => {
     const truncated = Object.entries(snapshot.results).filter(([, r]) => r.warnings.some((w) => /^'mdat' at \d+ is truncated$/.test(w)));
     expect(truncated.length).toBeGreaterThan(0);
     for (const [name, r] of truncated) expect(warningCodesOf(r), name).toContain('truncated-mdat');
+  });
+});
+
+describe('values outside the types', () => {
+  test('never throw: a value that is not a result or a warning gives internal, null or no code', () => {
+    const loose = (v: unknown) => v as Parameters<typeof errorCodeOf>[0];
+    expect(errorCodeOf(loose(null))).toBe('internal');
+    expect(errorCodeOf(loose({}))).toBe('internal');
+    expect(errorCodeOf(loose({ error: undefined }))).toBe('internal');
+    expect(errorCodeOf(loose({ error: 42 }))).toBe('internal');
+    expect(errorCodeOf(loose({ code: 'timeout', message: 'timed out' }))).toBe('internal');
+    expect(warningCodeOf(7 as unknown as string)).toBeNull();
+    expect(warningCodeOf(null as unknown as string)).toBeNull();
+    const looseResult = (v: unknown) => v as Parameters<typeof warningCodesOf>[0];
+    expect(warningCodesOf(looseResult(null))).toEqual([]);
+    expect(warningCodesOf(looseResult({}))).toEqual([]);
+    expect(warningCodesOf(looseResult({ warnings: ["'mdat' at 1 is truncated", 3], videoTracks: [null, {}, { warnings: 'x' }] }))).toEqual(['truncated-mdat']);
   });
 });
 
