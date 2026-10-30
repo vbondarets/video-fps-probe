@@ -125,6 +125,33 @@ function colrOf(buf: Buffer, box: Child): ContainerColor | null {
   return { kind, primaries: u16(0), transfer: u16(1), matrix: u16(2), fullRange };
 }
 
+export function laterColr(before: ContainerColor | null, next: ContainerColor | null): ContainerColor | null {
+  if (!next) return before;
+  return next.kind === 'nclc' && before?.fullRange != null ? { ...next, fullRange: before.fullRange } : next;
+}
+
+const MATRIX_SHIFT = [16n, 16n, 30n];
+
+export function displayMatrixOf(track: readonly number[] | null, movie: readonly number[] | null): number[] | null {
+  if (!track || track.length < 9) return null;
+  if (!movie || movie.length < 9) return [...track];
+  const out: number[] = [];
+  for (let i = 0; i < 3; i++) {
+    for (let j = 0; j < 3; j++) {
+      let sum = 0n;
+      for (let e = 0; e < 3; e++) sum += (BigInt(track[i * 3 + e]) * BigInt(movie[e * 3 + j])) >> MATRIX_SHIFT[e];
+      out.push(Number(BigInt.asIntN(32, sum)));
+    }
+  }
+  return out;
+}
+
+function movieMatrixOf(buf: Buffer, mvhd: Child | undefined): number[] | null {
+  if (!mvhd || mvhd.end - mvhd.start < 4) return null;
+  const at = mvhd.start + (buf.readUInt8(mvhd.start) === 1 ? 48 : 36);
+  return at + 36 <= mvhd.end ? Array.from({ length: 9 }, (_, i) => buf.readInt32BE(at + i * 4)) : null;
+}
+
 function sampleEntryOf(buf: Buffer, stbl: Child | undefined): SampleEntryFacts | null {
   const stsd = find(buf, stbl, 'stsd');
   const entry = stsd && stsd.start + 8 < stsd.end ? children(buf, stsd.start + 8, stsd.end)[0] : undefined;
@@ -142,7 +169,7 @@ function sampleEntryOf(buf: Buffer, stbl: Child | undefined): SampleEntryFacts |
   for (const c of children(buf, entry.start + VISUAL_FIELDS, entry.end)) {
     const body = buf.subarray(c.start, c.end);
     if (c.type === 'pasp' && body.length >= 8) facts.pasp = { num: body.readUInt32BE(0), den: body.readUInt32BE(4) };
-    else if (c.type === 'colr') facts.colr ??= colrOf(buf, c);
+    else if (c.type === 'colr') facts.colr = laterColr(facts.colr, colrOf(buf, c));
     else if (c.type === 'vpcC') {
       facts.vpcC = vpcColor(body);
       facts.config ??= vpcConfig(body);
@@ -154,7 +181,7 @@ function sampleEntryOf(buf: Buffer, stbl: Child | undefined): SampleEntryFacts |
   return facts;
 }
 
-function trackOf(buf: Buffer, trak: Child): LayoutTrack | null {
+function trackOf(buf: Buffer, trak: Child, movieMatrix: number[] | null): LayoutTrack | null {
   const tkhd = find(buf, trak, 'tkhd');
   const mdia = find(buf, trak, 'mdia');
   if (!tkhd || tkhd.start + 24 > tkhd.end || !mdia) return null;
@@ -167,6 +194,7 @@ function trackOf(buf: Buffer, trak: Child): LayoutTrack | null {
   const handler = hdlr && hdlr.start + 12 <= hdlr.end ? buf.toString('latin1', hdlr.start + 8, hdlr.start + 12) : null;
   const matrixAt = tkhd.start + (v1 ? 52 : 40);
   const sized = matrixAt + 44 <= tkhd.end;
+  const matrix = sized ? Array.from({ length: 9 }, (_, i) => buf.readInt32BE(matrixAt + i * 4)) : null;
   return {
     id,
     handler,
@@ -177,7 +205,8 @@ function trackOf(buf: Buffer, trak: Child): LayoutTrack | null {
     enabled: (buf.readUIntBE(tkhd.start + 1, 3) & 1) === 1,
     tkhdWidth: sized ? buf.readUInt32BE(matrixAt + 36) >>> 16 : 0,
     tkhdHeight: sized ? buf.readUInt32BE(matrixAt + 40) >>> 16 : 0,
-    matrix: sized ? Array.from({ length: 9 }, (_, i) => buf.readInt32BE(matrixAt + i * 4)) : null,
+    matrix,
+    displayMatrix: displayMatrixOf(matrix, movieMatrix),
     entry: handler === 'vide' ? sampleEntryOf(buf, stbl) : null,
   };
 }
@@ -265,10 +294,12 @@ async function readMoov(handle: FileHandle, offset: number, size: number): Promi
   await handle.read(buf, 0, size, offset);
   const top = children(buf, 0, size)[0];
   if (!top || top.type !== 'moov') return { movieDurationSec: null, fragmentDurationSec: null, tracks: [], hasMvex: false, trex: new Map() };
-  const movie = timing(buf, find(buf, top, 'mvhd'), 20, 12);
+  const mvhd = find(buf, top, 'mvhd');
+  const movie = timing(buf, mvhd, 20, 12);
+  const movieMatrix = movieMatrixOf(buf, mvhd);
   const tracks = children(buf, top.start, top.end)
     .filter((c) => c.type === 'trak')
-    .map((t) => trackOf(buf, t))
+    .map((t) => trackOf(buf, t, movieMatrix))
     .filter((t): t is LayoutTrack => t !== null);
   return {
     movieDurationSec: movie && movie.timescale > 0 ? movie.duration / movie.timescale : null,

@@ -59,7 +59,7 @@ const RULE = {
   isVfr: 'Equal to the reference VFR flag (shared rule, tolerance max(1 tick, 0.5% of the median delta))',
   duplicates: 'Equal to the reference count of deltas that are 0 or less',
   medianFrameInterval: 'Equal rational vs medianDeltaTicks x time_base on exact scans, within-tol when fewer than 2 deltas remain after the tail and the app kept the tail, which the reference never keeps, and n/a for probe and header scans',
-  sampleAspectRatio: 'Equal ratio vs sample_aspect_ratio. No ratio is exact against 1:1 or N/A, and a built-in deviation against another ratio only when an independent scan finds no pasp, tkhd size, non-uniform tkhd matrix or Display element',
+  sampleAspectRatio: 'Equal ratio vs sample_aspect_ratio. No ratio is exact against 1:1 or N/A, and a built-in deviation against another ratio only when an independent scan finds no pasp, tkhd size, non-uniform tkhd matrix (times the mvhd matrix) or Matroska display size (DisplayWidth and DisplayHeight with a DisplayUnit below 4, unit 0 defaulting to the pixel size)',
   displayAspectRatio: 'width x SAR over height vs display_aspect_ratio, with the display size equal to round(width x SAR) by height. No ratio is judged as for sampleAspectRatio',
   enabled: 'Equal to the tkhd enabled flag (MP4 and MOV) or FlagEnabled (Matroska) of an independent scan. ffprobe disposition.default is shown for information',
   color: 'Never wrong, sometimes silent: a value equals the ffprobe name, none against none is exact, and none against a value is a built-in deviation only when ffprobe takes it from a bitstream the library does not read (no colr, vpcC or Colour that declares it, and no SPS in an H.264 or HEVC codec configuration)',
@@ -668,9 +668,15 @@ export function containerDeclaresSar(facts: TrackFacts): boolean | null {
     if (!e) return null;
     if (e.pasp && e.pasp.num > 0 && e.pasp.den > 0) return true;
     if (iso.tkhdWidth && iso.tkhdHeight && (iso.tkhdWidth !== e.width || iso.tkhdHeight !== e.height)) return true;
-    return nonUniformMatrix(iso.matrix);
+    return !!iso.tkhdWidth && !!iso.tkhdHeight && nonUniformMatrix(iso.displayMatrix ?? iso.matrix);
   }
-  if (mkv) return (mkv.displayWidth ?? null) !== null || (mkv.displayHeight ?? null) !== null;
+  if (mkv) {
+    const unit = mkv.displayUnit ?? 0;
+    if (unit >= 4) return false;
+    const width = mkv.displayWidth ?? (unit === 0 ? (mkv.pixelWidth ?? null) : null);
+    const height = mkv.displayHeight ?? (unit === 0 ? (mkv.pixelHeight ?? null) : null);
+    return width !== null && height !== null && width > 0 && height > 0;
+  }
   return null;
 }
 

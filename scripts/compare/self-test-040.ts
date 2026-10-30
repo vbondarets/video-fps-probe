@@ -1,6 +1,6 @@
 import { statSync } from 'node:fs';
 import type { FileResult, Rational, VideoTrackResult } from '../../src/core/types.ts';
-import { expectedLayout, scanIsoBmffLayout, scanMatroskaLayout } from './layout.ts';
+import { displayMatrixOf, expectedLayout, laterColr, scanIsoBmffLayout, scanMatroskaLayout } from './layout.ts';
 import { PROFILE_NOT_READ, PROFILE_TABLE, ffmpegProfileName, profileNamesOf } from './profiles.ts';
 import { bitDepthOfPixFmt, parseColonRatio, parseRef, type RefFile, type RefStream } from './ref.ts';
 import { BITSTREAM_COLOR, BITSTREAM_SAR, evaluate, matroskaTrackOf, type EvaluateInput, type Evaluation } from './rules.ts';
@@ -116,7 +116,22 @@ export function selfTest040(expectEq: ExpectEq, kit: SelfTestKit): void {
   const mkvSar = (fields: TrackFields040, ff: string, layout: FileLayout) =>
     run({ info: MKV_INFO, ref: refFile([refStream({ sampleAspectRatio: parseColonRatio(ff) })], { formatName: 'matroska,webm' }), result: appResult([track(fields)], { container: 'webm', scan: 'exact' }), layout });
   expectEq('sar: Matroska Display elements declare a ratio', verdict(mkvSar({ sampleAspectRatio: null }, '4:3', mkvLayout({ displayWidth: 16, displayHeight: 9, displayUnit: 3 })), 'sampleAspectRatio'), 'mismatch');
-  expectEq('sar: Matroska without Display elements', verdict(mkvSar({ sampleAspectRatio: null }, '4:3', mkvLayout()), 'sampleAspectRatio'), 'known-deviation');
+  expectEq('sar: Matroska without Display elements and without a pixel size', verdict(mkvSar({ sampleAspectRatio: null }, '4:3', mkvLayout()), 'sampleAspectRatio'), 'known-deviation');
+  expectEq('sar: Matroska unit 0 without Display elements takes the pixel size', verdict(mkvSar({ sampleAspectRatio: null }, '4:3', mkvLayout({ pixelWidth: 160, pixelHeight: 120 })), 'sampleAspectRatio'), 'mismatch');
+  expectEq('sar: Matroska unit 3 with one Display element declares nothing', verdict(mkvSar({ sampleAspectRatio: null }, '4:3', mkvLayout({ pixelWidth: 160, pixelHeight: 120, displayWidth: 16, displayUnit: 3 })), 'sampleAspectRatio'), 'known-deviation');
+  expectEq('sar: Matroska unit 4 declares nothing', verdict(mkvSar({ sampleAspectRatio: null }, '4:3', mkvLayout({ pixelWidth: 160, pixelHeight: 120, displayWidth: 16, displayHeight: 9, displayUnit: 4 })), 'sampleAspectRatio'), 'known-deviation');
+  expectEq('sar: Matroska Display elements of 0 declare nothing', verdict(mkvSar({ sampleAspectRatio: null }, '4:3', mkvLayout({ pixelWidth: 160, pixelHeight: 120, displayWidth: 0, displayHeight: 9 })), 'sampleAspectRatio'), 'known-deviation');
+  const half = [32768, 0, 0, 0, 65536, 0, 0, 0, 1 << 30];
+  const double = [131072, 0, 0, 0, 65536, 0, 0, 0, 1 << 30];
+  expectEq('sar: the mvhd matrix multiplies into the track matrix', displayMatrixOf(double, half)?.join(' '), '65536 0 0 0 65536 0 0 0 1073741824');
+  expectEq('sar: a mvhd scale over an identity tkhd declares a ratio', verdict(sar({ sampleAspectRatio: null }, '2:1', isoLayout({ displayMatrix: displayMatrixOf([65536, 0, 0, 0, 65536, 0, 0, 0, 1 << 30], double) })), 'sampleAspectRatio'), 'mismatch');
+  expectEq('sar: a mvhd scale that undoes the tkhd scale declares nothing', verdict(sar({ sampleAspectRatio: null }, '4:3', isoLayout({ matrix: double, displayMatrix: displayMatrixOf(double, half) })), 'sampleAspectRatio'), 'known-deviation');
+  expectEq('sar: a matrix scale with a tkhd size of 0 declares nothing', verdict(sar({ sampleAspectRatio: null }, '4:3', isoLayout({ matrix: double, tkhdWidth: 0, tkhdHeight: 0 })), 'sampleAspectRatio'), 'known-deviation');
+  const lastNclx = { kind: 'nclx' as const, primaries: 9, transfer: 16, matrix: 9, fullRange: true };
+  const lastNclc = { kind: 'nclc' as const, primaries: 1, transfer: 1, matrix: 1, fullRange: null };
+  expectEq('colr: the last nclx or nclc colr gives the codes', JSON.stringify(laterColr(lastNclx, { ...lastNclx, primaries: 1 })), JSON.stringify({ ...lastNclx, primaries: 1 }));
+  expectEq('colr: a later nclc keeps the range of an earlier nclx', JSON.stringify(laterColr(lastNclx, lastNclc)), JSON.stringify({ ...lastNclc, fullRange: true }));
+  expectEq('colr: a colr of another type changes nothing', laterColr(lastNclx, null), lastNclx);
 
   const dar = (fields: TrackFields040, ff: string | null) => mp4(fields, { width: 160, height: 120, sampleAspectRatio: parseColonRatio('4:3'), displayAspectRatio: parseColonRatio(ff) }, isoLayout(), { width: 160, height: 120 });
   expectEq('dar: 4:3 pixels on 160x120', verdict(dar({ sampleAspectRatio: { num: 4, den: 3 }, displayWidth: 213, displayHeight: 120 }, '16:9'), 'displayAspectRatio'), 'exact');

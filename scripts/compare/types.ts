@@ -117,6 +117,7 @@ export interface LayoutTrack {
   tkhdWidth?: number;
   tkhdHeight?: number;
   matrix?: number[] | null;
+  displayMatrix?: number[] | null;
   entry?: SampleEntryFacts | null;
 }
 
