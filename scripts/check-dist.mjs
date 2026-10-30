@@ -22,7 +22,7 @@ export const SPLIT_WORKERS = {
   'worker/own-isobmff.worker.js': ['core/matroska/', 'core/rfps.js', 'core/analyze.js'],
   'worker/own-matroska.worker.js': ['core/isobmff/', 'core/analyze.js'],
 };
-export const HEADER_CLOSURE = { 'header/index.js': ['core/isobmff/index.js', 'core/stats.js', 'core/rfps.js'] };
+export const HEADER_CLOSURE = { 'header/index.js': ['core/isobmff/index.js', 'core/stats.js', 'core/rfps.js', 'core/analyze.js', 'core/matroska/', 'client/', 'worker/', 'engines/', 'plugins/'] };
 const WORKER_CALL = /\bnew\s+(?:Worker|SharedWorker)\s*\(/g;
 const WORKER_LITERAL = /^new\s+(?:Worker|SharedWorker)\s*\(\s*new\s+URL\s*\(\s*(?:'([^']+)'|"([^"]+)")\s*,\s*import\.meta\.url\s*\)/;
 const WORKER_ASSET = /^(?:worker\/[^/]+\.worker\.js|standalone\/.+)$/;
@@ -255,7 +255,7 @@ export function checkDist({ pack = true, ssr = true, repo = REPO_ROOT } = {}) {
   const edges = graph(files, texts);
   const has = (f) => texts.has(f);
   for (const root of PURE_ENTRIES.filter(has)) for (const edge of edges.get(root) ?? []) fail(`${root}: imports ${edge.specifier} at run time, a main-thread rule entry imports nothing`);
-  const hygieneRoots = ['client/index.js', 'client/lazy.js', 'react/index.js', 'plugins/rvfc.js', 'worker/runtime.js', ...Object.keys(SPLIT_WORKERS), ...files.filter((f) => /^engines\/[^/]+\.js$/.test(f))].filter(has);
+  const hygieneRoots = ['client/index.js', 'client/lazy.js', 'react/index.js', 'plugins/rvfc.js', 'worker/runtime.js', ...Object.keys(SPLIT_WORKERS), ...Object.keys(HEADER_CLOSURE), ...files.filter((f) => /^engines\/[^/]+\.js$/.test(f))].filter(has);
   for (const root of hygieneRoots) {
     const reached = closure(edges, root, { dynamic: true }).files;
     for (const host of LITERAL_HOSTS) if (reached.has(host)) fail(`literal hygiene: ${root} reaches ${host}`);
@@ -273,7 +273,7 @@ export function checkDist({ pack = true, ssr = true, repo = REPO_ROOT } = {}) {
   }
 
   for (const [root, forbidden] of Object.entries(HEADER_CLOSURE).filter(([root]) => has(root))) {
-    for (const f of closure(edges, root, { dynamic: true }).files) if (forbidden.includes(f)) fail(`header closure: ${root} reaches ${f}`);
+    for (const f of closure(edges, root, { dynamic: true }).files) if (forbidden.some((p) => (p.endsWith('/') ? f.startsWith(p) : f === p))) fail(`header closure: ${root} reaches ${f}`);
   }
 
   const isolationRoots = ['index.js', 'lazy.js', 'react/index.js', ...files.filter((f) => /^(?:client|plugins)\/[^/]+\.js$/.test(f))].filter(has);
@@ -377,6 +377,13 @@ export function runSelfTest() {
     expectProblem('a header entry that reaches the full ISO BMFF parser fails', problemsOf({ ...header, 'core/isobmff/build.js': "import './index.js';\nexport const build = () => null;\n" }), 'header closure: header/index.js reaches core/isobmff/index.js', true);
     expectProblem('a header entry that reaches the statistics through import() fails', problemsOf({ ...header, 'core/isobmff/header.js': "export const walk = () => import('../stats.js');\n" }), 'header closure: header/index.js reaches core/stats.js', true);
     expectProblem('a header entry that reaches the ffprobe estimate fails', problemsOf({ ...header, 'core/isobmff/build.js': "import '../rfps.js';\nexport const build = () => null;\n" }), 'header closure: header/index.js reaches core/rfps.js', true);
+    const viaLiteral = problemsOf({ ...header, ...assets, 'plugins/own.js': "export const start = () => new Worker(new URL('../worker/own.worker.js', import.meta.url), { type: 'module' });\n", 'core/isobmff/build.js': "import '../../plugins/own.js';\nexport const build = () => null;\n" });
+    expectProblem('a header entry that reaches the worker literal host fails the literal hygiene', viaLiteral, 'literal hygiene: header/index.js reaches plugins/own.js', true);
+    expectProblem('a header entry that reaches the worker literal host fails the header closure', viaLiteral, 'header closure: header/index.js reaches plugins/own.js', true);
+    expectProblem('a header entry that imports an engine through import() fails', problemsOf({ ...header, 'engines/mp4box.js': 'export const e = 1;\n', 'core/isobmff/build.js': "export const build = () => import('../../engines/mp4box.js');\n" }), 'header closure: header/index.js reaches engines/mp4box.js', true);
+    expectProblem('a header entry that reaches the Matroska parser fails', problemsOf({ ...header, ...serve, ...mkvParser, 'core/isobmff/build.js': "import '../matroska/index.js';\nexport const build = () => null;\n" }), 'header closure: header/index.js reaches core/matroska/index.js', true);
+    expectProblem('a header entry that reaches the probe client fails', problemsOf({ ...header, 'client/index.js': 'export const c = 1;\n', 'header/index.js': "import '../core/isobmff/header.js';\nimport '../client/index.js';\nexport const analyzeHeader = () => null;\n" }), 'header closure: header/index.js reaches client/index.js', true);
+    expectProblem('a header entry that reaches the parser loaders of analyze.js fails', problemsOf({ ...header, ...serve, 'core/isobmff/header.js': "import '../analyze.js';\nexport const walk = () => null;\n" }), 'header closure: header/index.js reaches core/analyze.js', true);
 
     const react = { 'react/index.js': "'use client';\nimport { useMemo } from 'react';\nexport const x = useMemo;\n", 'react/index.d.ts': "import type { ReactNode } from 'react';\nexport type X = ReactNode;\n" };
     expectProblem('react/ importing react with use client first passes', problemsOf(react), 'react', false);
