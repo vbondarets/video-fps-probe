@@ -4,11 +4,32 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { normalizedName } from '../../scripts/size-matrix.mjs';
 import { REPO_ROOT } from '../helpers/fixtures.ts';
 
+interface Sized {
+  gzip: number;
+  normalized: { gzip: number };
+}
+
+interface MatrixFile extends Sized {
+  file: string;
+  worker: string | null;
+  class: string;
+  normalized: { file: string; gzip: number; entry: boolean; holds: string[] };
+}
+
+interface Fixture {
+  name: string;
+  metrics: Record<string, number | null>;
+  normalized: { metrics: Record<string, number | null> };
+  budgets?: { key: string; limit: number }[];
+  files: MatrixFile[];
+}
+
 interface Matrix {
-  fixtures: { name: string; metrics: Record<string, number | null>; budgets?: { key: string; limit: number }[]; files?: { file: string; worker: string | null; class: string }[] }[];
-  standalone: { file: string; gzip: number; limit?: number }[];
+  fixtures: Fixture[];
+  standalone: (Sized & { file: string; limit?: number })[];
 }
 
 interface Group {
@@ -20,67 +41,111 @@ interface Group {
 
 interface GateConfig {
   baselineSha256: string;
+  normalizedBaseline: string;
+  normalizedBaselineSha256: string;
   report: string;
   stageBase: string;
   stageBaseSha256: string;
   stage: number;
+  files: { growth: Record<string, Record<string, number>> };
   groups: Group[];
   [key: string]: unknown;
 }
 
 const BASELINE_SHA256 = '1b6c24749acae07a3fea4b2477d8c88517d303c617f629c6c3f8b179db6f5fe2';
+const NORMALIZED_SHA256 = 'e1b75f2135ba0f951f9bb214a3b7479e271ae8a2e8d7645ba7f3cde8368f4fcd';
 const GATE = join(REPO_ROOT, 'scripts', 'size-gate.mjs');
 const CONFIG = join(REPO_ROOT, 'scripts', 'size-gate.json');
-const BASELINE = join(REPO_ROOT, 'fixtures', 'snapshots', 'size-matrix-v0.3.0.json');
+const SNAPSHOTS = join(REPO_ROOT, 'fixtures', 'snapshots');
+const BASELINE = join(SNAPSHOTS, 'size-matrix-v0.3.0.json');
+const NORMALIZED = join(SNAPSHOTS, 'size-matrix-v0.3.0-normalized.json');
 const hasTag = spawnSync('git', ['rev-parse', '--verify', '--quiet', 'v0.3.0^{commit}'], { cwd: REPO_ROOT }).status === 0;
 const shallow = spawnSync('git', ['rev-parse', '--is-shallow-repository'], { cwd: REPO_ROOT, encoding: 'utf8' });
 const fullHistory = shallow.status === 0 && shallow.stdout.trim() === 'false';
 const sha256 = (bytes: Buffer | string) => createHash('sha256').update(bytes).digest('hex');
+const rawPart = (text: string) => `${JSON.stringify(JSON.parse(text), (key: string, value: unknown) => (key === 'normalized' ? undefined : value), 2)}\n`;
+const fmt = (n: number) => n.toLocaleString('en-US');
+const signed = (n: number) => `${n > 0 ? '+' : ''}${fmt(n)}`;
+const fileKey = (x: MatrixFile) => `${x.normalized.file} (${x.worker ?? 'page'})`;
+const failures = (err: string) => err.split('\n').filter((l) => l.startsWith('FAIL '));
+const failedRow = (line: string) => line.slice(5, line.indexOf(': '));
 let dir = '';
 let configs = 0;
+
+const template = () => JSON.parse(readFileSync(NORMALIZED, 'utf8')) as Matrix;
+const START = template();
+const fixtureOf = (m: Matrix, name: string) => m.fixtures.find((f) => f.name === name)!;
+const norm = (config: string, key: string) => fixtureOf(START, config).normalized.metrics[key]!;
+const raw = (config: string, key: string) => fixtureOf(START, config).metrics[key]!;
 
 function run(args: string[], cwd = REPO_ROOT): { status: number | null; out: string; err: string } {
   const r = spawnSync(process.execPath, [GATE, ...args], { cwd, encoding: 'utf8' });
   return { status: r.status, out: r.stdout, err: r.stderr };
 }
 
-function raised(name: string, edit: (m: Matrix) => void): string {
-  const m = JSON.parse(readFileSync(BASELINE, 'utf8')) as Matrix;
-  edit(m);
+function written(name: string, m: unknown): string {
   const path = join(dir, name);
   writeFileSync(path, JSON.stringify(m));
   return path;
 }
 
-function configAt(stage: number, stageBase = BASELINE, edit: (c: GateConfig) => void = () => {}): string {
+function raised(name: string, edit: (m: Matrix) => void): string {
+  const m = template();
+  edit(m);
+  return written(name, m);
+}
+
+function configAt(stage: number, stageBase = NORMALIZED, edit: (c: GateConfig) => void = () => {}): string {
   const c = JSON.parse(readFileSync(CONFIG, 'utf8')) as GateConfig;
   c.stage = stage;
   c.stageBase = stageBase;
   c.stageBaseSha256 = sha256(readFileSync(stageBase));
   edit(c);
-  const path = join(dir, `config-${++configs}.json`);
-  writeFileSync(path, JSON.stringify(c));
-  return path;
+  return written(`config-${++configs}.json`, c);
 }
 
-const at = (stage: number, report: string, stageBase = BASELINE) => run(['--config', configAt(stage, stageBase), '--report', report]);
+const at = (stage: number, report: string, stageBase = NORMALIZED) => run(['--config', configAt(stage, stageBase), '--report', report]);
+
+const grow = (x: Sized, by: number) => {
+  x.gzip += by;
+  x.normalized.gzip += by;
+};
 
 const metric = (m: Matrix, config: string, key: string, by: number) => {
-  const f = m.fixtures.find((x) => x.name === config)!;
+  const f = fixtureOf(m, config);
   f.metrics[key] = (f.metrics[key] ?? 0) + by;
+  f.normalized.metrics[key] = (f.normalized.metrics[key] ?? 0) + by;
 };
 
-const ONE_FILE_ISO_WORKERS = new Set(['own.worker', 'own-isobmff.worker']);
-const isoCopies = (f: Matrix['fixtures'][number]) => (f.files ?? []).filter((x) => x.class === 'isobmff' || (x.class === 'shared' && x.worker !== null && ONE_FILE_ISO_WORKERS.has(x.worker))).length;
+const holding = (f: Fixture, kind: string) => f.files.filter((x) => !x.normalized.entry && x.normalized.holds.includes(kind));
 
-const isoParser = (m: Matrix, by: number) => {
+const FAMILIES = {
+  isobmff: { rows: ['isobmff', 'firstMp4', 'firstMp4Summary', 'allOwn'], oneFile: 'firstMkv', standalone: ['own.worker.js', 'own-isobmff.worker.js'] },
+  matroska: { rows: ['matroska', 'firstMkv', 'allOwn'], oneFile: 'firstMp4', standalone: ['own.worker.js', 'own-matroska.worker.js'] },
+} as const;
+
+const parser = (m: Matrix, family: keyof typeof FAMILIES, by: number) => {
+  const p = FAMILIES[family];
   for (const f of m.fixtures) {
-    for (const key of ['isobmff', 'firstMp4', 'firstMp4Summary', 'allOwn']) if (typeof f.metrics[key] === 'number') f.metrics[key] += by;
-    f.metrics.lazyTotal = f.metrics.lazyTotal! + by * isoCopies(f);
-    if (f.name === 'standalone-url') f.metrics.firstMkv = f.metrics.firstMkv! + by;
+    for (const key of p.rows) if (typeof f.metrics[key] === 'number') metric(m, f.name, key, by);
+    if (f.name === 'standalone-url') metric(m, f.name, p.oneFile, by);
+    const copies = holding(f, family);
+    metric(m, f.name, 'lazyTotal', by * copies.length);
+    for (const x of copies) grow(x, by);
   }
-  for (const s of m.standalone) if (s.file !== 'own-matroska.worker.js') s.gzip += by;
+  for (const s of m.standalone) if ((p.standalone as readonly string[]).includes(s.file)) grow(s, by);
 };
+
+const isoParser = (m: Matrix, by: number) => parser(m, 'isobmff', by);
+
+const parserRows = (m: Matrix, family: keyof typeof FAMILIES) => [
+  ...m.fixtures.flatMap((f) => [
+    ...[...FAMILIES[family].rows, 'lazyTotal'].filter((k) => typeof f.metrics[k] === 'number' && (k !== 'lazyTotal' || holding(f, family).length > 0)).map((k) => `${f.name}:${k}`),
+    ...(f.name === 'standalone-url' ? [`standalone-url:${FAMILIES[family].oneFile}`] : []),
+  ]),
+  ...m.standalone.filter((s) => (FAMILIES[family].standalone as readonly string[]).includes(s.file)).map((s) => `standalone:${s.file}`),
+];
+const parserFiles = (m: Matrix, family: string) => m.fixtures.flatMap((f) => holding(f, family).map((x) => `${f.name} file ${fileKey(x)}`));
 
 function committed(rev: string, path: string): Buffer | null {
   const r = spawnSync('git', ['show', `${rev}:${path}`], { cwd: REPO_ROOT, encoding: 'buffer' });
@@ -109,10 +174,21 @@ describe('size gate against the 0.3.0 baseline', () => {
     if (dir) rmSync(dir, { recursive: true, force: true });
   });
 
-  test('the baseline is the pinned 0.3.0 report', () => {
+  test('the baselines are the pinned 0.3.0 reports', () => {
     expect(sha256(readFileSync(BASELINE))).toBe(BASELINE_SHA256);
+    expect(sha256(readFileSync(NORMALIZED))).toBe(NORMALIZED_SHA256);
     const config = JSON.parse(readFileSync(CONFIG, 'utf8')) as GateConfig;
     expect(config.baselineSha256).toBe(BASELINE_SHA256);
+    expect(join(REPO_ROOT, config.normalizedBaseline)).toBe(NORMALIZED);
+    expect(config.normalizedBaselineSha256).toBe(NORMALIZED_SHA256);
+  });
+
+  test('the normalized baseline is the 0.3.0 report with normalized sizes', () => {
+    expect(rawPart(readFileSync(NORMALIZED, 'utf8'))).toBe(readFileSync(BASELINE, 'utf8'));
+    for (const f of START.fixtures) {
+      expect(Object.keys(f.normalized.metrics), f.name).toEqual(Object.keys(f.metrics));
+      for (const x of f.files) expect(x.normalized.file, x.file).toBe(normalizedName(x.file));
+    }
   });
 
   test.skipIf(!hasTag)('the baseline is the report of tag v0.3.0 byte for byte', () => {
@@ -126,7 +202,10 @@ describe('size gate against the 0.3.0 baseline', () => {
     const rev = stageBaseCommit(config.stage);
     const report = committed(rev, 'report/size-matrix.json');
     expect(report, `report/size-matrix.json at ${rev}`).not.toBeNull();
-    expect(Buffer.compare(report!, readFileSync(join(REPO_ROOT, config.stageBase))), `${config.stageBase} against report/size-matrix.json at ${rev}`).toBe(0);
+    const base = readFileSync(join(REPO_ROOT, config.stageBase));
+    const text = report!.toString('utf8');
+    if (rawPart(text) !== text) expect(Buffer.compare(report!, base), `${config.stageBase} against report/size-matrix.json at ${rev}`).toBe(0);
+    else expect(rawPart(base.toString('utf8')), `${config.stageBase} without its normalized sizes against report/size-matrix.json at ${rev}`).toBe(text);
   });
 
   test('every pinned cap is at most the budget of its row in the committed report', () => {
@@ -144,30 +223,54 @@ describe('size gate against the 0.3.0 baseline', () => {
     }
   });
 
-  test('passes the committed report', () => {
+  test('passes the committed report with every row at its stage base', () => {
     const r = run([]);
     expect(r.status, r.err).toBe(0);
-    expect(r.out).toMatch(/size gate: 98 gated rows within the stage \d allowances, shares and caps/);
+    expect(r.out).toMatch(/size gate: 98 gated rows and 292 files within the stage \d allowances, shares and caps/);
+    expect(r.out).toContain('0 of them changed since the stage base or failed');
   });
 
   test('passes the baseline itself at every stage', () => {
     for (const stage of [1, 2, 3, 4, 5, 6]) {
-      const r = at(stage, BASELINE);
+      const r = at(stage, NORMALIZED);
       expect(r.status, `stage ${stage}: ${r.err}`).toBe(0);
     }
   });
 
-  test('fails a baseline that is not the pinned snapshot', () => {
-    const r = run(['--config', configAt(1), '--baseline', raised('edited-baseline.json', (m) => metric(m, 'custom', 'firstMp4', 300))]);
+  test('fails a baseline or a normalized baseline that is not the pinned snapshot', () => {
+    const edited = JSON.parse(readFileSync(BASELINE, 'utf8')) as Matrix;
+    fixtureOf(edited, 'custom').metrics.firstMp4! += 300;
+    const r = run(['--config', configAt(1), '--baseline', written('edited-baseline.json', edited)]);
     expect(r.status).toBe(1);
     expect(r.err).toContain('the configuration pins 1b6c2474');
     expect(r.err).toContain('nothing was gated');
+    const normalized = raised('edited-normalized.json', (m) => metric(m, 'custom', 'firstMp4', 300));
+    const n = run(['--config', configAt(1), '--normalized-baseline', normalized]);
+    expect(n.status).toBe(1);
+    expect(n.err).toContain('the configuration pins e1b75f21');
+    const other = run([
+      '--config',
+      configAt(1, NORMALIZED, (c) => {
+        c.normalizedBaseline = normalized;
+        c.normalizedBaselineSha256 = sha256(readFileSync(normalized));
+      }),
+    ]);
+    expect(other.status).toBe(1);
+    expect(other.err).toContain('without its normalized keys is not the baseline');
+  });
+
+  test('fails a measured report without normalized sizes', () => {
+    const r = at(1, BASELINE);
+    expect(r.status).toBe(1);
+    expect(r.err).toContain('the measured report has no normalized sizes for default, zero-config');
+    expect(r.err).toContain('measure it with the current scripts/size-matrix.mjs');
   });
 
   test('fails a first MP4 row one byte above its stage 1 share', () => {
     const r = at(1, raised('one-byte.json', (m) => metric(m, 'zero-config', 'firstMp4', 1)));
     expect(r.status).toBe(1);
-    expect(r.err).toContain('zero-config:firstMp4: 24,473 B is 1 B above the 0.3.0 baseline of 24,472 B, stage 1 allows 0 B');
+    const n = norm('zero-config', 'firstMp4');
+    expect(r.err).toContain(`zero-config:firstMp4: ${fmt(n + 1)} B is 1 B above the 0.3.0 baseline of ${fmt(n)} B, stage 1 allows 0 B`);
   });
 
   test('applies the cumulative share of a later stage', () => {
@@ -175,17 +278,20 @@ describe('size gate against the 0.3.0 baseline', () => {
     expect(by(390).status).toBe(0);
     const over = by(391);
     expect(over.status).toBe(1);
-    expect(over.err).toContain('default:firstMp4: 23,126 B is 391 B above the 0.3.0 baseline of 22,735 B, stage 2 allows 390 B');
+    const n = norm('default', 'firstMp4');
+    expect(over.err).toContain(`default:firstMp4: ${fmt(n + 391)} B is 391 B above the 0.3.0 baseline of ${fmt(n)} B, stage 2 allows 390 B`);
   });
 
   test('bounds the growth over the stage base by the share of the stage', () => {
     const base = raised('stage-2-end.json', (m) => metric(m, 'zero-config', 'firstMp4', 100));
     const within = at(3, raised('stage-3-ok.json', (m) => metric(m, 'zero-config', 'firstMp4', 110)), base);
     expect(within.status, within.err).toBe(0);
-    expect(within.out).toMatch(/zero-config:firstMp4 +24,472 +24,572 +24,582 +\+110 +400 +\+10 +10 /);
+    const n = norm('zero-config', 'firstMp4');
+    const r = raw('zero-config', 'firstMp4');
+    expect(within.out).toMatch(new RegExp(`zero-config:firstMp4 +${fmt(n)} +${fmt(n + 100)} +${fmt(n + 110)} +\\+110 +400 +\\+10 +10 +${fmt(r + 110)} +24,950 +ok`));
     const over = at(3, raised('stage-3-over.json', (m) => metric(m, 'zero-config', 'firstMp4', 111)), base);
     expect(over.status).toBe(1);
-    expect(over.err).toContain('zero-config:firstMp4: 24,583 B is 11 B above the stage base of 24,572 B, the share of stage 3 is 10 B');
+    expect(over.err).toContain(`zero-config:firstMp4: ${fmt(n + 111)} B is 11 B above the stage base of ${fmt(n + 100)} B, the share of stage 3 is 10 B`);
   });
 
   test('fails a later stage that spends more than its own share although the cumulative growth fits', () => {
@@ -194,34 +300,33 @@ describe('size gate against the 0.3.0 baseline', () => {
     });
     const r = at(3, raised('report-390.json', (m) => metric(m, 'default', 'firstMp4', 390)), base);
     expect(r.status).toBe(1);
-    expect(r.err).toContain('default:firstMp4: 23,125 B is 290 B above the stage base of 22,835 B, the share of stage 3 is 10 B');
+    const n = norm('default', 'firstMp4');
+    expect(r.err).toContain(`default:firstMp4: ${fmt(n + 390)} B is 290 B above the stage base of ${fmt(n + 100)} B, the share of stage 3 is 10 B`);
     expect(r.err).not.toContain('above the 0.3.0 baseline');
   });
 
-  test('lets the ISO BMFF parser spend the stage 3 share on every row that holds it', () => {
+  test('lets the ISO BMFF parser spend the stage 3 share on every row and file that holds it', () => {
     const base = raised('stage-2-parser.json', (m) => isoParser(m, 390));
     const stage3End = raised('stage-3-parser-ok.json', (m) => isoParser(m, 400));
     const within = at(3, stage3End, base);
     expect(within.status, within.err).toBe(0);
-    expect(within.out).toMatch(/default:lazyTotal +89,206 +89,986 +90,006 +\+800 +1,200 +\+20 +20 +92,000 +ok/);
+    const lazy = norm('default', 'lazyTotal');
+    expect(within.out).toMatch(new RegExp(`default:lazyTotal +${fmt(lazy)} +${fmt(lazy + 780)} +${fmt(lazy + 800)} +\\+800 +1,200 +\\+20 +20 +${fmt(raw('default', 'lazyTotal') + 800)} +92,000 +ok`));
     const over = at(3, raised('stage-3-parser-over.json', (m) => isoParser(m, 401)), base);
     expect(over.status).toBe(1);
-    expect(over.err).toContain('default:lazyTotal: 90,008 B is 22 B above the stage base of 89,986 B, the share of stage 3 is 20 B');
-    expect(over.err).toContain('all:lazyTotal: 366,173 B is 44 B above the stage base of 366,129 B, the share of stage 3 is 40 B');
-    const matrix = JSON.parse(readFileSync(BASELINE, 'utf8')) as Matrix;
-    const parserRows = [
-      ...matrix.fixtures.flatMap((f) => [...['isobmff', 'firstMp4', 'firstMp4Summary', 'allOwn', 'lazyTotal'].filter((k) => typeof f.metrics[k] === 'number').map((k) => `${f.name}:${k}`), ...(f.name === 'standalone-url' ? ['standalone-url:firstMkv'] : [])]),
-      ...matrix.standalone.filter((s) => s.file !== 'own-matroska.worker.js').map((s) => `standalone:${s.file}`),
-    ];
-    const failed = new Set(over.err.split('\n').filter((l) => l.startsWith('FAIL ')).map((l) => l.slice(5, l.indexOf(': '))));
-    expect([...failed].sort()).toEqual(parserRows.sort());
+    expect(over.err).toContain(`default:lazyTotal: ${fmt(lazy + 802)} B is 22 B above the stage base of ${fmt(lazy + 780)} B, the share of stage 3 is 20 B`);
+    const all = norm('all', 'lazyTotal');
+    expect(over.err).toContain(`all:lazyTotal: ${fmt(all + 1604)} B is 44 B above the stage base of ${fmt(all + 1560)} B, the share of stage 3 is 40 B`);
+    expect(over.err).toMatch(/FAIL default file assets\/own-isobmff\.worker-00000000\.js \(own-isobmff\.worker\): [\d,]+ B is 401 B above the 0\.3\.0 baseline of [\d,]+ B, stage 3 allows 400 B for isobmff \(files\)/);
+    const failed = new Set(failures(over.err).map(failedRow));
+    expect([...failed].sort()).toEqual([...parserRows(START, 'isobmff'), ...parserFiles(START, 'isobmff')].sort());
     expect(at(4, stage3End, stage3End).status).toBe(0);
     const stage4 = at(4, raised('stage-4-parser.json', (m) => isoParser(m, 401)), stage3End);
     expect(stage4.status).toBe(1);
-    expect(stage4.err).toContain('default:lazyTotal: 90,008 B differs from the stage base of 90,006 B by +2 B, and stage 4 keeps it byte-identical');
+    expect(stage4.err).toContain(`default:lazyTotal: ${fmt(lazy + 802)} B differs from the stage base of ${fmt(lazy + 800)} B by +2 B, and its share in stage 4 is 0`);
   });
 
-  test('keeps a row that holds no ISO BMFF parser byte-identical while the parser spends the stage 3 share', () => {
+  test('keeps a row that holds no ISO BMFF parser identical while the parser spends the stage 3 share', () => {
     const base = raised('stage-2-parser-base.json', (m) => isoParser(m, 390));
     for (const [config, key] of [
       ['default', 'client'],
@@ -239,21 +344,69 @@ describe('size gate against the 0.3.0 baseline', () => {
         base,
       );
       expect(r.status, `${config}:${key}`).toBe(1);
-      const fails = r.err.split('\n').filter((l) => l.startsWith('FAIL '));
+      const fails = failures(r.err);
       expect(fails, `${config}:${key}`).toHaveLength(1);
       expect(fails[0]).toContain(`FAIL ${config}:${key}: `);
     }
   });
 
-  test('keeps every other row byte-identical in a frozen stage', () => {
+  test('lets an engine chunk file grow by the engine share in stage 2', () => {
+    const engine = (by: number) => (m: Matrix) => {
+      for (const f of m.fixtures) {
+        const copies = holding(f, 'mp4box');
+        if (copies.length === 0) continue;
+        if (typeof f.metrics.mp4box === 'number') metric(m, f.name, 'mp4box', by);
+        metric(m, f.name, 'lazyTotal', by * copies.length);
+        for (const x of copies) grow(x, by);
+      }
+    };
+    expect(at(2, raised('engine-30.json', engine(30))).status).toBe(0);
+    const over = at(2, raised('engine-31.json', engine(31)));
+    expect(over.status).toBe(1);
+    expect(over.err).toContain(`mp4box:mp4box: ${fmt(norm('mp4box', 'mp4box') + 31)} B is 31 B above the 0.3.0 baseline of ${fmt(norm('mp4box', 'mp4box'))} B, stage 2 allows 30 B`);
+    expect(over.err).toMatch(/FAIL all file assets\/mp4box-00000000\.js \(page\): [\d,]+ B is 31 B above the 0\.3\.0 baseline of [\d,]+ B, stage 2 allows 30 B for mp4box \(files\)/);
+    expect(at(3, raised('engine-stage-3.json', engine(1)), raised('engine-stage-2.json', engine(0))).status).toBe(1);
+  });
+
+  test('fails a file that appears, disappears or changes what it holds', () => {
+    const dropped = at(1, raised('file-dropped.json', (m) => fixtureOf(m, 'default').files.splice(fixtureOf(m, 'default').files.findIndex((x) => x.normalized.file === 'assets/compare-00000000.js'), 1)));
+    expect(dropped.status).toBe(1);
+    expect(dropped.err).toContain('default file assets/compare-00000000.js (page): in the stage base but not in the measured report');
+    const added = at(
+      1,
+      raised('file-added.json', (m) => {
+        const files = fixtureOf(m, 'default').files;
+        const x = files.find((y) => y.normalized.file === 'assets/compare-00000000.js')!;
+        files.push({ ...x, file: 'assets/extra-AAAAAAAA.js', normalized: { ...x.normalized, file: 'assets/extra-00000000.js' } });
+      }),
+    );
+    expect(added.status).toBe(1);
+    expect(added.err).toContain('default file assets/extra-00000000.js (page): not in the stage base, and no file may be added to a configuration of 0.3.0');
+    const moved = at(1, raised('file-holds.json', (m) => (fixtureOf(m, 'default').files.find((x) => x.normalized.file === 'assets/stats-00000000.js')!.normalized.holds = ['isobmff'])));
+    expect(moved.status).toBe(1);
+    expect(moved.err).toContain('default file assets/stats-00000000.js (page): holds isobmff against no parser or engine in the stage base');
+  });
+
+  test('keeps every other row identical in a frozen stage', () => {
     const report = raised('client.json', (m) => metric(m, 'default', 'client', 1));
     const frozen = at(3, report);
     expect(frozen.status).toBe(1);
-    expect(frozen.err).toContain('default:client: measured 3,284 B against 3,283 B in the stage base, and stage 3 keeps every other row byte-identical');
+    const client = norm('default', 'client');
+    expect(frozen.err).toContain(`default:client: measured ${fmt(client + 1)} B against ${fmt(client)} B in the stage base, and stage 3 keeps every other row identical`);
     expect(at(2, report).status).toBe(0);
     const matroska = at(3, raised('mkv-shrink.json', (m) => metric(m, 'default', 'firstMkv', -1)));
     expect(matroska.status).toBe(1);
-    expect(matroska.err).toContain('default:firstMkv: 25,538 B differs from the stage base of 25,539 B by -1 B, and stage 3 keeps it byte-identical');
+    const mkv = norm('default', 'firstMkv');
+    expect(matroska.err).toContain(`default:firstMkv: ${fmt(mkv - 1)} B differs from the stage base of ${fmt(mkv)} B by -1 B, and its share in stage 3 is 0`);
+  });
+
+  test('keeps a row whose share is 0 identical in a stage that freezes nothing, in both directions', () => {
+    const base = raised('engine-stage-4.json', (m) => metric(m, 'mp4box', 'mp4box', 20));
+    for (const by of [1, -1]) {
+      const r = at(5, raised(`engine-stage-5-${by}.json`, (m) => metric(m, 'mp4box', 'mp4box', 20 + by)), base);
+      expect(r.status, `${by}`).toBe(1);
+      expect(r.err).toContain(`mp4box:mp4box: ${fmt(norm('mp4box', 'mp4box') + 20 + by)} B differs from the stage base of ${fmt(norm('mp4box', 'mp4box') + 20)} B by ${signed(by)} B, and its share in stage 5 is 0`);
+    }
   });
 
   test('lets only the listed rows of the rule entries move in stage 6', () => {
@@ -265,75 +418,86 @@ describe('size gate against the 0.3.0 baseline', () => {
     expect(check.out).toContain('except the rows check:trigger, check:entry, check:check, preset:trigger, preset:entry, preset:check');
     const lazy = at(6, raised('preset-lazy.json', (m) => metric(m, 'preset', 'lazyTotal', 500)));
     expect(lazy.status).toBe(1);
-    expect(lazy.err).toContain('preset:lazyTotal: 89,711 B differs from the stage base of 89,211 B by +500 B, and stage 6 keeps it byte-identical');
+    const presetLazy = norm('preset', 'lazyTotal');
+    expect(lazy.err).toContain(`preset:lazyTotal: ${fmt(presetLazy + 500)} B differs from the stage base of ${fmt(presetLazy)} B by +500 B, and its share in stage 6 is 0`);
     const own = at(6, raised('check-own.json', (m) => metric(m, 'check', 'allOwn', 500)));
     expect(own.status).toBe(1);
-    expect(own.err).toContain('check:allOwn: 49,114 B differs from the stage base of 48,614 B by +500 B, and stage 6 keeps it byte-identical');
+    const allOwn = norm('check', 'allOwn');
+    expect(own.err).toContain(`check:allOwn: ${fmt(allOwn + 500)} B differs from the stage base of ${fmt(allOwn)} B by +500 B, and its share in stage 6 is 0`);
     const first = at(6, raised('check-first.json', (m) => metric(m, 'check', 'firstMp4', 500)));
     expect(first.status).toBe(1);
-    expect(first.err).toContain('check:firstMp4: 23,237 B differs from the stage base of 22,737 B by +500 B, and stage 6 keeps it byte-identical');
+    const firstMp4 = norm('check', 'firstMp4');
+    expect(first.err).toContain(`check:firstMp4: ${fmt(firstMp4 + 500)} B is 500 B above the 0.3.0 baseline of ${fmt(firstMp4)} B, stage 6 allows 450 B`);
     const presets = at(6, raised('presets.json', (m) => metric(m, 'preset', 'presets', 1)));
     expect(presets.status).toBe(1);
-    expect(presets.err).toContain('preset:presets: 456 B differs from the 0.3.0 baseline of 455 B by +1 B, and the group keeps it byte-identical');
-    const capped = at(6, raised('check-cap.json', (m) => metric(m, 'check', 'check', 511)));
+    const p = norm('preset', 'presets');
+    expect(presets.err).toContain(`preset:presets: ${fmt(p + 1)} B differs from the 0.3.0 baseline of ${fmt(p)} B by +1 B, and the group keeps it identical`);
+    const capped = at(6, raised('check-cap.json', (m) => metric(m, 'check', 'check', 4501 - raw('check', 'check'))));
     expect(capped.status).toBe(1);
-    expect(capped.err).toContain('check:check: 4,501 B is above its cap of 4,500 B');
+    expect(capped.err).toContain('check:check: 4,501 B as built is above its cap of 4,500 B');
     const host = at(6, raised('host.json', (m) => metric(m, 'default', 'trigger', 1)));
     expect(host.status).toBe(1);
-    expect(host.err).toContain('default:trigger: 667 B differs from the 0.3.0 baseline of 666 B by +1 B, and the group keeps it byte-identical');
-    const other = at(6, raised('other.json', (m) => metric(m, 'rvfc', 'rvfc', 1)));
+    const trigger = norm('default', 'trigger');
+    expect(host.err).toContain(`default:trigger: ${fmt(trigger + 1)} B differs from the 0.3.0 baseline of ${fmt(trigger)} B by +1 B, and the group keeps it identical`);
+    const other = at(6, raised('other.json', (m) => metric(m, 'rvfc', 'entry', 1)));
     expect(other.status).toBe(1);
-    expect(other.err).toContain('rvfc:rvfc: measured 2,194 B against 2,193 B in the stage base, and stage 6 keeps every other row byte-identical');
+    const entry = norm('rvfc', 'entry');
+    expect(other.err).toContain(`rvfc:entry: measured ${fmt(entry + 1)} B against ${fmt(entry)} B in the stage base, and stage 6 keeps every other row identical`);
   });
 
   test('fails a configuration name where frozen.stages needs a row', () => {
-    const r = run(['--config', configAt(6, BASELINE, (c) => ((c.frozen as { stages: Record<string, string[]> }).stages['6'] = ['check'])), '--report', BASELINE]);
+    const r = run(['--config', configAt(6, NORMALIZED, (c) => ((c.frozen as { stages: Record<string, string[]> }).stages['6'] = ['check'])), '--report', NORMALIZED]);
     expect(r.status).toBe(1);
     expect(r.err).toContain('frozen.stages of stage 6 lists check, which is not a <configuration>:<metric> row');
   });
 
   test('gates the first MP4 of every configuration and the rule chunks in the stages that freeze nothing', () => {
     const rows = ['mp4box:firstMp4', 'preset:firstMp4', 'react:firstMp4Summary'];
-    const grow = (m: Matrix, by: number) => {
+    const growRows = (m: Matrix, by: number) => {
       for (const row of rows) metric(m, row.slice(0, row.indexOf(':')), row.slice(row.indexOf(':') + 1), by);
     };
-    const stage4End = raised('stage-4-end.json', (m) => grow(m, 400));
+    const stage4End = raised('stage-4-end.json', (m) => growRows(m, 400));
     for (const [stage, base, start, share] of [
-      [2, BASELINE, 0, 390],
+      [2, NORMALIZED, 0, 390],
       [5, stage4End, 400, 50],
     ] as const) {
-      const within = at(stage, raised(`first-${stage}-ok.json`, (m) => grow(m, start + share)), base);
+      const within = at(stage, raised(`first-${stage}-ok.json`, (m) => growRows(m, start + share)), base);
       expect(within.status, `stage ${stage}: ${within.err}`).toBe(0);
-      const over = at(stage, raised(`first-${stage}-over.json`, (m) => grow(m, start + share + 1)), base);
+      const over = at(stage, raised(`first-${stage}-over.json`, (m) => growRows(m, start + share + 1)), base);
       expect(over.status).toBe(1);
       for (const row of rows) expect(over.err, row).toContain(`${row}: `);
       const rules = at(
         stage,
         raised(`rules-${stage}.json`, (m) => {
-          grow(m, start);
+          growRows(m, start);
           metric(m, 'check', 'check', 1);
           metric(m, 'preset', 'presets', -1);
         }),
         base,
       );
       expect(rules.status).toBe(1);
-      expect(rules.err).toContain('check:check: 3,991 B differs from the 0.3.0 baseline of 3,990 B by +1 B, and the group keeps it byte-identical');
-      expect(rules.err).toContain('preset:presets: 454 B differs from the 0.3.0 baseline of 455 B by -1 B, and the group keeps it byte-identical');
+      const check = norm('check', 'check');
+      const presets = norm('preset', 'presets');
+      expect(rules.err).toContain(`check:check: ${fmt(check + 1)} B differs from the 0.3.0 baseline of ${fmt(check)} B by +1 B, and the group keeps it identical`);
+      expect(rules.err).toContain(`preset:presets: ${fmt(presets - 1)} B differs from the 0.3.0 baseline of ${fmt(presets)} B by -1 B, and the group keeps it identical`);
     }
     const over = at(2, raised('mp4box-first.json', (m) => metric(m, 'mp4box', 'firstMp4', 391)));
-    expect(over.err).toContain('mp4box:firstMp4: 23,161 B is 391 B above the 0.3.0 baseline of 22,770 B, stage 2 allows 390 B');
+    const n = norm('mp4box', 'firstMp4');
+    expect(over.err).toContain(`mp4box:firstMp4: ${fmt(n + 391)} B is 391 B above the 0.3.0 baseline of ${fmt(n)} B, stage 2 allows 390 B`);
   });
 
   test('fails a critical path that shrinks', () => {
     const r = at(2, raised('shrink.json', (m) => metric(m, 'default', 'trigger', -5)));
     expect(r.status).toBe(1);
-    expect(r.err).toContain('default:trigger: 661 B differs from the 0.3.0 baseline of 666 B by -5 B, and the group keeps it byte-identical');
+    const n = norm('default', 'trigger');
+    expect(r.err).toContain(`default:trigger: ${fmt(n - 5)} B differs from the 0.3.0 baseline of ${fmt(n)} B by -5 B, and the group keeps it identical`);
   });
 
-  test('fails a row above its absolute cap', () => {
-    const r = at(6, raised('cap.json', (m) => metric(m, 'standalone-split-url', 'firstMp4', 454)));
+  test('applies the cap to the raw size as built', () => {
+    const r = at(6, raised('cap.json', (m) => metric(m, 'standalone-split-url', 'firstMp4', 24951 - raw('standalone-split-url', 'firstMp4'))));
     expect(r.status).toBe(1);
-    expect(r.err).toContain('standalone-split-url:firstMp4: 24,951 B is above its cap of 24,950 B');
+    expect(r.err).toContain('standalone-split-url:firstMp4: 24,951 B as built is above its cap of 24,950 B');
+    expect(norm('standalone-split-url', 'firstMp4')).toBeLessThan(raw('standalone-split-url', 'firstMp4'));
   });
 
   test('gates a growth-only row without a cap', () => {
@@ -341,20 +505,21 @@ describe('size gate against the 0.3.0 baseline', () => {
     expect(by(200).status).toBe(0);
     const over = by(201);
     expect(over.status).toBe(1);
-    expect(over.err).toContain('custom:firstMkv: 26,883 B is 201 B above the 0.3.0 baseline of 26,682 B, stage 2 allows 200 B');
+    const n = norm('custom', 'firstMkv');
+    expect(over.err).toContain(`custom:firstMkv: ${fmt(n + 201)} B is 201 B above the 0.3.0 baseline of ${fmt(n)} B, stage 2 allows 200 B`);
   });
 
   test('fails a standalone worker file above its share', () => {
-    const r = at(1, raised('worker.json', (m) => (m.standalone.find((s) => s.file === 'own-isobmff.worker.js')!.gzip += 1)));
+    const r = at(1, raised('worker.json', (m) => grow(m.standalone.find((s) => s.file === 'own-isobmff.worker.js')!, 1)));
     expect(r.status).toBe(1);
     expect(r.err).toContain('standalone:own-isobmff.worker.js: 21,144 B is 1 B above the 0.3.0 baseline of 21,143 B');
   });
 
   test('fails a gated row that no report has', () => {
-    const typo = run(['--config', configAt(1, BASELINE, (c) => (c.groups[2].rows = ['custom:firstMP4', 'custom-eager:firstMp4'])), '--report', BASELINE]);
+    const typo = run(['--config', configAt(1, NORMALIZED, (c) => (c.groups[2]!.rows = ['custom:firstMP4', 'custom-eager:firstMp4'])), '--report', NORMALIZED]);
     expect(typo.status).toBe(1);
     expect(typo.err).toContain('custom:firstMP4: not in the baseline report: configuration custom has no metric firstMP4');
-    const dropped = at(1, raised('dropped.json', (m) => delete m.fixtures.find((f) => f.name === 'custom')!.metrics.firstMp4));
+    const dropped = at(1, raised('dropped.json', (m) => delete fixtureOf(m, 'custom').metrics.firstMp4));
     expect(dropped.status).toBe(1);
     expect(dropped.err).toContain('custom:firstMp4: not in the measured report: configuration custom has no metric firstMp4');
   });
