@@ -130,6 +130,16 @@ describe('error codes at the throw sites', () => {
     });
   });
 
+  test('a Matroska scan window that is not a safe integer keeps its 0.3.0 text and reads as corrupt, as documented', async () => {
+    const webm = readFileSync(join(REPO_ROOT, 'fixtures', 'files', 'cfr_vp9_30.webm'));
+    for (const matroskaScan of [Number.NaN, Number.POSITIVE_INFINITY, 2 ** 60]) {
+      expect(await analyze(new Blob([webm]), 'scan.webm', { matroskaMode: 'exact', readAhead: { matroskaScan } })).toMatchObject({
+        error: `length must be a non-negative safe integer, got ${matroskaScan}`,
+        errorCode: 'corrupt',
+      });
+    }
+  });
+
   test('a parser that fails to load is load-failed, a thrown error after it is coded by its kind', async () => {
     const blob = new Blob([MP4_HEAD]);
     expect(
