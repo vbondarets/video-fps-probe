@@ -9,7 +9,7 @@ import { discover, measure, scanReferences } from './size-report.mjs';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const KB = 1000;
 const PACKAGE_SOURCE = 'node_modules/video-fps-probe/';
-const ENTRY_SOURCES = { react: ['./react', `${PACKAGE_SOURCE}dist/react/`], check: ['./check', `${PACKAGE_SOURCE}dist/check/`], presets: ['./presets', `${PACKAGE_SOURCE}dist/presets/`] };
+const ENTRY_SOURCES = { react: ['./react', `${PACKAGE_SOURCE}dist/react/`], check: ['./check', `${PACKAGE_SOURCE}dist/check/`], presets: ['./presets', `${PACKAGE_SOURCE}dist/presets/`], header: ['./header', `${PACKAGE_SOURCE}dist/header/`] };
 
 const RESET = 'The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.';
 const RESET_020 =
@@ -165,6 +165,11 @@ export const BUDGETS = {
     { key: 'firstMp4', limit: 24.5 * KB, why: `As in the check configuration. Measured 23.60 KB. Measured 23.60 KB when re-set. ${RESET_020}` },
     { key: 'lazyTotal', limit: 92 * KB, why: `As in the check configuration. Measured 80.96 KB. Measured 81.29 KB when re-set. ${RESET_020} Raised from 84 KB to 92 KB in 0.3.0, measured 89.16 KB, as in the check configuration. ${RESET_030}` },
   ],
+  header: [
+    { key: 'trigger', limit: 20 * KB, why: `The package code in the entry chunk of a host that imports video-fps-probe/header statically: analyzeHeader with its option checks, the limited source, the reader, the sniffer, the ISO BMFF box parsers, the header walk, the fragmented duration and the track builder it shares with the full parser. It starts no worker and loads nothing lazily, and it reaches neither the full ISO BMFF parser nor the statistics. Design estimate 11 to 13 KB; measured 17.91 KB, of which 2.37 KB is the per-sample part of the shared track builder, which header mode never runs: moving it out of the shared builder would cost the first MP4 more than the 0.01 KB share of stage 3. ${RESET}` },
+    { key: 'header', limit: 3 * KB, why: `The part of the critical path under dist/header/: analyzeHeader, its option checks, the Matroska DocType check and the limited source with its deadline. Measured 2.33 KB. ${RESET}` },
+    { key: 'entry', limit: 20 * KB, why: `The trigger of this configuration plus the Vite runtime of the entry chunk. Measured 17.94 KB. ${RESET}` },
+  ],
 };
 
 export const STANDALONE_BUDGETS = {
@@ -178,6 +183,7 @@ const LABELS = {
   react: 'React entry (the provider and hooks in the entry chunk, React not counted)',
   check: 'check entry (in the entry chunk)',
   presets: 'presets entry (the imported presets, in the entry chunk)',
+  header: 'header entry (analyzeHeader, its option checks and the limited source, in the entry chunk)',
   entry: 'entry chunk with the preload helper',
   client: 'probe client (lazy)',
   isobmff: 'ISO BMFF parser (in the own worker)',
@@ -465,6 +471,7 @@ export function measureFixture(dir, fixture, { thirdPartyInformational = false }
     react: entryCode('react'),
     check: entryCode('check'),
     presets: entryCode('presets'),
+    header: entryCode('header'),
     client: clientFiles.size > 0 ? { files: [...without(clientFiles)] } : null,
     isobmff: share(isoWorker, 'isobmff'),
     matroska: share(mkvWorker, 'matroska'),
