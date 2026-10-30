@@ -13,6 +13,7 @@ const HEADER_PEEK = 16;
 const MFRA_TAIL = 64 * 1024;
 const MFRA_CAP = 16 * 1024 * 1024;
 const MOOF_HARD_CAP = 64 * 1024 * 1024;
+const RUN_TYPES = new Set(['sidx', 'styp', 'prft', 'emsg']);
 
 type Limit = Error & { errorCode: string };
 
@@ -130,6 +131,7 @@ interface Walked {
   moov: DataView | null;
   fragments: boolean;
   firstMoof: BoxHeader | null;
+  run: number;
   limit: Limit | null;
 }
 
@@ -139,7 +141,8 @@ async function walkTop(w: Walk): Promise<Walked> {
   let pos = 0;
   let moov: DataView | null = null;
   let afterMdat = false;
-  const walked = (firstMoof: BoxHeader | null, limit: Limit | null = null): Walked => ({ moov, fragments: movie.hasMvex && (firstMoof !== null || limit !== null), firstMoof, limit });
+  let runFrom = 0;
+  const walked = (firstMoof: BoxHeader | null, limit: Limit | null = null): Walked => ({ moov, fragments: movie.hasMvex && (firstMoof !== null || limit !== null), firstMoof, run: firstMoof ? firstMoof.start - runFrom : 0, limit });
   try {
     while (pos + 8 <= size) {
       const cached = moov !== null && !movie.hasMvex;
@@ -189,6 +192,7 @@ async function walkTop(w: Walk): Promise<Walked> {
         const sh = dv && readBoxHeader(dv, 0, dv.byteLength);
         if (sh) top.sidx = parseSidx(dv, sh, pos);
       }
+      if (!RUN_TYPES.has(h.type)) runFrom = pos + rel.size;
       afterMdat = h.type === 'mdat';
       pos += rel.size;
     }
@@ -259,17 +263,40 @@ async function walkFragments(w: Walk, from: number, end: number, parsed: Set<num
     if (h.type === 'moof' && !parsed.has(pos)) {
       if (h.size > MOOF_HARD_CAP) throw new IsoBmffError('too-large', `corrupt file: moof larger than 64 MiB at ${pos}`);
       parseFragment(w, await w.reader.view(pos, h.size, ahead(w, pos, w.plan.head)), pos, parsed);
+    } else if (h.type === 'sidx') {
+      w.movie.topLevel.push({ type: 'sidx', start: pos, end: pos + h.size, sidx: parseSidx(await w.reader.view(pos, h.size, ahead(w, pos, w.plan.head)), h, pos) });
     }
     pos += h.size;
   }
   return true;
 }
 
-function sidxEnd(movie: IsoMovie, tr: IsoTrack, ends: number[]): number | null {
+async function preRun(w: Walk, from: number, run: number, after: number): Promise<void> {
+  const at = from - run;
+  if (run <= 0 || at < after) return;
+  const dv = await w.reader.view(at, run, ahead(w, at, w.plan.head));
+  const found: TopBox[] = [];
+  try {
+    for (let p = 0; p < run; ) {
+      const h = readBoxHeader(dv, p, run);
+      if (!h || h.truncated || !RUN_TYPES.has(h.type)) return;
+      found.push({ type: h.type, start: at + p, end: at + h.end, sidx: h.type === 'sidx' ? parseSidx(dv, h, at + p) : null });
+      p = h.end;
+    }
+  } catch {
+    return;
+  }
+  for (const b of found) {
+    count(w);
+    w.movie.topLevel.push(b);
+  }
+}
+
+function sidxEnd(movie: IsoMovie, tr: IsoTrack, ends: number[] | null): number | null {
   let end: number | null = null;
   for (const b of movie.topLevel) {
     const x = b.sidx;
-    if (x && !x.hierarchical && x.referenceId === tr.id && x.timescale === tr.timescale && ends.includes(x.coverageEnd)) end = x.earliestPts + x.durationSum;
+    if (x && !x.hierarchical && x.referenceId === tr.id && x.timescale === tr.timescale && (!ends || ends.includes(x.coverageEnd))) end = x.earliestPts + x.durationSum;
   }
   return end;
 }
@@ -341,29 +368,31 @@ async function resolveFragmented(w: Walk, walked: Walked, videos: IsoTrack[], bu
   const starts = new Map(tracks.map((tr) => [tr, timingOf(tr, movie, tr.fragments).startPts]));
   const firstCount = new Map(tracks.map((tr) => [tr, tr.fragments.length]));
   const open = (): IsoTrack[] => tracks.filter((t) => !resolved.has(t) && (videos.includes(t) || hasFragmentData(t, movie, index)));
+  const settle = (tr: IsoTrack, ends: number[] | null, fragments: IsoTrack['fragments']): void => {
+    const end = sidxEnd(movie, tr, ends);
+    if (!ends || end !== null) resolved.set(tr, { ticks: Math.max(timingOf(tr, movie, fragments).durationTs, end ?? 0), timescale: tr.timescale, provenance: 'header' });
+  };
   const bySidx = (ends: number[]): void => {
-    for (const tr of open()) {
-      const end = sidxEnd(movie, tr, ends);
-      if (end !== null) resolved.set(tr, { ticks: Math.max(timingOf(tr, movie, []).durationTs, end), timescale: tr.timescale, provenance: 'header' });
-    }
+    for (const tr of open()) settle(tr, ends, []);
   };
   bySidx([size]);
   if (plan.index && !limit && open().length > 0) {
     try {
       index = await readTailIndex(w);
       if (index) {
-        bySidx([size, size - index.mfraSize]);
+        const stop = size - index.mfraSize;
+        bySidx([size, stop]);
         let from: number | null = null;
         for (const tr of open()) {
           const last = lastOffset(index.offsets.get(tr.id));
           if (last !== null && (from === null || last < from)) from = last;
         }
         if (from !== null) {
-          const whole = (await walkFragments(w, from, size - index.mfraSize, parsed)) && first !== null && from <= first.start;
+          if (first) await preRun(w, from, walked.run, first.start + first.size);
+          const whole = (await walkFragments(w, from, stop, parsed)) && first !== null && from <= first.start;
           for (const tr of open()) {
             const tail = tr.fragments.slice(firstCount.get(tr) ?? 0);
-            if (!whole && (tail.length === 0 || tail[0].baseDts === null)) continue;
-            resolved.set(tr, { ticks: timingOf(tr, movie, tr.fragments).durationTs, timescale: tr.timescale, provenance: 'header' });
+            if (whole || (tail.length > 0 && tail[0].baseDts !== null)) settle(tr, null, tr.fragments);
           }
         }
       }
