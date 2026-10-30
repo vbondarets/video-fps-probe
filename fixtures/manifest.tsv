@@ -1,172 +1,172 @@
-name	container	category	expect	committed	notes	path
-cfr_h264_23.976.mp4	mp4	cfr	ok	yes	CFR 24000/1001 fps, H.264 no B-frames, ftyp free mdat moov, 1 stts entry	files/cfr_h264_23.976.mp4
-cfr_vp9_23.976.webm	webm	cfr	ok	yes	CFR 24000/1001 fps VP9 WebM: ms block timestamps quantize inst. FPS, DefaultDuration is exact	files/cfr_vp9_23.976.webm
-cfr_h264_24.mp4	mp4	cfr	ok	yes	CFR 24 fps, H.264 no B-frames, ftyp free mdat moov, 1 stts entry	files/cfr_h264_24.mp4
-cfr_vp9_24.webm	webm	cfr	ok	yes	CFR 24 fps VP9 WebM: ms block timestamps quantize inst. FPS, DefaultDuration is exact	files/cfr_vp9_24.webm
-cfr_h264_25.mp4	mp4	cfr	ok	yes	CFR 25 fps, H.264 no B-frames, ftyp free mdat moov, 1 stts entry	files/cfr_h264_25.mp4
-cfr_vp9_25.webm	webm	cfr	ok	yes	CFR 25 fps VP9 WebM: ms block timestamps quantize inst. FPS, DefaultDuration is exact	files/cfr_vp9_25.webm
-cfr_h264_29.97.mp4	mp4	cfr	ok	yes	CFR 30000/1001 fps, H.264 no B-frames, ftyp free mdat moov, 1 stts entry	files/cfr_h264_29.97.mp4
-cfr_vp9_29.97.webm	webm	cfr	ok	yes	CFR 30000/1001 fps VP9 WebM: ms block timestamps quantize inst. FPS, DefaultDuration is exact	files/cfr_vp9_29.97.webm
-cfr_h264_30.mp4	mp4	cfr	ok	yes	CFR 30 fps, H.264 no B-frames, ftyp free mdat moov, 1 stts entry	files/cfr_h264_30.mp4
-cfr_vp9_30.webm	webm	cfr	ok	yes	CFR 30 fps VP9 WebM: ms block timestamps quantize inst. FPS, DefaultDuration is exact	files/cfr_vp9_30.webm
-cfr_h264_50.mp4	mp4	cfr	ok	yes	CFR 50 fps, H.264 no B-frames, ftyp free mdat moov, 1 stts entry	files/cfr_h264_50.mp4
-cfr_vp9_50.webm	webm	cfr	ok	yes	CFR 50 fps VP9 WebM: ms block timestamps quantize inst. FPS, DefaultDuration is exact	files/cfr_vp9_50.webm
-cfr_h264_59.94.mp4	mp4	cfr	ok	yes	CFR 60000/1001 fps, H.264 no B-frames, ftyp free mdat moov, 1 stts entry	files/cfr_h264_59.94.mp4
-cfr_vp9_59.94.webm	webm	cfr	ok	yes	CFR 60000/1001 fps VP9 WebM: ms block timestamps quantize inst. FPS, DefaultDuration is exact	files/cfr_vp9_59.94.webm
-cfr_h264_60.mp4	mp4	cfr	ok	yes	CFR 60 fps, H.264 no B-frames, ftyp free mdat moov, 1 stts entry	files/cfr_h264_60.mp4
-cfr_vp9_60.webm	webm	cfr	ok	yes	CFR 60 fps VP9 WebM: ms block timestamps quantize inst. FPS, DefaultDuration is exact	files/cfr_vp9_60.webm
-cfr_h264_120.mp4	mp4	cfr	ok	yes	CFR 120 fps, H.264 no B-frames, ftyp free mdat moov, 1 stts entry	files/cfr_h264_120.mp4
-cfr_vp9_120.webm	webm	cfr	ok	yes	CFR 120 fps VP9 WebM: ms block timestamps quantize inst. FPS, DefaultDuration is exact	files/cfr_vp9_120.webm
-cfr_h264_240.mp4	mp4	cfr	ok	yes	CFR 240 fps, H.264 no B-frames, ftyp free mdat moov, 1 stts entry	files/cfr_h264_240.mp4
-cfr_vp9_240.webm	webm	cfr	ok	yes	CFR 240 fps VP9 WebM: ms block timestamps quantize inst. FPS, DefaultDuration is exact	files/cfr_vp9_240.webm
-mov_nobf_default.mov	mov	mov	ok	yes	MOV, no B-frames, 'wide' before mdat, moov at end, elst present	files/mov_nobf_default.mov
-mov_nobf_faststart.mov	mov	mov	ok	yes	MOV faststart: ftyp moov wide mdat	files/mov_nobf_faststart.mov
-mov_bf_elst.mov	mov	mov	ok	yes	MOV + B-frames: ctts + elst media_time=2002 (2 frames of reorder delay)	files/mov_bf_elst.mov
-mov_bf_noelst.mov	mov	mov	ok	yes	MOV + B-frames without edit list: ffprobe start_time=0.067, no elst	files/mov_bf_noelst.mov
-mov_bf_faststart.mov	mov	mov	ok	yes	MOV + B-frames + faststart	files/mov_bf_faststart.mov
-mov_prores.mov	mov	codec	ok	yes	MOV ProRes 422 Proxy (non-H.26x codec, apch)	files/mov_prores.mov
-mp4_bf_elst.mp4	mp4	mov	ok	yes	MP4 + B-frames: ctts + elst media_time=2002, 'free' before mdat	files/mp4_bf_elst.mp4
-mp4_bf_noelst.mp4	mp4	mov	ok	yes	MP4 + B-frames, no elst	files/mp4_bf_noelst.mp4
-mp4_bf_faststart.mp4	mp4	mov	ok	yes	MP4 faststart: ftyp moov free mdat	files/mp4_bf_faststart.mp4
-mp4_elst_empty_offset.mp4	mp4	mov	ok	yes	elst = [empty edit 1000 ms (media_time=-1), media_time=1024]; ffprobe start_time=1.0; 90 frames	files/mp4_elst_empty_offset.mp4
-mp4_elst_trim_start.mp4	mp4	mov	ok	yes	-ss 0.7 stream copy: stts=90 samples but elst trims start so only 69 frames are shown (nb_frames=90, nb_read_frames=69)	files/mp4_elst_trim_start.mp4
-mp4_elst_trim_output_seek.mp4	mp4	mov	ok	yes	output -ss 0.7 stream copy: 60 frames, elst = [empty 301, media_time 2002], start_time 0.301	files/mp4_elst_trim_output_seek.mp4
-fmp4_keyframe_empty_moov.mp4	mp4	fmp4	ok	yes	ftyp moov(empty) (moof mdat)x4 mfra; explicit base_data_offset in tfhd; nb_frames N/A	files/fmp4_keyframe_empty_moov.mp4
-fmp4_default_base_moof.mp4	mp4	fmp4	ok	yes	as above with default_base_is_moof (tfhd flags 0x20038)	files/fmp4_default_base_moof.mp4
-fmp4_frag_duration.mp4	mp4	fmp4	ok	yes	fragments cut by duration (0.5 s): 8 moof for 120 samples	files/fmp4_frag_duration.mp4
-fmp4_bframes.mp4	mp4	fmp4	ok	yes	fragmented with B-frames: trun composition offsets, no elst, start_time 0.067	files/fmp4_bframes.mp4
-fmp4_hybrid_no_empty_moov.mp4	mp4	fmp4	ok	yes	moov already holds 30 samples (stts) + 3 moofs with 90 more: ffprobe nb_frames=30 but 120 real	files/fmp4_hybrid_no_empty_moov.mp4
-fmp4_cmaf.mp4	mp4	fmp4	ok	yes	movflags cmaf	files/fmp4_cmaf.mp4
-fmp4_global_sidx.mp4	mp4	fmp4	ok	yes	global sidx right after moov	files/fmp4_global_sidx.mp4
-fmp4_dash_flag.mp4	mp4	fmp4	ok	yes	movflags dash: sidx before every moof	files/fmp4_dash_flag.mp4
-mp4_hybrid_fragmented_finalized.mp4	mp4	fmp4	ok	yes	hybrid_fragmented: written fragmented, finalized to a plain ftyp free mdat moov file (4 chunks)	files/mp4_hybrid_fragmented_finalized.mp4
-fmp4_dash_single_file.mp4	mp4	fmp4	ok	yes	-f dash single_file: ftyp moov (sidx moof mdat)x4; moov has elst with segment_duration=0	files/fmp4_dash_single_file.mp4
-fmp4_dash_concat_segments.mp4	mp4	fmp4	ok	yes	CMAF-style: init segment + 4 media segments concatenated: moov (styp sidx moof mdat)x4	files/fmp4_dash_concat_segments.mp4
-hevc_hvc1.mp4	mp4	codec	ok	yes	HEVC sample entry hvc1 (coded size 160x96, display 160x90)	files/hevc_hvc1.mp4
-hevc_hev1.mp4	mp4	codec	ok	yes	HEVC sample entry hev1	files/hevc_hev1.mp4
-av1.mp4	mp4	codec	ok	yes	AV1 in MP4 (av01) via libaom	files/av1.mp4
-vp9.mp4	mp4	codec	ok	yes	VP9 in MP4 (vp09)	files/vp9.mp4
-vp9.webm	webm	codec	ok	yes	VP9 WebM, known sizes, Cues, Duration, DefaultDuration=33366666 ns	files/vp9.webm
-vp8.webm	webm	codec	ok	yes	VP8 WebM	files/vp8.webm
-av1.webm	webm	codec	ok	yes	AV1 WebM	files/av1.webm
-h264.mkv	matroska	matroska	ok	yes	Matroska with H.264	files/h264.mkv
-hevc.mkv	matroska	codec	ok	yes	HEVC (H.265) in Matroska	files/hevc.mkv
-vp9_live.webm	webm	live	ok	yes	-live 1: Segment size unknown, no Duration, no Cues, clusters keep known size. crashed.mkv (ffmpeg killed mid-write) is not in the corpus: not byte-reproducible	files/vp9_live.webm
-vp9_pipe.webm	webm	live	ok	yes	written to a pipe: identical structure to -live 1 (non-seekable output)	files/vp9_pipe.webm
-vp9_unknown_clusters.webm	webm	live	ok	yes	MediaRecorder-like: Segment AND every Cluster have unknown size (01FFFF.. / 3FFFFF), no Cues/Duration	files/vp9_unknown_clusters.webm
-vp9_no_defaultduration.webm	webm	matroska	ok	yes	DefaultDuration element overwritten by an EBML Void: only block timestamps (ms) remain	files/vp9_no_defaultduration.webm
-vfr_concat_10_30_60.mp4	mp4	vfr	ok	yes	VFR method 1: concat of 2 s segments at 10/30/60 fps, passthrough; avg 100/3, nominal r=60; timescale 90000	files/vfr_concat_10_30_60.mp4
-vfr_concat_bframes.mp4	mp4	vfr	ok	yes	VFR + B-frames: stts (DTS deltas) and display-order PTS deltas differ, so FPS min/max from stts is not the same as from PTS	files/vfr_concat_bframes.mp4
-vfr_concat_10_30_60_ts1M.mp4	mp4	vfr	ok	yes	same, ffmpeg default timescale 1000000: rounding gives 33333/33334 tick durations (5 distinct deltas)	files/vfr_concat_10_30_60_ts1M.mp4
-vfr_concat_10_30_60.mov	mov	vfr	ok	yes	same in MOV	files/vfr_concat_10_30_60.mov
-vfr_concat_10_30_60.webm	webm	vfr	ok	yes	same in WebM: ffprobe avg_frame_rate=0/0, r_frame_rate=30/1; DefaultDuration describes only one rate	files/vfr_concat_10_30_60.webm
-vfr_concat_10_30_60_fmp4.mp4	mp4	vfr	ok	yes	same, fragmented: durations live in trun	files/vfr_concat_10_30_60_fmp4.mp4
-vfr_setpts_sine.mp4	mp4	vfr	ok	yes	VFR method 2: non-linear setpts, delta = 3000*(1+0.75cos(N/8)) ticks -> inst. FPS 17..120	files/vfr_setpts_sine.mp4
-vfr_select_drop.mp4	mp4	vfr	ok	yes	VFR method 3: select drops 4 of every 10 frames of a 60 fps source (gaps of 1,2,3 frames)	files/vfr_select_drop.mp4
-vfr_mpdecimate.mp4	mp4	vfr	ok	yes	VFR method 4: mpdecimate removes the static middle: one ~1.5 s gap (min inst FPS 0.67)	files/vfr_mpdecimate.mp4
-vfr_screenrec_ts1000.mp4	mp4	vfr	ok	yes	VFR method 5: screen-recording-like, timescale 1000, 0-7 ms jitter, long gaps; 246 frames, avg ~41 (61500/1501)	files/vfr_screenrec_ts1000.mp4
-vfr_screenrec_ts1000.webm	webm	vfr	ok	yes	same in WebM: DefaultDuration claims 60 fps while real average is ~41	files/vfr_screenrec_ts1000.webm
-vfr_pulldown_2_3.mp4	mp4	vfr	ok	yes	VFR method 6: setts bsf rewrites a 24 fps stream to a 2:3 cadence (3000/4500 ticks); avg exactly 24, r=60	files/vfr_pulldown_2_3.mp4
-vfr_two_phase_5_200.mp4	mp4	vfr	ok	yes	rate profile: 4 s at 5 fps then 4 s at 200 fps (20 + 800 frames), passthrough, timescale 90000; avg 205/2	files/vfr_two_phase_5_200.mp4
-vfr_two_phase_5_200.webm	webm	vfr	ok	yes	same two phases in WebM (VP9): 200 ms and 5 ms block timestamps	files/vfr_two_phase_5_200.webm
-vfr_two_phase_5_200.mkv	matroska	vfr	ok	yes	same two phases, the H.264 MP4 stream-copied to Matroska	files/vfr_two_phase_5_200.mkv
-vfr_freeze_2s.mp4	mp4	vfr	ok	yes	rate profile: 30 fps with one frame held for 2 s at 1.967 s (frame 59), 120 frames over 5.967 s	files/vfr_freeze_2s.mp4
-box64_mdat64_wide.mov	mov	box64	ok	yes	'wide'+mdat(32) rewritten to size=1 'mdat' largesize (16-byte header); same file size, same stco offsets	files/box64_mdat64_wide.mov
-box64_mdat64_free.mp4	mp4	box64	ok	yes	'free'+mdat(32) rewritten the same way	files/box64_mdat64_free.mp4
-box64_co64_mdat64.mp4	mp4	box64	ok	yes	64-bit mdat header + every stco rewritten to co64 (moov grows by 4 bytes/chunk)	files/box64_co64_mdat64.mp4
-av_h264_aac.mp4	mp4	multi	ok	yes	video + AAC audio, moov at end (the typical real-world file)	files/av_h264_aac.mp4
-av_h264_aac_faststart.mp4	mp4	multi	ok	yes	video + AAC audio, faststart	files/av_h264_aac_faststart.mp4
-multi_video_2tracks.mp4	mp4	multi	ok	yes	two real video tracks: 160x90 @30 (3 s) first, 320x180 @24 (4 s) second, + audio	files/multi_video_2tracks.mp4
-still_image_track_first.mp4	mp4	multi	ok	yes	first video trak is a 1-sample MJPEG still (64x64, 0.04 s), real H.264 video is track 2	files/still_image_track_first.mp4
-cover_art_audio.m4a	mp4	cover	no-video	yes	audio-only M4A with cover art stored in udta/meta/ilst/covr (no video trak, but ffprobe lists an attached_pic video stream)	files/cover_art_audio.m4a
-cover_art_plus_video.mp4	mp4	cover	ok	yes	real video + covr cover art; ffprobe shows 3 streams (attached_pic first), trak list has only video+audio	files/cover_art_plus_video.mp4
-audio_only.m4a	mp4	audio	no-video	yes	audio-only M4A (ipod brand), no video trak	files/audio_only.m4a
-audio_only_aac.mp4	mp4	audio	no-video	yes	audio-only MP4	files/audio_only_aac.mp4
-audio_only_opus.webm	webm	audio	no-video	yes	audio-only WebM/Opus (no video TrackEntry)	files/audio_only_opus.webm
-edge_single_frame.mp4	mp4	edge	still	yes	one video sample: avg FPS undefined, treated as a still image	files/edge_single_frame.mp4
-corrupt_empty_0byte.mp4	unknown	corrupt	error	yes	zero-byte file	files/corrupt_empty_0byte.mp4
-corrupt_garbage_random.mp4	unknown	corrupt	error	yes	64 KiB xorshift noise, .mp4 extension	files/corrupt_garbage_random.mp4
-corrupt_text_named.mp4	unknown	corrupt	error	yes	ASCII text with .mp4 extension	files/corrupt_text_named.mp4
-corrupt_png_named.mp4	unknown	corrupt	error	yes	a PNG image saved with .mp4 extension (ffprobe sniffs png_pipe and reports a png video stream; the app must not treat it as a container)	files/corrupt_png_named.mp4
-corrupt_trunc_moov_partial.mp4	mp4	corrupt	error	yes	non-faststart file cut in the middle of moov	files/corrupt_trunc_moov_partial.mp4
-corrupt_trunc_no_moov.mp4	mp4	corrupt	error	yes	non-faststart file cut exactly where moov would start (interrupted recording)	files/corrupt_trunc_no_moov.mp4
-corrupt_trunc_mdat_faststart.mp4	mp4	corrupt	ok	yes	moov intact (faststart) but mdat cut at 60%: header says 90 frames, only 53 decodable	files/corrupt_trunc_mdat_faststart.mp4
-corrupt_fmp4_truncated_mid_fragment.mp4	mp4	corrupt	ok	yes	fragmented MP4 cut at 60% (interrupted live recording): last moof/mdat incomplete	files/corrupt_fmp4_truncated_mid_fragment.mp4
-box_mdat_size0.mp4	mp4	box64	ok	yes	last mdat has size field 0 ('extends to end of file')	files/box_mdat_size0.mp4
-corrupt_stts_count_huge.mp4	mp4	corrupt	ok	yes	stts entry_count lies (2^31-1): the app bounds reads by box size and warns; ffprobe fails (error reading header)	files/corrupt_stts_count_huge.mp4
-sniff_webm_named_mp4.mp4	webm	sniff	ok	yes	real WebM named .mp4: sniff magic, not extension	files/sniff_webm_named_mp4.mp4
-sniff_mp4_named_webm.webm	mp4	sniff	ok	yes	real MP4 named .webm	files/sniff_mp4_named_webm.webm
-sniff_mp4_named_mkv.mkv	mp4	sniff	ok	yes	real MP4 named .mkv	files/sniff_mp4_named_mkv.mkv
-frag_vfr_global_sidx.mp4	mp4	fmp4	ok	yes	fragmented VFR (60 fps for 1 s, then every 3rd frame) with a global sidx: ffprobe reads only the first fragment (avg 60/1), true average 4200/149	files/frag_vfr_global_sidx.mp4
-frag_vfr_dash.mp4	mp4	fmp4	ok	yes	same content with movflags dash (sidx per fragment): ffprobe reads all but the last fragment (avg 30/1), true average 4200/149	files/frag_vfr_dash.mp4
-h264_vfr_remux.mkv	matroska	vfr	ok	yes	VFR MP4 stream-copied to Matroska: DefaultDuration 23076923 = the true average 130/3, 260 BlockGroups each with a BlockDuration	files/h264_vfr_remux.mkv
-vp9_pipe_t10.webm	webm	live	ok	yes	3 s source piped with -t 10: Info Duration says 10.000 but 90 frames end at 3.0 s	files/vp9_pipe_t10.webm
-vp9_opus_live_audiotail.webm	webm	live	ok	yes	3 s video + 6 s Opus, -live 1: last cluster holds no video, the tail scan must reach the last video PTS (2.967 s)	files/vp9_opus_live_audiotail.webm
-h264_25_cover.mkv	matroska	cover	ok	yes	Matroska with an attached cover.png: ffprobe lists an attached_pic stream (r 90000/1) that the app ignores	files/h264_25_cover.mkv
-remux_cfr_120_ts16000.mp4	mp4	cfr	ok	yes	cfr_vp9_120.webm stream-copied to MP4 (MKV-to-MP4 remux): timescale 16000, PTS on a 1 ms grid, so deltas differ by 16 ticks; CFR 120, 1 ms quantized	files/remux_cfr_120_ts16000.mp4
-remux_cfr_29.97_ts16000.mp4	mp4	cfr	ok	yes	cfr_vp9_29.97.webm stream-copied to MP4 (MKV-to-MP4 remux): timescale 16000, PTS on a 1 ms grid, so deltas differ by 16 ticks; CFR 30000/1001, 1 ms quantized	files/remux_cfr_29.97_ts16000.mp4
-start_freeze_bf.mp4	mp4	vfr	ok	yes	first frame held 2 s, then 30 fps, B-frames + elst: stts starts 60000, 1000, 60000; avg_frame_rate 1125/67 differs from presented frames / span 4500/209	files/start_freeze_bf.mp4
-fmp4_missing_fragment.mp4	mp4	fmp4	ok	yes	fragmented 30 fps with the 3rd moof+mdat removed: tfdt jumps 1 s, avg_frame_rate 30/1, presented frames / span 25/1	files/fmp4_missing_fragment.mp4
-elst_trim_vfr_copy.mp4	mp4	vfr	ok	yes	vfr_two_phase_5_200.mp4 trimmed with -ss 0.95 -c copy: elst skips 5 stored frames, avg_frame_rate counts them	files/elst_trim_vfr_copy.mp4
-cfr_240_ts600.mp4	mp4	cfr	ok	yes	240 fps at timescale 600 (QuickTime-like slow motion): deltas alternate 3 and 2 ticks, nominal 240/1	files/cfr_240_ts600.mp4
-fmp4_global_sidx_bframes.mp4	mp4	fmp4	ok	yes	plain ffmpeg DASH output with B-frames: global sidx with earliest_presentation_time 1024, ffprobe duration = ept + subsegment durations (4.08 s, format 4.16 s)	files/fmp4_global_sidx_bframes.mp4
-late_30_to_60.mp4	mp4	vfr	ok	yes	late change: 6000 frames at 30 fps (200 s), then 1200 at 60 fps (20 s); avg 360/11, the change is far past a 256-packet probe	files/late_30_to_60.mp4
-late_25_to_12.5.webm	webm	vfr	ok	yes	late change in WebM (VP9): 5500 frames at 25 fps (220 s), then 500 at 12.5 fps (40 s); 6000 frames over 260 s; no DefaultDuration, ffprobe estimates avg_frame_rate 25/1 from the first packets	files/late_25_to_12.5.webm
-late_freeze_10s.mkv	matroska	vfr	ok	yes	late freeze in Matroska (H.264): 25 fps, frame 5999 held 10.04 s at 239.96 s, then 250 more frames; 6250 frames over 260 s	files/late_freeze_10s.mkv
-fmp4_mehd_all_ones.mp4	mp4	fmp4	ok	yes	fmp4_default_base_moof.mp4 with a version 1 mehd of 0xFFFFFFFFFFFFFFFF (unknown fragment duration) in mvex: ffprobe never reads mehd, the app ignores it	files/fmp4_mehd_all_ones.mp4
-corrupt_elst64_all_ones.mp4	mp4	corrupt	ok	yes	cfr_h264_30.mp4 with its elst rewritten as version 1 and a segment duration of 0xFFFFFFFFFFFFFFFF: the app reads the edit as lasting to the end and warns; ffprobe fails (invalid edit list duration -1)	files/corrupt_elst64_all_ones.mp4
-mov_trailing_junk.mov	mov	mov	ok	yes	mov_nobf_default.mov (moov at the end) with 16 bytes appended that are not a box: a size of 0x7FFFFFFF, past the end of the file, and a type of four NUL bytes, like the trailer of a phone MOV: the walk ignores them, so the file is not truncated	files/mov_trailing_junk.mov
-mp4_stsd_two_entries.mp4	mp4	mov	ok	yes	cfr_h264_30.mp4 with a copy of its avc1 sample entry that says 320x180 and its one chunk split in two, so samples 46 to 90 point to the second description: ffprobe reads both entries and prints the decoded 160x90; frames and rates come from stts	files/mp4_stsd_two_entries.mp4
-rec_chromium_vp8.webm	webm	recorder	ok	yes	Chromium 156 MediaRecorder video/webm;codecs=vp8, one piece: sized Segment, Duration and Cues, no DefaultDuration	files/rec_chromium_vp8.webm
-rec_chromium_vp8_sliced.webm	webm	recorder	ok	yes	Chromium 156 MediaRecorder video/webm;codecs=vp8, 250 ms timeslice: unknown-size Segment and Clusters, no Duration, no Cues, no DefaultDuration	files/rec_chromium_vp8_sliced.webm
-rec_chromium_vp9.webm	webm	recorder	ok	yes	Chromium 156 MediaRecorder video/webm;codecs=vp9, one piece: sized Segment, Duration and Cues, no DefaultDuration	files/rec_chromium_vp9.webm
-rec_chromium_vp9_sliced.webm	webm	recorder	ok	yes	Chromium 156 MediaRecorder video/webm;codecs=vp9, 250 ms timeslice: unknown-size Segment and Clusters, no Duration, no Cues, no DefaultDuration	files/rec_chromium_vp9_sliced.webm
-rec_chromium_av1.webm	webm	recorder	ok	yes	Chromium 156 MediaRecorder video/webm;codecs=av1 (recorded as av01), one piece: sized Segment, Duration and Cues, no DefaultDuration	files/rec_chromium_av1.webm
-rec_chromium_av1_sliced.webm	webm	recorder	ok	yes	Chromium 156 MediaRecorder video/webm;codecs=av1 (recorded as av01), 250 ms timeslice: unknown-size Segment and Clusters, no Duration, no Cues, no DefaultDuration	files/rec_chromium_av1_sliced.webm
-rec_chromium_h264.mkv	matroska	recorder	ok	yes	Chromium 156 MediaRecorder video/webm;codecs=h264, recorded as video/x-matroska;codecs=avc1 (DocType matroska), one piece: Duration and Cues, no DefaultDuration	files/rec_chromium_h264.mkv
-rec_chromium_h264_sliced.mkv	matroska	recorder	ok	yes	Chromium 156 MediaRecorder video/webm;codecs=h264, recorded as video/x-matroska;codecs=avc1, 250 ms timeslice: unknown sizes, no Duration, no Cues, no DefaultDuration	files/rec_chromium_h264_sliced.mkv
-rec_chromium_h264.mp4	mp4	recorder	ok	yes	Chromium 156 MediaRecorder video/mp4;codecs=avc1, one piece: fragmented (empty moov, moof mdat, mfra), mvhd duration set	files/rec_chromium_h264.mp4
-rec_chromium_h264_sliced.mp4	mp4	recorder	ok	yes	Chromium 156 MediaRecorder video/mp4;codecs=avc1, 250 ms timeslice: fragmented, mvhd duration 0, no mfra	files/rec_chromium_h264_sliced.mp4
-rec_chromium_vp9.mp4	mp4	recorder	ok	yes	Chromium 156 MediaRecorder video/mp4 (recorded as video/mp4;codecs=vp9), one piece: fragmented (empty moov, moof mdat, mfra), mvhd duration set	files/rec_chromium_vp9.mp4
-rec_chromium_vp9_sliced.mp4	mp4	recorder	ok	yes	Chromium 156 MediaRecorder video/mp4 (recorded as video/mp4;codecs=vp9), 250 ms timeslice: fragmented, mvhd duration 0, no mfra	files/rec_chromium_vp9_sliced.mp4
-sar_h264_4x3.mp4	mp4	sar	ok	yes	160x120 with a 4:3 sample aspect ratio in pasp and in the SPS VUI: ffprobe sample_aspect_ratio 4:3, display_aspect_ratio 16:9	files/sar_h264_4x3.mp4
-sar_pasp_only.mp4	mp4	sar	ok	yes	pasp says 4:3, the SPS VUI says 1:1: ffprobe prints the pasp ratio 4:3 (display 64:27)	files/sar_pasp_only.mp4
-sar_tkhd_only.mp4	mp4	sar	ok	yes	pasp renamed to free, tkhd says 240x90 over a 160x90 stream (VUI 1:1): ffprobe derives 3:2 from the tkhd size	files/sar_tkhd_only.mp4
-sar_matrix_scale.mp4	mp4	sar	ok	yes	pasp renamed to free, tkhd matrix scales x by 2 (VUI 1:1): ffprobe derives 2:1 from the matrix and prints a Display Matrix side data entry	files/sar_matrix_scale.mp4
-sar_tkhd_fraction.mp4	mp4	sar	ok	yes	sar_h264_4x3.mp4 with pasp renamed to free: the tkhd width 213.33 (16.16) that ffmpeg wrote for the 4:3 ratio wins over the 4:3 VUI, and ffprobe derives 213:160 from its integer part	files/sar_tkhd_fraction.mp4
-sar_vui_only.mp4	mp4	sar	ok	yes	sar_h264_4x3.mp4 with pasp renamed to free and the tkhd size set to the stored 160x120: only the SPS VUI carries the 4:3 ratio, and ffprobe prints it	files/sar_vui_only.mp4
-sar_tkhd_matrix.mp4	mp4	sar	ok	yes	sar_tkhd_only.mp4 (tkhd 240x90, 3:2) with the tkhd matrix scaling x by 2: ffprobe prints 2:1, the matrix ratio beats the tkhd size	files/sar_tkhd_matrix.mp4
-sar_pasp_tkhd_matrix.mp4	mp4	sar	ok	yes	sar_tkhd_matrix.mp4 with a pasp of 4:3 appended: ffprobe prints 4:3, the pasp beats the tkhd matrix and the tkhd size	files/sar_pasp_tkhd_matrix.mp4
-sar_none.mp4	mp4	sar	ok	yes	unknown sample aspect ratio: no pasp and no VUI aspect ratio, ffprobe prints N/A for sample_aspect_ratio and display_aspect_ratio	files/sar_none.mp4
-sar_4x3.mkv	matroska	sar	ok	yes	160x120 with a 4:3 sample aspect ratio: ffmpeg writes DisplayWidth 16, DisplayHeight 9 and DisplayUnit 3 (aspect ratio), ffprobe prints 4:3	files/sar_4x3.mkv
-track_disabled.mp4	mp4	multi	ok	yes	the only video track has the tkhd enabled flag cleared (flags 2): ffprobe disposition.default 0, the track is still decoded	files/track_disabled.mp4
-hdr10_hevc10.mp4	mp4	color	ok	yes	10-bit HEVC Main 10, BT.2020 primaries, PQ transfer, BT.2020 non-constant matrix, limited range, in colr nclx and in the SPS VUI	files/hdr10_hevc10.mp4
-hdr10_hevc10.mkv	matroska	color	ok	yes	the same PQ stream in Matroska: Colour with MatrixCoefficients, Range, TransferCharacteristics and Primaries	files/hdr10_hevc10.mkv
-hlg_hevc10.mp4	mp4	color	ok	yes	10-bit HEVC with BT.2020 primaries and the HLG transfer (arib-std-b67) in colr nclx and in the SPS VUI	files/hlg_hevc10.mp4
-hlg_h264_8bit.mp4	mp4	color	ok	yes	8-bit H.264 that keeps the BT.2020 and HLG tags in colr nclx and in the SPS VUI	files/hlg_h264_8bit.mp4
-vp9_p2_10bit.webm	webm	color	ok	yes	VP9 profile 2, 10-bit, PQ tags in the Colour element and no CodecPrivate: the profile and the bit depth are only in the bitstream	files/vp9_p2_10bit.webm
-vp9_p2_10bit.mp4	mp4	color	ok	yes	VP9 profile 2, 10-bit, in MP4: vpcC version 1 and colr nclx both carry the PQ tags	files/vp9_p2_10bit.mp4
-av1_10bit.mp4	mp4	color	ok	yes	AV1 Main, 10-bit (av1C high_bitdepth), no color tags in the container	files/av1_10bit.mp4
-colr_nclc.mov	mov	color	ok	yes	MOV colr nclc (BT.709, no range field) over an SPS VUI with full range: ffprobe takes the range from the VUI (pc)	files/colr_nclc.mov
-colr_vui_conflict.mp4	mp4	color	ok	yes	rec_chromium_h264.mp4 with its colr rewritten to BT.2020, PQ, BT.2020 non-constant, limited range over an SPS VUI that says BT.709, sRGB, BT.709, full range: ffprobe prints every colr value	files/colr_vui_conflict.mp4
-colr_vui_conflict_hevc.mp4	mp4	color	ok	yes	hdr10_hevc10.mp4 with its colr rewritten to BT.709 over a PQ SPS VUI: ffprobe prints the colr values	files/colr_vui_conflict_hevc.mp4
-colr_only_h264.mp4	mp4	color	ok	yes	H.264 without a VUI video signal type, colr nclx BT.2020 and PQ added: ffprobe prints the colr values	files/colr_only_h264.mp4
-colr_only_hevc.mp4	mp4	color	ok	yes	10-bit HEVC whose VUI has a video signal type without a colour description, colr nclx BT.2020 and PQ added: ffprobe prints the colr values	files/colr_only_hevc.mp4
-colr_unspecified_hevc.mp4	mp4	color	ok	yes	hdr10_hevc10.mp4 with a colr nclx whose three codes are 2 (unspecified) and whose full range flag is set: ffprobe prints the PQ codes of the SPS VUI and the pc range of the colr	files/colr_unspecified_hevc.mp4
-colr_partial_h264.mp4	mp4	color	ok	yes	hlg_h264_8bit.mp4 with a colr nclx of primaries 1 and two unspecified codes, full range: ffprobe prints bt709, two unknowns and pc, nothing from the SPS VUI	files/colr_partial_h264.mp4
-hlg_vui_only.mp4	mp4	color	ok	yes	hlg_hevc10.mp4 with its colr renamed to free: only the SPS VUI carries the HLG tags, and ffprobe prints them	files/hlg_vui_only.mp4
-hlg_h264_vui_only.mp4	mp4	color	ok	yes	hlg_h264_8bit.mp4 with its colr renamed to free: only the H.264 SPS VUI carries the HLG tags, and ffprobe prints them	files/hlg_h264_vui_only.mp4
-dv_p81_dvvc.mp4	mp4	dovi	ok	yes	hdr10_hevc10.mp4 with a dvvC record appended to hvc1: Dolby Vision profile 8, level 1, compatibility id 1, metadata compression 1 (limited)	files/dv_p81_dvvc.mp4
-dv_p5_dvcc_dvh1.mp4	mp4	dovi	ok	yes	hdr10_hevc10.mp4 with the entry renamed to dvh1 and a dvcC record: Dolby Vision profile 5, level 2, compatibility id 0, no metadata compression	files/dv_p5_dvcc_dvh1.mp4
-dv_p81.mkv	matroska	dovi	ok	yes	hdr10_hevc10.mkv with a BlockAdditionMapping of type dvvC where ffmpeg writes one: Dolby Vision profile 8, level 1, compatibility id 1, metadata compression 1	files/dv_p81.mkv
-fmp4_mehd_valid.mp4	mp4	fmp4	ok	yes	fmp4_default_base_moof.mp4 with a version 1 mehd of 4004 ms, the true duration: ffprobe never reads mehd	files/fmp4_mehd_valid.mp4
-fmp4_audio_longer.mp4	mp4	fmp4	ok	yes	fragmented 2 s video with 2.5 s of AAC audio, empty moov, mfra at the end: the format duration follows the audio	files/fmp4_audio_longer.mp4
-fmp4_audio_longer_sidx.mp4	mp4	fmp4	ok	yes	the same with a global sidx per track after the moov, and an mfra at the end	files/fmp4_audio_longer_sidx.mp4
-faststart_large_moov.mp4	mp4	mov	ok	yes	faststart with a moov of 72831 bytes, above 64 KiB: 6000 frames whose durations alternate 3500 and 2500 ticks, one stts entry per frame	files/faststart_large_moov.mp4
-mov_cmov.mov	mov	mov	error	yes	MOV whose moov is zlib-compressed into cmov (dcom, cmvd), as old QuickTime writers did: ffprobe reads it, the app reports it unsupported	files/mov_cmov.mov
-long_cfr_3h_60fps.mp4	mp4	long	ok	no	3 h x 60 fps = 648000 frames, 64x36, crf 51: 13 MB, moov 2.6 MB at the end (stsz 4 B/frame)	large/long_cfr_3h_60fps.mp4
-long_vfr_1h_screenrec.mp4	mp4	long	ok	no	1 h VFR screen-recording-like: 133920 frames, stts has 124761 entries (~1 MB)	large/long_vfr_1h_screenrec.mp4
-big_1080p_moov_end.mp4	mp4	big	ok	no	60 s of 1080p30 H.264 with film-grain noise, CRF 21 (604 MB), moov at the end: a phone-sized upload, measured in the browser	large/big_1080p_moov_end.mp4
-big_1080p_faststart.mp4	mp4	big	ok	no	the same file with -movflags +faststart (moov before mdat)	large/big_1080p_faststart.mp4
-big_1080p.mkv	matroska	big	ok	no	the same stream copied to Matroska: auto mode decides between probe and exact by the predicted scan cost	large/big_1080p.mkv
-sparse_4_5gb_co64.mp4	mp4	sparse	ok	no	SPARSE 4.5 GB logical: ftyp + mdat(64-bit, hole+payload) + moov(co64, offsets > 2^32) at 4.5 GB; ~87 KB real data. Do NOT copy with tools that expand sparse files	large/sparse_4_5gb_co64.mp4
+name	container	category	expect	committed	notes	path	code
+cfr_h264_23.976.mp4	mp4	cfr	ok	yes	CFR 24000/1001 fps, H.264 no B-frames, ftyp free mdat moov, 1 stts entry	files/cfr_h264_23.976.mp4	
+cfr_vp9_23.976.webm	webm	cfr	ok	yes	CFR 24000/1001 fps VP9 WebM: ms block timestamps quantize inst. FPS, DefaultDuration is exact	files/cfr_vp9_23.976.webm	
+cfr_h264_24.mp4	mp4	cfr	ok	yes	CFR 24 fps, H.264 no B-frames, ftyp free mdat moov, 1 stts entry	files/cfr_h264_24.mp4	
+cfr_vp9_24.webm	webm	cfr	ok	yes	CFR 24 fps VP9 WebM: ms block timestamps quantize inst. FPS, DefaultDuration is exact	files/cfr_vp9_24.webm	
+cfr_h264_25.mp4	mp4	cfr	ok	yes	CFR 25 fps, H.264 no B-frames, ftyp free mdat moov, 1 stts entry	files/cfr_h264_25.mp4	
+cfr_vp9_25.webm	webm	cfr	ok	yes	CFR 25 fps VP9 WebM: ms block timestamps quantize inst. FPS, DefaultDuration is exact	files/cfr_vp9_25.webm	
+cfr_h264_29.97.mp4	mp4	cfr	ok	yes	CFR 30000/1001 fps, H.264 no B-frames, ftyp free mdat moov, 1 stts entry	files/cfr_h264_29.97.mp4	
+cfr_vp9_29.97.webm	webm	cfr	ok	yes	CFR 30000/1001 fps VP9 WebM: ms block timestamps quantize inst. FPS, DefaultDuration is exact	files/cfr_vp9_29.97.webm	
+cfr_h264_30.mp4	mp4	cfr	ok	yes	CFR 30 fps, H.264 no B-frames, ftyp free mdat moov, 1 stts entry	files/cfr_h264_30.mp4	
+cfr_vp9_30.webm	webm	cfr	ok	yes	CFR 30 fps VP9 WebM: ms block timestamps quantize inst. FPS, DefaultDuration is exact	files/cfr_vp9_30.webm	
+cfr_h264_50.mp4	mp4	cfr	ok	yes	CFR 50 fps, H.264 no B-frames, ftyp free mdat moov, 1 stts entry	files/cfr_h264_50.mp4	
+cfr_vp9_50.webm	webm	cfr	ok	yes	CFR 50 fps VP9 WebM: ms block timestamps quantize inst. FPS, DefaultDuration is exact	files/cfr_vp9_50.webm	
+cfr_h264_59.94.mp4	mp4	cfr	ok	yes	CFR 60000/1001 fps, H.264 no B-frames, ftyp free mdat moov, 1 stts entry	files/cfr_h264_59.94.mp4	
+cfr_vp9_59.94.webm	webm	cfr	ok	yes	CFR 60000/1001 fps VP9 WebM: ms block timestamps quantize inst. FPS, DefaultDuration is exact	files/cfr_vp9_59.94.webm	
+cfr_h264_60.mp4	mp4	cfr	ok	yes	CFR 60 fps, H.264 no B-frames, ftyp free mdat moov, 1 stts entry	files/cfr_h264_60.mp4	
+cfr_vp9_60.webm	webm	cfr	ok	yes	CFR 60 fps VP9 WebM: ms block timestamps quantize inst. FPS, DefaultDuration is exact	files/cfr_vp9_60.webm	
+cfr_h264_120.mp4	mp4	cfr	ok	yes	CFR 120 fps, H.264 no B-frames, ftyp free mdat moov, 1 stts entry	files/cfr_h264_120.mp4	
+cfr_vp9_120.webm	webm	cfr	ok	yes	CFR 120 fps VP9 WebM: ms block timestamps quantize inst. FPS, DefaultDuration is exact	files/cfr_vp9_120.webm	
+cfr_h264_240.mp4	mp4	cfr	ok	yes	CFR 240 fps, H.264 no B-frames, ftyp free mdat moov, 1 stts entry	files/cfr_h264_240.mp4	
+cfr_vp9_240.webm	webm	cfr	ok	yes	CFR 240 fps VP9 WebM: ms block timestamps quantize inst. FPS, DefaultDuration is exact	files/cfr_vp9_240.webm	
+mov_nobf_default.mov	mov	mov	ok	yes	MOV, no B-frames, 'wide' before mdat, moov at end, elst present	files/mov_nobf_default.mov	
+mov_nobf_faststart.mov	mov	mov	ok	yes	MOV faststart: ftyp moov wide mdat	files/mov_nobf_faststart.mov	
+mov_bf_elst.mov	mov	mov	ok	yes	MOV + B-frames: ctts + elst media_time=2002 (2 frames of reorder delay)	files/mov_bf_elst.mov	
+mov_bf_noelst.mov	mov	mov	ok	yes	MOV + B-frames without edit list: ffprobe start_time=0.067, no elst	files/mov_bf_noelst.mov	
+mov_bf_faststart.mov	mov	mov	ok	yes	MOV + B-frames + faststart	files/mov_bf_faststart.mov	
+mov_prores.mov	mov	codec	ok	yes	MOV ProRes 422 Proxy (non-H.26x codec, apch)	files/mov_prores.mov	
+mp4_bf_elst.mp4	mp4	mov	ok	yes	MP4 + B-frames: ctts + elst media_time=2002, 'free' before mdat	files/mp4_bf_elst.mp4	
+mp4_bf_noelst.mp4	mp4	mov	ok	yes	MP4 + B-frames, no elst	files/mp4_bf_noelst.mp4	
+mp4_bf_faststart.mp4	mp4	mov	ok	yes	MP4 faststart: ftyp moov free mdat	files/mp4_bf_faststart.mp4	
+mp4_elst_empty_offset.mp4	mp4	mov	ok	yes	elst = [empty edit 1000 ms (media_time=-1), media_time=1024]; ffprobe start_time=1.0; 90 frames	files/mp4_elst_empty_offset.mp4	
+mp4_elst_trim_start.mp4	mp4	mov	ok	yes	-ss 0.7 stream copy: stts=90 samples but elst trims start so only 69 frames are shown (nb_frames=90, nb_read_frames=69)	files/mp4_elst_trim_start.mp4	
+mp4_elst_trim_output_seek.mp4	mp4	mov	ok	yes	output -ss 0.7 stream copy: 60 frames, elst = [empty 301, media_time 2002], start_time 0.301	files/mp4_elst_trim_output_seek.mp4	
+fmp4_keyframe_empty_moov.mp4	mp4	fmp4	ok	yes	ftyp moov(empty) (moof mdat)x4 mfra; explicit base_data_offset in tfhd; nb_frames N/A	files/fmp4_keyframe_empty_moov.mp4	
+fmp4_default_base_moof.mp4	mp4	fmp4	ok	yes	as above with default_base_is_moof (tfhd flags 0x20038)	files/fmp4_default_base_moof.mp4	
+fmp4_frag_duration.mp4	mp4	fmp4	ok	yes	fragments cut by duration (0.5 s): 8 moof for 120 samples	files/fmp4_frag_duration.mp4	
+fmp4_bframes.mp4	mp4	fmp4	ok	yes	fragmented with B-frames: trun composition offsets, no elst, start_time 0.067	files/fmp4_bframes.mp4	
+fmp4_hybrid_no_empty_moov.mp4	mp4	fmp4	ok	yes	moov already holds 30 samples (stts) + 3 moofs with 90 more: ffprobe nb_frames=30 but 120 real	files/fmp4_hybrid_no_empty_moov.mp4	
+fmp4_cmaf.mp4	mp4	fmp4	ok	yes	movflags cmaf	files/fmp4_cmaf.mp4	
+fmp4_global_sidx.mp4	mp4	fmp4	ok	yes	global sidx right after moov	files/fmp4_global_sidx.mp4	
+fmp4_dash_flag.mp4	mp4	fmp4	ok	yes	movflags dash: sidx before every moof	files/fmp4_dash_flag.mp4	
+mp4_hybrid_fragmented_finalized.mp4	mp4	fmp4	ok	yes	hybrid_fragmented: written fragmented, finalized to a plain ftyp free mdat moov file (4 chunks)	files/mp4_hybrid_fragmented_finalized.mp4	
+fmp4_dash_single_file.mp4	mp4	fmp4	ok	yes	-f dash single_file: ftyp moov (sidx moof mdat)x4; moov has elst with segment_duration=0	files/fmp4_dash_single_file.mp4	
+fmp4_dash_concat_segments.mp4	mp4	fmp4	ok	yes	CMAF-style: init segment + 4 media segments concatenated: moov (styp sidx moof mdat)x4	files/fmp4_dash_concat_segments.mp4	
+hevc_hvc1.mp4	mp4	codec	ok	yes	HEVC sample entry hvc1 (coded size 160x96, display 160x90)	files/hevc_hvc1.mp4	
+hevc_hev1.mp4	mp4	codec	ok	yes	HEVC sample entry hev1	files/hevc_hev1.mp4	
+av1.mp4	mp4	codec	ok	yes	AV1 in MP4 (av01) via libaom	files/av1.mp4	
+vp9.mp4	mp4	codec	ok	yes	VP9 in MP4 (vp09)	files/vp9.mp4	
+vp9.webm	webm	codec	ok	yes	VP9 WebM, known sizes, Cues, Duration, DefaultDuration=33366666 ns	files/vp9.webm	
+vp8.webm	webm	codec	ok	yes	VP8 WebM	files/vp8.webm	
+av1.webm	webm	codec	ok	yes	AV1 WebM	files/av1.webm	
+h264.mkv	matroska	matroska	ok	yes	Matroska with H.264	files/h264.mkv	
+hevc.mkv	matroska	codec	ok	yes	HEVC (H.265) in Matroska	files/hevc.mkv	
+vp9_live.webm	webm	live	ok	yes	-live 1: Segment size unknown, no Duration, no Cues, clusters keep known size. crashed.mkv (ffmpeg killed mid-write) is not in the corpus: not byte-reproducible	files/vp9_live.webm	
+vp9_pipe.webm	webm	live	ok	yes	written to a pipe: identical structure to -live 1 (non-seekable output)	files/vp9_pipe.webm	
+vp9_unknown_clusters.webm	webm	live	ok	yes	MediaRecorder-like: Segment AND every Cluster have unknown size (01FFFF.. / 3FFFFF), no Cues/Duration	files/vp9_unknown_clusters.webm	
+vp9_no_defaultduration.webm	webm	matroska	ok	yes	DefaultDuration element overwritten by an EBML Void: only block timestamps (ms) remain	files/vp9_no_defaultduration.webm	
+vfr_concat_10_30_60.mp4	mp4	vfr	ok	yes	VFR method 1: concat of 2 s segments at 10/30/60 fps, passthrough; avg 100/3, nominal r=60; timescale 90000	files/vfr_concat_10_30_60.mp4	
+vfr_concat_bframes.mp4	mp4	vfr	ok	yes	VFR + B-frames: stts (DTS deltas) and display-order PTS deltas differ, so FPS min/max from stts is not the same as from PTS	files/vfr_concat_bframes.mp4	
+vfr_concat_10_30_60_ts1M.mp4	mp4	vfr	ok	yes	same, ffmpeg default timescale 1000000: rounding gives 33333/33334 tick durations (5 distinct deltas)	files/vfr_concat_10_30_60_ts1M.mp4	
+vfr_concat_10_30_60.mov	mov	vfr	ok	yes	same in MOV	files/vfr_concat_10_30_60.mov	
+vfr_concat_10_30_60.webm	webm	vfr	ok	yes	same in WebM: ffprobe avg_frame_rate=0/0, r_frame_rate=30/1; DefaultDuration describes only one rate	files/vfr_concat_10_30_60.webm	
+vfr_concat_10_30_60_fmp4.mp4	mp4	vfr	ok	yes	same, fragmented: durations live in trun	files/vfr_concat_10_30_60_fmp4.mp4	
+vfr_setpts_sine.mp4	mp4	vfr	ok	yes	VFR method 2: non-linear setpts, delta = 3000*(1+0.75cos(N/8)) ticks -> inst. FPS 17..120	files/vfr_setpts_sine.mp4	
+vfr_select_drop.mp4	mp4	vfr	ok	yes	VFR method 3: select drops 4 of every 10 frames of a 60 fps source (gaps of 1,2,3 frames)	files/vfr_select_drop.mp4	
+vfr_mpdecimate.mp4	mp4	vfr	ok	yes	VFR method 4: mpdecimate removes the static middle: one ~1.5 s gap (min inst FPS 0.67)	files/vfr_mpdecimate.mp4	
+vfr_screenrec_ts1000.mp4	mp4	vfr	ok	yes	VFR method 5: screen-recording-like, timescale 1000, 0-7 ms jitter, long gaps; 246 frames, avg ~41 (61500/1501)	files/vfr_screenrec_ts1000.mp4	
+vfr_screenrec_ts1000.webm	webm	vfr	ok	yes	same in WebM: DefaultDuration claims 60 fps while real average is ~41	files/vfr_screenrec_ts1000.webm	
+vfr_pulldown_2_3.mp4	mp4	vfr	ok	yes	VFR method 6: setts bsf rewrites a 24 fps stream to a 2:3 cadence (3000/4500 ticks); avg exactly 24, r=60	files/vfr_pulldown_2_3.mp4	
+vfr_two_phase_5_200.mp4	mp4	vfr	ok	yes	rate profile: 4 s at 5 fps then 4 s at 200 fps (20 + 800 frames), passthrough, timescale 90000; avg 205/2	files/vfr_two_phase_5_200.mp4	
+vfr_two_phase_5_200.webm	webm	vfr	ok	yes	same two phases in WebM (VP9): 200 ms and 5 ms block timestamps	files/vfr_two_phase_5_200.webm	
+vfr_two_phase_5_200.mkv	matroska	vfr	ok	yes	same two phases, the H.264 MP4 stream-copied to Matroska	files/vfr_two_phase_5_200.mkv	
+vfr_freeze_2s.mp4	mp4	vfr	ok	yes	rate profile: 30 fps with one frame held for 2 s at 1.967 s (frame 59), 120 frames over 5.967 s	files/vfr_freeze_2s.mp4	
+box64_mdat64_wide.mov	mov	box64	ok	yes	'wide'+mdat(32) rewritten to size=1 'mdat' largesize (16-byte header); same file size, same stco offsets	files/box64_mdat64_wide.mov	
+box64_mdat64_free.mp4	mp4	box64	ok	yes	'free'+mdat(32) rewritten the same way	files/box64_mdat64_free.mp4	
+box64_co64_mdat64.mp4	mp4	box64	ok	yes	64-bit mdat header + every stco rewritten to co64 (moov grows by 4 bytes/chunk)	files/box64_co64_mdat64.mp4	
+av_h264_aac.mp4	mp4	multi	ok	yes	video + AAC audio, moov at end (the typical real-world file)	files/av_h264_aac.mp4	
+av_h264_aac_faststart.mp4	mp4	multi	ok	yes	video + AAC audio, faststart	files/av_h264_aac_faststart.mp4	
+multi_video_2tracks.mp4	mp4	multi	ok	yes	two real video tracks: 160x90 @30 (3 s) first, 320x180 @24 (4 s) second, + audio	files/multi_video_2tracks.mp4	
+still_image_track_first.mp4	mp4	multi	ok	yes	first video trak is a 1-sample MJPEG still (64x64, 0.04 s), real H.264 video is track 2	files/still_image_track_first.mp4	
+cover_art_audio.m4a	mp4	cover	no-video	yes	audio-only M4A with cover art stored in udta/meta/ilst/covr (no video trak, but ffprobe lists an attached_pic video stream)	files/cover_art_audio.m4a	
+cover_art_plus_video.mp4	mp4	cover	ok	yes	real video + covr cover art; ffprobe shows 3 streams (attached_pic first), trak list has only video+audio	files/cover_art_plus_video.mp4	
+audio_only.m4a	mp4	audio	no-video	yes	audio-only M4A (ipod brand), no video trak	files/audio_only.m4a	
+audio_only_aac.mp4	mp4	audio	no-video	yes	audio-only MP4	files/audio_only_aac.mp4	
+audio_only_opus.webm	webm	audio	no-video	yes	audio-only WebM/Opus (no video TrackEntry)	files/audio_only_opus.webm	
+edge_single_frame.mp4	mp4	edge	still	yes	one video sample: avg FPS undefined, treated as a still image	files/edge_single_frame.mp4	
+corrupt_empty_0byte.mp4	unknown	corrupt	error	yes	zero-byte file	files/corrupt_empty_0byte.mp4	empty-file
+corrupt_garbage_random.mp4	unknown	corrupt	error	yes	64 KiB xorshift noise, .mp4 extension	files/corrupt_garbage_random.mp4	unrecognised
+corrupt_text_named.mp4	unknown	corrupt	error	yes	ASCII text with .mp4 extension	files/corrupt_text_named.mp4	unrecognised
+corrupt_png_named.mp4	unknown	corrupt	error	yes	a PNG image saved with .mp4 extension (ffprobe sniffs png_pipe and reports a png video stream; the app must not treat it as a container)	files/corrupt_png_named.mp4	unrecognised
+corrupt_trunc_moov_partial.mp4	mp4	corrupt	error	yes	non-faststart file cut in the middle of moov	files/corrupt_trunc_moov_partial.mp4	truncated
+corrupt_trunc_no_moov.mp4	mp4	corrupt	error	yes	non-faststart file cut exactly where moov would start (interrupted recording)	files/corrupt_trunc_no_moov.mp4	no-header
+corrupt_trunc_mdat_faststart.mp4	mp4	corrupt	ok	yes	moov intact (faststart) but mdat cut at 60%: header says 90 frames, only 53 decodable	files/corrupt_trunc_mdat_faststart.mp4	
+corrupt_fmp4_truncated_mid_fragment.mp4	mp4	corrupt	ok	yes	fragmented MP4 cut at 60% (interrupted live recording): last moof/mdat incomplete	files/corrupt_fmp4_truncated_mid_fragment.mp4	
+box_mdat_size0.mp4	mp4	box64	ok	yes	last mdat has size field 0 ('extends to end of file')	files/box_mdat_size0.mp4	
+corrupt_stts_count_huge.mp4	mp4	corrupt	ok	yes	stts entry_count lies (2^31-1): the app bounds reads by box size and warns; ffprobe fails (error reading header)	files/corrupt_stts_count_huge.mp4	
+sniff_webm_named_mp4.mp4	webm	sniff	ok	yes	real WebM named .mp4: sniff magic, not extension	files/sniff_webm_named_mp4.mp4	
+sniff_mp4_named_webm.webm	mp4	sniff	ok	yes	real MP4 named .webm	files/sniff_mp4_named_webm.webm	
+sniff_mp4_named_mkv.mkv	mp4	sniff	ok	yes	real MP4 named .mkv	files/sniff_mp4_named_mkv.mkv	
+frag_vfr_global_sidx.mp4	mp4	fmp4	ok	yes	fragmented VFR (60 fps for 1 s, then every 3rd frame) with a global sidx: ffprobe reads only the first fragment (avg 60/1), true average 4200/149	files/frag_vfr_global_sidx.mp4	
+frag_vfr_dash.mp4	mp4	fmp4	ok	yes	same content with movflags dash (sidx per fragment): ffprobe reads all but the last fragment (avg 30/1), true average 4200/149	files/frag_vfr_dash.mp4	
+h264_vfr_remux.mkv	matroska	vfr	ok	yes	VFR MP4 stream-copied to Matroska: DefaultDuration 23076923 = the true average 130/3, 260 BlockGroups each with a BlockDuration	files/h264_vfr_remux.mkv	
+vp9_pipe_t10.webm	webm	live	ok	yes	3 s source piped with -t 10: Info Duration says 10.000 but 90 frames end at 3.0 s	files/vp9_pipe_t10.webm	
+vp9_opus_live_audiotail.webm	webm	live	ok	yes	3 s video + 6 s Opus, -live 1: last cluster holds no video, the tail scan must reach the last video PTS (2.967 s)	files/vp9_opus_live_audiotail.webm	
+h264_25_cover.mkv	matroska	cover	ok	yes	Matroska with an attached cover.png: ffprobe lists an attached_pic stream (r 90000/1) that the app ignores	files/h264_25_cover.mkv	
+remux_cfr_120_ts16000.mp4	mp4	cfr	ok	yes	cfr_vp9_120.webm stream-copied to MP4 (MKV-to-MP4 remux): timescale 16000, PTS on a 1 ms grid, so deltas differ by 16 ticks; CFR 120, 1 ms quantized	files/remux_cfr_120_ts16000.mp4	
+remux_cfr_29.97_ts16000.mp4	mp4	cfr	ok	yes	cfr_vp9_29.97.webm stream-copied to MP4 (MKV-to-MP4 remux): timescale 16000, PTS on a 1 ms grid, so deltas differ by 16 ticks; CFR 30000/1001, 1 ms quantized	files/remux_cfr_29.97_ts16000.mp4	
+start_freeze_bf.mp4	mp4	vfr	ok	yes	first frame held 2 s, then 30 fps, B-frames + elst: stts starts 60000, 1000, 60000; avg_frame_rate 1125/67 differs from presented frames / span 4500/209	files/start_freeze_bf.mp4	
+fmp4_missing_fragment.mp4	mp4	fmp4	ok	yes	fragmented 30 fps with the 3rd moof+mdat removed: tfdt jumps 1 s, avg_frame_rate 30/1, presented frames / span 25/1	files/fmp4_missing_fragment.mp4	
+elst_trim_vfr_copy.mp4	mp4	vfr	ok	yes	vfr_two_phase_5_200.mp4 trimmed with -ss 0.95 -c copy: elst skips 5 stored frames, avg_frame_rate counts them	files/elst_trim_vfr_copy.mp4	
+cfr_240_ts600.mp4	mp4	cfr	ok	yes	240 fps at timescale 600 (QuickTime-like slow motion): deltas alternate 3 and 2 ticks, nominal 240/1	files/cfr_240_ts600.mp4	
+fmp4_global_sidx_bframes.mp4	mp4	fmp4	ok	yes	plain ffmpeg DASH output with B-frames: global sidx with earliest_presentation_time 1024, ffprobe duration = ept + subsegment durations (4.08 s, format 4.16 s)	files/fmp4_global_sidx_bframes.mp4	
+late_30_to_60.mp4	mp4	vfr	ok	yes	late change: 6000 frames at 30 fps (200 s), then 1200 at 60 fps (20 s); avg 360/11, the change is far past a 256-packet probe	files/late_30_to_60.mp4	
+late_25_to_12.5.webm	webm	vfr	ok	yes	late change in WebM (VP9): 5500 frames at 25 fps (220 s), then 500 at 12.5 fps (40 s); 6000 frames over 260 s; no DefaultDuration, ffprobe estimates avg_frame_rate 25/1 from the first packets	files/late_25_to_12.5.webm	
+late_freeze_10s.mkv	matroska	vfr	ok	yes	late freeze in Matroska (H.264): 25 fps, frame 5999 held 10.04 s at 239.96 s, then 250 more frames; 6250 frames over 260 s	files/late_freeze_10s.mkv	
+fmp4_mehd_all_ones.mp4	mp4	fmp4	ok	yes	fmp4_default_base_moof.mp4 with a version 1 mehd of 0xFFFFFFFFFFFFFFFF (unknown fragment duration) in mvex: ffprobe never reads mehd, the app ignores it	files/fmp4_mehd_all_ones.mp4	
+corrupt_elst64_all_ones.mp4	mp4	corrupt	ok	yes	cfr_h264_30.mp4 with its elst rewritten as version 1 and a segment duration of 0xFFFFFFFFFFFFFFFF: the app reads the edit as lasting to the end and warns; ffprobe fails (invalid edit list duration -1)	files/corrupt_elst64_all_ones.mp4	
+mov_trailing_junk.mov	mov	mov	ok	yes	mov_nobf_default.mov (moov at the end) with 16 bytes appended that are not a box: a size of 0x7FFFFFFF, past the end of the file, and a type of four NUL bytes, like the trailer of a phone MOV: the walk ignores them, so the file is not truncated	files/mov_trailing_junk.mov	
+mp4_stsd_two_entries.mp4	mp4	mov	ok	yes	cfr_h264_30.mp4 with a copy of its avc1 sample entry that says 320x180 and its one chunk split in two, so samples 46 to 90 point to the second description: ffprobe reads both entries and prints the decoded 160x90; frames and rates come from stts	files/mp4_stsd_two_entries.mp4	
+rec_chromium_vp8.webm	webm	recorder	ok	yes	Chromium 156 MediaRecorder video/webm;codecs=vp8, one piece: sized Segment, Duration and Cues, no DefaultDuration	files/rec_chromium_vp8.webm	
+rec_chromium_vp8_sliced.webm	webm	recorder	ok	yes	Chromium 156 MediaRecorder video/webm;codecs=vp8, 250 ms timeslice: unknown-size Segment and Clusters, no Duration, no Cues, no DefaultDuration	files/rec_chromium_vp8_sliced.webm	
+rec_chromium_vp9.webm	webm	recorder	ok	yes	Chromium 156 MediaRecorder video/webm;codecs=vp9, one piece: sized Segment, Duration and Cues, no DefaultDuration	files/rec_chromium_vp9.webm	
+rec_chromium_vp9_sliced.webm	webm	recorder	ok	yes	Chromium 156 MediaRecorder video/webm;codecs=vp9, 250 ms timeslice: unknown-size Segment and Clusters, no Duration, no Cues, no DefaultDuration	files/rec_chromium_vp9_sliced.webm	
+rec_chromium_av1.webm	webm	recorder	ok	yes	Chromium 156 MediaRecorder video/webm;codecs=av1 (recorded as av01), one piece: sized Segment, Duration and Cues, no DefaultDuration	files/rec_chromium_av1.webm	
+rec_chromium_av1_sliced.webm	webm	recorder	ok	yes	Chromium 156 MediaRecorder video/webm;codecs=av1 (recorded as av01), 250 ms timeslice: unknown-size Segment and Clusters, no Duration, no Cues, no DefaultDuration	files/rec_chromium_av1_sliced.webm	
+rec_chromium_h264.mkv	matroska	recorder	ok	yes	Chromium 156 MediaRecorder video/webm;codecs=h264, recorded as video/x-matroska;codecs=avc1 (DocType matroska), one piece: Duration and Cues, no DefaultDuration	files/rec_chromium_h264.mkv	
+rec_chromium_h264_sliced.mkv	matroska	recorder	ok	yes	Chromium 156 MediaRecorder video/webm;codecs=h264, recorded as video/x-matroska;codecs=avc1, 250 ms timeslice: unknown sizes, no Duration, no Cues, no DefaultDuration	files/rec_chromium_h264_sliced.mkv	
+rec_chromium_h264.mp4	mp4	recorder	ok	yes	Chromium 156 MediaRecorder video/mp4;codecs=avc1, one piece: fragmented (empty moov, moof mdat, mfra), mvhd duration set	files/rec_chromium_h264.mp4	
+rec_chromium_h264_sliced.mp4	mp4	recorder	ok	yes	Chromium 156 MediaRecorder video/mp4;codecs=avc1, 250 ms timeslice: fragmented, mvhd duration 0, no mfra	files/rec_chromium_h264_sliced.mp4	
+rec_chromium_vp9.mp4	mp4	recorder	ok	yes	Chromium 156 MediaRecorder video/mp4 (recorded as video/mp4;codecs=vp9), one piece: fragmented (empty moov, moof mdat, mfra), mvhd duration set	files/rec_chromium_vp9.mp4	
+rec_chromium_vp9_sliced.mp4	mp4	recorder	ok	yes	Chromium 156 MediaRecorder video/mp4 (recorded as video/mp4;codecs=vp9), 250 ms timeslice: fragmented, mvhd duration 0, no mfra	files/rec_chromium_vp9_sliced.mp4	
+sar_h264_4x3.mp4	mp4	sar	ok	yes	160x120 with a 4:3 sample aspect ratio in pasp and in the SPS VUI: ffprobe sample_aspect_ratio 4:3, display_aspect_ratio 16:9	files/sar_h264_4x3.mp4	
+sar_pasp_only.mp4	mp4	sar	ok	yes	pasp says 4:3, the SPS VUI says 1:1: ffprobe prints the pasp ratio 4:3 (display 64:27)	files/sar_pasp_only.mp4	
+sar_tkhd_only.mp4	mp4	sar	ok	yes	pasp renamed to free, tkhd says 240x90 over a 160x90 stream (VUI 1:1): ffprobe derives 3:2 from the tkhd size	files/sar_tkhd_only.mp4	
+sar_matrix_scale.mp4	mp4	sar	ok	yes	pasp renamed to free, tkhd matrix scales x by 2 (VUI 1:1): ffprobe derives 2:1 from the matrix and prints a Display Matrix side data entry	files/sar_matrix_scale.mp4	
+sar_tkhd_fraction.mp4	mp4	sar	ok	yes	sar_h264_4x3.mp4 with pasp renamed to free: the tkhd width 213.33 (16.16) that ffmpeg wrote for the 4:3 ratio wins over the 4:3 VUI, and ffprobe derives 213:160 from its integer part	files/sar_tkhd_fraction.mp4	
+sar_vui_only.mp4	mp4	sar	ok	yes	sar_h264_4x3.mp4 with pasp renamed to free and the tkhd size set to the stored 160x120: only the SPS VUI carries the 4:3 ratio, and ffprobe prints it	files/sar_vui_only.mp4	
+sar_tkhd_matrix.mp4	mp4	sar	ok	yes	sar_tkhd_only.mp4 (tkhd 240x90, 3:2) with the tkhd matrix scaling x by 2: ffprobe prints 2:1, the matrix ratio beats the tkhd size	files/sar_tkhd_matrix.mp4	
+sar_pasp_tkhd_matrix.mp4	mp4	sar	ok	yes	sar_tkhd_matrix.mp4 with a pasp of 4:3 appended: ffprobe prints 4:3, the pasp beats the tkhd matrix and the tkhd size	files/sar_pasp_tkhd_matrix.mp4	
+sar_none.mp4	mp4	sar	ok	yes	unknown sample aspect ratio: no pasp and no VUI aspect ratio, ffprobe prints N/A for sample_aspect_ratio and display_aspect_ratio	files/sar_none.mp4	
+sar_4x3.mkv	matroska	sar	ok	yes	160x120 with a 4:3 sample aspect ratio: ffmpeg writes DisplayWidth 16, DisplayHeight 9 and DisplayUnit 3 (aspect ratio), ffprobe prints 4:3	files/sar_4x3.mkv	
+track_disabled.mp4	mp4	multi	ok	yes	the only video track has the tkhd enabled flag cleared (flags 2): ffprobe disposition.default 0, the track is still decoded	files/track_disabled.mp4	
+hdr10_hevc10.mp4	mp4	color	ok	yes	10-bit HEVC Main 10, BT.2020 primaries, PQ transfer, BT.2020 non-constant matrix, limited range, in colr nclx and in the SPS VUI	files/hdr10_hevc10.mp4	
+hdr10_hevc10.mkv	matroska	color	ok	yes	the same PQ stream in Matroska: Colour with MatrixCoefficients, Range, TransferCharacteristics and Primaries	files/hdr10_hevc10.mkv	
+hlg_hevc10.mp4	mp4	color	ok	yes	10-bit HEVC with BT.2020 primaries and the HLG transfer (arib-std-b67) in colr nclx and in the SPS VUI	files/hlg_hevc10.mp4	
+hlg_h264_8bit.mp4	mp4	color	ok	yes	8-bit H.264 that keeps the BT.2020 and HLG tags in colr nclx and in the SPS VUI	files/hlg_h264_8bit.mp4	
+vp9_p2_10bit.webm	webm	color	ok	yes	VP9 profile 2, 10-bit, PQ tags in the Colour element and no CodecPrivate: the profile and the bit depth are only in the bitstream	files/vp9_p2_10bit.webm	
+vp9_p2_10bit.mp4	mp4	color	ok	yes	VP9 profile 2, 10-bit, in MP4: vpcC version 1 and colr nclx both carry the PQ tags	files/vp9_p2_10bit.mp4	
+av1_10bit.mp4	mp4	color	ok	yes	AV1 Main, 10-bit (av1C high_bitdepth), no color tags in the container	files/av1_10bit.mp4	
+colr_nclc.mov	mov	color	ok	yes	MOV colr nclc (BT.709, no range field) over an SPS VUI with full range: ffprobe takes the range from the VUI (pc)	files/colr_nclc.mov	
+colr_vui_conflict.mp4	mp4	color	ok	yes	rec_chromium_h264.mp4 with its colr rewritten to BT.2020, PQ, BT.2020 non-constant, limited range over an SPS VUI that says BT.709, sRGB, BT.709, full range: ffprobe prints every colr value	files/colr_vui_conflict.mp4	
+colr_vui_conflict_hevc.mp4	mp4	color	ok	yes	hdr10_hevc10.mp4 with its colr rewritten to BT.709 over a PQ SPS VUI: ffprobe prints the colr values	files/colr_vui_conflict_hevc.mp4	
+colr_only_h264.mp4	mp4	color	ok	yes	H.264 without a VUI video signal type, colr nclx BT.2020 and PQ added: ffprobe prints the colr values	files/colr_only_h264.mp4	
+colr_only_hevc.mp4	mp4	color	ok	yes	10-bit HEVC whose VUI has a video signal type without a colour description, colr nclx BT.2020 and PQ added: ffprobe prints the colr values	files/colr_only_hevc.mp4	
+colr_unspecified_hevc.mp4	mp4	color	ok	yes	hdr10_hevc10.mp4 with a colr nclx whose three codes are 2 (unspecified) and whose full range flag is set: ffprobe prints the PQ codes of the SPS VUI and the pc range of the colr	files/colr_unspecified_hevc.mp4	
+colr_partial_h264.mp4	mp4	color	ok	yes	hlg_h264_8bit.mp4 with a colr nclx of primaries 1 and two unspecified codes, full range: ffprobe prints bt709, two unknowns and pc, nothing from the SPS VUI	files/colr_partial_h264.mp4	
+hlg_vui_only.mp4	mp4	color	ok	yes	hlg_hevc10.mp4 with its colr renamed to free: only the SPS VUI carries the HLG tags, and ffprobe prints them	files/hlg_vui_only.mp4	
+hlg_h264_vui_only.mp4	mp4	color	ok	yes	hlg_h264_8bit.mp4 with its colr renamed to free: only the H.264 SPS VUI carries the HLG tags, and ffprobe prints them	files/hlg_h264_vui_only.mp4	
+dv_p81_dvvc.mp4	mp4	dovi	ok	yes	hdr10_hevc10.mp4 with a dvvC record appended to hvc1: Dolby Vision profile 8, level 1, compatibility id 1, metadata compression 1 (limited)	files/dv_p81_dvvc.mp4	
+dv_p5_dvcc_dvh1.mp4	mp4	dovi	ok	yes	hdr10_hevc10.mp4 with the entry renamed to dvh1 and a dvcC record: Dolby Vision profile 5, level 2, compatibility id 0, no metadata compression	files/dv_p5_dvcc_dvh1.mp4	
+dv_p81.mkv	matroska	dovi	ok	yes	hdr10_hevc10.mkv with a BlockAdditionMapping of type dvvC where ffmpeg writes one: Dolby Vision profile 8, level 1, compatibility id 1, metadata compression 1	files/dv_p81.mkv	
+fmp4_mehd_valid.mp4	mp4	fmp4	ok	yes	fmp4_default_base_moof.mp4 with a version 1 mehd of 4004 ms, the true duration: ffprobe never reads mehd	files/fmp4_mehd_valid.mp4	
+fmp4_audio_longer.mp4	mp4	fmp4	ok	yes	fragmented 2 s video with 2.5 s of AAC audio, empty moov, mfra at the end: the format duration follows the audio	files/fmp4_audio_longer.mp4	
+fmp4_audio_longer_sidx.mp4	mp4	fmp4	ok	yes	the same with a global sidx per track after the moov, and an mfra at the end	files/fmp4_audio_longer_sidx.mp4	
+faststart_large_moov.mp4	mp4	mov	ok	yes	faststart with a moov of 72831 bytes, above 64 KiB: 6000 frames whose durations alternate 3500 and 2500 ticks, one stts entry per frame	files/faststart_large_moov.mp4	
+mov_cmov.mov	mov	mov	error	yes	MOV whose moov is zlib-compressed into cmov (dcom, cmvd), as old QuickTime writers did: ffprobe reads it, the app reports it unsupported	files/mov_cmov.mov	unsupported
+long_cfr_3h_60fps.mp4	mp4	long	ok	no	3 h x 60 fps = 648000 frames, 64x36, crf 51: 13 MB, moov 2.6 MB at the end (stsz 4 B/frame)	large/long_cfr_3h_60fps.mp4	
+long_vfr_1h_screenrec.mp4	mp4	long	ok	no	1 h VFR screen-recording-like: 133920 frames, stts has 124761 entries (~1 MB)	large/long_vfr_1h_screenrec.mp4	
+big_1080p_moov_end.mp4	mp4	big	ok	no	60 s of 1080p30 H.264 with film-grain noise, CRF 21 (604 MB), moov at the end: a phone-sized upload, measured in the browser	large/big_1080p_moov_end.mp4	
+big_1080p_faststart.mp4	mp4	big	ok	no	the same file with -movflags +faststart (moov before mdat)	large/big_1080p_faststart.mp4	
+big_1080p.mkv	matroska	big	ok	no	the same stream copied to Matroska: auto mode decides between probe and exact by the predicted scan cost	large/big_1080p.mkv	
+sparse_4_5gb_co64.mp4	mp4	sparse	ok	no	SPARSE 4.5 GB logical: ftyp + mdat(64-bit, hole+payload) + moov(co64, offsets > 2^32) at 4.5 GB; ~87 KB real data. Do NOT copy with tools that expand sparse files	large/sparse_4_5gb_co64.mp4	

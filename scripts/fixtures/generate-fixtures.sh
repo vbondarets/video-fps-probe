@@ -41,11 +41,11 @@ trap 'rm -rf "$W"' EXIT
 cd "$FILES"
 [[ $WITH_LONG == 1 || $WITH_SPARSE == 1 || $WITH_BIG == 1 ]] && mkdir -p "$LARGE"
 
-printf 'name\tcontainer\tcategory\texpect\tcommitted\tnotes\tpath\n' > "$MANIFEST"
+printf 'name\tcontainer\tcategory\texpect\tcommitted\tnotes\tpath\tcode\n' > "$MANIFEST"
 
 FF=(ffmpeg -hide_banner -loglevel error -y)
-note()       { printf '%s\t%s\t%s\t%s\tyes\t%s\tfiles/%s\n' "$1" "$2" "$3" "$4" "$5" "$1" >> "$MANIFEST"; }
-note_large() { printf '%s\t%s\t%s\t%s\tno\t%s\tlarge/%s\n' "$1" "$2" "$3" "$4" "$5" "$1" >> "$MANIFEST"; }
+note()       { printf '%s\t%s\t%s\t%s\tyes\t%s\tfiles/%s\t%s\n' "$1" "$2" "$3" "$4" "$5" "$1" "${6:-}" >> "$MANIFEST"; }
+note_large() { printf '%s\t%s\t%s\t%s\tno\t%s\tlarge/%s\t%s\n' "$1" "$2" "$3" "$4" "$5" "$1" "${6:-}" >> "$MANIFEST"; }
 src()  { echo "testsrc2=size=${3:-160x90}:rate=$1:duration=$2"; }
 
 H264V=(-c:v libx264 -preset ultrafast -crf 30 -pix_fmt yuv420p -g 30)
@@ -227,17 +227,17 @@ note edge_single_frame.mp4 mp4 edge still "one video sample: avg FPS undefined, 
 
 # ---------- I. Negative / corrupt / lying files ----------
 : > corrupt_empty_0byte.mp4
-note corrupt_empty_0byte.mp4 unknown corrupt error "zero-byte file"
+note corrupt_empty_0byte.mp4 unknown corrupt error "zero-byte file" empty-file
 node "$TOOLS/make-corrupt.mjs" garbage corrupt_garbage_random.mp4 65536 12345
-note corrupt_garbage_random.mp4 unknown corrupt error "64 KiB xorshift noise, .mp4 extension"
+note corrupt_garbage_random.mp4 unknown corrupt error "64 KiB xorshift noise, .mp4 extension" unrecognised
 printf 'This is a plain text file with an .mp4 extension.\nNot a video.\n' > corrupt_text_named.mp4
-note corrupt_text_named.mp4 unknown corrupt error "ASCII text with .mp4 extension"
+note corrupt_text_named.mp4 unknown corrupt error "ASCII text with .mp4 extension" unrecognised
 cp "$W/cover.png" corrupt_png_named.mp4
-note corrupt_png_named.mp4 unknown corrupt error "a PNG image saved with .mp4 extension (ffprobe sniffs png_pipe and reports a png video stream; the app must not treat it as a container)"
+note corrupt_png_named.mp4 unknown corrupt error "a PNG image saved with .mp4 extension (ffprobe sniffs png_pipe and reports a png video stream; the app must not treat it as a container)" unrecognised
 node "$TOOLS/make-corrupt.mjs" truncate cfr_h264_30.mp4 corrupt_trunc_moov_partial.mp4 moov-half > /dev/null
-note corrupt_trunc_moov_partial.mp4 mp4 corrupt error "non-faststart file cut in the middle of moov"
+note corrupt_trunc_moov_partial.mp4 mp4 corrupt error "non-faststart file cut in the middle of moov" truncated
 node "$TOOLS/make-corrupt.mjs" truncate cfr_h264_30.mp4 corrupt_trunc_no_moov.mp4 mdat-end > /dev/null
-note corrupt_trunc_no_moov.mp4 mp4 corrupt error "non-faststart file cut exactly where moov would start (interrupted recording)"
+note corrupt_trunc_no_moov.mp4 mp4 corrupt error "non-faststart file cut exactly where moov would start (interrupted recording)" no-header
 node "$TOOLS/make-corrupt.mjs" truncate av_h264_aac_faststart.mp4 corrupt_trunc_mdat_faststart.mp4 ratio:0.6 > /dev/null
 note corrupt_trunc_mdat_faststart.mp4 mp4 corrupt ok "moov intact (faststart) but mdat cut at 60%: header says 90 frames, only 53 decodable"
 node "$TOOLS/make-corrupt.mjs" truncate fmp4_keyframe_empty_moov.mp4 corrupt_fmp4_truncated_mid_fragment.mp4 ratio:0.6 > /dev/null
@@ -405,7 +405,7 @@ note fmp4_audio_longer_sidx.mp4 mp4 fmp4 ok "the same with a global sidx per tra
 note faststart_large_moov.mp4 mp4 mov ok "faststart with a moov of 72831 bytes, above 64 KiB: 6000 frames whose durations alternate 3500 and 2500 ticks, one stts entry per frame"
 "${FF[@]}" -f lavfi -i "$S1" "${H264[@]}" -f mov "$W/mov_1s.mov"
 node "$TOOLS/patch-mp4.mjs" cmov "$W/mov_1s.mov" mov_cmov.mov > /dev/null
-note mov_cmov.mov mov mov error "MOV whose moov is zlib-compressed into cmov (dcom, cmvd), as old QuickTime writers did: ffprobe reads it, the app reports it unsupported"
+note mov_cmov.mov mov mov error "MOV whose moov is zlib-compressed into cmov (dcom, cmvd), as old QuickTime writers did: ffprobe reads it, the app reports it unsupported" unsupported
 
 # ---------- L. Optional heavy files (manifest rows are always written, files only on request) ----------
 note_large long_cfr_3h_60fps.mp4 mp4 long ok "3 h x 60 fps = 648000 frames, 64x36, crf 51: 13 MB, moov 2.6 MB at the end (stsz 4 B/frame)"
@@ -430,7 +430,7 @@ fi
 
 # ---------- consistency: manifest rows <-> files ----------
 fail=0
-while IFS=$'\t' read -r name _ _ _ committed _ path; do
+while IFS=$'\t' read -r name _ _ _ committed _ path _; do
   [[ "$name" == name ]] && continue
   if [[ "$committed" == yes && ! -f "$ROOT/$path" ]]; then echo "ERROR: manifest row without file: $path" >&2; fail=1; fi
 done < "$MANIFEST"

@@ -54,10 +54,12 @@ Tab separated, header on the first line, notes never contain tabs.
 | `committed` | `yes` for `files/`, `no` for `large/` |
 | `notes` | how the file is built and what it exercises |
 | `path` | path relative to `fixtures/`, `files/<name>` or `large/<name>` |
+| `code` | the expected file error code of a row that expects `error` (`empty-file`, `unrecognised`, `truncated`, `no-header`, `unsupported`), empty on every other row |
 
 `expect=ok` does not mean ffprobe agrees. `corrupt_stts_count_huge.mp4` is `ok` because the app bounds the
 lying `entry_count` by the box size and warns, while ffprobe fails on it (`ok: false` in its reference).
-`corrupt_png_named.mp4` is `error` although ffprobe opens it as `png_pipe`.
+`corrupt_png_named.mp4` is `error` although ffprobe opens it as `png_pipe`, and `mov_cmov.mov` is `error`
+although ffprobe reads its compressed moov and all 30 frames.
 
 ## Categories
 
