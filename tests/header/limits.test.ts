@@ -278,6 +278,56 @@ describe('read and byte limits', () => {
     expect(await analyzeHeader(src)).toMatchObject({ errorCode: 'read-failed', error: 'file read failed: Error: disk gone' });
   });
 
+  test('an abort of the source itself, with the caller signal still open, is read-failed', async () => {
+    for (const [reason, text] of [
+      [new DOMException('aborted', 'AbortError'), 'file read failed: AbortError: aborted'],
+      [{ name: 'AbortError' }, 'file read failed: [object Object]'],
+    ] as const) {
+      const signal = new AbortController().signal;
+      const src: BlobLike = { size: 100_000, slice: () => ({ arrayBuffer: () => Promise.reject(reason) }) };
+      expect(await analyzeHeader(src, { signal }), text).toMatchObject({ errorCode: 'read-failed', error: text, videoTracks: [] });
+      expect(getEventListeners(signal, 'abort')).toHaveLength(0);
+    }
+    const blob = await openAsBlob(join(FILES_DIR, 'rec_chromium_h264.mp4'));
+    let reads = 0;
+    const late: BlobLike = {
+      size: blob.size,
+      slice: (start, end) => ({ arrayBuffer: () => (++reads === 1 ? blob.slice(start, end).arrayBuffer() : Promise.reject(new DOMException('aborted', 'AbortError'))) }),
+    };
+    const r = await analyzeHeader(late);
+    expect(r).toMatchObject({ errorCode: 'read-failed', error: 'file read failed: AbortError: aborted' });
+  });
+
+  test('a source that resolves something other than bytes is read-failed', async () => {
+    const values: Array<[unknown, string]> = [
+      [null, 'file read failed: the source returned null instead of bytes'],
+      ['text', 'file read failed: the source returned string instead of bytes'],
+    ];
+    for (const [value, text] of values) {
+      const src: BlobLike = { size: 100_000, slice: () => ({ arrayBuffer: () => Promise.resolve(value as ArrayBuffer) }) };
+      expect(await analyzeHeader(src), text).toMatchObject({ errorCode: 'read-failed', error: text });
+    }
+    const viaRead = { size: HEAD.length, slice: () => ({ arrayBuffer: () => Promise.reject(new Error('not used')) }), read: async (start: number, end: number) => HEAD.slice(start, end).buffer };
+    expect((await analyzeHeader(viaRead)).error).toBeNull();
+    const nothing = { size: HEAD.length, slice: () => ({ arrayBuffer: () => Promise.reject(new Error('not used')) }), read: async () => undefined };
+    expect(await analyzeHeader(nothing as unknown as BlobLike)).toMatchObject({ errorCode: 'read-failed', error: 'file read failed: the source returned undefined instead of bytes' });
+  });
+
+  test('the source size is read once, so a getter that changes leaves no timer or listener behind', async () => {
+    let n = 0;
+    const src = {
+      get size() {
+        return n++ === 0 ? HEAD.length : Number.NaN;
+      },
+      slice: (start?: number, end?: number) => new Blob([HEAD]).slice(start, end),
+    };
+    const signal = new AbortController().signal;
+    const r = await analyzeHeader(src, { signal, limits: { maxMs: 60_000 } });
+    expect(r).toMatchObject({ error: null, size: HEAD.length });
+    expect(getEventListeners(signal, 'abort')).toHaveLength(0);
+    expect(n).toBe(1);
+  });
+
   test('a source with a read method gets the range and the internal signal', async () => {
     const calls: Array<[number, number, boolean]> = [];
     const src = {
