@@ -631,14 +631,14 @@ function headline(inp: Inputs): string[] {
   const bigMkvChrome = inp.bench.chrome.large['big_1080p.mkv']?.['own'];
   const big =
     bigFixture && bigChrome
-      ? ` A ${fmtMB(bigFixture.sizeBytes)} 1080p MP4 with the moov at the end takes ${io(bigFixture).reads} reads (${fmtBytes(io(bigFixture).bytesRead)}) and ${fmtMs(bigChrome.medianMs)} ms${bigMkv && bigMkvChrome ? `; the same stream in Matroska takes ${fmtMs(bigMkvChrome.medianMs)} ms in auto mode (${io(bigMkv).reads} reads; a probe, so no frame count until "Scan all frames")` : ''}.`
+      ? ` A ${fmtMB(bigFixture.sizeBytes)} 1080p MP4 with the moov at the end takes ${io(bigFixture).reads} reads (${fmtBytes(io(bigFixture).bytesRead)}) and ${fmtMs(bigChrome.medianMs)} ms${bigMkv && bigMkvChrome ? `, and the same stream in Matroska takes ${fmtMs(bigMkvChrome.medianMs)} ms in auto mode (${io(bigMkv).reads} reads, a probe, so no frame count until "Scan all frames")` : ''}.`
       : '';
   const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? '' : 's'}`;
   return [
-    `- **Accuracy.** The own parsers were checked against ffprobe 8.1.1 on ${own.fixtures.length} fixtures, ${own.fixtures.length - recorded} made with ffmpeg and ${recorded} MediaRecorder recordings from headless Chromium (${committed.length} committed, ${large.length} large local files; phone, camera, screen recorder, Firefox and Safari output is not in the corpus, see Limitations): ${checks} field checks, ${counts.exact} exact, ${withinTolText(own.fixtures.flatMap(checksOf))}, ${plural(counts['known-deviation'], 'known deviation')} with a recorded reason, ${plural(counts.mismatch, 'mismatch').replace(/hs$/, 'hes')}, ${counts['n/a']} not applicable.`,
+    `- **Accuracy.** The own parsers were checked against ffprobe 8.1.1 on ${own.fixtures.length} fixtures, ${own.fixtures.length - recorded} made with ffmpeg and ${recorded} MediaRecorder recordings from headless Chromium (${committed.length} committed, ${large.length} large local files, with no phone, camera, screen recorder, Firefox or Safari output in the corpus, see Limitations): ${checks} field checks, ${counts.exact} exact, ${withinTolText(own.fixtures.flatMap(checksOf))}, ${plural(counts['known-deviation'], 'known deviation')} with a recorded reason, ${plural(counts.mismatch, 'mismatch').replace(/hs$/, 'hes')}, ${counts['n/a']} not applicable.`,
     `- **Reads.** Median ${plural(median(reads), 'read')} per committed fixture, at most ${Math.max(...reads)}. The ${fmtDuration(longDur)}, ${longFrames}-frame MP4 (${fmtBytes(long.sizeBytes)}) takes ${io(long).reads} reads and ${fmtBytes(io(long).bytesRead)} (${fmtPct(io(long).percent)}% of the file).`,
-    `- **Speed.** In ${browser}, warm: median ${fmtMs(median(warm.map((w) => w.medianMs)))} ms per file in the worker and ${fmtMs(median(warm.map((w) => w.medianWallMs)))} ms from file pick to rendered result; the ${fmtDuration(longDur)} file takes ${fmtMs(chromeLong.medianMs)} ms.${big}${staleBenchChunks(inp).length > 0 ? ' Measured on an earlier build, so these figures are not current ([Speed](#speed)).' : ''}`,
-    `- **Size.** A default install (\`video-fps-probe/lazy\`) adds ${fmtKB(matrixMetric(inp, 'default', 'trigger'))} gzip to a host app's critical path. Its first MP4 file loads ${fmtKB(matrixMetric(inp, 'default', 'firstMp4'))} lazily when the host's Vite config sets \`worker: { format: 'es' }\`, and ${fmtKB(matrixMetric(inp, 'zero-config', 'firstMp4'))} with Vite's default worker format, 'iife', which builds each of the two own workers as one file ([Package size](#package-size)). The demo page plus its first MP4 result loads ${fmtKB(firstMp4.gzip)} gzip (page, ${kindGzip(inp.size, 'client') === null ? '' : 'probe client, '}worker entry, ${sharedParserGzip(inp.size) === null ? '' : 'shared statistics chunk, '}ISO BMFF parser); the first Matroska result ${fmtKB(firstMkv.gzip)}${firstMkvEstimate ? `, or ${fmtKB(firstMkvEstimate.gzip)} for a file without DefaultDuration, such as a MediaRecorder recording, which also loads the ffprobe frame rate estimate` : ''}.`,
+    `- **Speed.** In ${browser}, warm: median ${fmtMs(median(warm.map((w) => w.medianMs)))} ms per file in the worker and ${fmtMs(median(warm.map((w) => w.medianWallMs)))} ms from file pick to rendered result, and the ${fmtDuration(longDur)} file takes ${fmtMs(chromeLong.medianMs)} ms.${big}${staleBenchChunks(inp).length > 0 ? ' Measured on an earlier build, so these figures are not current ([Speed](#speed)).' : ''}`,
+    `- **Size.** A default install (\`video-fps-probe/lazy\`) adds ${fmtKB(matrixMetric(inp, 'default', 'trigger'))} gzip to a host app's critical path. Its first MP4 file loads ${fmtKB(matrixMetric(inp, 'default', 'firstMp4'))} lazily when the host's Vite config sets \`worker: { format: 'es' }\`, and ${fmtKB(matrixMetric(inp, 'zero-config', 'firstMp4'))} with Vite's default worker format, 'iife', which builds each of the two own workers as one file ([Package size](#package-size)). The demo page plus its first MP4 result loads ${fmtKB(firstMp4.gzip)} gzip (page, ${kindGzip(inp.size, 'client') === null ? '' : 'probe client, '}worker entry, ${sharedParserGzip(inp.size) === null ? '' : 'shared statistics chunk, '}ISO BMFF parser), and the first Matroska result ${fmtKB(firstMkv.gzip)}${firstMkvEstimate ? `, or ${fmtKB(firstMkvEstimate.gzip)} for a file without DefaultDuration, such as a MediaRecorder recording, which also loads the ffprobe frame rate estimate` : ''}.`,
     `- **Embedding.** In a host app with a ${fmtMB(inp.integration.host.initialGzipBytes)} gzip initial load, prewarming the worker when the upload dialog opens makes the first result on fast 4G take ${fmtMs(fast.prewarm.totalMs)} ms instead of ${fmtMs(fast.cold.totalMs)} ms ([Embedding in an existing app](#embedding-in-an-existing-app)).${integrationStale(inp) ? ` Measured on an earlier build whose worker entry and parser chunks differ from the current ones, so these figures are not current.` : ''}`,
     `- **Same result in Node and Chrome.** ${inp.bench.sanity.identical} of ${inp.bench.sanity.compared} files give identical results field by field (timing excluded).`,
     `- **Machine.** ${machine(inp)}.`,
@@ -888,7 +888,7 @@ function enginesBlock(inp: Inputs): string[] {
     '',
     ...table(['Arm', 'Files', 'Fixtures', 'Checks', 'exact', ...OUTCOMES.map((k) => OUTCOME_LABEL[k])], 'llrrrrrrrr', byFamily),
     '',
-    ...engines.filter((e) => e.informational).map((e) => `- ${label(e)}: wrong ${byField(e, 'wrong')}; definition differs ${byField(e, 'definition-differs')}; unverified ${byField(e, 'unverified')}.`),
+    ...engines.filter((e) => e.informational).map((e) => `- ${label(e)}. Wrong: ${byField(e, 'wrong')}. Definition differs: ${byField(e, 'definition-differs')}. Unverified: ${byField(e, 'unverified')}.`),
     '',
     '**Where the libraries win**, from the same reports:',
     '',
@@ -933,9 +933,9 @@ function accuracyWins(own: EngineReport, arms: readonly EngineReport[]): string[
       }
       if (better.size === 0) continue;
       const where = track && f.tracks.length > 1 ? ` (track ${track.trackId})` : '';
-      const theirs = [...better.entries()].map(([what, names]) => `${what} in ${names.join(' and ')}`).join('; ');
+      const theirs = [...better.entries()].map(([what, names]) => `${what} in ${names.join(' and ')}`).join(', ');
       const mine = `${c.verdict}${c.app ? ` (${c.app}${same ? ', the same value' : ''})` : ''}${c.detail ? `: ${c.detail}` : ''}`;
-      out.push(`\`${f.name}\`${where} \`${c.id}\`: ${theirs}; own ${mine}`);
+      out.push(`\`${f.name}\`${where} \`${c.id}\`: ${theirs}, own ${mine}`);
     }
   }
   return out;
@@ -951,7 +951,7 @@ function winsLines(inp: Inputs, engines: readonly EngineReport[]): string[] {
   const accuracy = accuracyWins(own, arms);
   out.push(
     accuracy.length > 0
-      ? `- A library arm is exact or within tolerance where the own parsers are not (${scope}): ${accuracy.join('; ')}.`
+      ? [`- A library arm is exact or within tolerance where the own parsers are not (${scope}):`, ...accuracy.map((a) => `  - ${a}`)].join('\n')
       : `- No check where a library arm is exact or within tolerance and the own parsers are not (${scope}).`,
   );
   const opened = (f: AccFixture | undefined): f is AccFixture => !!f && !!f.io && !f.appError;
@@ -966,11 +966,11 @@ function winsLines(inp: Inputs, engines: readonly EngineReport[]): string[] {
       if (fewer === 0 && large.length === 0) return [];
       return [`${label(e)} ${fewer} of ${committed.length}${large.length > 0 ? `, and ${large.join(', ')}` : ''}`];
     });
-    if (parts.length > 0) out.push(`- ${what}, on the committed files that both the arm and the own parsers open, then the large local files: ${parts.join('; ')}.`);
+    if (parts.length > 0) out.push([`- ${what}, on the committed files that both the arm and the own parsers open, then the large local files:`, ...parts.map((x) => `  - ${x}`)].join('\n'));
   };
   compare((f) => io(f).bytesRead, fmtBytes, 'Fewer bytes read than the own parsers');
   compare((f) => io(f).reads, (v) => String(v), 'Fewer reads than the own parsers');
-  compare((f) => io(f).ms, (v) => `${fmtMs(v)} ms`, 'Faster than the own parsers in Node (median of the runs; the library arms run each large file once)');
+  compare((f) => io(f).ms, (v) => `${fmtMs(v)} ms`, 'Faster than the own parsers in Node (median of the runs, and one run of each large file for the library arms)');
   const browser = majorVersion(inp.bench.environment.chrome);
   for (const lib of ['mp4box', 'mediabunny']) {
     const names = Object.keys(inp.bench.chrome.warm).filter((n) => inp.bench.chrome.engines[n]?.[lib]);
@@ -979,7 +979,7 @@ function winsLines(inp: Inputs, engines: readonly EngineReport[]): string[] {
       .filter(([, byEngine]) => byEngine[lib] && byEngine['own'] && byEngine[lib]!.medianMs < byEngine['own']!.medianMs)
       .map(([name, byEngine]) => `\`${name}\` ${fmtMs(byEngine[lib]!.medianMs)} ms against ${fmtMs(byEngine['own']!.medianMs)} ms`);
     if (faster.length > 0 || large.length > 0) {
-      out.push(`- Faster than the own parsers in ${browser} (${LIBRARY_LABEL[lib]}, tuned adapter): ${faster.length} of ${names.length} files warm${large.length > 0 ? `; ${large.join(', ')}` : ''}.`);
+      out.push(`- Faster than the own parsers in ${browser} (${LIBRARY_LABEL[lib]}, tuned adapter): ${faster.length} of ${names.length} files warm${large.length > 0 ? `, and ${large.join(', ')}` : ''}.`);
     }
   }
   return out;
@@ -1064,7 +1064,7 @@ function packageBlock(inp: Inputs, doc: Doc): string[] {
   }
   const v = inp.matrix.versions;
   return [
-    `**A default install adds ${fmtKB(matrixMetric(inp, 'default', 'trigger'))} gzip to the host app's critical path:** the package code in the entry chunk of a Vite ${v['vite'] ?? ''} app that imports \`video-fps-probe/lazy\` (with Vite's preload helper, which any app with a dynamic import already has, that entry chunk is ${fmtKB(matrixMetric(inp, 'default', 'entry'))}). With \`worker: { format: 'es' }\` in the host's Vite config the first MP4 or MOV file then loads ${fmtKB(matrixMetric(inp, 'default', 'firstMp4'))} lazily: the probe client and the ISO BMFF worker of own, which holds its parser and the statistics. The first MKV or WebM file without DefaultDuration loads ${fmtKB(matrixMetric(inp, 'default', 'firstMkv'))}: the probe client, the Matroska worker and the ffprobe frame rate estimate. Every own path together is ${fmtKB(matrixMetric(inp, 'default', 'allOwn'))}, because each worker holds its own copy of the runtime and the statistics. Without a worker option Vite builds workers as 'iife', which cannot split, so each own worker is one file, and the first MP4 loads ${fmtKB(matrixMetric(inp, 'zero-config', 'firstMp4'))} and the first MKV ${fmtKB(matrixMetric(inp, 'zero-config', 'firstMkv'))} (zero-config). mp4box.js and mediabunny are only in the build when their entries are imported. Everything the default build emits outside the entry chunk is ${fmtKB(matrixMetric(inp, 'default', 'lazyTotal'))}, because it also holds main-thread copies of the parsers, the statistics and the worker runtime. The default flavor keeps them as an in-thread own for environments without a \`Worker\` global (SSR, Node) and for \`worker: 'inline'\`; the client flavor keeps them for \`worker: 'inline'\` and for environments without a \`Worker\` global; the root \`analyze()\` always runs in the calling thread on them. A browser with a \`Worker\` global never fetches them otherwise.`,
+    `**A default install adds ${fmtKB(matrixMetric(inp, 'default', 'trigger'))} gzip to the host app's critical path:** the package code in the entry chunk of a Vite ${v['vite'] ?? ''} app that imports \`video-fps-probe/lazy\` (with Vite's preload helper, which any app with a dynamic import already has, that entry chunk is ${fmtKB(matrixMetric(inp, 'default', 'entry'))}). With \`worker: { format: 'es' }\` in the host's Vite config the first MP4 or MOV file then loads ${fmtKB(matrixMetric(inp, 'default', 'firstMp4'))} lazily: the probe client and the ISO BMFF worker of own, which holds its parser and the statistics. The first MKV or WebM file without DefaultDuration loads ${fmtKB(matrixMetric(inp, 'default', 'firstMkv'))}: the probe client, the Matroska worker and the ffprobe frame rate estimate. Every own path together is ${fmtKB(matrixMetric(inp, 'default', 'allOwn'))}, because each worker holds its own copy of the runtime and the statistics. Without a worker option Vite builds workers as 'iife', which cannot split, so each own worker is one file, and the first MP4 loads ${fmtKB(matrixMetric(inp, 'zero-config', 'firstMp4'))} and the first MKV ${fmtKB(matrixMetric(inp, 'zero-config', 'firstMkv'))} (zero-config). mp4box.js and mediabunny are only in the build when their entries are imported. Everything the default build emits outside the entry chunk is ${fmtKB(matrixMetric(inp, 'default', 'lazyTotal'))}, because it also holds main-thread copies of the parsers, the statistics and the worker runtime. The default flavor keeps them as an in-thread own for environments without a \`Worker\` global (SSR, Node) and for \`worker: 'inline'\`. The client flavor keeps them for \`worker: 'inline'\` and for environments without a \`Worker\` global. The root \`analyze()\` always runs in the calling thread on them. A browser with a \`Worker\` global never fetches them otherwise.`,
     '',
     `Recommended: one line in the host's Vite config, so the own workers keep the rate profile core and the ffprobe frame rate estimate as lazy chunks and the first MP4 loads ${fmtKB(matrixMetric(inp, 'default', 'firstMp4'))} instead of ${fmtKB(matrixMetric(inp, 'zero-config', 'firstMp4'))}. Module workers run on the whole package floor (Chrome and Edge 94, Firefox 114, Safari 15.4).`,
     '',
@@ -1076,7 +1076,7 @@ function packageBlock(inp: Inputs, doc: Doc): string[] {
     '',
     ...table(['Configuration', 'Imports', 'Vite worker option', 'Critical path', 'First MP4, lazy', 'First MKV, lazy', 'All own paths, lazy', 'Engine chunks, lazy', 'Worker files', 'Budgets'], 'lllrrrrrrl', rows),
     '',
-    `Measured by \`npm run size:matrix\` on production builds of the fixtures in \`tests/consumers/fixtures/\`, installed from the packed tarball into a directory outside the repository with mp4box ${v['mp4box'] ?? ''} and mediabunny ${v['mediabunny'] ?? ''}; gzip -9, KB = 1000 bytes. The critical path is the package code in the entry chunk, cut out by the hidden sourcemap. CI fails when a budget is exceeded, a configuration builds an unexpected worker file, or a sourcemap lists a module that must not be there (mp4box or mediabunny where they are not imported, the prebuilt own worker in the custom-worker build); [report/size-matrix.md](${doc.link('report/size-matrix.md')}) lists every budget with its reason.`,
+    `Measured by \`npm run size:matrix\` on production builds of the fixtures in \`tests/consumers/fixtures/\`, installed from the packed tarball into a directory outside the repository with mp4box ${v['mp4box'] ?? ''} and mediabunny ${v['mediabunny'] ?? ''}, gzip -9, KB = 1000 bytes. The critical path is the package code in the entry chunk, cut out by the hidden sourcemap. CI fails when a budget is exceeded, a configuration builds an unexpected worker file, or a sourcemap lists a module that must not be there (mp4box or mediabunny where they are not imported, the prebuilt own worker in the custom-worker build). [report/size-matrix.md](${doc.link('report/size-matrix.md')}) lists every budget with its reason.`,
   ];
 }
 
@@ -1110,7 +1110,7 @@ function sizeBlock(inp: Inputs, doc: Doc): string[] {
     '',
     `Engines cost nothing until imported. Importing a descriptor grows the critical path a little, from ${kb('default', 'trigger')} to ${grown.slice(0, -1).join(', ')} and ${grown.at(-1)}, and the engine itself loads lazily: ${engines.join(', ')}. Gzip -9 of production builds from the packed tarball, budgeted in CI. Every configuration is in [docs/benchmarks.md](${doc.link('docs/benchmarks.md')}#package-size).`,
     '',
-    `\`video-fps-probe/react\` adds ${kb('react', 'react')} to the critical path for the provider, \`useVideoFps\` and its store (React itself not counted); its first analysis also fetches a ${kb('react', 'summary')} summary module, in parallel with the probe client. \`video-fps-probe/check\` adds ${kb('check', 'check')} when imported statically, and nothing lazily; one preset from \`video-fps-probe/presets\` adds ${kb('preset', 'presets')}.`,
+    `\`video-fps-probe/react\` adds ${kb('react', 'react')} to the critical path for the provider, \`useVideoFps\` and its store (React itself not counted), and its first analysis also fetches a ${kb('react', 'summary')} summary module, in parallel with the probe client. \`video-fps-probe/check\` adds ${kb('check', 'check')} when imported statically, and nothing lazily. One preset from \`video-fps-probe/presets\` adds ${kb('preset', 'presets')}.`,
   ];
 }
 
@@ -1131,11 +1131,11 @@ function viteBlock(inp: Inputs, doc: Doc): string[] {
   const identical = hash('zero-config') !== undefined && hash('zero-config') === hash('iife-nosplit');
   const v = inp.matrix.versions;
   return [
-    `Measured with Vite ${v['vite'] ?? ''} on production builds installed from the packed tarball (gzip -9, KB = 1000 bytes; the fixtures are in \`tests/consumers/fixtures/\`):`,
+    `Measured with Vite ${v['vite'] ?? ''} on production builds installed from the packed tarball (gzip -9, KB = 1000 bytes, with the fixtures in \`tests/consumers/fixtures/\`):`,
     '',
     ...table(['Fixture', 'Imports', 'Vite worker option', 'Critical path', 'First MP4, lazy', 'First MKV, lazy', 'All own paths, lazy', 'Worker files'], 'lllrrrrl', rows),
     '',
-    `The default flavor runs own on one worker per container family, picked by the first four bytes of the file. With format 'es' each worker holds its parser and the statistics, and keeps the rate profile core and, for Matroska, the ffprobe frame rate estimate as lazy chunks; with 'iife' each is one file. A custom worker built from \`video-fps-probe/worker-runtime\` keeps the 0.2.0 layout: a small entry that loads one parser per container.${identical ? ` In Vite ${v['vite'] ?? ''} the zero-config and iife-nosplit own workers are byte-identical: with format 'iife' Vite already inlines the worker's dynamic imports, so \`codeSplitting: false\` changes nothing for this package.` : ''} Everything the default build emits outside the entry chunk is ${kb('default', 'lazyTotal')}, because it also holds the main-thread copies of the runtime and parsers ([SSR](#ssr-and-the-lazy-main-thread-chunks)). The full matrix, engines included, is in [benchmarks.md](${doc.link('docs/benchmarks.md')}#package-size).`,
+    `The default flavor runs own on one worker per container family, picked by the first four bytes of the file. With format 'es' each worker holds its parser and the statistics, and keeps the rate profile core and, for Matroska, the ffprobe frame rate estimate as lazy chunks, while with 'iife' each is one file. A custom worker built from \`video-fps-probe/worker-runtime\` keeps the 0.2.0 layout: a small entry that loads one parser per container.${identical ? ` In Vite ${v['vite'] ?? ''} the zero-config and iife-nosplit own workers are byte-identical: with format 'iife' Vite already inlines the worker's dynamic imports, so \`codeSplitting: false\` changes nothing for this package.` : ''} Everything the default build emits outside the entry chunk is ${kb('default', 'lazyTotal')}, because it also holds the main-thread copies of the runtime and parsers ([SSR](#ssr-and-the-lazy-main-thread-chunks)). The full matrix, engines included, is in [benchmarks.md](${doc.link('docs/benchmarks.md')}#package-size).`,
   ];
 }
 
@@ -1156,7 +1156,7 @@ function corpusLine(committed: readonly AccFixture[], doc: Doc): string {
   const recorded = committed.filter((f) => f.category === 'recorder').length;
   const made = committed.length - recorded;
   const recordings = recorded > 0 ? ` and ${recorded} are real MediaRecorder recordings from headless Chromium, committed as recorded` : '';
-  return `Of the ${committed.length} committed fixtures, ${made} are synthetic files made with ffmpeg${recordings}; per-engine tables, speed and method: [docs/benchmarks.md](${doc.link('docs/benchmarks.md')}).`;
+  return `Of the ${committed.length} committed fixtures, ${made} are synthetic files made with ffmpeg${recordings}. Per-engine tables, speed and method: [docs/benchmarks.md](${doc.link('docs/benchmarks.md')}).`;
 }
 
 const LARGE_FLAG: Record<string, string> = { long: '--with-long', big: '--with-big', sparse: '--with-sparse' };
@@ -1271,7 +1271,7 @@ function speedBlock(inp: Inputs): string[] {
     ...staleNote,
     ...table(['File', 'What it is', 'Size', 'Duration', 'Frames', 'Reads', 'Bytes read', 'Node ms', `${browser} ms`, `${browser} UI ms`], 'lllrrrrrrr', rows),
     '',
-    `- Cold start, ${browser}: the app is ready ${fmtMs(inp.bench.chrome.pageLoad.readyMs)} ms after navigation; ${cb.files} files picked at once on a fresh profile show all results after ${fmtMs(cb.wallMs)} ms (median of ${fmtMs(rb.medianMs)} ms over reloads, range ${fmtMs(rb.minMs)} to ${fmtMs(rb.maxMs)} ms).`,
+    `- Cold start, ${browser}: the app is ready ${fmtMs(inp.bench.chrome.pageLoad.readyMs)} ms after navigation, and ${cb.files} files picked at once on a fresh profile show all results after ${fmtMs(cb.wallMs)} ms (median of ${fmtMs(rb.medianMs)} ms over reloads, range ${fmtMs(rb.minMs)} to ${fmtMs(rb.maxMs)} ms).`,
     ...edgeLine,
     '',
     ...table(['First file of a container', 'File', 'UI ms, fresh page', 'UI ms, 2nd pick', 'UI ms, steady', 'Extra ms (fresh - steady)', 'Chunks fetched (raw)'], 'llrrrrl', cold),
