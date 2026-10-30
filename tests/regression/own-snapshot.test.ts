@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
 import { check } from '../../src/check/index.ts';
@@ -6,6 +7,8 @@ import { CHECK_SNAPSHOT, OWN_SNAPSHOT, checkReportsOf, ownResultOf, presetEntrie
 import { fixturePath } from '../helpers/fixtures.ts';
 
 const ALLOWED_NEW_WARNINGS: readonly RegExp[] = [];
+const OWN_SHA256 = '6f1006012765c976282d4f4599004d7b8b09d660baf7871e67250ffd572574f1';
+const CHECK_SHA256 = 'c9546ce6ac427a65fb428860007f6a31b493987f6ce2cf133dd0626d0a0dc071';
 
 const own = JSON.parse(readFileSync(OWN_SNAPSHOT, 'utf8')) as OwnSnapshot;
 const checks = JSON.parse(readFileSync(CHECK_SNAPSHOT, 'utf8')) as CheckSnapshot;
@@ -41,6 +44,12 @@ function differences(was: unknown, now: unknown, path: string, out: string[] = [
 }
 
 describe('own results and preset verdicts against the 0.3.0 snapshot', () => {
+  test('the snapshots are the pinned files', () => {
+    const sha256 = (path: string) => createHash('sha256').update(readFileSync(path)).digest('hex');
+    expect(sha256(OWN_SNAPSHOT), OWN_SNAPSHOT).toBe(OWN_SHA256);
+    expect(sha256(CHECK_SNAPSHOT), CHECK_SNAPSHOT).toBe(CHECK_SHA256);
+  });
+
   test('the snapshot holds every committed 0.3.0 fixture and every preset', () => {
     expect(own.version).toBe('0.3.0');
     expect(names.length).toBe(165);
