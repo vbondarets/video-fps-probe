@@ -7,7 +7,7 @@ import type { AnalyzeOptions, FileResult, MatroskaMode } from '../src/core/types
 import { loadManifest, loadRef, fixturePath, type ManifestEntry } from '../tests/helpers/fixtures.ts';
 import { openFixture } from '../tests/helpers/open-blob.ts';
 import { forFixture, loadDeviations } from './compare/deviations.ts';
-import { ARMS, ENGINE_ALIASES, ENGINE_NAMES, REPO_ROOT, loadEngine, resolveEngineName, type EngineHandle, type EngineName } from './compare/engines.ts';
+import { ARMS, ENGINE_ALIASES, ENGINE_NAMES, REPO_ROOT, loadEngine, resolveEngineName, uncheckedRequiredFields, type EngineHandle, type EngineName } from './compare/engines.ts';
 import { mp4boxCodecStrings } from './compare/idiomatic.ts';
 import { scanIsoBmffLayout, scanMatroskaLayout } from './compare/layout.ts';
 import { classifyEvaluation, countOutcomes } from './compare/outcomes.ts';
@@ -300,6 +300,7 @@ async function main(): Promise<number> {
     }
     const { counts, mismatchFixtures } = tallyEngine(fixtures);
     const checked = new Set(fixtures.flatMap((f) => [...f.fileChecks, ...f.tracks.flatMap((t) => t.checks)]).map((c) => c.field));
+    if (!filter) for (const field of uncheckedRequiredFields(ARMS[engineName], checked)) harnessProblems.add(`the ${engineName} arm checks no ${field} on any fixture, a field it must provide`);
     engineReports.push({
       notProvided: FIELD_NAMES.filter((f) => !checked.has(f)),
       engine: engineName,

@@ -23,6 +23,7 @@ export interface ArmSpec {
   style: ArmStyle;
   families: readonly ContainerFamily[];
   provides: ReadonlySet<FieldName> | null;
+  requires?: readonly FieldName[];
   picksPrimary: boolean;
   primaryOnly: boolean;
   recipe: string;
@@ -39,9 +40,31 @@ const MP4BOX_FIELDS: ReadonlySet<FieldName> = new Set(['error', 'trackSelection'
 const MEDIABUNNY_FIELDS: ReadonlySet<FieldName> = new Set(['error', 'trackSelection', 'codecName', 'width', 'height', 'avgFps', 'nominalFps', 'minFps', 'maxFps', 'isVfr', 'startSec', 'durationSec', 'formatDurationSec']);
 const MEDIABUNNY_FULL_FIELDS: ReadonlySet<FieldName> = new Set([...MEDIABUNNY_FIELDS, 'frames']);
 const BOTH: readonly ContainerFamily[] = ['isobmff', 'matroska'];
+const OWN_REQUIRED_FIELDS: readonly FieldName[] = [
+  'avgFps',
+  'nominalFps',
+  'frames',
+  'presentedFrames',
+  'durationSec',
+  'startSec',
+  'formatDurationSec',
+  'minFps',
+  'maxFps',
+  'isVfr',
+  'duplicateTimestamps',
+  'width',
+  'height',
+  'codecName',
+  'error',
+  'trackSelection',
+  'medianFrameInterval',
+  'enabled',
+  'layout',
+  'errorCode',
+];
 
 export const ARMS: Readonly<Record<EngineName, ArmSpec>> = {
-  own: { library: 'own', style: 'own', families: BOTH, provides: null, picksPrimary: true, primaryOnly: false, recipe: 'analyze() of src/core, the engine this package ships' },
+  own: { library: 'own', style: 'own', families: BOTH, provides: null, requires: OWN_REQUIRED_FIELDS, picksPrimary: true, primaryOnly: false, recipe: 'analyze() of src/core, the engine this package ships' },
   'mp4box-idiomatic': {
     library: 'mp4box',
     style: 'idiomatic',
@@ -88,6 +111,10 @@ export const ARMS: Readonly<Record<EngineName, ArmSpec>> = {
     recipe: "this package's adapter (video-fps-probe/engines/mediabunny): every packet timestamp through this package's timeline statistics (min, max, VFR), the average from computePacketStats().averagePacketRate",
   },
 };
+
+export function uncheckedRequiredFields(spec: ArmSpec, checked: ReadonlySet<FieldName>): FieldName[] {
+  return (spec.requires ?? []).filter((field) => !checked.has(field));
+}
 
 export interface EngineHandle {
   name: EngineName;
