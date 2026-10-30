@@ -9,8 +9,15 @@
   "stageBaseSha256": "594fef2ab36ae0c2d665bc6d3ddb36ff800e3cdabe90bded04e75945defd7617",
   "unit": "gzip bytes, KB = 1000 bytes. Every growth, share and identity rule compares the hash-normalized sizes of the report, the key normalized, measured with the content hash of every emitted file name replaced by a fixed placeholder, and cap applies to the raw size as built. growth is the cumulative allowance over the 0.3.0 baseline after each 0.4.0 stage (null: no growth limit), the share of a stage is its growth minus the growth of the stage before and bounds the growth over the stage base, a row whose share in a stage is 0 must equal the stage base in that stage, cap is a fixed limit in bytes (null: a growth-only row), and exact keeps a row identical to the baseline while its growth is not null",
   "frozen": {
-    "stages": { "1": [], "3": [], "4": [], "6": ["check:trigger", "check:entry", "check:check", "preset:trigger", "preset:entry", "preset:check"] },
-    "why": "Stages 1 and 4 add no code to the browser paths, stage 3 adds only its 0.01 KB share to the ISO BMFF parser and stage 6 adds code only to the rule entries. These stages keep every row that no group gates identical to the report they start from, and every stage keeps every gated row whose share in the stage is 0 identical to it. Every row that holds the ISO BMFF parser is gated with the ISO BMFF share for each copy of the parser it holds, so the stage 3 parser change moves only gated rows, each within its share. The listed rows are the only other rows such a stage may move: the critical path, the entry chunk and the check chunk of the check and preset configurations in stage 6."
+    "stages": {
+      "1": [],
+      "2": ["zero-config:segments", "iife-nosplit:segments", "zero-config:rfps", "iife-nosplit:rfps"],
+      "3": ["zero-config:segments", "iife-nosplit:segments"],
+      "4": [],
+      "5": ["zero-config:segments", "iife-nosplit:segments", "zero-config:rfps", "iife-nosplit:rfps"],
+      "6": ["check:trigger", "check:entry", "check:check", "preset:trigger", "preset:entry", "preset:check"]
+    },
+    "why": "Every stage keeps every row that no group gates identical to the report it starts from, except the rows it lists, and every stage keeps every gated row whose share in the stage is 0 identical to it. No stage plans a change in the entry chunk, the probe client, React or the summary module before stage 6, and the code that stages 2 to 5 change is gated by the groups and by files.kinds. The listed rows are the only other rows a stage may move. Stage 6 adds the check rules, so it may move the critical path, the entry chunk and the check chunk of the check and preset configurations. In zero-config and iife-nosplit each own worker is a single file, and the rate profile core and the ffprobe frame rate estimate rows are cut out of it by sourcemap. Any code change in that file renames the minified identifiers of the whole file, so these rows move by a few bytes whenever the parser or the core in the same file changes: in stages 2 and 5 for both workers, in stage 3 for the ISO BMFF worker that the rate profile core is cut from. A real build of a stage 2 change, a median frame interval in the statistics, both parsers and the engine helpers, moved them by +1 B and -3 B. Their code is gated whole in every other configuration, and the worker file they are cut from is gated under files.kinds."
   },
   "files": {
     "kinds": {
@@ -108,17 +115,17 @@
     },
     {
       "name": "rate profile core",
-      "rows": ["default:segments", "zero-config:segments", "custom:segments", "custom-eager:segments", "mp4box:segments", "mediabunny:segments", "rvfc:segments", "all:segments", "iife-nosplit:segments", "react:segments", "react18:segments", "check:segments", "preset:segments"],
+      "rows": ["default:segments", "custom:segments", "custom-eager:segments", "mp4box:segments", "mediabunny:segments", "rvfc:segments", "all:segments", "react:segments", "react18:segments", "check:segments", "preset:segments"],
       "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0 },
       "cap": 2000,
-      "why": "No 0.4.0 stage changes the rate profile core, so it stays identical to 0.3.0, under the 2.00 KB budget of the default and all configurations, which the other configurations measure the same code against."
+      "why": "No 0.4.0 stage changes the rate profile core, so it stays identical to 0.3.0, under the 2.00 KB budget of the default and all configurations, which the other configurations measure the same code against. These rows measure the chunk of the rate profile core as a whole file. The rows of zero-config and iife-nosplit cut the same code out of the single ISO BMFF worker file instead, so frozen.stages gates them."
     },
     {
       "name": "ffprobe frame rate estimate",
-      "rows": ["default:rfps", "zero-config:rfps", "custom:rfps", "custom-eager:rfps", "mp4box:rfps", "mediabunny:rfps", "rvfc:rfps", "all:rfps", "iife-nosplit:rfps", "react:rfps", "react18:rfps", "check:rfps", "preset:rfps"],
+      "rows": ["default:rfps", "custom:rfps", "custom-eager:rfps", "mp4box:rfps", "mediabunny:rfps", "rvfc:rfps", "all:rfps", "react:rfps", "react18:rfps", "check:rfps", "preset:rfps"],
       "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0 },
       "cap": 4000,
-      "why": "No 0.4.0 stage changes the ffprobe frame rate estimate, so it stays identical to 0.3.0, under the 4.00 KB budget of the default and all configurations, which the other configurations measure the same code against."
+      "why": "No 0.4.0 stage changes the ffprobe frame rate estimate, so it stays identical to 0.3.0, under the 4.00 KB budget of the default and all configurations, which the other configurations measure the same code against. These rows measure the chunk of the estimate as a whole file. The rows of zero-config and iife-nosplit cut the same code out of the single Matroska worker file instead, so frozen.stages gates them."
     },
     {
       "name": "all own paths",

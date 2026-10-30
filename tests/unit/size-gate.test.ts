@@ -266,7 +266,7 @@ describe('size gate against the 0.3.0 baseline', () => {
   test('passes the committed report with every row at its stage base', () => {
     const r = run([]);
     expect(r.status, r.err).toBe(0);
-    expect(r.out).toMatch(/size gate: 142 gated rows and 292 files within the stage \d allowances, shares and caps/);
+    expect(r.out).toMatch(/size gate: 138 gated rows and 292 files within the stage \d allowances, shares and caps/);
     expect(r.out).toContain('0 of them changed since the stage base or failed');
   });
 
@@ -398,7 +398,7 @@ describe('size gate against the 0.3.0 baseline', () => {
     const report = applied('real-parser-only.json', pair);
     const within = at(3, report);
     expect(within.status, within.err).toBe(0);
-    expect(within.out).toMatch(/size gate: 142 gated rows and 292 files within the stage 3 allowances, shares and caps/);
+    expect(within.out).toMatch(/size gate: 138 gated rows and 292 files within the stage 3 allowances, shares and caps/);
     const growth = Object.entries(pair.files).map(([key, [, value]]) => {
       const at = key.indexOf(' ');
       return value - fixtureOf(START, key.slice(0, at)).files.find((x) => fileKey(x) === key.slice(at + 1))!.normalized.gzip;
@@ -557,26 +557,54 @@ describe('size gate against the 0.3.0 baseline', () => {
     expect(moved.err).toContain('default file assets/stats-00000000.js (page): holds isobmff, core against core in the stage base');
   });
 
-  test('keeps every other row identical in a frozen stage', () => {
+  test('keeps every other row identical in every stage', () => {
     const report = raised('client.json', (m) => metric(m, 'default', 'client', 1));
-    const frozen = at(3, report);
-    expect(frozen.status).toBe(1);
     const client = norm('default', 'client');
-    expect(frozen.err).toContain(`default:client: measured ${fmt(client + 1)} B against ${fmt(client)} B in the stage base, and stage 3 keeps every other row identical`);
-    expect(at(2, report).status).toBe(0);
+    for (const stage of [1, 2, 3, 4, 5, 6]) {
+      const frozen = at(stage, report);
+      expect(frozen.status, `stage ${stage}`).toBe(1);
+      expect(failures(frozen.err)).toEqual([`FAIL default:client: measured ${fmt(client + 1)} B against ${fmt(client)} B in the stage base, and stage ${stage} keeps every other row identical`]);
+    }
+    for (const stage of [2, 5]) {
+      const entry = at(stage, raised(`entry-${stage}.json`, (m) => metric(m, 'default', 'entry', 50)));
+      expect(entry.status, `stage ${stage}`).toBe(1);
+      expect(entry.err).toContain(`default:entry: measured ${fmt(norm('default', 'entry') + 50)} B against ${fmt(norm('default', 'entry'))} B in the stage base, and stage ${stage} keeps every other row identical`);
+    }
     const matroska = at(3, raised('mkv-shrink.json', (m) => metric(m, 'default', 'firstMkv', -1)));
     expect(matroska.status).toBe(1);
     const mkv = norm('default', 'firstMkv');
     expect(matroska.err).toContain(`default:firstMkv: ${fmt(mkv - 1)} B differs from the stage base of ${fmt(mkv)} B by -1 B, and its share in stage 3 is 0`);
   });
 
-  test('keeps a row whose share is 0 identical in a stage that freezes nothing, in both directions', () => {
+  test('keeps a gated row whose share is 0 identical, in both directions', () => {
     const base = raised('engine-stage-4.json', (m) => metric(m, 'mp4box', 'mp4box', 20));
     for (const by of [1, -1]) {
       const r = at(5, raised(`engine-stage-5-${by}.json`, (m) => metric(m, 'mp4box', 'mp4box', 20 + by)), base);
       expect(r.status, `${by}`).toBe(1);
       expect(r.err).toContain(`mp4box:mp4box: ${fmt(norm('mp4box', 'mp4box') + 20 + by)} B differs from the stage base of ${fmt(norm('mp4box', 'mp4box') + 20)} B by ${signed(by)} B, and its share in stage 5 is 0`);
     }
+  });
+
+  test('lets the rows cut out of a single own worker file move only in the stages that change that file', () => {
+    const cut = (rows: string[], by: number) => (m: Matrix) => {
+      for (const row of rows) metric(m, row.slice(0, row.indexOf(':')), row.slice(row.indexOf(':') + 1), by);
+    };
+    const segments = ['zero-config:segments', 'iife-nosplit:segments'];
+    const rfps = ['zero-config:rfps', 'iife-nosplit:rfps'];
+    for (const [stage, moving] of [
+      [2, [...segments, ...rfps]],
+      [3, segments],
+      [5, [...segments, ...rfps]],
+    ] as const) {
+      const r = at(stage, raised(`cut-${stage}.json`, cut([...moving], -3)));
+      expect(r.status, `stage ${stage}: ${r.err}`).toBe(0);
+      expect(r.out).toContain(`except the rows ${moving.join(', ')}`);
+    }
+    for (const stage of [1, 4, 6]) expect(at(stage, raised(`cut-frozen-${stage}.json`, cut(segments, 1))).status, `stage ${stage}`).toBe(1);
+    const rfps3 = at(3, raised('cut-rfps-3.json', cut(rfps, 1)));
+    expect(rfps3.status).toBe(1);
+    expect(failures(rfps3.err).map(failedRow)).toEqual(rfps);
+    expect(at(2, raised('cut-default-2.json', (m) => metric(m, 'default', 'segments', 1))).status).toBe(1);
   });
 
   test('lets only the listed rows of the rule entries move in stage 6', () => {
@@ -621,7 +649,7 @@ describe('size gate against the 0.3.0 baseline', () => {
     expect(r.err).toContain('frozen.stages of stage 6 lists check, which is not a <configuration>:<metric> row');
   });
 
-  test('gates the first MP4 of every configuration and the rule chunks in the stages that freeze nothing', () => {
+  test('gates the first MP4 of every configuration and the rule chunks in stages 2 and 5', () => {
     const rows = ['mp4box:firstMp4', 'preset:firstMp4', 'react:firstMp4Summary'];
     const growRows = (m: Matrix, by: number) => {
       for (const row of rows) metric(m, row.slice(0, row.indexOf(':')), row.slice(row.indexOf(':') + 1), by);
