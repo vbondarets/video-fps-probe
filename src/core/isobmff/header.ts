@@ -422,6 +422,14 @@ async function resolveFragmented(w: Walk, walked: Walked, videos: IsoTrack[], bu
   }
 }
 
+function collapse(list: string[]): void {
+  const seen = new Map<string, number>();
+  for (const s of list) seen.set(s, (seen.get(s) ?? 0) + 1);
+  if (seen.size === list.length) return;
+  list.length = 0;
+  for (const [s, n] of seen) list.push(n > 1 ? `${s} (${n} times)` : s);
+}
+
 export async function analyzeIsoBmffHeader(reader: BlobReader, budget: HeaderBudget, plan: HeaderPlan): Promise<ContainerAnalysis> {
   const movie = newMovie(reader.size);
   const w: Walk = { reader, budget, plan, movie, boxes: 0 };
@@ -462,5 +470,7 @@ export async function analyzeIsoBmffHeader(reader: BlobReader, budget: HeaderBud
     analysis.formatDurationSec = null;
   }
   analysis.layout = layoutOf(movie);
+  collapse(analysis.warnings);
+  for (const t of analysis.videoTracks) collapse(t.warnings);
   return analysis;
 }
