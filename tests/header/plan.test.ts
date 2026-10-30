@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { analyzeHeader, type HeaderResult } from '../../src/header/index.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
-import { box, bytes, ftyp, mdatHeader, moov, moovOfSize, mvex, recording, sidx, virtualSource, zeros, type Segment } from '../helpers/iso-builder.ts';
+import { box, bytes, ftyp, mdatHeader, moof, moov, moovOfSize, mvex, recording, sidx, virtualSource, zeros, type Segment } from '../helpers/iso-builder.ts';
 
 const KIB = 1024;
 const MIB = 1024 * 1024;
@@ -213,7 +213,7 @@ describe('read plan of virtual sources', () => {
 
   test('a sidx that does not reach the end of the file is not a duration', async () => {
     const short = sidx(1, 15360, 0, [[10, 512]]);
-    const src = virtualSource([ftyp('iso5'), moov([{ id: 1 }], [mvex({ trex: [{ id: 1, duration: 512 }] })]), short, mdatHeader(16), zeros(16)]);
+    const src = virtualSource([ftyp('iso5'), moov([{ id: 1 }], [mvex({ trex: [{ id: 1, duration: 512 }] })]), short, moof(1, [{ id: 1, baseDts: 0, count: 30, duration: 512 }], 300), mdatHeader(300), zeros(300)]);
     const r = await analyzeHeader(src);
     expect(r.errorCode).toBe('no-duration');
   });
