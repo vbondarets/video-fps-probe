@@ -54,9 +54,10 @@ interface GateConfig {
 
 interface Pair {
   change: string;
+  structure: string;
   rows: Record<string, [number, number]>;
   files: Record<string, [number, number]>;
-  rawOnlyRows: string[];
+  rawOnlyRows: Record<string, [number, number]>;
 }
 
 const BASELINE_SHA256 = '1b6c24749acae07a3fea4b2477d8c88517d303c617f629c6c3f8b179db6f5fe2';
@@ -67,6 +68,7 @@ const SNAPSHOTS = join(REPO_ROOT, 'fixtures', 'snapshots');
 const BASELINE = join(SNAPSHOTS, 'size-matrix-v0.3.0.json');
 const NORMALIZED = join(SNAPSHOTS, 'size-matrix-v0.3.0-normalized.json');
 const PAIRS = JSON.parse(readFileSync(join(SNAPSHOTS, 'size-gate-pairs.json'), 'utf8')) as Record<string, Pair>;
+const PAIR_NAMES = ['parserOnly', 'nonParser', 'core', 'median'] as const;
 const hasTag = spawnSync('git', ['rev-parse', '--verify', '--quiet', 'v0.3.0^{commit}'], { cwd: REPO_ROOT }).status === 0;
 const shallow = spawnSync('git', ['rev-parse', '--is-shallow-repository'], { cwd: REPO_ROOT, encoding: 'utf8' });
 const fullHistory = shallow.status === 0 && shallow.stdout.trim() === 'false';
@@ -162,9 +164,17 @@ const parserRows = (m: Matrix, family: keyof typeof FAMILIES) => [
 const parserFiles = (m: Matrix, family: string) => m.fixtures.flatMap((f) => holding(f, family).map((x) => `${f.name} file ${fileKey(x)}`));
 const parserOnlyFiles = (m: Matrix, family: string) => m.fixtures.flatMap((f) => holding(f, family).filter((x) => !holds(x, 'core')).map((x) => `${f.name} file ${fileKey(x)}`));
 
+const structureOf = (m: Matrix) =>
+  sha256(
+    m.fixtures
+      .flatMap((f) => f.files.map((x) => `${f.name} ${fileKey(x)} ${x.normalized.entry ? 'entry' : 'lazy'} ${x.normalized.sources.join(' ')}`))
+      .sort()
+      .join('\n'),
+  );
+
 function applied(name: string, pair: Pair): string {
   return raised(name, (m) => {
-    for (const [row, [rawValue, normalizedValue]] of Object.entries(pair.rows)) {
+    for (const [row, [rawValue, normalizedValue]] of [...Object.entries(pair.rows), ...Object.entries(pair.rawOnlyRows)]) {
       const at = row.indexOf(':');
       const [config, key] = [row.slice(0, at), row.slice(at + 1)];
       if (config === 'standalone') {
@@ -428,8 +438,19 @@ describe('size gate against the 0.3.0 baseline', () => {
     for (const row of Object.keys(pair.rows)) expect(isoRows.has(row), row).toBe(true);
     const isoFiles = new Set(parserFiles(START, 'isobmff').map((k) => k.replace(' file ', ' ')));
     for (const key of Object.keys(pair.files)) expect(isoFiles.has(key), key).toBe(true);
-    expect(pair.rawOnlyRows).toEqual(expect.arrayContaining(['default:trigger', 'default:client', 'default:firstMkv', 'default:segments', 'all:mp4box', 'rvfc:rvfc']));
-    expect(pair.rawOnlyRows.filter((row) => !isoRows.has(row)).length).toBeGreaterThan(Object.keys(pair.rows).length);
+    expect(Object.keys(pair.rawOnlyRows)).toEqual(expect.arrayContaining(['default:trigger', 'default:client', 'default:firstMkv', 'default:segments', 'all:mp4box', 'rvfc:rvfc']));
+    expect(Object.keys(pair.rawOnlyRows).filter((row) => !isoRows.has(row)).length).toBeGreaterThan(Object.keys(pair.rows).length);
+    for (const [row, [rawValue, normalizedValue]] of Object.entries(pair.rawOnlyRows)) {
+      const at = row.indexOf(':');
+      const [config, key] = [row.slice(0, at), row.slice(at + 1)];
+      if (config === 'standalone') continue;
+      expect(normalizedValue, row).toBe(norm(config, key));
+      expect(rawValue, row).not.toBe(raw(config, key));
+    }
+    const within = at(3, applied('real-parser-only-raw.json', pair));
+    const [trigger] = pair.rawOnlyRows['default:trigger']!;
+    expect(trigger).not.toBe(raw('default', 'trigger'));
+    expect(within.out).toMatch(new RegExp(`default:trigger +[\\d,]+ +[\\d,]+ +[\\d,]+ +0 +0 +0 +0 +${fmt(trigger)} +1,000 +ok`));
   });
 
   test('fails a real change outside the parsers at stage 3 that every sum row holding it would let pass', () => {
@@ -445,6 +466,67 @@ describe('size gate against the 0.3.0 baseline', () => {
     const fails = failures(r.err);
     expect(fails).toHaveLength(Object.keys(pair.files).length);
     for (const line of fails) expect(line).toMatch(/^FAIL [\w-]+ file assets\/compare-00000000\.js \(page\): [\d,]+ B is \d+ B above the 0\.3\.0 baseline of [\d,]+ B, stage 3 allows 0 B for a file that holds no kind \(files\)$/);
+  });
+
+  test('every recorded real pair emits the same files from the same modules as the baseline', () => {
+    const base = structureOf(START);
+    for (const name of PAIR_NAMES) expect(PAIRS[name]!.structure, name).toBe(base);
+  });
+
+  test('passes a real change in the shared core at stages 2 and 5 and fails it at stage 3', () => {
+    const pair = PAIRS.core!;
+    for (const key of Object.keys(pair.files)) {
+      const at = key.indexOf(' ');
+      const x = fixtureOf(START, key.slice(0, at)).files.find((y) => fileKey(y) === key.slice(at + 1))!;
+      expect(holds(x, 'core'), key).toBe(true);
+    }
+    expect(Object.keys(pair.files).length).toBeGreaterThan(50);
+    const report = applied('real-core.json', pair);
+    for (const stage of [2, 5]) {
+      const r = at(stage, report);
+      expect(r.status, `stage ${stage}: ${r.err}`).toBe(0);
+    }
+    const stage3 = at(3, report);
+    expect(stage3.status).toBe(1);
+    const fails = failures(stage3.err);
+    for (const line of fails) expect(Object.hasOwn(pair.rows, failedRow(line)) || Object.hasOwn(pair.files, failedRow(line).replace(' file ', ' ')), line).toBe(true);
+    expect(stage3.err).toMatch(/FAIL default file assets\/runtime-00000000\.js \(page\): [\d,]+ B is \d+ B above the 0\.3\.0 baseline of [\d,]+ B, stage 3 allows 390 B for core \(files\)|FAIL default file assets\/runtime-00000000\.js \(page\): [\d,]+ B differs from the stage base of [\d,]+ B by \+\d+ B, and the share of stage 3 for core is 0 \(files\)/);
+  });
+
+  test('fails a real change outside the parsers and the core in every stage', () => {
+    const pair = PAIRS.nonParser!;
+    const report = applied('real-non-parser-every-stage.json', pair);
+    for (const stage of [1, 2, 3, 4, 5, 6]) {
+      const r = at(stage, report);
+      expect(r.status, `stage ${stage}`).toBe(1);
+      const fails = failures(r.err);
+      expect(fails.filter((line) => / file assets\/compare-00000000\.js \(page\): /.test(line)), `stage ${stage}`).toHaveLength(Object.keys(pair.files).length);
+      for (const line of fails) expect(line).toMatch(/^FAIL ([\w-]+ file assets\/compare-00000000\.js \(page\)|[\w-]+:lazyTotal): /);
+    }
+  });
+
+  test('passes a real stage 2 median change except where it spends more than the 0.03 KB engine share', () => {
+    const pair = PAIRS.median!;
+    const kinds = ['isobmff', 'matroska', 'core', 'engine'];
+    for (const key of Object.keys(pair.files)) {
+      const at = key.indexOf(' ');
+      const x = fixtureOf(START, key.slice(0, at)).files.find((y) => fileKey(y) === key.slice(at + 1))!;
+      expect(kinds.some((k) => holds(x, k)), key).toBe(true);
+    }
+    expect(Object.keys(pair.rows)).toEqual(expect.arrayContaining(['zero-config:segments', 'iife-nosplit:segments', 'zero-config:rfps', 'iife-nosplit:rfps']));
+    const report = applied('real-median.json', pair);
+    const r = at(2, report);
+    expect(r.status).toBe(1);
+    const fails = failures(r.err);
+    expect(fails.length).toBeGreaterThan(0);
+    for (const line of fails) expect(line).toMatch(/stage 2 allows 30 B( for engine)? \((engine chunks|files)\)$/);
+    const wider = configAt(2, NORMALIZED, (c) => {
+      c.files.kinds.engine!.growth['2'] = 50;
+      c.groups.find((g) => g.name === 'engine chunks')!.growth['2'] = 50;
+    });
+    const fits = run(['--config', wider, '--report', report]);
+    expect(fits.status, fits.err).toBe(0);
+    expect(at(3, report).status).toBe(1);
   });
 
   test('lets both parsers spend the stage 2 shares and fails one byte over on either parser', () => {
