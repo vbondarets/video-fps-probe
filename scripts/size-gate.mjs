@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,111 +9,171 @@ const STANDALONE = 'standalone';
 
 const USAGE = `Usage: node scripts/size-gate.mjs [--config <file>] [--report <file>] [--baseline <file>] [--stage <n>]
 
-Compares the size matrix report against the committed 0.3.0 baseline with the cumulative growth
-allowances and caps of scripts/size-gate.json, and exits 1 when a gated row grows past the share
-of the current stage or past its cap. Rows are <configuration>:<metric> of the report, or
-standalone:<file> for the prebuilt worker files. The table also shows the growth since the report
-of the stage base commit, when git has that commit.
+Compares the size matrix report against the committed 0.3.0 baseline and against the committed report
+the current stage started from (the stage base), with the allowances and caps of scripts/size-gate.json.
+It exits 1 when a snapshot does not match its pinned SHA-256, when a gated row grows past its cumulative
+allowance over the baseline, past the share of the current stage over the stage base or past its cap,
+when a row that must stay byte-identical changes, or when a gated row is missing. Rows are
+<configuration>:<metric> of the report, or standalone:<file> for the prebuilt worker files.
+
+The share of a stage is its cumulative allowance minus the allowance of the stage before. In a stage
+listed under frozen.stages, every row whose share is 0 and every row no group gates must equal the stage
+base, except in the configurations that the stage lists. A stage that starts from a report other than the
+baseline commits that report as fixtures/snapshots/size-matrix-s<previous stage>.json and points
+stageBase and stageBaseSha256 at it.
 
   --config <file>     gate configuration (default scripts/size-gate.json)
   --report <file>     measured report (default: the report named in the configuration)
-  --baseline <file>   baseline report (default: the baseline named in the configuration)
+  --baseline <file>   baseline report, checked against baselineSha256 (default: the baseline of the configuration)
   --stage <n>         stage whose allowances apply (default: the stage of the configuration)
+
+Paths on the command line resolve against the working directory, paths in the configuration against the
+repository root.
 `;
 
 const fromRoot = (p) => (isAbsolute(p) ? p : join(REPO_ROOT, p));
+const fromCwd = (p) => resolve(process.cwd(), p);
 const fmt = (n) => (n === null || n === undefined ? '-' : n.toLocaleString('en-US'));
-const signed = (n) => (n === null ? '-' : `${n > 0 ? '+' : ''}${n.toLocaleString('en-US')}`);
+const signed = (n) => (n === null || n === undefined ? '-' : `${n > 0 ? '+' : ''}${n.toLocaleString('en-US')}`);
+const sha256 = (path) => createHash('sha256').update(readFileSync(path)).digest('hex');
 
 function readJson(path, what) {
   if (!existsSync(path)) throw new Error(`${what} ${path} does not exist`);
   return JSON.parse(readFileSync(path, 'utf8'));
 }
 
+function pinProblem(path, pin, what) {
+  if (typeof pin !== 'string' || !/^[0-9a-f]{64}$/.test(pin)) return `the configuration pins no SHA-256 for the ${what}`;
+  if (!existsSync(path)) return `the ${what} ${path} does not exist`;
+  const actual = sha256(path);
+  return actual === pin ? null : `the ${what} ${path} has SHA-256 ${actual}, the configuration pins ${pin}, so it is not the committed snapshot`;
+}
+
+function splitRow(row) {
+  const at = row.indexOf(':');
+  return at < 0 ? [row, ''] : [row.slice(0, at), row.slice(at + 1)];
+}
+
 function lookup(report, row) {
-  const [config, metric] = row.split(/:(.*)/s);
+  const [config, metric] = splitRow(row);
   if (config === STANDALONE) {
     const s = (report.standalone ?? []).find((x) => x.file === metric);
-    return s ? { value: s.gzip ?? null, budget: s.limit ?? null, found: true } : { value: null, budget: null, found: false };
+    if (!s) return { found: false, why: `no standalone file ${metric}` };
+    return typeof s.gzip === 'number' ? { found: true, value: s.gzip } : { found: false, why: `standalone file ${metric} has no gzip size` };
   }
   const f = (report.fixtures ?? []).find((x) => x.name === config);
-  if (!f) return { value: null, budget: null, found: false };
-  const budget = (f.budgets ?? []).find((b) => b.key === metric);
-  return { value: f.metrics?.[metric] ?? null, budget: budget?.limit ?? null, found: true };
+  if (!f) return { found: false, why: `no configuration ${config}` };
+  if (!f.metrics || !Object.hasOwn(f.metrics, metric)) return { found: false, why: `configuration ${config} has no metric ${metric}` };
+  return { found: true, value: f.metrics[metric] };
 }
 
-function stageBaseReport(config) {
-  if (!config.stageBase) return { report: null, note: 'no stage base commit in the configuration' };
-  try {
-    const text = execFileSync('git', ['show', `${config.stageBase}:${config.report}`], { cwd: REPO_ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 1 << 28 });
-    return { report: JSON.parse(text), note: `growth since the report of ${config.stageBase}` };
-  } catch {
-    return { report: null, note: `the report of ${config.stageBase} is not available here (a shallow clone has only the checked-out commit), so the growth since the stage base is not shown` };
-  }
+function everyRow(report) {
+  const out = new Map();
+  for (const f of report.fixtures ?? []) for (const [k, v] of Object.entries(f.metrics ?? {})) out.set(`${f.name}:${k}`, v);
+  for (const s of report.standalone ?? []) out.set(`${STANDALONE}:${s.file}`, s.gzip ?? null);
+  return out;
 }
 
-function gate(config, report, baseline, stage, base) {
+function capOf(group, row) {
+  if (group.cap === null || typeof group.cap === 'number') return { cap: group.cap };
+  if (group.cap && typeof group.cap === 'object' && typeof group.cap[row] === 'number') return { cap: group.cap[row] };
+  return { problem: `group "${group.name}" gives no cap for ${row}: cap must be a number, an object with a number per row, or null for a growth-only row` };
+}
+
+function allowances(group, stage) {
+  const key = String(stage);
+  if (!group.growth || !(key in group.growth)) return { problem: `group "${group.name}" has no growth allowance for stage ${stage}` };
+  const allowed = group.growth[key];
+  const before = stage === 1 ? 0 : group.growth[String(stage - 1)];
+  if (before === undefined) return { problem: `group "${group.name}" has no growth allowance for stage ${stage - 1}` };
+  const share = allowed === null || before === null ? null : allowed - before;
+  return { allowed, share };
+}
+
+function gate(config, report, baseline, base, stage) {
   const problems = [];
   const rows = [];
-  const key = String(stage);
+  const frozenStages = config.frozen?.stages ?? {};
+  const frozen = Object.hasOwn(frozenStages, String(stage));
+  const exempt = new Set(frozen ? frozenStages[String(stage)] : []);
+  const gated = new Set();
   for (const group of config.groups) {
-    if (!(key in group.growth)) problems.push(`group "${group.name}" has no growth allowance for stage ${stage}`);
-    const allowed = group.growth[key] ?? null;
+    const a = allowances(group, stage);
+    if (a.problem) {
+      problems.push(a.problem);
+      continue;
+    }
     for (const row of group.rows) {
+      gated.add(row);
+      const c = capOf(group, row);
+      if (c.problem) problems.push(c.problem);
+      const cap = c.cap ?? null;
       const now = lookup(report, row);
       const was = lookup(baseline, row);
-      const before = base ? lookup(base, row).value : null;
-      const cap = group.cap === 'budget' ? now.budget : group.cap;
-      const out = { row, group: group.name, baseline: was.value, value: now.value, delta: null, allowed, cap, sinceBase: null, status: 'ok' };
+      const start = lookup(base, row);
+      const out = { row, baseline: was.value ?? null, base: start.value ?? null, value: now.value ?? null, delta: null, allowed: a.allowed, sinceBase: null, share: a.share, cap, status: 'ok' };
       rows.push(out);
-      if (!was.found) {
-        problems.push(`${row}: not in the baseline report, so it cannot be gated`);
-        out.status = 'no baseline';
-        continue;
-      }
-      if (!now.found) {
-        problems.push(`${row}: not in the measured report`);
-        out.status = 'missing';
-        continue;
-      }
-      if (was.value === null || now.value === null) {
-        if (was.value !== now.value) {
-          problems.push(`${row}: measured ${fmt(now.value)} B against a baseline of ${fmt(was.value)} B`);
-          out.status = 'changed';
-        }
+      const fail = (status, text) => {
+        problems.push(`${row}: ${text} (${group.name})`);
+        if (out.status === 'ok') out.status = status;
+      };
+      if (!was.found) fail('no baseline', `not in the baseline report: ${was.why}`);
+      if (!start.found) fail('no stage base', `not in the stage base report: ${start.why}`);
+      if (!now.found) fail('missing', `not in the measured report: ${now.why}`);
+      if (!was.found || !start.found || !now.found) continue;
+      if (was.value === null || start.value === null || now.value === null) {
+        fail('no value', `has no value in the ${was.value === null ? 'baseline' : start.value === null ? 'stage base' : 'measured'} report, so it cannot be gated`);
         continue;
       }
       out.delta = now.value - was.value;
-      out.sinceBase = before === null ? null : now.value - before;
-      if (allowed !== null && out.delta > allowed) {
-        problems.push(`${row}: ${fmt(now.value)} B is ${fmt(out.delta)} B above the 0.3.0 baseline of ${fmt(was.value)} B, stage ${stage} allows ${fmt(allowed)} B (${group.name})`);
-        out.status = 'over share';
+      out.sinceBase = now.value - start.value;
+      const [configuration] = splitRow(row);
+      if (group.exact === true && a.allowed !== null && out.delta !== 0) {
+        fail('changed', `${fmt(now.value)} B differs from the 0.3.0 baseline of ${fmt(was.value)} B by ${signed(out.delta)} B, and the group keeps it byte-identical`);
+      } else if (a.allowed !== null && out.delta > a.allowed) {
+        fail('over growth', `${fmt(now.value)} B is ${fmt(out.delta)} B above the 0.3.0 baseline of ${fmt(was.value)} B, stage ${stage} allows ${fmt(a.allowed)} B`);
       }
-      if (cap === null || cap === undefined) {
-        problems.push(`${row}: has no budget in the measured report to use as its cap`);
-        out.status = 'no cap';
-      } else if (now.value > cap) {
-        problems.push(`${row}: ${fmt(now.value)} B is above its cap of ${fmt(cap)} B (${group.name})`);
-        out.status = 'over cap';
+      if (a.share !== null) {
+        if (frozen && !exempt.has(configuration) && a.share === 0 && out.sinceBase !== 0) {
+          fail('changed', `${fmt(now.value)} B differs from the stage base of ${fmt(start.value)} B by ${signed(out.sinceBase)} B, and stage ${stage} keeps it byte-identical`);
+        } else if (out.sinceBase > a.share) {
+          fail('over share', `${fmt(now.value)} B is ${fmt(out.sinceBase)} B above the stage base of ${fmt(start.value)} B, the share of stage ${stage} is ${fmt(a.share)} B`);
+        }
       }
+      if (cap !== null && now.value > cap) fail('over cap', `${fmt(now.value)} B is above its cap of ${fmt(cap)} B`);
     }
   }
-  const gatedTriggers = new Set(rows.filter((r) => r.row.endsWith(':trigger')).map((r) => r.row.split(':')[0]));
+  let frozenRows = 0;
+  if (frozen) {
+    const measured = everyRow(report);
+    for (const [row, was] of everyRow(base)) {
+      const [configuration] = splitRow(row);
+      if (gated.has(row) || exempt.has(configuration)) continue;
+      frozenRows++;
+      if (!measured.has(row)) problems.push(`${row}: in the stage base report but not in the measured report, and stage ${stage} keeps every other row byte-identical`);
+      else if (measured.get(row) !== was) problems.push(`${row}: measured ${fmt(measured.get(row))} B against ${fmt(was)} B in the stage base, and stage ${stage} keeps every other row byte-identical`);
+    }
+  }
+  const gatedTriggers = new Set([...gated].filter((r) => r.endsWith(':trigger')).map((r) => splitRow(r)[0]));
   for (const f of baseline.fixtures ?? []) {
     if (!gatedTriggers.has(f.name)) problems.push(`configuration ${f.name} of the baseline has no gated critical path row`);
   }
-  const added = (report.fixtures ?? []).map((f) => f.name).filter((n) => !(baseline.fixtures ?? []).some((f) => f.name === n));
-  return { rows, problems, added };
+  const names = (r) => (r.fixtures ?? []).map((f) => f.name);
+  const added = names(report).filter((n) => !names(baseline).includes(n));
+  return { rows, problems, added, frozen, exempt: [...exempt], frozenRows };
 }
 
-function printTable(result, stage, baseNote) {
-  const head = ['row', 'baseline', 'measured', 'delta', `stage ${stage} allows`, 'cap', 'since base', 'status'];
-  const body = result.rows.map((r) => [r.row, fmt(r.baseline), fmt(r.value), signed(r.delta), r.allowed === null ? 'any' : fmt(r.allowed), fmt(r.cap), signed(r.sinceBase), r.status]);
+function printTable(result, stage) {
+  const head = ['row', 'baseline', 'stage base', 'measured', 'delta', `stage ${stage} allows`, 'since base', 'share', 'cap', 'status'];
+  const body = result.rows.map((r) => [r.row, fmt(r.baseline), fmt(r.base), fmt(r.value), signed(r.delta), r.allowed === null ? 'any' : fmt(r.allowed), signed(r.sinceBase), r.share === null ? 'any' : fmt(r.share), r.cap === null ? 'none' : fmt(r.cap), r.status]);
   const widths = head.map((h, i) => Math.max(h.length, ...body.map((b) => b[i].length)));
   const line = (cells) => cells.map((c, i) => (i === 0 || i === cells.length - 1 ? c.padEnd(widths[i]) : c.padStart(widths[i]))).join('  ');
   console.log(line(head));
   for (const b of body) console.log(line(b));
-  console.log(`since base: ${baseNote}`);
+  if (result.frozen) {
+    const except = result.exempt.length > 0 ? `, except the configurations ${result.exempt.join(', ')}` : '';
+    console.log(`stage ${stage} keeps every row that no group gates byte-identical to the stage base: ${result.frozenRows} rows${except}`);
+  } else console.log(`stage ${stage} does not freeze the rows that no group gates`);
   if (result.added.length > 0) console.log(`configurations added after 0.3.0, gated only by their budgets in size-matrix: ${result.added.join(', ')}`);
 }
 
@@ -126,23 +186,31 @@ function main() {
     console.log(USAGE);
     return 0;
   }
-  const config = readJson(fromRoot(values.config ?? 'scripts/size-gate.json'), 'gate configuration');
-  const report = readJson(fromRoot(values.report ?? config.report), 'report');
-  const baseline = readJson(fromRoot(values.baseline ?? config.baseline), 'baseline');
+  const config = readJson(values.config === undefined ? fromRoot('scripts/size-gate.json') : fromCwd(values.config), 'gate configuration');
   const stage = values.stage === undefined ? config.stage : Number(values.stage);
   if (!Number.isInteger(stage) || stage < 1) {
     console.error(`the stage must be a positive integer, got ${values.stage ?? config.stage}`);
     return 2;
   }
-  const base = stageBaseReport(config);
-  const result = gate(config, report, baseline, stage, base.report);
-  printTable(result, stage, base.note);
+  const baselinePath = values.baseline === undefined ? fromRoot(config.baseline) : fromCwd(values.baseline);
+  const basePath = fromRoot(config.stageBase);
+  const pins = [pinProblem(baselinePath, config.baselineSha256, 'baseline'), pinProblem(basePath, config.stageBaseSha256, 'stage base')].filter((p) => p !== null);
+  if (pins.length > 0) {
+    for (const p of pins) console.error(`FAIL ${p}`);
+    console.error(`size gate: ${pins.length} snapshot problem(s), nothing was gated`);
+    return 1;
+  }
+  const report = readJson(values.report === undefined ? fromRoot(config.report) : fromCwd(values.report), 'report');
+  const baseline = readJson(baselinePath, 'baseline');
+  const base = readJson(basePath, 'stage base');
+  const result = gate(config, report, baseline, base, stage);
+  printTable(result, stage);
   if (result.problems.length > 0) {
     for (const p of result.problems) console.error(`FAIL ${p}`);
     console.error(`size gate: ${result.problems.length} problem(s) at stage ${stage}`);
     return 1;
   }
-  console.log(`size gate: ${result.rows.length} rows within the stage ${stage} allowances and caps`);
+  console.log(`size gate: ${result.rows.length} gated rows within the stage ${stage} allowances, shares and caps`);
   return 0;
 }
 

@@ -1,30 +1,36 @@
 {
   "baseline": "fixtures/snapshots/size-matrix-v0.3.0.json",
+  "baselineSha256": "1b6c24749acae07a3fea4b2477d8c88517d303c617f629c6c3f8b179db6f5fe2",
   "report": "report/size-matrix.json",
   "stage": 1,
-  "stageBase": "ae14faf",
-  "unit": "gzip bytes, KB = 1000 bytes. growth is the cumulative allowance over the 0.3.0 baseline after each 0.4.0 stage (null: no growth limit), cap is a fixed limit in bytes or the row budget of the report",
+  "stageBase": "fixtures/snapshots/size-matrix-v0.3.0.json",
+  "stageBaseSha256": "1b6c24749acae07a3fea4b2477d8c88517d303c617f629c6c3f8b179db6f5fe2",
+  "unit": "gzip bytes, KB = 1000 bytes. growth is the cumulative allowance over the 0.3.0 baseline after each 0.4.0 stage (null: no growth limit), the share of a stage is its growth minus the growth of the stage before and bounds the growth over the stage base, cap is a fixed limit in bytes (null: a growth-only row), and exact keeps a row byte-identical to the baseline while its growth is not null",
+  "frozen": {
+    "stages": { "1": [], "3": [], "4": [], "6": ["check", "preset"] },
+    "why": "The 0.4.0 steps that add no code to the browser paths, or only to the rule entries, keep every row that no group gates, and every gated row without a share, byte-identical to the report they start from. The listed configurations are the ones such a step may move."
+  },
   "groups": [
     {
       "name": "first MP4 under the 25.00 KB promise",
       "rows": ["zero-config:firstMp4", "iife-nosplit:firstMp4", "standalone-split-url:firstMp4"],
       "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 450, "6": 450 },
       "cap": 24950,
-      "why": "Stage 2 may spend 0.39 KB, stage 3 0.01 KB and stage 5 0.05 KB on the first MP4 path, and the three configurations that inline the worker stay at or below 24.95 KB, inside the 25.00 KB promise."
+      "why": "The 0.4.0 parser additions may spend 0.39 KB, then 0.01 KB, then 0.05 KB on the first MP4 path, and the three configurations that inline the worker stay at or below 24.95 KB, inside the 25.00 KB promise."
     },
     {
       "name": "first MP4 of the default configuration",
       "rows": ["default:firstMp4"],
       "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 450, "6": 450 },
       "cap": 24000,
-      "why": "The same per-stage shares, under the 24.00 KB promise of the default configuration."
+      "why": "The same shares, under the 24.00 KB promise of the default configuration."
     },
     {
       "name": "first MP4 of the custom worker configurations",
       "rows": ["custom:firstMp4", "custom-eager:firstMp4"],
       "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 450, "6": 450 },
-      "cap": "budget",
-      "why": "The same per-stage shares, under the budgets of the custom configurations."
+      "cap": { "custom:firstMp4": 24500, "custom-eager:firstMp4": 21500 },
+      "why": "The same shares, under the 0.3.0 budgets of the custom configurations."
     },
     {
       "name": "standalone ISO BMFF worker file",
@@ -37,15 +43,22 @@
       "name": "Matroska path",
       "rows": ["standalone:own-matroska.worker.js", "default:firstMkv", "zero-config:firstMkv", "iife-nosplit:firstMkv", "standalone-split-url:firstMkv"],
       "growth": { "1": 0, "2": 200, "3": 200, "4": 200, "5": 250, "6": 250 },
-      "cap": "budget",
-      "why": "Stage 2 may spend 0.20 KB and stage 5 0.05 KB on the first MKV path, under the row budgets."
+      "cap": { "standalone:own-matroska.worker.js": 25000, "default:firstMkv": 26500, "zero-config:firstMkv": 28000, "iife-nosplit:firstMkv": 28000, "standalone-split-url:firstMkv": 28000 },
+      "why": "The 0.4.0 parser additions may spend 0.20 KB, then 0.05 KB on the first MKV path, under the 0.3.0 budgets of these rows."
+    },
+    {
+      "name": "first MKV of the other configurations",
+      "rows": ["custom:firstMkv", "custom-eager:firstMkv", "mp4box:firstMkv", "mediabunny:firstMkv", "rvfc:firstMkv", "all:firstMkv", "react:firstMkv", "react18:firstMkv", "check:firstMkv", "preset:firstMkv"],
+      "growth": { "1": 0, "2": 200, "3": 200, "4": 200, "5": 250, "6": 250 },
+      "cap": null,
+      "why": "The same shares as the Matroska path. These rows have no budget in the size matrix, so only their growth is gated."
     },
     {
       "name": "both parsers in one file",
-      "rows": ["standalone:own.worker.js", "standalone-url:firstMp4"],
+      "rows": ["standalone:own.worker.js", "standalone-url:firstMp4", "standalone-url:firstMkv"],
       "growth": { "1": 0, "2": 590, "3": 600, "4": 600, "5": 700, "6": 700 },
-      "cap": "budget",
-      "why": "The single standalone worker holds both parsers, so it may grow by the ISO BMFF and the Matroska shares together."
+      "cap": { "standalone:own.worker.js": 37500, "standalone-url:firstMp4": 40000, "standalone-url:firstMkv": 40000 },
+      "why": "The single standalone worker holds both parsers, so it, and the first file of the configuration that loads it, may grow by the ISO BMFF and the Matroska shares together."
     },
     {
       "name": "ISO BMFF parser chunk",
@@ -58,22 +71,24 @@
       "name": "engine chunks",
       "rows": ["mp4box:mp4box", "mediabunny:mediabunny"],
       "growth": { "1": 0, "2": 30, "3": 30, "4": 30, "5": 30, "6": 30 },
-      "cap": "budget",
-      "why": "The library engine chunks share the result helpers and may grow by 0.03 KB at most."
+      "cap": { "mp4box:mp4box": 46500, "mediabunny:mediabunny": 56000 },
+      "why": "The library engine chunks share the result helpers and may grow by 0.03 KB at most, under their 0.3.0 budgets."
     },
     {
       "name": "critical path",
       "rows": ["default:trigger", "zero-config:trigger", "custom:trigger", "custom-eager:trigger", "mp4box:trigger", "mediabunny:trigger", "rvfc:trigger", "all:trigger", "standalone-url:trigger", "standalone-split-url:trigger", "iife-nosplit:trigger", "react:trigger", "react18:trigger"],
       "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0 },
-      "cap": "budget",
+      "exact": true,
+      "cap": { "default:trigger": 1000, "zero-config:trigger": 1000, "custom:trigger": 1000, "custom-eager:trigger": 3500, "mp4box:trigger": 1000, "mediabunny:trigger": 1000, "rvfc:trigger": 1000, "all:trigger": 1500, "standalone-url:trigger": 1000, "standalone-split-url:trigger": 1000, "iife-nosplit:trigger": 1000, "react:trigger": 2000, "react18:trigger": 2000 },
       "why": "The package code in the entry chunk stays byte-identical to 0.3.0 for the whole release."
     },
     {
       "name": "critical path of the rule entries",
       "rows": ["check:trigger", "preset:trigger"],
       "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": null },
-      "cap": "budget",
-      "why": "Byte-identical until stage 6, which adds the check rules and re-sets the preset budget."
+      "exact": true,
+      "cap": { "check:trigger": 5000, "preset:trigger": 5000 },
+      "why": "Byte-identical to 0.3.0 until the last 0.4.0 step, which adds the check rules and re-sets the preset budget."
     }
   ]
 }
