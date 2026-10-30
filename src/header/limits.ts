@@ -65,8 +65,8 @@ export class LimitedSource implements BlobLike {
   #bytes = 0;
   #tripped: LimitError | null = null;
 
-  constructor(inner: BlobLike, limits: Required<Pick<HeaderLimits, 'maxBytes' | 'maxReads' | 'maxMs'>>, caller: AbortSignal | null) {
-    this.size = inner.size;
+  constructor(inner: BlobLike, size: number, limits: Required<Pick<HeaderLimits, 'maxBytes' | 'maxReads' | 'maxMs'>>, caller: AbortSignal | null) {
+    this.size = size;
     this.#inner = inner;
     this.#maxBytes = limits.maxBytes;
     this.#maxReads = limits.maxReads;

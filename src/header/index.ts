@@ -51,6 +51,7 @@ function record(value: unknown, what: string): Record<string, unknown> {
 
 interface Resolved {
   name: string;
+  size: number;
   signal: AbortSignal | null;
   limits: Required<HeaderLimits>;
   head: number;
@@ -61,7 +62,7 @@ interface Resolved {
 function resolveHeaderOptions(source: unknown, options: unknown): Resolved {
   const src = source as Partial<BlobLike> | null;
   if (typeof src !== 'object' || src === null || typeof src.slice !== 'function') throw new TypeError(`source must be a Blob or a BlobLike with a size and a slice method, got ${shown(source)}`);
-  count(src.size, 'source.size');
+  const size = count(src.size, 'source.size');
   const o = record(options, 'options');
   if (o.name !== undefined && typeof o.name !== 'string') throw new TypeError(`name must be a string, got ${shown(o.name)}`);
   const signal = o.signal ?? null;
@@ -80,7 +81,7 @@ function resolveHeaderOptions(source: unknown, options: unknown): Resolved {
   const mode = o.fragmentedDuration ?? 'index';
   if (mode !== 'index' && mode !== 'header') throw new TypeError(`fragmentedDuration must be 'header' or 'index', got ${shown(mode)}`);
   const name = (o.name as string | undefined) ?? (typeof File !== 'undefined' && source instanceof File ? source.name : '');
-  return { name, signal: signal as AbortSignal | null, limits, head, tail, index: mode === 'index' };
+  return { name, size, signal: signal as AbortSignal | null, limits, head, tail, index: mode === 'index' };
 }
 
 function docTypeOf(head: Uint8Array): string | null {
@@ -134,7 +135,7 @@ export async function analyzeHeader(source: Blob | BlobLike, options: HeaderOpti
   const t0 = performance.now();
   const o = resolveHeaderOptions(source, options);
   throwIfAborted(o.signal);
-  const limited = new LimitedSource(source, o.limits, o.signal);
+  const limited = new LimitedSource(source, o.size, o.limits, o.signal);
   const reader = new BlobReader(limited, { headWindow: o.head, signal: o.signal });
   let analysis: ContainerAnalysis;
   try {
@@ -149,7 +150,7 @@ export async function analyzeHeader(source: Blob | BlobLike, options: HeaderOpti
   }
   return {
     name: o.name,
-    size: source.size,
+    size: o.size,
     ...analysis,
     io: { reads: reader.reads, bytesRead: reader.bytesFetched, ms: performance.now() - t0, bytesRequested: limited.bytesRequested },
     engine: 'own',
