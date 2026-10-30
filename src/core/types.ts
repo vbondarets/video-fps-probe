@@ -115,6 +115,25 @@ export interface IoStats {
   ms: number;
 }
 
+export type FileErrorCode =
+  | 'empty-file'
+  | 'unrecognised'
+  | 'unsupported-container'
+  | 'unsupported'
+  | 'too-large'
+  | 'no-header'
+  | 'truncated'
+  | 'corrupt'
+  | 'no-duration'
+  | 'byte-limit'
+  | 'read-limit'
+  | 'time-limit'
+  | 'structure-limit'
+  | 'read-failed'
+  | 'load-failed'
+  | 'engine-failed'
+  | 'internal';
+
 export interface FileResult {
   name: string;
   size: number;
@@ -126,6 +145,7 @@ export interface FileResult {
   audioTrackCount: number;
   primaryTrackId: number | null;
   error: string | null;
+  errorCode?: FileErrorCode | null;
   warnings: string[];
   io: IoStats;
   engine: EngineId;

@@ -1,4 +1,5 @@
 import { analyzeWith } from '../core/dispatch.ts';
+import { fileError } from '../core/reader.ts';
 import type { ContainerAnalyzer } from '../core/types.ts';
 import type { ContainerFamily, EngineModule } from '../plugins/types.ts';
 
@@ -11,7 +12,7 @@ export function singleContainerEngine(kind: ContainerFamily, analyzer: Container
     containers: 'any',
     run: (blob, name, opts) =>
       analyzeWith(blob, name, opts, (found) => {
-        if (found !== kind) throw new Error(wrongFamily(kind, found));
+        if (found !== kind) throw fileError('unsupported-container', wrongFamily(kind, found));
         return analyzer;
       }),
   };

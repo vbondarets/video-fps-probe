@@ -18,7 +18,7 @@ function children(dv: DataView, h: BoxHeader, ctx: ParseContext, skip = 0): Gene
 function* guard(gen: Generator<BoxHeader>, ctx: ParseContext, parent: string): Generator<BoxHeader> {
   for (const c of gen) {
     if (c.truncated) {
-      if (ctx.strict) throw new IsoBmffError('incomplete file: moov is truncated');
+      if (ctx.strict) throw new IsoBmffError('truncated', 'incomplete file: moov is truncated');
       ctx.warnings.push(`'${c.type}' overruns '${parent}'`);
     }
     yield c;
@@ -309,7 +309,7 @@ export function parseMoov(dv: DataView, h: BoxHeader, movie: IsoMovie, strict: b
         }
         break;
       case 'cmov':
-        throw new IsoBmffError('unsupported: compressed movie header (cmov)');
+        throw new IsoBmffError('unsupported', 'unsupported: compressed movie header (cmov)');
     }
   }
 }

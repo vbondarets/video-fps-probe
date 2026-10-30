@@ -1,4 +1,4 @@
-import type { BlobReader } from '../reader.ts';
+import { codeOf, type BlobReader } from '../reader.ts';
 import { emptyAnalysis, emptyTrack } from '../result.ts';
 import { analyzeTimeline, rateProfileOf, type ProfileJob } from '../stats.ts';
 import { toFfprobeString } from '../rational.ts';
@@ -49,11 +49,11 @@ function containerOf(movie: IsoMovie): ContainerKind {
 async function readMoov(reader: BlobReader, h: BoxHeader, movie: IsoMovie): Promise<void> {
   const size = reader.size;
   const beyond = h.start + h.size > size;
-  if (!beyond && h.size > MOOV_HARD_CAP) throw new IsoBmffError('unsupported: moov larger than 256 MiB');
+  if (!beyond && h.size > MOOV_HARD_CAP) throw new IsoBmffError('too-large', 'unsupported: moov larger than 256 MiB');
   const len = beyond ? Math.min(size - h.start, MOOV_SUSPECT_CAP) : h.size;
   const dv = await reader.view(h.start, len, 0);
   const mh = readBoxHeader(dv, 0, dv.byteLength);
-  if (!mh) throw new IsoBmffError('incomplete file: moov is truncated');
+  if (!mh) throw new IsoBmffError('truncated', 'incomplete file: moov is truncated');
   parseMoov(dv, mh, movie, beyond, h.start);
   if (beyond) movie.warnings.push('moov size exceeds the file; parsed what is there');
 }
@@ -111,8 +111,8 @@ async function walk(reader: BlobReader, opts: ResolvedAnalyzeOptions, movie: Iso
         sawMoov = true;
       }
     } else if (h.type === 'moof') {
-      if (!sawMoov) throw new IsoBmffError('corrupt file: movie fragment (moof) before moov');
-      if (h.size > MOOF_HARD_CAP) throw new IsoBmffError(`corrupt file: moof larger than 64 MiB at ${pos}`);
+      if (!sawMoov) throw new IsoBmffError('corrupt', 'corrupt file: movie fragment (moof) before moov');
+      if (h.size > MOOF_HARD_CAP) throw new IsoBmffError('too-large', `corrupt file: moof larger than 64 MiB at ${pos}`);
       const want = Math.min(h.size + HEADER_PEEK, size - pos);
       const dv = await look(pos, want, 0);
       const mh = readBoxHeader(dv, 0, Math.min(h.size, dv.byteLength));
@@ -145,7 +145,7 @@ async function walk(reader: BlobReader, opts: ResolvedAnalyzeOptions, movie: Iso
     afterMdat = h.type === 'mdat';
     pos = boxEnd;
   }
-  if (!sawMoov) throw new IsoBmffError('incomplete file: no moov');
+  if (!sawMoov) throw new IsoBmffError('no-header', 'incomplete file: no moov');
 }
 
 async function emulateFfprobeExtent(reader: BlobReader, movie: IsoMovie): Promise<void> {
@@ -376,7 +376,8 @@ export async function analyzeIsoBmffDetailed(reader: BlobReader, opts: ResolvedA
   const fail = (e: unknown): IsoBmffDetails => {
     if (isAbort(e, reader)) throw e;
     const message = e instanceof Error ? e.message : String(e);
-    const analysis = emptyAnalysis(containerOf(movie), e instanceof IsoBmffError || message.startsWith(`file read failed`) ? message : `corrupt file: ${message}`);
+    const analysis = emptyAnalysis(containerOf(movie), (e as { errorCode?: unknown } | null)?.errorCode ? message : `corrupt file: ${message}`);
+    analysis.errorCode = codeOf(e);
     analysis.brand = movie.brand;
     analysis.warnings = movie.warnings;
     return { analysis, movie };

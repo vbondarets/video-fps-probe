@@ -98,7 +98,7 @@ export function parseTrun(
   const overrun = record > 0 && count < declared;
   const hasDuration = (flags & TRUN_SAMPLE_DURATION) !== 0;
   if (!hasDuration && tfhd.defaultDuration === null && count > 0) {
-    throw new IsoBmffError(`corrupt file: no sample duration for track ${tfhd.trackId}`);
+    throw new IsoBmffError('corrupt', `corrupt file: no sample duration for track ${tfhd.trackId}`);
   }
   const defaultDuration = tfhd.defaultDuration ?? 0;
   const durations = hasDuration ? new Uint32Array(count) : null;
@@ -201,7 +201,7 @@ export function parseMoof(dv: DataView, moof: BoxHeader, moofStart: number, moof
 export function parseSidx(dv: DataView, box: BoxHeader, fileStart: number): Sidx | null {
   const p = box.start + box.headerSize;
   const v1 = p < box.end && dv.getUint8(p) === 1;
-  if (p + (v1 ? 32 : 24) > box.end) throw new IsoBmffError(`corrupt file: box 'sidx' at ${fileStart} is truncated`);
+  if (p + (v1 ? 32 : 24) > box.end) throw new IsoBmffError('corrupt', `corrupt file: box 'sidx' at ${fileStart} is truncated`);
   let o = p + 12;
   const earliestPts = v1 ? boxU64(dv, o, 'sidx', fileStart) : dv.getUint32(o);
   const firstOffset = v1 ? boxU64(dv, o + 8, 'sidx', fileStart) : dv.getUint32(o + 4);

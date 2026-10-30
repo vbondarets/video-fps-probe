@@ -1,9 +1,9 @@
 import { throwIfAborted } from './abort.ts';
 import { resolveOptions } from './options.ts';
-import { BlobReader, type BlobLike } from './reader.ts';
+import { BlobReader, codeOf, fileError, type BlobLike } from './reader.ts';
 import { emptyAnalysis } from './result.ts';
 import { sniff, type SniffKind } from './sniff.ts';
-import type { AnalyzeOptions, ContainerAnalysis, ContainerAnalyzer, FileResult, ResolvedAnalyzeOptions } from './types.ts';
+import type { AnalyzeOptions, ContainerAnalyzer, FileResult, ResolvedAnalyzeOptions } from './types.ts';
 
 export type ContainerKind = Exclude<SniffKind, 'unknown'>;
 
@@ -28,18 +28,6 @@ export function errorMessage(e: unknown): string {
   return String(e);
 }
 
-function applyAnalysis(target: FileResult, a: ContainerAnalysis): void {
-  target.container = a.container;
-  target.brand = a.brand;
-  target.formatDurationSec = a.formatDurationSec;
-  target.scan = a.scan;
-  target.videoTracks = a.videoTracks;
-  target.audioTrackCount = a.audioTrackCount;
-  target.primaryTrackId = a.primaryTrackId;
-  target.error = a.error;
-  target.warnings = a.warnings;
-}
-
 export async function analyzeWith(blob: BlobLike, name: string, opts: AnalyzeOptions, analyzerOf: AnalyzerOf): Promise<FileResult> {
   const t0 = performance.now();
   const resolved = resolveOptions(opts);
@@ -48,31 +36,30 @@ export async function analyzeWith(blob: BlobLike, name: string, opts: AnalyzeOpt
     name,
     size: blob.size,
     ...emptyAnalysis('unknown'),
+    errorCode: null,
     io: { reads: 0, bytesRead: 0, ms: 0 },
     engine: 'own',
   };
   let reader: BlobReader | null = null;
   let loadMs = 0;
+  let loading = false;
   try {
     reader = new BlobReader(blob, { headWindow: resolved.readAhead.head, signal: resolved.signal });
-    if (reader.size === 0) {
-      result.error = 'not a recognised container: empty file';
-    } else {
-      const head = await reader.bytes(0, Math.min(SNIFF_BYTES, reader.size), firstReadAhead(reader.size, resolved));
-      const sniffed = sniff(head);
-      if (sniffed.kind === 'unknown') {
-        result.error = `not a recognised container: ${sniffed.reason}`;
-      } else {
-        result.container = sniffed.kind === 'isobmff' ? 'mp4' : 'matroska';
-        const l0 = performance.now();
-        const analyzer = await analyzerOf(sniffed.kind);
-        loadMs = performance.now() - l0;
-        applyAnalysis(result, await analyzer(reader, resolved));
-      }
-    }
+    if (reader.size === 0) throw fileError('empty-file', 'not a recognised container: empty file');
+    const head = await reader.bytes(0, Math.min(SNIFF_BYTES, reader.size), firstReadAhead(reader.size, resolved));
+    const sniffed = sniff(head);
+    if (sniffed.kind === 'unknown') throw fileError('unrecognised', `not a recognised container: ${sniffed.reason}`);
+    result.container = sniffed.kind === 'isobmff' ? 'mp4' : 'matroska';
+    const l0 = performance.now();
+    loading = true;
+    const analyzer = await analyzerOf(sniffed.kind);
+    loading = false;
+    loadMs = performance.now() - l0;
+    Object.assign(result, await analyzer(reader, resolved));
   } catch (e) {
     if (resolved.signal?.aborted || isAbortError(e)) throw e;
     result.error = errorMessage(e);
+    result.errorCode = codeOf(e, loading ? 'load-failed' : 'internal');
   }
   if (reader) {
     result.io.reads = reader.reads;

@@ -1,3 +1,5 @@
+import type { FileErrorCode } from '../../src/core/types.ts';
+
 export type Verdict = 'exact' | 'within-tol' | 'known-deviation' | 'mismatch' | 'n/a';
 
 export const VERDICTS: readonly Verdict[] = ['exact', 'within-tol', 'known-deviation', 'mismatch', 'n/a'];
@@ -200,7 +202,7 @@ export interface TrackFields040 {
 }
 
 export interface FileFields040 {
-  errorCode?: string | null;
+  errorCode?: FileErrorCode | null;
   layout?: ContainerLayoutLike | null;
 }
 

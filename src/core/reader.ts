@@ -1,4 +1,5 @@
 import { throwIfAborted } from './abort.ts';
+import type { FileErrorCode } from './types.ts';
 
 export interface BlobSlice {
   arrayBuffer(): Promise<ArrayBuffer>;
@@ -31,6 +32,14 @@ interface Interval {
 
 function assertSafeCount(value: number, what: string): void {
   if (!Number.isSafeInteger(value) || value < 0) throw new RangeError(`${what} must be a non-negative safe integer, got ${value}`);
+}
+
+export function fileError(code: FileErrorCode, message: string): Error {
+  return Object.assign(Error(message), { errorCode: code });
+}
+
+export function codeOf(e: unknown, fallback: FileErrorCode = 'internal'): FileErrorCode {
+  return (e as { errorCode?: FileErrorCode } | null)?.errorCode ?? (e instanceof RangeError ? 'corrupt' : fallback);
 }
 
 export function toSafeNumber(value: bigint, what = 'value'): number {
@@ -83,12 +92,12 @@ export class BlobReader {
       ab = await this.#source.slice(offset, end).arrayBuffer();
     } catch (e) {
       this.checkAbort();
-      throw (e as Error | null)?.name === 'AbortError' ? e : Error(`file read failed: ${e}`);
+      throw (e as Error | null)?.name === 'AbortError' ? e : fileError('read-failed', `file read failed: ${e}`);
     }
     this.checkAbort();
     this.#reads++;
     if (ab.byteLength !== end - offset) {
-      throw Error(`file read failed: short read at ${offset}: expected ${end - offset} bytes, got ${ab.byteLength}`);
+      throw fileError('read-failed', `file read failed: short read at ${offset}: expected ${end - offset} bytes, got ${ab.byteLength}`);
     }
     this.#cover(offset, end);
     return new Uint8Array(ab);

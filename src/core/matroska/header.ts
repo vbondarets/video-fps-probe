@@ -51,6 +51,7 @@ import {
   vintLength,
   type ElementHeader,
 } from './ebml.ts';
+import { fileError } from '../reader.ts';
 import { findLevel1Forward, type ByteSource } from './source.ts';
 
 export interface MkvTrack {
@@ -373,7 +374,7 @@ export async function readMatroskaHeader(src: ByteSource): Promise<MkvHeader> {
     warnings: [],
   };
   const ebml = await src.header(0);
-  if (!ebml || ebml.id !== ID_EBML || ebml.size === UNKNOWN_SIZE || ebml.dataStart + ebml.size > src.size) throw new Error('invalid EBML header');
+  if (!ebml || ebml.id !== ID_EBML || ebml.size === UNKNOWN_SIZE || ebml.dataStart + ebml.size > src.size) throw fileError('corrupt', 'invalid EBML header');
   await src.load(ebml.dataStart, Math.min(ebml.size, 4096));
   const s0 = ebml.dataStart - src.base;
   for (const c of children(src.buf, s0, s0 + ebml.size)) if (c.id === ID_DOC_TYPE) h.docType = readString(src.buf, c.start, c.size);
@@ -382,7 +383,7 @@ export async function readMatroskaHeader(src: ByteSource): Promise<MkvHeader> {
   let seg = await findSegment(src, h, ebml.dataStart + ebml.size);
   if (!seg) {
     const q = await findLevel1Forward(src, ebml.dataStart + ebml.size, src.size, src.size, { canLoad });
-    if (q < 0) throw new Error('no Segment element');
+    if (q < 0) throw fileError('no-header', 'no Segment element');
     h.warnings.push(`no valid Segment header: reading level-1 elements from ${q}`);
     h.segmentExtended = true;
     seg = { id: ID_SEGMENT, pos: q, size: UNKNOWN_SIZE, dataStart: q };
@@ -443,6 +444,6 @@ export async function readMatroskaHeader(src: ByteSource): Promise<MkvHeader> {
   }
   h.cuesPos ??= h.seek.get(ID_CUES) ?? null;
   if (!seen.ids.has(ID_INFO)) h.warnings.push('no Info element: TimestampScale 1000000 assumed');
-  if (!h.tracks.length) throw new Error(seen.ids.has(ID_TRACKS) ? 'no complete TrackEntry in Tracks' : 'no Tracks element found');
+  if (!h.tracks.length) throw seen.ids.has(ID_TRACKS) ? fileError('truncated', 'no complete TrackEntry in Tracks') : fileError('no-header', 'no Tracks element found');
   return h;
 }
