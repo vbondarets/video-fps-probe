@@ -1,0 +1,220 @@
+import { openAsBlob } from 'node:fs';
+import { join } from 'node:path';
+import { describe, expect, test } from 'vitest';
+import { analyzeHeader, type HeaderResult } from '../../src/header/index.ts';
+import { FILES_DIR } from '../helpers/fixtures.ts';
+import { box, bytes, ftyp, mdatHeader, moov, moovOfSize, mvex, recording, sidx, virtualSource, zeros, type Segment } from '../helpers/iso-builder.ts';
+
+const KIB = 1024;
+const MIB = 1024 * 1024;
+const VIDEO = { id: 1, samples: [[90, 512]] as Array<[number, number]> };
+
+const fixture = async (name: string, options = {}): Promise<HeaderResult> => analyzeHeader(await openAsBlob(join(FILES_DIR, name)), { name, ...options });
+
+function reads(r: HeaderResult): [number, number] {
+  return [r.io.reads, r.io.bytesRequested];
+}
+
+describe('read plan of the committed fixtures', () => {
+  test('a faststart moov inside the head window takes one read', async () => {
+    const r = await fixture('av_h264_aac_faststart.mp4');
+    expect(r.error).toBeNull();
+    expect(r.layout?.kind).toBe('faststart');
+    expect(r.io.reads).toBe(1);
+  });
+
+  test('a faststart moov that ends past the head window takes a second read for exactly the rest', async () => {
+    const r = await fixture('faststart_large_moov.mp4');
+    expect(r.layout).toMatchObject({ kind: 'faststart', moovOffset: 32, moovSize: 72831 });
+    expect(reads(r)).toEqual([2, 32 + 72831]);
+  });
+
+  test('a moov at the end inside the tail window takes two reads', async () => {
+    const r = await fixture('cfr_h264_30.mp4');
+    expect(r.layout?.kind).toBe('moov-at-end');
+    expect(r.io.reads).toBe(2);
+    expect(r.videoTracks[0]).toMatchObject({ frames: 90, durationSec: 3 });
+  });
+
+  test('a fragmented file with a covering sidx and an mfra takes the head and the mfra tail', async () => {
+    const r = await fixture('fmp4_global_sidx.mp4');
+    expect(r.error).toBeNull();
+    expect(r.videoTracks[0].provenance.durationSec).toBe('header');
+    expect(r.io.reads).toBe(2);
+  });
+
+  test("fragmentedDuration 'header' never reads past the first fragment", async () => {
+    const r = await fixture('rec_chromium_h264.mp4', { fragmentedDuration: 'header' });
+    expect(r).toMatchObject({ errorCode: 'no-duration', error: 'incomplete header: fragmented file without a sidx, mfra or mehd duration' });
+    expect(r.io.reads).toBe(1);
+    expect(r.videoTracks).toHaveLength(1);
+    expect(r.primaryTrackId).toBe(r.videoTracks[0].trackId);
+  });
+
+  test('a Matroska file is not read past the head window', async () => {
+    const webm = await fixture('cfr_vp9_30.webm');
+    expect(webm).toMatchObject({ container: 'webm', errorCode: 'unsupported-container', error: 'container not read by the header entry: webm', videoTracks: [] });
+    expect(webm.io.reads).toBe(1);
+    const mkv = await fixture('h264.mkv');
+    expect(mkv).toMatchObject({ container: 'matroska', errorCode: 'unsupported-container', error: 'container not read by the header entry: matroska' });
+  });
+
+  test('an empty file takes no read', async () => {
+    const r = await analyzeHeader(new Blob([]), { name: 'empty.mp4' });
+    expect(r).toMatchObject({ error: 'not a recognised container: empty file', errorCode: 'empty-file', scan: 'header', layout: null });
+    expect(reads(r)).toEqual([0, 0]);
+  });
+
+  test('a file that is not a container reads only the head window', async () => {
+    const r = await fixture('corrupt_png_named.mp4');
+    expect(r).toMatchObject({ errorCode: 'unrecognised', container: 'unknown' });
+    expect(r.io.reads).toBe(1);
+  });
+});
+
+describe('read plan of virtual sources', () => {
+  test('a faststart moov inside 64 KiB takes one read of 64 KiB', async () => {
+    const src = virtualSource([ftyp(), moov([VIDEO]), mdatHeader(MIB), { zeros: MIB }]);
+    const r = await analyzeHeader(src);
+    expect(r.error).toBeNull();
+    expect(reads(r)).toEqual([1, 64 * KIB]);
+  });
+
+  test('a 100 KiB faststart moov in a 1 GiB file takes two reads', async () => {
+    const m = moovOfSize(100 * KIB, { id: 1 });
+    const head = bytes(ftyp(), m);
+    const src = virtualSource([head, mdatHeader(1024 * MIB - head.length - 8), { zeros: 1024 * MIB - head.length - 8 }]);
+    expect(src.size).toBe(1024 * MIB);
+    const r = await analyzeHeader(src);
+    expect(r.error).toBeNull();
+    expect(r.layout).toMatchObject({ kind: 'faststart', moovSize: m.length });
+    expect(reads(r)).toEqual([2, head.length]);
+  });
+
+  test('a moov at the end inside the tail window takes two reads', async () => {
+    const m = moov([VIDEO]);
+    const src = virtualSource([ftyp(), mdatHeader(10 * MIB), { zeros: 10 * MIB }, m]);
+    const r = await analyzeHeader(src);
+    expect(r.error).toBeNull();
+    expect(r.layout?.kind).toBe('moov-at-end');
+    expect(reads(r)).toEqual([2, 64 * KIB + m.length]);
+  });
+
+  test('the 2.6 MB moov at the end of a 13 MB file takes three reads and stops with byte-limit after two under 2 MiB', async () => {
+    const m = moovOfSize(2_614_543, { id: 1 });
+    const mdat = 13 * 1000 * 1000 - m.length - 32 - 8;
+    const src = virtualSource([ftyp(), mdatHeader(mdat), { zeros: mdat }, m]);
+    const full = await analyzeHeader(src);
+    expect(full.error).toBeNull();
+    expect(full.io.reads).toBe(3);
+    expect(full.io.bytesRequested).toBe(64 * KIB + m.length);
+    const tight = await analyzeHeader(src, { limits: { maxBytes: 2 * MIB } });
+    expect(tight.errorCode).toBe('byte-limit');
+    expect(tight.error).toMatch(/^limit reached: maxBytes 2097152 \(\d+ more bytes needed at offset \d+\)$/);
+    expect(tight.io.reads).toBe(2);
+    expect(tight.io.bytesRequested).toBe(64 * KIB + 256 * KIB);
+    expect(tight.layout).toMatchObject({ kind: 'moov-at-end', moovSize: m.length });
+    expect(tight.videoTracks).toEqual([]);
+  });
+
+  test('1800 fragments without an index take at most two reads and end in no-duration', async () => {
+    const { source } = recording({ fragments: 1800, mdatBytes: 100, index: false });
+    const r = await analyzeHeader(source);
+    expect(r.errorCode).toBe('no-duration');
+    expect(r.io.reads).toBeLessThanOrEqual(2);
+    expect(r.videoTracks).toHaveLength(1);
+    expect(r.layout).toMatchObject({ kind: 'fragmented', emptyMoov: true });
+  });
+
+  test('a recording whose last moof is inside the tail window takes two reads, otherwise three', async () => {
+    const near = recording({ fragments: 4, mdatBytes: 40 * KIB });
+    const r1 = await analyzeHeader(near.source);
+    expect(r1.error).toBeNull();
+    expect(r1.io.reads).toBe(2);
+    expect(r1.videoTracks[0].durationSec).toBe(near.videoTicks / 15360);
+    const far = recording({ fragments: 4, mdatBytes: MIB });
+    const r2 = await analyzeHeader(far.source);
+    expect(r2.error).toBeNull();
+    expect(r2.io.reads).toBe(3);
+    expect(r2.videoTracks[0]).toMatchObject({ durationSec: far.videoTicks / 15360, provenance: { durationSec: 'header' } });
+    expect(r2.formatDurationSec).toBe(far.videoTicks / 15360);
+  });
+
+  test('a sound track that ends later sets the format duration', async () => {
+    const rec = recording({ fragments: 3, mdatBytes: 2 * MIB, audio: true, audioLonger: 25 });
+    const r = await analyzeHeader(rec.source);
+    expect(r.error).toBeNull();
+    expect(r.videoTracks[0].durationSec).toBe(rec.videoTicks / 15360);
+    expect(r.formatDurationSec).toBeCloseTo(rec.audioTicks! / 48000, 6);
+    expect(r.formatDurationSec!).toBeGreaterThan(r.videoTracks[0].durationSec!);
+  });
+
+  test('mehd gives an estimated duration only when it is valid', async () => {
+    for (const [mehd, expected] of [
+      [3000, 3],
+      [0, null],
+      [0xffffffff, null],
+      [0xffffffffffffffffn, null],
+    ] as const) {
+      const { source } = recording({ fragments: 3, mdatBytes: 100, index: false, mehd });
+      const r = await analyzeHeader(source);
+      if (expected === null) expect(r.errorCode, String(mehd)).toBe('no-duration');
+      else {
+        expect(r.error).toBeNull();
+        expect(r.videoTracks[0]).toMatchObject({ durationSec: expected, provenance: { durationSec: 'estimated' } });
+        expect(r.formatDurationSec).toBe(expected);
+      }
+    }
+  });
+
+  test('a covering sidx after the moov resolves the duration from the head', async () => {
+    const rec = recording({ fragments: 3, mdatBytes: 100, index: false, sidx: true });
+    const r = await analyzeHeader(rec.source);
+    expect(r.error).toBeNull();
+    expect(r.layout?.sidx).toBe(true);
+    expect(r.videoTracks[0]).toMatchObject({ durationSec: rec.videoTicks / 15360, provenance: { durationSec: 'header' } });
+    expect(r.io.reads).toBe(1);
+  });
+
+  test('an 8 MiB free box and several mdats before the moov cost one peek each outside the windows', async () => {
+    const m = moov([VIDEO]);
+    const free = 8 * MIB;
+    const src = virtualSource([ftyp(), mdatHeader(4 * MIB), { zeros: 4 * MIB }, box('free'), mdatHeader(2 * MIB), { zeros: 2 * MIB }, bytes(mdatHeader(free - 8)), { zeros: free - 8 }, m]);
+    const r = await analyzeHeader(src);
+    expect(r.error).toBeNull();
+    expect(r.layout?.kind).toBe('moov-at-end');
+    expect(r.io.reads).toBe(4);
+  });
+
+  test('2000 top-level free boxes stop with structure-limit under the default limit', async () => {
+    const segments: Segment[] = [ftyp()];
+    for (let i = 0; i < 2000; i++) segments.push(box('free', zeros(8)));
+    segments.push(moov([VIDEO]));
+    const r = await analyzeHeader(virtualSource(segments));
+    expect(r).toMatchObject({ errorCode: 'structure-limit', error: 'limit reached: maxTopLevelBoxes 1024', videoTracks: [] });
+    const ok = await analyzeHeader(virtualSource(segments), { limits: { maxTopLevelBoxes: 2002 } });
+    expect(ok.error).toBeNull();
+  });
+
+  test('a moov of 20,000 trak boxes stops with structure-limit', async () => {
+    const trak = box('trak', zeros(0));
+    const many = box('moov', ...Array.from({ length: 20_000 }, () => trak));
+    const r = await analyzeHeader(virtualSource([ftyp(), many, mdatHeader(16), zeros(16)]));
+    expect(r).toMatchObject({ errorCode: 'structure-limit', error: 'limit reached: maxTracks 64', videoTracks: [], primaryTrackId: null });
+    expect(r.layout).toMatchObject({ moovSize: many.length });
+  });
+
+  test('a moov that runs past the end of the file is parsed strictly as in full mode', async () => {
+    const m = moov([VIDEO]);
+    const cut = m.subarray(0, m.length - 40);
+    const r = await analyzeHeader(virtualSource([ftyp(), cut]));
+    expect(r).toMatchObject({ errorCode: 'truncated', error: 'incomplete file: moov is truncated' });
+  });
+
+  test('a sidx that does not reach the end of the file is not a duration', async () => {
+    const short = sidx(1, 15360, 0, [[10, 512]]);
+    const src = virtualSource([ftyp('iso5'), moov([{ id: 1 }], [mvex({ trex: [{ id: 1, duration: 512 }] })]), short, mdatHeader(16), zeros(16)]);
+    const r = await analyzeHeader(src);
+    expect(r.errorCode).toBe('no-duration');
+  });
+});
