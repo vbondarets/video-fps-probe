@@ -714,7 +714,7 @@ function enabledDraft(t: Track040, s: RefStream, facts: TrackFacts): Draft | nul
   const base = trackBase('enabled', null, t, RULE.enabled);
   const expected = facts.iso ? facts.iso.enabled : facts.mkv ? facts.mkv.flagEnabled : undefined;
   const info = `ffprobe disposition.default ${s.enabled ? 1 : 0}, shown for information`;
-  const app = t.enabled === null ? null : String(t.enabled);
+  const app = String(t.enabled);
   if (expected === undefined) return { ...base, verdict: 'n/a', app, ffprobe: null, detail: `no independent scan, ${info}` };
   return { ...base, verdict: t.enabled === expected ? 'exact' : 'mismatch', app, ffprobe: String(expected), detail: info };
 }

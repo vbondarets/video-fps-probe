@@ -191,7 +191,7 @@ export interface TrackFields040 {
   sampleAspectRatio?: RationalLike | null;
   displayWidth?: number | null;
   displayHeight?: number | null;
-  enabled?: boolean | null;
+  enabled?: boolean;
   color?: ColorLike | null;
 }
 
