@@ -372,6 +372,7 @@ async function resolveFragmented(w: Walk, walked: Walked, videos: IsoTrack[], bu
     }
   }
   const mehd = walked.moov ? mehdDuration(walked.moov) : null;
+  if (limit && mehd !== null && open().length > 0) analysis.warnings.push(`fragment index not read: ${limit.message}`);
   for (const tr of open()) if (mehd !== null) resolved.set(tr, { ticks: mehd, timescale: movie.timescale, provenance: 'estimated' });
   for (const tr of tracks) {
     if (resolved.has(tr) || videos.includes(tr) || hasFragmentData(tr, movie, index)) continue;
