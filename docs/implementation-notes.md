@@ -589,3 +589,41 @@ Measured on 2026-10-30 with `npm run build:lib` and the gzip level 9 of `node:zl
 The layout cost 2.5 times its estimate: the walk over the top-level boxes and the five members are about 0.15 KB of it. Dropping `moovOffset` and `emptyMoov` saves 0.04 KB.
 
 The sample aspect ratio does not fit the 0.39 KB share of the first MP4 path. On top of the rows above, a compact ISO BMFF rule (the `pasp`, the tkhd matrix multiplied with the mvhd matrix, and the tkhd size, with the FFmpeg conversion of a ratio of doubles) costs +240 bytes on `own-isobmff.worker.js`, the `pasp` and the tkhd size alone +160, and the `pasp` alone +109, most of it the plumbing of the matrix and the provenance. The first MP4 row of the zero-config configuration had 96 bytes left under its 24.95 KB cap before it.
+
+## 18. The header-only entry (0.4.0 stage 3)
+
+### The shared module and the 0.01 KB share
+
+The header walk needs the ISO BMFF track builder without the full parser, which imports the statistics. `src/core/isobmff/build.ts` therefore holds the code both modes share: `containerOf`, `readMoov`, `layoutOf`, `isVideoTrack`, `buildVideoTrack`, `finishProvenance`, `pickPrimary`, `formatDuration` and `reportedIds`. Measured on the size gate of stage 3 (hash-normalized gzip bytes over stage 2, every first MP4 row, the parser chunks and the worker files of the gate):
+
+| Arrangement | Largest growth | Notes |
+|---|---:|---|
+| a pure move of the helpers, `buildVideoTrack` left in `index.ts` | +20 | the order of the functions in the chunk changed |
+| `buildTrackHead` split off, its locals returned in an object | +55 | the extra function and its destructuring |
+| the whole `buildVideoTrack` in `build.ts`, the statistics passed as an optional argument, and the walk and the ffprobe extent emulation moved with it, so the chunk keeps its 0.3.0 function and module order | +15 to +28 | a context field instead of the argument cost more |
+| the same with one early return for broken tracks and header mode | +13 to +21 | |
+| the same with the eleven statistics fields copied in a loop | -14 to +1 | the shipped arrangement |
+
+So `build.ts` also holds the full-mode walk, and `buildVideoTrack(track, movie, options, context, timeline?)` runs the per-sample part only when it is given `analyzeTimeline`. `index.ts` imports `build.ts` right after the statistics, and `build.ts` imports `model.ts` for its types only, which keeps the module order of the bundles. Header mode calls the builder without the statistics, so the per-sample part stays in the header bundle unused: 2.37 KB of its 17.91 KB, measured by bundling the entry with and without it. Moving that part out of the shared builder costs the first MP4 more than the 0.01 KB share of this stage, so stage 5, which has a 0.05 KB share in the parser, is the earliest place to try it.
+
+### What the header walk reads
+
+- The header walk reuses `readMoov`, so a moov that runs past the end of the file is parsed strictly as in full mode: `incomplete file: moov is truncated` when a child is cut, else the prefix with the warning `moov size exceeds the file; parsed what is there`. The trak pre-count runs on the same bytes first, so `structure-limit` comes before any track is built.
+- After a moov with an `mvex`, the walk continues past every box but a `moof`, an `mdat` or an `mfra`, and reads each sidx exactly. When it reaches the end of the file without a fragment box, the file is read as one without fragments, with the frame count of the moov.
+- When the first moof is already in the bytes read, its fragments are parsed for the start of each track, so the format duration takes the start offsets as full mode does. `fmp4_global_sidx_bframes.mp4` needs them: its video starts at 0.08 s and its format duration is 4.16 s, its tracks 4.08 s.
+- The mfra tail walk starts at the earliest last indexed moof of the tracks still open and parses every later moof, so a sound track that the mfra does not index still gets its end from the fragments read, when its first one there has a tfdt.
+- ffmpeg ends a `+global_sidx` output with an mfra, so the sidx of such a file covers the file only up to the mfra, which takes the 64 KiB tail read to confirm. In `'header'` mode those files end in `no-duration`, and in `'index'` mode they take 2 reads.
+- `fmp4_mehd_valid.mp4` has an mfra too, so in `'index'` mode its duration comes from the index with provenance `header`, and only `'header'` mode reports the mehd duration as `estimated`.
+- Node 24.20 `openAsBlob` wraps the size of the 4.5 GB sparse file to 205,121,518 bytes, so a header run on it through `openAsBlob` ends in `no-header` like full mode. Through the `FileSlice` of `tests/helpers/open-blob.ts` it takes 2 reads and 66,712 bytes, the moov at 4,500,087,638.
+
+### Measured on the corpus
+
+`tests/header/parity.test.ts` and `node scripts/compare-ffprobe.ts --header --no-write` run every ISO BMFF fixture, 118 committed and 5 large, in both `fragmentedDuration` modes. Every file without fragments equals full mode on every compared field. Of the 25 fragmented files, the 6 without an mfra, a mehd or a covering sidx (the two `-f dash` outputs, the two sliced Chromium recordings, `fmp4_missing_fragment.mp4` and `corrupt_fmp4_truncated_mid_fragment.mp4`) end in `no-duration` with their tracks, and every other one gets the full-mode durations in `'index'` mode. `tests/header/fuzz.test.ts` ran 10,000 seeded mutations in 1.2 s on this machine with no rejection and no `internal` code.
+
+| File | Default limits | 2 MiB, 3 reads, 2.5 s, 16 tracks, 32 boxes |
+|---|---|---|
+| `long_cfr_3h_60fps.mp4`, a 2.6 MB moov at the end | 3 reads, 2,680,079 B | `byte-limit` after 2 reads, 327,680 B, `layout.moovSize` 2,614,543 |
+| `long_vfr_1h_screenrec.mp4`, a 1.5 MB moov at the end | 3 reads, 1,604,603 B | the same |
+| `big_1080p_moov_end.mp4` | 2 reads, 76,837 B | the same |
+| `big_1080p_faststart.mp4` | 1 read, 65,536 B | the same |
+| `sparse_4_5gb_co64.mp4`, through a `FileSlice` | 2 reads, 66,712 B | the same |
