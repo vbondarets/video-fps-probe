@@ -50,7 +50,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 ### Not yet
 
 - 0.3.x: a bundler matrix in CI: webpack 5, Rspack, Next.js, Angular CLI, SvelteKit, Nuxt, Parcel, Bun and Deno, with pnpm, Yarn PnP and bun installs.
-- 0.4.0: a header-only ISO BMFF mode with byte, read and time limits, machine-readable error codes, a layout field, a Range source for object storage (a fetcher, no SDK), color, HDR and Dolby Vision basics, PAR and display size, a median frame interval and CommonJS server entries only.
+- 0.4.0: a header-only ISO BMFF mode with byte, read and time limits, machine-readable error codes, a layout field, a Range source for object storage (a fetcher, no SDK), color, HDR and Dolby Vision basics, PAR and display size, a median frame interval for `check` and CommonJS server entries only.
 - 0.5.0: a Node entry (`fromPath`, DOM-free types, a `worker_threads` pool), NestJS validators, a CLI, bitrate, GOP and audio details, cadence detection, Vue, Svelte and Angular adapters, and later MPEG-TS and HLS.
 
 ## 0.2.0 - 2026-10-25
