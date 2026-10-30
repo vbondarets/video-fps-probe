@@ -36,7 +36,9 @@ Windows (process start dominates), the long files add about 30 seconds, and the 
 The generator fails when `files/` and `manifest.tsv` disagree. Output is byte-reproducible on the same ffmpeg
 build: a second run into a separate folder gave identical bytes for all 104 core files of that date and the same
 manifest (checked on 2026-10-21). The check ran only on those 104 files; the 7 core fixtures added later were not
-re-checked. WebM and Matroska
+re-checked. A run on 2026-10-30 reproduced all 165 core files and the manifest, but `vp8.webm` is not reliably
+reproducible: libvpx VP8 with `-deadline realtime` adapts its speed to the wall clock, and runs on a loaded machine gave
+other sizes. Do not commit a regenerated `vp8.webm` without comparing its bytes. WebM and Matroska
 outputs use `-fflags +bitexact`, which removes random UIDs. The committed bytes come from ffmpeg
 `8.1.1-full_build-www.gyan.dev`; another build can differ in encoder output, so the generator warns when the
 version is not 8.1.1 and `fixtures:refs` refuses to run unless `ALLOW_FFPROBE_MISMATCH=1` is set.
