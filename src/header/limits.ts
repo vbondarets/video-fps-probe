@@ -35,9 +35,17 @@ interface SignalRead {
 const noop = (): void => {};
 const MAX_TIMER_MS = 0x7fffffff;
 
-function wholeBuffer(bytes: Uint8Array): ArrayBuffer {
-  if (bytes.byteOffset === 0 && bytes.byteLength === bytes.buffer.byteLength && bytes.buffer instanceof ArrayBuffer) return bytes.buffer;
-  return bytes.slice().buffer;
+function sourceError(message: string): Error {
+  return Object.assign(new Error(message), { name: '' });
+}
+
+function bufferOf(value: unknown): ArrayBuffer {
+  if (ArrayBuffer.isView(value)) {
+    const bytes = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
+    return bytes.byteOffset === 0 && bytes.byteLength === bytes.buffer.byteLength && bytes.buffer instanceof ArrayBuffer ? bytes.buffer : bytes.slice().buffer;
+  }
+  if (typeof (value as { byteLength?: unknown } | null)?.byteLength !== 'number') throw sourceError(`the source returned ${value === null ? 'null' : typeof value} instead of bytes`);
+  return value as ArrayBuffer;
 }
 
 export class LimitedSource implements BlobLike {
@@ -140,13 +148,14 @@ export class LimitedSource implements BlobLike {
     let pending: Promise<ArrayBuffer>;
     try {
       const inner = this.#inner;
-      pending = typeof inner.read === 'function' ? Promise.resolve(inner.read(start, end, this.#controller.signal)).then(wholeBuffer) : Promise.resolve(inner.slice(start, end).arrayBuffer());
+      pending = Promise.resolve(typeof inner.read === 'function' ? inner.read(start, end, this.#controller.signal) : inner.slice(start, end).arrayBuffer()).then(bufferOf);
     } catch (e) {
       pending = Promise.reject(e);
     }
     pending.catch(noop);
     return Promise.race([pending, this.#stopped]).catch((e: unknown) => {
       if (e instanceof LimitError) this.#tripped = e;
+      else if (!this.#controller.signal.aborted && (e as Error | null)?.name === 'AbortError') throw sourceError(String(e));
       throw e;
     });
   }
