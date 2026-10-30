@@ -7668,8 +7668,8 @@
       "worker": "none needed: the header entry runs in the calling thread",
       "engines": [],
       "metrics": {
-        "entry": 18504,
-        "trigger": 18481,
+        "entry": 18509,
+        "trigger": 18486,
         "react": null,
         "check": null,
         "presets": null,
@@ -7693,8 +7693,8 @@
       },
       "normalized": {
         "metrics": {
-          "entry": 18504,
-          "trigger": 18481,
+          "entry": 18509,
+          "trigger": 18486,
           "react": null,
           "check": null,
           "presets": null,
@@ -7720,13 +7720,13 @@
       "workers": [],
       "files": [
         {
-          "file": "assets/index-CzyTLAle.js",
-          "gzip": 18504,
+          "file": "assets/index-B94uYzu2.js",
+          "gzip": 18509,
           "worker": null,
           "class": "isobmff",
           "normalized": {
             "file": "assets/index-00000000.js",
-            "gzip": 18504,
+            "gzip": 18509,
             "entry": true,
             "sources": [
               "core/abort.js",
@@ -7770,10 +7770,10 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 20000,
-          "gzip": 18481,
-          "headroom": 1519,
+          "gzip": 18486,
+          "headroom": 1514,
           "status": "ok",
-          "why": "The package code in the entry chunk of a host that imports video-fps-probe/header statically: analyzeHeader with its option checks, the limited source, the reader, the sniffer, the ISO BMFF box parsers, the header walk, the fragmented duration and the track builder it shares with the full parser. It starts no worker and loads nothing lazily, and it reaches neither the full ISO BMFF parser nor the statistics. Design estimate 11 to 13 KB, measured 17.92 KB, of which 2.37 KB is the per-sample part of the shared track builder, which header mode never runs: moving it out of the shared builder would cost the first MP4 more than the 0.01 KB share of stage 3. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 18.48 KB once the walk followed full mode on hybrid files, single moofs, sidx ends, start offsets and limits after the moov."
+          "why": "The package code in the entry chunk of a host that imports video-fps-probe/header statically: analyzeHeader with its option checks, the limited source, the reader, the sniffer, the ISO BMFF box parsers, the header walk, the fragmented duration and the track builder it shares with the full parser. It starts no worker and loads nothing lazily, and it reaches neither the full ISO BMFF parser nor the statistics. Design estimate 11 to 13 KB, measured 17.92 KB, of which 2.37 KB is the per-sample part of the shared track builder, which header mode never runs: moving it out of the shared builder would cost the first MP4 more than the 0.01 KB share of stage 3. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 18.49 KB once the walk followed full mode on hybrid files, single moofs, sidx ends, start offsets and limits after the moov."
         },
         {
           "key": "header",
@@ -7788,10 +7788,10 @@
           "key": "entry",
           "label": "entry chunk with the preload helper",
           "limit": 20000,
-          "gzip": 18504,
-          "headroom": 1496,
+          "gzip": 18509,
+          "headroom": 1491,
           "status": "ok",
-          "why": "The trigger of this configuration plus the Vite runtime of the entry chunk. Measured 17.94 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 18.50 KB with the trigger above."
+          "why": "The trigger of this configuration plus the Vite runtime of the entry chunk. Measured 17.94 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 18.51 KB with the trigger above."
         }
       ],
       "problems": []
