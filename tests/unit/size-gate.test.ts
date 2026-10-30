@@ -273,11 +273,14 @@ describe('size gate against the 0.3.0 baseline', () => {
     }
   });
 
-  test('passes the committed report with every row at its stage base', () => {
+  test('passes the committed report, with every row at its stage base while the report is the stage base', () => {
     const r = run([]);
     expect(r.status, r.err).toBe(0);
     expect(r.out).toMatch(/size gate: 138 gated rows and 292 files within the stage \d allowances, shares and caps/);
-    expect(r.out).toContain('0 of them changed since the stage base or failed');
+    const config = JSON.parse(readFileSync(CONFIG, 'utf8')) as GateConfig;
+    const atBase = readFileSync(join(REPO_ROOT, config.report)).equals(readFileSync(join(REPO_ROOT, config.stageBase)));
+    if (atBase) expect(r.out).toContain('0 of them changed since the stage base or failed');
+    else expect(r.out).toMatch(/files: 292 emitted files outside the entry chunk of the 0\.3\.0 configurations, [1-9]\d* of them changed since the stage base or failed/);
   });
 
   test('passes the baseline itself at every stage', () => {
