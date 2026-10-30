@@ -7773,7 +7773,7 @@
           "gzip": 17921,
           "headroom": 2079,
           "status": "ok",
-          "why": "The package code in the entry chunk of a host that imports video-fps-probe/header statically: analyzeHeader with its option checks, the limited source, the reader, the sniffer, the ISO BMFF box parsers, the header walk, the fragmented duration and the track builder it shares with the full parser. It starts no worker and loads nothing lazily, and it reaches neither the full ISO BMFF parser nor the statistics. Design estimate 11 to 13 KB; measured 17.92 KB, of which 2.37 KB is the per-sample part of the shared track builder, which header mode never runs: moving it out of the shared builder would cost the first MP4 more than the 0.01 KB share of stage 3. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+          "why": "The package code in the entry chunk of a host that imports video-fps-probe/header statically: analyzeHeader with its option checks, the limited source, the reader, the sniffer, the ISO BMFF box parsers, the header walk, the fragmented duration and the track builder it shares with the full parser. It starts no worker and loads nothing lazily, and it reaches neither the full ISO BMFF parser nor the statistics. Design estimate 11 to 13 KB, measured 17.92 KB, of which 2.37 KB is the per-sample part of the shared track builder, which header mode never runs: moving it out of the shared builder would cost the first MP4 more than the 0.01 KB share of stage 3. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
         {
           "key": "header",
