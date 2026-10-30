@@ -100,6 +100,27 @@
       "why": "These rows measure the same parser code as the parser chunk above, so they get the same shares under the same 13.00 KB cap."
     },
     {
+      "name": "Matroska parser chunk",
+      "rows": ["default:matroska", "zero-config:matroska", "custom:matroska", "custom-eager:matroska", "mp4box:matroska", "mediabunny:matroska", "rvfc:matroska", "all:matroska", "iife-nosplit:matroska", "react:matroska", "react18:matroska", "check:matroska", "preset:matroska"],
+      "growth": { "1": 0, "2": 200, "3": 200, "4": 200, "5": 250, "6": 250 },
+      "cap": 12500,
+      "why": "The Matroska parser in the own worker gets the shares of the Matroska path, under the 12.50 KB budget of the default and all configurations, which the other configurations measure the same parser code against."
+    },
+    {
+      "name": "rate profile core",
+      "rows": ["default:segments", "zero-config:segments", "custom:segments", "custom-eager:segments", "mp4box:segments", "mediabunny:segments", "rvfc:segments", "all:segments", "iife-nosplit:segments", "react:segments", "react18:segments", "check:segments", "preset:segments"],
+      "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0 },
+      "cap": 2000,
+      "why": "No 0.4.0 stage changes the rate profile core, so it stays identical to 0.3.0, under the 2.00 KB budget of the default and all configurations, which the other configurations measure the same code against."
+    },
+    {
+      "name": "ffprobe frame rate estimate",
+      "rows": ["default:rfps", "zero-config:rfps", "custom:rfps", "custom-eager:rfps", "mp4box:rfps", "mediabunny:rfps", "rvfc:rfps", "all:rfps", "iife-nosplit:rfps", "react:rfps", "react18:rfps", "check:rfps", "preset:rfps"],
+      "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0 },
+      "cap": 4000,
+      "why": "No 0.4.0 stage changes the ffprobe frame rate estimate, so it stays identical to 0.3.0, under the 4.00 KB budget of the default and all configurations, which the other configurations measure the same code against."
+    },
+    {
       "name": "all own paths",
       "rows": ["default:allOwn", "zero-config:allOwn", "all:allOwn", "standalone-split-url:allOwn", "iife-nosplit:allOwn", "react:allOwn"],
       "growth": { "1": 0, "2": 590, "3": 600, "4": 600, "5": 700, "6": 700 },
@@ -136,10 +157,17 @@
     },
     {
       "name": "engine chunks",
-      "rows": ["mp4box:mp4box", "mediabunny:mediabunny"],
+      "rows": ["mp4box:mp4box", "mediabunny:mediabunny", "all:mp4box", "all:mediabunny"],
       "growth": { "1": 0, "2": 30, "3": 30, "4": 30, "5": 30, "6": 30 },
-      "cap": { "mp4box:mp4box": 46500, "mediabunny:mediabunny": 56000 },
+      "cap": { "mp4box:mp4box": 46500, "mediabunny:mediabunny": 56000, "all:mp4box": 46500, "all:mediabunny": 56000 },
       "why": "The library engine chunks share the result helpers and may grow by 0.03 KB at most, under their 0.3.0 budgets."
+    },
+    {
+      "name": "main-thread engine chunks",
+      "rows": ["rvfc:rvfc", "all:rvfc", "all:pageEngineShared"],
+      "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0 },
+      "cap": { "rvfc:rvfc": 2500, "all:rvfc": 2500, "all:pageEngineShared": 2000 },
+      "why": "No 0.4.0 stage changes the rVFC engine or the shared engine chunk on the main thread, so they stay identical to 0.3.0, under their 0.3.0 budgets."
     },
     {
       "name": "critical path",

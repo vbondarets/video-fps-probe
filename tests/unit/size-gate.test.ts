@@ -226,7 +226,7 @@ describe('size gate against the 0.3.0 baseline', () => {
   test('passes the committed report with every row at its stage base', () => {
     const r = run([]);
     expect(r.status, r.err).toBe(0);
-    expect(r.out).toMatch(/size gate: 98 gated rows and 292 files within the stage \d allowances, shares and caps/);
+    expect(r.out).toMatch(/size gate: 142 gated rows and 292 files within the stage \d allowances, shares and caps/);
     expect(r.out).toContain('0 of them changed since the stage base or failed');
   });
 
@@ -334,6 +334,8 @@ describe('size gate against the 0.3.0 baseline', () => {
       ['default', 'matroska'],
       ['zero-config', 'firstMkv'],
       ['rvfc', 'rvfc'],
+      ['all', 'mp4box'],
+      ['all', 'pageEngineShared'],
     ] as const) {
       const r = at(
         3,
@@ -363,7 +365,7 @@ describe('size gate against the 0.3.0 baseline', () => {
     expect(at(2, raised('engine-30.json', engine(30))).status).toBe(0);
     const over = at(2, raised('engine-31.json', engine(31)));
     expect(over.status).toBe(1);
-    expect(over.err).toContain(`mp4box:mp4box: ${fmt(norm('mp4box', 'mp4box') + 31)} B is 31 B above the 0.3.0 baseline of ${fmt(norm('mp4box', 'mp4box'))} B, stage 2 allows 30 B`);
+    expect(over.err).toContain(`all:mp4box: ${fmt(norm('all', 'mp4box') + 31)} B is 31 B above the 0.3.0 baseline of ${fmt(norm('all', 'mp4box'))} B, stage 2 allows 30 B`);
     expect(over.err).toMatch(/FAIL all file assets\/mp4box-00000000\.js \(page\): [\d,]+ B is 31 B above the 0\.3\.0 baseline of [\d,]+ B, stage 2 allows 30 B for mp4box \(files\)/);
     expect(at(3, raised('engine-stage-3.json', engine(1)), raised('engine-stage-2.json', engine(0))).status).toBe(1);
   });
