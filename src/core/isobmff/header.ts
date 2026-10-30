@@ -15,11 +15,13 @@ const MFRA_CAP = 16 * 1024 * 1024;
 const MOOF_HARD_CAP = 64 * 1024 * 1024;
 const SIDE_TYPES = new Set(['moof', 'mdat', 'mfra']);
 
+type Limit = Error & { errorCode: string };
+
 export interface HeaderBudget {
   readonly bytesLeft: number;
   checkTime(): void;
   reserve(reads: number, bytes: number, offset: number): void;
-  take(): (Error & { errorCode: string }) | null;
+  take(): Limit | null;
 }
 
 export interface HeaderPlan {
@@ -141,6 +143,7 @@ interface Walked {
   moov: DataView | null;
   fragments: boolean;
   firstMoof: BoxHeader | null;
+  limit: Limit | null;
 }
 
 async function walkTop(w: Walk): Promise<Walked> {
@@ -149,56 +152,63 @@ async function walkTop(w: Walk): Promise<Walked> {
   let pos = 0;
   let moov: DataView | null = null;
   let afterMdat = false;
-  while (pos + 8 <= size) {
-    visit(w);
-    const hv = await peekAt(w, pos, afterMdat && !moov ? w.plan.tail : w.plan.head);
-    let rel: BoxHeader | null;
-    try {
-      rel = readBoxHeader(hv, 0, size - pos, pos);
-    } catch (e) {
-      if (!moov) throw e;
-      movie.warnings.push(`ignored trailing data at ${pos}: ${(e as Error).message}`);
-      return { moov, fragments: false, firstMoof: null };
-    }
-    if (!rel) break;
-    const h: BoxHeader = { ...rel, start: pos, end: Math.min(pos + rel.size, size) };
-    const trailer = rel.truncated && moov !== null && h.type !== 'mdat' && h.type !== 'moof';
-    if (rel.truncated) {
-      movie.truncated = true;
-      movie.warnings.push(trailer ? `ignored trailing data at ${pos}: not a box` : `'${h.type}' at ${pos} is truncated`);
-    }
-    const top: TopBox = { type: h.type, start: pos, end: h.end, sidx: null };
-    movie.topLevel.push(top);
-    if (trailer || (moov && SIDE_TYPES.has(h.type))) return { moov, fragments: !trailer, firstMoof: !trailer && h.type === 'moof' ? h : null };
-    if (h.type === 'ftyp') {
-      const fv = await reader.view(pos, Math.min(h.size, 1024), ahead(w, pos, w.plan.head));
-      const p = h.headerSize;
-      if (p + 4 <= fv.byteLength) {
-        movie.hasFtyp = true;
-        movie.brand = fourcc(fv, p);
-        for (let q = p + 8; q + 4 <= fv.byteLength; q += 4) movie.compatibleBrands.push(fourcc(fv, q));
+  try {
+    while (pos + 8 <= size) {
+      visit(w);
+      const hv = await peekAt(w, pos, afterMdat && !moov ? w.plan.tail : w.plan.head);
+      let rel: BoxHeader | null;
+      try {
+        rel = readBoxHeader(hv, 0, size - pos, pos);
+      } catch (e) {
+        if (!moov) throw e;
+        movie.warnings.push(`ignored trailing data at ${pos}: ${(e as Error).message}`);
+        return { moov, fragments: false, firstMoof: null, limit: null };
       }
-    } else if (h.type === 'moov') {
-      if (moov) movie.warnings.push(`ignored a second moov at ${pos}`);
-      else {
-        moov = await readHeaderMoov(w, h);
-        if (!movie.hasMvex) {
-          noteTruncatedMdat(w, pos + rel.size);
-          return { moov, fragments: false, firstMoof: null };
+      if (!rel) break;
+      const h: BoxHeader = { ...rel, start: pos, end: Math.min(pos + rel.size, size) };
+      const trailer = rel.truncated && moov !== null && h.type !== 'mdat' && h.type !== 'moof';
+      if (rel.truncated) {
+        movie.truncated = true;
+        movie.warnings.push(trailer ? `ignored trailing data at ${pos}: not a box` : `'${h.type}' at ${pos} is truncated`);
+      }
+      const top: TopBox = { type: h.type, start: pos, end: h.end, sidx: null };
+      movie.topLevel.push(top);
+      if (trailer || (moov && SIDE_TYPES.has(h.type))) return { moov, fragments: !trailer, firstMoof: !trailer && h.type === 'moof' ? h : null, limit: null };
+      if (h.type === 'ftyp') {
+        const fv = await reader.view(pos, Math.min(h.size, 1024), ahead(w, pos, w.plan.head));
+        const p = h.headerSize;
+        if (p + 4 <= fv.byteLength) {
+          movie.hasFtyp = true;
+          movie.brand = fourcc(fv, p);
+          for (let q = p + 8; q + 4 <= fv.byteLength; q += 4) movie.compatibleBrands.push(fourcc(fv, q));
         }
+      } else if (h.type === 'moov') {
+        if (moov) movie.warnings.push(`ignored a second moov at ${pos}`);
+        else {
+          moov = await readHeaderMoov(w, h);
+          if (!movie.hasMvex) {
+            noteTruncatedMdat(w, pos + rel.size);
+            return { moov, fragments: false, firstMoof: null, limit: null };
+          }
+        }
+      } else if (h.type === 'moof') {
+        throw new IsoBmffError('corrupt', 'corrupt file: movie fragment (moof) before moov');
+      } else if (h.type === 'sidx' && !rel.truncated) {
+        const dv = await reader.view(pos, h.size, 0);
+        const sh = readBoxHeader(dv, 0, dv.byteLength);
+        if (sh) top.sidx = parseSidx(dv, sh, pos);
       }
-    } else if (h.type === 'moof') {
-      throw new IsoBmffError('corrupt', 'corrupt file: movie fragment (moof) before moov');
-    } else if (h.type === 'sidx' && !rel.truncated) {
-      const dv = await reader.view(pos, h.size, 0);
-      const sh = readBoxHeader(dv, 0, dv.byteLength);
-      if (sh) top.sidx = parseSidx(dv, sh, pos);
+      afterMdat = h.type === 'mdat';
+      pos += rel.size;
     }
-    afterMdat = h.type === 'mdat';
-    pos += rel.size;
+  } catch (e) {
+    if (!moov || isAbort(e, reader)) throw e;
+    const limit = w.budget.take() ?? (isLimit(e) ? e : null);
+    if (!limit) throw e;
+    return { moov, fragments: movie.hasMvex, firstMoof: null, limit };
   }
   if (!moov) throw new IsoBmffError('no-header', 'incomplete file: no moov');
-  return { moov, fragments: false, firstMoof: null };
+  return { moov, fragments: false, firstMoof: null, limit: null };
 }
 
 async function readTailIndex(w: Walk): Promise<TailIndex | null> {
@@ -312,7 +322,7 @@ function headerTrack(t: VideoTrackResult): void {
   delete t.provenance.presentedFrames;
 }
 
-function isLimit(e: unknown): e is Error & { errorCode: string } {
+function isLimit(e: unknown): e is Limit {
   const code = (e as { errorCode?: unknown } | null)?.errorCode;
   return typeof code === 'string' && code.endsWith('-limit');
 }
@@ -330,7 +340,7 @@ async function resolveFragmented(w: Walk, walked: Walked, videos: IsoTrack[], bu
   const resolved = new Map<IsoTrack, Resolved>();
   const parsed = new Set<number>();
   let index: TailIndex | null = null;
-  let limit: (Error & { errorCode: string }) | null = null;
+  let limit = walked.limit;
   const first = walked.firstMoof;
   const head = first && first.size <= MOOF_HARD_CAP ? reader.peek(first.start, first.size) : null;
   if (first && head) parseFragment(w, head, first.start, parsed);
@@ -344,7 +354,7 @@ async function resolveFragmented(w: Walk, walked: Walked, videos: IsoTrack[], bu
     }
   };
   bySidx([size]);
-  if (plan.index && open().length > 0) {
+  if (plan.index && !limit && open().length > 0) {
     try {
       index = await readTailIndex(w);
       if (index) {
