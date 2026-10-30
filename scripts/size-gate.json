@@ -153,7 +153,7 @@
       "rows": ["all:lazyTotal"],
       "growth": { "1": 0, "2": 2360, "3": 2400, "4": 2400, "5": 2800, "6": 2800 },
       "cap": 367000,
-      "why": "Both engine workers carry a copy of each parser, so this row holds four copies and may grow by four times the ISO BMFF and the Matroska shares together, under its 0.3.0 budget."
+      "why": "Both engine workers carry a copy of each parser, so this row holds four copies and may grow by four times the ISO BMFF and the Matroska shares together, under its 0.3.0 budget. That budget of 367.00 KB is below the stage 5 allowance, 364,569 B as built in 0.3.0 plus 2,800 B. If the full design shares do not fit under it, stage 5 may re-set the lazy total budget of the all configuration, and this cap with it, to its measurement plus 1 percent, with a changelog note."
     },
     {
       "name": "engine chunks",
