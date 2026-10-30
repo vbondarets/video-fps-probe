@@ -8,9 +8,9 @@ The package is ESM only, targets ES2022 and ships its own types. Every entry exc
 
 | Entry | Exports | Worker literal in the build |
 |---|---|---|
-| `video-fps-probe` | `createProbe`, `analyze`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, every type on this page except `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions`, `VideoFpsState` and the check types (`CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `FrameSizeRule`, `RangeRule`, `RatioValue`, `RatePolicy`) and the preset types (`ProviderPreset`, `PresetSourceKind`) | the two own workers |
+| `video-fps-probe` | `createProbe`, `analyze`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, `errorCodeOf`, `errorClass`, `warningCodeOf`, `warningCodesOf`, every type on this page except `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions`, `VideoFpsState` and the check types (`CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `FrameSizeRule`, `RangeRule`, `RatioValue`, `RatePolicy`) and the preset types (`ProviderPreset`, `PresetSourceKind`) | the two own workers |
 | `video-fps-probe/lazy` | `lazyProbe`, `lazyProbeFrom`, `LazyProbe`, `ProbeOptions` | the two own workers |
-| `video-fps-probe/client` | `createProbeClient`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, every type on this page except `InThreadOptions`, `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions`, `VideoFpsState` and the check types (`CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `FrameSizeRule`, `RangeRule`, `RatioValue`, `RatePolicy`) and the preset types (`ProviderPreset`, `PresetSourceKind`) | none |
+| `video-fps-probe/client` | `createProbeClient`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, every type on this page except `InThreadOptions`, `ErrorClass`, `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions`, `VideoFpsState` and the check types (`CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `FrameSizeRule`, `RangeRule`, `RatioValue`, `RatePolicy`) and the preset types (`ProviderPreset`, `PresetSourceKind`) | none |
 | `video-fps-probe/client/lazy` | `lazyProbeClient`, `lazyProbeFrom`, `ClientOptions`, `LazyProbe`, `Probe` | none |
 | `video-fps-probe/check` | `check`, `CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `FrameSizeRule`, `RangeRule`, `RatioValue`, `RatePolicy` | none |
 | `video-fps-probe/presets` | `klingO1ReferenceVideo`, `klingMotionControl`, `runwayAleph2`, `veoExtend`, `wan26ReferenceToVideoFal`, `seedance2ReferenceVideo`, `ProviderPreset`, `PresetSourceKind` | none |
@@ -404,6 +404,8 @@ type ProbeResult = FileResult & {
 | `audioTrackCount` | number | audio tracks seen |
 | `primaryTrackId` | number or null | the track the summary uses: the enabled ISO BMFF track with the most samples, or the first Matroska video track |
 | `error` | string or null | why the file could not be analysed, for example `not a recognised container: PNG image`. `file read failed: <error>` when the file itself could not be read, whatever its container, from the own and mediabunny engines and from mp4box before it has read the moov: a picked file that was changed, moved or deleted since (`file read failed: NotReadableError: ...`, `InvalidStateError` or `NotFoundError`), one that got shorter while it was read (`file read failed: short read at ...`), or a `BlobLike` whose read rejected or threw. A read failure is not a file problem: picking the file again usually helps |
+| `errorCode` | `FileErrorCode` or null | the machine-readable code of `error`, null exactly when `error` is null ([error codes](#error-codes)). Set by own. Absent on results of mp4box, mediabunny and rvfc and on results of 0.3.0, which `errorCodeOf` codes from their text |
+| `layout` | `ContainerLayout` or null | the top-level layout of an ISO BMFF file, also when it failed, as far as it was read ([layout](#containerlayout)). Null for Matroska and WebM, for an unrecognised file, and when neither a moov nor an mdat was seen. Set by own |
 | `warnings` | string[] | file-level warnings in plain words; NUL and other control characters from the file are replaced by `?` |
 | `io` | `{ reads, bytesRead, ms }` | `Blob.slice()` reads, unique bytes read, and the analysis time in the thread that ran it (chunk loading excluded) |
 | `engine` | `'own' \| 'mp4box' \| 'mediabunny' \| 'rvfc'` | which engine produced the result |
@@ -428,6 +430,8 @@ type ProbeResult = FileResult & {
 | `duplicateTimestamps` | frames sharing a timestamp (excluded from the statistics) |
 | `timestampsQuantized` | CFR content on 1 ms ticks (Matroska, MP4 remuxed from Matroska) |
 | `isStill` | a single frame or a still image track |
+| `medianFrameInterval` | `Rational` in seconds: the lower-median presented frame interval, with the tail of the reorder depth left out as for `minFps` and `maxFps`, reduced. ISO BMFF, Matroska after a probe (`sampled`) or exact scan, mp4box and mediabunny. Null for one frame, in a Matroska header scan and when the per-sample analysis was skipped over `maxExpandedSamples` |
+| `enabled` | the tkhd enabled bit (MP4 and MOV) or FlagEnabled (Matroska and WebM, true when absent). Set by own. A disabled primary track is not meant to be played: ffprobe prints `disposition.default` 0 for it in MP4 |
 | `rateProfile` | `RateProfile` or null; only for tracks whose intervals differ by more than 7.5% and not only by timestamp rounding (Matroska only after an exact scan) |
 | `provenance` | `Partial<Record<TrackField, Provenance>>`: where each value came from |
 | `warnings` | track-level warnings in plain words; NUL and other control characters from the file are replaced by `?` |
@@ -456,6 +460,71 @@ type ProbeResult = FileResult & {
 | `sampled` | from a sample of Matroska blocks (probe mode); never used for an average |
 | `estimated` | derived under an assumption, such as a playback measurement (rvfc) |
 | `computed` | a value ffprobe prints as N/A, computed here (a Matroska frame count) |
+
+### Error codes
+
+```ts
+type FileErrorCode =
+  | 'empty-file' | 'unrecognised' | 'unsupported-container' | 'unsupported' | 'too-large'
+  | 'no-header' | 'truncated' | 'corrupt' | 'no-duration'
+  | 'byte-limit' | 'read-limit' | 'time-limit' | 'structure-limit'
+  | 'read-failed' | 'load-failed' | 'engine-failed' | 'internal';
+type ErrorClass = 'file' | 'limit' | 'io' | 'environment' | 'internal';
+type WarningCode = 'invalid-timescale' | 'truncated-mdat' | 'truncated-box' | 'trailing-data';
+
+function errorCodeOf(result: Pick<FileResult, 'error'> & Partial<Pick<FileResult, 'errorCode' | 'engine'>>): FileErrorCode | null; // video-fps-probe
+function errorClass(code: FileErrorCode): ErrorClass;
+function warningCodeOf(warning: string): WarningCode | null;
+function warningCodesOf(result: Pick<FileResult, 'warnings' | 'videoTracks'>): WarningCode[];
+```
+
+The code travels with the failure, not with its text: every `error` reads as it did in 0.3.0, and code that branches should branch on `errorCode`.
+
+| Code | Class | When (the message of own) |
+|---|---|---|
+| `empty-file` | file | `not a recognised container: empty file` |
+| `unrecognised` | file | `not a recognised container: <reason>`, for example `PNG image` |
+| `unsupported-container` | file | a container the engine or worker does not read: `the own Matroska worker does not read ISO BMFF`, `unsupported by <engine>` |
+| `unsupported` | file | `unsupported: compressed movie header (cmov)`, a 64-bit box value above 2^53-1 |
+| `too-large` | file | `unsupported: moov larger than 256 MiB`, `corrupt file: moof larger than 64 MiB at <offset>` |
+| `no-header` | file | `incomplete file: no moov`, `no Segment element`, `no Tracks element found` |
+| `truncated` | file | `incomplete file: moov is truncated`, `no complete TrackEntry in Tracks` |
+| `corrupt` | file | every other `corrupt file: ...`, `invalid EBML header`, and a malformed value that stopped the parser |
+| `no-duration` | file | reserved for the header-only mode: a fragmented file whose duration no index gives |
+| `byte-limit`, `read-limit`, `time-limit`, `structure-limit` | limit | reserved for the header-only mode and its limits |
+| `read-failed` | io | `file read failed: <error>` and `file read failed: short read ...` |
+| `load-failed` | environment | the parser or statistics chunk of own did not load, for example after a redeploy |
+| `engine-failed` | file | a failure of mp4box, mediabunny or rvfc, from `errorCodeOf` only |
+| `internal` | internal | any other exception: a bug in the package, never a property of the file |
+
+`errorClass` sorts the codes for caching and retries. `file` and `internal` codes are deterministic: the same bytes and package version give the same code, so a server can cache them per object. `read-failed` and `load-failed` are transient and worth a retry. A code this version does not know, from a later one, is `internal`.
+
+`errorCodeOf` returns `result.errorCode` when the result has the field. Otherwise it codes `result.error` from its text, best effort, which covers results of mp4box, mediabunny and rvfc and JSON stored by 0.3.0: a text no rule matches is `engine-failed` from another engine and `internal` from own.
+
+`warningCodeOf` gives a stable code to four warning prefixes and null to every other warning, which stays free text: `invalid mdhd timescale ` and `invalid timescale ` give `invalid-timescale`, `'mdat' at <offset> is truncated` gives `truncated-mdat`, any other `'<type>' at <offset> is truncated` gives `truncated-box`, and `ignored trailing data at ` gives `trailing-data`. `warningCodesOf` collects the codes of the file and its tracks once each.
+
+A server can derive its own reasons from these fields:
+
+| A server wants | From the result |
+|---|---|
+| not an MP4 | `empty-file` or `unrecognised`, or a `container` other than `mp4` and `mov` |
+| no usable video track | `errorCode === null` and `primaryTrackId === null`, or a primary track with `isStill` true or `enabled` false |
+| truncated | `truncated`, or no error and `warningCodesOf(result)` holding `truncated-mdat` |
+| hybrid fragmented | `layout?.kind === 'fragmented'` and `layout.emptyMoov === false` |
+| moov at the end | `layout?.kind === 'moov-at-end'`, which a player must seek for before it can start |
+
+### ContainerLayout
+
+```ts
+type LayoutKind = 'faststart' | 'moov-at-end' | 'fragmented';
+interface ContainerLayout {
+  kind: LayoutKind; // fragmented with an mvex, else moov-at-end when an mdat comes before the moov or no moov was reached, else faststart
+  moovOffset: number | null; // offset and declared size of the first moov, null when no moov header was seen
+  moovSize: number | null;
+  sidx: boolean; // a top-level sidx comes before the first moof, in the boxes read
+  emptyMoov: boolean; // fragmented, and no video track has a sample in the moov
+}
+```
 
 ### summarize
 
@@ -700,6 +769,7 @@ The package follows semantic versioning, with these rules:
 - **Minor**: new optional result fields, new engines or entries, new options.
 - **Major**: removing or retyping a field, a new major of a peer, or a higher browser floor.
 - Items marked experimental here (`compare`, `CompareResult`, the native `mp4box`, `mediabunny` and `rvfc` details on `ProbeResult`) can change in a minor release.
+- A minor release may add error codes and warning codes. Treat an error code you do not know like `internal` and a warning code you do not know like null. Moving a failure to another code is a behaviour change and the changelog says so. The text of an `error` or a warning outside the coded prefixes is not part of the API.
 - The rules of a preset follow its source: when a provider changes its published limits, the preset changes with them in the next minor release, with the new `verifiedAt` and a changelog entry. Pin your own rules if they must not move.
 
 The package stays on 0.x until a production consumer has completed a release cycle with it; during 0.x a minor release may contain breaking changes, listed in the [changelog](../CHANGELOG.md).

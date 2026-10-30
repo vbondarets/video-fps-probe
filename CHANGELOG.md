@@ -4,6 +4,17 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## Unreleased
 
+### Added
+
+- `errorCode` on every own result: a code for `error` from a closed list, such as `no-header`, `truncated` or `read-failed`, null exactly when `error` is null. Every `error` text is unchanged ([error codes](docs/api.md#error-codes)).
+- `errorCodeOf`, `errorClass`, `warningCodeOf` and `warningCodesOf` in the root entry, for results of any engine or version and four stable warning prefixes.
+- `layout` on ISO BMFF results: `faststart`, `moov-at-end` or `fragmented`, the moov offset and size, a sidx before the first moof, and an empty moov.
+- `medianFrameInterval` on video tracks of own, mp4box and mediabunny, and `enabled` (tkhd or FlagEnabled) on own tracks. `TrackField` gains `'medianFrameInterval'`, so an exhaustive `switch` needs the case.
+
+### Changed
+
+- The first MP4 loads 23.06 KB gzip (22.73 KB in 0.3.0), 24.85 KB with Vite's default worker format (24.47 KB), and the first WebM or MKV 25.71 KB (25.54 KB) ([size matrix](report/size-matrix.md)).
+
 ## 0.3.0 - 2026-10-30
 
 ### Added
