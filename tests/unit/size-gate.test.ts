@@ -33,6 +33,8 @@ const GATE = join(REPO_ROOT, 'scripts', 'size-gate.mjs');
 const CONFIG = join(REPO_ROOT, 'scripts', 'size-gate.json');
 const BASELINE = join(REPO_ROOT, 'fixtures', 'snapshots', 'size-matrix-v0.3.0.json');
 const hasTag = spawnSync('git', ['rev-parse', '--verify', '--quiet', 'v0.3.0^{commit}'], { cwd: REPO_ROOT }).status === 0;
+const shallow = spawnSync('git', ['rev-parse', '--is-shallow-repository'], { cwd: REPO_ROOT, encoding: 'utf8' });
+const fullHistory = shallow.status === 0 && shallow.stdout.trim() === 'false';
 const sha256 = (bytes: Buffer | string) => createHash('sha256').update(bytes).digest('hex');
 let dir = '';
 let configs = 0;
@@ -68,6 +70,24 @@ const metric = (m: Matrix, config: string, key: string, by: number) => {
   f.metrics[key] = (f.metrics[key] ?? 0) + by;
 };
 
+function committed(rev: string, path: string): Buffer | null {
+  const r = spawnSync('git', ['show', `${rev}:${path}`], { cwd: REPO_ROOT, encoding: 'buffer' });
+  return r.status === 0 ? r.stdout : null;
+}
+
+function stageAt(rev: string): unknown {
+  const bytes = committed(rev, 'scripts/size-gate.json');
+  return bytes === null ? undefined : (JSON.parse(bytes.toString('utf8')) as GateConfig).stage;
+}
+
+function stageBaseCommit(stage: number): string {
+  if (stageAt('HEAD') !== stage) return 'HEAD';
+  const log = spawnSync('git', ['log', '--format=%H', '--', 'scripts/size-gate.json'], { cwd: REPO_ROOT, encoding: 'utf8' });
+  const advanced = log.stdout.split('\n').find((sha) => sha !== '' && stageAt(sha) !== stageAt(`${sha}^`));
+  if (!advanced) throw new Error('no commit sets the stage of scripts/size-gate.json');
+  return `${advanced}^`;
+}
+
 describe('size gate against the 0.3.0 baseline', () => {
   beforeAll(() => {
     dir = mkdtempSync(join(process.env.FPS_PROBE_SCRATCH ?? tmpdir(), 'fps-probe-size-gate-'));
@@ -87,6 +107,14 @@ describe('size gate against the 0.3.0 baseline', () => {
     const show = spawnSync('git', ['show', 'v0.3.0:report/size-matrix.json'], { cwd: REPO_ROOT, encoding: 'buffer' });
     expect(show.status).toBe(0);
     expect(Buffer.compare(show.stdout, readFileSync(BASELINE))).toBe(0);
+  });
+
+  test.skipIf(!fullHistory)('the stage base is the report of the commit before the one that last advanced the stage', () => {
+    const config = JSON.parse(readFileSync(CONFIG, 'utf8')) as GateConfig;
+    const rev = stageBaseCommit(config.stage);
+    const report = committed(rev, 'report/size-matrix.json');
+    expect(report, `report/size-matrix.json at ${rev}`).not.toBeNull();
+    expect(Buffer.compare(report!, readFileSync(join(REPO_ROOT, config.stageBase))), `${config.stageBase} against report/size-matrix.json at ${rev}`).toBe(0);
   });
 
   test('every pinned cap is at most the budget of its row in the committed report', () => {

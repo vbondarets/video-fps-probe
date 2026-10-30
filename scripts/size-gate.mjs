@@ -19,8 +19,9 @@ when a row that must stay byte-identical changes, or when a gated row is missing
 The share of a stage is its cumulative allowance minus the allowance of the stage before. In a stage
 listed under frozen.stages, every row whose share is 0 and every row no group gates must equal the stage
 base, except the rows that the stage lists. A stage that starts from a report other than the baseline
-commits that report as fixtures/snapshots/size-matrix-s<previous stage>.json and points stageBase and
-stageBaseSha256 at it.
+commits that report as fixtures/snapshots/size-matrix-s<previous stage>.json, points stageBase and
+stageBaseSha256 at it and advances stage, in one commit of its own made before any code change of the
+stage. So the stage base is report/size-matrix.json of the commit before the one that last advanced stage.
 
   --config <file>     gate configuration (default scripts/size-gate.json)
   --report <file>     measured report (default: the report named in the configuration)
