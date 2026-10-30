@@ -43,7 +43,7 @@ function differences(was: unknown, now: unknown, path: string, out: string[] = [
 describe('own results and preset verdicts against the 0.3.0 snapshot', () => {
   test('the snapshot holds every committed 0.3.0 fixture and every preset', () => {
     expect(own.version).toBe('0.3.0');
-    expect(names.length).toBe(158);
+    expect(names.length).toBe(164);
     for (const name of names) expect(fixturePath(name), name).not.toBeNull();
     expect(Object.keys(checks.reports)).toEqual(names);
     expect(checks.presets).toEqual(presetEntries().map(([n]) => n));
