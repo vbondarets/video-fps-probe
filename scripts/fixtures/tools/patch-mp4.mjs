@@ -9,9 +9,18 @@
 //   node patch-mp4.mjs mvhd64|tkhd64|mdhd64 <in> <out> <hex64>  rewrite the first mvhd, tkhd or mdhd as version 1 with the 64-bit duration (moov after mdat)
 //   node patch-mp4.mjs trailer <in> <out> <hex>        append the bytes after the last top-level box
 //   node patch-mp4.mjs stsd2  <in> <out> <WxH>         add a copy of the only sample entry with the size WxH and point the second half of the samples to it (one chunk split in two; moov after mdat)
-// The first three modes need the non-faststart layout ftyp [wide|free] mdat moov.
+//   node patch-mp4.mjs pasp   <in> <out> <h:v>         set the pasp of the first video sample entry, or append one
+//   node patch-mp4.mjs tkhdsize <in> <out> <WxH>       set the tkhd width and height of the first video track, and rename its pasp to 'free'
+//   node patch-mp4.mjs matrix <in> <out> <a,b,c,d>     set the tkhd matrix scale and shear terms of the first video track, and rename its pasp to 'free'
+//   node patch-mp4.mjs tkhdflags <in> <out> <flags>    set the tkhd flags of the first video track (2 clears the enabled bit)
+//   node patch-mp4.mjs colr   <in> <out> <spec>        nclx:P,T,M,F or nclc:P,T,M replaces the first colr of the first video sample entry or appends one, free renames it to 'free'
+//   node patch-mp4.mjs dvcc|dvvc <in> <out> <p,l,c,m[,fourcc]>  append a 24-byte Dolby Vision record (version 1.0, profile, level, rpu and bl set, compatibility id, metadata compression) to the first video sample entry, optionally renaming the entry
+//   node patch-mp4.mjs cmov   <in> <out>               compress the moov into moov/cmov (dcom zlib, cmvd), as old QuickTime writers did (moov after mdat)
+// The first three modes need the non-faststart layout ftyp [wide|free] mdat moov. A mode that changes the moov size needs the moov after
+// every mdat, or a fragmented file with an empty moov and moof-relative data offsets (tfra offsets are shifted).
 import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import zlib from 'node:zlib';
 
 const [mode, inFile, outFile, holeArg] = process.argv.slice(2);
 const src = fs.readFileSync(inFile);
@@ -127,6 +136,203 @@ function splitSampleEntry(box, type, state, [width, height]) {
     return out;
   }
   return null;
+}
+
+const VISUAL_ENTRIES = new Set(['avc1', 'avc3', 'hvc1', 'hev1', 'dvh1', 'dvhe', 'av01', 'vp09', 'mp4v', 'jpeg', 'mjpa', 'apcn', 'apch', 'apcs', 'apco', 'ap4h']);
+const VISUAL_ENTRY_HEADER = 86;
+const typeOf = (box) => box.toString('latin1', 4, 8);
+
+function boxOf(type, payload) {
+  const b = Buffer.alloc(8 + payload.length);
+  b.writeUInt32BE(b.length, 0);
+  b.write(type, 4, 'latin1');
+  payload.copy(b, 8);
+  return b;
+}
+
+function childBoxes(buf, start, end) {
+  const out = [];
+  for (let p = start; p + 8 <= end; ) {
+    const size = buf.readUInt32BE(p);
+    if (size < 8 || p + size > end) throw new Error(`box at ${p} has size ${size}`);
+    out.push(buf.subarray(p, p + size));
+    p += size;
+  }
+  return out;
+}
+
+function isVideoTrak(trak) {
+  if (typeOf(trak) !== 'trak') return false;
+  const mdia = childBoxes(trak, 8, trak.length).find((b) => typeOf(b) === 'mdia');
+  const hdlr = mdia && childBoxes(mdia, 8, mdia.length).find((b) => typeOf(b) === 'hdlr');
+  return !!hdlr && hdlr.toString('latin1', 16, 20) === 'vide';
+}
+
+function renamed(box, type) {
+  const out = Buffer.from(box);
+  out.write(type, 4, 'latin1');
+  return out;
+}
+
+function editVideoEntry(stsd, fn) {
+  const entry = stsd.subarray(16, 16 + stsd.readUInt32BE(16));
+  if (!VISUAL_ENTRIES.has(typeOf(entry))) throw new Error(`the first sample entry '${typeOf(entry)}' is not a video entry`);
+  const out = fn({ type: typeOf(entry), kids: childBoxes(entry, VISUAL_ENTRY_HEADER, entry.length) });
+  const body = Buffer.concat([entry.subarray(0, VISUAL_ENTRY_HEADER), ...out.kids]);
+  body.writeUInt32BE(body.length, 0);
+  body.write(out.type, 4, 'latin1');
+  const result = Buffer.concat([stsd.subarray(0, 16), body, stsd.subarray(16 + entry.length)]);
+  result.writeUInt32BE(result.length, 0);
+  return result;
+}
+
+function replaceKid(kids, type, box) {
+  const i = kids.findIndex((k) => typeOf(k) === type);
+  return i < 0 ? [...kids, box] : kids.map((k, j) => (j === i ? box : k));
+}
+
+function renameKid(kids, from, to) {
+  const i = kids.findIndex((k) => typeOf(k) === from);
+  if (i < 0) throw new Error(`the video sample entry has no '${from}'`);
+  return kids.map((k, j) => (j === i ? renamed(k, to) : k));
+}
+
+function patchTkhd(box, fn) {
+  const out = Buffer.from(box);
+  fn(out, out.readUInt8(8) === 1 ? 60 : 48);
+  return out;
+}
+
+function colrBox(spec) {
+  const [kind, list] = spec.split(':');
+  const v = (list ?? '').split(',').map(Number);
+  if (kind === 'nclx' && v.length === 4) {
+    const p = Buffer.alloc(11);
+    p.write('nclx', 0, 'latin1');
+    [v[0], v[1], v[2]].forEach((x, i) => p.writeUInt16BE(x, 4 + i * 2));
+    p.writeUInt8(v[3] ? 0x80 : 0, 10);
+    return boxOf('colr', p);
+  }
+  if (kind === 'nclc' && v.length === 3) {
+    const p = Buffer.alloc(10);
+    p.write('nclc', 0, 'latin1');
+    v.forEach((x, i) => p.writeUInt16BE(x, 4 + i * 2));
+    return boxOf('colr', p);
+  }
+  throw new Error(`colr spec must be nclx:P,T,M,F, nclc:P,T,M or free, got ${spec}`);
+}
+
+function dvRecord(profile, level, compatibility, mdCompression) {
+  const r = Buffer.alloc(24);
+  r.writeUInt8(1, 0);
+  r.writeUInt16BE((profile << 9) | (level << 3) | 0b101, 2);
+  r.writeUInt8((compatibility << 4) | (mdCompression << 2), 4);
+  return r;
+}
+
+function entryEdit(spec) {
+  if (mode === 'pasp') {
+    const [h, v] = spec.split(':').map(Number);
+    const p = Buffer.alloc(8);
+    p.writeUInt32BE(h, 0);
+    p.writeUInt32BE(v, 4);
+    return (e) => ({ type: e.type, kids: replaceKid(e.kids, 'pasp', boxOf('pasp', p)) });
+  }
+  if (mode === 'tkhdsize' || mode === 'matrix') return (e) => ({ type: e.type, kids: e.kids.some((k) => typeOf(k) === 'pasp') ? renameKid(e.kids, 'pasp', 'free') : e.kids });
+  if (mode === 'colr') {
+    if (spec === 'free') return (e) => ({ type: e.type, kids: renameKid(e.kids, 'colr', 'free') });
+    const box = colrBox(spec);
+    return (e) => ({ type: e.type, kids: replaceKid(e.kids, 'colr', box) });
+  }
+  if (mode === 'dvcc' || mode === 'dvvc') {
+    const [p, l, c, m, fourcc] = spec.split(',');
+    const box = boxOf(mode === 'dvcc' ? 'dvcC' : 'dvvC', dvRecord(Number(p), Number(l), Number(c), Number(m)));
+    return (e) => ({ type: fourcc ?? e.type, kids: [...e.kids, box] });
+  }
+  return null;
+}
+
+function tkhdEdit(spec) {
+  if (mode === 'tkhdsize') {
+    const [w, h] = spec.split('x').map(Number);
+    return (out, matrix) => {
+      out.writeUInt32BE(w * 65536, matrix + 36);
+      out.writeUInt32BE(h * 65536, matrix + 40);
+    };
+  }
+  if (mode === 'matrix') {
+    const terms = spec.split(',').map(Number);
+    if (terms.length !== 4) throw new Error(`matrix needs a,b,c,d, got ${spec}`);
+    return (out, matrix) => [0, 1, 3, 4].forEach((slot, i) => out.writeInt32BE(Math.round(terms[i] * 65536), matrix + slot * 4));
+  }
+  if (mode === 'tkhdflags') return (out) => out.writeUIntBE(Number(spec), 9, 3);
+  return null;
+}
+
+function checkMovableMoov(top, moov, moovBuf) {
+  if (!top.some((b) => b.type === 'mdat' && b.pos > moov.pos)) return;
+  if (!top.some((b) => b.type === 'moof')) throw new Error('moov is before mdat (faststart): chunk offsets would move');
+  if (top.some((b) => b.type === 'sidx' && b.pos < moov.pos)) throw new Error('a sidx before moov would point past its subsegments');
+  edit(moovBuf, 0, moovBuf.length, (type, box) => {
+    if ((type === 'stco' || type === 'co64') && box.readUInt32BE(12) > 0) throw new Error('the moov holds chunk offsets into an mdat after it');
+    return null;
+  }, () => null);
+  for (const b of top.filter((x) => x.type === 'moof')) {
+    const tf = src.indexOf('tfhd', b.pos);
+    if (tf < 0 || src.readUInt32BE(tf + 4) & 1) throw new Error(`moof at ${b.pos} has an absolute base_data_offset`);
+  }
+}
+
+function withMoov(moovBuf) {
+  const top = topBoxes(src);
+  const moov = top.find((b) => b.type === 'moov');
+  const delta = moovBuf.length - moov.size;
+  if (delta !== 0) checkMovableMoov(top, moov, moovBuf);
+  const final = replaceMoov(src, moovBuf);
+  if (delta !== 0) shiftTfra(final, delta);
+  return final;
+}
+
+if (['pasp', 'tkhdsize', 'matrix', 'tkhdflags', 'colr', 'dvcc', 'dvvc'].includes(mode)) {
+  if (!holeArg) throw new Error(`${mode} needs a value`);
+  const moov = topBoxes(src).find((b) => b.type === 'moov');
+  const kids = childBoxes(src, moov.pos + 8, moov.pos + moov.size);
+  const at = kids.findIndex(isVideoTrak);
+  if (at < 0) throw new Error('no video trak');
+  const onEntry = entryEdit(holeArg);
+  const onTkhd = tkhdEdit(holeArg);
+  let entries = 0;
+  let tkhds = 0;
+  const trak = edit(kids[at], 0, kids[at].length, (type, box) => {
+    if (type === 'stsd' && onEntry) {
+      entries++;
+      return editVideoEntry(box, onEntry);
+    }
+    if (type === 'tkhd' && onTkhd) {
+      tkhds++;
+      return patchTkhd(box, onTkhd);
+    }
+    return null;
+  }, () => null);
+  if ((onEntry && entries !== 1) || (onTkhd && tkhds !== 1)) throw new Error('the video trak has no single stsd or tkhd');
+  const final = withMoov(boxOf('moov', Buffer.concat(kids.map((k, i) => (i === at ? trak : k)))));
+  fs.writeFileSync(outFile, final);
+  console.log(`${mode}: wrote ${outFile} (${final.length} bytes, was ${src.length})`);
+  process.exit(0);
+}
+
+if (mode === 'cmov') {
+  const top = topBoxes(src);
+  const moov = top.find((b) => b.type === 'moov');
+  if (top.some((b) => b.type === 'mdat' && b.pos > moov.pos)) throw new Error('moov is before mdat (faststart): chunk offsets would move');
+  const length = Buffer.alloc(4);
+  length.writeUInt32BE(moov.size, 0);
+  const packed = zlib.deflateSync(src.subarray(moov.pos, moov.pos + moov.size), { level: 9 });
+  const cmov = boxOf('cmov', Buffer.concat([boxOf('dcom', Buffer.from('zlib', 'latin1')), boxOf('cmvd', Buffer.concat([length, packed]))]));
+  const final = replaceMoov(src, boxOf('moov', cmov));
+  fs.writeFileSync(outFile, final);
+  console.log(`${mode}: wrote ${outFile} (${final.length} bytes, was ${src.length})`);
+  process.exit(0);
 }
 
 if (mode === 'stsd2') {
