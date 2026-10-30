@@ -465,9 +465,9 @@ The 0.4.0 plan, the 0.4.1 bundler matrix and 0.5.0 are in the [README roadmap](.
 
 - Expose a median frame interval and use it in `check()`. 0.3.0 judges the format duration of a WebM or Matroska track when it is within one frame interval of the measured span, the interval of `dominantFps`, else of `nominalFps` on a constant track, else of `avgFps` (section 3, track and format durations), so the Chromium recordings, which have no dominant rate, take their average interval of 27 ms rather than their median of 17 ms.
 
-## 16. 0.4.0 stage 1: what ffprobe 8.1.1 prints for the section P fixtures
+## 16. What ffprobe 8.1.1 prints for the aspect ratio, color and header fixtures
 
-Recorded on 2026-10-30 with ffprobe 8.1.1 (the gyan.dev full build) on the fixtures of section P of `scripts/fixtures/generate-fixtures.sh`. The values come from `fixtures/ref/*.ref.json` (`-show_streams -show_format -count_frames -count_packets -show_optional_fields always`). Experiments marked "scratch" used the same patch modes on copies that are not committed. These facts fix the rules that stages 2 and 5 implement, and they replace the guesses of the 0.4.0 design where they differ.
+Recorded on 2026-10-30 with ffprobe 8.1.1 (the gyan.dev full build) on the fixtures of section P of `scripts/fixtures/generate-fixtures.sh`. The values come from `fixtures/ref/*.ref.json` (`-show_streams -show_format -count_frames -count_packets -show_optional_fields always`). Experiments marked "scratch" used the same patch modes, or ffmpeg itself, on copies that are not committed. These facts fix the aspect ratio rule of the parsers and the color rule of the 0.4.0 color reader.
 
 ### Printed values per fixture
 
@@ -518,17 +518,19 @@ H.264 and HEVC behave the same in the mov demuxer of FFmpeg 8.1.1: the container
 - **Conflict.** `colr_vui_conflict.mp4` (H.264, colr BT.2020, PQ, BT.2020 non-constant, limited range over a VUI of BT.709, sRGB, BT.709, full range) prints every colr value. `colr_vui_conflict_hevc.mp4` (HEVC, colr BT.709 over a PQ VUI) prints the colr values too. `pix_fmt` still follows the VUI full range flag (`yuvj420p` on the H.264 file).
 - **Only the colr speaks.** `colr_only_h264.mp4` (no VUI video signal type) and `colr_only_hevc.mp4` (a video signal type without a colour description) print the colr values.
 - **Only the VUI speaks.** `hlg_h264_vui_only.mp4` and `hlg_vui_only.mp4` print the VUI values.
-- **Unspecified codes.** Primaries, transfer and matrix act as one group. When the colr gives at least one of the three as a code other than 2, ffprobe prints all three from the colr, an unspecified one as `unknown` (`colr_partial_h264.mp4`: bt709, unknown, unknown over a BT.2020 HLG VUI). When all three are 2, it prints the three VUI values (`colr_unspecified_hevc.mp4`). Scratch: a colr of 2, 16, 2 over a PQ VUI prints unknown, smpte2084, unknown.
+- **Unspecified codes.** The mov demuxer first turns every colr code that has no name in the FFmpeg primaries, transfer or matrix table into 2 (unspecified). The reserved codes 0 and 3 have the name `reserved` and count as specified (matrix 0 is `gbr`). Primaries, transfer and matrix then act as one group. When the colr gives at least one of the three as a specified code, ffprobe prints all three from the colr, an unspecified one as `unknown` (`colr_partial_h264.mp4`: bt709, unknown, unknown over a BT.2020 HLG VUI). When all three are unspecified, it prints the three VUI values (`colr_unspecified_hevc.mp4`). Scratch: a colr of 2, 16, 2 over a PQ VUI prints unknown, smpte2084, unknown. A colr of 200, 2, 2 on `hlg_h264_8bit.mp4` and of 2, 2, 200 on `hlg_hevc10.mp4` print the VUI values bt2020, arib-std-b67 and bt2020nc, because 200 has no name. A colr of 3, 2, 2 or 0, 2, 2 on `hlg_h264_8bit.mp4` prints primaries `reserved` and unknown for the other two.
 - **Range.** The nclx full range flag always wins, also when its three codes are 2 (`colr_unspecified_hevc.mp4`: pc over a limited range VUI, `colr_vui_conflict.mp4`: tv over a full range VUI). nclc has no range field, so the range comes from the VUI (`colr_nclc.mov`: pc).
 
-So the `VUI_RULE` table of stage 5 has one row per member, the same for both codecs:
+So the color rule of the 0.4.0 color reader has one row per member, the same for both codecs. A code is unspecified when it is 2 or has no FFmpeg name, and the reserved codes 0 and 3 are specified:
 
 | Member | H.264 and HEVC |
 |---|---|
 | range | the nclx full range flag when the entry has an nclx colr, else `video_full_range_flag` when `video_signal_type_present_flag` is set, else none |
-| primaries, transfer, space | the colr codes (nclx or nclc) when at least one of the three is not 2, each code 2 giving none, else the SPS values when `colour_description_present_flag` is set, else none |
+| primaries, transfer, space | the colr codes (nclx or nclc) when at least one of the three is specified, each unspecified code giving none, else the SPS values when `colour_description_present_flag` is set, else none |
 
-This reverses the precedence the design assumed for branch A (the SPS before the container). A container reader is right whenever a colr declares a value, and the SPS readers decide only the files whose container is silent: `hlg_h264_vui_only.mp4`, `hlg_vui_only.mp4`, `colr_unspecified_hevc.mp4`, and the range of `colr_nclc.mov`. Matroska `Colour` against a conflicting SPS was not recorded: no committed file has one.
+So the container wins over the SPS, not the reverse. A container reader is right whenever a colr declares a value, and the SPS readers decide only the files whose container is silent: `hlg_h264_vui_only.mp4`, `hlg_vui_only.mp4`, `colr_unspecified_hevc.mp4`, and the range of `colr_nclc.mov`, `hevc_hvc1.mp4` and `hevc_hev1.mp4`. The two HEVC files have no colr, and their range tv comes only from the VUI video signal type.
+
+- **Matroska.** The Colour element wins over the SPS like a colr, and the same rule applies to the CodecPrivate SPS (scratch, no committed file shows either case). `hdr10_hevc10.mkv` with its SPS rewritten to BT.709 by the `hevc_metadata` bitstream filter, the Colour still PQ, prints the Colour values bt2020, smpte2084 and bt2020nc. An x264 file in Matroska with HLG only in the VUI (`-x264-params colorprim=bt2020:transfer=arib-std-b67:colormatrix=bt2020nc`), whose Colour carries only the Range, prints the VUI values bt2020, arib-std-b67 and bt2020nc.
 
 - **VP9.** `vp9_p2_10bit.webm` and `vp9_p2_10bit.mp4` print the PQ names. The Colour element, the vpcC, the colr and the frame header agree. The WebM file has no CodecPrivate, so its profile and bit depth are only in the bitstream.
 - **AV1.** `av1_10bit.mp4` has no color box. ffprobe prints range tv from the sequence header and unknown for the other three.
@@ -538,7 +540,7 @@ This reverses the precedence the design assumed for branch A (the SPS before the
 - **HDR.** `color_transfer` is `smpte2084` for PQ and `arib-std-b67` for HLG. Primaries print `bt2020`, the matrix `bt2020nc`, the range `tv` or `pc`. `hlg_h264_8bit.mp4` shows that an 8-bit H.264 file keeps the HLG tags.
 - **Profiles.** H.264 prints `Constrained Baseline` (profile_idc 66 with constraint_set1), `Main` (77) and `High` (100), HEVC `Main` (1) and `Main 10` (2), AV1 `Main` (seq_profile 0), VP9 `Profile 0` and `Profile 2`. The corpus also prints `Proxy` for ProRes, `Baseline` for MJPEG, `0` for VP8 and `unknown` for PNG, which carry no profile in a codec configuration. `scripts/compare/profiles.ts` holds the name table, and `compare-ffprobe --self-test` checks it against the codec configuration of every committed stream.
 - **Bit depth.** HEVC, VP9 and AV1 at 10 bits print `pix_fmt` `yuv420p10le` and `bits_per_raw_sample` N/A, so the depth comes from `pix_fmt`.
-- **Disposition.** `disposition.default` is 0 on every ffmpeg-written Matroska file, whose FlagDefault is 0, and on `track_disabled.mp4` (tkhd flags 2). It is 1 on every other MP4 and MOV.
+- **Disposition.** In MP4 and MOV `disposition.default` follows the tkhd enabled flag. It is 0 on `track_disabled.mp4` (tkhd flags 2) and on the second video track of `multi_video_2tracks.mp4`, an older fixture whose second track has its enabled bit clear too, and 1 on every other MP4 and MOV video track. In Matroska it follows FlagDefault, which ffmpeg takes from the disposition of its source: the new Matroska and WebM files, encoded from lavfi, print 0, while stream copies of an MP4 (`vfr_two_phase_5_200.mkv`, `h264_vfr_remux.mkv`, `big_1080p.mkv`) and the Chromium recordings print 1.
 
 ### Side data
 
@@ -548,11 +550,11 @@ This reverses the precedence the design assumed for branch A (the SPS before the
 
 ### Sample aspect ratio
 
-- **Precedence.** pasp, then the tkhd matrix, then the tkhd size, then the SPS VUI: `sar_pasp_tkhd_matrix.mp4` prints the pasp 4:3, `sar_tkhd_matrix.mp4` the matrix 2:1 over the tkhd size 3:2, `sar_tkhd_only.mp4` the tkhd size 3:2, `sar_vui_only.mp4` the VUI 4:3. Design 7.1 put the tkhd size before the matrix, which ffprobe does not do. A pasp of 1:1 also wins over a VUI of 4:3 (scratch), and `sar_pasp_only.mp4` shows a pasp of 4:3 winning over a VUI of 1:1.
+- **Precedence.** pasp, then the tkhd matrix, then the tkhd size, then the SPS VUI: `sar_pasp_tkhd_matrix.mp4` prints the pasp 4:3, `sar_tkhd_matrix.mp4` the matrix 2:1 over the tkhd size 3:2, `sar_tkhd_only.mp4` the tkhd size 3:2, `sar_vui_only.mp4` the VUI 4:3. So the matrix comes before the tkhd size. A pasp of 1:1 also wins over a VUI of 4:3 (scratch), and `sar_pasp_only.mp4` shows a pasp of 4:3 winning over a VUI of 1:1.
 - **tkhd size.** The ratio is (stored height x tkhd width) : (stored width x tkhd height) with the integer parts of the 16.16 values. ffmpeg writes a tkhd width of 213.33 for the 4:3 ratio of a 160x120 stream, so `sar_tkhd_fraction.mp4`, the same file without its pasp, prints 213:160.
-- **tkhd matrix.** The column scales hypot(a, c) and hypot(b, d) give the ratio of the x to the y scale when both are above 1 in 16.16 units and they differ by more than 1 percent. Scratch: an x scale of 1.005 prints 1:1, and so do a uniform 2 times scale and a 90 degree rotation.
+- **tkhd matrix.** The column scales hypot(a, c) and hypot(b, d) give the ratio of the x to the y scale when both are above 1 in 16.16 units and they differ by more than 1 percent. Scratch: an x scale of 1.005 prints 1:1, and so do a uniform 2 times scale and a 90 degree rotation. FFmpeg multiplies the mvhd matrix into the tkhd matrix before it takes the scales, and applies them only when the tkhd width and height are not 0. Every ffmpeg-written file has an identity mvhd matrix, so no committed file shows the product.
 - **MP4 without pasp.** With the tkhd size equal to the stored size and an identity matrix, ffprobe prints the VUI ratio (`sar_vui_only.mp4`), and with no VUI aspect ratio N/A for both ratios (`sar_none.mp4`). ffmpeg writes a pasp for every MP4 whose ratio is known, 1:1 included.
-- **Matroska.** For a 4:3 ratio on 160x120, ffmpeg writes DisplayWidth 16, DisplayHeight 9 and DisplayUnit 3, and ffprobe prints 4:3 (`sar_4x3.mkv`), so the (PixelHeight x DisplayWidth) : (PixelWidth x DisplayHeight) rule holds for unit 3 too.
+- **Matroska.** For a 4:3 ratio on 160x120, ffmpeg writes DisplayWidth 16, DisplayHeight 9 and DisplayUnit 3, and ffprobe prints 4:3 (`sar_4x3.mkv`), so the (PixelHeight x DisplayWidth) : (PixelWidth x DisplayHeight) rule holds for unit 3 too. FFmpeg applies Display elements only with a DisplayUnit below 4 and only when both are above 0. With unit 0 a missing element takes the pixel size, so a Matroska file without Display elements gets the ratio 1:1 from the container: scratch, an x264 file in Matroska with a VUI ratio of 4:3 (`-x264-params sar=4/3`) and no Display elements prints 1:1 and 4:3 for the display. With units 1 to 3 a missing element gives no container ratio.
 
 ### Fragmented output and the mfra
 
@@ -564,4 +566,4 @@ This reverses the precedence the design assumed for branch A (the SPS before the
 
 - `fmp4_mehd_valid.mp4` prints the format duration 4.004000, as without the mehd: ffprobe never reads it.
 - `faststart_large_moov.mp4` has a moov of 72,831 bytes at offset 32, above a 64 KiB head read, with one stts entry per frame.
-- `mov_cmov.mov`: ffprobe reads the zlib-compressed moov (30 frames, 1.001000 s). The own parser answers `unsupported: compressed movie header (cmov)`, so the manifest row expects an error.
+- `mov_cmov.mov`: ffprobe reads the zlib-compressed moov (30 frames, 1.001000 s). The own parser answers `unsupported: compressed movie header (cmov)`, so the manifest row expects an error with the code `unsupported`. The `expect` column states the outcome of the app, so the `error` check of this row is exact and not a known deviation, although ffprobe reads the file, as for `corrupt_png_named.mp4`.
