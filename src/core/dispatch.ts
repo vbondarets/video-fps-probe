@@ -1,6 +1,6 @@
 import { throwIfAborted } from './abort.ts';
 import { resolveOptions } from './options.ts';
-import { BlobReader, codeOf, fileError, type BlobLike } from './reader.ts';
+import { BlobReader, whichErrorCode, withErrorCode, type BlobLike } from './reader.ts';
 import { emptyAnalysis } from './result.ts';
 import { sniff, type SniffKind } from './sniff.ts';
 import type { AnalyzeOptions, ContainerAnalyzer, FileResult, ResolvedAnalyzeOptions } from './types.ts';
@@ -46,10 +46,10 @@ export async function analyzeWith(blob: BlobLike, name: string, opts: AnalyzeOpt
   let loading = false;
   try {
     reader = new BlobReader(blob, { headWindow: resolved.readAhead.head, signal: resolved.signal });
-    if (reader.size === 0) throw fileError('empty-file', 'not a recognised container: empty file');
+    if (reader.size === 0) throw withErrorCode('empty-file', 'not a recognised container: empty file');
     const head = await reader.bytes(0, Math.min(SNIFF_BYTES, reader.size), firstReadAhead(reader.size, resolved));
     const sniffed = sniff(head);
-    if (sniffed.kind === 'unknown') throw fileError('unrecognised', `not a recognised container: ${sniffed.reason}`);
+    if (sniffed.kind === 'unknown') throw withErrorCode('unrecognised', `not a recognised container: ${sniffed.reason}`);
     result.container = sniffed.kind === 'isobmff' ? 'mp4' : 'matroska';
     const l0 = performance.now();
     loading = true;
@@ -60,7 +60,7 @@ export async function analyzeWith(blob: BlobLike, name: string, opts: AnalyzeOpt
   } catch (e) {
     if (resolved.signal?.aborted || isAbortError(e)) throw e;
     result.error = errorMessage(e);
-    result.errorCode = codeOf(e, loading ? 'load-failed' : 'internal');
+    result.errorCode = whichErrorCode(e, loading ? 'load-failed' : 'internal');
   }
   if (reader) {
     result.io.reads = reader.reads;

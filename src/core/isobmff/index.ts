@@ -1,9 +1,9 @@
-import { codeOf, type BlobReader } from '../reader.ts';
 import { emptyAnalysis, emptyTrack } from '../result.ts';
 import { analyzeTimeline, rateProfileOf, type ProfileJob } from '../stats.ts';
 import { toFfprobeString } from '../rational.ts';
 import type { ContainerAnalysis, ContainerKind, ContainerLayout, ResolvedAnalyzeOptions, VideoTrackResult } from '../types.ts';
 import { IsoBmffError, readBoxHeader, type BoxHeader } from './boxes.ts';
+import { whichErrorCode, type BlobReader } from '../reader.ts';
 import { codecNameFor, isVideoFourcc } from './codecs.ts';
 import { newMovie, type IsoMovie, type IsoTrack, type TopBox } from './model.ts';
 import { parseMoof, parseSidx } from './moof.ts';
@@ -402,7 +402,7 @@ export async function analyzeIsoBmffDetailed(reader: BlobReader, opts: ResolvedA
     if (isAbort(e, reader)) throw e;
     const message = e instanceof Error ? e.message : String(e);
     const analysis = emptyAnalysis(containerOf(movie), (e as { errorCode?: unknown } | null)?.errorCode ? message : `corrupt file: ${message}`);
-    analysis.errorCode = codeOf(e);
+    analysis.errorCode = whichErrorCode(e);
     analysis.layout = layoutOf(movie);
     analysis.brand = movie.brand;
     analysis.warnings = movie.warnings;

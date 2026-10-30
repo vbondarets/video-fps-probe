@@ -34,14 +34,6 @@ function assertSafeCount(value: number, what: string): void {
   if (!Number.isSafeInteger(value) || value < 0) throw new RangeError(`${what} must be a non-negative safe integer, got ${value}`);
 }
 
-export function fileError(code: FileErrorCode, message: string): Error {
-  return Object.assign(Error(message), { errorCode: code });
-}
-
-export function codeOf(e: unknown, fallback: FileErrorCode = 'internal'): FileErrorCode {
-  return (e as { errorCode?: FileErrorCode } | null)?.errorCode ?? (e instanceof RangeError ? 'corrupt' : fallback);
-}
-
 export function toSafeNumber(value: bigint, what = 'value'): number {
   if (value > BigInt(MAX_SAFE_OFFSET) || value < -BigInt(MAX_SAFE_OFFSET)) throw new RangeError(`${what} ${value} exceeds 2^53-1`);
   return Number(value);
@@ -92,12 +84,12 @@ export class BlobReader {
       ab = await this.#source.slice(offset, end).arrayBuffer();
     } catch (e) {
       this.checkAbort();
-      throw (e as Error | null)?.name === 'AbortError' ? e : fileError('read-failed', `file read failed: ${e}`);
+      throw (e as Error | null)?.name === 'AbortError' ? e : withErrorCode('read-failed', `file read failed: ${e}`);
     }
     this.checkAbort();
     this.#reads++;
     if (ab.byteLength !== end - offset) {
-      throw fileError('read-failed', `file read failed: short read at ${offset}: expected ${end - offset} bytes, got ${ab.byteLength}`);
+      throw withErrorCode('read-failed', `file read failed: short read at ${offset}: expected ${end - offset} bytes, got ${ab.byteLength}`);
     }
     this.#cover(offset, end);
     return new Uint8Array(ab);
@@ -240,4 +232,12 @@ export function ascii(dv: DataView, p: number, length: number): string {
 
 export function fourcc(dv: DataView, p: number): string {
   return ascii(dv, p, 4).replace(/[^ -~]/g, '?');
+}
+
+export function withErrorCode(code: FileErrorCode, message: string): Error {
+  return Object.assign(Error(message), { errorCode: code });
+}
+
+export function whichErrorCode(e: unknown, fallback: FileErrorCode = 'internal'): FileErrorCode {
+  return (e as { errorCode?: FileErrorCode } | null)?.errorCode ?? (e instanceof RangeError ? 'corrupt' : fallback);
 }
