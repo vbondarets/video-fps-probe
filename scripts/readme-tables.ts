@@ -1108,7 +1108,7 @@ function sizeBlock(inp: Inputs, doc: Doc): string[] {
     "export default defineConfig({ worker: { format: 'es' } });",
     '```',
     '',
-    `Engines cost nothing until imported. Importing a descriptor grows the critical path a little, from ${kb('default', 'trigger')} to ${grown.slice(0, -1).join(', ')} and ${grown.at(-1)}, and the engine itself loads lazily: ${engines.join(', ')}. Gzip -9 of production builds from the packed tarball, budgeted in CI; every configuration is in [docs/benchmarks.md](${doc.link('docs/benchmarks.md')}#package-size).`,
+    `Engines cost nothing until imported. Importing a descriptor grows the critical path a little, from ${kb('default', 'trigger')} to ${grown.slice(0, -1).join(', ')} and ${grown.at(-1)}, and the engine itself loads lazily: ${engines.join(', ')}. Gzip -9 of production builds from the packed tarball, budgeted in CI. Every configuration is in [docs/benchmarks.md](${doc.link('docs/benchmarks.md')}#package-size).`,
     '',
     `\`video-fps-probe/react\` adds ${kb('react', 'react')} to the critical path for the provider, \`useVideoFps\` and its store (React itself not counted); its first analysis also fetches a ${kb('react', 'summary')} summary module, in parallel with the probe client. \`video-fps-probe/check\` adds ${kb('check', 'check')} when imported statically, and nothing lazily; one preset from \`video-fps-probe/presets\` adds ${kb('preset', 'presets')}.`,
   ];
@@ -1146,7 +1146,7 @@ function accuracySummaryBlock(inp: Inputs, doc: Doc): string[] {
   const arms = inp.acc.engines.filter((e) => e.informational && !e.loadSkipped);
   const libraries = [...new Set(arms.map((e) => `${LIBRARY_LABEL[e.arm.library] ?? e.arm.library} ${e.arm.version ?? ''}`.trim()))];
   return [
-    `**${n('mismatch')} mismatches against ffprobe ${inp.acc.ffprobeVersions.map((s) => s.replace(/^ffprobe version /, '').replace(/-.*$/, '')).join(', ')}** on the ${fixtures.length} committed fixtures: ${checks.length} field checks, ${n('exact')} exact, ${withinTolText(checks)}, ${n('known-deviation')} known deviation${n('known-deviation') === 1 ? '' : 's'} with a recorded reason, ${n('n/a')} not applicable. The same comparison runs ${libraries.join(' and ')} in ${arms.length} arms (their idiomatic recipes, mediabunny with a full scan, and this package's tuned adapters) and sorts each difference into wrong, definition differs, unverified, not provided or unsupported container; the [accuracy section](${doc.link('docs/benchmarks.md')}#accuracy-vs-ffprobe) has the outcomes and where the libraries win.`,
+    `**${n('mismatch')} mismatches against ffprobe ${inp.acc.ffprobeVersions.map((s) => s.replace(/^ffprobe version /, '').replace(/-.*$/, '')).join(', ')}** on the ${fixtures.length} committed fixtures: ${checks.length} field checks, ${n('exact')} exact, ${withinTolText(checks)}, ${n('known-deviation')} known deviation${n('known-deviation') === 1 ? '' : 's'} with a recorded reason, ${n('n/a')} not applicable. The same comparison runs ${libraries.join(' and ')} in ${arms.length} arms (their idiomatic recipes, mediabunny with a full scan, and this package's tuned adapters) and sorts each difference into wrong, definition differs, unverified, not provided or unsupported container. The [accuracy section](${doc.link('docs/benchmarks.md')}#accuracy-vs-ffprobe) has the outcomes and where the libraries win.`,
     '',
     corpusLine(fixtures, doc),
   ];

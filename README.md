@@ -148,7 +148,7 @@ import { defineConfig } from 'vite';
 export default defineConfig({ worker: { format: 'es' } });
 ```
 
-Engines cost nothing until imported. Importing a descriptor grows the critical path a little, from 0.67 KB to 0.89 KB with mp4box or mediabunny, 0.77 KB with rVFC and 1.01 KB with all three, and the engine itself loads lazily: mp4box 44.95 KB, mediabunny 54.17 KB, rVFC 2.19 KB. Gzip -9 of production builds from the packed tarball, budgeted in CI; every configuration is in [docs/benchmarks.md](docs/benchmarks.md#package-size).
+Engines cost nothing until imported. Importing a descriptor grows the critical path a little, from 0.67 KB to 0.89 KB with mp4box or mediabunny, 0.77 KB with rVFC and 1.01 KB with all three, and the engine itself loads lazily: mp4box 44.95 KB, mediabunny 54.17 KB, rVFC 2.19 KB. Gzip -9 of production builds from the packed tarball, budgeted in CI. Every configuration is in [docs/benchmarks.md](docs/benchmarks.md#package-size).
 
 `video-fps-probe/react` adds 1.20 KB to the critical path for the provider, `useVideoFps` and its store (React itself not counted); its first analysis also fetches a 0.43 KB summary module, in parallel with the probe client. `video-fps-probe/check` adds 3.99 KB when imported statically, and nothing lazily; one preset from `video-fps-probe/presets` adds 0.46 KB.
 
@@ -158,7 +158,7 @@ Engines cost nothing until imported. Importing a descriptor grows the critical p
 
 <!-- tables:accuracy-summary:start -->
 
-**0 mismatches against ffprobe 8.1.1** on the 165 committed fixtures: 3271 field checks, 3185 exact, 13 within tolerance (9 of them a definition difference by design: the measured average of a Matroska file that stores no duration for its last frame, which avgFps gives the median interval and ffprobe its own estimate), 0 known deviations with a recorded reason, 73 not applicable. The same comparison runs mp4box.js 2.4.1 and mediabunny 1.62.1 in 5 arms (their idiomatic recipes, mediabunny with a full scan, and this package's tuned adapters) and sorts each difference into wrong, definition differs, unverified, not provided or unsupported container; the [accuracy section](docs/benchmarks.md#accuracy-vs-ffprobe) has the outcomes and where the libraries win.
+**0 mismatches against ffprobe 8.1.1** on the 165 committed fixtures: 3271 field checks, 3185 exact, 13 within tolerance (9 of them a definition difference by design: the measured average of a Matroska file that stores no duration for its last frame, which avgFps gives the median interval and ffprobe its own estimate), 0 known deviations with a recorded reason, 73 not applicable. The same comparison runs mp4box.js 2.4.1 and mediabunny 1.62.1 in 5 arms (their idiomatic recipes, mediabunny with a full scan, and this package's tuned adapters) and sorts each difference into wrong, definition differs, unverified, not provided or unsupported container. The [accuracy section](docs/benchmarks.md#accuracy-vs-ffprobe) has the outcomes and where the libraries win.
 
 Of the 165 committed fixtures, 153 are synthetic files made with ffmpeg and 12 are real MediaRecorder recordings from headless Chromium, committed as recorded; per-engine tables, speed and method: [docs/benchmarks.md](docs/benchmarks.md).
 
