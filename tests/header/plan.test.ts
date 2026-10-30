@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { analyzeHeader, type HeaderResult } from '../../src/header/index.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
-import { box, bytes, ftyp, mdatHeader, moof, moov, moovOfSize, mvex, recording, sidx, virtualSource, zeros, type Segment } from '../helpers/iso-builder.ts';
+import { box, bytes, ftyp, fullBox, mdatHeader, mfra, moof, moov, moovOfSize, mvex, recording, sidx, u32, virtualSource, zeros, type Segment } from '../helpers/iso-builder.ts';
 
 const KIB = 1024;
 const MIB = 1024 * 1024;
@@ -216,5 +216,78 @@ describe('read plan of virtual sources', () => {
     const src = virtualSource([ftyp('iso5'), moov([{ id: 1 }], [mvex({ trex: [{ id: 1, duration: 512 }] })]), short, moof(1, [{ id: 1, baseDts: 0, count: 30, duration: 512 }], 300), mdatHeader(300), zeros(300)]);
     const r = await analyzeHeader(src);
     expect(r.errorCode).toBe('no-duration');
+  });
+
+  test('a single moof indexed by the mfra resolves every track from that moof', async () => {
+    const rec = recording({ fragments: 1, mdatBytes: 200 * KIB, audio: true, audioLonger: 5 });
+    const r = await analyzeHeader(rec.source);
+    expect(r.error).toBeNull();
+    expect(r.io.reads).toBe(2);
+    expect(r.videoTracks[0]).toMatchObject({ durationSec: rec.videoTicks / 15360, isStill: false, provenance: { durationSec: 'header' } });
+    expect(r.formatDurationSec).toBeCloseTo(rec.audioTicks! / 48000, 6);
+    expect((await analyzeHeader(rec.source, { fragmentedDuration: 'header' })).errorCode).toBe('no-duration');
+  });
+
+  test('an mvex file whose moov holds every sample reads as a file without fragments', async () => {
+    const tracks = [{ id: 1, timescale: 15360, samples: [[150, 512]] as Array<[number, number]> }];
+    const head = bytes(ftyp('iso5'), moov(tracks, [mvex({ trex: [{ id: 1, duration: 512 }] })]));
+    for (const index of [mfra([]), mfra([{ id: 1, offsets: [] }])]) {
+      const src = virtualSource([head, mdatHeader(MIB), { zeros: MIB }, index]);
+      for (const fragmentedDuration of ['index', 'header'] as const) {
+        const r = await analyzeHeader(src, { fragmentedDuration });
+        expect(r.error, fragmentedDuration).toBeNull();
+        expect(r.layout, fragmentedDuration).toMatchObject({ kind: 'fragmented', emptyMoov: false });
+        expect(r.videoTracks[0], fragmentedDuration).toMatchObject({ frames: 150, durationSec: 5, provenance: { durationSec: 'header' } });
+        expect(r.formatDurationSec, fragmentedDuration).toBe(5);
+        expect(r.io.reads, fragmentedDuration).toBe(2);
+      }
+    }
+  });
+
+  test('a limit hit between the moov and the first moof keeps the tracks', async () => {
+    const free = Array.from({ length: 40 }, () => box('free'));
+    const withMehd = recording({ fragments: 3, mdatBytes: 1000, mehd: 6000, free });
+    const estimated = await analyzeHeader(withMehd.source, { limits: { maxTopLevelBoxes: 32 } });
+    expect(estimated).toMatchObject({ error: null, errorCode: null, formatDurationSec: 6, primaryTrackId: 1 });
+    expect(estimated.videoTracks[0]).toMatchObject({ durationSec: 6, provenance: { durationSec: 'estimated' } });
+    expect(estimated.warnings).toContain('fragment index not read: limit reached: maxTopLevelBoxes 32');
+    const bare = await analyzeHeader(recording({ fragments: 3, mdatBytes: 1000, free }).source, { limits: { maxTopLevelBoxes: 32 } });
+    expect(bare).toMatchObject({ errorCode: 'structure-limit', error: 'limit reached: maxTopLevelBoxes 32', primaryTrackId: 1, formatDurationSec: null });
+    expect(bare.videoTracks).toHaveLength(1);
+    const gap = await analyzeHeader(recording({ fragments: 3, mdatBytes: 1000, free: [box('free', zeros(70 * KIB))] }).source, { limits: { maxReads: 1 } });
+    expect(gap).toMatchObject({ errorCode: 'read-limit', error: 'limit reached: maxReads 1', primaryTrackId: 1 });
+    expect(gap.videoTracks).toHaveLength(1);
+    const plain = virtualSource([ftyp(), moov([VIDEO]), ...free, mdatHeader(MIB), { zeros: MIB }]);
+    const counted = await analyzeHeader(plain, { limits: { maxTopLevelBoxes: 32 } });
+    expect(counted).toMatchObject({ errorCode: 'structure-limit', primaryTrackId: 1 });
+    expect(counted.videoTracks[0]).toMatchObject({ frames: 90 });
+  });
+
+  test('a hostile mfro size above 16 MiB is not read', async () => {
+    const head = bytes(ftyp('iso5'), moov([{ id: 1 }], [mvex({ trex: [{ id: 1, duration: 512 }] })]), moof(1, [{ id: 1, baseDts: 0, count: 30, duration: 512 }], 300));
+    const src = virtualSource([head, mdatHeader(40 * MIB), { zeros: 40 * MIB }, fullBox('mfro', 0, 0, u32(30 * MIB))]);
+    const r = await analyzeHeader(src, { limits: { maxBytes: Number.POSITIVE_INFINITY } });
+    expect(r.errorCode).toBe('no-duration');
+    expect(src.calls.every(([s, e]) => e - s <= 64 * KIB)).toBe(true);
+  });
+
+  test('a warning that repeats is reported once with its count', async () => {
+    const head = bytes(ftyp('iso5'), moov([{ id: 1 }], [mvex({ trex: [{ id: 1, duration: 512 }] })]));
+    const many = moof(1, Array.from({ length: 1000 }, () => ({ id: 77, baseDts: 0, count: 1, duration: 512 })), 0);
+    const r = await analyzeHeader(virtualSource([head, many, mdatHeader(16), zeros(16)]));
+    expect(r.warnings.filter((w) => w.startsWith('fragment for unknown track 77'))).toEqual(['fragment for unknown track 77 (1000 times)']);
+  });
+
+  test('a truncated mdat and trailing data after a moov without mvex are noted from the bytes read', async () => {
+    const m = moov([VIDEO]);
+    const head = bytes(ftyp(), m, box('free', zeros(100)));
+    const cut = virtualSource([head, mdatHeader(10 * MIB), { zeros: MIB }]);
+    const r = await analyzeHeader(cut);
+    expect(r.error).toBeNull();
+    expect(r.io.reads).toBe(1);
+    expect(r.warnings).toContain(`'mdat' at ${head.length} is truncated`);
+    const junk = await analyzeHeader(virtualSource([ftyp(), mdatHeader(MIB), { zeros: MIB }, m, bytes([0, 0, 0, 2, 0x6a, 0x75, 0x6e, 0x6b])]));
+    expect(junk.error).toBeNull();
+    expect(junk.warnings.some((w) => w.startsWith('ignored trailing data at '))).toBe(true);
   });
 });
