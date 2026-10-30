@@ -11,6 +11,7 @@ import { editInfo, rescaleRound, sampleTotals, trackTiming } from './track.ts';
 
 const HEADER_PEEK = 16;
 const MFRA_TAIL = 64 * 1024;
+const MFRA_CAP = 16 * 1024 * 1024;
 const MOOF_HARD_CAP = 64 * 1024 * 1024;
 const SIDE_TYPES = new Set(['moof', 'mdat', 'mfra']);
 
@@ -212,7 +213,7 @@ async function readTailIndex(w: Walk): Promise<TailIndex | null> {
   }
   if (fourcc(tail, tailLen - 12) !== 'mfro') return null;
   const mfraSize = tail.getUint32(tailLen - 4);
-  if (mfraSize < 24 || mfraSize > size) return null;
+  if (mfraSize < 24 || mfraSize > Math.min(size, MFRA_CAP)) return null;
   const dv = mfraSize <= tailLen ? new DataView(tail.buffer, tail.byteOffset + tailLen - mfraSize, mfraSize) : await reader.view(size - mfraSize, mfraSize, 0);
   let h: BoxHeader | null;
   try {
