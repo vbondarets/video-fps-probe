@@ -160,6 +160,7 @@ const parserRows = (m: Matrix, family: keyof typeof FAMILIES) => [
   ...m.standalone.filter((s) => (FAMILIES[family].standalone as readonly string[]).includes(s.file)).map((s) => `standalone:${s.file}`),
 ];
 const parserFiles = (m: Matrix, family: string) => m.fixtures.flatMap((f) => holding(f, family).map((x) => `${f.name} file ${fileKey(x)}`));
+const parserOnlyFiles = (m: Matrix, family: string) => m.fixtures.flatMap((f) => holding(f, family).filter((x) => !holds(x, 'core')).map((x) => `${f.name} file ${fileKey(x)}`));
 
 function applied(name: string, pair: Pair): string {
   return raised(name, (m) => {
@@ -356,7 +357,8 @@ describe('size gate against the 0.3.0 baseline', () => {
     expect(over.err).toContain(`default:lazyTotal: ${fmt(lazy + 802)} B is 22 B above the stage base of ${fmt(lazy + 780)} B, the share of stage 3 is 20 B`);
     const all = norm('all', 'lazyTotal');
     expect(over.err).toContain(`all:lazyTotal: ${fmt(all + 1604)} B is 44 B above the stage base of ${fmt(all + 1560)} B, the share of stage 3 is 40 B`);
-    expect(over.err).toMatch(/FAIL default file assets\/own-isobmff\.worker-00000000\.js \(own-isobmff\.worker\): [\d,]+ B is 401 B above the 0\.3\.0 baseline of [\d,]+ B, stage 3 allows 400 B for isobmff \(files\)/);
+    expect(over.err).toMatch(/FAIL default file assets\/isobmff-00000000\.js \(page\): [\d,]+ B is 401 B above the 0\.3\.0 baseline of [\d,]+ B, stage 3 allows 400 B for isobmff \(files\)/);
+    expect(over.err).toMatch(/FAIL default file assets\/own-isobmff\.worker-00000000\.js \(own-isobmff\.worker\): [\d,]+ B is 11 B above the stage base of [\d,]+ B, the share of stage 3 for isobmff and core is 10 B \(files\)/);
     const failed = new Set(failures(over.err).map(failedRow));
     expect([...failed].sort()).toEqual([...parserRows(START, 'isobmff'), ...parserFiles(START, 'isobmff')].sort());
     expect(at(4, stage3End, stage3End).status).toBe(0);
@@ -417,7 +419,7 @@ describe('size gate against the 0.3.0 baseline', () => {
     const fails = failures(over.err);
     expect(fails.length).toBeGreaterThan(0);
     for (const line of fails) expect(Object.hasOwn(pair.rows, failedRow(line)) || Object.hasOwn(pair.files, failedRow(line).replace(' file ', ' ')), line).toBe(true);
-    expect(over.err).toMatch(new RegExp(`B above the stage base of [\\d,]+ B, the share of stage 3 for isobmff is ${largest - 1} B`));
+    expect(over.err).toMatch(new RegExp(`B above the stage base of [\\d,]+ B, the share of stage 3 for isobmff(?: and core)? is ${largest - 1} B`));
   });
 
   test('moves only rows and files that hold the parser in a real parser-only change, while the content hashes move many more raw sizes', () => {
@@ -442,7 +444,7 @@ describe('size gate against the 0.3.0 baseline', () => {
     expect(r.status).toBe(1);
     const fails = failures(r.err);
     expect(fails).toHaveLength(Object.keys(pair.files).length);
-    for (const line of fails) expect(line).toMatch(/^FAIL [\w-]+ file assets\/compare-00000000\.js \(page\): [\d,]+ B is \d+ B above the 0\.3\.0 baseline of [\d,]+ B, stage 3 allows 0 B for a file without a parser or engine \(files\)$/);
+    for (const line of fails) expect(line).toMatch(/^FAIL [\w-]+ file assets\/compare-00000000\.js \(page\): [\d,]+ B is \d+ B above the 0\.3\.0 baseline of [\d,]+ B, stage 3 allows 0 B for a file that holds no kind \(files\)$/);
   });
 
   test('lets both parsers spend the stage 2 shares and fails one byte over on either parser', () => {
@@ -458,7 +460,7 @@ describe('size gate against the 0.3.0 baseline', () => {
       const r = at(2, raised(`stage-2-${family}-over.json`, bothParsers(iso, mkv)));
       expect(r.status, family).toBe(1);
       const failed = new Set(failures(r.err).map(failedRow));
-      expect([...failed].sort(), family).toEqual([...new Set([...parserRows(START, family), ...parserFiles(START, family)])].sort());
+      expect([...failed].sort(), family).toEqual([...new Set([...parserRows(START, family), ...parserOnlyFiles(START, family)])].sort());
     }
   });
 
@@ -481,26 +483,59 @@ describe('size gate against the 0.3.0 baseline', () => {
       const r = run(['--config', configAt(5, base, reset), '--report', raised(`stage-5-${family}-over.json`, bothParsers(iso, mkv))]);
       expect(r.status, family).toBe(1);
       const failed = new Set(failures(r.err).map(failedRow));
-      expect([...failed].sort(), family).toEqual([...new Set([...parserRows(START, family), ...parserFiles(START, family)])].sort());
+      expect([...failed].sort(), family).toEqual([...new Set([...parserRows(START, family), ...parserOnlyFiles(START, family)])].sort());
     }
   });
 
-  test('lets an engine chunk file grow by the engine share in stage 2', () => {
+  test('lets every file that holds the engine result helpers grow by the engine share in stage 2', () => {
     const engine = (by: number) => (m: Matrix) => {
       for (const f of m.fixtures) {
-        const copies = holding(f, 'mp4box');
+        const copies = holding(f, 'engine');
         if (copies.length === 0) continue;
-        if (typeof f.metrics.mp4box === 'number') metric(m, f.name, 'mp4box', by);
+        for (const key of ['mp4box', 'mediabunny', 'pageEngineShared']) if (typeof f.metrics[key] === 'number') metric(m, f.name, key, by);
         metric(m, f.name, 'lazyTotal', by * copies.length);
         for (const x of copies) grow(x, by);
       }
     };
-    expect(at(2, raised('engine-30.json', engine(30))).status).toBe(0);
+    expect(START.fixtures.flatMap((f) => holding(f, 'engine')).length).toBe(7);
+    const ok = at(2, raised('engine-30.json', engine(30)));
+    expect(ok.status, ok.err).toBe(0);
     const over = at(2, raised('engine-31.json', engine(31)));
     expect(over.status).toBe(1);
     expect(over.err).toContain(`all:mp4box: ${fmt(norm('all', 'mp4box') + 31)} B is 31 B above the 0.3.0 baseline of ${fmt(norm('all', 'mp4box'))} B, stage 2 allows 30 B`);
-    expect(over.err).toMatch(/FAIL all file assets\/mp4box-00000000\.js \(page\): [\d,]+ B is 31 B above the 0\.3\.0 baseline of [\d,]+ B, stage 2 allows 30 B for mp4box \(files\)/);
+    expect(over.err).toContain(`all:pageEngineShared: ${fmt(norm('all', 'pageEngineShared') + 31)} B is 31 B above the 0.3.0 baseline of ${fmt(norm('all', 'pageEngineShared'))} B, stage 2 allows 30 B`);
+    expect(over.err).toMatch(/FAIL all file assets\/counting-00000000\.js \(page\): [\d,]+ B is 31 B above the 0\.3\.0 baseline of [\d,]+ B, stage 2 allows 30 B for engine \(files\)/);
     expect(at(3, raised('engine-stage-3.json', engine(1)), raised('engine-stage-2.json', engine(0))).status).toBe(1);
+    const library = at(2, raised('engine-library.json', (m) => grow(fixtureOf(m, 'all').files.find((x) => x.normalized.file === 'assets/mp4box-00000000.js' && x.worker === null)!, 1)));
+    expect(library.status).toBe(1);
+    expect(failures(library.err)).toEqual([expect.stringMatching(/^FAIL all file assets\/mp4box-00000000\.js \(page\): [\d,]+ B is 1 B above the 0\.3\.0 baseline of [\d,]+ B, stage 2 allows 0 B for a file that holds no kind \(files\)$/)]);
+  });
+
+  test('lets a file that holds only the shared core spend the core share of stages 2 and 5 and nothing in stage 3', () => {
+    const core = (by: number) => (m: Matrix) => {
+      const f = fixtureOf(m, 'default');
+      const files = f.files.filter((x) => x.worker === null && ['assets/result-00000000.js', 'assets/runtime-00000000.js'].includes(x.normalized.file));
+      expect(files.map((x) => holds(x, 'core'))).toEqual([true, true]);
+      for (const x of files) grow(x, by);
+      metric(m, 'default', 'lazyTotal', 2 * by);
+    };
+    const ok = at(2, raised('core-390.json', core(390)));
+    expect(ok.status, ok.err).toBe(0);
+    const over = at(2, raised('core-391.json', core(391)));
+    expect(over.status).toBe(1);
+    expect(failures(over.err)).toEqual([
+      expect.stringMatching(/^FAIL default file assets\/result-00000000\.js \(page\): [\d,]+ B is 391 B above the 0\.3\.0 baseline of [\d,]+ B, stage 2 allows 390 B for core \(files\)$/),
+      expect.stringMatching(/^FAIL default file assets\/runtime-00000000\.js \(page\): [\d,]+ B is 391 B above the 0\.3\.0 baseline of [\d,]+ B, stage 2 allows 390 B for core \(files\)$/),
+    ]);
+    const stage2End = raised('core-stage-2-end.json', core(300));
+    const stage3 = at(3, raised('core-stage-3.json', core(301)), stage2End);
+    expect(stage3.status).toBe(1);
+    expect(failures(stage3.err)).toHaveLength(2);
+    expect(stage3.err).toMatch(/FAIL default file assets\/result-00000000\.js \(page\): [\d,]+ B differs from the stage base of [\d,]+ B by \+1 B, and the share of stage 3 for core is 0 \(files\)/);
+    expect(at(5, raised('core-stage-5.json', core(350)), stage2End).status).toBe(0);
+    const stage5 = at(5, raised('core-stage-5-over.json', core(351)), stage2End);
+    expect(stage5.status).toBe(1);
+    expect(stage5.err).toMatch(/FAIL default file assets\/runtime-00000000\.js \(page\): [\d,]+ B is 51 B above the stage base of [\d,]+ B, the share of stage 5 for core is 50 B \(files\)/);
   });
 
   test('fails a file that appears, disappears or changes what it holds', () => {
@@ -519,7 +554,7 @@ describe('size gate against the 0.3.0 baseline', () => {
     expect(added.err).toContain('default file assets/extra-00000000.js (page): not in the stage base, and no file may be added to a configuration of 0.3.0');
     const moved = at(1, raised('file-holds.json', (m) => (fixtureOf(m, 'default').files.find((x) => x.normalized.file === 'assets/stats-00000000.js')!.normalized.sources.push('core/isobmff/index.js'))));
     expect(moved.status).toBe(1);
-    expect(moved.err).toContain('default file assets/stats-00000000.js (page): holds isobmff against no parser or engine in the stage base');
+    expect(moved.err).toContain('default file assets/stats-00000000.js (page): holds isobmff, core against core in the stage base');
   });
 
   test('keeps every other row identical in a frozen stage', () => {

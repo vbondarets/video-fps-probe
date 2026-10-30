@@ -160,7 +160,7 @@ function gateFiles(config, report, baseline, base, stage) {
   let count = 0;
   if (problems.length > 0) return { problems, rows, count };
   const kindsOf = (x) => kinds.filter((k) => x.normalized.sources.some((s) => k.re.test(s)));
-  const named = (list) => list.map((k) => k.name).join(', ') || 'no parser or engine';
+  const named = (list) => list.map((k) => k.name).join(', ') || 'no kind';
   for (const f of base.fixtures ?? []) {
     if (!(baseline.fixtures ?? []).some((b) => b.name === f.name)) continue;
     const sides = { 'stage base': lazyFiles(f), baseline: lazyFiles((baseline.fixtures ?? []).find((b) => b.name === f.name)), measured: lazyFiles((report.fixtures ?? []).find((m) => m.name === f.name)) };
@@ -197,7 +197,7 @@ function gateFiles(config, report, baseline, base, stage) {
         problems.push(`${f.name} file ${key}: ${text} (files)`);
         if (out.status === 'ok') out.status = status;
       };
-      const what = holds.join(' and ') || 'a file without a parser or engine';
+      const what = holds.join(' and ') || 'a file that holds no kind';
       if (allowed !== null && delta > allowed) fail('over growth', `${fmt(value)} B is ${fmt(delta)} B above the 0.3.0 baseline of ${fmt(b.normalized.gzip)} B, stage ${stage} allows ${fmt(allowed)} B for ${what}`);
       else if (share === 0 && sinceBase !== 0) fail('changed', `${fmt(value)} B differs from the stage base of ${fmt(s.normalized.gzip)} B by ${signed(sinceBase)} B, and the share of stage ${stage} for ${what} is 0`);
       else if (share !== null && sinceBase > share) fail('over share', `${fmt(value)} B is ${fmt(sinceBase)} B above the stage base of ${fmt(s.normalized.gzip)} B, the share of stage ${stage} for ${what} is ${fmt(share)} B`);

@@ -16,10 +16,10 @@
     "kinds": {
       "isobmff": { "sources": "^(core/isobmff/|standalone/own(-isobmff)?\\.worker\\.js$)", "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 450, "6": 450 } },
       "matroska": { "sources": "^(core/matroska/|standalone/own(-matroska)?\\.worker\\.js$)", "growth": { "1": 0, "2": 200, "3": 200, "4": 200, "5": 250, "6": 250 } },
-      "mp4box": { "sources": "^(node_modules/mp4box|engines/mp4box\\.js)$", "growth": { "1": 0, "2": 30, "3": 30, "4": 30, "5": 30, "6": 30 } },
-      "mediabunny": { "sources": "^(node_modules/mediabunny|engines/mediabunny\\.js)$", "growth": { "1": 0, "2": 30, "3": 30, "4": 30, "5": 30, "6": 30 } }
+      "core": { "sources": "^(core/(dispatch|options|reader|result|stats)\\.js|standalone/own(-isobmff|-matroska)?\\.worker\\.js)$", "growth": { "1": 0, "2": 390, "3": 390, "4": 390, "5": 440, "6": 440 } },
+      "engine": { "sources": "^engines/common\\.js$", "growth": { "1": 0, "2": 30, "3": 30, "4": 30, "5": 30, "6": 30 } }
     },
-    "why": "A sum row such as firstMp4, allOwn or lazyTotal adds up whole files, so its share alone would let a file without a parser grow inside it. Every emitted file outside the entry chunk of a 0.3.0 configuration is therefore gated on its own: a file that holds the ISO BMFF parser, the Matroska parser or an engine chunk may grow by the allowance of each one it holds, the same shares as the parser rows and the engine chunks, and every other file stays identical to the stage base. What a file holds comes from the modules its sourcemap names, so a new kind needs no new measurement of the 0.3.0 baseline. A copy of a standalone worker file has no sourcemap and is named after the standalone file it copies."
+    "why": "A sum row such as firstMp4, allOwn or lazyTotal adds up whole files, so its share alone would let a file that no stage changes grow inside it. Every emitted file outside the entry chunk of a 0.3.0 configuration is therefore gated on its own: a file may grow by the allowance of each kind of code it holds, and every other file stays identical to the stage base. isobmff and matroska are the parsers, with the shares of their rows. core is the shared reader, dispatch, options, empty results and statistics, which every own worker, every engine worker and the main-thread runtime hold: stage 2 adds the errorCode tagging to the reader and the dispatch, the new fields to the empty results and the median frame interval to the statistics, and stage 5 adds the codecConfig option to the options, so core gets the first MP4 shares of those two stages, 0.39 KB and 0.05 KB, and nothing in stages 3, 4 and 6. engine is the result helpers that every engine chunk shares, engines/common.ts, where stage 2 copies the median frame interval, with the 0.03 KB share of the engine chunks; the engine adapters and the mp4box and mediabunny libraries do not change in 0.4.0. The kinds of a file add up, and the rows that hold the file bound the sum. What a file holds comes from the modules its sourcemap names, so a new kind needs no new measurement of the 0.3.0 baseline. A copy of a standalone worker file has no sourcemap and is named after the standalone file it copies. A file is gated as a whole, so a module that no kind names, such as a worker entry, worker/single.ts or the worker runtime, spends the allowance of the kinds it ships with: an own worker file is checked only against the shares of its parser and the core."
   },
   "groups": [
     {
@@ -157,17 +157,17 @@
     },
     {
       "name": "engine chunks",
-      "rows": ["mp4box:mp4box", "mediabunny:mediabunny", "all:mp4box", "all:mediabunny"],
+      "rows": ["mp4box:mp4box", "mediabunny:mediabunny", "all:mp4box", "all:mediabunny", "all:pageEngineShared"],
       "growth": { "1": 0, "2": 30, "3": 30, "4": 30, "5": 30, "6": 30 },
-      "cap": { "mp4box:mp4box": 46500, "mediabunny:mediabunny": 56000, "all:mp4box": 46500, "all:mediabunny": 56000 },
-      "why": "The library engine chunks share the result helpers and may grow by 0.03 KB at most, under their 0.3.0 budgets."
+      "cap": { "mp4box:mp4box": 46500, "mediabunny:mediabunny": 56000, "all:mp4box": 46500, "all:mediabunny": 56000, "all:pageEngineShared": 2000 },
+      "why": "The library engine chunks and the shared engine chunk on the main thread hold the result helpers of the engines, engines/common.ts, which copy the median frame interval in stage 2, and may grow by 0.03 KB at most, under their 0.3.0 budgets."
     },
     {
-      "name": "main-thread engine chunks",
-      "rows": ["rvfc:rvfc", "all:rvfc", "all:pageEngineShared"],
+      "name": "rVFC engine chunks",
+      "rows": ["rvfc:rvfc", "all:rvfc"],
       "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0 },
-      "cap": { "rvfc:rvfc": 2500, "all:rvfc": 2500, "all:pageEngineShared": 2000 },
-      "why": "No 0.4.0 stage changes the rVFC engine or the shared engine chunk on the main thread, so they stay identical to 0.3.0, under their 0.3.0 budgets."
+      "cap": { "rvfc:rvfc": 2500, "all:rvfc": 2500 },
+      "why": "No 0.4.0 stage changes the rVFC engine on the main thread, so it stays identical to 0.3.0, under its 0.3.0 budget."
     },
     {
       "name": "critical path",
