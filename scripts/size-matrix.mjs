@@ -676,7 +676,7 @@ export function renderMarkdown(matrix) {
     const chains = f.chains.length === 0 ? 'request chains ok' : f.chains.join('; ');
     const own = f.workers.filter((w) => Object.hasOwn(WORKER_MUST_NOT, w.name));
     const isolation = own.length === 0 ? '' : f.workerLeaks.length === 0 ? `; ${own.map((w) => w.name).join(' and ')} reach${own.length === 1 ? 'es' : ''} only the parser of ${own.length === 1 ? 'its' : 'their'} container family` : `; ${f.workerLeaks.length} worker isolation problem(s): ${f.workerLeaks.join('; ')}`;
-    out.push(`- **${f.name}**: worker files ${f.workers.map((w) => `${w.name} (${w.chunks} lazy chunk${w.chunks === 1 ? '' : 's'})`).join(', ')}; ${leaks}${isolation}; ${chains}.`);
+    out.push(`- **${f.name}**: worker files ${f.workers.length === 0 ? 'none' : f.workers.map((w) => `${w.name} (${w.chunks} lazy chunk${w.chunks === 1 ? '' : 's'})`).join(', ')}; ${leaks}${isolation}; ${chains}.`);
   }
   out.push('');
   out.push(
