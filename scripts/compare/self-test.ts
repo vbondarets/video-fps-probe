@@ -2,13 +2,13 @@ import { avReduce } from '../../src/core/rational.ts';
 import { emptyAnalysis, emptyTrack } from '../../src/core/result.ts';
 import type { FileResult, Rational, VideoTrackResult } from '../../src/core/types.ts';
 import { parseDeviations } from './deviations.ts';
-import { ARMS, uncheckedRequiredFields } from './engines.ts';
+import { ARMS, uncheckedRequiredFields, type CheckedFixture } from './engines.ts';
 import { classifyEvaluation } from './outcomes.ts';
 import { fixturePath, loadManifest, loadRef } from '../../tests/helpers/fixtures.ts';
 import { selfTest040, profileCoverage } from './self-test-040.ts';
 import { parseRatio, parseRef, ticksToSec, type RefFile, type RefFps, type RefInstFps, type RefStream } from './ref.ts';
 import { evaluate, expectedPrimary, noteContradictsLayout, pairTracks, type EvaluateInput, type Evaluation } from './rules.ts';
-import { FIELD_NAMES, type CheckResult, type FieldName, type FileLayout, type FixtureInfo, type TrackFields040 } from './types.ts';
+import { FIELD_NAMES, type CheckResult, type ContainerFamily, type FieldName, type FileLayout, type FixtureInfo, type TrackFields040 } from './types.ts';
 
 function rat(num: number, den: number): Rational {
   const r = avReduce(num, den);
@@ -453,12 +453,38 @@ export async function runSelfTest(): Promise<number> {
     return all(e).find((c) => c.id === id)?.outcome ?? 'none';
   };
   const cfrRef = refFile([refStream()]);
-  const ownRequired = ARMS.own.requires ?? [];
-  expectEq('required: the own arm requires the stage 2 fields', ['errorCode', 'layout', 'medianFrameInterval', 'enabled'].every((f) => ownRequired.includes(f as FieldName)), true);
-  expectEq('required: every required field is a field name', ownRequired.every((f) => FIELD_NAMES.includes(f)), true);
-  expectEq('required: a field the own arm leaves unchecked is reported', uncheckedRequiredFields(ARMS.own, new Set(FIELD_NAMES.filter((f) => f !== 'layout' && f !== 'enabled'))).join(' '), 'enabled layout');
-  expectEq('required: an arm with every required field checked reports none', uncheckedRequiredFields(ARMS.own, new Set(FIELD_NAMES)).length, 0);
-  expectEq('required: an arm without a list reports none', uncheckedRequiredFields(ARMS['mp4box-tuned'], new Set()).length, 0);
+  const families: readonly ContainerFamily[] = ['isobmff', 'matroska'];
+  const fileFields: readonly FieldName[] = ['error', 'errorCode', 'layout', 'trackSelection', 'formatDurationSec'];
+  const trackChecks = (drop: readonly FieldName[]) => FIELD_NAMES.filter((f) => !fileFields.includes(f) && !drop.includes(f)).map((field) => ({ field }));
+  const checkedFixture = (name: string, family: ContainerFamily | null, drop: readonly FieldName[] = [], trackDrops: ReadonlyArray<readonly FieldName[]> = [[]]): CheckedFixture => ({
+    name,
+    family,
+    fileChecks: fileFields.filter((f) => !drop.includes(f)).map((field) => ({ field })),
+    tracks: trackDrops.map((d, i) => ({ trackId: i + 1, checks: trackChecks([...drop, ...d]) })),
+  });
+  const complete = [checkedFixture('a.mp4', 'isobmff'), checkedFixture('a.webm', 'matroska')];
+  const gapsOf = (fixtures: readonly CheckedFixture[]) => uncheckedRequiredFields(ARMS.own, fixtures).join(' | ');
+  for (const family of families) {
+    const required = ARMS.own.requires?.[family] ?? [];
+    expectEq(`required: the own arm requires the stage 2 fields in ${family}`, ['errorCode', 'layout', 'medianFrameInterval', 'enabled'].every((f) => required.includes(f as FieldName)), true);
+    expectEq(`required: every ${family} required field is a field name`, required.every((f) => FIELD_NAMES.includes(f)), true);
+  }
+  expectEq('required: every required field checked on every track reports none', gapsOf(complete), '');
+  expectEq(
+    'required: fields one family leaves unchecked are reported for that family',
+    gapsOf([checkedFixture('a.mp4', 'isobmff'), checkedFixture('a.webm', 'matroska', ['layout', 'enabled'])]),
+    'checks no enabled on any Matroska fixture, a field it must provide | checks no layout on any Matroska fixture, a field it must provide',
+  );
+  expectEq('required: a field only ISO BMFF leaves unchecked is reported for ISO BMFF only', gapsOf([checkedFixture('a.mp4', 'isobmff', ['medianFrameInterval']), ...complete.slice(1)]), 'checks no medianFrameInterval on any ISO BMFF fixture, a field it must provide');
+  expectEq(
+    'required: a track field missing on one evaluated track is reported',
+    gapsOf([...complete, checkedFixture('b.webm', 'matroska', [], [[], ['enabled']])]),
+    'checks no enabled on 1 evaluated Matroska track(s), first b.webm track 2, a field it must provide on every track',
+  );
+  expectEq('required: a track without checks is not a gap', gapsOf([...complete, { ...checkedFixture('c.webm', 'matroska'), tracks: [{ trackId: 1, checks: [] }] }]), '');
+  expectEq('required: a file field may be missing on one fixture', gapsOf([...complete, checkedFixture('d.mp4', 'isobmff', ['trackSelection', 'formatDurationSec'], [])]), '');
+  expectEq('required: an unsniffed fixture is in no family', gapsOf([...complete, checkedFixture('e.bin', null, [...FIELD_NAMES], [])]), '');
+  expectEq('required: an arm without a list reports none', uncheckedRequiredFields(ARMS['mp4box-tuned'], []).length, 0);
   expectEq('outcome: an unread container', outcomeOf('mp4box-tuned', { info: MKV_INFO, ref: cfrRef, result: appResult([], { error: 'unsupported by mp4box' }) }, 'error'), 'unsupported-container');
   expectEq('outcome: a field outside the recipe', outcomeOf('mp4box-idiomatic', { info: MP4_INFO, ref: cfrRef, result: appResult([appTrack({ avgFps: null, avgFpsFfprobe: null })]) }, 'avgFps'), 'not-provided');
   expectEq('outcome: no value', outcomeOf('mediabunny-tuned', { info: MP4_INFO, ref: cfrRef, result: appResult([appTrack({ frames: null })]) }, 'frames'), 'not-provided');

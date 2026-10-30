@@ -4,7 +4,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { analyze as analyzeOwn } from '../../src/core/index.ts';
 import type { BlobLike } from '../../src/core/reader.ts';
 import type { AnalyzeOptions, FileResult } from '../../src/core/types.ts';
-import type { ContainerFamily, FieldName } from './types.ts';
+import type { CheckResult, ContainerFamily, FieldName } from './types.ts';
 
 export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
@@ -23,7 +23,7 @@ export interface ArmSpec {
   style: ArmStyle;
   families: readonly ContainerFamily[];
   provides: ReadonlySet<FieldName> | null;
-  requires?: readonly FieldName[];
+  requires?: Partial<Readonly<Record<ContainerFamily, readonly FieldName[]>>>;
   picksPrimary: boolean;
   primaryOnly: boolean;
   recipe: string;
@@ -64,7 +64,7 @@ const OWN_REQUIRED_FIELDS: readonly FieldName[] = [
 ];
 
 export const ARMS: Readonly<Record<EngineName, ArmSpec>> = {
-  own: { library: 'own', style: 'own', families: BOTH, provides: null, requires: OWN_REQUIRED_FIELDS, picksPrimary: true, primaryOnly: false, recipe: 'analyze() of src/core, the engine this package ships' },
+  own: { library: 'own', style: 'own', families: BOTH, provides: null, requires: { isobmff: OWN_REQUIRED_FIELDS, matroska: OWN_REQUIRED_FIELDS }, picksPrimary: true, primaryOnly: false, recipe: 'analyze() of src/core, the engine this package ships' },
   'mp4box-idiomatic': {
     library: 'mp4box',
     style: 'idiomatic',
@@ -112,8 +112,32 @@ export const ARMS: Readonly<Record<EngineName, ArmSpec>> = {
   },
 };
 
-export function uncheckedRequiredFields(spec: ArmSpec, checked: ReadonlySet<FieldName>): FieldName[] {
-  return (spec.requires ?? []).filter((field) => !checked.has(field));
+export interface CheckedFixture {
+  name: string;
+  family: ContainerFamily | null;
+  fileChecks: readonly Pick<CheckResult, 'field'>[];
+  tracks: readonly { trackId: number | null; checks: readonly Pick<CheckResult, 'field'>[] }[];
+}
+
+const FAMILY_NAMES: Readonly<Record<ContainerFamily, string>> = { isobmff: 'ISO BMFF', matroska: 'Matroska' };
+
+export function uncheckedRequiredFields(spec: ArmSpec, fixtures: readonly CheckedFixture[]): string[] {
+  const out: string[] = [];
+  const trackFields = new Set(fixtures.flatMap((f) => f.tracks.flatMap((t) => t.checks.map((c) => c.field))));
+  for (const family of spec.families) {
+    const ofFamily = fixtures.filter((f) => f.family === family);
+    const checked = new Set(ofFamily.flatMap((f) => [...f.fileChecks, ...f.tracks.flatMap((t) => t.checks)].map((c) => c.field)));
+    for (const field of spec.requires?.[family] ?? []) {
+      if (!checked.has(field)) {
+        out.push(`checks no ${field} on any ${FAMILY_NAMES[family]} fixture, a field it must provide`);
+        continue;
+      }
+      if (!trackFields.has(field)) continue;
+      const gaps = ofFamily.flatMap((f) => f.tracks.filter((t) => t.checks.length > 0 && !t.checks.some((c) => c.field === field)).map((t) => `${f.name} track ${t.trackId ?? 'none'}`));
+      if (gaps.length > 0) out.push(`checks no ${field} on ${gaps.length} evaluated ${FAMILY_NAMES[family]} track(s), first ${gaps[0]}, a field it must provide on every track`);
+    }
+  }
+  return out;
 }
 
 export interface EngineHandle {

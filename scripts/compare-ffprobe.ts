@@ -300,7 +300,7 @@ async function main(): Promise<number> {
     }
     const { counts, mismatchFixtures } = tallyEngine(fixtures);
     const checked = new Set(fixtures.flatMap((f) => [...f.fileChecks, ...f.tracks.flatMap((t) => t.checks)]).map((c) => c.field));
-    if (!filter) for (const field of uncheckedRequiredFields(ARMS[engineName], checked)) harnessProblems.add(`the ${engineName} arm checks no ${field} on any fixture, a field it must provide`);
+    if (!filter) for (const gap of uncheckedRequiredFields(ARMS[engineName], fixtures)) harnessProblems.add(`the ${engineName} arm ${gap}`);
     engineReports.push({
       notProvided: FIELD_NAMES.filter((f) => !checked.has(f)),
       engine: engineName,
