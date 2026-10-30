@@ -38,7 +38,10 @@ build: a second run into a separate folder gave identical bytes for all 104 core
 manifest (checked on 2026-10-21). The check ran only on those 104 files; the 7 core fixtures added later were not
 re-checked. A run on 2026-10-30 reproduced all 165 core files and the manifest, but `vp8.webm` is not reliably
 reproducible: libvpx VP8 with `-deadline realtime` adapts its speed to the wall clock, and runs on a loaded machine gave
-other sizes. Do not commit a regenerated `vp8.webm` without comparing its bytes. WebM and Matroska
+other sizes. Do not commit a regenerated `vp8.webm` without comparing its bytes. `mov_cmov.mov` is reproducible only
+with the same zlib: its cmov holds the output of `zlib.deflateSync` at level 9 in Node (both runs used Node 24.20.0,
+zlib 1.3.2.1-motley), and another zlib build can emit other deflate bytes, so compare its bytes before a regenerated copy
+is committed. WebM and Matroska
 outputs use `-fflags +bitexact`, which removes random UIDs. The committed bytes come from ffmpeg
 `8.1.1-full_build-www.gyan.dev`; another build can differ in encoder output, so the generator warns when the
 version is not 8.1.1 and `fixtures:refs` refuses to run unless `ALLOW_FFPROBE_MISMATCH=1` is set.
