@@ -647,14 +647,17 @@ function headline(inp: Inputs): string[] {
   ];
 }
 
-const LARGE_TEXT: Record<string, string> = { long: 'long files', big: '1080p files of 604 MB', sparse: 'sparse file of 4.5 GB' };
+const LARGE_TEXT: Record<string, readonly [string, string]> = { long: ['long file', 'long files'], big: ['1080p file of 604 MB', '1080p files of 604 MB'], sparse: ['sparse file of 4.5 GB', 'sparse files of 4.5 GB'] };
 
 function scopeLine(inp: Inputs): string {
   const own = engine(inp.acc, 'own');
   const { checks } = ownTotals(own);
   const large = own.fixtures.filter((f) => isLarge(f, inp.manifest));
   const committed = own.fixtures.filter((f) => !isLarge(f, inp.manifest));
-  const kinds = [...new Set(large.map((f) => f.category))].map((c) => `${large.filter((f) => f.category === c).length} ${LARGE_TEXT[c] ?? c}`);
+  const kinds = [...new Set(large.map((f) => f.category))].map((c) => {
+    const n = large.filter((f) => f.category === c).length;
+    return `${n} ${LARGE_TEXT[c]?.[n === 1 ? 0 : 1] ?? c}`;
+  });
   const benched = new Set(Object.keys(inp.bench.chrome.warm));
   const later = committed.filter((f) => !benched.has(f.name)).length;
   const cc = committed.flatMap(checksOf);
