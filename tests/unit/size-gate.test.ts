@@ -52,6 +52,13 @@ interface GateConfig {
   [key: string]: unknown;
 }
 
+interface Pair {
+  change: string;
+  rows: Record<string, [number, number]>;
+  files: Record<string, [number, number]>;
+  rawOnlyRows: string[];
+}
+
 const BASELINE_SHA256 = '1b6c24749acae07a3fea4b2477d8c88517d303c617f629c6c3f8b179db6f5fe2';
 const NORMALIZED_SHA256 = 'e1b75f2135ba0f951f9bb214a3b7479e271ae8a2e8d7645ba7f3cde8368f4fcd';
 const GATE = join(REPO_ROOT, 'scripts', 'size-gate.mjs');
@@ -59,6 +66,7 @@ const CONFIG = join(REPO_ROOT, 'scripts', 'size-gate.json');
 const SNAPSHOTS = join(REPO_ROOT, 'fixtures', 'snapshots');
 const BASELINE = join(SNAPSHOTS, 'size-matrix-v0.3.0.json');
 const NORMALIZED = join(SNAPSHOTS, 'size-matrix-v0.3.0-normalized.json');
+const PAIRS = JSON.parse(readFileSync(join(SNAPSHOTS, 'size-gate-pairs.json'), 'utf8')) as Record<string, Pair>;
 const hasTag = spawnSync('git', ['rev-parse', '--verify', '--quiet', 'v0.3.0^{commit}'], { cwd: REPO_ROOT }).status === 0;
 const shallow = spawnSync('git', ['rev-parse', '--is-shallow-repository'], { cwd: REPO_ROOT, encoding: 'utf8' });
 const fullHistory = shallow.status === 0 && shallow.stdout.trim() === 'false';
@@ -146,6 +154,31 @@ const parserRows = (m: Matrix, family: keyof typeof FAMILIES) => [
   ...m.standalone.filter((s) => (FAMILIES[family].standalone as readonly string[]).includes(s.file)).map((s) => `standalone:${s.file}`),
 ];
 const parserFiles = (m: Matrix, family: string) => m.fixtures.flatMap((f) => holding(f, family).map((x) => `${f.name} file ${fileKey(x)}`));
+
+function applied(name: string, pair: Pair): string {
+  return raised(name, (m) => {
+    for (const [row, [rawValue, normalizedValue]] of Object.entries(pair.rows)) {
+      const at = row.indexOf(':');
+      const [config, key] = [row.slice(0, at), row.slice(at + 1)];
+      if (config === 'standalone') {
+        const s = m.standalone.find((x) => x.file === key)!;
+        s.gzip = rawValue;
+        s.normalized.gzip = normalizedValue;
+      } else {
+        const f = fixtureOf(m, config);
+        f.metrics[key] = rawValue;
+        f.normalized.metrics[key] = normalizedValue;
+      }
+    }
+    for (const [key, [rawValue, normalizedValue]] of Object.entries(pair.files)) {
+      const at = key.indexOf(' ');
+      const x = fixtureOf(m, key.slice(0, at)).files.find((y) => fileKey(y) === key.slice(at + 1));
+      if (!x) throw new Error(`the pair names the file ${key}, which the normalized baseline does not have`);
+      x.gzip = rawValue;
+      x.normalized.gzip = normalizedValue;
+    }
+  });
+}
 
 function committed(rev: string, path: string): Buffer | null {
   const r = spawnSync('git', ['show', `${rev}:${path}`], { cwd: REPO_ROOT, encoding: 'buffer' });
@@ -350,6 +383,60 @@ describe('size gate against the 0.3.0 baseline', () => {
       expect(fails, `${config}:${key}`).toHaveLength(1);
       expect(fails[0]).toContain(`FAIL ${config}:${key}: `);
     }
+  });
+
+  test('passes a real parser-only change at stage 3 within the share and fails it over the share', () => {
+    const pair = PAIRS.parserOnly!;
+    const report = applied('real-parser-only.json', pair);
+    const within = at(3, report);
+    expect(within.status, within.err).toBe(0);
+    expect(within.out).toMatch(/size gate: 142 gated rows and 292 files within the stage 3 allowances, shares and caps/);
+    const growth = Object.entries(pair.files).map(([key, [, value]]) => {
+      const at = key.indexOf(' ');
+      return value - fixtureOf(START, key.slice(0, at)).files.find((x) => fileKey(x) === key.slice(at + 1))!.normalized.gzip;
+    });
+    const largest = Math.max(...growth);
+    expect(largest).toBeGreaterThan(0);
+    expect(largest).toBeLessThanOrEqual(10);
+    const lowered = configAt(3, NORMALIZED, (c) => {
+      const iso = c.files.growth.isobmff!;
+      iso['3'] = iso['2']! + largest - 1;
+      for (const g of c.groups) {
+        const share = (g.growth['3'] ?? 0) - (g.growth['2'] ?? 0);
+        if (share > 0) g.growth['3'] = g.growth['2']! + (share / 10) * (largest - 1);
+      }
+    });
+    const over = run(['--config', lowered, '--report', report]);
+    expect(over.status).toBe(1);
+    const fails = failures(over.err);
+    expect(fails.length).toBeGreaterThan(0);
+    for (const line of fails) expect(Object.hasOwn(pair.rows, failedRow(line)) || Object.hasOwn(pair.files, failedRow(line).replace(' file ', ' ')), line).toBe(true);
+    expect(over.err).toMatch(new RegExp(`B above the stage base of [\\d,]+ B, the share of stage 3 for isobmff is ${largest - 1} B`));
+  });
+
+  test('moves only rows and files that hold the parser in a real parser-only change, while the content hashes move many more raw sizes', () => {
+    const pair = PAIRS.parserOnly!;
+    const isoRows = new Set(parserRows(START, 'isobmff'));
+    for (const row of Object.keys(pair.rows)) expect(isoRows.has(row), row).toBe(true);
+    const isoFiles = new Set(parserFiles(START, 'isobmff').map((k) => k.replace(' file ', ' ')));
+    for (const key of Object.keys(pair.files)) expect(isoFiles.has(key), key).toBe(true);
+    expect(pair.rawOnlyRows).toEqual(expect.arrayContaining(['default:trigger', 'default:client', 'default:firstMkv', 'default:segments', 'all:mp4box', 'rvfc:rvfc']));
+    expect(pair.rawOnlyRows.filter((row) => !isoRows.has(row)).length).toBeGreaterThan(Object.keys(pair.rows).length);
+  });
+
+  test('fails a real change outside the parsers at stage 3 that every sum row holding it would let pass', () => {
+    const pair = PAIRS.nonParser!;
+    expect(Object.keys(pair.rows).length).toBeGreaterThan(0);
+    for (const row of Object.keys(pair.rows)) expect(row, 'the change moves only the emitted lazy totals').toMatch(/:lazyTotal$/);
+    for (const [row, [, value]] of Object.entries(pair.rows)) {
+      const at = row.indexOf(':');
+      expect(value - norm(row.slice(0, at), 'lazyTotal'), row).toBeLessThanOrEqual(20);
+    }
+    const r = at(3, applied('real-non-parser.json', pair));
+    expect(r.status).toBe(1);
+    const fails = failures(r.err);
+    expect(fails).toHaveLength(Object.keys(pair.files).length);
+    for (const line of fails) expect(line).toMatch(/^FAIL [\w-]+ file assets\/compare-00000000\.js \(page\): [\d,]+ B is \d+ B above the 0\.3\.0 baseline of [\d,]+ B, stage 3 allows 0 B for a file without a parser or engine \(files\)$/);
   });
 
   test('lets an engine chunk file grow by the engine share in stage 2', () => {
