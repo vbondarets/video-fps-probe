@@ -12,6 +12,7 @@ The package is ESM only, targets ES2022 and ships its own types. Every entry exc
 | `video-fps-probe/lazy` | `lazyProbe`, `lazyProbeFrom`, `LazyProbe`, `ProbeOptions` | the two own workers |
 | `video-fps-probe/client` | `createProbeClient`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, every type on this page except `InThreadOptions`, `ErrorClass`, `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions`, `VideoFpsState` and the check types (`CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `FrameSizeRule`, `RangeRule`, `RatioValue`, `RatePolicy`) and the preset types (`ProviderPreset`, `PresetSourceKind`) | none |
 | `video-fps-probe/client/lazy` | `lazyProbeClient`, `lazyProbeFrom`, `ClientOptions`, `LazyProbe`, `Probe` | none |
+| `video-fps-probe/header` | `analyzeHeader`, `HEADER_DEFAULT_LIMITS`, `errorCodeOf`, `errorClass`, `warningCodeOf`, `warningCodesOf`, `isAbortError`, `isTimeoutError`, `HeaderOptions`, `HeaderLimits`, `HeaderResult`, `FragmentedDuration`, `ErrorClass`, `BlobLike`, `BlobSlice` and the result types of `video-fps-probe/client` such as `FileResult`, `VideoTrackResult`, `FileErrorCode` and `ContainerLayout` ([header-only analysis](#header-only-analysis)) | none |
 | `video-fps-probe/check` | `check`, `CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `FrameSizeRule`, `RangeRule`, `RatioValue`, `RatePolicy` | none |
 | `video-fps-probe/presets` | `klingO1ReferenceVideo`, `klingMotionControl`, `runwayAleph2`, `veoExtend`, `wan26ReferenceToVideoFal`, `seedance2ReferenceVideo`, `ProviderPreset`, `PresetSourceKind` | none |
 | `video-fps-probe/presets/sources.json` | a JSON file, not a module: the source page of every preset, keyed by the name of its export, which replaces the deprecated sourceUrl of a preset | none |
@@ -30,7 +31,7 @@ There are two flavors because bundlers emit a worker file for every `new Worker(
 - **Default flavor** (`video-fps-probe`, `video-fps-probe/lazy`): the own engine and its two prebuilt workers, one per container family, are built in. Use it unless you build your own worker.
 - **Client flavor** (`video-fps-probe/client`, `video-fps-probe/client/lazy`): no worker is built in. You pass a worker, `'inline'`, or prebuilt descriptors. A host with its own worker uses this flavor so the unused own worker is never emitted.
 
-The `mp4box` and `mediabunny` descriptors each carry their own prebuilt worker, which serves that engine and own. `rvfc`, `worker-runtime` and `engines/*` never reach a worker literal, and `check` and `presets` import no other module. `check-dist` enforces all of this on every build.
+The `mp4box` and `mediabunny` descriptors each carry their own prebuilt worker, which serves that engine and own. `rvfc`, `worker-runtime`, `header` and `engines/*` never reach a worker literal, `header` reaches neither the full ISO BMFF parser nor the statistics, and `check` and `presets` import no other module. `check-dist` enforces all of this on every build.
 
 ## Probes
 
@@ -301,6 +302,88 @@ module.exports = {
 
 `tests/package/jest-cjs` proves the first setup. It is a nested project with its own `package.json` and `package-lock.json`, Jest 30.5.2, babel-jest 30.5.2, Babel 7.29.7 and babel-plugin-transform-import-meta 2.3.3, pinned exactly, and the configuration above. `tests/package/jest-cjs.test.ts` installs the packed tarball into it, runs its one Jest test, which calls `analyze` on an MP4 and `check` with a preset, and compares both with the source. CI installs it with `npm ci --prefix tests/package/jest-cjs` before the package tests on Node 24 and 22.12, which fail in CI without it. Locally the test installs it with `npm ci --offline` and an empty npmrc, and skips with a message when the npm cache lacks it. Babel 7 is used because Babel 8 needs Node 22.18 or newer, above the 22.12 floor of the package.
 
+## Header-only analysis
+
+```ts
+function analyzeHeader(source: Blob | BlobLike, options?: HeaderOptions): Promise<HeaderResult>; // video-fps-probe/header
+
+interface HeaderOptions {
+  name?: string; // default: File.name, or ''
+  signal?: AbortSignal | null;
+  limits?: HeaderLimits;
+  readAhead?: Partial<ReadAheadSizes>; // head (default 65536, at least 1024) and tail (default 262144, at least 16)
+  fragmentedDuration?: 'header' | 'index'; // default 'index'
+}
+
+interface HeaderLimits {
+  maxBytes?: number; // bytes requested from the source, read-ahead included, default 16 MiB
+  maxReads?: number; // source reads issued, default 8
+  maxMs?: number; // wall clock from the call, default 10000
+  maxTracks?: number; // trak boxes in the moov, default 64
+  maxTopLevelBoxes?: number; // top-level box headers visited, default 1024
+}
+
+type HeaderResult = FileResult & { io: IoStats & { bytesRequested: number } };
+const HEADER_DEFAULT_LIMITS: Readonly<Required<HeaderLimits>>;
+```
+
+`analyzeHeader` reads only the container header of an MP4 or MOV file, in the calling thread, under hard limits on the bytes it requests, the reads it issues, the wall time, the tracks and the top-level boxes. It never expands a sample table, never loads the statistics and never walks every fragment, so its cost does not grow with the length of the file. The entry also exports `HEADER_DEFAULT_LIMITS`, `errorCodeOf`, `errorClass`, `warningCodeOf`, `warningCodesOf`, `isAbortError`, `isTimeoutError` and the result types. It reaches neither the full ISO BMFF parser nor the statistics, which `check-dist` enforces, and it starts no worker. WebM and Matroska files answer `unsupported-container` with the text `container not read by the header entry: webm` or `matroska` and `container` set from the DocType.
+
+**Contract.** `analyzeHeader` resolves for every file, read and limit problem, with `error` and `errorCode` set. It rejects only on the caller's abort, with the signal's reason, and on an invalid argument, with a `TypeError`. The reason of `AbortSignal.timeout()` is a `TimeoutError`, so a caller checks `isAbortError(e) || isTimeoutError(e)`. After the call settles no timer and no listener is left behind. A read that cannot be cancelled, from a `Blob` or a `BlobLike` without `read`, may finish in the background, and its rejection is caught.
+
+**Validation.** Every option is checked before the first read. `source.size` must be a non-negative safe integer, every limit a non-negative safe integer or `Infinity`, `readAhead.head` at least 1024 (the sniff window) and `readAhead.tail` at least 16. `readAhead.fragment` and `readAhead.matroskaScan` must be non-negative safe integers too, so that the `readAhead` of `analyze` can be passed as it is, and header mode does not use them. `fragmentedDuration` must be `'header'` or `'index'`, `name` a string and `signal` an `AbortSignal`. The text follows the reader, for example `limits.maxReads must be a non-negative safe integer or Infinity, got -1` or `readAhead.head must be a non-negative safe integer of at least 1024, got 512`.
+
+**A source with a signal.** A `BlobLike` may have `read(start, end, signal)`, which returns the bytes as a `Uint8Array`. Header mode calls it instead of `slice()`, with a signal that aborts on the caller's abort and at the deadline, so a Range source can close its socket.
+
+**Limits.** A read is checked when it is issued: one that would pass `maxReads` or `maxBytes`, or that starts after the deadline, is not issued, and the result carries `read-limit`, `byte-limit` or `time-limit`. The text names the limit, for example `limit reached: maxBytes 2097152 (582927 more bytes needed at offset 10670878)`. Read-ahead is clipped to the bytes left, so it never trips a limit itself. One deadline covers the call: a source that hangs, or that ignores its signal, settles at `maxMs` exactly. The deadline bounds waiting, not parsing: a moov that arrived in time is parsed to the end. `maxTracks` counts the trak boxes of the moov before it is parsed, and `maxTopLevelBoxes` every top-level box header visited, before the moov, after it and in the fragment walk. Both stop with `structure-limit` and the text `limit reached: maxTracks 16` or `limit reached: maxTopLevelBoxes 32`. Every result keeps `io.reads <= maxReads` and `io.bytesRequested <= maxBytes`. `io.reads` and `io.bytesRead` mean what they mean in full mode, and `io.bytesRequested` is the byte count charged against `maxBytes`, read-ahead included.
+
+**Read plan.** The first read takes `readAhead.head` bytes, 64 KiB by default. A box header outside the bytes already read costs one peek of `readAhead.head` bytes, or of `readAhead.tail` bytes (256 KiB) right after an mdat while no moov has been seen. The rest of a moov that did not fit is read in one more read of exactly that rest. Without an `mvex` the walk stops after the moov. With one it reads every top-level sidx before the first moof, then resolves the fragmented duration. Measured with the default limits:
+
+| Layout | Reads | Bytes requested |
+|---|---:|---|
+| a file of 64 KiB or less | 1 | the whole file |
+| faststart, ftyp and moov within 64 KiB | 1 | 64 KiB |
+| faststart, a moov that ends past 64 KiB | 2 | 64 KiB plus the rest of the moov |
+| moov at the end, inside the 256 KiB tail window | 2 | 64 KiB plus up to 256 KiB |
+| moov at the end, a larger moov (2.6 MB in a 3 h file) | 3 | 64 KiB plus 256 KiB plus the rest of the moov |
+| k boxes between the mdat and the moov that the windows miss | 2 + k | bounded by `maxReads` and `maxTopLevelBoxes` |
+| fragmented, a sidx that covers the file and no mfra | 1 | 64 KiB |
+| fragmented with an mfra, its last indexed moof inside the 64 KiB tail | 2 | 128 KiB |
+| fragmented with an mfra, that moof outside the tail | 3, plus 1 per later moof the windows miss | about 128 KiB plus the moofs |
+| fragmented, mehd only or nothing | 1 (`'header'`) or 2 (`'index'`) | an estimated duration, or `no-duration` |
+
+**Fragmented duration.** Each video and sound track is resolved by the first step that applies:
+
+1. A sidx before the first moof that references the track in its timescale, is not hierarchical and covers the file to its end, or to the start of the mfra when the tail was read. Its end, earliest presentation time plus the sum of its durations, is the duration, with provenance `header`. ffmpeg ends every `frag_keyframe` output with an mfra, its global sidx included, so in `'header'` mode such a sidx cannot be checked against the end of the file.
+2. In `'index'` mode only, the mfra index. The 64 KiB tail is read when the budget holds it and one more read. For each track the largest tfra offset is its last indexed moof, and the moofs from the earliest of those to the end are parsed, so the end of every track is the end of its last fragment. Provenance `header`. A limit hit here falls through to the next step, and the result then carries the warning `fragment index not read: limit reached: ...`.
+3. A valid `mehd`, neither 0 nor all ones, gives the duration of every track and of the file, with provenance `estimated`. ffprobe never reads mehd.
+4. Otherwise the error `incomplete header: fragmented file without a sidx, mfra or mehd duration`, code `no-duration`, with the tracks. When step 2 hit a limit, the result carries that limit code instead.
+
+`formatDurationSec` of a fragmented file is the largest end over its video and sound tracks, with the start offsets of the first fragment when it is in the bytes read, as in full mode. When a track with fragment data does not resolve, `formatDurationSec` is null, with the warning `format duration unresolved: track N`, and the video `durationSec` stays set. A recording whose audio outlasts its video therefore never gets a short duration.
+
+**Results.** A header result has `scan: 'header'`. Its tracks keep `presentedFrames`, `minFps`, `maxFps`, `nominalFps`, `dominantFps`, `isVfr`, `rFpsFfprobe`, `medianFrameInterval` and `rateProfile` at null, and `vfrRatio`, `distinctDeltas` and `duplicateTimestamps` at 0, with no provenance for them. On a file without fragments every other field equals full mode: `codecName`, `fourccOrCodecId`, `width`, `height`, `rotation`, `frames`, `isStill`, `enabled`, `durationSec`, `startSec`, `avgFpsFfprobe`, `formatDurationSec`, `layout`, `error` and `errorCode`, and `avgFps` wherever full mode reports `provenance.avgFps` `header`. On a fragmented file `frames`, `avgFps`, `avgFpsFfprobe` and `startSec` are null, `isStill` is true only when the moov and the fragments read hold at most one sample, every indexed fragment was read and the duration is at most one frame interval, and the primary track is the enabled one first, then not a still image, then the largest stored area, then the lowest track ID. `tests/header/parity.test.ts` checks all of this against full mode on every ISO BMFF fixture, and `node scripts/compare-ffprobe.ts --header --no-write` against ffprobe too.
+
+| When | Result |
+|---|---|
+| before the moov is parsed: a limit, `truncated`, `too-large`, `no-header`, `corrupt` or `structure-limit` | `error`, `errorCode`, `container`, `brand` and `layout` as far as seen, `videoTracks: []`, `primaryTrackId: null` |
+| after the moov, the fragmented duration not resolved | `error` and `errorCode`, with `videoTracks`, `enabled` and `primaryTrackId` |
+
+`check()` judges any result with an `error` as unknown, as in 0.3.0.
+
+**A tight server configuration.** The defaults are generous, so that a header of any size within reason is read. A server that reads uploads from object storage can bound each call much tighter:
+
+```ts
+import { analyzeHeader } from 'video-fps-probe/header';
+
+const result = await analyzeHeader(source, {
+  name: key,
+  signal,
+  limits: { maxBytes: 2 * 1024 * 1024, maxReads: 3, maxMs: 2500, maxTracks: 16, maxTopLevelBoxes: 32 },
+});
+```
+
+With these limits the 3 h moov-at-end file stops with `byte-limit` after 2 reads, with `layout.kind` `moov-at-end` and `layout.moovSize` set, the 604 MB moov-at-end file takes 2 reads and about 77 KB, and the 604 MB faststart file 1 read. `fragmentedDuration: 'header'` keeps a fragmented file to one read, at the cost of `no-duration` for files whose duration only the mfra gives, such as the browser recordings of MediaRecorder.
+
 ## Engines
 
 ### Descriptors
@@ -399,7 +482,7 @@ type ProbeResult = FileResult & {
 | `container` | `'mp4' \| 'mov' \| 'webm' \| 'matroska' \| 'unknown'` | from the ftyp brand or the EBML DocType |
 | `brand` | string or null | major brand or DocType |
 | `formatDurationSec` | number or null | the format duration ffprobe prints |
-| `scan` | `'header' \| 'probe' \| 'exact'` or null | how far a Matroska scan went; null for ISO BMFF |
+| `scan` | `'header' \| 'probe' \| 'exact'` or null | how far the scan went: `'exact'` for an ISO BMFF file read in full, the depth of a Matroska scan, `'header'` on every result of `video-fps-probe/header`, and null when a full-mode analysis failed |
 | `videoTracks` | `VideoTrackResult[]` | every video track |
 | `audioTrackCount` | number | audio tracks seen |
 | `primaryTrackId` | number or null | the track the summary uses: the enabled ISO BMFF track with the most samples, or the first Matroska video track |
@@ -407,7 +490,7 @@ type ProbeResult = FileResult & {
 | `errorCode` | `FileErrorCode` or null | the machine-readable code of `error`, null exactly when `error` is null ([error codes](#error-codes)). Set by own. Absent on results of mp4box, mediabunny and rvfc and on results of 0.3.0, which `errorCodeOf` codes from their text |
 | `layout` | `ContainerLayout` or null | the top-level layout of an ISO BMFF file, also when it failed, as far as it was read ([layout](#containerlayout)). Null for Matroska and WebM, for an unrecognised file, and when neither a moov nor an mdat was seen. Set by own |
 | `warnings` | string[] | file-level warnings in plain words; NUL and other control characters from the file are replaced by `?` |
-| `io` | `{ reads, bytesRead, ms }` | `Blob.slice()` reads, unique bytes read, and the analysis time in the thread that ran it (chunk loading excluded) |
+| `io` | `{ reads, bytesRead, ms }` | `Blob.slice()` reads, unique bytes read, and the analysis time in the thread that ran it (chunk loading excluded). Results of `video-fps-probe/header` add `bytesRequested`, the bytes requested from the source, read-ahead included, which `maxBytes` bounds |
 | `engine` | `'own' \| 'mp4box' \| 'mediabunny' \| 'rvfc'` | which engine produced the result |
 
 ### VideoTrackResult
@@ -490,14 +573,14 @@ The code travels with the failure, not with its text: every `error` reads as it 
 | `no-header` | file | `incomplete file: no moov`, `no Segment element`, `no Tracks element found` |
 | `truncated` | file | `incomplete file: moov is truncated`, `no complete TrackEntry in Tracks` |
 | `corrupt` | file | every other `corrupt file: ...` of a malformed file, `invalid EBML header`, and a malformed value that stopped the parser |
-| `no-duration` | file | reserved for the header-only mode: a fragmented file whose duration no index gives |
-| `byte-limit`, `read-limit`, `time-limit`, `structure-limit` | limit | reserved for the header-only mode and its limits |
+| `no-duration` | file | `incomplete header: fragmented file without a sidx, mfra or mehd duration`, from `video-fps-probe/header` only |
+| `byte-limit`, `read-limit`, `time-limit`, `structure-limit` | limit | `limit reached: maxBytes <n> (<m> more bytes needed at offset <o>)`, `limit reached: maxReads <n>`, `limit reached: maxMs <n>`, `limit reached: maxTracks <n>` and `limit reached: maxTopLevelBoxes <n>`, from `video-fps-probe/header` only ([limits](#header-only-analysis)) |
 | `read-failed` | io | `file read failed: <error>` and `file read failed: short read ...` |
 | `load-failed` | environment | the parser or statistics chunk of own did not load, for example after a redeploy |
 | `engine-failed` | file | a failure of mp4box, mediabunny or rvfc, from `errorCodeOf` only |
-| `internal` | internal | an invalid argument, such as a `readAhead.head` or `readAhead.fragment` that is not a non-negative safe integer or a `BlobLike` whose `size` is not a non-negative safe integer, and any other exception, a bug in the package. Never a property of the file. In ISO BMFF its text starts with `corrupt file: ` as in 0.3.0, for example `corrupt file: readAhead must be a non-negative safe integer, got -1` |
+| `internal` | internal | an invalid argument to `analyze` or a probe, such as a `readAhead.head` or `readAhead.fragment` that is not a non-negative safe integer or a `BlobLike` whose `size` is not a non-negative safe integer, and any other exception, a bug in the package. Never a property of the file. In ISO BMFF its text starts with `corrupt file: ` as in 0.3.0, for example `corrupt file: readAhead must be a non-negative safe integer, got -1`. `analyzeHeader` checks every option before it reads and throws a `TypeError` for an invalid one instead, so its `internal` is a bug only |
 
-One invalid argument can still read as a file code: a `readAhead.matroskaScan` that is not a safe integer, such as NaN, Infinity or 2^60, can fail the exact Matroska scan as `corrupt`, with the 0.3.0 text `length must be a non-negative safe integer, got NaN`. Pass a whole number of bytes.
+One invalid argument to `analyze` can still read as a file code: a `readAhead.matroskaScan` that is not a safe integer, such as NaN, Infinity or 2^60, can fail the exact Matroska scan as `corrupt`, with the 0.3.0 text `length must be a non-negative safe integer, got NaN`. Pass a whole number of bytes. `analyzeHeader` throws a `TypeError` for it instead.
 
 `errorClass` sorts the codes for caching and retries. `file` codes are deterministic: the same bytes and package version give the same code, so a server can cache them per object. `engine-failed` is deterministic only for the parsing engines, mp4box and mediabunny. An rvfc failure, such as `tab not visible: keep it in the foreground` or `requestVideoFrameCallback unsupported`, comes from the browser and not from the file. `byte-limit`, `read-limit` and `structure-limit` repeat for the same limits, while `time-limit` depends on the source and the machine, so do not cache it. `read-failed` and `load-failed` are transient and worth a retry. `internal` describes the call, an invalid argument or a bug in the package, and not the file, so do not cache it per object. A code this version does not know, from a later one, is `internal` too, and is not cached either.
 
