@@ -567,3 +567,24 @@ So the container wins over the SPS, not the reverse. A container reader is right
 - `fmp4_mehd_valid.mp4` prints the format duration 4.004000, as without the mehd: ffprobe never reads it.
 - `faststart_large_moov.mp4` has a moov of 72,831 bytes at offset 32, above a 64 KiB head read, with one stts entry per frame.
 - `mov_cmov.mov`: ffprobe reads the zlib-compressed moov (30 frames, 1.001000 s). The own parser answers `unsupported: compressed movie header (cmov)`, so the manifest row expects an error with the code `unsupported`. The `expect` column states the outcome of the app, so the `error` check of this row is exact and not a known deviation, although ffprobe reads the file, as for `corrupt_png_named.mp4`.
+
+## 17. Measured gzip cost of the 0.4.0 parser fields
+
+Measured on 2026-10-30 with `npm run build:lib` and the gzip level 9 of `node:zlib`, which the size matrix uses, on the standalone worker files. Each row is the growth of that commit over the one before it, so the rows add up to the total of the stage. The 0.4.0 design estimated 0.12 KB for the error codes, 0.08 KB for the layout and 0.02 KB for the median on the first MP4 path.
+
+| Change | `own-isobmff.worker.js` | `own-matroska.worker.js` | `own.worker.js` |
+|---|---:|---:|---:|
+| error codes at every throw site, the reader and the dispatch | +126 | -11 | +72 |
+| `layout` | +201 | +7 | +193 |
+| `medianFrameInterval` | +61 | +54 | +72 |
+| the median inside the statistics | 0 | +33 | +32 |
+| renamed code helpers | -29 | +2 | +5 |
+| a shared setup of the two ISO BMFF result paths, later reverted | +12 | 0 | -10 |
+| `enabled` | +6 | +23 | +31 |
+| the revert of the shared setup | -12 | 0 | +12 |
+| invalid caller input coded `internal` | +19 | +22 | +20 |
+| **total over 0.3.0** | **+384 (gate 390)** | **+130 (gate 200)** | **+427 (gate 590)** |
+
+The layout cost 2.5 times its estimate: the walk over the top-level boxes and the five members are about 0.15 KB of it. Dropping `moovOffset` and `emptyMoov` saves 0.04 KB.
+
+The sample aspect ratio does not fit the 0.39 KB share of the first MP4 path. On top of the rows above, a compact ISO BMFF rule (the `pasp`, the tkhd matrix multiplied with the mvhd matrix, and the tkhd size, with the FFmpeg conversion of a ratio of doubles) costs +240 bytes on `own-isobmff.worker.js`, the `pasp` and the tkhd size alone +160, and the `pasp` alone +109, most of it the plumbing of the matrix and the provenance. The first MP4 row of the zero-config configuration had 96 bytes left under its 24.95 KB cap before it.
