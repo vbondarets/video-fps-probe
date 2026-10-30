@@ -604,7 +604,7 @@ The header walk needs the ISO BMFF track builder without the full parser, which 
 | the same with one early return for broken tracks and header mode | +13 to +21 | |
 | the same with the eleven statistics fields copied in a loop | -14 to +1 | the shipped arrangement |
 
-So `build.ts` also holds the full-mode walk, and `buildVideoTrack(track, movie, options, context, timeline?)` runs the per-sample part only when it is given `analyzeTimeline`. `index.ts` imports `build.ts` right after the statistics, and `build.ts` imports `model.ts` for its types only, which keeps the module order of the bundles. Header mode calls the builder without the statistics, so the per-sample part stays in the header bundle unused: 2.37 KB of its 17.91 KB, measured by bundling the entry with and without it. Moving that part out of the shared builder costs the first MP4 more than the 0.01 KB share of this stage, so stage 5, which has a 0.05 KB share in the parser, is the earliest place to try it.
+So `build.ts` also holds the full-mode walk, and `buildVideoTrack(track, movie, options, context, timeline?)` runs the per-sample part only when it is given `analyzeTimeline`. `index.ts` imports `build.ts` right after the statistics, and `build.ts` imports `model.ts` for its types only, which keeps the module order of the bundles. Header mode calls the builder without the statistics, so the per-sample part stays in the header bundle unused: 2.37 KB of its 17.92 KB, measured by bundling the entry with and without it. Moving that part out of the shared builder costs the first MP4 more than the 0.01 KB share of this stage, so stage 5, which has a 0.05 KB share in the parser, is the earliest place to try it.
 
 ### What the header walk reads
 
