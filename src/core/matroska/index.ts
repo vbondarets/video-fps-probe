@@ -290,7 +290,7 @@ function pickEvenly(list: readonly number[], k: number): number[] {
 }
 
 async function tailScan(src: ByteSource, h: MkvHeader, video: readonly MkvTrack[], first: number, opts: ResolvedAnalyzeOptions): Promise<{ st: ScanState; maxAnyTicks: number } | null> {
-  let size = Math.max(opts.readAhead.tail, 4096);
+  let size = Math.max(opts.readAhead.tail || 0, 4096);
   let hi = h.segmentEnd;
   let maxAnyTicks = -Infinity;
   for (;;) {

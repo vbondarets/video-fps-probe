@@ -15,6 +15,10 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 - The first MP4 loads 23.07 KB gzip (22.73 KB in 0.3.0), 24.86 KB with Vite's default worker format (24.47 KB), and the first WebM or MKV 25.73 KB (25.54 KB) ([size matrix](report/size-matrix.md)).
 
+### Fixed
+
+- A `readAhead.tail` that is NaN no longer spins the Matroska probe forever: it scans the smallest tail, as every value below 4096 does.
+
 ## 0.3.0 - 2026-10-30
 
 ### Added

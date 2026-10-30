@@ -562,6 +562,15 @@ describe('error codes, median frame interval and enabled', () => {
     expect((await run(fine)).videoTracks[0].medianFrameInterval).toEqual({ num: 1, den: 25, value: 1 / 25 });
   });
 
+  it('a tail size that is not a number scans the smallest tail instead of spinning', async () => {
+    const blob = await openAsBlob(join(FILES_DIR, 'cfr_vp9_30.webm'));
+    const smallest = await run(blob, { matroskaMode: 'probe', readAhead: { tail: 4096 } });
+    for (const tail of [Number.NaN, 0, -1]) {
+      const r = await run(blob, { matroskaMode: 'probe', readAhead: { tail } });
+      expect({ ...r, io: { ...r.io, ms: 0 } }).toEqual({ ...smallest, io: { ...smallest.io, ms: 0 } });
+    }
+  });
+
   it('mergeRunStats gives the median interval of the merged runs', () => {
     const a = analyzeTimeline({ timescale: 1000, pts: [0, 33, 67, 100], tickQuantized: true });
     const b = analyzeTimeline({ timescale: 1000, pts: [1000, 1033, 1067, 1100], tickQuantized: true });
