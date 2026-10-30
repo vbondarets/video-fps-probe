@@ -327,6 +327,72 @@ for f in $(awk -F'\t' '$3 == "recorder" { print $1 }' "$MANIFEST"); do
   [[ -f "$f" ]] || cp "$HERE/../../fixtures/files/$f" "$f"
 done
 
+# ---------- P. Aspect ratio, color, HDR, Dolby Vision, a disabled track and header layouts: 1 s clips, byte patches for what ffmpeg does not write ----------
+S1="$(src 30000/1001 1)"
+H265X=(-c:v libx265 -preset ultrafast -crf 32 -pix_fmt yuv420p10le -x265-params log-level=error:keyint=30 -an)
+PQ="setparams=color_primaries=bt2020:color_trc=smpte2084:colorspace=bt2020nc:range=tv"
+HLG="setparams=color_primaries=bt2020:color_trc=arib-std-b67:colorspace=bt2020nc:range=tv"
+"${FF[@]}" -f lavfi -i "$(src 30000/1001 1 160x120)" -vf setsar=4/3 "${H264[@]}" sar_h264_4x3.mp4
+note sar_h264_4x3.mp4 mp4 sar ok "160x120 with a 4:3 sample aspect ratio in pasp and in the SPS VUI: ffprobe sample_aspect_ratio 4:3, display_aspect_ratio 16:9"
+"${FF[@]}" -f lavfi -i "$S1" "${H264[@]}" "$W/sar_base.mp4"
+node "$TOOLS/patch-mp4.mjs" pasp "$W/sar_base.mp4" sar_pasp_only.mp4 4:3 > /dev/null
+note sar_pasp_only.mp4 mp4 sar ok "pasp says 4:3, the SPS VUI says 1:1: ffprobe prints the pasp ratio 4:3 (display 64:27)"
+node "$TOOLS/patch-mp4.mjs" tkhdsize "$W/sar_base.mp4" sar_tkhd_only.mp4 240x90 > /dev/null
+note sar_tkhd_only.mp4 mp4 sar ok "pasp renamed to free, tkhd says 240x90 over a 160x90 stream (VUI 1:1): ffprobe derives 3:2 from the tkhd size"
+node "$TOOLS/patch-mp4.mjs" matrix "$W/sar_base.mp4" sar_matrix_scale.mp4 2,0,0,1 > /dev/null
+note sar_matrix_scale.mp4 mp4 sar ok "pasp renamed to free, tkhd matrix scales x by 2 (VUI 1:1): ffprobe derives 2:1 from the matrix and prints a Display Matrix side data entry"
+"${FF[@]}" -f lavfi -i "$S1" -vf setsar=0 "${H264[@]}" sar_none.mp4
+note sar_none.mp4 mp4 sar ok "unknown sample aspect ratio: no pasp and no VUI aspect ratio, ffprobe prints N/A for sample_aspect_ratio and display_aspect_ratio"
+"${FF[@]}" -f lavfi -i "$(src 30000/1001 1 160x120)" -vf setsar=4/3 "${H264[@]}" "${BX[@]}" -f matroska sar_4x3.mkv
+note sar_4x3.mkv matroska sar ok "160x120 with a 4:3 sample aspect ratio: ffmpeg writes DisplayWidth 16, DisplayHeight 9 and DisplayUnit 3 (aspect ratio), ffprobe prints 4:3"
+node "$TOOLS/patch-mp4.mjs" tkhdflags "$W/sar_base.mp4" track_disabled.mp4 2 > /dev/null
+note track_disabled.mp4 mp4 multi ok "the only video track has the tkhd enabled flag cleared (flags 2): ffprobe disposition.default 0, the track is still decoded"
+"${FF[@]}" -f lavfi -i "$S1" -vf "$PQ" "${H265X[@]}" -tag:v hvc1 -f mp4 hdr10_hevc10.mp4
+note hdr10_hevc10.mp4 mp4 color ok "10-bit HEVC Main 10, BT.2020 primaries, PQ transfer, BT.2020 non-constant matrix, limited range, in colr nclx and in the SPS VUI"
+"${FF[@]}" -f lavfi -i "$S1" -vf "$PQ" "${H265X[@]}" "${BX[@]}" -f matroska hdr10_hevc10.mkv
+note hdr10_hevc10.mkv matroska color ok "the same PQ stream in Matroska: Colour with MatrixCoefficients, Range, TransferCharacteristics and Primaries"
+"${FF[@]}" -f lavfi -i "$S1" -vf "$HLG" "${H265X[@]}" -tag:v hvc1 -f mp4 hlg_hevc10.mp4
+note hlg_hevc10.mp4 mp4 color ok "10-bit HEVC with BT.2020 primaries and the HLG transfer (arib-std-b67) in colr nclx and in the SPS VUI"
+"${FF[@]}" -f lavfi -i "$S1" -vf "$HLG" "${H264[@]}" hlg_h264_8bit.mp4
+note hlg_h264_8bit.mp4 mp4 color ok "8-bit H.264 that keeps the BT.2020 and HLG tags in colr nclx and in the SPS VUI"
+"${FF[@]}" -f lavfi -i "$S1" -vf "$PQ" "${VP9[@]}" -pix_fmt yuv420p10le "${BX[@]}" -f webm vp9_p2_10bit.webm
+note vp9_p2_10bit.webm webm color ok "VP9 profile 2, 10-bit, PQ tags in the Colour element and no CodecPrivate: the profile and the bit depth are only in the bitstream"
+"${FF[@]}" -f lavfi -i "$S1" -vf "$PQ" "${VP9[@]}" -pix_fmt yuv420p10le -f mp4 vp9_p2_10bit.mp4
+note vp9_p2_10bit.mp4 mp4 color ok "VP9 profile 2, 10-bit, in MP4: vpcC version 1 and colr nclx both carry the PQ tags"
+"${FF[@]}" -f lavfi -i "$S1" -c:v libaom-av1 -cpu-used 8 -crf 45 -b:v 0 -g 30 -pix_fmt yuv420p10le -an -f mp4 av1_10bit.mp4
+note av1_10bit.mp4 mp4 color ok "AV1 Main, 10-bit (av1C high_bitdepth), no color tags in the container"
+"${FF[@]}" -f lavfi -i "$S1" -vf "setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709:range=pc" "${H264[@]}" -f mov colr_nclc.mov
+note colr_nclc.mov mov color ok "MOV colr nclc (BT.709, no range field) over an SPS VUI with full range: ffprobe takes the range from the VUI (pc)"
+node "$TOOLS/patch-mp4.mjs" colr rec_chromium_h264.mp4 colr_vui_conflict.mp4 nclx:9,16,9,0 > /dev/null
+note colr_vui_conflict.mp4 mp4 color ok "rec_chromium_h264.mp4 with its colr rewritten to BT.2020, PQ, BT.2020 non-constant, limited range over an SPS VUI that says BT.709, sRGB, BT.709, full range: ffprobe prints every colr value"
+node "$TOOLS/patch-mp4.mjs" colr hdr10_hevc10.mp4 colr_vui_conflict_hevc.mp4 nclx:1,1,1,0 > /dev/null
+note colr_vui_conflict_hevc.mp4 mp4 color ok "hdr10_hevc10.mp4 with its colr rewritten to BT.709 over a PQ SPS VUI: ffprobe prints the colr values"
+node "$TOOLS/patch-mp4.mjs" colr "$W/sar_base.mp4" colr_only_h264.mp4 nclx:9,16,9,0 > /dev/null
+note colr_only_h264.mp4 mp4 color ok "H.264 without a VUI video signal type, colr nclx BT.2020 and PQ added: ffprobe prints the colr values"
+"${FF[@]}" -f lavfi -i "$S1" "${H265X[@]}" -tag:v hvc1 -f mp4 "$W/hevc10_plain.mp4"
+node "$TOOLS/patch-mp4.mjs" colr "$W/hevc10_plain.mp4" colr_only_hevc.mp4 nclx:9,16,9,0 > /dev/null
+note colr_only_hevc.mp4 mp4 color ok "10-bit HEVC whose VUI has a video signal type without a colour description, colr nclx BT.2020 and PQ added: ffprobe prints the colr values"
+node "$TOOLS/patch-mp4.mjs" colr hlg_hevc10.mp4 hlg_vui_only.mp4 free > /dev/null
+note hlg_vui_only.mp4 mp4 color ok "hlg_hevc10.mp4 with its colr renamed to free: only the SPS VUI carries the HLG tags, and ffprobe prints them"
+node "$TOOLS/patch-mp4.mjs" dvvc hdr10_hevc10.mp4 dv_p81_dvvc.mp4 8,1,1,1 > /dev/null
+note dv_p81_dvvc.mp4 mp4 dovi ok "hdr10_hevc10.mp4 with a dvvC record appended to hvc1: Dolby Vision profile 8, level 1, compatibility id 1, metadata compression 1 (limited)"
+node "$TOOLS/patch-mp4.mjs" dvcc hdr10_hevc10.mp4 dv_p5_dvcc_dvh1.mp4 5,2,0,0,dvh1 > /dev/null
+note dv_p5_dvcc_dvh1.mp4 mp4 dovi ok "hdr10_hevc10.mp4 with the entry renamed to dvh1 and a dvcC record: Dolby Vision profile 5, level 2, compatibility id 0, no metadata compression"
+node "$TOOLS/patch-webm.mjs" dvmap hdr10_hevc10.mkv dv_p81.mkv 8,1,1,1 > /dev/null
+note dv_p81.mkv matroska dovi ok "hdr10_hevc10.mkv with a BlockAdditionMapping of type dvvC where ffmpeg writes one: Dolby Vision profile 8, level 1, compatibility id 1, metadata compression 1"
+node "$TOOLS/patch-mp4.mjs" mehd fmp4_default_base_moof.mp4 fmp4_mehd_valid.mp4 0000000000000fa4 > /dev/null
+note fmp4_mehd_valid.mp4 mp4 fmp4 ok "fmp4_default_base_moof.mp4 with a version 1 mehd of 4004 ms, the true duration: ffprobe never reads mehd"
+AUD25=(-f lavfi -i "sine=frequency=440:sample_rate=44100:duration=2.5")
+"${FF[@]}" -f lavfi -i "$(src 30 2)" "${AUD25[@]}" -map 0:v -map 1:a "${H264V[@]}" -c:a aac -b:a 32k -movflags frag_keyframe+empty_moov+default_base_moof fmp4_audio_longer.mp4
+note fmp4_audio_longer.mp4 mp4 fmp4 ok "fragmented 2 s video with 2.5 s of AAC audio, empty moov, mfra at the end: the format duration follows the audio"
+"${FF[@]}" -f lavfi -i "$(src 30 2)" "${AUD25[@]}" -map 0:v -map 1:a "${H264V[@]}" -c:a aac -b:a 32k -movflags frag_keyframe+empty_moov+default_base_moof+global_sidx fmp4_audio_longer_sidx.mp4
+note fmp4_audio_longer_sidx.mp4 mp4 fmp4 ok "the same with a global sidx per track after the moov, and an mfra at the end"
+"${FF[@]}" -f lavfi -i "color=c=gray:size=64x36:rate=30:duration=200" -vf "settb=1/90000,setpts='N*3000+mod(N,2)*500'" -c:v libx264 -preset ultrafast -crf 51 -pix_fmt yuv420p -g 600 -bf 0 -an -x264-params scenecut=0:keyint=600 "${VFR[@]}" -enc_time_base:v 1/90000 -video_track_timescale 90000 -movflags +faststart faststart_large_moov.mp4
+note faststart_large_moov.mp4 mp4 mov ok "faststart with a moov of 72831 bytes, above 64 KiB: 6000 frames whose durations alternate 3500 and 2500 ticks, one stts entry per frame"
+"${FF[@]}" -f lavfi -i "$S1" "${H264[@]}" -f mov "$W/mov_1s.mov"
+node "$TOOLS/patch-mp4.mjs" cmov "$W/mov_1s.mov" mov_cmov.mov > /dev/null
+note mov_cmov.mov mov mov error "MOV whose moov is zlib-compressed into cmov (dcom, cmvd), as old QuickTime writers did: ffprobe reads it, the app reports it unsupported"
+
 # ---------- L. Optional heavy files (manifest rows are always written, files only on request) ----------
 note_large long_cfr_3h_60fps.mp4 mp4 long ok "3 h x 60 fps = 648000 frames, 64x36, crf 51: 13 MB, moov 2.6 MB at the end (stsz 4 B/frame)"
 note_large long_vfr_1h_screenrec.mp4 mp4 long ok "1 h VFR screen-recording-like: 133920 frames, stts has 124761 entries (~1 MB)"

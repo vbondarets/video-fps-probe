@@ -198,7 +198,7 @@ describe('rate profile on fixtures', () => {
         cfr++;
       }
     }
-    expect(vfr).toBe(37);
+    expect(vfr).toBe(41);
     expect(cfr).toBe(0);
   });
 

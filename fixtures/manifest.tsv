@@ -129,6 +129,34 @@ rec_chromium_h264.mp4	mp4	recorder	ok	yes	Chromium 156 MediaRecorder video/mp4;c
 rec_chromium_h264_sliced.mp4	mp4	recorder	ok	yes	Chromium 156 MediaRecorder video/mp4;codecs=avc1, 250 ms timeslice: fragmented, mvhd duration 0, no mfra	files/rec_chromium_h264_sliced.mp4
 rec_chromium_vp9.mp4	mp4	recorder	ok	yes	Chromium 156 MediaRecorder video/mp4 (recorded as video/mp4;codecs=vp9), one piece: fragmented (empty moov, moof mdat, mfra), mvhd duration set	files/rec_chromium_vp9.mp4
 rec_chromium_vp9_sliced.mp4	mp4	recorder	ok	yes	Chromium 156 MediaRecorder video/mp4 (recorded as video/mp4;codecs=vp9), 250 ms timeslice: fragmented, mvhd duration 0, no mfra	files/rec_chromium_vp9_sliced.mp4
+sar_h264_4x3.mp4	mp4	sar	ok	yes	160x120 with a 4:3 sample aspect ratio in pasp and in the SPS VUI: ffprobe sample_aspect_ratio 4:3, display_aspect_ratio 16:9	files/sar_h264_4x3.mp4
+sar_pasp_only.mp4	mp4	sar	ok	yes	pasp says 4:3, the SPS VUI says 1:1: ffprobe prints the pasp ratio 4:3 (display 64:27)	files/sar_pasp_only.mp4
+sar_tkhd_only.mp4	mp4	sar	ok	yes	pasp renamed to free, tkhd says 240x90 over a 160x90 stream (VUI 1:1): ffprobe derives 3:2 from the tkhd size	files/sar_tkhd_only.mp4
+sar_matrix_scale.mp4	mp4	sar	ok	yes	pasp renamed to free, tkhd matrix scales x by 2 (VUI 1:1): ffprobe derives 2:1 from the matrix and prints a Display Matrix side data entry	files/sar_matrix_scale.mp4
+sar_none.mp4	mp4	sar	ok	yes	unknown sample aspect ratio: no pasp and no VUI aspect ratio, ffprobe prints N/A for sample_aspect_ratio and display_aspect_ratio	files/sar_none.mp4
+sar_4x3.mkv	matroska	sar	ok	yes	160x120 with a 4:3 sample aspect ratio: ffmpeg writes DisplayWidth 16, DisplayHeight 9 and DisplayUnit 3 (aspect ratio), ffprobe prints 4:3	files/sar_4x3.mkv
+track_disabled.mp4	mp4	multi	ok	yes	the only video track has the tkhd enabled flag cleared (flags 2): ffprobe disposition.default 0, the track is still decoded	files/track_disabled.mp4
+hdr10_hevc10.mp4	mp4	color	ok	yes	10-bit HEVC Main 10, BT.2020 primaries, PQ transfer, BT.2020 non-constant matrix, limited range, in colr nclx and in the SPS VUI	files/hdr10_hevc10.mp4
+hdr10_hevc10.mkv	matroska	color	ok	yes	the same PQ stream in Matroska: Colour with MatrixCoefficients, Range, TransferCharacteristics and Primaries	files/hdr10_hevc10.mkv
+hlg_hevc10.mp4	mp4	color	ok	yes	10-bit HEVC with BT.2020 primaries and the HLG transfer (arib-std-b67) in colr nclx and in the SPS VUI	files/hlg_hevc10.mp4
+hlg_h264_8bit.mp4	mp4	color	ok	yes	8-bit H.264 that keeps the BT.2020 and HLG tags in colr nclx and in the SPS VUI	files/hlg_h264_8bit.mp4
+vp9_p2_10bit.webm	webm	color	ok	yes	VP9 profile 2, 10-bit, PQ tags in the Colour element and no CodecPrivate: the profile and the bit depth are only in the bitstream	files/vp9_p2_10bit.webm
+vp9_p2_10bit.mp4	mp4	color	ok	yes	VP9 profile 2, 10-bit, in MP4: vpcC version 1 and colr nclx both carry the PQ tags	files/vp9_p2_10bit.mp4
+av1_10bit.mp4	mp4	color	ok	yes	AV1 Main, 10-bit (av1C high_bitdepth), no color tags in the container	files/av1_10bit.mp4
+colr_nclc.mov	mov	color	ok	yes	MOV colr nclc (BT.709, no range field) over an SPS VUI with full range: ffprobe takes the range from the VUI (pc)	files/colr_nclc.mov
+colr_vui_conflict.mp4	mp4	color	ok	yes	rec_chromium_h264.mp4 with its colr rewritten to BT.2020, PQ, BT.2020 non-constant, limited range over an SPS VUI that says BT.709, sRGB, BT.709, full range: ffprobe prints every colr value	files/colr_vui_conflict.mp4
+colr_vui_conflict_hevc.mp4	mp4	color	ok	yes	hdr10_hevc10.mp4 with its colr rewritten to BT.709 over a PQ SPS VUI: ffprobe prints the colr values	files/colr_vui_conflict_hevc.mp4
+colr_only_h264.mp4	mp4	color	ok	yes	H.264 without a VUI video signal type, colr nclx BT.2020 and PQ added: ffprobe prints the colr values	files/colr_only_h264.mp4
+colr_only_hevc.mp4	mp4	color	ok	yes	10-bit HEVC whose VUI has a video signal type without a colour description, colr nclx BT.2020 and PQ added: ffprobe prints the colr values	files/colr_only_hevc.mp4
+hlg_vui_only.mp4	mp4	color	ok	yes	hlg_hevc10.mp4 with its colr renamed to free: only the SPS VUI carries the HLG tags, and ffprobe prints them	files/hlg_vui_only.mp4
+dv_p81_dvvc.mp4	mp4	dovi	ok	yes	hdr10_hevc10.mp4 with a dvvC record appended to hvc1: Dolby Vision profile 8, level 1, compatibility id 1, metadata compression 1 (limited)	files/dv_p81_dvvc.mp4
+dv_p5_dvcc_dvh1.mp4	mp4	dovi	ok	yes	hdr10_hevc10.mp4 with the entry renamed to dvh1 and a dvcC record: Dolby Vision profile 5, level 2, compatibility id 0, no metadata compression	files/dv_p5_dvcc_dvh1.mp4
+dv_p81.mkv	matroska	dovi	ok	yes	hdr10_hevc10.mkv with a BlockAdditionMapping of type dvvC where ffmpeg writes one: Dolby Vision profile 8, level 1, compatibility id 1, metadata compression 1	files/dv_p81.mkv
+fmp4_mehd_valid.mp4	mp4	fmp4	ok	yes	fmp4_default_base_moof.mp4 with a version 1 mehd of 4004 ms, the true duration: ffprobe never reads mehd	files/fmp4_mehd_valid.mp4
+fmp4_audio_longer.mp4	mp4	fmp4	ok	yes	fragmented 2 s video with 2.5 s of AAC audio, empty moov, mfra at the end: the format duration follows the audio	files/fmp4_audio_longer.mp4
+fmp4_audio_longer_sidx.mp4	mp4	fmp4	ok	yes	the same with a global sidx per track after the moov, and an mfra at the end	files/fmp4_audio_longer_sidx.mp4
+faststart_large_moov.mp4	mp4	mov	ok	yes	faststart with a moov of 72831 bytes, above 64 KiB: 6000 frames whose durations alternate 3500 and 2500 ticks, one stts entry per frame	files/faststart_large_moov.mp4
+mov_cmov.mov	mov	mov	error	yes	MOV whose moov is zlib-compressed into cmov (dcom, cmvd), as old QuickTime writers did: ffprobe reads it, the app reports it unsupported	files/mov_cmov.mov
 long_cfr_3h_60fps.mp4	mp4	long	ok	no	3 h x 60 fps = 648000 frames, 64x36, crf 51: 13 MB, moov 2.6 MB at the end (stsz 4 B/frame)	large/long_cfr_3h_60fps.mp4
 long_vfr_1h_screenrec.mp4	mp4	long	ok	no	1 h VFR screen-recording-like: 133920 frames, stts has 124761 entries (~1 MB)	large/long_vfr_1h_screenrec.mp4
 big_1080p_moov_end.mp4	mp4	big	ok	no	60 s of 1080p30 H.264 with film-grain noise, CRF 21 (604 MB), moov at the end: a phone-sized upload, measured in the browser	large/big_1080p_moov_end.mp4
