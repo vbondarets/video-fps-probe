@@ -256,6 +256,9 @@ jobs:
           path: report/size-matrix.*
           if-no-files-found: ignore
 
+      - name: Gate the size matrix against the 0.3.0 baseline and the stage shares
+        run: node scripts/size-gate.mjs
+
       - name: Check the generated doc tables against this measurement
         run: node scripts/readme-tables.ts --check
 
