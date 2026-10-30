@@ -1,7 +1,7 @@
 {
   "name": "video-fps-probe",
   "private": false,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Video frame rate, frame count and VFR detection from MP4/MOV/WebM/MKV container headers in a Web Worker. Matches ffprobe 8.1.1 on the test corpus (0 mismatches), no decoding.",
   "type": "module",
   "license": "MIT",
