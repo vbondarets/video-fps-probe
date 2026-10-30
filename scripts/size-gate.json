@@ -7,8 +7,8 @@
   "stageBaseSha256": "1b6c24749acae07a3fea4b2477d8c88517d303c617f629c6c3f8b179db6f5fe2",
   "unit": "gzip bytes, KB = 1000 bytes. growth is the cumulative allowance over the 0.3.0 baseline after each 0.4.0 stage (null: no growth limit), the share of a stage is its growth minus the growth of the stage before and bounds the growth over the stage base, cap is a fixed limit in bytes (null: a growth-only row), and exact keeps a row byte-identical to the baseline while its growth is not null",
   "frozen": {
-    "stages": { "1": [], "3": [], "4": [], "6": ["check", "preset"] },
-    "why": "The 0.4.0 steps that add no code to the browser paths, or only to the rule entries, keep every row that no group gates, and every gated row without a share, byte-identical to the report they start from. The listed configurations are the ones such a step may move."
+    "stages": { "1": [], "3": [], "4": [], "6": ["check:trigger", "check:entry", "check:check", "preset:trigger", "preset:entry", "preset:check"] },
+    "why": "The 0.4.0 steps that add no code to the browser paths, or only to the rule entries, keep every row that no group gates, and every gated row without a share, byte-identical to the report they start from. The listed rows are the only ones such a step may move: the critical path, the entry chunk and the check chunk of the check and preset configurations."
   },
   "groups": [
     {

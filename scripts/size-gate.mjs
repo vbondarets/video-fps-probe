@@ -18,9 +18,9 @@ when a row that must stay byte-identical changes, or when a gated row is missing
 
 The share of a stage is its cumulative allowance minus the allowance of the stage before. In a stage
 listed under frozen.stages, every row whose share is 0 and every row no group gates must equal the stage
-base, except in the configurations that the stage lists. A stage that starts from a report other than the
-baseline commits that report as fixtures/snapshots/size-matrix-s<previous stage>.json and points
-stageBase and stageBaseSha256 at it.
+base, except the rows that the stage lists. A stage that starts from a report other than the baseline
+commits that report as fixtures/snapshots/size-matrix-s<previous stage>.json and points stageBase and
+stageBaseSha256 at it.
 
   --config <file>     gate configuration (default scripts/size-gate.json)
   --report <file>     measured report (default: the report named in the configuration)
@@ -96,6 +96,7 @@ function gate(config, report, baseline, base, stage) {
   const frozenStages = config.frozen?.stages ?? {};
   const frozen = Object.hasOwn(frozenStages, String(stage));
   const exempt = new Set(frozen ? frozenStages[String(stage)] : []);
+  for (const row of exempt) if (!row.includes(':')) problems.push(`frozen.stages of stage ${stage} lists ${row}, which is not a <configuration>:<metric> row`);
   const gated = new Set();
   for (const group of config.groups) {
     const a = allowances(group, stage);
@@ -127,14 +128,13 @@ function gate(config, report, baseline, base, stage) {
       }
       out.delta = now.value - was.value;
       out.sinceBase = now.value - start.value;
-      const [configuration] = splitRow(row);
       if (group.exact === true && a.allowed !== null && out.delta !== 0) {
         fail('changed', `${fmt(now.value)} B differs from the 0.3.0 baseline of ${fmt(was.value)} B by ${signed(out.delta)} B, and the group keeps it byte-identical`);
       } else if (a.allowed !== null && out.delta > a.allowed) {
         fail('over growth', `${fmt(now.value)} B is ${fmt(out.delta)} B above the 0.3.0 baseline of ${fmt(was.value)} B, stage ${stage} allows ${fmt(a.allowed)} B`);
       }
       if (a.share !== null) {
-        if (frozen && !exempt.has(configuration) && a.share === 0 && out.sinceBase !== 0) {
+        if (frozen && !exempt.has(row) && a.share === 0 && out.sinceBase !== 0) {
           fail('changed', `${fmt(now.value)} B differs from the stage base of ${fmt(start.value)} B by ${signed(out.sinceBase)} B, and stage ${stage} keeps it byte-identical`);
         } else if (out.sinceBase > a.share) {
           fail('over share', `${fmt(now.value)} B is ${fmt(out.sinceBase)} B above the stage base of ${fmt(start.value)} B, the share of stage ${stage} is ${fmt(a.share)} B`);
@@ -147,8 +147,7 @@ function gate(config, report, baseline, base, stage) {
   if (frozen) {
     const measured = everyRow(report);
     for (const [row, was] of everyRow(base)) {
-      const [configuration] = splitRow(row);
-      if (gated.has(row) || exempt.has(configuration)) continue;
+      if (gated.has(row) || exempt.has(row)) continue;
       frozenRows++;
       if (!measured.has(row)) problems.push(`${row}: in the stage base report but not in the measured report, and stage ${stage} keeps every other row byte-identical`);
       else if (measured.get(row) !== was) problems.push(`${row}: measured ${fmt(measured.get(row))} B against ${fmt(was)} B in the stage base, and stage ${stage} keeps every other row byte-identical`);
@@ -171,7 +170,7 @@ function printTable(result, stage) {
   console.log(line(head));
   for (const b of body) console.log(line(b));
   if (result.frozen) {
-    const except = result.exempt.length > 0 ? `, except the configurations ${result.exempt.join(', ')}` : '';
+    const except = result.exempt.length > 0 ? `, except the rows ${result.exempt.join(', ')}` : '';
     console.log(`stage ${stage} keeps every row that no group gates byte-identical to the stage base: ${result.frozenRows} rows${except}`);
   } else console.log(`stage ${stage} does not freeze the rows that no group gates`);
   if (result.added.length > 0) console.log(`configurations added after 0.3.0, gated only by their budgets in size-matrix: ${result.added.join(', ')}`);

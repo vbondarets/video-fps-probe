@@ -169,19 +169,34 @@ describe('size gate against the 0.3.0 baseline', () => {
     expect(matroska.err).toContain('default:firstMkv: 25,538 B differs from the stage base of 25,539 B by -1 B, and stage 3 keeps it byte-identical');
   });
 
-  test('lets only the rule entries move in stage 6', () => {
+  test('lets only the listed rows of the rule entries move in stage 6', () => {
     const rules = raised('check.json', (m) => {
-      metric(m, 'check', 'trigger', 50);
-      metric(m, 'preset', 'lazyTotal', 50);
+      for (const c of ['check', 'preset']) for (const k of ['trigger', 'entry', 'check']) metric(m, c, k, 50);
     });
     const check = at(6, rules);
     expect(check.status, check.err).toBe(0);
+    expect(check.out).toContain('except the rows check:trigger, check:entry, check:check, preset:trigger, preset:entry, preset:check');
+    const lazy = at(6, raised('preset-lazy.json', (m) => metric(m, 'preset', 'lazyTotal', 500)));
+    expect(lazy.status).toBe(1);
+    expect(lazy.err).toContain('preset:lazyTotal: measured 89,711 B against 89,211 B in the stage base, and stage 6 keeps every other row byte-identical');
+    const own = at(6, raised('check-own.json', (m) => metric(m, 'check', 'allOwn', 500)));
+    expect(own.status).toBe(1);
+    expect(own.err).toContain('check:allOwn: measured 49,114 B against 48,614 B in the stage base');
+    const first = at(6, raised('check-first.json', (m) => metric(m, 'check', 'firstMp4', 500)));
+    expect(first.status).toBe(1);
+    expect(first.err).toContain('check:firstMp4: measured 23,237 B against 22,737 B in the stage base, and stage 6 keeps every other row byte-identical');
     const host = at(6, raised('host.json', (m) => metric(m, 'default', 'trigger', 1)));
     expect(host.status).toBe(1);
     expect(host.err).toContain('default:trigger: 667 B differs from the 0.3.0 baseline of 666 B by +1 B, and the group keeps it byte-identical');
     const other = at(6, raised('other.json', (m) => metric(m, 'rvfc', 'rvfc', 1)));
     expect(other.status).toBe(1);
     expect(other.err).toContain('rvfc:rvfc: measured 2,194 B against 2,193 B in the stage base, and stage 6 keeps every other row byte-identical');
+  });
+
+  test('fails a configuration name where frozen.stages needs a row', () => {
+    const r = run(['--config', configAt(6, BASELINE, (c) => ((c.frozen as { stages: Record<string, string[]> }).stages['6'] = ['check'])), '--report', BASELINE]);
+    expect(r.status).toBe(1);
+    expect(r.err).toContain('frozen.stages of stage 6 lists check, which is not a <configuration>:<metric> row');
   });
 
   test('fails a critical path that shrinks', () => {
