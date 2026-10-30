@@ -27,7 +27,7 @@ identical to the baseline changes, or when a gated row is missing. Rows are <con
 the report, or standalone:<file> for the prebuilt worker files.
 
 It also gates every emitted file outside the entry chunk of each 0.3.0 configuration on its own, so a
-sum row such as firstMp4, allOwn or lazyTotal cannot hide a change in a file that holds no parser. Files
+sum row such as firstMp4, allOwn or lazyTotal cannot hide a change in a file that no kind allows. Files
 are matched by their normalized name and the worker that loads them (page for the main thread). Each
 entry of files.kinds names a regular expression over the modules that scripts/size-matrix.mjs records
 for a file under sources, and a growth allowance. A file holds a kind when one of its modules matches it,
