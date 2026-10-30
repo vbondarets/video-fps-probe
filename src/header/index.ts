@@ -8,6 +8,7 @@ import type { ContainerAnalysis, FileErrorCode, FileResult, IoStats, ReadAheadSi
 import { HEADER_DEFAULT_LIMITS, LimitedSource, type HeaderLimits } from './limits.ts';
 
 export { errorClass, errorCodeOf, warningCodeOf, warningCodesOf, type ErrorClass } from '../api/codes.ts';
+export { isAbortError, isTimeoutError } from '../api/guards.ts';
 export { HEADER_DEFAULT_LIMITS, type HeaderLimits } from './limits.ts';
 export type { BlobLike, BlobSlice } from '../core/reader.ts';
 export type * from '../core/types.ts';
@@ -139,14 +140,13 @@ export async function analyzeHeader(source: Blob | BlobLike, options: HeaderOpti
   try {
     analysis = await analyzeSource(reader, limited, o);
   } catch (e) {
-    if (o.signal?.aborted) throw o.signal.reason;
+    throwIfAborted(o.signal);
     const limit = limited.take();
     analysis = { ...emptyAnalysis('unknown'), scan: 'header', errorCode: null, layout: null };
     failed(analysis, limit ? limit.message : e instanceof Error ? e.message || e.name : String(e), whichErrorCode(limit ?? e));
   } finally {
     limited.dispose();
   }
-  if (o.signal?.aborted) throw o.signal.reason;
   return {
     name: o.name,
     size: source.size,
