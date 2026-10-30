@@ -320,13 +320,7 @@ function finishProvenance(t: VideoTrackResult): void {
   if (t.durationSec !== null) p.durationSec = 'header';
   if (t.startSec !== null) p.startSec = 'header';
   if (t.presentedFrames !== null) p.presentedFrames = 'exact';
-  if (t.isVfr !== null) {
-    p.minFps = 'exact';
-    p.maxFps = 'exact';
-    p.isVfr = 'exact';
-    p.duplicateTimestamps = 'exact';
-    p.medianFrameInterval = 'exact';
-  }
+  if (t.isVfr !== null) for (const k of ['minFps', 'maxFps', 'isVfr', 'duplicateTimestamps', 'medianFrameInterval'] as const) p[k] = 'exact';
   if (t.nominalFps) p.nominalFps = 'exact';
   if (t.dominantFps) p.dominantFps = 'exact';
 }
@@ -398,23 +392,25 @@ function reportedIds(tracks: IsoTrack[]): Map<IsoTrack, number> {
 
 export async function analyzeIsoBmffDetailed(reader: BlobReader, opts: ResolvedAnalyzeOptions): Promise<IsoBmffDetails> {
   const movie = newMovie(reader.size);
+  const analysisOf = (error: string | null = null): ContainerAnalysis => {
+    const analysis = emptyAnalysis(containerOf(movie), error);
+    analysis.brand = movie.brand;
+    analysis.warnings = movie.warnings;
+    analysis.layout = layoutOf(movie);
+    return analysis;
+  };
   const fail = (e: unknown): IsoBmffDetails => {
     if (isAbort(e, reader)) throw e;
     const message = e instanceof Error ? e.message : String(e);
-    const analysis = emptyAnalysis(containerOf(movie), (e as { errorCode?: unknown } | null)?.errorCode ? message : `corrupt file: ${message}`);
+    const analysis = analysisOf((e as { errorCode?: unknown } | null)?.errorCode ? message : `corrupt file: ${message}`);
     analysis.errorCode = whichErrorCode(e);
-    analysis.layout = layoutOf(movie);
-    analysis.brand = movie.brand;
-    analysis.warnings = movie.warnings;
     return { analysis, movie };
   };
   try {
     await walk(reader, opts, movie);
     await emulateFfprobeExtent(reader, movie);
-    const analysis = emptyAnalysis(containerOf(movie));
-    analysis.brand = movie.brand;
+    const analysis = analysisOf();
     analysis.scan = 'exact';
-    analysis.warnings = movie.warnings;
     const reject = movie.ffprobeReject;
     const ffprobeFails = reject !== null && reject.moof < movie.ffprobeMoofLimit;
     if (ffprobeFails) movie.warnings.push(`ffprobe 8.1.1 ${reject.reason}`);
@@ -427,7 +423,6 @@ export async function analyzeIsoBmffDetailed(reader: BlobReader, opts: ResolvedA
     analysis.audioTrackCount = movie.tracks.filter((t) => t.handler === 'soun').length;
     analysis.primaryTrackId = pickPrimary(built);
     analysis.formatDurationSec = formatDuration(movie, new Set(videos));
-    analysis.layout = layoutOf(movie);
     return { analysis, movie };
   } catch (e) {
     return fail(e);
