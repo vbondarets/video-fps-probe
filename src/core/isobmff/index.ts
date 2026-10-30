@@ -2,7 +2,7 @@ import { codeOf, type BlobReader } from '../reader.ts';
 import { emptyAnalysis, emptyTrack } from '../result.ts';
 import { analyzeTimeline, rateProfileOf, type ProfileJob } from '../stats.ts';
 import { toFfprobeString } from '../rational.ts';
-import type { ContainerAnalysis, ContainerKind, ResolvedAnalyzeOptions, VideoTrackResult } from '../types.ts';
+import type { ContainerAnalysis, ContainerKind, ContainerLayout, ResolvedAnalyzeOptions, VideoTrackResult } from '../types.ts';
 import { IsoBmffError, readBoxHeader, type BoxHeader } from './boxes.ts';
 import { codecNameFor, isVideoFourcc } from './codecs.ts';
 import { newMovie, type IsoMovie, type IsoTrack, type TopBox } from './model.ts';
@@ -107,6 +107,7 @@ async function walk(reader: BlobReader, opts: ResolvedAnalyzeOptions, movie: Iso
     } else if (h.type === 'moov') {
       if (sawMoov) movie.warnings.push(`ignored a second moov at ${pos}`);
       else {
+        movie.moov = [pos, rel.size];
         await readMoov(reader, h, movie);
         sawMoov = true;
       }
@@ -173,6 +174,28 @@ async function emulateFfprobeExtent(reader: BlobReader, movie: IsoMovie): Promis
       return;
     }
   }
+}
+
+function layoutOf(movie: IsoMovie): ContainerLayout | null {
+  let mdat = Infinity;
+  let moof = false;
+  let sidx = false;
+  for (const b of movie.topLevel) {
+    if (b.type === 'mdat') mdat = Math.min(mdat, b.start);
+    moof ||= b.type === 'moof';
+    sidx ||= !moof && b.type === 'sidx';
+  }
+  const moov = movie.moov;
+  const moovAt = moov ? moov[0] : Infinity;
+  if (moovAt === mdat) return null;
+  const kind = movie.hasMvex ? 'fragmented' : mdat < moovAt ? 'moov-at-end' : 'faststart';
+  return {
+    kind,
+    moovOffset: moov ? moovAt : null,
+    moovSize: moov ? moov[1] : null,
+    sidx,
+    emptyMoov: kind === 'fragmented' && movie.tracks.every((t) => !isVideoTrack(t, movie) || !t.sampleCount),
+  };
 }
 
 function isVideoTrack(tr: IsoTrack, movie: IsoMovie): boolean {
@@ -378,6 +401,7 @@ export async function analyzeIsoBmffDetailed(reader: BlobReader, opts: ResolvedA
     const message = e instanceof Error ? e.message : String(e);
     const analysis = emptyAnalysis(containerOf(movie), (e as { errorCode?: unknown } | null)?.errorCode ? message : `corrupt file: ${message}`);
     analysis.errorCode = codeOf(e);
+    analysis.layout = layoutOf(movie);
     analysis.brand = movie.brand;
     analysis.warnings = movie.warnings;
     return { analysis, movie };
@@ -401,6 +425,7 @@ export async function analyzeIsoBmffDetailed(reader: BlobReader, opts: ResolvedA
     analysis.audioTrackCount = movie.tracks.filter((t) => t.handler === 'soun').length;
     analysis.primaryTrackId = pickPrimary(built);
     analysis.formatDurationSec = formatDuration(movie, new Set(videos));
+    analysis.layout = layoutOf(movie);
     return { analysis, movie };
   } catch (e) {
     return fail(e);

@@ -134,6 +134,16 @@ export type FileErrorCode =
   | 'engine-failed'
   | 'internal';
 
+export type LayoutKind = 'faststart' | 'moov-at-end' | 'fragmented';
+
+export interface ContainerLayout {
+  kind: LayoutKind;
+  moovOffset: number | null;
+  moovSize: number | null;
+  sidx: boolean;
+  emptyMoov: boolean;
+}
+
 export interface FileResult {
   name: string;
   size: number;
@@ -146,6 +156,7 @@ export interface FileResult {
   primaryTrackId: number | null;
   error: string | null;
   errorCode?: FileErrorCode | null;
+  layout?: ContainerLayout | null;
   warnings: string[];
   io: IoStats;
   engine: EngineId;

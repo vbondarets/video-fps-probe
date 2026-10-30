@@ -370,7 +370,7 @@ describe('an all-ones elst duration on an edit that trims the start', () => {
     const track = result.videoTracks[0]!;
     expect(track).toMatchObject({ frames: 90, presentedFrames: 69, startSec: 0, durationSec: 2.303, avgFps: { num: 30000, den: 1001 }, avgFpsFfprobe: null, rFpsFfprobe: null });
     expect(result.formatDurationSec).toBe(track.durationSec);
-    const same = (r: FileResult) => ({ ...r, name: '', size: 0, io: null, warnings: [], videoTracks: r.videoTracks.map((v) => ({ ...v, warnings: [], avgFpsFfprobe: null, rFpsFfprobe: null })) });
+    const same = (r: FileResult) => ({ ...r, name: '', size: 0, io: null, layout: r.layout && { ...r.layout, moovSize: null }, warnings: [], videoTracks: r.videoTracks.map((v) => ({ ...v, warnings: [], avgFpsFfprobe: null, rFpsFfprobe: null })) });
     expect(same(result)).toEqual(same(original));
     const ref = loadRef(source)!;
     expect(Math.abs(result.formatDurationSec! - Number(probeOf(ref).format!.duration))).toBeLessThanOrEqual(1e-6);
@@ -417,7 +417,8 @@ describe('all-ones mvhd, tkhd and mdhd version 1 durations against ffprobe 8.1.1
     expect([track.avgFpsFfprobe, track.rFpsFfprobe]).toEqual([stream.avg_frame_rate, stream.r_frame_rate]);
     if (stream.duration_ts > 0) {
       const original = (await analyzeFixture(fixturePath(source)!, name)).result;
-      expect({ ...result, size: 0, io: null }).toEqual({ ...original, size: 0, io: null });
+      const moovSize = original.layout?.moovSize;
+      expect({ ...result, size: 0, io: null, layout: result.layout && { ...result.layout, moovSize } }).toEqual({ ...original, size: 0, io: null });
     }
   });
 });

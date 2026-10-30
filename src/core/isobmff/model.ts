@@ -98,6 +98,7 @@ export interface IsoMovie {
   trex: Map<number, Trex>;
   moofCount: number;
   topLevel: TopBox[];
+  moov?: [offset: number, size: number];
   truncated: boolean;
   ffprobeMoofLimit: number;
   ffprobeReject: { moof: number; reason: string } | null;

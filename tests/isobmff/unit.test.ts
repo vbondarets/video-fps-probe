@@ -912,7 +912,7 @@ describe('64-bit all-ones durations', () => {
   const mdat = (n: number): Bytes => box('mdat', zeros(n));
   const elst64 = (duration: bigint, mediaTime: bigint): Bytes => box('edts', fullBox('elst', 1, 0, u32(1), u64(duration), u64(BigInt.asUintN(64, mediaTime)), u32(0x10000)));
   const sameExceptWarnings = (a: FileResult, b: FileResult, ffprobeFails = false): void => {
-    const strip = (r: FileResult) => ({ ...r, size: 0, io: null, warnings: [], videoTracks: r.videoTracks.map((t) => ({ ...t, warnings: [], ...(ffprobeFails ? { avgFpsFfprobe: null, rFpsFfprobe: null } : {}) })) });
+    const strip = (r: FileResult) => ({ ...r, size: 0, io: null, layout: r.layout && { ...r.layout, moovSize: null }, warnings: [], videoTracks: r.videoTracks.map((t) => ({ ...t, warnings: [], ...(ffprobeFails ? { avgFpsFfprobe: null, rFpsFfprobe: null } : {}) })) });
     expect(strip(a)).toEqual(strip(b));
   };
 
@@ -924,7 +924,7 @@ describe('64-bit all-ones durations', () => {
     const ones = await run(file(fullBox('mehd', 1, 0, u64(ALL_ONES)), trex));
     expect(ones.error).toBeNull();
     expect(ones.videoTracks[0]).toMatchObject({ frames: 90, presentedFrames: 90, durationSec: 3 });
-    expect(ones).toEqual({ ...plain, size: ones.size, io: ones.io });
+    expect(ones).toEqual({ ...plain, size: ones.size, io: ones.io, layout: { ...plain.layout, moovSize: ones.layout?.moovSize } });
     expect((await run(file(fullBox('mehd', 0, 0, u32(0xffffffff)), trex))).error).toBeNull();
   });
 
@@ -1021,7 +1021,7 @@ describe('several sample descriptions', () => {
     expect(two.error).toBeNull();
     expect(two.videoTracks[0].warnings).toEqual(['2 sample descriptions, first used']);
     expect(two.videoTracks[0]).toMatchObject({ width: 160, height: 90, codecName: 'h264', frames: 90, presentedFrames: 90, avgFpsFfprobe: '30/1', rFpsFfprobe: '30/1', durationSec: 3, isVfr: false });
-    const strip = (r: FileResult) => ({ ...r, size: 0, io: null, videoTracks: r.videoTracks.map((t) => ({ ...t, warnings: [] })) });
+    const strip = (r: FileResult) => ({ ...r, size: 0, io: null, layout: r.layout && { ...r.layout, moovSize: null }, videoTracks: r.videoTracks.map((t) => ({ ...t, warnings: [] })) });
     expect(strip(two)).toEqual(strip(one));
   });
 });

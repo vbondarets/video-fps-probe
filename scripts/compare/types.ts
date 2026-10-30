@@ -1,4 +1,4 @@
-import type { FileErrorCode } from '../../src/core/types.ts';
+import type { ContainerLayout, FileErrorCode } from '../../src/core/types.ts';
 
 export type Verdict = 'exact' | 'within-tol' | 'known-deviation' | 'mismatch' | 'n/a';
 
@@ -184,13 +184,7 @@ export interface ColorLike {
   dolbyVision: DolbyVisionLike | null;
 }
 
-export interface ContainerLayoutLike {
-  kind: string;
-  moovOffset: number | null;
-  moovSize: number | null;
-  sidx: boolean;
-  emptyMoov: boolean;
-}
+export type ContainerLayoutLike = ContainerLayout;
 
 export interface TrackFields040 {
   medianFrameInterval?: RationalLike | null;

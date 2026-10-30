@@ -37,6 +37,7 @@ export async function analyzeWith(blob: BlobLike, name: string, opts: AnalyzeOpt
     size: blob.size,
     ...emptyAnalysis('unknown'),
     errorCode: null,
+    layout: null,
     io: { reads: 0, bytesRead: 0, ms: 0 },
     engine: 'own',
   };
