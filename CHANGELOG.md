@@ -10,11 +10,11 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 - `errorCodeOf`, `errorClass`, `warningCodeOf` and `warningCodesOf` in the root entry, for results of any engine or version and four stable warning prefixes.
 - `layout` on ISO BMFF results: `faststart`, `moov-at-end` or `fragmented`, the moov offset and size, a sidx before the first moof, and an empty moov.
 - `medianFrameInterval` on video tracks of own, mp4box and mediabunny, and `enabled` (tkhd or FlagEnabled) on own tracks. `TrackField` gains `'medianFrameInterval'`, so an exhaustive `switch` needs the case.
-- `video-fps-probe/header`: `analyzeHeader(source, options)` reads only the header of an MP4 or MOV file, in the calling thread, under limits on the bytes requested, the reads, the wall time, the tracks and the top-level boxes (`HEADER_DEFAULT_LIMITS`: 16 MiB, 8 reads, 10 s, 64 tracks and 1024 boxes). A fragmented file gets its duration from a covering sidx, the mfra index or mehd, and new codes name what stopped it: `no-duration`, `byte-limit`, `read-limit`, `time-limit` and `structure-limit`. It rejects only on the caller's abort and on an invalid option, with a `TypeError`, and costs nothing in the other entries ([header-only analysis](docs/api.md#header-only-analysis)).
+- `video-fps-probe/header`: `analyzeHeader(source, options)` reads only the header of an MP4 or MOV file, in the calling thread, under limits on the bytes requested, the reads, the wall time, the tracks and the top-level boxes (`HEADER_DEFAULT_LIMITS`: 16 MiB, 8 reads, 10 s, 64 tracks and 1024 boxes). A fragmented file gets its duration from a covering sidx, the mfra index or mehd, and new codes name what stopped it: `no-duration`, `byte-limit`, `read-limit`, `time-limit` and `structure-limit`. It rejects only on the caller's abort and on an invalid option, with a `TypeError`, and adds at most 1 byte to the other entries ([header-only analysis](docs/api.md#header-only-analysis)).
 
 ### Changed
 
-- The installed package may take up to 632 KB unpacked (580 KB in 0.3.0), for the error codes, layout, median frame interval and the header-only entry, measured at 613 KB. A bundler still takes only the modules a host imports.
+- The installed package may take up to 632 KB unpacked (580 KB in 0.3.0), for the error codes, layout, median frame interval and the header-only entry, measured at 617 KB. A bundler still takes only the modules a host imports.
 - The first MP4 loads 23.07 KB gzip (22.73 KB in 0.3.0), 24.85 KB with Vite's default worker format (24.47 KB), and the first WebM or MKV 25.73 KB (25.54 KB) ([size matrix](report/size-matrix.md)).
 
 ### Fixed
