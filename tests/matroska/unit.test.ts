@@ -512,3 +512,61 @@ describe('modes', () => {
     expect(m.maxFps).toMatchObject({ num: 1000, den: 33 });
   });
 });
+
+describe('error codes, median frame interval and enabled', () => {
+  const FLAG_ENABLED = 0xb9;
+  const entry = (flagEnabled?: number): Uint8Array =>
+    el(
+      ID.TrackEntry,
+      concat(
+        uint(ID.TrackNumber, 1),
+        uint(ID.TrackUID, 1),
+        uint(ID.TrackType, 1),
+        ...(flagEnabled === undefined ? [] : [uint(FLAG_ENABLED, flagEnabled)]),
+        str(ID.CodecID, 'V_VP9'),
+        uint(ID.DefaultDuration, 40_000_000),
+        el(ID.Video, concat(uint(ID.PixelWidth, 160), uint(ID.PixelHeight, 90))),
+      ),
+    );
+  const withEntry = (e: Uint8Array): Blob => file(ebmlHeader(), segment([info(), el(ID.Tracks, e), ...cfrClusters({ frames: 10, periodMs: 40 })]));
+
+  it('every Matroska throw site gives its code and keeps its message', async () => {
+    expect(await run(file(u8(0x1a, 0x45, 0xdf, 0xa3, 0x8f, 1, 2)))).toMatchObject({ error: 'invalid EBML header', errorCode: 'corrupt', layout: null });
+    expect(await run(file(ebmlHeader(), el(ID.Void, new Uint8Array(4))))).toMatchObject({ error: 'no Segment element', errorCode: 'no-header' });
+    expect(await run(file(ebmlHeader(), segment([info(), ...cfrClusters({ frames: 3, periodMs: 40 })])))).toMatchObject({ error: 'no Tracks element found', errorCode: 'no-header' });
+    expect(await run(file(ebmlHeader(), segment([info(), el(ID.Tracks, []), ...cfrClusters({ frames: 3, periodMs: 40 })])))).toMatchObject({ error: 'no complete TrackEntry in Tracks', errorCode: 'truncated' });
+  });
+
+  it('a Matroska result has no layout and no error code when it succeeds', async () => {
+    expect(await run(simpleFile())).toMatchObject({ error: null, errorCode: null, layout: null });
+  });
+
+  it('enabled is FlagEnabled, true when the element is absent', async () => {
+    expect((await run(withEntry(entry()))).videoTracks[0].enabled).toBe(true);
+    expect((await run(withEntry(entry(1)))).videoTracks[0].enabled).toBe(true);
+    expect((await run(withEntry(entry(0)))).videoTracks[0].enabled).toBe(false);
+    expect((await run(withEntry(entry(0)), { matroskaMode: 'header' })).videoTracks[0].enabled).toBe(false);
+  });
+
+  it('the median frame interval is scaled by the TimestampScale, exact in the exact scan and sampled in the probe', async () => {
+    const exact = (await run(simpleFile({ frames: 90, periodMs: 40 }))).videoTracks[0];
+    expect(exact.medianFrameInterval).toEqual({ num: 1, den: 25, value: 1 / 25 });
+    expect(exact.provenance.medianFrameInterval).toBe('exact');
+    const probe = (await run(simpleFile({ frames: 90, periodMs: 40 }), { matroskaMode: 'probe' })).videoTracks[0];
+    expect(probe.medianFrameInterval).toEqual({ num: 1, den: 25, value: 1 / 25 });
+    expect(probe.provenance.medianFrameInterval).toBe('sampled');
+    const header = (await run(simpleFile({ frames: 90, periodMs: 40 }), { matroskaMode: 'header' })).videoTracks[0];
+    expect(header.medianFrameInterval).toBeNull();
+    expect(header.provenance.medianFrameInterval).toBeUndefined();
+    const fine = file(ebmlHeader(), segment([info({ timestampScale: 100_000 }), tracks({ number: 1, defaultDuration: 40_000_000 }), ...cfrClusters({ frames: 30, periodMs: 400 })]));
+    expect((await run(fine)).videoTracks[0].medianFrameInterval).toEqual({ num: 1, den: 25, value: 1 / 25 });
+  });
+
+  it('mergeRunStats gives the median interval of the merged runs', () => {
+    const a = analyzeTimeline({ timescale: 1000, pts: [0, 33, 67, 100], tickQuantized: true });
+    const b = analyzeTimeline({ timescale: 1000, pts: [1000, 1033, 1067, 1100], tickQuantized: true });
+    const m = mergeRunStats(1000, [a, b]);
+    expect(m.medianFrameInterval).toEqual({ num: 33, den: 1000, value: 0.033 });
+    expect(mergeRunStats(1000, []).medianFrameInterval).toBeNull();
+  });
+});

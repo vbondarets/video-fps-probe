@@ -1026,3 +1026,115 @@ describe('several sample descriptions', () => {
   });
 });
 
+
+describe('error codes, layout, median frame interval and enabled', () => {
+  const mdat = (n: number): Bytes => box('mdat', zeros(n));
+  const trex = fullBox('trex', 0, 0, u32(1), u32(1), u32(512), u32(0), u32(0));
+  const fragments = [0, 1].map((i) => moof(i + 1, [traf(0x20000, [], i * 30 * 512, trun(0, 0x201, 30, [...u32(0), ...new Array<number>(30).fill(0).flatMap(() => u32(10))]))]));
+  const sidx = fullBox('sidx', 0, 0, u32(1), u32(15360), u32(0), u32(0), u16(0), u16(0));
+
+  function virtual(size: number, head: Uint8Array): Blob {
+    const slice = (start = 0, end = size) => ({
+      arrayBuffer: async () => {
+        const out = new Uint8Array(Math.max(0, Math.min(end, size) - start));
+        if (start < head.length) out.set(head.subarray(start, Math.min(head.length, start + out.length)));
+        return out.buffer;
+      },
+    });
+    return { size, slice } as unknown as Blob;
+  }
+
+  test('a faststart file has its moov first, and the declared moov size', async () => {
+    const m = moov(trak(CFR30()));
+    const r = await run(bytes(ftyp(), m, mdat(900)));
+    expect(r.errorCode).toBeNull();
+    expect(r.layout).toEqual({ kind: 'faststart', moovOffset: ftyp().length, moovSize: m.length, sidx: false, emptyMoov: false });
+  });
+
+  test('an mdat before the moov is moov-at-end', async () => {
+    const m = moov(trak({ ...CFR30(), chunkOffset: 40 }));
+    const r = await run(bytes(ftyp(), mdat(900), m));
+    expect(r.layout).toEqual({ kind: 'moov-at-end', moovOffset: ftyp().length + 908, moovSize: m.length, sidx: false, emptyMoov: false });
+  });
+
+  test('mvex makes a file fragmented, a sidx before the first moof is seen, and an empty moov is reported', async () => {
+    const m = moov(trak({ id: 1, stts: [] }), box('mvex', trex));
+    const r = await run(bytes(ftyp('iso5'), m, sidx, ...fragments.flatMap((f) => [f, mdat(300)])));
+    expect(r.error).toBeNull();
+    expect(r.layout).toEqual({ kind: 'fragmented', moovOffset: ftyp('iso5').length, moovSize: m.length, sidx: true, emptyMoov: true });
+    const late = await run(bytes(ftyp('iso5'), m, fragments[0], mdat(300), sidx, fragments[1], mdat(300)));
+    expect(late.layout).toMatchObject({ kind: 'fragmented', sidx: false });
+  });
+
+  test('a hybrid fragmented file has samples in the moov, so emptyMoov is false', async () => {
+    const r = await run(bytes(ftyp('iso5'), moov(trak({ ...CFR30(30), chunkOffset: 40 }), box('mvex', trex)), mdat(300), ...fragments.flatMap((f) => [f, mdat(300)])));
+    expect(r.videoTracks[0].warnings.join(' ')).toMatch(/hybrid fragmented file/);
+    expect(r.layout).toMatchObject({ kind: 'fragmented', emptyMoov: false });
+  });
+
+  test('a failed file keeps the layout seen so far, and none when neither a moov nor an mdat was seen', async () => {
+    const noMoov = await run(bytes(ftyp(), mdat(100)));
+    expect(noMoov).toMatchObject({ error: 'incomplete file: no moov', errorCode: 'no-header' });
+    expect(noMoov.layout).toEqual({ kind: 'moov-at-end', moovOffset: null, moovSize: null, sidx: false, emptyMoov: false });
+    const nothing = await run(bytes(ftyp(), box('free', zeros(16))));
+    expect(nothing).toMatchObject({ errorCode: 'no-header', layout: null });
+    const early = await run(bytes(ftyp(), fragments[0], mdat(300)));
+    expect(early).toMatchObject({ error: 'corrupt file: movie fragment (moof) before moov', errorCode: 'corrupt', layout: null });
+  });
+
+  test('a moov that runs past the end of the file is truncated, with its declared size', async () => {
+    const m = moov(trak(CFR30()));
+    const cut = bytes(ftyp(), m).subarray(0, ftyp().length + m.length - 40);
+    const r = await run(cut);
+    expect(r).toMatchObject({ error: 'incomplete file: moov is truncated', errorCode: 'truncated' });
+    expect(r.layout).toEqual({ kind: 'faststart', moovOffset: ftyp().length, moovSize: m.length, sidx: false, emptyMoov: false });
+  });
+
+  test('every ISO BMFF throw site gives its code and keeps its message', async () => {
+    const cmov = await run(bytes(ftyp('qt  '), box('moov', mvhd(1000, 3000), box('cmov', zeros(8)))));
+    expect(cmov).toMatchObject({ error: 'unsupported: compressed movie header (cmov)', errorCode: 'unsupported' });
+    const small = await run(bytes(ftyp(), u32(4), tag('free')));
+    expect(small).toMatchObject({ error: `corrupt file: box 'free' at ${ftyp().length} is smaller than its header`, errorCode: 'corrupt' });
+    const huge = await run(bytes(ftyp(), u32(1), tag('free'), u64(2n ** 60n)));
+    expect(huge).toMatchObject({ error: `corrupt file: box 'free' at ${ftyp().length} has a size above 2^53-1`, errorCode: 'corrupt' });
+    const value = await run(bytes(ftyp(), moov(trak({ ...CFR30(), extra: [box('edts', fullBox('elst', 1, 0, u32(1), u64(2n ** 60n), u64(0n), u32(0x10000)))] }))));
+    expect(value.errorCode).toBe('unsupported');
+    expect(value.error).toMatch(/^unsupported: box 'elst' at \d+ holds a value above 2\^53-1$/);
+    const bigMoof = await run(bytes(ftyp('iso5'), moov(trak({ id: 1, stts: [] }), box('mvex', trex)), u32(64 * 1024 * 1024 + 16), tag('moof'), zeros(8)));
+    expect(bigMoof.errorCode).toBe('too-large');
+    expect(bigMoof.error).toMatch(/^corrupt file: moof larger than 64 MiB at \d+$/);
+    const noDuration = await run(bytes(ftyp('iso5'), moov(trak({ id: 1, stts: [] }), box('mvex')), moof(1, [traf(0x20000, [], 0, trun(0, 0x201, 2, [...u32(0), ...u32(10), ...u32(10)]))]), mdat(20)));
+    expect(noDuration).toMatchObject({ error: 'corrupt file: no sample duration for track 1', errorCode: 'corrupt' });
+    const moovHead = bytes(ftyp(), u32(257 * 1024 * 1024), tag('moov'));
+    const bigMoov = await analyze(virtual(300 * 1024 * 1024, moovHead), 'big.mp4');
+    expect(bigMoov).toMatchObject({ error: 'unsupported: moov larger than 256 MiB', errorCode: 'too-large' });
+    expect(bigMoov.layout).toEqual({ kind: 'faststart', moovOffset: ftyp().length, moovSize: 257 * 1024 * 1024, sidx: false, emptyMoov: false });
+  });
+
+  test('the median frame interval is the exact inverse of a constant rate, and lower-median on VFR', async () => {
+    const cfr = (await run(bytes(ftyp(), moov(trak(CFR30())), mdat(900)))).videoTracks[0];
+    expect(cfr.medianFrameInterval).toEqual({ num: 1, den: 30, value: 1 / 30 });
+    expect(cfr.provenance.medianFrameInterval).toBe('exact');
+    const ntsc = (await run(bytes(ftyp(), moov(trak({ id: 1, ts: 30000, stts: [[90, 1001]] })), mdat(900)))).videoTracks[0];
+    expect(ntsc.medianFrameInterval).toEqual({ num: 1001, den: 30000, value: 1001 / 30000 });
+    expect(ntsc.nominalFps).toMatchObject({ num: 30000, den: 1001 });
+    const vfr = (await run(bytes(ftyp(), moov(trak({ id: 1, stts: [[30, 512], [30, 1024]] })), mdat(600)))).videoTracks[0];
+    expect(vfr.isVfr).toBe(true);
+    expect(vfr.medianFrameInterval).toEqual({ num: 1, den: 30, value: 1 / 30 });
+  });
+
+  test('one frame and a skipped per-sample analysis have no median frame interval', async () => {
+    const one = (await run(bytes(ftyp(), moov(trak(CFR30(1))), mdat(10)))).videoTracks[0];
+    expect(one.medianFrameInterval).toBeNull();
+    expect(one.provenance.medianFrameInterval).toBeUndefined();
+    const skipped = (await run(bytes(ftyp(), moov(trak({ id: 1, stts: [[90, 512]], ctts: [[45, 1024], [45, 0]] })), mdat(900)), { maxExpandedSamples: 10 })).videoTracks[0];
+    expect(skipped.warnings.join(' ')).toMatch(/per-sample analysis skipped/);
+    expect(skipped.medianFrameInterval).toBeNull();
+  });
+
+  test('enabled is the tkhd enabled bit', async () => {
+    expect((await run(bytes(ftyp(), moov(trak(CFR30())), mdat(900)))).videoTracks[0].enabled).toBe(true);
+    expect((await run(bytes(ftyp(), moov(trak({ ...CFR30(), flags: 2 })), mdat(900)))).videoTracks[0].enabled).toBe(false);
+    expect((await run(bytes(ftyp(), moov(trak({ ...CFR30(), flags: 1 })), mdat(900)))).videoTracks[0].enabled).toBe(true);
+  });
+});
