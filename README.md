@@ -133,12 +133,12 @@ Rules are JSON, such as `{ fps: { min: 24, max: 60 }, duration: { max: 10 }, vfr
 
 <!-- tables:size:start -->
 
-**0.67 KB gzip on the critical path**: the package code in the entry chunk of a Vite 8.3.5 app that imports `video-fps-probe/lazy` (1.40 KB with Vite's preload helper). The rest loads lazily, on the first file:
+**0.66 KB gzip on the critical path**: the package code in the entry chunk of a Vite 8.3.5 app that imports `video-fps-probe/lazy` (1.40 KB with Vite's preload helper). The rest loads lazily, on the first file:
 
 | Host Vite config | Critical path | First MP4 | First MKV | All own paths | Worker files |
 |---|---:|---:|---:|---:|---:|
-| `worker: { format: 'es' }` (recommended) | **0.67 KB** | 23.06 KB | 25.71 KB | 49.11 KB | 2 |
-| none (Vite's default, 'iife') | **0.66 KB** | 24.85 KB | 27.16 KB | 48.73 KB | 2 |
+| `worker: { format: 'es' }` (recommended) | **0.66 KB** | 23.07 KB | 25.73 KB | 49.14 KB | 2 |
+| none (Vite's default, 'iife') | **0.66 KB** | 24.86 KB | 27.18 KB | 48.76 KB | 2 |
 
 Own runs on one worker per container family, picked by the first four bytes of the file, so a first file loads only the worker of its family. An iife worker cannot split, so without the option each own worker is one file with its lazy parts inlined:
 
@@ -148,7 +148,7 @@ import { defineConfig } from 'vite';
 export default defineConfig({ worker: { format: 'es' } });
 ```
 
-Engines cost nothing until imported. Importing a descriptor grows the critical path a little, from 0.67 KB to 0.89 KB with mp4box or mediabunny, 0.77 KB with rVFC and 1.01 KB with all three, and the engine itself loads lazily: mp4box 44.95 KB, mediabunny 54.17 KB, rVFC 2.19 KB. Gzip -9 of production builds from the packed tarball, budgeted in CI. Every configuration is in [docs/benchmarks.md](docs/benchmarks.md#package-size).
+Engines cost nothing until imported. Importing a descriptor grows the critical path a little, from 0.66 KB to 0.89 KB with mp4box or mediabunny, 0.76 KB with rVFC and 1.01 KB with all three, and the engine itself loads lazily: mp4box 44.95 KB, mediabunny 54.16 KB, rVFC 2.19 KB. Gzip -9 of production builds from the packed tarball, budgeted in CI. Every configuration is in [docs/benchmarks.md](docs/benchmarks.md#package-size).
 
 `video-fps-probe/react` adds 1.20 KB to the critical path for the provider, `useVideoFps` and its store (React itself not counted); its first analysis also fetches a 0.43 KB summary module, in parallel with the probe client. `video-fps-probe/check` adds 3.99 KB when imported statically, and nothing lazily; one preset from `video-fps-probe/presets` adds 0.46 KB.
 
