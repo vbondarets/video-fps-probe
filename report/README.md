@@ -37,7 +37,7 @@ Timings depend on the machine and on what else runs on it; verdicts, reads, byte
 
 <!-- tables:report-totals:start -->
 
-The committed `accuracy.md` and `accuracy.json` cover 171 fixtures: the 165 committed ones plus 6 local files of `fixtures/large` that are not committed (2 from `--with-long`, 3 from `--with-big`, 1 from `--with-sparse`). Their own-engine totals (2735 checks, 2642 exact) therefore include those 6 files. On the committed corpus alone, `npm run compare -- --no-write` gives the own engine 2633 checks: 2547 exact, 13 within-tol, 0 known-deviation, 0 mismatch and 73 n/a.
+The committed `accuracy.md` and `accuracy.json` cover 171 fixtures: the 165 committed ones plus 6 local files of `fixtures/large` that are not committed (2 from `--with-long`, 3 from `--with-big`, 1 from `--with-sparse`). Their own-engine totals (3397 checks, 3303 exact) therefore include those 6 files. On the committed corpus alone, `npm run compare -- --no-write` gives the own engine 3271 checks: 3185 exact, 13 within-tol, 0 known-deviation, 0 mismatch and 73 n/a.
 
 <!-- tables:report-totals:end -->
 
