@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { REPO_ROOT } from '../helpers/fixtures.ts';
 
 interface Matrix {
-  fixtures: { name: string; metrics: Record<string, number | null>; budgets?: { key: string; limit: number }[] }[];
+  fixtures: { name: string; metrics: Record<string, number | null>; budgets?: { key: string; limit: number }[]; files?: { file: string; worker: string | null; class: string }[] }[];
   standalone: { file: string; gzip: number; limit?: number }[];
 }
 
@@ -68,6 +68,18 @@ const at = (stage: number, report: string, stageBase = BASELINE) => run(['--conf
 const metric = (m: Matrix, config: string, key: string, by: number) => {
   const f = m.fixtures.find((x) => x.name === config)!;
   f.metrics[key] = (f.metrics[key] ?? 0) + by;
+};
+
+const ONE_FILE_ISO_WORKERS = new Set(['own.worker', 'own-isobmff.worker']);
+const isoCopies = (f: Matrix['fixtures'][number]) => (f.files ?? []).filter((x) => x.class === 'isobmff' || (x.class === 'shared' && x.worker !== null && ONE_FILE_ISO_WORKERS.has(x.worker))).length;
+
+const isoParser = (m: Matrix, by: number) => {
+  for (const f of m.fixtures) {
+    for (const key of ['isobmff', 'firstMp4', 'firstMp4Summary', 'allOwn']) if (typeof f.metrics[key] === 'number') f.metrics[key] += by;
+    f.metrics.lazyTotal = f.metrics.lazyTotal! + by * isoCopies(f);
+    if (f.name === 'standalone-url') f.metrics.firstMkv = f.metrics.firstMkv! + by;
+  }
+  for (const s of m.standalone) if (s.file !== 'own-matroska.worker.js') s.gzip += by;
 };
 
 function committed(rev: string, path: string): Buffer | null {
@@ -135,7 +147,7 @@ describe('size gate against the 0.3.0 baseline', () => {
   test('passes the committed report', () => {
     const r = run([]);
     expect(r.status, r.err).toBe(0);
-    expect(r.out).toMatch(/size gate: 57 gated rows within the stage \d allowances, shares and caps/);
+    expect(r.out).toMatch(/size gate: 98 gated rows within the stage \d allowances, shares and caps/);
   });
 
   test('passes the baseline itself at every stage', () => {
@@ -186,11 +198,58 @@ describe('size gate against the 0.3.0 baseline', () => {
     expect(r.err).not.toContain('above the 0.3.0 baseline');
   });
 
+  test('lets the ISO BMFF parser spend the stage 3 share on every row that holds it', () => {
+    const base = raised('stage-2-parser.json', (m) => isoParser(m, 390));
+    const stage3End = raised('stage-3-parser-ok.json', (m) => isoParser(m, 400));
+    const within = at(3, stage3End, base);
+    expect(within.status, within.err).toBe(0);
+    expect(within.out).toMatch(/default:lazyTotal +89,206 +89,986 +90,006 +\+800 +1,200 +\+20 +20 +92,000 +ok/);
+    const over = at(3, raised('stage-3-parser-over.json', (m) => isoParser(m, 401)), base);
+    expect(over.status).toBe(1);
+    expect(over.err).toContain('default:lazyTotal: 90,008 B is 22 B above the stage base of 89,986 B, the share of stage 3 is 20 B');
+    expect(over.err).toContain('all:lazyTotal: 366,173 B is 44 B above the stage base of 366,129 B, the share of stage 3 is 40 B');
+    const matrix = JSON.parse(readFileSync(BASELINE, 'utf8')) as Matrix;
+    const parserRows = [
+      ...matrix.fixtures.flatMap((f) => [...['isobmff', 'firstMp4', 'firstMp4Summary', 'allOwn', 'lazyTotal'].filter((k) => typeof f.metrics[k] === 'number').map((k) => `${f.name}:${k}`), ...(f.name === 'standalone-url' ? ['standalone-url:firstMkv'] : [])]),
+      ...matrix.standalone.filter((s) => s.file !== 'own-matroska.worker.js').map((s) => `standalone:${s.file}`),
+    ];
+    const failed = new Set(over.err.split('\n').filter((l) => l.startsWith('FAIL ')).map((l) => l.slice(5, l.indexOf(': '))));
+    expect([...failed].sort()).toEqual(parserRows.sort());
+    expect(at(4, stage3End, stage3End).status).toBe(0);
+    const stage4 = at(4, raised('stage-4-parser.json', (m) => isoParser(m, 401)), stage3End);
+    expect(stage4.status).toBe(1);
+    expect(stage4.err).toContain('default:lazyTotal: 90,008 B differs from the stage base of 90,006 B by +2 B, and stage 4 keeps it byte-identical');
+  });
+
+  test('keeps a row that holds no ISO BMFF parser byte-identical while the parser spends the stage 3 share', () => {
+    const base = raised('stage-2-parser-base.json', (m) => isoParser(m, 390));
+    for (const [config, key] of [
+      ['default', 'client'],
+      ['default', 'segments'],
+      ['default', 'matroska'],
+      ['zero-config', 'firstMkv'],
+      ['rvfc', 'rvfc'],
+    ] as const) {
+      const r = at(
+        3,
+        raised(`stage-3-${config}-${key}.json`, (m) => {
+          isoParser(m, 400);
+          metric(m, config, key, 1);
+        }),
+        base,
+      );
+      expect(r.status, `${config}:${key}`).toBe(1);
+      const fails = r.err.split('\n').filter((l) => l.startsWith('FAIL '));
+      expect(fails, `${config}:${key}`).toHaveLength(1);
+      expect(fails[0]).toContain(`FAIL ${config}:${key}: `);
+    }
+  });
+
   test('keeps every other row byte-identical in a frozen stage', () => {
-    const report = raised('lazy-total.json', (m) => metric(m, 'default', 'lazyTotal', 1));
+    const report = raised('client.json', (m) => metric(m, 'default', 'client', 1));
     const frozen = at(3, report);
     expect(frozen.status).toBe(1);
-    expect(frozen.err).toContain('default:lazyTotal: measured 89,207 B against 89,206 B in the stage base, and stage 3 keeps every other row byte-identical');
+    expect(frozen.err).toContain('default:client: measured 3,284 B against 3,283 B in the stage base, and stage 3 keeps every other row byte-identical');
     expect(at(2, report).status).toBe(0);
     const matroska = at(3, raised('mkv-shrink.json', (m) => metric(m, 'default', 'firstMkv', -1)));
     expect(matroska.status).toBe(1);
@@ -206,10 +265,10 @@ describe('size gate against the 0.3.0 baseline', () => {
     expect(check.out).toContain('except the rows check:trigger, check:entry, check:check, preset:trigger, preset:entry, preset:check');
     const lazy = at(6, raised('preset-lazy.json', (m) => metric(m, 'preset', 'lazyTotal', 500)));
     expect(lazy.status).toBe(1);
-    expect(lazy.err).toContain('preset:lazyTotal: measured 89,711 B against 89,211 B in the stage base, and stage 6 keeps every other row byte-identical');
+    expect(lazy.err).toContain('preset:lazyTotal: 89,711 B differs from the stage base of 89,211 B by +500 B, and stage 6 keeps it byte-identical');
     const own = at(6, raised('check-own.json', (m) => metric(m, 'check', 'allOwn', 500)));
     expect(own.status).toBe(1);
-    expect(own.err).toContain('check:allOwn: measured 49,114 B against 48,614 B in the stage base');
+    expect(own.err).toContain('check:allOwn: 49,114 B differs from the stage base of 48,614 B by +500 B, and stage 6 keeps it byte-identical');
     const first = at(6, raised('check-first.json', (m) => metric(m, 'check', 'firstMp4', 500)));
     expect(first.status).toBe(1);
     expect(first.err).toContain('check:firstMp4: 23,237 B differs from the stage base of 22,737 B by +500 B, and stage 6 keeps it byte-identical');
