@@ -464,3 +464,104 @@ Each worker imports its parser statically and reaches neither the other parser n
 The 0.4.0 plan, the 0.4.1 bundler matrix and 0.5.0 are in the [README roadmap](../README.md#roadmap). One 0.4.0 item in detail:
 
 - Expose a median frame interval and use it in `check()`. 0.3.0 judges the format duration of a WebM or Matroska track when it is within one frame interval of the measured span, the interval of `dominantFps`, else of `nominalFps` on a constant track, else of `avgFps` (section 3, track and format durations), so the Chromium recordings, which have no dominant rate, take their average interval of 27 ms rather than their median of 17 ms.
+
+## 16. 0.4.0 stage 1: what ffprobe 8.1.1 prints for the section P fixtures
+
+Recorded on 2026-10-30 with ffprobe 8.1.1 (the gyan.dev full build) on the fixtures of section P of `scripts/fixtures/generate-fixtures.sh`. The values come from `fixtures/ref/*.ref.json` (`-show_streams -show_format -count_frames -count_packets -show_optional_fields always`). Experiments marked "scratch" used the same patch modes on copies that are not committed. These facts fix the rules that stages 2 and 5 implement, and they replace the guesses of the 0.4.0 design where they differ.
+
+### Printed values per fixture
+
+Every fixture has one video stream. `unknown` is what ffprobe prints for code 2 (unspecified) or no value.
+
+| Fixture | color_range | color_primaries | color_transfer | color_space | profile | sample_aspect_ratio | display_aspect_ratio | pix_fmt | disposition.default | side_data_list |
+|---|---|---|---|---|---|---|---|---|---:|---|
+| `sar_h264_4x3.mp4` | unknown | unknown | unknown | unknown | Constrained Baseline | 4:3 | 16:9 | yuv420p | 1 | none |
+| `sar_pasp_only.mp4` | unknown | unknown | unknown | unknown | Constrained Baseline | 4:3 | 64:27 | yuv420p | 1 | none |
+| `sar_tkhd_only.mp4` | unknown | unknown | unknown | unknown | Constrained Baseline | 3:2 | 8:3 | yuv420p | 1 | none |
+| `sar_matrix_scale.mp4` | unknown | unknown | unknown | unknown | Constrained Baseline | 2:1 | 32:9 | yuv420p | 1 | Display Matrix: displaymatrix (3x3 text), rotation 0 |
+| `sar_tkhd_fraction.mp4` | unknown | unknown | unknown | unknown | Constrained Baseline | 213:160 | 71:40 | yuv420p | 1 | none |
+| `sar_vui_only.mp4` | unknown | unknown | unknown | unknown | Constrained Baseline | 4:3 | 16:9 | yuv420p | 1 | none |
+| `sar_tkhd_matrix.mp4` | unknown | unknown | unknown | unknown | Constrained Baseline | 2:1 | 32:9 | yuv420p | 1 | Display Matrix: displaymatrix (3x3 text), rotation 0 |
+| `sar_pasp_tkhd_matrix.mp4` | unknown | unknown | unknown | unknown | Constrained Baseline | 4:3 | 64:27 | yuv420p | 1 | Display Matrix: displaymatrix (3x3 text), rotation 0 |
+| `sar_none.mp4` | unknown | unknown | unknown | unknown | Constrained Baseline | N/A | N/A | yuv420p | 1 | none |
+| `sar_4x3.mkv` | tv | unknown | unknown | unknown | Constrained Baseline | 4:3 | 16:9 | yuv420p | 0 | none |
+| `track_disabled.mp4` | unknown | unknown | unknown | unknown | Constrained Baseline | 1:1 | 16:9 | yuv420p | 0 | none |
+| `hdr10_hevc10.mp4` | tv | bt2020 | smpte2084 | bt2020nc | Main 10 | 1:1 | 16:9 | yuv420p10le | 1 | none |
+| `hdr10_hevc10.mkv` | tv | bt2020 | smpte2084 | bt2020nc | Main 10 | 1:1 | 16:9 | yuv420p10le | 0 | none |
+| `hlg_hevc10.mp4` | tv | bt2020 | arib-std-b67 | bt2020nc | Main 10 | 1:1 | 16:9 | yuv420p10le | 1 | none |
+| `hlg_h264_8bit.mp4` | tv | bt2020 | arib-std-b67 | bt2020nc | Constrained Baseline | 1:1 | 16:9 | yuv420p | 1 | none |
+| `vp9_p2_10bit.webm` | tv | bt2020 | smpte2084 | bt2020nc | Profile 2 | 1:1 | 16:9 | yuv420p10le | 0 | none |
+| `vp9_p2_10bit.mp4` | tv | bt2020 | smpte2084 | bt2020nc | Profile 2 | 1:1 | 16:9 | yuv420p10le | 1 | none |
+| `av1_10bit.mp4` | tv | unknown | unknown | unknown | Main | 1:1 | 16:9 | yuv420p10le | 1 | none |
+| `colr_nclc.mov` | pc | bt709 | bt709 | bt709 | Constrained Baseline | 1:1 | 16:9 | yuvj420p | 1 | none |
+| `colr_vui_conflict.mp4` | tv | bt2020 | smpte2084 | bt2020nc | Constrained Baseline | 1:1 | 16:9 | yuvj420p | 1 | none |
+| `colr_vui_conflict_hevc.mp4` | tv | bt709 | bt709 | bt709 | Main 10 | 1:1 | 16:9 | yuv420p10le | 1 | none |
+| `colr_only_h264.mp4` | tv | bt2020 | smpte2084 | bt2020nc | Constrained Baseline | 1:1 | 16:9 | yuv420p | 1 | none |
+| `colr_only_hevc.mp4` | tv | bt2020 | smpte2084 | bt2020nc | Main 10 | 1:1 | 16:9 | yuv420p10le | 1 | none |
+| `colr_unspecified_hevc.mp4` | pc | bt2020 | smpte2084 | bt2020nc | Main 10 | 1:1 | 16:9 | yuv420p10le | 1 | none |
+| `colr_partial_h264.mp4` | pc | bt709 | unknown | unknown | Constrained Baseline | 1:1 | 16:9 | yuv420p | 1 | none |
+| `hlg_vui_only.mp4` | tv | bt2020 | arib-std-b67 | bt2020nc | Main 10 | 1:1 | 16:9 | yuv420p10le | 1 | none |
+| `hlg_h264_vui_only.mp4` | tv | bt2020 | arib-std-b67 | bt2020nc | Constrained Baseline | 1:1 | 16:9 | yuv420p | 1 | none |
+| `dv_p81_dvvc.mp4` | tv | bt2020 | smpte2084 | bt2020nc | Main 10 | 1:1 | 16:9 | yuv420p10le | 1 | DOVI configuration record: dv_version_major 1, dv_version_minor 0, dv_profile 8, dv_level 1, rpu_present_flag 1, el_present_flag 0, bl_present_flag 1, dv_bl_signal_compatibility_id 1, dv_md_compression limited |
+| `dv_p5_dvcc_dvh1.mp4` | tv | bt2020 | smpte2084 | bt2020nc | Main 10 | 1:1 | 16:9 | yuv420p10le | 1 | DOVI configuration record: dv_version_major 1, dv_version_minor 0, dv_profile 5, dv_level 2, rpu_present_flag 1, el_present_flag 0, bl_present_flag 1, dv_bl_signal_compatibility_id 0, dv_md_compression none |
+| `dv_p81.mkv` | tv | bt2020 | smpte2084 | bt2020nc | Main 10 | 1:1 | 16:9 | yuv420p10le | 0 | DOVI configuration record: dv_version_major 1, dv_version_minor 0, dv_profile 8, dv_level 1, rpu_present_flag 1, el_present_flag 0, bl_present_flag 1, dv_bl_signal_compatibility_id 1, dv_md_compression limited |
+| `fmp4_mehd_valid.mp4` | unknown | unknown | unknown | unknown | Constrained Baseline | 1:1 | 16:9 | yuv420p | 1 | none |
+| `fmp4_audio_longer.mp4` | unknown | unknown | unknown | unknown | Constrained Baseline | 1:1 | 16:9 | yuv420p | 1 | none |
+| `fmp4_audio_longer_sidx.mp4` | unknown | unknown | unknown | unknown | Constrained Baseline | 1:1 | 16:9 | yuv420p | 1 | none |
+| `faststart_large_moov.mp4` | unknown | unknown | unknown | unknown | Constrained Baseline | 1:1 | 16:9 | yuv420p | 1 | none |
+| `mov_cmov.mov` | unknown | unknown | unknown | unknown | Constrained Baseline | 1:1 | 16:9 | yuv420p | 1 | none |
+
+### Color: the container against the SPS VUI
+
+H.264 and HEVC behave the same in the mov demuxer of FFmpeg 8.1.1: the container values are kept, and the decoder fills only what the container leaves unspecified.
+
+- **Conflict.** `colr_vui_conflict.mp4` (H.264, colr BT.2020, PQ, BT.2020 non-constant, limited range over a VUI of BT.709, sRGB, BT.709, full range) prints every colr value. `colr_vui_conflict_hevc.mp4` (HEVC, colr BT.709 over a PQ VUI) prints the colr values too. `pix_fmt` still follows the VUI full range flag (`yuvj420p` on the H.264 file).
+- **Only the colr speaks.** `colr_only_h264.mp4` (no VUI video signal type) and `colr_only_hevc.mp4` (a video signal type without a colour description) print the colr values.
+- **Only the VUI speaks.** `hlg_h264_vui_only.mp4` and `hlg_vui_only.mp4` print the VUI values.
+- **Unspecified codes.** Primaries, transfer and matrix act as one group. When the colr gives at least one of the three as a code other than 2, ffprobe prints all three from the colr, an unspecified one as `unknown` (`colr_partial_h264.mp4`: bt709, unknown, unknown over a BT.2020 HLG VUI). When all three are 2, it prints the three VUI values (`colr_unspecified_hevc.mp4`). Scratch: a colr of 2, 16, 2 over a PQ VUI prints unknown, smpte2084, unknown.
+- **Range.** The nclx full range flag always wins, also when its three codes are 2 (`colr_unspecified_hevc.mp4`: pc over a limited range VUI, `colr_vui_conflict.mp4`: tv over a full range VUI). nclc has no range field, so the range comes from the VUI (`colr_nclc.mov`: pc).
+
+So the `VUI_RULE` table of stage 5 has one row per member, the same for both codecs:
+
+| Member | H.264 and HEVC |
+|---|---|
+| range | the nclx full range flag when the entry has an nclx colr, else `video_full_range_flag` when `video_signal_type_present_flag` is set, else none |
+| primaries, transfer, space | the colr codes (nclx or nclc) when at least one of the three is not 2, each code 2 giving none, else the SPS values when `colour_description_present_flag` is set, else none |
+
+This reverses the precedence the design assumed for branch A (the SPS before the container). A container reader is right whenever a colr declares a value, and the SPS readers decide only the files whose container is silent: `hlg_h264_vui_only.mp4`, `hlg_vui_only.mp4`, `colr_unspecified_hevc.mp4`, and the range of `colr_nclc.mov`. Matroska `Colour` against a conflicting SPS was not recorded: no committed file has one.
+
+- **VP9.** `vp9_p2_10bit.webm` and `vp9_p2_10bit.mp4` print the PQ names. The Colour element, the vpcC, the colr and the frame header agree. The WebM file has no CodecPrivate, so its profile and bit depth are only in the bitstream.
+- **AV1.** `av1_10bit.mp4` has no color box. ffprobe prints range tv from the sequence header and unknown for the other three.
+
+### Names
+
+- **HDR.** `color_transfer` is `smpte2084` for PQ and `arib-std-b67` for HLG. Primaries print `bt2020`, the matrix `bt2020nc`, the range `tv` or `pc`. `hlg_h264_8bit.mp4` shows that an 8-bit H.264 file keeps the HLG tags.
+- **Profiles.** H.264 prints `Constrained Baseline` (profile_idc 66 with constraint_set1), `Main` (77) and `High` (100), HEVC `Main` (1) and `Main 10` (2), AV1 `Main` (seq_profile 0), VP9 `Profile 0` and `Profile 2`. The corpus also prints `Proxy` for ProRes, `Baseline` for MJPEG, `0` for VP8 and `unknown` for PNG, which carry no profile in a codec configuration. `scripts/compare/profiles.ts` holds the name table, and `compare-ffprobe --self-test` checks it against the codec configuration of every committed stream.
+- **Bit depth.** HEVC, VP9 and AV1 at 10 bits print `pix_fmt` `yuv420p10le` and `bits_per_raw_sample` N/A, so the depth comes from `pix_fmt`.
+- **Disposition.** `disposition.default` is 0 on every ffmpeg-written Matroska file, whose FlagDefault is 0, and on `track_disabled.mp4` (tkhd flags 2). It is 1 on every other MP4 and MOV.
+
+### Side data
+
+- **DOVI configuration record**, on `dv_p81_dvvc.mp4`, `dv_p5_dvcc_dvh1.mp4` and `dv_p81.mkv`: `side_data_type`, `dv_version_major`, `dv_version_minor`, `dv_profile`, `dv_level`, `rpu_present_flag`, `el_present_flag`, `bl_present_flag`, `dv_bl_signal_compatibility_id` and `dv_md_compression`. FFmpeg 8.1.1 prints `dv_md_compression`, as a name: `none` for 0 and `limited` for 1 are in the corpus. The comparison maps `reserved` to 2 and `extended` to 3, which no fixture shows. A `dvh1` entry prints `codec_tag_string` `dvh1` and `codec_name` `hevc`.
+- **Display Matrix**, on every file whose tkhd matrix is not the identity: `side_data_type`, `displaymatrix` (the 3 by 3 matrix as text) and `rotation` (scratch: -90 for a matrix of 0, 1, -1, 0).
+- No other side data type appears in the corpus. `compare-ffprobe` reports a harness problem for any type or key it does not map.
+
+### Sample aspect ratio
+
+- **Precedence.** pasp, then the tkhd matrix, then the tkhd size, then the SPS VUI: `sar_pasp_tkhd_matrix.mp4` prints the pasp 4:3, `sar_tkhd_matrix.mp4` the matrix 2:1 over the tkhd size 3:2, `sar_tkhd_only.mp4` the tkhd size 3:2, `sar_vui_only.mp4` the VUI 4:3. Design 7.1 put the tkhd size before the matrix, which ffprobe does not do. A pasp of 1:1 also wins over a VUI of 4:3 (scratch), and `sar_pasp_only.mp4` shows a pasp of 4:3 winning over a VUI of 1:1.
+- **tkhd size.** The ratio is (stored height x tkhd width) : (stored width x tkhd height) with the integer parts of the 16.16 values. ffmpeg writes a tkhd width of 213.33 for the 4:3 ratio of a 160x120 stream, so `sar_tkhd_fraction.mp4`, the same file without its pasp, prints 213:160.
+- **tkhd matrix.** The column scales hypot(a, c) and hypot(b, d) give the ratio of the x to the y scale when both are above 1 in 16.16 units and they differ by more than 1 percent. Scratch: an x scale of 1.005 prints 1:1, and so do a uniform 2 times scale and a 90 degree rotation.
+- **MP4 without pasp.** With the tkhd size equal to the stored size and an identity matrix, ffprobe prints the VUI ratio (`sar_vui_only.mp4`), and with no VUI aspect ratio N/A for both ratios (`sar_none.mp4`). ffmpeg writes a pasp for every MP4 whose ratio is known, 1:1 included.
+- **Matroska.** For a 4:3 ratio on 160x120, ffmpeg writes DisplayWidth 16, DisplayHeight 9 and DisplayUnit 3, and ffprobe prints 4:3 (`sar_4x3.mkv`), so the (PixelHeight x DisplayWidth) : (PixelWidth x DisplayHeight) rule holds for unit 3 too.
+
+### Fragmented output and the mfra
+
+- Every fragmented file ffmpeg writes with `frag_keyframe` or `-frag_duration` ends with an mfra: with `empty_moov`, with `global_sidx`, with `dash`, with `cmaf`, and with an audio track (`fmp4_audio_longer.mp4`, `fmp4_audio_longer_sidx.mp4`). The `-f dash` outputs (`fmp4_dash_single_file.mp4`, `fmp4_dash_concat_segments.mp4`) have none, and neither do the sliced Chromium recordings.
+- `global_sidx` with an audio track writes one sidx per track after the moov.
+- `fmp4_audio_longer.mp4`: the format duration is 2.523220, the end of the audio. The video stream lasts 2.023242 s for 60 frames at 30 fps, because the first frame lasts 869 ticks of 1/15360 s where the others last 512, so the video is VFR.
+
+### Other files
+
+- `fmp4_mehd_valid.mp4` prints the format duration 4.004000, as without the mehd: ffprobe never reads it.
+- `faststart_large_moov.mp4` has a moov of 72,831 bytes at offset 32, above a 64 KiB head read, with one stts entry per frame.
+- `mov_cmov.mov`: ffprobe reads the zlib-compressed moov (30 frames, 1.001000 s). The own parser answers `unsupported: compressed movie header (cmov)`, so the manifest row expects an error.
