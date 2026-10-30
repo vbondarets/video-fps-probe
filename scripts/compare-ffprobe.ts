@@ -1,7 +1,9 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
+import { analyze as ownAnalyze } from '../src/core/analyze.ts';
 import type { BlobLike } from '../src/core/reader.ts';
+import { analyzeHeader, type HeaderResult } from '../src/header/index.ts';
 import { emptyAnalysis } from '../src/core/result.ts';
 import type { AnalyzeOptions, FileResult, MatroskaMode } from '../src/core/types.ts';
 import { loadManifest, loadRef, fixturePath, type ManifestEntry } from '../tests/helpers/fixtures.ts';
@@ -9,9 +11,9 @@ import { openFixture } from '../tests/helpers/open-blob.ts';
 import { forFixture, loadDeviations } from './compare/deviations.ts';
 import { ARMS, ENGINE_ALIASES, ENGINE_NAMES, REPO_ROOT, loadEngine, resolveEngineName, uncheckedRequiredFields, type EngineHandle, type EngineName } from './compare/engines.ts';
 import { mp4boxCodecStrings } from './compare/idiomatic.ts';
-import { scanIsoBmffLayout, scanMatroskaLayout } from './compare/layout.ts';
+import { isoBmffFixtureSet, scanIsoBmffLayout, scanMatroskaLayout } from './compare/layout.ts';
 import { classifyEvaluation, countOutcomes } from './compare/outcomes.ts';
-import { parseRef, type RefFile } from './compare/ref.ts';
+import { parseRef, ticksToSec, type RefFile } from './compare/ref.ts';
 import {
   renderMarkdown,
   serializeReport,
@@ -22,7 +24,7 @@ import {
   type SkippedFixture,
   type StaleDeviation,
 } from './compare/report.ts';
-import { evaluate, noteContradictsLayout } from './compare/rules.ts';
+import { EXACT_SECONDS_EPSILON, evaluate, noteContradictsLayout } from './compare/rules.ts';
 import { runSelfTest } from './compare/self-test.ts';
 import { FIELD_NAMES, OUTCOME_CLASSES, type FileLayout } from './compare/types.ts';
 
@@ -41,6 +43,8 @@ const USAGE = `Usage: node scripts/compare-ffprobe.ts [options]
   --out <dir>            report directory (default report)
   --no-write             print the summary only
   --verbose              keep console output of the library engines (muted by default)
+  --header               check video-fps-probe/header instead of the arms: every ISO BMFF fixture in both
+                         fragmentedDuration modes against the full own result and ffprobe, writes no report
   --self-test            check the comparison rules on hand-made cases and exit
   --help
 `;
@@ -129,6 +133,119 @@ function printSummary(report: AccuracyReport): void {
   }
 }
 
+const HEADER_TRACK_FIELDS = ['codecName', 'fourccOrCodecId', 'width', 'height', 'rotation', 'frames', 'isStill', 'enabled', 'durationSec', 'startSec', 'avgFpsFfprobe', 'sampleAspectRatio', 'displayWidth', 'displayHeight'] as const;
+const HEADER_FILE_FIELDS = ['container', 'brand', 'formatDurationSec', 'layout', 'error', 'errorCode', 'audioTrackCount', 'primaryTrackId'] as const;
+const NO_DURATION = 'incomplete header: fragmented file without a sidx, mfra or mehd duration';
+
+const fields = (o: object, keys: readonly string[]): string => JSON.stringify(keys.map((k) => (o as Record<string, unknown>)[k] ?? null));
+
+function frameInterval(t: FileResult['videoTracks'][number]): number {
+  if (t.medianFrameInterval) return t.medianFrameInterval.value;
+  return t.avgFps && t.avgFps.value > 0 ? 1 / t.avgFps.value : 0;
+}
+
+interface HeaderTally {
+  exact: number;
+  estimated: number;
+  unresolved: number;
+}
+
+function checkHeader(name: string, mode: 'index' | 'header', h: HeaderResult, full: FileResult, ref: RefFile | null, fail: (text: string) => void): HeaderTally {
+  const tally: HeaderTally = { exact: 0, estimated: 0, unresolved: 0 };
+  const at = (text: string): void => fail(`${name} (${mode}): ${text}`);
+  if (h.scan !== 'header') at(`scan is ${h.scan}`);
+  if (h.io.reads > 8 || h.io.bytesRequested > 16 * 1024 * 1024) at(`read ${h.io.reads} times and requested ${h.io.bytesRequested} bytes under the default limits`);
+  if (h.videoTracks.length !== full.videoTracks.length && !(h.error !== null && h.videoTracks.length === 0)) {
+    at(`${h.videoTracks.length} video tracks against ${full.videoTracks.length}`);
+    return tally;
+  }
+  if (full.layout?.kind !== 'fragmented') {
+    if (fields(h, HEADER_FILE_FIELDS) !== fields(full, HEADER_FILE_FIELDS)) at(`file fields ${fields(h, HEADER_FILE_FIELDS)} differ from full mode ${fields(full, HEADER_FILE_FIELDS)}`);
+    h.videoTracks.forEach((t, i) => {
+      const u = full.videoTracks[i];
+      if (fields(t, HEADER_TRACK_FIELDS) !== fields(u, HEADER_TRACK_FIELDS)) at(`track ${t.trackId} ${fields(t, HEADER_TRACK_FIELDS)} differs from full mode ${fields(u, HEADER_TRACK_FIELDS)}`);
+      else if (u.provenance.avgFps === 'header' && JSON.stringify(t.avgFps) !== JSON.stringify(u.avgFps)) at(`track ${t.trackId} avgFps differs where full mode reports the header average`);
+      else tally.exact++;
+    });
+    return tally;
+  }
+  if (JSON.stringify(h.layout) !== JSON.stringify(full.layout)) at(`layout ${JSON.stringify(h.layout)} differs from ${JSON.stringify(full.layout)}`);
+  const estimated = h.videoTracks.some((t) => t.provenance.durationSec === 'estimated');
+  if (h.formatDurationSec !== null && full.formatDurationSec !== null && h.formatDurationSec !== full.formatDurationSec && !estimated) at(`format duration ${h.formatDurationSec} against ${full.formatDurationSec}`);
+  if (h.formatDurationSec === null && h.errorCode === null && !h.warnings.some((w) => w.startsWith('format duration unresolved: track '))) at('no format duration, no error and no unresolved-track warning');
+  h.videoTracks.forEach((t, i) => {
+    const u = full.videoTracks[i];
+    if (t.isStill !== u.isStill || t.enabled !== u.enabled) at(`track ${t.trackId} isStill ${t.isStill} enabled ${t.enabled} against ${u.isStill} ${u.enabled}`);
+    if (t.frames !== null || t.avgFps !== null || t.startSec !== null) at(`track ${t.trackId} reports per-fragment values`);
+    if (t.durationSec === null) {
+      tally.unresolved++;
+      if (h.errorCode === null && !h.warnings.includes(`format duration unresolved: track ${t.trackId}`)) at(`track ${t.trackId} has no duration and the result says nothing`);
+      return;
+    }
+    if (t.provenance.durationSec === 'estimated') {
+      tally.estimated++;
+      return;
+    }
+    const s = ref?.videoStreams[i];
+    const expected = s && s.durationTs !== null ? ticksToSec(s.durationTs, s.timeBase) : u.durationSec;
+    const tolerance = Math.abs((u.durationSec ?? 0) - (expected ?? 0)) + EXACT_SECONDS_EPSILON;
+    if (u.durationSec === null || Math.abs(t.durationSec - u.durationSec) > frameInterval(u) + EXACT_SECONDS_EPSILON) at(`track ${t.trackId} duration ${t.durationSec} is not within one frame interval of full mode ${u.durationSec}`);
+    else if (expected !== null && Math.abs(t.durationSec - expected) > tolerance) at(`track ${t.trackId} duration ${t.durationSec} against ffprobe ${expected}, full mode ${u.durationSec}`);
+    else tally.exact++;
+  });
+  return tally;
+}
+
+async function runHeaderArm(entries: ManifestEntry[], withLarge: boolean, refOf: (name: string) => RefFile | null): Promise<number> {
+  const failures: string[] = [];
+  const fail = (text: string): void => {
+    failures.push(text);
+  };
+  const usable = entries.filter((e) => (withLarge || !isLarge(e)) && fixturePath(e.name) !== null);
+  const iso = new Set(await isoBmffFixtureSet(usable.map((e) => e.name), fixturePath));
+  const totals = { fixtures: 0, fragmented: 0, exact: 0, estimated: 0, unresolved: 0 };
+  const byName = new Map<string, Record<'index' | 'header', HeaderResult>>();
+  for (const entry of usable.filter((e) => iso.has(e.name))) {
+    const opened = await openFixture(fixturePath(entry.name)!);
+    try {
+      const full = await ownAnalyze(opened.blob, entry.name, {});
+      const runs = { index: await analyzeHeader(opened.blob, { name: entry.name }), header: await analyzeHeader(opened.blob, { name: entry.name, fragmentedDuration: 'header' }) };
+      byName.set(entry.name, runs);
+      totals.fixtures++;
+      if (full.layout?.kind === 'fragmented') totals.fragmented++;
+      for (const mode of ['index', 'header'] as const) {
+        const t = checkHeader(entry.name, mode, runs[mode], full, refOf(entry.name), fail);
+        totals.exact += t.exact;
+        totals.estimated += t.estimated;
+        totals.unresolved += t.unresolved;
+      }
+    } finally {
+      await opened.close();
+    }
+  }
+  const expect = (name: string, mode: 'index' | 'header', test: (r: HeaderResult) => boolean, what: string): void => {
+    const r = byName.get(name)?.[mode];
+    if (!r) fail(`${name} (${mode}): missing from the run`);
+    else if (!test(r)) fail(`${name} (${mode}): ${what}, got ${r.errorCode ?? 'no error'} and ${JSON.stringify(r.videoTracks.map((t) => [t.durationSec, t.provenance.durationSec ?? null]))}`);
+  };
+  const resolvedBy =
+    (provenance: string) =>
+    (r: HeaderResult): boolean =>
+      r.error === null && r.videoTracks.length > 0 && r.videoTracks.every((t) => t.durationSec !== null && t.provenance.durationSec === provenance);
+  const names = [...byName.keys()];
+  for (const name of names.filter((n) => n.includes('global_sidx'))) expect(name, 'index', resolvedBy('header'), 'a global sidx gives the exact duration');
+  for (const name of names.filter((n) => /^rec_.*\.mp4$/.test(n) && !n.includes('_sliced'))) expect(name, 'index', resolvedBy('header'), 'a recording with an mfra gets the full-mode duration');
+  for (const name of names.filter((n) => /^rec_.*_sliced\.mp4$/.test(n))) {
+    for (const mode of ['index', 'header'] as const) expect(name, mode, (r) => r.errorCode === 'no-duration' && r.error === NO_DURATION && r.videoTracks.length > 0, 'a sliced recording has no duration');
+  }
+  expect('fmp4_mehd_valid.mp4', 'header', resolvedBy('estimated'), 'a valid mehd gives an estimated duration');
+  console.log(
+    `header: ${totals.fixtures} ISO BMFF fixtures (${totals.fragmented} fragmented) in both modes, ${totals.exact} track runs equal to full mode and ffprobe, ${totals.estimated} estimated from mehd, ${totals.unresolved} without a duration`,
+  );
+  for (const f of failures) console.error(`FAIL header: ${f}`);
+  return failures.length > 0 ? 1 : 0;
+}
+
 async function main(): Promise<number> {
   const { values } = parseArgs({
     options: {
@@ -141,6 +258,7 @@ async function main(): Promise<number> {
       'no-write': { type: 'boolean', default: false },
       verbose: { type: 'boolean', default: false },
       'self-test': { type: 'boolean', default: false },
+      header: { type: 'boolean', default: false },
       help: { type: 'boolean', default: false },
     },
     strict: true,
@@ -203,6 +321,8 @@ async function main(): Promise<number> {
     if (!codecStringCache.has(name)) codecStringCache.set(name, await withMutedConsole(!verbose, () => mp4boxCodecStrings(blob)).catch(() => null));
     return codecStringCache.get(name) ?? null;
   };
+  if (values.header) return runHeaderArm(entries, withLarge, refOf);
+
   const harnessProblems = new Set<string>();
   const opts: AnalyzeOptions = { matroskaMode: mkvMode as MatroskaMode };
   const engineReports: EngineReport[] = [];
