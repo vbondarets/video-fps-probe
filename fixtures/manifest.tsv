@@ -155,6 +155,7 @@ colr_only_hevc.mp4	mp4	color	ok	yes	10-bit HEVC whose VUI has a video signal typ
 colr_unspecified_hevc.mp4	mp4	color	ok	yes	hdr10_hevc10.mp4 with a colr nclx whose three codes are 2 (unspecified) and whose full range flag is set: ffprobe prints the PQ codes of the SPS VUI and the pc range of the colr	files/colr_unspecified_hevc.mp4
 colr_partial_h264.mp4	mp4	color	ok	yes	hlg_h264_8bit.mp4 with a colr nclx of primaries 1 and two unspecified codes, full range: ffprobe prints bt709, two unknowns and pc, nothing from the SPS VUI	files/colr_partial_h264.mp4
 hlg_vui_only.mp4	mp4	color	ok	yes	hlg_hevc10.mp4 with its colr renamed to free: only the SPS VUI carries the HLG tags, and ffprobe prints them	files/hlg_vui_only.mp4
+hlg_h264_vui_only.mp4	mp4	color	ok	yes	hlg_h264_8bit.mp4 with its colr renamed to free: only the H.264 SPS VUI carries the HLG tags, and ffprobe prints them	files/hlg_h264_vui_only.mp4
 dv_p81_dvvc.mp4	mp4	dovi	ok	yes	hdr10_hevc10.mp4 with a dvvC record appended to hvc1: Dolby Vision profile 8, level 1, compatibility id 1, metadata compression 1 (limited)	files/dv_p81_dvvc.mp4
 dv_p5_dvcc_dvh1.mp4	mp4	dovi	ok	yes	hdr10_hevc10.mp4 with the entry renamed to dvh1 and a dvcC record: Dolby Vision profile 5, level 2, compatibility id 0, no metadata compression	files/dv_p5_dvcc_dvh1.mp4
 dv_p81.mkv	matroska	dovi	ok	yes	hdr10_hevc10.mkv with a BlockAdditionMapping of type dvvC where ffmpeg writes one: Dolby Vision profile 8, level 1, compatibility id 1, metadata compression 1	files/dv_p81.mkv

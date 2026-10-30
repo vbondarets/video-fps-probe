@@ -386,6 +386,8 @@ node "$TOOLS/patch-mp4.mjs" colr hlg_h264_8bit.mp4 colr_partial_h264.mp4 nclx:1,
 note colr_partial_h264.mp4 mp4 color ok "hlg_h264_8bit.mp4 with a colr nclx of primaries 1 and two unspecified codes, full range: ffprobe prints bt709, two unknowns and pc, nothing from the SPS VUI"
 node "$TOOLS/patch-mp4.mjs" colr hlg_hevc10.mp4 hlg_vui_only.mp4 free > /dev/null
 note hlg_vui_only.mp4 mp4 color ok "hlg_hevc10.mp4 with its colr renamed to free: only the SPS VUI carries the HLG tags, and ffprobe prints them"
+node "$TOOLS/patch-mp4.mjs" colr hlg_h264_8bit.mp4 hlg_h264_vui_only.mp4 free > /dev/null
+note hlg_h264_vui_only.mp4 mp4 color ok "hlg_h264_8bit.mp4 with its colr renamed to free: only the H.264 SPS VUI carries the HLG tags, and ffprobe prints them"
 node "$TOOLS/patch-mp4.mjs" dvvc hdr10_hevc10.mp4 dv_p81_dvvc.mp4 8,1,1,1 > /dev/null
 note dv_p81_dvvc.mp4 mp4 dovi ok "hdr10_hevc10.mp4 with a dvvC record appended to hvc1: Dolby Vision profile 8, level 1, compatibility id 1, metadata compression 1 (limited)"
 node "$TOOLS/patch-mp4.mjs" dvcc hdr10_hevc10.mp4 dv_p5_dvcc_dvh1.mp4 5,2,0,0,dvh1 > /dev/null
