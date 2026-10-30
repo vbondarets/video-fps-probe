@@ -80,14 +80,18 @@ export class LimitedSource implements BlobLike {
       if (caller.aborted) this.#forward();
       else caller.addEventListener('abort', this.#forward, { once: true });
     }
-    if (limits.maxMs <= MAX_TIMER_MS && !internal.aborted) {
-      this.#timer = setTimeout(() => {
-        this.#timer = null;
-        this.#timedOut = true;
-        this.#controller.abort(new LimitError('time-limit', `limit reached: maxMs ${this.#maxMs}`));
-      }, limits.maxMs);
-      (this.#timer as { unref?: () => void }).unref?.();
-    }
+    if (Number.isFinite(limits.maxMs) && !internal.aborted) this.#arm(limits.maxMs);
+  }
+
+  #arm(left: number): void {
+    const step = Math.min(left, MAX_TIMER_MS);
+    this.#timer = setTimeout(() => {
+      if (left > step) return this.#arm(left - step);
+      this.#timer = null;
+      this.#timedOut = true;
+      this.#controller.abort(new LimitError('time-limit', `limit reached: maxMs ${this.#maxMs}`));
+    }, step);
+    (this.#timer as { unref?: () => void }).unref?.();
   }
 
   get bytesLeft(): number {

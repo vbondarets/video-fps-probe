@@ -109,16 +109,21 @@ describe('the deadline', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  test('a maxMs above the timer range does not fire at once', async () => {
+  test('a maxMs above the timer range does not fire at once and still settles a hanging read at maxMs', async () => {
     const r = await analyzeHeader(new Blob([HEAD]), { limits: { maxMs: 2 ** 40 } });
     expect(r.error).toBeNull();
     vi.useFakeTimers();
     const p = analyzeHeader(hanging(), { limits: { maxMs: 2 ** 31 } });
     const s = settles(p);
-    expect(vi.getTimerCount()).toBe(0);
+    expect(vi.getTimerCount()).toBe(1);
     await vi.advanceTimersByTimeAsync(10_000);
     expect(s.done()).toBe(false);
-    vi.useRealTimers();
+    await vi.advanceTimersByTimeAsync(2 ** 31 - 1 - 10_000);
+    expect(s.done()).toBe(false);
+    expect(vi.getTimerCount()).toBe(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(await p).toMatchObject({ errorCode: 'time-limit', error: `limit reached: maxMs ${2 ** 31}` });
+    expect(vi.getTimerCount()).toBe(0);
   });
 
   test('maxMs 0 stops before the first read', async () => {
