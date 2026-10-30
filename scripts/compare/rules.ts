@@ -1,15 +1,25 @@
 import type { FileResult, Rational, VideoTrackResult } from '../../src/core/types.ts';
+import { expectedLayout } from './layout.ts';
+import { constraintsFromCodecString, ffmpegProfileName } from './profiles.ts';
 import { parseRatio, ticksToSec, type Ratio, type RefFile, type RefStream } from './ref.ts';
 import {
   checkId,
   type CheckResult,
   type CheckScope,
+  type CodecConfigFacts,
+  type ColorLike,
+  type ContainerColor,
   type ContainerFamily,
+  type ContainerLayoutLike,
+  type DolbyVisionLike,
   type FieldName,
+  type FileFields040,
   type FileLayout,
+  type LayoutTrack,
   type MatroskaLayoutTrack,
   type FixtureDeviations,
   type FixtureInfo,
+  type TrackFields040,
   type Verdict,
 } from './types.ts';
 
@@ -48,7 +58,21 @@ const RULE = {
   maxFps: 'Exact rational vs the tail-excluded reference maximum',
   isVfr: 'Equal to the reference VFR flag (shared rule, tolerance max(1 tick, 0.5% of the median delta))',
   duplicates: 'Equal to the reference count of deltas that are 0 or less',
+  medianFrameInterval: 'Equal rational vs medianDeltaTicks x time_base on exact scans, within-tol when fewer than 2 deltas remain after the tail and the app kept the tail, which the reference never keeps, and n/a for probe and header scans',
+  sampleAspectRatio: 'Equal ratio vs sample_aspect_ratio. No ratio is exact against 1:1 or N/A, and a built-in deviation against another ratio only when an independent scan finds no pasp, tkhd size, non-uniform tkhd matrix or Display element',
+  displayAspectRatio: 'width x SAR over height vs display_aspect_ratio, with the display size equal to round(width x SAR) by height. No ratio is judged as for sampleAspectRatio',
+  enabled: 'Equal to the tkhd enabled flag (MP4 and MOV) or FlagEnabled (Matroska) of an independent scan. ffprobe disposition.default is shown for information',
+  color: 'Never wrong, sometimes silent: a value equals the ffprobe name, none against none is exact, and none against a value is a built-in deviation only when ffprobe takes it from a bitstream the library does not read (no colr, vpcC or Colour that declares it, and no SPS in an H.264 or HEVC codec configuration)',
+  bitDepth: 'Equal to the component depth of pix_fmt, and none is n/a unless a codec configuration carries a depth',
+  profile: 'The numeric profile and constraint flags through the FFmpeg name table vs profile, and none is n/a unless a codec configuration carries a profile',
+  codecString: 'Equal to the codec string mp4box.js 2.4.1 reports for the track (MP4 and MOV), n/a on Matroska and for codecs without a codec string rule',
+  dolbyVision: 'Field by field vs the DOVI configuration record side data, mdCompression vs dv_md_compression',
+  layout: 'Equal to the layout of an independent top-level scan: mvex, the first mdat against the moov, a sidx before the first moof, the moov sample counts',
+  errorCode: 'null exactly when error is null, and equal to the manifest code when the row has one',
 } as const;
+
+export const BITSTREAM_SAR = 'bitstream-derived: ffprobe takes the ratio from the SPS VUI, and the container declares none';
+export const BITSTREAM_COLOR = 'bitstream-derived: ffprobe takes the value from a bitstream the library does not read, and the container declares none';
 
 export interface Draft {
   field: FieldName;
@@ -82,6 +106,7 @@ export interface EvaluateInput {
   layout?: FileLayout | null;
   deviations?: FixtureDeviations | null;
   threw?: string | null;
+  codecStrings?: ReadonlyMap<number, string> | null;
 }
 
 export interface Evaluation {
@@ -575,6 +600,252 @@ function noPacketsDraft(field: FieldName, t: VideoTrackResult, rule: string, app
   return { ...trackBase(field, null, t, rule), verdict: 'n/a', app, ffprobe: null, detail: 'no packet reference' };
 }
 
+type Track040 = VideoTrackResult & TrackFields040;
+
+export interface TrackFacts {
+  iso: LayoutTrack | null;
+  mkv: MatroskaLayoutTrack | null;
+}
+
+function gcd(a: number, b: number): number {
+  let x = Math.abs(a);
+  let y = Math.abs(b);
+  while (y) [x, y] = [y, x % y];
+  return x || 1;
+}
+
+function reduced(num: number, den: number): Ratio {
+  const g = gcd(num, den);
+  return { num: num / g, den: den / g };
+}
+
+const fmtColon = (r: Ratio | null | undefined): string | null => (r ? `${r.num}:${r.den}` : null);
+
+function sortedPositiveDeltas(s: RefStream): number[] | null {
+  const pts = s.packets?.ptsPresented;
+  if (!pts) return null;
+  const sorted = [...pts].sort((a, b) => a - b);
+  return sorted
+    .slice(1)
+    .map((v, i) => v - sorted[i])
+    .filter((d) => d > 0)
+    .sort((a, b) => a - b);
+}
+
+function medianDraft(t: Track040, s: RefStream, result: FileResult): Draft | null {
+  const app = t.medianFrameInterval;
+  if (app === undefined) return null;
+  const base = trackBase('medianFrameInterval', null, t, RULE.medianFrameInterval);
+  const provenance = (t.provenance as Record<string, string | undefined>).medianFrameInterval;
+  const ticks = s.packets?.medianDeltaTicks ?? null;
+  const ff = ticks === null ? null : reduced(ticks * s.timeBase.num, s.timeBase.den);
+  const appStr = fmtRatio(app);
+  if (result.scan !== 'exact' && provenance !== 'exact') {
+    return { ...base, verdict: 'n/a', app: appStr, ffprobe: fmtRatio(ff), detail: `no exact scan (scan=${result.scan ?? 'none'}, provenance=${provenance ?? 'none'})` };
+  }
+  if (!app && !ff) return { ...base, verdict: 'exact', app: null, ffprobe: null, detail: 'both report none' };
+  if (app && ff && sameRatio(app, ff)) return { ...base, verdict: 'exact', app: appStr, ffprobe: fmtRatio(ff) };
+  const kept = s.packets?.instFpsExcludingTail?.count ?? 0;
+  const all = sortedPositiveDeltas(s);
+  if (app && kept < 2 && all && all.length > 0) {
+    const median = all[Math.floor((all.length - 1) / 2)];
+    if (sameRatio(app, reduced(median * s.timeBase.num, s.timeBase.den))) return { ...base, verdict: 'within-tol', app: appStr, ffprobe: fmtRatio(ff), detail: 'tail kept below 2 deltas' };
+  }
+  return { ...base, verdict: 'mismatch', app: appStr, ffprobe: fmtRatio(ff) };
+}
+
+function nonUniformMatrix(matrix: readonly number[] | null | undefined): boolean {
+  if (!matrix || matrix.length < 5) return false;
+  const x = Math.hypot(matrix[0], matrix[3]);
+  const y = Math.hypot(matrix[1], matrix[4]);
+  return x > 1 && y > 1 && x < 2 ** 24 && y < 2 ** 24 && Math.abs(x / y - 1) > 0.01;
+}
+
+export function containerDeclaresSar(facts: TrackFacts): boolean | null {
+  const { iso, mkv } = facts;
+  if (iso) {
+    const e = iso.entry;
+    if (!e) return null;
+    if (e.pasp && e.pasp.num > 0 && e.pasp.den > 0) return true;
+    if (iso.tkhdWidth && iso.tkhdHeight && (iso.tkhdWidth !== e.width || iso.tkhdHeight !== e.height)) return true;
+    return nonUniformMatrix(iso.matrix);
+  }
+  if (mkv) return (mkv.displayWidth ?? null) !== null || (mkv.displayHeight ?? null) !== null;
+  return null;
+}
+
+function sarDrafts(t: Track040, s: RefStream, facts: TrackFacts): Draft[] {
+  const out: Draft[] = [];
+  const sar = t.sampleAspectRatio;
+  const declared = containerDeclaresSar(facts);
+  const silent = (ff: Ratio | null): boolean => !ff || ff.num === ff.den;
+  if (sar !== undefined) {
+    const base = trackBase('sampleAspectRatio', null, t, RULE.sampleAspectRatio);
+    const ff = s.sampleAspectRatio;
+    if (sar) out.push({ ...base, verdict: ff && sameRatio(sar, ff) ? 'exact' : 'mismatch', app: fmtColon(sar), ffprobe: fmtColon(ff) ?? 'N/A' });
+    else if (silent(ff)) out.push({ ...base, verdict: 'exact', app: null, ffprobe: fmtColon(ff) ?? 'N/A', detail: 'no ratio in the container, ffprobe prints 1:1 or N/A' });
+    else out.push({ ...base, verdict: 'mismatch', app: null, ffprobe: fmtColon(ff), builtinDeviation: declared === false ? BITSTREAM_SAR : null, detail: declared === null ? 'no independent scan of the container' : null });
+  }
+  if (t.displayWidth !== undefined || t.displayHeight !== undefined) {
+    const base = trackBase('displayAspectRatio', null, t, RULE.displayAspectRatio);
+    const ratio = sar ?? null;
+    const ff = s.displayAspectRatio;
+    const width = t.width > 0 ? Math.round((t.width * (ratio?.num ?? 1)) / (ratio?.den ?? 1)) : null;
+    const height = t.height > 0 ? t.height : null;
+    const appDar = t.width > 0 && t.height > 0 ? reduced(t.width * (ratio?.num ?? 1), t.height * (ratio?.den ?? 1)) : null;
+    const app = `${fmtColon(appDar) ?? '-'} (${t.displayWidth ?? '-'}x${t.displayHeight ?? '-'})`;
+    if ((t.displayWidth ?? null) !== width || (t.displayHeight ?? null) !== height) {
+      out.push({ ...base, verdict: 'mismatch', app, ffprobe: fmtColon(ff), detail: `the display size should be ${width ?? '-'}x${height ?? '-'}, round(width x SAR) by height` });
+    } else if (!ff) out.push({ ...base, verdict: ratio ? 'mismatch' : 'exact', app, ffprobe: 'N/A', detail: ratio ? null : 'no ratio on either side' });
+    else if (appDar && sameRatio(appDar, ff)) out.push({ ...base, verdict: 'exact', app, ffprobe: fmtColon(ff) });
+    else out.push({ ...base, verdict: 'mismatch', app, ffprobe: fmtColon(ff), builtinDeviation: !ratio && declared === false ? BITSTREAM_SAR : null });
+  }
+  return out;
+}
+
+function enabledDraft(t: Track040, s: RefStream, facts: TrackFacts): Draft | null {
+  if (t.enabled === undefined) return null;
+  const base = trackBase('enabled', null, t, RULE.enabled);
+  const expected = facts.iso ? facts.iso.enabled : facts.mkv ? facts.mkv.flagEnabled : undefined;
+  const info = `ffprobe disposition.default ${s.enabled ? 1 : 0}, shown for information`;
+  const app = t.enabled === null ? null : String(t.enabled);
+  if (expected === undefined) return { ...base, verdict: 'n/a', app, ffprobe: null, detail: `no independent scan, ${info}` };
+  return { ...base, verdict: t.enabled === expected ? 'exact' : 'mismatch', app, ffprobe: String(expected), detail: info };
+}
+
+type ColorMember = 'range' | 'primaries' | 'transfer' | 'space';
+
+const COLOR_FIELDS: ReadonlyArray<readonly [FieldName, ColorMember, keyof RefStream]> = [
+  ['colorRange', 'range', 'colorRange'],
+  ['colorPrimaries', 'primaries', 'colorPrimaries'],
+  ['colorTransfer', 'transfer', 'colorTransfer'],
+  ['colorSpace', 'space', 'colorSpace'],
+];
+
+const UNSPECIFIED_CODE = 2;
+
+function declares(c: ContainerColor | null | undefined, member: ColorMember): boolean {
+  if (!c) return false;
+  if (member === 'range') return c.fullRange !== null;
+  const code = member === 'primaries' ? c.primaries : member === 'transfer' ? c.transfer : c.matrix;
+  return code !== null && code !== UNSPECIFIED_CODE;
+}
+
+function configOf(facts: TrackFacts): CodecConfigFacts | null {
+  return facts.iso?.entry?.config ?? facts.mkv?.config ?? null;
+}
+
+export function bitstreamOnlyColor(t: VideoTrackResult, facts: TrackFacts, member: ColorMember): boolean | null {
+  if (!facts.iso?.entry && !facts.mkv) return null;
+  const sources = [facts.iso?.entry?.colr, facts.iso?.entry?.vpcC, facts.mkv?.colour];
+  if (sources.some((c) => declares(c, member))) return false;
+  const config = configOf(facts);
+  if ((t.codecName === 'h264' || t.codecName === 'hevc') && config?.hasSps) return false;
+  return true;
+}
+
+function colorDrafts(t: Track040, s: RefStream, facts: TrackFacts): Draft[] {
+  if (t.color === undefined) return [];
+  const color: ColorLike | null = t.color;
+  return COLOR_FIELDS.map(([field, member, refKey]) => {
+    const base = trackBase(field, null, t, RULE.color);
+    const app = color?.[member] ?? null;
+    const ff = s[refKey] as string | null;
+    if (app !== null) return { ...base, verdict: app === ff ? 'exact' : 'mismatch', app, ffprobe: ff };
+    if (ff === null) return { ...base, verdict: 'exact', app: null, ffprobe: null, detail: 'both report none' };
+    const only = bitstreamOnlyColor(t, facts, member);
+    return { ...base, verdict: 'mismatch', app: null, ffprobe: ff, builtinDeviation: only ? BITSTREAM_COLOR : null, detail: only === null ? 'no independent scan of the container' : null };
+  });
+}
+
+function bitDepthDraft(t: Track040, s: RefStream, facts: TrackFacts): Draft | null {
+  if (t.color === undefined) return null;
+  const base = trackBase('bitDepth', null, t, RULE.bitDepth);
+  const app = t.color?.bitDepth ?? null;
+  const ff = s.bitDepth === null ? null : String(s.bitDepth);
+  if (app !== null) return { ...base, verdict: String(app) === ff ? 'exact' : 'mismatch', app: String(app), ffprobe: ff, detail: `pix_fmt ${s.pixFmt ?? 'N/A'}` };
+  const config = configOf(facts);
+  const carries = !!config && (config.bitDepth !== null || (config.kind === 'avcC' && config.hasSps === true));
+  return { ...base, verdict: carries ? 'mismatch' : 'n/a', app: null, ffprobe: ff, detail: carries ? `the ${config?.kind} codec configuration carries a depth` : 'no codec configuration carries a depth' };
+}
+
+function profileDraft(t: Track040, s: RefStream, facts: TrackFacts): Draft | null {
+  if (t.color === undefined) return null;
+  const base = trackBase('profile', null, t, RULE.profile);
+  const app = t.color?.profile ?? null;
+  const config = configOf(facts);
+  if (app === null) {
+    const carries = config?.profile != null;
+    return { ...base, verdict: carries ? 'mismatch' : 'n/a', app: null, ffprobe: s.profile, detail: carries ? `the ${config?.kind} codec configuration carries profile ${config?.profile}` : 'no codec configuration carries a profile' };
+  }
+  const constraints = config?.constraints ?? constraintsFromCodecString(t.color?.codecString);
+  const name = ffmpegProfileName(t.codecName, app, constraints);
+  if (name === null) return { ...base, verdict: 'mismatch', app: String(app), ffprobe: s.profile, detail: `the name table has no entry for ${t.codecName} profile ${app} with constraints ${constraints ?? 'none'}` };
+  return { ...base, verdict: name === s.profile ? 'exact' : 'mismatch', app: `${app} (${name})`, ffprobe: s.profile };
+}
+
+const CODEC_STRING_RULE = /^(avc[13]|hvc1|hev1|dvh1|dvhe|av01|vp09)\./;
+
+function codecStringDraft(family: ContainerFamily, t: Track040, codecStrings: ReadonlyMap<number, string> | null | undefined): Draft | null {
+  if (t.color === undefined) return null;
+  const base = trackBase('codecString', null, t, RULE.codecString);
+  const app = t.color?.codecString ?? null;
+  if (family === 'matroska') return { ...base, verdict: 'n/a', app, ffprobe: null, detail: 'no codec string oracle for Matroska' };
+  const expected = codecStrings?.get(t.trackId);
+  if (expected === undefined) return { ...base, verdict: 'n/a', app, ffprobe: null, detail: 'mp4box.js gave no codec string for the track' };
+  if (app === null && !CODEC_STRING_RULE.test(expected)) return { ...base, verdict: 'n/a', app: null, ffprobe: expected, detail: 'no codec string rule for this codec' };
+  return { ...base, verdict: app === expected ? 'exact' : 'mismatch', app, ffprobe: expected };
+}
+
+const DV_FIELDS: ReadonlyArray<keyof DolbyVisionLike> = ['versionMajor', 'versionMinor', 'profile', 'level', 'rpu', 'el', 'bl', 'compatibilityId', 'mdCompression'];
+
+function fmtDolbyVision(d: DolbyVisionLike | null): string | null {
+  return d ? DV_FIELDS.map((k) => `${k} ${String(d[k])}`).join(', ') : null;
+}
+
+function dolbyVisionDraft(t: Track040, s: RefStream): Draft | null {
+  if (t.color === undefined) return null;
+  const base = trackBase('dolbyVision', null, t, RULE.dolbyVision);
+  const app = t.color?.dolbyVision ?? null;
+  const ff = s.dolbyVision;
+  if (!app && !ff) return { ...base, verdict: 'exact', app: null, ffprobe: null, detail: 'both report none' };
+  if (!app || !ff) return { ...base, verdict: 'mismatch', app: fmtDolbyVision(app), ffprobe: fmtDolbyVision(ff) };
+  const differ = DV_FIELDS.filter((k) => app[k] !== ff[k]);
+  return { ...base, verdict: differ.length === 0 ? 'exact' : 'mismatch', app: fmtDolbyVision(app), ffprobe: fmtDolbyVision(ff), detail: differ.length > 0 ? `differs in ${differ.join(', ')}` : null };
+}
+
+function fileBase(field: FieldName, rule: string) {
+  return { field, sub: null, scope: 'file' as const, trackId: null, rule };
+}
+
+const fmtLayout = (l: ContainerLayoutLike | null): string | null => (l ? `${l.kind}, moov ${l.moovOffset ?? '-'}+${l.moovSize ?? '-'}, sidx ${l.sidx}, emptyMoov ${l.emptyMoov}` : null);
+
+function layoutDraft(family: ContainerFamily | null, result: FileResult & FileFields040, layout: FileLayout | null | undefined): Draft | null {
+  if (result.layout === undefined) return null;
+  const base = fileBase('layout', RULE.layout);
+  if (family === 'isobmff' && !layout) return { ...base, verdict: 'n/a', app: fmtLayout(result.layout), ffprobe: null, detail: 'no independent scan' };
+  const expected = family === 'isobmff' ? expectedLayout(layout) : null;
+  const app = result.layout;
+  const differ = app && expected ? (['kind', 'moovOffset', 'moovSize', 'sidx', 'emptyMoov'] as const).filter((k) => app[k] !== expected[k]) : [];
+  const same = app === null || expected === null ? app === expected : differ.length === 0;
+  return { ...base, verdict: same ? 'exact' : 'mismatch', app: fmtLayout(app), ffprobe: fmtLayout(expected), detail: differ.length > 0 ? `differs in ${differ.join(', ')}` : null };
+}
+
+function errorCodeDraft(info: FixtureInfo, result: FileResult & FileFields040): Draft | null {
+  if (result.errorCode === undefined) return null;
+  const base = fileBase('errorCode', RULE.errorCode);
+  const code = result.errorCode;
+  if ((result.error === null) !== (code === null)) return { ...base, verdict: 'mismatch', app: code, ffprobe: info.code ?? null, detail: `error is ${result.error === null ? 'null' : 'set'}, errorCode ${code === null ? 'null' : 'set'}` };
+  if (code !== null && info.code) return { ...base, verdict: code === info.code ? 'exact' : 'mismatch', app: code, ffprobe: info.code };
+  return { ...base, verdict: 'exact', app: code, ffprobe: info.code ?? null, detail: code === null ? null : 'the manifest row names no code' };
+}
+
+function drafts040(family: ContainerFamily, t: VideoTrackResult, s: RefStream, result: FileResult, facts: TrackFacts, codecStrings: ReadonlyMap<number, string> | null | undefined): Draft[] {
+  const x = t as Track040;
+  const out = [medianDraft(x, s, result), ...sarDrafts(x, s, facts), enabledDraft(x, s, facts), ...colorDrafts(x, s, facts), bitDepthDraft(x, s, facts), profileDraft(x, s, facts), codecStringDraft(family, x, codecStrings), dolbyVisionDraft(x, s)];
+  return out.filter((d): d is Draft => d !== null);
+}
+
 function trackDrafts(
   family: ContainerFamily,
   info: FixtureInfo,
@@ -658,6 +929,7 @@ export function evaluate(input: EvaluateInput): Evaluation {
 
   const family = detectFamily(info, ref, result);
   const fileChecks: CheckResult[] = [finalize(errorDraft(info, ref, result, threw))];
+  for (const d of [errorCodeDraft(info, result), layoutDraft(family, result, layout)]) if (d) fileChecks.push(finalize(d));
   const tracks: TrackEvaluation[] = [];
 
   const finish = (): Evaluation => ({
@@ -692,7 +964,10 @@ export function evaluate(input: EvaluateInput): Evaluation {
 
   for (const pair of pairs) {
     if (!pair.app || !pair.ref) continue;
-    const drafts = trackDrafts(family, info, result, layout, pair.app, pair.ref, family === 'matroska' ? matroskaTrackOf(layout, ref.videoStreams, pair.ref) : null);
+    const mkv = family === 'matroska' ? matroskaTrackOf(layout, ref.videoStreams, pair.ref) : null;
+    const trackId = pair.app.trackId;
+    const facts: TrackFacts = { iso: family === 'isobmff' ? (layout?.tracks?.find((lt) => lt.id === trackId) ?? null) : null, mkv };
+    const drafts = [...trackDrafts(family, info, result, layout, pair.app, pair.ref, mkv), ...drafts040(family, pair.app, pair.ref, result, facts, input.codecStrings)];
     tracks.push({
       trackId: pair.app.trackId,
       refIndex: pair.ref.index,

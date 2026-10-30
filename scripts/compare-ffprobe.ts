@@ -8,6 +8,7 @@ import { loadManifest, loadRef, fixturePath, type ManifestEntry } from '../tests
 import { openFixture } from '../tests/helpers/open-blob.ts';
 import { forFixture, loadDeviations } from './compare/deviations.ts';
 import { ARMS, ENGINE_ALIASES, ENGINE_NAMES, REPO_ROOT, loadEngine, resolveEngineName, type EngineHandle, type EngineName } from './compare/engines.ts';
+import { mp4boxCodecStrings } from './compare/idiomatic.ts';
 import { scanIsoBmffLayout, scanMatroskaLayout } from './compare/layout.ts';
 import { classifyEvaluation, countOutcomes } from './compare/outcomes.ts';
 import { parseRef, type RefFile } from './compare/ref.ts';
@@ -23,7 +24,7 @@ import {
 } from './compare/report.ts';
 import { evaluate, noteContradictsLayout } from './compare/rules.ts';
 import { runSelfTest } from './compare/self-test.ts';
-import { OUTCOME_CLASSES, type FileLayout } from './compare/types.ts';
+import { FIELD_NAMES, OUTCOME_CLASSES, type FileLayout } from './compare/types.ts';
 
 const DEVIATIONS_DIR = join(REPO_ROOT, 'fixtures', 'known-deviations');
 const DEFAULT_REPEAT = 3;
@@ -196,6 +197,12 @@ async function main(): Promise<number> {
     return refCache.get(name) ?? null;
   };
   const layoutCache = new Map<string, FileLayout | null>();
+  const codecStringCache = new Map<string, Map<number, string> | null>();
+  const codecStringsOf = async (name: string, blob: BlobLike, result: FileResult): Promise<Map<number, string> | null> => {
+    if (!result.videoTracks.some((t) => (t as { color?: unknown }).color !== undefined)) return null;
+    if (!codecStringCache.has(name)) codecStringCache.set(name, await withMutedConsole(!verbose, () => mp4boxCodecStrings(blob)).catch(() => null));
+    return codecStringCache.get(name) ?? null;
+  };
   const harnessProblems = new Set<string>();
   const opts: AnalyzeOptions = { matroskaMode: mkvMode as MatroskaMode };
   const engineReports: EngineReport[] = [];
@@ -238,7 +245,7 @@ async function main(): Promise<number> {
       const ref = refOf(entry.name);
       const opened = await openFixture(path);
       try {
-        const info = { name: entry.name, container: entry.container, category: entry.category, expect: entry.expect, notes: entry.notes };
+        const info = { name: entry.name, container: entry.container, category: entry.category, expect: entry.expect, notes: entry.notes, ...(entry.columns.code ? { code: entry.columns.code } : {}) };
         const isIso = entry.container === 'mp4' || entry.container === 'mov';
         const isMatroska = entry.container === 'webm' || entry.container === 'matroska';
         if (!layoutCache.has(entry.name)) {
@@ -248,10 +255,12 @@ async function main(): Promise<number> {
         const layout = layoutCache.get(entry.name) ?? null;
         const contradiction = noteContradictsLayout(info, layout);
         if (contradiction) harnessProblems.add(contradiction);
+        for (const s of ref?.videoStreams ?? []) for (const u of s.unmappedSideData) harnessProblems.add(`${entry.name} stream ${s.index}: ffprobe prints ${u}, which the comparison does not map`);
         const runs = engine.informational && isLarge(entry) ? 1 : repeat;
         const timed = await runTimed(engine, opened.blob, entry.name, opts, runs, engine.informational && !verbose);
         const result = timed.result;
-        const evaluation = evaluate({ info, ref, result, layout, threw: timed.threw, deviations: forFixture(deviations, entry.name) });
+        const codecStrings = isIso ? await codecStringsOf(entry.name, opened.blob, result) : null;
+        const evaluation = evaluate({ info, ref, result, layout, threw: timed.threw, deviations: forFixture(deviations, entry.name), codecStrings });
         classifyEvaluation({ arm: ARMS[engineName], info, ref, result, layout, family: evaluation.family }, evaluation);
         for (const key of evaluation.unusedDeviationKeys) stale.push({ fixture: entry.name, key });
         const bytesRead = result.io?.bytesRead ?? 0;
@@ -290,7 +299,9 @@ async function main(): Promise<number> {
       }
     }
     const { counts, mismatchFixtures } = tallyEngine(fixtures);
+    const checked = new Set(fixtures.flatMap((f) => [...f.fileChecks, ...f.tracks.flatMap((t) => t.checks)]).map((c) => c.field));
     engineReports.push({
+      notProvided: FIELD_NAMES.filter((f) => !checked.has(f)),
       engine: engineName,
       informational: engine.informational,
       arm: engine.arm,

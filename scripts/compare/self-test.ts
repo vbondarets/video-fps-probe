@@ -4,10 +4,11 @@ import type { FileResult, Rational, VideoTrackResult } from '../../src/core/type
 import { parseDeviations } from './deviations.ts';
 import { ARMS } from './engines.ts';
 import { classifyEvaluation } from './outcomes.ts';
-import { loadManifest, loadRef } from '../../tests/helpers/fixtures.ts';
+import { fixturePath, loadManifest, loadRef } from '../../tests/helpers/fixtures.ts';
+import { selfTest040, profileCoverage } from './self-test-040.ts';
 import { parseRatio, parseRef, ticksToSec, type RefFile, type RefFps, type RefInstFps, type RefStream } from './ref.ts';
 import { evaluate, expectedPrimary, noteContradictsLayout, pairTracks, type EvaluateInput, type Evaluation } from './rules.ts';
-import type { CheckResult, FileLayout, FixtureInfo } from './types.ts';
+import type { CheckResult, FileLayout, FixtureInfo, TrackFields040 } from './types.ts';
 
 function rat(num: number, den: number): Rational {
   const r = avReduce(num, den);
@@ -52,6 +53,19 @@ function refStream(over: Partial<RefStream> = {}): RefStream {
       lastDurationTicks: 1001,
       medianDeltaTicks: 1001,
     },
+    sampleAspectRatio: { num: 1, den: 1 },
+    displayAspectRatio: { num: 16, den: 9 },
+    colorRange: null,
+    colorPrimaries: null,
+    colorTransfer: null,
+    colorSpace: null,
+    pixFmt: 'yuv420p',
+    bitDepth: 8,
+    profile: 'Constrained Baseline',
+    sideData: [],
+    dolbyVision: null,
+    rotation: null,
+    unmappedSideData: [],
     ...over,
   };
 }
@@ -154,6 +168,28 @@ function oracleTrack(s: RefStream, trackId: number, matroska: boolean): VideoTra
     duplicateTimestamps: s.packets?.duplicateTimestamps ?? 0,
     isStill: (frames ?? 0) <= 1,
     provenance: { avgFps: 'exact', frames: 'exact', presentedFrames: 'exact', startSec: 'exact' },
+    ...oracleFields040(s),
+  };
+}
+
+function oracleFields040(s: RefStream): TrackFields040 {
+  const median = s.packets?.medianDeltaTicks ?? null;
+  const sar = s.sampleAspectRatio;
+  return {
+    medianFrameInterval: median === null ? null : rat(median * s.timeBase.num, s.timeBase.den),
+    sampleAspectRatio: sar ? { ...sar } : null,
+    displayWidth: s.width > 0 ? Math.round((s.width * (sar?.num ?? 1)) / (sar?.den ?? 1)) : null,
+    displayHeight: s.height > 0 ? s.height : null,
+    color: {
+      range: s.colorRange,
+      primaries: s.colorPrimaries,
+      transfer: s.colorTransfer,
+      space: s.colorSpace,
+      bitDepth: s.bitDepth,
+      profile: null,
+      codecString: null,
+      dolbyVision: s.dolbyVision ? { ...s.dolbyVision } : null,
+    },
   };
 }
 
@@ -194,7 +230,7 @@ function oracleRoundTrip(expectEq: (label: string, actual: unknown, expected: un
   return evaluated;
 }
 
-export function runSelfTest(): number {
+export async function runSelfTest(): Promise<number> {
   let total = 0;
   const failures: string[] = [];
   const expectEq = (label: string, actual: unknown, expected: unknown) => {
@@ -497,6 +533,10 @@ export function runSelfTest(): number {
   );
   expectEq('deviation file: valid entry kept', parsed.get('a.mp4')?.avgFps, reason);
   expectEq('deviation file: three problems', problems.length, 3);
+
+  selfTest040(expectEq, { refStream, refFile, appTrack, appResult, rat, MP4_INFO, MKV_INFO });
+  const covered = await profileCoverage(expectEq, fixturePath);
+  console.log(`self-test: profile names of ${covered} video stream(s) checked against the FFmpeg name table`);
 
   const roundTripped = oracleRoundTrip(expectEq);
   console.log(`self-test: oracle round trip over ${roundTripped} fixture reference(s)`);

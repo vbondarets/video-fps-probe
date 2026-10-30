@@ -214,7 +214,7 @@ describe('Matroska fixtures', () => {
   });
 
   it('lists only real fixtures and fields in the known deviations', () => {
-    const fields = new Set(['avgFps', 'avgFps.declared', 'avgFps.measured', 'nominalFps', 'frames', 'presentedFrames', 'durationSec', 'startSec', 'formatDurationSec', 'minFps', 'maxFps', 'isVfr', 'duplicateTimestamps', 'width', 'height', 'codecName', 'error', 'trackSelection']);
+    const fields = new Set(['avgFps', 'avgFps.declared', 'avgFps.measured', 'nominalFps', 'frames', 'presentedFrames', 'durationSec', 'startSec', 'formatDurationSec', 'minFps', 'maxFps', 'isVfr', 'duplicateTimestamps', 'width', 'height', 'codecName', 'error', 'trackSelection', 'medianFrameInterval', 'sampleAspectRatio', 'displayAspectRatio', 'enabled', 'colorRange', 'colorPrimaries', 'colorTransfer', 'colorSpace', 'bitDepth', 'profile', 'codecString', 'dolbyVision', 'layout', 'errorCode']);
     for (const [name, entry] of Object.entries(DEVIATIONS)) {
       expect(ROWS.some((r) => r.name === name)).toBe(true);
       for (const [field, reason] of Object.entries(entry)) {

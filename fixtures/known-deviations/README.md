@@ -32,6 +32,8 @@ Field names:
 
 `avgFps`, `nominalFps`, `frames`, `presentedFrames`, `durationSec`, `startSec`, `formatDurationSec`, `minFps`, `maxFps`, `isVfr`, `duplicateTimestamps`, `width`, `height`, `codecName`, `error`, `trackSelection`.
 
+Registered for 0.4.0, checked only on results that carry them (a result without the field gets no check, and the report lists the field as not provided): `medianFrameInterval`, `sampleAspectRatio`, `displayAspectRatio`, `enabled`, `colorRange`, `colorPrimaries`, `colorTransfer`, `colorSpace`, `bitDepth`, `profile`, `codecString`, `dolbyVision`, `layout`, `errorCode`.
+
 `avgFps` also accepts two finer keys for Matroska, where it is checked twice: `avgFps.declared` (the DefaultDuration string, or without a DefaultDuration the reproduced ffprobe estimate, against `avg_frame_rate`) and `avgFps.measured` (the exact-scan average against `avgFromPts`). A finer key wins over `avgFps`.
 
 A deviation covers the field on every video track of the fixture.
@@ -46,6 +48,8 @@ A deviation covers the field on every video track of the fixture.
 ## Built-in deviation
 
 One deviation needs no entry because research 2.1 and 6.4 define it: ffprobe computes `avg_frame_rate` from the fragments it reads while opening the file. With a global sidx it reads the first fragment, with a per-fragment sidx all but the last. When the file is fragmented and has a sidx (found by a top-level box scan), the app value differs from ffprobe, and it equals the full-file average `avgFromPts` of the reference within 1e-9 relative, the `avgFps` check is reported as `known-deviation` with source `[built-in]`. An entry in the file for the same fixture and field replaces the built-in reason.
+
+Two more need no entry, for the 0.4.0 fields. A sample aspect ratio that ffprobe takes from the SPS VUI while the container declares none (no `pasp`, no tkhd size that differs from the stored size, no tkhd matrix whose column scales differ by more than 1 percent, no Matroska DisplayWidth or DisplayHeight) is `bitstream-derived` when the result reports none. A color value that ffprobe takes from a bitstream the library does not read (the AV1 sequence header, the VP9 frame header, an H.264 or HEVC SPS that the codec configuration does not hold) is `bitstream-derived` when the result reports none and no `colr`, `vpcC` or `Colour` declares that member. A reported value that differs from ffprobe is always a mismatch.
 
 ## Rules the script applies
 
@@ -65,6 +69,16 @@ These are the research 6.4 tolerances as implemented in `scripts/compare/rules.t
 | `formatDurationSec` | `format.duration` to 6 decimals is `exact`, within 1e-6 s is `within-tol`; `n/a` when subtitle or data streams exist, or for a no-video file where the app reports none | same; ffprobe N/A with no app value is `exact`, with an app value `n/a` |
 | `minFps`, `maxFps` | exact rationals vs the tail-excluded reference (`instFpsExcludingTail`); both absent is `exact` | same, on 1 ms ticks |
 | `isVfr`, `duplicateTimestamps` | equal to the reference | equal |
+| `medianFrameInterval` | equal rational vs `medianDeltaTicks` x `time_base` on exact scans, `within-tol` when fewer than 2 deltas remain after the tail and the result kept the tail | same, `n/a` for probe and header scans |
+| `sampleAspectRatio`, `displayAspectRatio` | equal ratio vs `sample_aspect_ratio` and `display_aspect_ratio` (colon form). No ratio is exact against `1:1` or `N/A`. The display size must be round(width x SAR) by height | same, the container ratio comes from DisplayWidth and DisplayHeight |
+| `enabled` | the tkhd enabled flag of an independent scan, `disposition.default` is shown for information | FlagEnabled, default 1 |
+| `colorRange`, `colorPrimaries`, `colorTransfer`, `colorSpace` | a value equals the ffprobe name, `unknown` and `unspecified` count as none | same |
+| `bitDepth` | the component depth of `pix_fmt`, `n/a` when no codec configuration carries a depth | same |
+| `profile` | the numeric profile and the constraint flags through the FFmpeg name table of `scripts/compare/profiles.ts` vs `profile` | same |
+| `codecString` | the codec string of mp4box.js 2.4.1 | `n/a` |
+| `dolbyVision` | field by field vs the `DOVI configuration record` side data, `mdCompression` vs `dv_md_compression` (`none` 0, `limited` 1, `reserved` 2, `extended` 3). A side data type or key the script does not map is a harness problem | same |
+| `layout` | the kind, moov offset and size, sidx and empty moov of an independent top-level scan | none expected |
+| `errorCode` | null exactly when `error` is null, and the manifest `code` column when the row has one | same |
 
 ## Example
 

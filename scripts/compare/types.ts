@@ -23,6 +23,20 @@ export const FIELD_NAMES = [
   'codecName',
   'error',
   'trackSelection',
+  'medianFrameInterval',
+  'sampleAspectRatio',
+  'displayAspectRatio',
+  'enabled',
+  'colorRange',
+  'colorPrimaries',
+  'colorTransfer',
+  'colorSpace',
+  'bitDepth',
+  'profile',
+  'codecString',
+  'dolbyVision',
+  'layout',
+  'errorCode',
 ] as const;
 
 export type FieldName = (typeof FIELD_NAMES)[number];
@@ -60,6 +74,34 @@ export interface FixtureInfo {
   category: string;
   expect: string;
   notes: string;
+  code?: string;
+}
+
+export interface ContainerColor {
+  kind: 'nclx' | 'nclc' | 'vpcC' | 'Colour';
+  primaries: number | null;
+  transfer: number | null;
+  matrix: number | null;
+  fullRange: boolean | null;
+}
+
+export interface CodecConfigFacts {
+  kind: 'avcC' | 'hvcC' | 'av1C' | 'vpcC' | 'vp9-private';
+  profile: number | null;
+  constraints: number | null;
+  bitDepth: number | null;
+  hasSps: boolean | null;
+}
+
+export interface SampleEntryFacts {
+  type: string;
+  width: number;
+  height: number;
+  pasp: { num: number; den: number } | null;
+  colr: ContainerColor | null;
+  vpcC: ContainerColor | null;
+  config: CodecConfigFacts | null;
+  dolbyVision: string | null;
 }
 
 export interface LayoutTrack {
@@ -69,6 +111,11 @@ export interface LayoutTrack {
   samples: number | null;
   hasEditList: boolean;
   lastSampleTicks?: number | null;
+  enabled?: boolean;
+  tkhdWidth?: number;
+  tkhdHeight?: number;
+  matrix?: number[] | null;
+  entry?: SampleEntryFacts | null;
 }
 
 export interface MatroskaLayoutTrack {
@@ -76,6 +123,17 @@ export interface MatroskaLayoutTrack {
   type: number | null;
   defaultDurationNs: number | null;
   blockDurations: number;
+  codecId?: string | null;
+  flagEnabled?: boolean;
+  flagDefault?: boolean;
+  pixelWidth?: number | null;
+  pixelHeight?: number | null;
+  displayWidth?: number | null;
+  displayHeight?: number | null;
+  displayUnit?: number | null;
+  colour?: ContainerColor | null;
+  config?: CodecConfigFacts | null;
+  blockAdditionTypes?: string[];
 }
 
 export interface FileLayout {
@@ -86,6 +144,61 @@ export interface FileLayout {
   fragmentDurationSec?: number | null;
   tracks?: LayoutTrack[];
   matroskaTracks?: MatroskaLayoutTrack[];
+  hasMvex?: boolean;
+  moovOffset?: number | null;
+  moovSize?: number | null;
+  firstMdatOffset?: number | null;
+  sidxBeforeFirstMoof?: boolean;
+}
+
+export interface RationalLike {
+  num: number;
+  den: number;
+}
+
+export interface DolbyVisionLike {
+  versionMajor: number;
+  versionMinor: number;
+  profile: number;
+  level: number;
+  rpu: boolean;
+  el: boolean;
+  bl: boolean;
+  compatibilityId: number;
+  mdCompression: number;
+}
+
+export interface ColorLike {
+  range: string | null;
+  primaries: string | null;
+  transfer: string | null;
+  space: string | null;
+  bitDepth: number | null;
+  profile: number | null;
+  codecString: string | null;
+  dolbyVision: DolbyVisionLike | null;
+}
+
+export interface ContainerLayoutLike {
+  kind: string;
+  moovOffset: number | null;
+  moovSize: number | null;
+  sidx: boolean;
+  emptyMoov: boolean;
+}
+
+export interface TrackFields040 {
+  medianFrameInterval?: RationalLike | null;
+  sampleAspectRatio?: RationalLike | null;
+  displayWidth?: number | null;
+  displayHeight?: number | null;
+  enabled?: boolean | null;
+  color?: ColorLike | null;
+}
+
+export interface FileFields040 {
+  errorCode?: string | null;
+  layout?: ContainerLayoutLike | null;
 }
 
 export type FixtureDeviations = Readonly<Record<string, string>>;

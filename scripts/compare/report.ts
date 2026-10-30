@@ -50,6 +50,7 @@ export interface EngineReport {
   counts: Record<Verdict, number>;
   outcomes: Record<OutcomeClass, number>;
   mismatchFixtures: string[];
+  notProvided?: FieldName[];
 }
 
 export interface AccuracyReport {
@@ -209,6 +210,20 @@ const MATRIX_COLUMNS: ReadonlyArray<readonly [header: string, field: FieldName]>
   ['cod', 'codecName'],
   ['w', 'width'],
   ['h', 'height'],
+  ['mfi', 'medianFrameInterval'],
+  ['sar', 'sampleAspectRatio'],
+  ['dar', 'displayAspectRatio'],
+  ['en', 'enabled'],
+  ['rng', 'colorRange'],
+  ['pri', 'colorPrimaries'],
+  ['trc', 'colorTransfer'],
+  ['spc', 'colorSpace'],
+  ['bit', 'bitDepth'],
+  ['prf', 'profile'],
+  ['cs', 'codecString'],
+  ['dv', 'dolbyVision'],
+  ['lay', 'layout'],
+  ['ec', 'errorCode'],
 ];
 
 const VERDICT_SYMBOL: Record<Verdict, string> = { exact: '=', 'within-tol': '~', 'known-deviation': 'K', mismatch: 'X', 'n/a': '.' };
@@ -236,7 +251,7 @@ function renderMatrix(e: EngineReport): string[] {
   const out: string[] = [];
   out.push(`<details><summary>${e.engine}: verdict per field</summary>`);
   out.push('');
-  out.push('Legend: `=` exact, `~` within-tol, `K` known-deviation, `X` mismatch, `.` n/a, blank = not checked. Columns: err = outcome vs manifest, sel = track selection, avg, nom = nominal/r_frame_rate, frm = frames, prs = presented frames, dur = track duration, srt = start, fmt = format duration, min/max = instantaneous FPS, vfr, dup = duplicate timestamps, cod = codec, w, h.');
+  out.push('Legend: `=` exact, `~` within-tol, `K` known-deviation, `X` mismatch, `.` n/a, blank = not checked. Columns: err = outcome vs manifest, sel = track selection, avg, nom = nominal/r_frame_rate, frm = frames, prs = presented frames, dur = track duration, srt = start, fmt = format duration, min/max = instantaneous FPS, vfr, dup = duplicate timestamps, cod = codec, w, h, mfi = median frame interval, sar and dar = sample and display aspect ratio, en = enabled flag, rng, pri, trc and spc = color range, primaries, transfer and space, bit = bit depth, prf = profile, cs = codec string, dv = Dolby Vision, lay = layout, ec = error code.');
   out.push('');
   out.push(`| Fixture | ${MATRIX_COLUMNS.map(([h]) => h).join(' | ')} |`);
   out.push(`|---|${MATRIX_COLUMNS.map(() => ':-:').join('|')}|`);
@@ -278,6 +293,10 @@ function renderEngine(e: EngineReport): string[] {
   const dev = e.deviationFiles.length > 0 ? `known deviations from ${e.deviationFiles.map((f) => `\`${f}\``).join(', ')}` : 'no known-deviation file';
   out.push(`${e.fixtures.length} fixtures run, ${e.skipped.length} skipped, ${dev}.`);
   out.push('');
+  if (e.notProvided && e.notProvided.length > 0) {
+    out.push(`Not provided, so not checked: ${e.notProvided.map((f) => `\`${f}\``).join(', ')}.`);
+    out.push('');
+  }
   if (e.fixtures.length > 0) {
     out.push('| Fixture | Category | avg FPS (app, or app vs ffprobe) | frames | min..max FPS | Verdict | Reads | Bytes | % of file | ms |');
     out.push('|---|---|---|---|---|---|---:|---:|---:|---:|');

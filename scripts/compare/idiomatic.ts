@@ -123,7 +123,7 @@ function mp4boxTrack(t: Movie['tracks'][number]): VideoTrackResult {
   return out;
 }
 
-export async function analyzeMp4boxRecipe(blob: BlobLike, name: string): Promise<FileResult> {
+export async function analyzeMp4boxRecipe(blob: BlobLike, name: string, codecStrings?: Map<number, string>): Promise<FileResult> {
   const t0 = performance.now();
   const tally = new IoTally();
   const result = newResult(name, blob.size, 'mp4box');
@@ -161,6 +161,7 @@ export async function analyzeMp4boxRecipe(blob: BlobLike, name: string): Promise
   } else {
     result.container = movie.brands.includes('qt  ') ? 'mov' : 'mp4';
     result.videoTracks = movie.tracks.filter((t) => t.video !== undefined).map(mp4boxTrack);
+    for (const t of movie.tracks) if (t.video !== undefined) codecStrings?.set(t.id, t.codec);
     result.audioTrackCount = movie.audioTracks.length;
     result.primaryTrackId = result.videoTracks[0]?.trackId ?? null;
     const fragmented = movie.fragment_duration && movie.fragment_duration.den > 0 ? movie.fragment_duration.num / movie.fragment_duration.den : null;
@@ -169,4 +170,10 @@ export async function analyzeMp4boxRecipe(blob: BlobLike, name: string): Promise
   }
   result.io = tally.io(t0);
   return result;
+}
+
+export async function mp4boxCodecStrings(blob: BlobLike): Promise<Map<number, string>> {
+  const out = new Map<number, string>();
+  await analyzeMp4boxRecipe(blob, '', out);
+  return out;
 }

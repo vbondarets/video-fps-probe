@@ -34,6 +34,23 @@ export interface RefPackets {
   ptsPresented?: number[] | null;
 }
 
+export interface RefDolbyVision {
+  versionMajor: number;
+  versionMinor: number;
+  profile: number;
+  level: number;
+  rpu: boolean;
+  el: boolean;
+  bl: boolean;
+  compatibilityId: number;
+  mdCompression: number;
+}
+
+export interface RefSideData {
+  type: string;
+  keys: string[];
+}
+
 export interface RefStream {
   index: number;
   codecName: string;
@@ -50,6 +67,19 @@ export interface RefStream {
   enabled: boolean;
   durationTagSec: number | null;
   packets: RefPackets | null;
+  sampleAspectRatio: Ratio | null;
+  displayAspectRatio: Ratio | null;
+  colorRange: string | null;
+  colorPrimaries: string | null;
+  colorTransfer: string | null;
+  colorSpace: string | null;
+  pixFmt: string | null;
+  bitDepth: number | null;
+  profile: string | null;
+  sideData: RefSideData[];
+  dolbyVision: RefDolbyVision | null;
+  rotation: number | null;
+  unmappedSideData: string[];
 }
 
 export interface RefFile {
@@ -143,6 +173,92 @@ function packetsOf(v: unknown): RefPackets | null {
   };
 }
 
+export function parseColonRatio(v: unknown): Ratio | null {
+  if (typeof v !== 'string') return null;
+  const m = /^(\d+):(\d+)$/.exec(v.trim());
+  if (!m) return null;
+  const r = { num: Number(m[1]), den: Number(m[2]) };
+  return r.num > 0 && r.den > 0 ? r : null;
+}
+
+const UNSET_COLOR = new Set(['unknown', 'unspecified', 'reserved', 'n/a']);
+
+export function normalizedColor(v: unknown): string | null {
+  const t = strOrNull(v);
+  return t === null || UNSET_COLOR.has(t.toLowerCase()) ? null : t;
+}
+
+export function bitDepthOfPixFmt(pixFmt: string | null): number | null {
+  if (!pixFmt) return null;
+  if (/^(?:rgb|bgr)a?(?:48|64)(?:le|be)$/.test(pixFmt)) return 16;
+  const deep = /(?:p|p0|gray|ya)(\d{1,2})(?:le|be)$/.exec(pixFmt);
+  if (deep) return Number(deep[1]);
+  return /(?:le|be)$/.test(pixFmt) ? null : 8;
+}
+
+export const DOVI_SIDE_DATA = 'DOVI configuration record';
+export const DISPLAY_MATRIX_SIDE_DATA = 'Display Matrix';
+export const MD_COMPRESSION: Readonly<Record<string, number>> = { none: 0, limited: 1, reserved: 2, extended: 3 };
+
+const DOVI_KEYS: Readonly<Record<string, keyof RefDolbyVision>> = {
+  dv_version_major: 'versionMajor',
+  dv_version_minor: 'versionMinor',
+  dv_profile: 'profile',
+  dv_level: 'level',
+  rpu_present_flag: 'rpu',
+  el_present_flag: 'el',
+  bl_present_flag: 'bl',
+  dv_bl_signal_compatibility_id: 'compatibilityId',
+  dv_md_compression: 'mdCompression',
+};
+
+const SIDE_DATA_KEYS: Readonly<Record<string, readonly string[]>> = {
+  [DOVI_SIDE_DATA]: ['side_data_type', ...Object.keys(DOVI_KEYS)],
+  [DISPLAY_MATRIX_SIDE_DATA]: ['side_data_type', 'displaymatrix', 'rotation'],
+};
+
+function dolbyVisionOf(entry: Json, unmapped: string[]): RefDolbyVision {
+  const out: Record<string, number | boolean> = {};
+  for (const [key, field] of Object.entries(DOVI_KEYS)) {
+    const raw = entry[key];
+    if (key === 'dv_md_compression') {
+      const n = typeof raw === 'string' ? MD_COMPRESSION[raw] : numOrNull(raw);
+      if (n === undefined || n === null) unmapped.push(`${DOVI_SIDE_DATA}.${key}=${String(raw)}`);
+      out[field] = n ?? -1;
+    } else if (field === 'rpu' || field === 'el' || field === 'bl') {
+      out[field] = numOrNull(raw) === 1;
+    } else {
+      const n = numOrNull(raw);
+      if (n === null) unmapped.push(`${DOVI_SIDE_DATA}.${key}=${String(raw)}`);
+      out[field] = n ?? -1;
+    }
+  }
+  return out as unknown as RefDolbyVision;
+}
+
+function sideDataOf(stream: Json): Pick<RefStream, 'sideData' | 'dolbyVision' | 'rotation' | 'unmappedSideData'> {
+  const sideData: RefSideData[] = [];
+  const unmapped: string[] = [];
+  let dolbyVision: RefDolbyVision | null = null;
+  let rotation: number | null = null;
+  for (const e of arr(stream.side_data_list)) {
+    const entry = rec(e);
+    if (!entry) continue;
+    const type = strOrNull(entry.side_data_type) ?? 'unknown';
+    const keys = Object.keys(entry);
+    sideData.push({ type, keys });
+    const known = SIDE_DATA_KEYS[type];
+    if (!known) {
+      unmapped.push(`side data type "${type}"`);
+      continue;
+    }
+    for (const k of keys) if (!known.includes(k)) unmapped.push(`${type}.${k}`);
+    if (type === DOVI_SIDE_DATA) dolbyVision = dolbyVisionOf(entry, unmapped);
+    if (type === DISPLAY_MATRIX_SIDE_DATA) rotation = numOrNull(entry.rotation);
+  }
+  return { sideData, dolbyVision, rotation, unmappedSideData: unmapped };
+}
+
 function tagDurationSec(tags: Json | null): number | null {
   const raw = tags ? strOrNull(tags.DURATION ?? tags.duration) : null;
   if (!raw) return null;
@@ -202,6 +318,16 @@ export function parseRef(name: string, json: unknown): RefFile {
         enabled: isDefaultDisposition(s),
         durationTagSec: tagDurationSec(rec(s.tags)),
         packets: packetsOf(derived.get(index)),
+        sampleAspectRatio: parseColonRatio(s.sample_aspect_ratio),
+        displayAspectRatio: parseColonRatio(s.display_aspect_ratio),
+        colorRange: normalizedColor(s.color_range),
+        colorPrimaries: normalizedColor(s.color_primaries),
+        colorTransfer: normalizedColor(s.color_transfer),
+        colorSpace: normalizedColor(s.color_space),
+        pixFmt: strOrNull(s.pix_fmt),
+        bitDepth: bitDepthOfPixFmt(strOrNull(s.pix_fmt)),
+        profile: normalizedColor(s.profile),
+        ...sideDataOf(s),
       });
     } else otherStreamTypes.push(type);
   }

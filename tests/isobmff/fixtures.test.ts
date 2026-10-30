@@ -31,6 +31,20 @@ const DEVIATION_FIELDS = new Set([
   'codecName',
   'error',
   'trackSelection',
+  'medianFrameInterval',
+  'sampleAspectRatio',
+  'displayAspectRatio',
+  'enabled',
+  'colorRange',
+  'colorPrimaries',
+  'colorTransfer',
+  'colorSpace',
+  'bitDepth',
+  'profile',
+  'codecString',
+  'dolbyVision',
+  'layout',
+  'errorCode',
 ]);
 
 const LONG_DASH = new RegExp(`[${String.fromCharCode(0x2013, 0x2014)}]`);
