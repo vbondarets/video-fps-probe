@@ -22,6 +22,7 @@ export const SPLIT_WORKERS = {
   'worker/own-isobmff.worker.js': ['core/matroska/', 'core/rfps.js', 'core/analyze.js'],
   'worker/own-matroska.worker.js': ['core/isobmff/', 'core/analyze.js'],
 };
+export const HEADER_CLOSURE = { 'header/index.js': ['core/isobmff/index.js', 'core/stats.js', 'core/rfps.js'] };
 const WORKER_CALL = /\bnew\s+(?:Worker|SharedWorker)\s*\(/g;
 const WORKER_LITERAL = /^new\s+(?:Worker|SharedWorker)\s*\(\s*new\s+URL\s*\(\s*(?:'([^']+)'|"([^"]+)")\s*,\s*import\.meta\.url\s*\)/;
 const WORKER_ASSET = /^(?:worker\/[^/]+\.worker\.js|standalone\/.+)$/;
@@ -271,6 +272,10 @@ export function checkDist({ pack = true, ssr = true, repo = REPO_ROOT } = {}) {
     for (const f of closure(edges, root, { dynamic: true }).files) if (forbidden.some((p) => (p.endsWith('/') ? f.startsWith(p) : f === p))) fail(`worker isolation: ${root} reaches ${f}`);
   }
 
+  for (const [root, forbidden] of Object.entries(HEADER_CLOSURE).filter(([root]) => has(root))) {
+    for (const f of closure(edges, root, { dynamic: true }).files) if (forbidden.includes(f)) fail(`header closure: ${root} reaches ${f}`);
+  }
+
   const isolationRoots = ['index.js', 'lazy.js', 'react/index.js', ...files.filter((f) => /^(?:client|plugins)\/[^/]+\.js$/.test(f))].filter(has);
   for (const root of isolationRoots) {
     const { files: reached, bare: bareSpecifiers } = closure(edges, root, { dynamic: false });
@@ -359,6 +364,19 @@ export function runSelfTest() {
     expectProblem('the Matroska worker reaching the ISO BMFF parser fails', problemsOf({ ...split, 'worker/serve.js': "import '../core/isobmff/boxes.js';\nexport const serve = () => {};\n" }), 'worker isolation: worker/own-matroska.worker.js reaches core/isobmff/boxes.js', true);
     expectProblem('a per-container worker reaching the parser loaders of analyze.js fails', problemsOf({ ...split, 'worker/single.js': "import '../core/analyze.js';\nexport const single = () => {};\n" }), 'worker isolation: worker/own-matroska.worker.js reaches core/analyze.js', true);
     expectProblem('a per-container worker reaching a worker literal fails the literal hygiene', problemsOf({ ...split, 'plugins/own.js': "export const start = () => new Worker(new URL('../worker/own-isobmff.worker.js', import.meta.url), { type: 'module' });\n", 'worker/serve.js': "import '../plugins/own.js';\nexport const serve = () => {};\n" }), 'literal hygiene: worker/own-isobmff.worker.js reaches plugins/own.js', true);
+
+    const header = {
+      'header/index.js': "import '../core/isobmff/header.js';\nexport const analyzeHeader = () => null;\n",
+      'core/isobmff/header.js': "import './build.js';\nexport const walk = () => null;\n",
+      'core/isobmff/build.js': 'export const build = () => null;\n',
+      'core/isobmff/index.js': "import '../stats.js';\nexport const parse = () => null;\n",
+      'core/stats.js': 'export const s = 1;\n',
+      'core/rfps.js': 'export const r = 1;\n',
+    };
+    expectProblem('a header entry that reaches only the header walk and the shared build passes', problemsOf(header), 'header closure', false);
+    expectProblem('a header entry that reaches the full ISO BMFF parser fails', problemsOf({ ...header, 'core/isobmff/build.js': "import './index.js';\nexport const build = () => null;\n" }), 'header closure: header/index.js reaches core/isobmff/index.js', true);
+    expectProblem('a header entry that reaches the statistics through import() fails', problemsOf({ ...header, 'core/isobmff/header.js': "export const walk = () => import('../stats.js');\n" }), 'header closure: header/index.js reaches core/stats.js', true);
+    expectProblem('a header entry that reaches the ffprobe estimate fails', problemsOf({ ...header, 'core/isobmff/build.js': "import '../rfps.js';\nexport const build = () => null;\n" }), 'header closure: header/index.js reaches core/rfps.js', true);
 
     const react = { 'react/index.js': "'use client';\nimport { useMemo } from 'react';\nexport const x = useMemo;\n", 'react/index.d.ts': "import type { ReactNode } from 'react';\nexport type X = ReactNode;\n" };
     expectProblem('react/ importing react with use client first passes', problemsOf(react), 'react', false);
