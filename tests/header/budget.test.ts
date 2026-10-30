@@ -31,6 +31,11 @@ function virtualSources(): Array<[string, () => BlobLike]> {
     ['recording with longer audio', () => recording({ fragments: 4, mdatBytes: MIB, audio: true, audioLonger: 20 }).source],
     ['recording with mehd and an mfra', () => recording({ fragments: 4, mdatBytes: MIB, mehd: 4000 }).source],
     ['sidx after the moov', () => recording({ fragments: 3, mdatBytes: 1000, index: false, sidx: true }).source],
+    ['40 free boxes between the moov and the first moof, with mehd', () => recording({ fragments: 3, mdatBytes: 1000, mehd: 3000, free: Array.from({ length: 40 }, () => box('free')) }).source],
+    ['a 70 KiB free box between the moov and the first moof', () => recording({ fragments: 3, mdatBytes: 1000, free: [box('free', zeros(70 * 1024))] }).source],
+    ['a single moof with longer audio', () => recording({ fragments: 1, mdatBytes: MIB, audio: true, audioLonger: 7 }).source],
+    ['composition offsets with a sidx per fragment', () => recording({ fragments: 4, mdatBytes: 100_000, cts: 1024, sidx: 'fragment' }).source],
+    ['40 free boxes after a moov without mvex', () => virtualSource([ftyp(), moov([video]), ...Array.from({ length: 40 }, () => box('free')), mdatHeader(MIB), { zeros: MIB }])],
     ['2000 free boxes', () => virtualSource(free)],
     ['20,000 trak boxes', () => virtualSource([ftyp(), box('moov', ...Array.from({ length: 20_000 }, () => box('trak'))), bytes(mdatHeader(8)), zeros(8)])],
   ];
@@ -41,7 +46,10 @@ const comparable = (r: HeaderResult): unknown => ({ ...r, io: null });
 function check(label: string, r: HeaderResult, unlimited: HeaderResult, limits: HeaderLimits): void {
   if (limits.maxBytes !== undefined) expect(r.io.bytesRequested, label).toBeLessThanOrEqual(limits.maxBytes);
   if (limits.maxReads !== undefined) expect(r.io.reads, label).toBeLessThanOrEqual(limits.maxReads);
-  if (r.errorCode && LIMIT_CODES.has(r.errorCode)) return;
+  if (r.errorCode && LIMIT_CODES.has(r.errorCode)) {
+    if (r.videoTracks.length > 0) expect(r.videoTracks.map((t) => t.trackId), label).toEqual(unlimited.videoTracks.map((t) => t.trackId));
+    return;
+  }
   if (r.warnings.some((w) => w.startsWith('fragment index not read: limit reached: '))) {
     expect(r.videoTracks.every((t) => t.provenance.durationSec === 'estimated'), label).toBe(true);
     return;
