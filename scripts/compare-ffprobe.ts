@@ -155,7 +155,7 @@ function checkHeader(name: string, mode: 'index' | 'header', h: HeaderResult, fu
   const at = (text: string): void => fail(`${name} (${mode}): ${text}`);
   if (h.scan !== 'header') at(`scan is ${h.scan}`);
   if (h.io.reads > 8 || h.io.bytesRequested > 16 * 1024 * 1024) at(`read ${h.io.reads} times and requested ${h.io.bytesRequested} bytes under the default limits`);
-  if (h.videoTracks.length !== full.videoTracks.length && !(h.error !== null && h.videoTracks.length === 0)) {
+  if (h.videoTracks.length !== full.videoTracks.length && (full.layout?.kind === 'fragmented' || h.error === null || h.videoTracks.length > 0)) {
     at(`${h.videoTracks.length} video tracks against ${full.videoTracks.length}`);
     return tally;
   }
@@ -170,6 +170,7 @@ function checkHeader(name: string, mode: 'index' | 'header', h: HeaderResult, fu
     return tally;
   }
   if (JSON.stringify(h.layout) !== JSON.stringify(full.layout)) at(`layout ${JSON.stringify(h.layout)} differs from ${JSON.stringify(full.layout)}`);
+  if (h.errorCode !== null && h.errorCode !== 'no-duration' && h.errorCode !== full.errorCode) at(`error code ${h.errorCode} where full mode has ${full.errorCode}`);
   const estimated = h.videoTracks.some((t) => t.provenance.durationSec === 'estimated');
   if (h.formatDurationSec !== null && full.formatDurationSec !== null && h.formatDurationSec !== full.formatDurationSec && !estimated) at(`format duration ${h.formatDurationSec} against ${full.formatDurationSec}`);
   if (h.formatDurationSec === null && h.errorCode === null && !h.warnings.some((w) => w.startsWith('format duration unresolved: track '))) at('no format duration, no error and no unresolved-track warning');
