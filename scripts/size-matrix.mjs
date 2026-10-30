@@ -632,7 +632,7 @@ export function renderMarkdown(matrix) {
   for (const f of matrix.fixtures) {
     const engine = [f.metrics.mp4box !== null ? `mp4box ${kb(f.metrics.mp4box)}` : null, f.metrics.mediabunny !== null ? `mediabunny ${kb(f.metrics.mediabunny)}` : null, f.metrics.rvfc !== null ? `rVFC ${kb(f.metrics.rvfc)}` : null].filter(Boolean).join(', ') || '-';
     const status = f.problems.length === 0 ? 'ok' : `${f.problems.length} problem${f.problems.length === 1 ? '' : 's'}`;
-    out.push(`| ${f.name} | ${importsOf(f)} | ${f.worker} | **${kb(f.metrics.trigger)}** | ${kb(f.metrics.entry)} | ${cell(f.metrics.firstMp4)} | ${cell(f.metrics.firstMkv)} | ${cell(f.metrics.allOwn)} | ${engine} | ${f.workers.length} (${f.workers.map((w) => w.name).join(', ')}) | ${status} |`);
+    out.push(`| ${f.name} | ${importsOf(f)} | ${f.worker} | **${kb(f.metrics.trigger)}** | ${kb(f.metrics.entry)} | ${cell(f.metrics.firstMp4)} | ${cell(f.metrics.firstMkv)} | ${cell(f.metrics.allOwn)} | ${engine} | ${f.workers.length > 0 ? `${f.workers.length} (${f.workers.map((w) => w.name).join(', ')})` : '0'} | ${status} |`);
   }
   for (const s of matrix.standalone) {
     const [mp4, mkv] = s.file === 'own-isobmff.worker.js' ? [s.gzip, null] : s.file === 'own-matroska.worker.js' ? [null, s.gzip] : [s.gzip, s.gzip];
