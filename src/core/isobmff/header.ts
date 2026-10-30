@@ -243,7 +243,7 @@ function parseFragment(w: Walk, dv: DataView, pos: number, parsed: Set<number>):
   parsed.add(pos);
 }
 
-async function walkFragments(w: Walk, from: number, end: number, parsed: Set<number>): Promise<void> {
+async function walkFragments(w: Walk, from: number, end: number, parsed: Set<number>): Promise<boolean> {
   let pos = from;
   while (pos + 8 <= end) {
     visit(w);
@@ -252,15 +252,17 @@ async function walkFragments(w: Walk, from: number, end: number, parsed: Set<num
     try {
       h = readBoxHeader(hv, 0, end - pos, pos);
     } catch {
-      return;
+      return false;
     }
-    if (!h || h.truncated || h.type === 'mfra') return;
+    if (!h || h.truncated) return false;
+    if (h.type === 'mfra') return true;
     if (h.type === 'moof' && !parsed.has(pos)) {
       if (h.size > MOOF_HARD_CAP) throw new IsoBmffError('too-large', `corrupt file: moof larger than 64 MiB at ${pos}`);
       parseFragment(w, await w.reader.view(pos, h.size, ahead(w, pos, w.plan.head)), pos, parsed);
     }
     pos += h.size;
   }
+  return true;
 }
 
 function sidxEnd(movie: IsoMovie, tr: IsoTrack, ends: number[]): number | null {
@@ -357,11 +359,10 @@ async function resolveFragmented(w: Walk, walked: Walked, videos: IsoTrack[], bu
           if (last !== null && (from === null || last < from)) from = last;
         }
         if (from !== null) {
-          const whole = first !== null && from <= first.start;
-          await walkFragments(w, from, size - index.mfraSize, parsed);
+          const whole = (await walkFragments(w, from, size - index.mfraSize, parsed)) && first !== null && from <= first.start;
           for (const tr of open()) {
             const tail = tr.fragments.slice(firstCount.get(tr) ?? 0);
-            if (tail.length === 0 || (!whole && tail[0].baseDts === null)) continue;
+            if (!whole && (tail.length === 0 || tail[0].baseDts === null)) continue;
             resolved.set(tr, { ticks: timingOf(tr, movie, tr.fragments).durationTs, timescale: tr.timescale, provenance: 'header' });
           }
         }
