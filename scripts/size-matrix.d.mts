@@ -12,3 +12,9 @@ export const BUDGETS: Record<string, Budget[]>;
 export const THIRD_PARTY_ENGINES: string[];
 
 export function measuresThirdParty(fixture: Pick<ConsumerFixture, 'engines'>, key: string): boolean;
+
+export const HASH_PLACEHOLDER: string;
+
+export function normalizedName(name: string): string;
+
+export function hashNormalizer(names: Iterable<string>): (text: string) => string;

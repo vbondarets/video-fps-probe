@@ -43,6 +43,31 @@
         "firstMp4Summary": null,
         "lazyTotal": 89206
       },
+      "normalized": {
+        "metrics": {
+          "entry": 1385,
+          "trigger": 656,
+          "react": null,
+          "check": null,
+          "presets": null,
+          "client": 3203,
+          "isobmff": 12097,
+          "matroska": 11379,
+          "segments": 1804,
+          "rfps": 3610,
+          "firstMp4": 22649,
+          "firstMkv": 25439,
+          "allOwn": 48494,
+          "mp4box": null,
+          "mediabunny": null,
+          "engineShared": null,
+          "rvfc": null,
+          "pageEngineShared": null,
+          "summary": null,
+          "firstMp4Summary": null,
+          "lazyTotal": 88863
+        }
+      },
       "workers": [
         {
           "name": "own-isobmff.worker",
@@ -62,109 +87,225 @@
           "file": "assets/compare-Jebu_1mZ.js",
           "gzip": 1326,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/compare-00000000.js",
+            "gzip": 1288,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/fallback-DQgdnv3K.js",
           "gzip": 753,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/fallback-00000000.js",
+            "gzip": 733,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/index-DJ6uTMFj.js",
           "gzip": 1397,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/index-00000000.js",
+            "gzip": 1385,
+            "entry": true,
+            "holds": []
+          }
         },
         {
           "file": "assets/inline-Dsy73QMF.js",
           "gzip": 657,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/inline-00000000.js",
+            "gzip": 641,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/isobmff-CbqWXk5j.js",
           "gzip": 12323,
           "worker": null,
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/isobmff-00000000.js",
+            "gzip": 12300,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/matroska-BlShReze.js",
           "gzip": 11933,
           "worker": null,
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/matroska-00000000.js",
+            "gzip": 11885,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/own-isobmff.worker-BsFuWBCP.js",
           "gzip": 19452,
           "worker": "own-isobmff.worker",
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/own-isobmff.worker-00000000.js",
+            "gzip": 19446,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/own-matroska.worker-Dv3HQ1bP.js",
           "gzip": 18641,
           "worker": "own-matroska.worker",
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/own-matroska.worker-00000000.js",
+            "gzip": 18626,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/probe-DWWGVm8B.js",
           "gzip": 3283,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/probe-00000000.js",
+            "gzip": 3203,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/result-DwUAyOGs.js",
           "gzip": 381,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/result-00000000.js",
+            "gzip": 381,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-DDaDsCn2.js",
           "gzip": 3615,
           "worker": "own-matroska.worker",
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3610,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-R9dC7db6.js",
           "gzip": 3600,
           "worker": null,
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3595,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/runtime-lhrMUkum.js",
           "gzip": 2453,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/runtime-00000000.js",
+            "gzip": 2402,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-BEYDst9h.js",
           "gzip": 1843,
           "worker": null,
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1841,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-BHPJMyh4.js",
           "gzip": 1811,
           "worker": "own-matroska.worker",
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1805,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-DVpTqDas.js",
           "gzip": 1810,
           "worker": "own-isobmff.worker",
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1804,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/sniff-DecauIFI.js",
           "gzip": 989,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/sniff-00000000.js",
+            "gzip": 989,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/stats-a0RbBk1u.js",
           "gzip": 4336,
           "worker": null,
-          "class": "stats"
+          "class": "stats",
+          "normalized": {
+            "file": "assets/stats-00000000.js",
+            "gzip": 4314,
+            "entry": false,
+            "holds": []
+          }
         }
       ],
       "mustNot": [
@@ -329,6 +470,31 @@
         "firstMp4Summary": null,
         "lazyTotal": 88866
       },
+      "normalized": {
+        "metrics": {
+          "entry": 1385,
+          "trigger": 656,
+          "react": null,
+          "check": null,
+          "presets": null,
+          "client": 3203,
+          "isobmff": 12104,
+          "matroska": 11407,
+          "segments": 1726,
+          "rfps": 3526,
+          "firstMp4": 24390,
+          "firstMkv": 26996,
+          "allOwn": 48183,
+          "mp4box": null,
+          "mediabunny": null,
+          "engineShared": null,
+          "rvfc": null,
+          "pageEngineShared": null,
+          "summary": null,
+          "firstMp4Summary": null,
+          "lazyTotal": 88552
+        }
+      },
       "workers": [
         {
           "name": "own-isobmff.worker",
@@ -348,91 +514,189 @@
           "file": "assets/compare-RpkUE7jm.js",
           "gzip": 1325,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/compare-00000000.js",
+            "gzip": 1288,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/fallback-CT02WVaN.js",
           "gzip": 751,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/fallback-00000000.js",
+            "gzip": 733,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/index-DmjUnTNM.js",
           "gzip": 1395,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/index-00000000.js",
+            "gzip": 1385,
+            "entry": true,
+            "holds": []
+          }
         },
         {
           "file": "assets/inline-WAi8PGDT.js",
           "gzip": 655,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/inline-00000000.js",
+            "gzip": 641,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/isobmff-CCtMm25D.js",
           "gzip": 12325,
           "worker": null,
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/isobmff-00000000.js",
+            "gzip": 12300,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/matroska-Dq-HKOY4.js",
           "gzip": 11936,
           "worker": null,
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/matroska-00000000.js",
+            "gzip": 11885,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/own-isobmff.worker-Gj5EG3Ra.js",
           "gzip": 21187,
           "worker": "own-isobmff.worker",
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/own-isobmff.worker-00000000.js",
+            "gzip": 21187,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/own-matroska.worker-Dogy1Iw-.js",
           "gzip": 23793,
           "worker": "own-matroska.worker",
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/own-matroska.worker-00000000.js",
+            "gzip": 23793,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/probe-CaVTTlWJ.js",
           "gzip": 3285,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/probe-00000000.js",
+            "gzip": 3203,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/result-DwUAyOGs.js",
           "gzip": 381,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/result-00000000.js",
+            "gzip": 381,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-CH3jJRRi.js",
           "gzip": 3603,
           "worker": null,
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3595,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/runtime-DkkdDFOP.js",
           "gzip": 2456,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/runtime-00000000.js",
+            "gzip": 2402,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-l5VV0mf4.js",
           "gzip": 1844,
           "worker": null,
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1841,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/sniff-DecauIFI.js",
           "gzip": 989,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/sniff-00000000.js",
+            "gzip": 989,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/stats-Bj8Y1cFT.js",
           "gzip": 4336,
           "worker": null,
-          "class": "stats"
+          "class": "stats",
+          "normalized": {
+            "file": "assets/stats-00000000.js",
+            "gzip": 4314,
+            "entry": false,
+            "holds": []
+          }
         }
       ],
       "mustNot": [
@@ -553,6 +817,31 @@
         "firstMp4Summary": null,
         "lazyTotal": 81817
       },
+      "normalized": {
+        "metrics": {
+          "entry": 1447,
+          "trigger": 662,
+          "react": null,
+          "check": null,
+          "presets": null,
+          "client": 2857,
+          "isobmff": 12261,
+          "matroska": 11730,
+          "segments": 1841,
+          "rfps": 3597,
+          "firstMp4": 23473,
+          "firstMkv": 26539,
+          "allOwn": 40641,
+          "mp4box": null,
+          "mediabunny": null,
+          "engineShared": null,
+          "rvfc": null,
+          "pageEngineShared": null,
+          "summary": null,
+          "firstMp4Summary": null,
+          "lazyTotal": 81439
+        }
+      },
       "workers": [
         {
           "name": "fps.worker",
@@ -566,121 +855,249 @@
           "file": "assets/compare-BEWlX4-O.js",
           "gzip": 1329,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/compare-00000000.js",
+            "gzip": 1293,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/fallback-h6LaVPBL.js",
           "gzip": 749,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/fallback-00000000.js",
+            "gzip": 733,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/fps.worker-D8e8y7kH.js",
           "gzip": 4087,
           "worker": "fps.worker",
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/fps.worker-00000000.js",
+            "gzip": 4061,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/index-iR1wAmqg.js",
           "gzip": 1466,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/index-00000000.js",
+            "gzip": 1447,
+            "entry": true,
+            "holds": []
+          }
         },
         {
           "file": "assets/inline-DjAm_2JQ.js",
           "gzip": 655,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/inline-00000000.js",
+            "gzip": 641,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/isobmff-BY5SoUQe.js",
           "gzip": 12323,
           "worker": null,
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/isobmff-00000000.js",
+            "gzip": 12300,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/isobmff-B_SDAnpH.js",
           "gzip": 12276,
           "worker": "fps.worker",
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/isobmff-00000000.js",
+            "gzip": 12261,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/matroska-DU2XjNgk.js",
           "gzip": 11754,
           "worker": "fps.worker",
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/matroska-00000000.js",
+            "gzip": 11730,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/matroska-DfJlZMbx.js",
           "gzip": 11933,
           "worker": null,
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/matroska-00000000.js",
+            "gzip": 11885,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/probe-client-C9ueJlRz.js",
           "gzip": 2929,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/probe-client-00000000.js",
+            "gzip": 2857,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/result-DwUAyOGs.js",
           "gzip": 381,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/result-00000000.js",
+            "gzip": 381,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-dgVVXxAc.js",
           "gzip": 3604,
           "worker": "fps.worker",
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3597,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-lJ7oy84H.js",
           "gzip": 3600,
           "worker": null,
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3595,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/route-v9RlpSjS.js",
           "gzip": 424,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/route-00000000.js",
+            "gzip": 424,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/runtime-6dbnC59r.js",
           "gzip": 2453,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/runtime-00000000.js",
+            "gzip": 2402,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-BH8sAlap.js",
           "gzip": 1844,
           "worker": "fps.worker",
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1841,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-BrSQKzll.js",
           "gzip": 1844,
           "worker": null,
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1841,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/sniff-DecauIFI.js",
           "gzip": 989,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/sniff-00000000.js",
+            "gzip": 989,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/stats-CgqemdPN.js",
           "gzip": 4335,
           "worker": null,
-          "class": "stats"
+          "class": "stats",
+          "normalized": {
+            "file": "assets/stats-00000000.js",
+            "gzip": 4314,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/stats-D1twAyCY.js",
           "gzip": 4308,
           "worker": "fps.worker",
-          "class": "stats"
+          "class": "stats",
+          "normalized": {
+            "file": "assets/stats-00000000.js",
+            "gzip": 4294,
+            "entry": false,
+            "holds": []
+          }
         }
       ],
       "mustNot": [
@@ -787,6 +1204,31 @@
         "firstMp4Summary": null,
         "lazyTotal": 78836
       },
+      "normalized": {
+        "metrics": {
+          "entry": 3738,
+          "trigger": 2924,
+          "react": null,
+          "check": null,
+          "presets": null,
+          "client": null,
+          "isobmff": 12261,
+          "matroska": 11730,
+          "segments": 1841,
+          "rfps": 3597,
+          "firstMp4": 20616,
+          "firstMkv": 23682,
+          "allOwn": 37784,
+          "mp4box": null,
+          "mediabunny": null,
+          "engineShared": null,
+          "rvfc": null,
+          "pageEngineShared": null,
+          "summary": null,
+          "firstMp4Summary": null,
+          "lazyTotal": 78526
+        }
+      },
       "workers": [
         {
           "name": "fps.worker",
@@ -800,115 +1242,237 @@
           "file": "assets/compare-XRVcqSEP.js",
           "gzip": 1306,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/compare-00000000.js",
+            "gzip": 1280,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/fallback-SFj3Cqpa.js",
           "gzip": 746,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/fallback-00000000.js",
+            "gzip": 728,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/fps.worker-D8e8y7kH.js",
           "gzip": 4087,
           "worker": "fps.worker",
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/fps.worker-00000000.js",
+            "gzip": 4061,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/index-CcvJXzfW.js",
           "gzip": 3807,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/index-00000000.js",
+            "gzip": 3738,
+            "entry": true,
+            "holds": []
+          }
         },
         {
           "file": "assets/inline-DgwL7-AP.js",
           "gzip": 659,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/inline-00000000.js",
+            "gzip": 644,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/isobmff-B_SDAnpH.js",
           "gzip": 12276,
           "worker": "fps.worker",
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/isobmff-00000000.js",
+            "gzip": 12261,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/isobmff-DxGh_4fQ.js",
           "gzip": 12324,
           "worker": null,
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/isobmff-00000000.js",
+            "gzip": 12300,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/matroska-DU2XjNgk.js",
           "gzip": 11754,
           "worker": "fps.worker",
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/matroska-00000000.js",
+            "gzip": 11730,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/matroska-f9vjU_DE.js",
           "gzip": 11941,
           "worker": null,
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/matroska-00000000.js",
+            "gzip": 11891,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/result-DwUAyOGs.js",
           "gzip": 381,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/result-00000000.js",
+            "gzip": 381,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-BrqALGED.js",
           "gzip": 3602,
           "worker": null,
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3595,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-dgVVXxAc.js",
           "gzip": 3604,
           "worker": "fps.worker",
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3597,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/route-Be8bEeLf.js",
           "gzip": 377,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/route-00000000.js",
+            "gzip": 371,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/runtime-DMhtTeix.js",
           "gzip": 2459,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/runtime-00000000.js",
+            "gzip": 2408,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-BH8sAlap.js",
           "gzip": 1844,
           "worker": "fps.worker",
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1841,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-BuN0iMNK.js",
           "gzip": 1844,
           "worker": null,
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1841,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/sniff-DecauIFI.js",
           "gzip": 989,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/sniff-00000000.js",
+            "gzip": 989,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/stats-D1twAyCY.js",
           "gzip": 4308,
           "worker": "fps.worker",
-          "class": "stats"
+          "class": "stats",
+          "normalized": {
+            "file": "assets/stats-00000000.js",
+            "gzip": 4294,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/stats-DVyy7ORj.js",
           "gzip": 4335,
           "worker": null,
-          "class": "stats"
+          "class": "stats",
+          "normalized": {
+            "file": "assets/stats-00000000.js",
+            "gzip": 4314,
+            "entry": false,
+            "holds": []
+          }
         }
       ],
       "mustNot": [
@@ -1007,6 +1571,31 @@
         "firstMp4Summary": null,
         "lazyTotal": 217516
       },
+      "normalized": {
+        "metrics": {
+          "entry": 1661,
+          "trigger": 848,
+          "react": null,
+          "check": null,
+          "presets": null,
+          "client": 3218,
+          "isobmff": 12097,
+          "matroska": 11379,
+          "segments": 1804,
+          "rfps": 3610,
+          "firstMp4": 22664,
+          "firstMkv": 25454,
+          "allOwn": 48509,
+          "mp4box": 44911,
+          "mediabunny": null,
+          "engineShared": null,
+          "rvfc": null,
+          "pageEngineShared": null,
+          "summary": null,
+          "firstMp4Summary": null,
+          "lazyTotal": 216998
+        }
+      },
       "workers": [
         {
           "name": "mp4box.worker",
@@ -1032,169 +1621,353 @@
           "file": "assets/compare-fKSCkJm8.js",
           "gzip": 1324,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/compare-00000000.js",
+            "gzip": 1288,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/fallback-DDbs719Q.js",
           "gzip": 751,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/fallback-00000000.js",
+            "gzip": 733,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/index-DhoJGQp-.js",
           "gzip": 1740,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/index-00000000.js",
+            "gzip": 1661,
+            "entry": true,
+            "holds": []
+          }
         },
         {
           "file": "assets/inline-sRvaYS5j.js",
           "gzip": 655,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/inline-00000000.js",
+            "gzip": 641,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/isobmff-CDGB73PB.js",
           "gzip": 12316,
           "worker": null,
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/isobmff-00000000.js",
+            "gzip": 12292,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/isobmff-vznqSNM1.js",
           "gzip": 12325,
           "worker": "mp4box.worker",
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/isobmff-00000000.js",
+            "gzip": 12312,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/matroska-B7bTVjaa.js",
           "gzip": 11904,
           "worker": null,
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/matroska-00000000.js",
+            "gzip": 11861,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/matroska-yKKkUL71.js",
           "gzip": 11743,
           "worker": "mp4box.worker",
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/matroska-00000000.js",
+            "gzip": 11721,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/mp4box-B1oHm4EU.js",
           "gzip": 44925,
           "worker": "mp4box.worker",
-          "class": "mp4box"
+          "class": "mp4box",
+          "normalized": {
+            "file": "assets/mp4box-00000000.js",
+            "gzip": 44911,
+            "entry": false,
+            "holds": [
+              "mp4box"
+            ]
+          }
         },
         {
           "file": "assets/mp4box-gCkjzjL7.js",
           "gzip": 44933,
           "worker": null,
-          "class": "mp4box"
+          "class": "mp4box",
+          "normalized": {
+            "file": "assets/mp4box-00000000.js",
+            "gzip": 44889,
+            "entry": false,
+            "holds": [
+              "mp4box"
+            ]
+          }
         },
         {
           "file": "assets/mp4box.worker-Dqvnm-hG.js",
           "gzip": 4218,
           "worker": "mp4box.worker",
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/mp4box.worker-00000000.js",
+            "gzip": 4186,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/options-BkKhyq8S.js",
           "gzip": 366,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/options-00000000.js",
+            "gzip": 366,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/own-isobmff.worker-BsFuWBCP.js",
           "gzip": 19452,
           "worker": "own-isobmff.worker",
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/own-isobmff.worker-00000000.js",
+            "gzip": 19446,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/own-matroska.worker-Dv3HQ1bP.js",
           "gzip": 18641,
           "worker": "own-matroska.worker",
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/own-matroska.worker-00000000.js",
+            "gzip": 18626,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/probe-Yr9AiW__.js",
           "gzip": 3318,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/probe-00000000.js",
+            "gzip": 3218,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/reader-C9AUSK3e.js",
           "gzip": 1395,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/reader-00000000.js",
+            "gzip": 1395,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/result-DwUAyOGs.js",
           "gzip": 381,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/result-00000000.js",
+            "gzip": 381,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-BHhvS4zv.js",
           "gzip": 3601,
           "worker": null,
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3595,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-C1CgE8Dl.js",
           "gzip": 3601,
           "worker": "mp4box.worker",
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3597,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-DDaDsCn2.js",
           "gzip": 3615,
           "worker": "own-matroska.worker",
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3610,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/runtime-Bu_dHzGV.js",
           "gzip": 1107,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/runtime-00000000.js",
+            "gzip": 1039,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-BHPJMyh4.js",
           "gzip": 1811,
           "worker": "own-matroska.worker",
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1805,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-DVpTqDas.js",
           "gzip": 1810,
           "worker": "own-isobmff.worker",
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1804,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-mldkWwMs.js",
           "gzip": 1844,
           "worker": "mp4box.worker",
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1841,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-tNy05qkA.js",
           "gzip": 1844,
           "worker": null,
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1841,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/sniff-DecauIFI.js",
           "gzip": 989,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/sniff-00000000.js",
+            "gzip": 989,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/stats-D7uCz-Lw.js",
           "gzip": 4337,
           "worker": null,
-          "class": "stats"
+          "class": "stats",
+          "normalized": {
+            "file": "assets/stats-00000000.js",
+            "gzip": 4314,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/stats-xo551lGr.js",
           "gzip": 4310,
           "worker": "mp4box.worker",
-          "class": "stats"
+          "class": "stats",
+          "normalized": {
+            "file": "assets/stats-00000000.js",
+            "gzip": 4297,
+            "entry": false,
+            "holds": []
+          }
         }
       ],
       "mustNot": [
@@ -1296,6 +2069,31 @@
         "firstMp4Summary": null,
         "lazyTotal": 234726
       },
+      "normalized": {
+        "metrics": {
+          "entry": 1663,
+          "trigger": 852,
+          "react": null,
+          "check": null,
+          "presets": null,
+          "client": 3218,
+          "isobmff": 12097,
+          "matroska": 11379,
+          "segments": 1804,
+          "rfps": 3610,
+          "firstMp4": 22664,
+          "firstMkv": 25454,
+          "allOwn": 48509,
+          "mp4box": null,
+          "mediabunny": 54133,
+          "engineShared": null,
+          "rvfc": null,
+          "pageEngineShared": null,
+          "summary": null,
+          "firstMp4Summary": null,
+          "lazyTotal": 234211
+        }
+      },
       "workers": [
         {
           "name": "mediabunny.worker",
@@ -1321,169 +2119,353 @@
           "file": "assets/abort-BxutaVbu.js",
           "gzip": 109,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/abort-00000000.js",
+            "gzip": 109,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/compare-C94tPcN6.js",
           "gzip": 1323,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/compare-00000000.js",
+            "gzip": 1288,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/fallback-DphchBBd.js",
           "gzip": 751,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/fallback-00000000.js",
+            "gzip": 733,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/index-BPZQaSm4.js",
           "gzip": 1741,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/index-00000000.js",
+            "gzip": 1663,
+            "entry": true,
+            "holds": []
+          }
         },
         {
           "file": "assets/inline-uIUa4u3d.js",
           "gzip": 658,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/inline-00000000.js",
+            "gzip": 641,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/isobmff-DiRTqtoA.js",
           "gzip": 12319,
           "worker": null,
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/isobmff-00000000.js",
+            "gzip": 12296,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/isobmff-DqpHvlss.js",
           "gzip": 12278,
           "worker": "mediabunny.worker",
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/isobmff-00000000.js",
+            "gzip": 12262,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/matroska-D20WxcCz.js",
           "gzip": 11903,
           "worker": null,
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/matroska-00000000.js",
+            "gzip": 11862,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/matroska-WQ4TRu7N.js",
           "gzip": 11759,
           "worker": "mediabunny.worker",
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/matroska-00000000.js",
+            "gzip": 11734,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/mediabunny-Bfm01U8A.js",
           "gzip": 53220,
           "worker": null,
-          "class": "mediabunny"
+          "class": "mediabunny",
+          "normalized": {
+            "file": "assets/mediabunny-00000000.js",
+            "gzip": 53188,
+            "entry": false,
+            "holds": [
+              "mediabunny"
+            ]
+          }
         },
         {
           "file": "assets/mediabunny-DpvgGHrx.js",
           "gzip": 54150,
           "worker": "mediabunny.worker",
-          "class": "mediabunny"
+          "class": "mediabunny",
+          "normalized": {
+            "file": "assets/mediabunny-00000000.js",
+            "gzip": 54133,
+            "entry": false,
+            "holds": [
+              "mediabunny"
+            ]
+          }
         },
         {
           "file": "assets/mediabunny.worker-CBfTQJGv.js",
           "gzip": 4120,
           "worker": "mediabunny.worker",
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/mediabunny.worker-00000000.js",
+            "gzip": 4086,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/options-BkKhyq8S.js",
           "gzip": 366,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/options-00000000.js",
+            "gzip": 366,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/own-isobmff.worker-BsFuWBCP.js",
           "gzip": 19452,
           "worker": "own-isobmff.worker",
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/own-isobmff.worker-00000000.js",
+            "gzip": 19446,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/own-matroska.worker-Dv3HQ1bP.js",
           "gzip": 18641,
           "worker": "own-matroska.worker",
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/own-matroska.worker-00000000.js",
+            "gzip": 18626,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/probe-CEmWmUlo.js",
           "gzip": 3315,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/probe-00000000.js",
+            "gzip": 3218,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/result-DwUAyOGs.js",
           "gzip": 381,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/result-00000000.js",
+            "gzip": 381,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-12pcOJ44.js",
           "gzip": 3600,
           "worker": null,
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3595,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-DDaDsCn2.js",
           "gzip": 3615,
           "worker": "own-matroska.worker",
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3610,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-qvfrnjX6.js",
           "gzip": 3603,
           "worker": "mediabunny.worker",
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3597,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/runtime-wVAxLcPl.js",
           "gzip": 2208,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/runtime-00000000.js",
+            "gzip": 2142,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-BHPJMyh4.js",
           "gzip": 1811,
           "worker": "own-matroska.worker",
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1805,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-C1D0wuEI.js",
           "gzip": 1845,
           "worker": "mediabunny.worker",
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1841,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-CBHT7O3W.js",
           "gzip": 1843,
           "worker": null,
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1841,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-DVpTqDas.js",
           "gzip": 1810,
           "worker": "own-isobmff.worker",
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1804,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/sniff-DecauIFI.js",
           "gzip": 989,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/sniff-00000000.js",
+            "gzip": 989,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/stats-BFDxuCUN.js",
           "gzip": 4314,
           "worker": "mediabunny.worker",
-          "class": "stats"
+          "class": "stats",
+          "normalized": {
+            "file": "assets/stats-00000000.js",
+            "gzip": 4300,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/stats-CUod1Un_.js",
           "gzip": 4343,
           "worker": null,
-          "class": "stats"
+          "class": "stats",
+          "normalized": {
+            "file": "assets/stats-00000000.js",
+            "gzip": 4318,
+            "entry": false,
+            "holds": []
+          }
         }
       ],
       "mustNot": [
@@ -1585,6 +2567,31 @@
         "firstMp4Summary": null,
         "lazyTotal": 91523
       },
+      "normalized": {
+        "metrics": {
+          "entry": 1545,
+          "trigger": 747,
+          "react": null,
+          "check": null,
+          "presets": null,
+          "client": 3212,
+          "isobmff": 12097,
+          "matroska": 11379,
+          "segments": 1804,
+          "rfps": 3610,
+          "firstMp4": 22658,
+          "firstMkv": 25448,
+          "allOwn": 48503,
+          "mp4box": null,
+          "mediabunny": null,
+          "engineShared": null,
+          "rvfc": 2170,
+          "pageEngineShared": null,
+          "summary": null,
+          "firstMp4Summary": null,
+          "lazyTotal": 91132
+        }
+      },
       "workers": [
         {
           "name": "own-isobmff.worker",
@@ -1604,121 +2611,249 @@
           "file": "assets/abort-BxutaVbu.js",
           "gzip": 109,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/abort-00000000.js",
+            "gzip": 109,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/compare-DLsGqnqo.js",
           "gzip": 1325,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/compare-00000000.js",
+            "gzip": 1288,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/fallback-BBQOKYn6.js",
           "gzip": 752,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/fallback-00000000.js",
+            "gzip": 733,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/index-SlvYNNx0.js",
           "gzip": 1582,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/index-00000000.js",
+            "gzip": 1545,
+            "entry": true,
+            "holds": []
+          }
         },
         {
           "file": "assets/inline-C6OyPDhj.js",
           "gzip": 656,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/inline-00000000.js",
+            "gzip": 641,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/isobmff-C0hYbFNS.js",
           "gzip": 12324,
           "worker": null,
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/isobmff-00000000.js",
+            "gzip": 12300,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/matroska-BqlrrCnN.js",
           "gzip": 11949,
           "worker": null,
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/matroska-00000000.js",
+            "gzip": 11892,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/own-isobmff.worker-BsFuWBCP.js",
           "gzip": 19452,
           "worker": "own-isobmff.worker",
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/own-isobmff.worker-00000000.js",
+            "gzip": 19446,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/own-matroska.worker-Dv3HQ1bP.js",
           "gzip": 18641,
           "worker": "own-matroska.worker",
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/own-matroska.worker-00000000.js",
+            "gzip": 18626,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/probe-BYu5UN9k.js",
           "gzip": 3300,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/probe-00000000.js",
+            "gzip": 3212,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/result-DwUAyOGs.js",
           "gzip": 381,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/result-00000000.js",
+            "gzip": 381,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-DDaDsCn2.js",
           "gzip": 3615,
           "worker": "own-matroska.worker",
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3610,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-DbJ3PbfH.js",
           "gzip": 3602,
           "worker": null,
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3595,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/runtime-B0s7h33S.js",
           "gzip": 2434,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/runtime-00000000.js",
+            "gzip": 2376,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rvfc-DgI7heff.js",
           "gzip": 2193,
           "worker": null,
-          "class": "rvfc"
+          "class": "rvfc",
+          "normalized": {
+            "file": "assets/rvfc-00000000.js",
+            "gzip": 2170,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-BHPJMyh4.js",
           "gzip": 1811,
           "worker": "own-matroska.worker",
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1805,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-BygPbLA6.js",
           "gzip": 1844,
           "worker": null,
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1841,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-DVpTqDas.js",
           "gzip": 1810,
           "worker": "own-isobmff.worker",
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1804,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/sniff-DecauIFI.js",
           "gzip": 989,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/sniff-00000000.js",
+            "gzip": 989,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/stats-DrNuR1W_.js",
           "gzip": 4336,
           "worker": null,
-          "class": "stats"
+          "class": "stats",
+          "normalized": {
+            "file": "assets/stats-00000000.js",
+            "gzip": 4314,
+            "entry": false,
+            "holds": []
+          }
         }
       ],
       "mustNot": [
@@ -1807,6 +2942,31 @@
         "firstMp4Summary": null,
         "lazyTotal": 364569
       },
+      "normalized": {
+        "metrics": {
+          "entry": 1788,
+          "trigger": 941,
+          "react": null,
+          "check": null,
+          "presets": null,
+          "client": 3225,
+          "isobmff": 12097,
+          "matroska": 11379,
+          "segments": 1804,
+          "rfps": 3610,
+          "firstMp4": 22671,
+          "firstMkv": 25461,
+          "allOwn": 48516,
+          "mp4box": 44911,
+          "mediabunny": 54133,
+          "engineShared": null,
+          "rvfc": 2170,
+          "pageEngineShared": 1566,
+          "summary": null,
+          "firstMp4Summary": null,
+          "lazyTotal": 363815
+        }
+      },
       "workers": [
         {
           "name": "mediabunny.worker",
@@ -1838,235 +2998,493 @@
           "file": "assets/abort-BxutaVbu.js",
           "gzip": 109,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/abort-00000000.js",
+            "gzip": 109,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/compare-DH7qqIo9.js",
           "gzip": 1325,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/compare-00000000.js",
+            "gzip": 1288,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/counting-CFsD1cPi.js",
           "gzip": 1586,
           "worker": null,
-          "class": "engineShared"
+          "class": "engineShared",
+          "normalized": {
+            "file": "assets/counting-00000000.js",
+            "gzip": 1566,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/fallback-QqeESZ9u.js",
           "gzip": 752,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/fallback-00000000.js",
+            "gzip": 733,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/index-BemKqfVX.js",
           "gzip": 1914,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/index-00000000.js",
+            "gzip": 1788,
+            "entry": true,
+            "holds": []
+          }
         },
         {
           "file": "assets/inline-Bd83h_i5.js",
           "gzip": 657,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/inline-00000000.js",
+            "gzip": 641,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/isobmff-BGGTJ-Da.js",
           "gzip": 12312,
           "worker": null,
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/isobmff-00000000.js",
+            "gzip": 12287,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/isobmff-DqpHvlss.js",
           "gzip": 12278,
           "worker": "mediabunny.worker",
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/isobmff-00000000.js",
+            "gzip": 12262,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/isobmff-vznqSNM1.js",
           "gzip": 12325,
           "worker": "mp4box.worker",
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/isobmff-00000000.js",
+            "gzip": 12312,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/matroska-BpQ-ibwf.js",
           "gzip": 11905,
           "worker": null,
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/matroska-00000000.js",
+            "gzip": 11862,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/matroska-WQ4TRu7N.js",
           "gzip": 11759,
           "worker": "mediabunny.worker",
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/matroska-00000000.js",
+            "gzip": 11734,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/matroska-yKKkUL71.js",
           "gzip": 11743,
           "worker": "mp4box.worker",
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/matroska-00000000.js",
+            "gzip": 11721,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/mediabunny-DpvgGHrx.js",
           "gzip": 54150,
           "worker": "mediabunny.worker",
-          "class": "mediabunny"
+          "class": "mediabunny",
+          "normalized": {
+            "file": "assets/mediabunny-00000000.js",
+            "gzip": 54133,
+            "entry": false,
+            "holds": [
+              "mediabunny"
+            ]
+          }
         },
         {
           "file": "assets/mediabunny-DtZv8tLV.js",
           "gzip": 52162,
           "worker": null,
-          "class": "mediabunny"
+          "class": "mediabunny",
+          "normalized": {
+            "file": "assets/mediabunny-00000000.js",
+            "gzip": 52124,
+            "entry": false,
+            "holds": [
+              "mediabunny"
+            ]
+          }
         },
         {
           "file": "assets/mediabunny.worker-CBfTQJGv.js",
           "gzip": 4120,
           "worker": "mediabunny.worker",
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/mediabunny.worker-00000000.js",
+            "gzip": 4086,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/mp4box-B1oHm4EU.js",
           "gzip": 44925,
           "worker": "mp4box.worker",
-          "class": "mp4box"
+          "class": "mp4box",
+          "normalized": {
+            "file": "assets/mp4box-00000000.js",
+            "gzip": 44911,
+            "entry": false,
+            "holds": [
+              "mp4box"
+            ]
+          }
         },
         {
           "file": "assets/mp4box-C7QgOE7j.js",
           "gzip": 43840,
           "worker": null,
-          "class": "mp4box"
+          "class": "mp4box",
+          "normalized": {
+            "file": "assets/mp4box-00000000.js",
+            "gzip": 43780,
+            "entry": false,
+            "holds": [
+              "mp4box"
+            ]
+          }
         },
         {
           "file": "assets/mp4box.worker-Dqvnm-hG.js",
           "gzip": 4218,
           "worker": "mp4box.worker",
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/mp4box.worker-00000000.js",
+            "gzip": 4186,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/options-BkKhyq8S.js",
           "gzip": 366,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/options-00000000.js",
+            "gzip": 366,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/own-isobmff.worker-BsFuWBCP.js",
           "gzip": 19452,
           "worker": "own-isobmff.worker",
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/own-isobmff.worker-00000000.js",
+            "gzip": 19446,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/own-matroska.worker-Dv3HQ1bP.js",
           "gzip": 18641,
           "worker": "own-matroska.worker",
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/own-matroska.worker-00000000.js",
+            "gzip": 18626,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/probe-GvwyV7z3.js",
           "gzip": 3332,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/probe-00000000.js",
+            "gzip": 3225,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/reader-BHNmYB8v.js",
           "gzip": 1386,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/reader-00000000.js",
+            "gzip": 1382,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/result-DwUAyOGs.js",
           "gzip": 381,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/result-00000000.js",
+            "gzip": 381,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-C1CgE8Dl.js",
           "gzip": 3601,
           "worker": "mp4box.worker",
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3597,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-CcRCVNiK.js",
           "gzip": 3601,
           "worker": null,
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3595,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-DDaDsCn2.js",
           "gzip": 3615,
           "worker": "own-matroska.worker",
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3610,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-qvfrnjX6.js",
           "gzip": 3603,
           "worker": "mediabunny.worker",
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3597,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/runtime-v_uPhuYV.js",
           "gzip": 1124,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/runtime-00000000.js",
+            "gzip": 1049,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rvfc-DuaBvKwA.js",
           "gzip": 2193,
           "worker": null,
-          "class": "rvfc"
+          "class": "rvfc",
+          "normalized": {
+            "file": "assets/rvfc-00000000.js",
+            "gzip": 2170,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-BHPJMyh4.js",
           "gzip": 1811,
           "worker": "own-matroska.worker",
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1805,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-C1D0wuEI.js",
           "gzip": 1845,
           "worker": "mediabunny.worker",
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1841,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-DVpTqDas.js",
           "gzip": 1810,
           "worker": "own-isobmff.worker",
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1804,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-DtFegBDZ.js",
           "gzip": 1844,
           "worker": null,
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1841,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-mldkWwMs.js",
           "gzip": 1844,
           "worker": "mp4box.worker",
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1841,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/sniff-DecauIFI.js",
           "gzip": 989,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/sniff-00000000.js",
+            "gzip": 989,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/stats-6wf0Ar3J.js",
           "gzip": 4341,
           "worker": null,
-          "class": "stats"
+          "class": "stats",
+          "normalized": {
+            "file": "assets/stats-00000000.js",
+            "gzip": 4318,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/stats-BFDxuCUN.js",
           "gzip": 4314,
           "worker": "mediabunny.worker",
-          "class": "stats"
+          "class": "stats",
+          "normalized": {
+            "file": "assets/stats-00000000.js",
+            "gzip": 4300,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/stats-xo551lGr.js",
           "gzip": 4310,
           "worker": "mp4box.worker",
-          "class": "stats"
+          "class": "stats",
+          "normalized": {
+            "file": "assets/stats-00000000.js",
+            "gzip": 4297,
+            "entry": false,
+            "holds": []
+          }
         }
       ],
       "mustNot": [],
@@ -2282,6 +3700,31 @@
         "firstMp4Summary": null,
         "lazyTotal": 79921
       },
+      "normalized": {
+        "metrics": {
+          "entry": 1434,
+          "trigger": 687,
+          "react": null,
+          "check": null,
+          "presets": null,
+          "client": 2857,
+          "isobmff": null,
+          "matroska": null,
+          "segments": null,
+          "rfps": null,
+          "firstMp4": 38826,
+          "firstMkv": 38826,
+          "allOwn": 38826,
+          "mp4box": null,
+          "mediabunny": null,
+          "engineShared": null,
+          "rvfc": null,
+          "pageEngineShared": null,
+          "summary": null,
+          "firstMp4Summary": null,
+          "lazyTotal": 79624
+        }
+      },
       "workers": [
         {
           "name": "own.worker",
@@ -2295,91 +3738,188 @@
           "file": "assets/compare-BQalYKBi.js",
           "gzip": 1327,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/compare-00000000.js",
+            "gzip": 1293,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/fallback-CSeem1Zq.js",
           "gzip": 752,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/fallback-00000000.js",
+            "gzip": 733,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/index-BZH7Jfus.js",
           "gzip": 1450,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/index-00000000.js",
+            "gzip": 1434,
+            "entry": true,
+            "holds": []
+          }
         },
         {
           "file": "assets/inline-CmrqybjZ.js",
           "gzip": 658,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/inline-00000000.js",
+            "gzip": 641,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/isobmff-B0aLwZ4B.js",
           "gzip": 12324,
           "worker": null,
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/isobmff-00000000.js",
+            "gzip": 12300,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/matroska-DXdeem2A.js",
           "gzip": 11935,
           "worker": null,
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/matroska-00000000.js",
+            "gzip": 11885,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/own.worker-BPWuTyP0.js",
           "gzip": 35969,
           "worker": "own.worker",
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/own.worker-00000000.js",
+            "gzip": 35969,
+            "entry": false,
+            "holds": [
+              "isobmff",
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/probe-client-BdlGlBJF.js",
           "gzip": 2928,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/probe-client-00000000.js",
+            "gzip": 2857,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/result-DwUAyOGs.js",
           "gzip": 381,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/result-00000000.js",
+            "gzip": 381,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-DjlmNpXU.js",
           "gzip": 3601,
           "worker": null,
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3595,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/route-v9RlpSjS.js",
           "gzip": 424,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/route-00000000.js",
+            "gzip": 424,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/runtime-C7lFD9y8.js",
           "gzip": 2452,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/runtime-00000000.js",
+            "gzip": 2402,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-DU2i41o7.js",
           "gzip": 1844,
           "worker": null,
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1841,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/sniff-DecauIFI.js",
           "gzip": 989,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/sniff-00000000.js",
+            "gzip": 989,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/stats-Cjv0wUgS.js",
           "gzip": 4337,
           "worker": null,
-          "class": "stats"
+          "class": "stats",
+          "normalized": {
+            "file": "assets/stats-00000000.js",
+            "gzip": 4314,
+            "entry": false,
+            "holds": []
+          }
         }
       ],
       "mustNot": [
@@ -2487,6 +4027,31 @@
         "firstMp4Summary": null,
         "lazyTotal": 88819
       },
+      "normalized": {
+        "metrics": {
+          "entry": 1468,
+          "trigger": 706,
+          "react": null,
+          "check": null,
+          "presets": null,
+          "client": 3281,
+          "isobmff": null,
+          "matroska": null,
+          "segments": null,
+          "rfps": null,
+          "firstMp4": 24424,
+          "firstMkv": 27006,
+          "allOwn": 48149,
+          "mp4box": null,
+          "mediabunny": null,
+          "engineShared": null,
+          "rvfc": null,
+          "pageEngineShared": null,
+          "summary": null,
+          "firstMp4Summary": null,
+          "lazyTotal": 88523
+        }
+      },
       "workers": [
         {
           "name": "own-isobmff.worker",
@@ -2506,97 +4071,201 @@
           "file": "assets/compare-C2qCBReG.js",
           "gzip": 1328,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/compare-00000000.js",
+            "gzip": 1293,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/fallback-D7VGJrFG.js",
           "gzip": 751,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/fallback-00000000.js",
+            "gzip": 733,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/index-BPg0GQ3p.js",
           "gzip": 1498,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/index-00000000.js",
+            "gzip": 1468,
+            "entry": true,
+            "holds": []
+          }
         },
         {
           "file": "assets/inline-D7_HIqYc.js",
           "gzip": 656,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/inline-00000000.js",
+            "gzip": 641,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/isobmff-DuvWTqYu.js",
           "gzip": 12323,
           "worker": null,
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/isobmff-00000000.js",
+            "gzip": 12300,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/matroska-BYISUZ1C.js",
           "gzip": 11932,
           "worker": null,
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/matroska-00000000.js",
+            "gzip": 11885,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/own-isobmff.worker-nKrzpURB.js",
           "gzip": 21143,
           "worker": "own-isobmff.worker",
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/own-isobmff.worker-00000000.js",
+            "gzip": 21143,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/own-matroska.worker-DV-hFI7C.js",
           "gzip": 23725,
           "worker": "own-matroska.worker",
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/own-matroska.worker-00000000.js",
+            "gzip": 23725,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/probe-client-Bx0Cv-8G.js",
           "gzip": 2930,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/probe-client-00000000.js",
+            "gzip": 2857,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/result-DwUAyOGs.js",
           "gzip": 381,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/result-00000000.js",
+            "gzip": 381,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-CGa-eAoc.js",
           "gzip": 3601,
           "worker": null,
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3595,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/route-v9RlpSjS.js",
           "gzip": 424,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/route-00000000.js",
+            "gzip": 424,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/runtime-DOr3nLf_.js",
           "gzip": 2454,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/runtime-00000000.js",
+            "gzip": 2402,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-BU5oC_vM.js",
           "gzip": 1845,
           "worker": null,
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1841,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/sniff-DecauIFI.js",
           "gzip": 989,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/sniff-00000000.js",
+            "gzip": 989,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/stats-NepQn8c8.js",
           "gzip": 4337,
           "worker": null,
-          "class": "stats"
+          "class": "stats",
+          "normalized": {
+            "file": "assets/stats-00000000.js",
+            "gzip": 4314,
+            "entry": false,
+            "holds": []
+          }
         }
       ],
       "mustNot": [
@@ -2729,6 +4398,31 @@
         "firstMp4Summary": null,
         "lazyTotal": 88866
       },
+      "normalized": {
+        "metrics": {
+          "entry": 1385,
+          "trigger": 656,
+          "react": null,
+          "check": null,
+          "presets": null,
+          "client": 3203,
+          "isobmff": 12104,
+          "matroska": 11407,
+          "segments": 1726,
+          "rfps": 3526,
+          "firstMp4": 24390,
+          "firstMkv": 26996,
+          "allOwn": 48183,
+          "mp4box": null,
+          "mediabunny": null,
+          "engineShared": null,
+          "rvfc": null,
+          "pageEngineShared": null,
+          "summary": null,
+          "firstMp4Summary": null,
+          "lazyTotal": 88552
+        }
+      },
       "workers": [
         {
           "name": "own-isobmff.worker",
@@ -2748,91 +4442,189 @@
           "file": "assets/compare-RpkUE7jm.js",
           "gzip": 1325,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/compare-00000000.js",
+            "gzip": 1288,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/fallback-CT02WVaN.js",
           "gzip": 751,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/fallback-00000000.js",
+            "gzip": 733,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/index-DmjUnTNM.js",
           "gzip": 1395,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/index-00000000.js",
+            "gzip": 1385,
+            "entry": true,
+            "holds": []
+          }
         },
         {
           "file": "assets/inline-WAi8PGDT.js",
           "gzip": 655,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/inline-00000000.js",
+            "gzip": 641,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/isobmff-CCtMm25D.js",
           "gzip": 12325,
           "worker": null,
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/isobmff-00000000.js",
+            "gzip": 12300,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/matroska-Dq-HKOY4.js",
           "gzip": 11936,
           "worker": null,
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/matroska-00000000.js",
+            "gzip": 11885,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/own-isobmff.worker-Gj5EG3Ra.js",
           "gzip": 21187,
           "worker": "own-isobmff.worker",
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/own-isobmff.worker-00000000.js",
+            "gzip": 21187,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/own-matroska.worker-Dogy1Iw-.js",
           "gzip": 23793,
           "worker": "own-matroska.worker",
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/own-matroska.worker-00000000.js",
+            "gzip": 23793,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/probe-CaVTTlWJ.js",
           "gzip": 3285,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/probe-00000000.js",
+            "gzip": 3203,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/result-DwUAyOGs.js",
           "gzip": 381,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/result-00000000.js",
+            "gzip": 381,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-CH3jJRRi.js",
           "gzip": 3603,
           "worker": null,
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3595,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/runtime-DkkdDFOP.js",
           "gzip": 2456,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/runtime-00000000.js",
+            "gzip": 2402,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-l5VV0mf4.js",
           "gzip": 1844,
           "worker": null,
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1841,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/sniff-DecauIFI.js",
           "gzip": 989,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/sniff-00000000.js",
+            "gzip": 989,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/stats-Bj8Y1cFT.js",
           "gzip": 4336,
           "worker": null,
-          "class": "stats"
+          "class": "stats",
+          "normalized": {
+            "file": "assets/stats-00000000.js",
+            "gzip": 4314,
+            "entry": false,
+            "holds": []
+          }
         }
       ],
       "mustNot": [
@@ -2952,6 +4744,31 @@
         "firstMp4Summary": 23167,
         "lazyTotal": 89642
       },
+      "normalized": {
+        "metrics": {
+          "entry": 69845,
+          "trigger": 1622,
+          "react": 1191,
+          "check": null,
+          "presets": null,
+          "client": 3203,
+          "isobmff": 12097,
+          "matroska": 11379,
+          "segments": 1804,
+          "rfps": 3610,
+          "firstMp4": 22649,
+          "firstMkv": 25439,
+          "allOwn": 48494,
+          "mp4box": null,
+          "mediabunny": null,
+          "engineShared": null,
+          "rvfc": null,
+          "pageEngineShared": null,
+          "summary": 430,
+          "firstMp4Summary": 23079,
+          "lazyTotal": 89293
+        }
+      },
       "workers": [
         {
           "name": "own-isobmff.worker",
@@ -2971,115 +4788,237 @@
           "file": "assets/compare-DZ_Lrg0v.js",
           "gzip": 1326,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/compare-00000000.js",
+            "gzip": 1288,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/fallback-6WGNp2DK.js",
           "gzip": 752,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/fallback-00000000.js",
+            "gzip": 733,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/index-DurZLZ02.js",
           "gzip": 69859,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/index-00000000.js",
+            "gzip": 69845,
+            "entry": true,
+            "holds": []
+          }
         },
         {
           "file": "assets/inline-CqLBsYTS.js",
           "gzip": 656,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/inline-00000000.js",
+            "gzip": 641,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/isobmff-WI9ZvdPj.js",
           "gzip": 12324,
           "worker": null,
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/isobmff-00000000.js",
+            "gzip": 12300,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/matroska-CZzp_Zad.js",
           "gzip": 11934,
           "worker": null,
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/matroska-00000000.js",
+            "gzip": 11885,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/own-isobmff.worker-BsFuWBCP.js",
           "gzip": 19452,
           "worker": "own-isobmff.worker",
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/own-isobmff.worker-00000000.js",
+            "gzip": 19446,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/own-matroska.worker-Dv3HQ1bP.js",
           "gzip": 18641,
           "worker": "own-matroska.worker",
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/own-matroska.worker-00000000.js",
+            "gzip": 18626,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/probe-CygyL5wM.js",
           "gzip": 3285,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/probe-00000000.js",
+            "gzip": 3203,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/result-DwUAyOGs.js",
           "gzip": 381,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/result-00000000.js",
+            "gzip": 381,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-BowITKM3.js",
           "gzip": 3601,
           "worker": null,
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3595,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-DDaDsCn2.js",
           "gzip": 3615,
           "worker": "own-matroska.worker",
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3610,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/runtime-Cotu2WgH.js",
           "gzip": 2455,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/runtime-00000000.js",
+            "gzip": 2402,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-BHPJMyh4.js",
           "gzip": 1811,
           "worker": "own-matroska.worker",
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1805,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-C6emxWN9.js",
           "gzip": 1844,
           "worker": null,
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1841,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-DVpTqDas.js",
           "gzip": 1810,
           "worker": "own-isobmff.worker",
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1804,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/sniff-DecauIFI.js",
           "gzip": 989,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/sniff-00000000.js",
+            "gzip": 989,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/stats-BRmBH-3b.js",
           "gzip": 4336,
           "worker": null,
-          "class": "stats"
+          "class": "stats",
+          "normalized": {
+            "file": "assets/stats-00000000.js",
+            "gzip": 4314,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/summary-CE9reLEn.js",
           "gzip": 430,
           "worker": null,
-          "class": "summary"
+          "class": "summary",
+          "normalized": {
+            "file": "assets/summary-00000000.js",
+            "gzip": 430,
+            "entry": false,
+            "holds": []
+          }
         }
       ],
       "mustNot": [
@@ -3218,6 +5157,31 @@
         "firstMp4Summary": 23167,
         "lazyTotal": 89642
       },
+      "normalized": {
+        "metrics": {
+          "entry": 47243,
+          "trigger": 1620,
+          "react": 1192,
+          "check": null,
+          "presets": null,
+          "client": 3203,
+          "isobmff": 12097,
+          "matroska": 11379,
+          "segments": 1804,
+          "rfps": 3610,
+          "firstMp4": 22649,
+          "firstMkv": 25439,
+          "allOwn": 48494,
+          "mp4box": null,
+          "mediabunny": null,
+          "engineShared": null,
+          "rvfc": null,
+          "pageEngineShared": null,
+          "summary": 430,
+          "firstMp4Summary": 23079,
+          "lazyTotal": 89293
+        }
+      },
       "workers": [
         {
           "name": "own-isobmff.worker",
@@ -3237,115 +5201,237 @@
           "file": "assets/compare-DhQjjtpg.js",
           "gzip": 1324,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/compare-00000000.js",
+            "gzip": 1288,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/fallback-CjflCQBt.js",
           "gzip": 752,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/fallback-00000000.js",
+            "gzip": 733,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/index-DdR743r5.js",
           "gzip": 47255,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/index-00000000.js",
+            "gzip": 47243,
+            "entry": true,
+            "holds": []
+          }
         },
         {
           "file": "assets/inline-KGhKZ-zN.js",
           "gzip": 656,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/inline-00000000.js",
+            "gzip": 641,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/isobmff-CIgkyddY.js",
           "gzip": 12325,
           "worker": null,
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/isobmff-00000000.js",
+            "gzip": 12300,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/matroska-BRVtn5mu.js",
           "gzip": 11935,
           "worker": null,
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/matroska-00000000.js",
+            "gzip": 11885,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/own-isobmff.worker-BsFuWBCP.js",
           "gzip": 19452,
           "worker": "own-isobmff.worker",
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/own-isobmff.worker-00000000.js",
+            "gzip": 19446,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/own-matroska.worker-Dv3HQ1bP.js",
           "gzip": 18641,
           "worker": "own-matroska.worker",
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/own-matroska.worker-00000000.js",
+            "gzip": 18626,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/probe-DeOWoEMn.js",
           "gzip": 3285,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/probe-00000000.js",
+            "gzip": 3203,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/result-DwUAyOGs.js",
           "gzip": 381,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/result-00000000.js",
+            "gzip": 381,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-DDaDsCn2.js",
           "gzip": 3615,
           "worker": "own-matroska.worker",
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3610,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-FbZ7Pq-V.js",
           "gzip": 3602,
           "worker": null,
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3595,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/runtime-CnLCs9RK.js",
           "gzip": 2453,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/runtime-00000000.js",
+            "gzip": 2402,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-BHPJMyh4.js",
           "gzip": 1811,
           "worker": "own-matroska.worker",
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1805,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-DVpTqDas.js",
           "gzip": 1810,
           "worker": "own-isobmff.worker",
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1804,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-nAU54HUD.js",
           "gzip": 1844,
           "worker": null,
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1841,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/sniff-DecauIFI.js",
           "gzip": 989,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/sniff-00000000.js",
+            "gzip": 989,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/stats-BHmT2Wmf.js",
           "gzip": 4337,
           "worker": null,
-          "class": "stats"
+          "class": "stats",
+          "normalized": {
+            "file": "assets/stats-00000000.js",
+            "gzip": 4314,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/summary-CE9reLEn.js",
           "gzip": 430,
           "worker": null,
-          "class": "summary"
+          "class": "summary",
+          "normalized": {
+            "file": "assets/summary-00000000.js",
+            "gzip": 430,
+            "entry": false,
+            "holds": []
+          }
         }
       ],
       "mustNot": [
@@ -3430,6 +5516,31 @@
         "firstMp4Summary": null,
         "lazyTotal": 89216
       },
+      "normalized": {
+        "metrics": {
+          "entry": 5263,
+          "trigger": 4544,
+          "react": null,
+          "check": 3990,
+          "presets": null,
+          "client": 3203,
+          "isobmff": 12097,
+          "matroska": 11379,
+          "segments": 1804,
+          "rfps": 3610,
+          "firstMp4": 22649,
+          "firstMkv": 25439,
+          "allOwn": 48494,
+          "mp4box": null,
+          "mediabunny": null,
+          "engineShared": null,
+          "rvfc": null,
+          "pageEngineShared": null,
+          "summary": null,
+          "firstMp4Summary": null,
+          "lazyTotal": 88863
+        }
+      },
       "workers": [
         {
           "name": "own-isobmff.worker",
@@ -3449,109 +5560,225 @@
           "file": "assets/compare-C2W6NdVJ.js",
           "gzip": 1324,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/compare-00000000.js",
+            "gzip": 1288,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/fallback-CfcWyETA.js",
           "gzip": 752,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/fallback-00000000.js",
+            "gzip": 733,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/index-D0BD63aS.js",
           "gzip": 5268,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/index-00000000.js",
+            "gzip": 5263,
+            "entry": true,
+            "holds": []
+          }
         },
         {
           "file": "assets/inline-DVHBehPI.js",
           "gzip": 656,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/inline-00000000.js",
+            "gzip": 641,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/isobmff-DhOAK0o2.js",
           "gzip": 12326,
           "worker": null,
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/isobmff-00000000.js",
+            "gzip": 12300,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/matroska-Ke_uTF38.js",
           "gzip": 11936,
           "worker": null,
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/matroska-00000000.js",
+            "gzip": 11885,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/own-isobmff.worker-BsFuWBCP.js",
           "gzip": 19452,
           "worker": "own-isobmff.worker",
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/own-isobmff.worker-00000000.js",
+            "gzip": 19446,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/own-matroska.worker-Dv3HQ1bP.js",
           "gzip": 18641,
           "worker": "own-matroska.worker",
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/own-matroska.worker-00000000.js",
+            "gzip": 18626,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/probe-DDuLTwoQ.js",
           "gzip": 3285,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/probe-00000000.js",
+            "gzip": 3203,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/result-DwUAyOGs.js",
           "gzip": 381,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/result-00000000.js",
+            "gzip": 381,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-BZZZdkCe.js",
           "gzip": 3604,
           "worker": null,
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3595,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-DDaDsCn2.js",
           "gzip": 3615,
           "worker": "own-matroska.worker",
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3610,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/runtime-A0U1z-oX.js",
           "gzip": 2453,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/runtime-00000000.js",
+            "gzip": 2402,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-BHPJMyh4.js",
           "gzip": 1811,
           "worker": "own-matroska.worker",
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1805,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-DJLgiUFM.js",
           "gzip": 1846,
           "worker": null,
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1841,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-DVpTqDas.js",
           "gzip": 1810,
           "worker": "own-isobmff.worker",
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1804,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/sniff-DecauIFI.js",
           "gzip": 989,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/sniff-00000000.js",
+            "gzip": 989,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/stats-CMWWLKQB.js",
           "gzip": 4335,
           "worker": null,
-          "class": "stats"
+          "class": "stats",
+          "normalized": {
+            "file": "assets/stats-00000000.js",
+            "gzip": 4314,
+            "entry": false,
+            "holds": []
+          }
         }
       ],
       "mustNot": [
@@ -3646,6 +5873,31 @@
         "firstMp4Summary": null,
         "lazyTotal": 89211
       },
+      "normalized": {
+        "metrics": {
+          "entry": 5617,
+          "trigger": 4898,
+          "react": null,
+          "check": 3990,
+          "presets": 455,
+          "client": 3203,
+          "isobmff": 12097,
+          "matroska": 11379,
+          "segments": 1804,
+          "rfps": 3610,
+          "firstMp4": 22649,
+          "firstMkv": 25439,
+          "allOwn": 48494,
+          "mp4box": null,
+          "mediabunny": null,
+          "engineShared": null,
+          "rvfc": null,
+          "pageEngineShared": null,
+          "summary": null,
+          "firstMp4Summary": null,
+          "lazyTotal": 88863
+        }
+      },
       "workers": [
         {
           "name": "own-isobmff.worker",
@@ -3665,109 +5917,225 @@
           "file": "assets/compare-CeOiXwTv.js",
           "gzip": 1326,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/compare-00000000.js",
+            "gzip": 1288,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/fallback-flLwIH8E.js",
           "gzip": 754,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/fallback-00000000.js",
+            "gzip": 733,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/index-DN7Q5iYH.js",
           "gzip": 5622,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/index-00000000.js",
+            "gzip": 5617,
+            "entry": true,
+            "holds": []
+          }
         },
         {
           "file": "assets/inline-Cvz6DMYQ.js",
           "gzip": 659,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/inline-00000000.js",
+            "gzip": 641,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/isobmff-D4Z4U6tP.js",
           "gzip": 12323,
           "worker": null,
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/isobmff-00000000.js",
+            "gzip": 12300,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/matroska-DhBUuncg.js",
           "gzip": 11934,
           "worker": null,
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/matroska-00000000.js",
+            "gzip": 11885,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/own-isobmff.worker-BsFuWBCP.js",
           "gzip": 19452,
           "worker": "own-isobmff.worker",
-          "class": "isobmff"
+          "class": "isobmff",
+          "normalized": {
+            "file": "assets/own-isobmff.worker-00000000.js",
+            "gzip": 19446,
+            "entry": false,
+            "holds": [
+              "isobmff"
+            ]
+          }
         },
         {
           "file": "assets/own-matroska.worker-Dv3HQ1bP.js",
           "gzip": 18641,
           "worker": "own-matroska.worker",
-          "class": "matroska"
+          "class": "matroska",
+          "normalized": {
+            "file": "assets/own-matroska.worker-00000000.js",
+            "gzip": 18626,
+            "entry": false,
+            "holds": [
+              "matroska"
+            ]
+          }
         },
         {
           "file": "assets/probe-BhwpRpEC.js",
           "gzip": 3286,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/probe-00000000.js",
+            "gzip": 3203,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/result-DwUAyOGs.js",
           "gzip": 381,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/result-00000000.js",
+            "gzip": 381,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-DDaDsCn2.js",
           "gzip": 3615,
           "worker": "own-matroska.worker",
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3610,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/rfps-X34BojJQ.js",
           "gzip": 3600,
           "worker": null,
-          "class": "rfps"
+          "class": "rfps",
+          "normalized": {
+            "file": "assets/rfps-00000000.js",
+            "gzip": 3595,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/runtime-Cr_deJ5V.js",
           "gzip": 2450,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/runtime-00000000.js",
+            "gzip": 2402,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-BHPJMyh4.js",
           "gzip": 1811,
           "worker": "own-matroska.worker",
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1805,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-D8NXAvDX.js",
           "gzip": 1843,
           "worker": null,
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1841,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/segments-DVpTqDas.js",
           "gzip": 1810,
           "worker": "own-isobmff.worker",
-          "class": "segments"
+          "class": "segments",
+          "normalized": {
+            "file": "assets/segments-00000000.js",
+            "gzip": 1804,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/sniff-DecauIFI.js",
           "gzip": 989,
           "worker": null,
-          "class": "shared"
+          "class": "shared",
+          "normalized": {
+            "file": "assets/sniff-00000000.js",
+            "gzip": 989,
+            "entry": false,
+            "holds": []
+          }
         },
         {
           "file": "assets/stats-Cege5szh.js",
           "gzip": 4337,
           "worker": null,
-          "class": "stats"
+          "class": "stats",
+          "normalized": {
+            "file": "assets/stats-00000000.js",
+            "gzip": 4314,
+            "entry": false,
+            "holds": []
+          }
         }
       ],
       "mustNot": [
@@ -3843,21 +6211,30 @@
       "gzip": 35969,
       "limit": 37500,
       "status": "ok",
-      "why": "dist/standalone/own.worker.js: the own worker as one minified IIFE file with no imports, built by rolldown. Design estimate 35.0 KB; measured 32.04 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 35.5 KB to 36 KB in 0.2.0, measured 35.58 KB, when the ffprobe frame rate estimate, which the file inlines, began to read the H.264 slice headers that decide the decoder delay (0.63 KB gzip). Measured 35.95 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass."
+      "why": "dist/standalone/own.worker.js: the own worker as one minified IIFE file with no imports, built by rolldown. Design estimate 35.0 KB; measured 32.04 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 35.5 KB to 36 KB in 0.2.0, measured 35.58 KB, when the ffprobe frame rate estimate, which the file inlines, began to read the H.264 slice headers that decide the decoder delay (0.63 KB gzip). Measured 35.95 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass.",
+      "normalized": {
+        "gzip": 35969
+      }
     },
     {
       "file": "own-isobmff.worker.js",
       "gzip": 21143,
       "limit": 22000,
       "status": "ok",
-      "why": "dist/standalone/own-isobmff.worker.js: the ISO BMFF worker of own as one minified IIFE file with no imports, built by rolldown, for a host that starts classic workers and registers it with byContainer. Design estimate 21.2 to 21.6 KB; measured 21.15 KB. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
+      "why": "dist/standalone/own-isobmff.worker.js: the ISO BMFF worker of own as one minified IIFE file with no imports, built by rolldown, for a host that starts classic workers and registers it with byContainer. Design estimate 21.2 to 21.6 KB; measured 21.15 KB. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB.",
+      "normalized": {
+        "gzip": 21143
+      }
     },
     {
       "file": "own-matroska.worker.js",
       "gzip": 23725,
       "limit": 25000,
       "status": "ok",
-      "why": "dist/standalone/own-matroska.worker.js: the Matroska worker of own as one minified IIFE file with no imports, with the ffprobe frame rate estimate and the rate profile core inlined. Design estimate 24.2 to 24.6 KB; measured 23.80 KB. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB."
+      "why": "dist/standalone/own-matroska.worker.js: the Matroska worker of own as one minified IIFE file with no imports, with the ffprobe frame rate estimate and the rate profile core inlined. Design estimate 24.2 to 24.6 KB; measured 23.80 KB. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB.",
+      "normalized": {
+        "gzip": 23725
+      }
     }
   ],
   "failures": []

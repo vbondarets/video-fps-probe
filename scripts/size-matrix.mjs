@@ -231,11 +231,62 @@ Measures the consumer fixtures built by node scripts/consumers.mjs from the pack
                 for the job summary. Every other budget and check still fails as with --check alone.
 
 Without --check the report is written to --out, or to report/ (npm run size:matrix:write).
+
+size-matrix.json also records a hash-normalized size next to each raw one, under the key normalized: for
+every row of a configuration (normalized.metrics), for every emitted file (normalized.gzip, with the
+normalized file name, whether the file is in the entry chunk and which parsers or engines it holds) and
+for every standalone worker file (normalized.gzip). Before gzip, every name of an emitted file that ends in
+-<8 character content hash>.<extension> is replaced, in the contents of every file and with the same
+length, by the name with the hash 00000000, so a change in one chunk does not move the size of the
+chunks that only name it. scripts/size-gate.mjs compares these sizes. The markdown report shows only the
+raw sizes.
 `;
 
 const kb = (n) => `${(n / KB).toFixed(2)} KB`;
 const posix = (p) => p.split('\\').join('/');
 const gzipOf = (buf) => measure(buf).gzip;
+
+export const HASH_PLACEHOLDER = '00000000';
+const HASHED_NAME = /^(.+)-([A-Za-z0-9_-]{8})(\.[A-Za-z0-9]+(?:\.map)?)$/;
+const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+export function normalizedName(name) {
+  const at = name.lastIndexOf('/') + 1;
+  const m = HASHED_NAME.exec(name.slice(at));
+  return m ? `${name.slice(0, at)}${m[1]}-${HASH_PLACEHOLDER}${m[3]}` : name;
+}
+
+export function hashNormalizer(names) {
+  const swaps = new Map();
+  for (const name of names) {
+    const base = name.slice(name.lastIndexOf('/') + 1);
+    const swapped = normalizedName(base);
+    if (swapped !== base) swaps.set(base, swapped);
+  }
+  if (swaps.size === 0) return (text) => text;
+  const pattern = new RegExp(
+    [...swaps.keys()]
+      .sort((a, b) => b.length - a.length || (a < b ? -1 : 1))
+      .map(escapeRegExp)
+      .join('|'),
+    'g',
+  );
+  return (text) => text.replace(pattern, (s) => swaps.get(s));
+}
+
+function emittedNames(dir) {
+  return readdirSync(dir, { withFileTypes: true, recursive: true })
+    .filter((e) => e.isFile())
+    .map((e) => e.name);
+}
+
+const HOLDS = [
+  ['isobmff', /video-fps-probe\/dist\/core\/isobmff\//],
+  ['matroska', /video-fps-probe\/dist\/core\/matroska\//],
+  ['mp4box', /node_modules\/mp4box\/|video-fps-probe\/dist\/engines\/mp4box\.js$/],
+  ['mediabunny', /node_modules\/mediabunny\/|video-fps-probe\/dist\/engines\/mediabunny\.js$/],
+];
+const STANDALONE_HOLDS = { 'own.worker.js': ['isobmff', 'matroska'], 'own-isobmff.worker.js': ['isobmff'], 'own-matroska.worker.js': ['matroska'] };
 
 const B64 = new Map([...'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'].map((c, i) => [c, i]));
 
@@ -317,23 +368,22 @@ export function measureFixture(dir, fixture, { thirdPartyInformational = false }
   const found = discover(distDir);
   const files = found.files.filter((f) => /\.m?js$/.test(f));
   const fileSet = new Set(found.files);
-  const texts = new Map(files.map((f) => [f, readFileSync(join(distDir, f), 'utf8')]));
+  const bytes = new Map(files.map((f) => [f, readFileSync(join(distDir, f))]));
+  const texts = new Map(files.map((f) => [f, bytes.get(f).toString('utf8')]));
   const maps = new Map(files.map((f) => [f, readMap(distDir, f)]));
-  const gz = new Map(files.map((f) => [f, gzipOf(readFileSync(join(distDir, f)))]));
+  const normalize = hashNormalizer(emittedNames(distDir));
+  const raw = { gz: new Map(files.map((f) => [f, gzipOf(bytes.get(f))])), texts };
+  const normalized = {
+    gz: new Map(files.map((f) => [f, gzipOf(Buffer.from(normalize(bytes.get(f).toString('latin1')), 'latin1'))])),
+    texts: new Map(files.map((f) => [f, normalize(texts.get(f))])),
+  };
+  const gz = raw.gz;
   const classOf = (f) => classify(maps.get(f)?.sources ?? []);
   const sum = (list) => [...list].reduce((n, f) => n + (gz.get(f) ?? 0), 0);
   const problems = [];
 
   const entry = found.main ? closureOf(found.main, fileSet, texts, { dynamic: false }) : new Set();
-  let trigger = 0;
-  const entryCode = Object.fromEntries(Object.keys(ENTRY_SOURCES).map((key) => [key, 0]));
-  for (const f of entry) {
-    const map = maps.get(f);
-    if (map) {
-      trigger += gzipOf(Buffer.from(codeFromSources(texts.get(f), map, (s) => s.includes(PACKAGE_SOURCE))));
-      for (const [key, [entryImport, source]] of Object.entries(ENTRY_SOURCES)) if (fixture.imports.includes(entryImport)) entryCode[key] += gzipOf(Buffer.from(codeFromSources(texts.get(f), map, (s) => s.includes(source))));
-    } else problems.push(`${f}: no sourcemap`);
-  }
+  for (const f of entry) if (!maps.get(f)) problems.push(`${f}: no sourcemap`);
   const without = (set) => new Set([...set].filter((f) => !entry.has(f)));
   const clientFiles = new Set();
   for (const f of files) if (found.kinds.get(f) === 'client') for (const g of closureOf(f, fileSet, texts, { dynamic: false })) clientFiles.add(g);
@@ -376,41 +426,41 @@ export function measureFixture(dir, fixture, { thirdPartyInformational = false }
     for (const c of classes) for (const f of w.withStatics(w.byClass[c])) list.add(f);
     return list;
   };
-  const lazyTotal = (paths) => (paths.every(([w]) => w) ? sum(without(new Set(paths.flatMap(([w, classes]) => [...pathOf(w, classes)])))) : null);
+  const lazyTotal = (paths) => (paths.every(([w]) => w) ? { files: [...without(new Set(paths.flatMap(([w, classes]) => [...pathOf(w, classes)])))] } : null);
   const share = (w, cls) => {
     if (!w) return null;
-    if (w.byClass[cls]) return sum(w.byClass[cls]);
+    if (w.byClass[cls]) return { files: [...w.byClass[cls]] };
     const re = CLASSES.find(([name]) => name === cls)[1];
-    let gzip = 0;
-    for (const f of w.statics) {
-      const map = maps.get(f);
-      const code = map ? codeFromSources(texts.get(f), map, (s) => re.test(s)) : '';
-      if (code) gzip += gzipOf(Buffer.from(code));
-    }
-    return gzip > 0 ? gzip : null;
+    const keep = (s) => re.test(s);
+    const cut = [...w.statics].filter((f) => maps.get(f) && codeFromSources(texts.get(f), maps.get(f), keep) !== '');
+    return cut.length > 0 ? { cut, keep, skipEmpty: true } : null;
   };
   const OWN_CLASSES = ['isobmff', 'matroska', 'stats', 'segments', 'rfps'];
   const engineChunk = (engine) => {
     const w = Object.values(workers).find((x) => x.byClass[engine]);
-    return w ? sum(w.byClass[engine]) : null;
+    return w ? { files: [...w.byClass[engine]] } : null;
   };
-  const engineShared = Object.values(workers).reduce((n, w) => n + sum(w.byClass.engineShared ?? []), 0);
+  const engineShared = Object.values(workers).flatMap((w) => [...(w.byClass.engineShared ?? [])]);
   const mainThread = new Set(files.filter((f) => !Object.values(workers).some((w) => w.side.has(f))));
   const rvfcFiles = [...mainThread].filter((f) => classOf(f) === 'rvfc');
   const pageEngineShared = [...mainThread].filter((f) => classOf(f) === 'engineShared');
+  const entryCode = (key) => (fixture.imports.includes(ENTRY_SOURCES[key][0]) ? { cut: [...entry], keep: (s) => s.includes(ENTRY_SOURCES[key][1]), skipEmpty: false } : null);
+  const summaryFiles = [...mainThread].filter((f) => classOf(f) === 'summary');
+  const summary = summaryFiles.length > 0 ? { files: [...without(new Set(summaryFiles.flatMap((f) => [...closureOf(f, fileSet, texts, { dynamic: false })])))] } : null;
+  const firstMp4 = lazyTotal([[isoWorker, ['isobmff', 'stats']]]);
 
-  const metrics = {
-    entry: sum(entry),
-    trigger,
-    react: fixture.imports.includes(ENTRY_SOURCES.react[0]) ? entryCode.react : null,
-    check: fixture.imports.includes(ENTRY_SOURCES.check[0]) ? entryCode.check : null,
-    presets: fixture.imports.includes(ENTRY_SOURCES.presets[0]) ? entryCode.presets : null,
-    client: clientFiles.size > 0 ? sum(without(clientFiles)) : null,
+  const rows = {
+    entry: { files: [...entry] },
+    trigger: { cut: [...entry], keep: (s) => s.includes(PACKAGE_SOURCE), skipEmpty: false },
+    react: entryCode('react'),
+    check: entryCode('check'),
+    presets: entryCode('presets'),
+    client: clientFiles.size > 0 ? { files: [...without(clientFiles)] } : null,
     isobmff: share(isoWorker, 'isobmff'),
     matroska: share(mkvWorker, 'matroska'),
     segments: share(isoWorker, 'segments') ?? share(mkvWorker, 'segments'),
     rfps: share(mkvWorker, 'rfps'),
-    firstMp4: lazyTotal([[isoWorker, ['isobmff', 'stats']]]),
+    firstMp4,
     firstMkv: lazyTotal([[mkvWorker, ['matroska', 'stats', 'rfps']]]),
     allOwn: lazyTotal([
       [isoWorker, OWN_CLASSES],
@@ -418,16 +468,35 @@ export function measureFixture(dir, fixture, { thirdPartyInformational = false }
     ]),
     mp4box: engineChunk('mp4box'),
     mediabunny: engineChunk('mediabunny'),
-    engineShared: engineShared > 0 ? engineShared : null,
-    rvfc: rvfcFiles.length > 0 ? sum(rvfcFiles) : null,
-    pageEngineShared: pageEngineShared.length > 0 ? sum(pageEngineShared) : null,
-    summary: null,
-    firstMp4Summary: null,
-    lazyTotal: sum(without(new Set(files))),
+    engineShared: engineShared.length > 0 ? { files: engineShared } : null,
+    rvfc: rvfcFiles.length > 0 ? { files: rvfcFiles } : null,
+    pageEngineShared: pageEngineShared.length > 0 ? { files: pageEngineShared } : null,
+    summary,
+    firstMp4Summary: summary !== null && firstMp4 !== null ? { files: [...firstMp4.files, ...summary.files] } : null,
+    lazyTotal: { files: [...without(new Set(files))] },
   };
-  const summaryFiles = [...mainThread].filter((f) => classOf(f) === 'summary');
-  if (summaryFiles.length > 0) metrics.summary = sum(without(new Set(summaryFiles.flatMap((f) => [...closureOf(f, fileSet, texts, { dynamic: false })]))));
-  if (metrics.summary !== null && metrics.firstMp4 !== null) metrics.firstMp4Summary = metrics.firstMp4 + metrics.summary;
+  const valueOf = (row, sizes) => {
+    if (row === null) return null;
+    if (row.files) return row.files.reduce((n, f) => n + (sizes.gz.get(f) ?? 0), 0);
+    let gzip = 0;
+    for (const f of row.cut) {
+      const map = maps.get(f);
+      if (!map) continue;
+      const code = codeFromSources(sizes.texts.get(f), map, row.keep);
+      if (code !== '' || !row.skipEmpty) gzip += gzipOf(Buffer.from(code));
+    }
+    return gzip;
+  };
+  const metricsOf = (sizes) => Object.fromEntries(Object.entries(rows).map(([key, row]) => [key, valueOf(row, sizes)]));
+  const metrics = metricsOf(raw);
+
+  const standaloneDir = join(installedPackage(dir), 'dist', 'standalone');
+  const standaloneCopies = Object.entries(STANDALONE_HOLDS).flatMap(([file, holds]) => (existsSync(join(standaloneDir, file)) ? [{ bytes: readFileSync(join(standaloneDir, file)), holds }] : []));
+  const holdsOf = (f) => {
+    const map = maps.get(f);
+    if (!map) return [...(standaloneCopies.find((c) => c.bytes.equals(bytes.get(f)))?.holds ?? [])];
+    return HOLDS.filter(([, re]) => map.sources.some((s) => re.test(s))).map(([name]) => name);
+  };
 
   const leaks = [];
   for (const f of files) {
@@ -462,8 +531,15 @@ export function measureFixture(dir, fixture, { thirdPartyInformational = false }
     worker: fixture.worker,
     engines: fixture.engines,
     metrics,
+    normalized: { metrics: metricsOf(normalized) },
     workers: names.map((n) => ({ name: n, entry: workers[n].entry, chunks: workers[n].chunks, sha256: workers[n].sha256 })),
-    files: files.map((f) => ({ file: f, gzip: gz.get(f), worker: Object.keys(workers).find((n) => workers[n].side.has(f)) ?? null, class: classOf(f) })),
+    files: files.map((f) => ({
+      file: f,
+      gzip: gz.get(f),
+      worker: Object.keys(workers).find((n) => workers[n].side.has(f)) ?? null,
+      class: classOf(f),
+      normalized: { file: normalizedName(f), gzip: normalized.gz.get(f), entry: entry.has(f), holds: holdsOf(f) },
+    })),
     mustNot: fixture.mustNot,
     leaks,
     workerLeaks,
@@ -480,10 +556,14 @@ function versionOf(dir, name) {
 
 export function buildMatrix(dir, { thirdPartyInformational = false } = {}) {
   const fixtures = FIXTURES.map((f) => measureFixture(dir, f, { thirdPartyInformational }));
+  const standaloneDir = join(installedPackage(dir), 'dist', 'standalone');
+  const normalize = existsSync(standaloneDir) ? hashNormalizer(emittedNames(standaloneDir)) : (text) => text;
   const standalone = Object.entries(STANDALONE_BUDGETS).map(([file, { limit, why }]) => {
-    const path = join(installedPackage(dir), 'dist', 'standalone', file);
-    const gzip = existsSync(path) ? gzipOf(readFileSync(path)) : null;
-    return { file, gzip, limit, status: gzip === null ? 'missing' : gzip > limit ? 'over' : 'ok', why };
+    const path = join(standaloneDir, file);
+    const bytes = existsSync(path) ? readFileSync(path) : null;
+    const gzip = bytes === null ? null : gzipOf(bytes);
+    const normalized = { gzip: bytes === null ? null : gzipOf(Buffer.from(normalize(bytes.toString('latin1')), 'latin1')) };
+    return { file, gzip, limit, status: gzip === null ? 'missing' : gzip > limit ? 'over' : 'ok', why, normalized };
   });
   const failures = fixtures.flatMap((f) => f.problems.map((p) => (p.startsWith(`${f.name} `) ? p : `${f.name}: ${p}`)));
   for (const s of standalone) if (s.status !== 'ok') failures.push(`standalone ${s.file}: ${s.status}${s.gzip === null ? '' : ` (${kb(s.gzip)} > ${kb(s.limit)})`}`);
