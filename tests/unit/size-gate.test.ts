@@ -16,7 +16,7 @@ interface MatrixFile extends Sized {
   file: string;
   worker: string | null;
   class: string;
-  normalized: { file: string; gzip: number; entry: boolean; holds: string[] };
+  normalized: { file: string; gzip: number; entry: boolean; sources: string[] };
 }
 
 interface Fixture {
@@ -47,7 +47,7 @@ interface GateConfig {
   stageBase: string;
   stageBaseSha256: string;
   stage: number;
-  files: { growth: Record<string, Record<string, number>> };
+  files: { kinds: Record<string, { sources: string; growth: Record<string, number> }> };
   groups: Group[];
   [key: string]: unknown;
 }
@@ -60,7 +60,7 @@ interface Pair {
 }
 
 const BASELINE_SHA256 = '1b6c24749acae07a3fea4b2477d8c88517d303c617f629c6c3f8b179db6f5fe2';
-const NORMALIZED_SHA256 = 'e1b75f2135ba0f951f9bb214a3b7479e271ae8a2e8d7645ba7f3cde8368f4fcd';
+const NORMALIZED_SHA256 = '594fef2ab36ae0c2d665bc6d3ddb36ff800e3cdabe90bded04e75945defd7617';
 const GATE = join(REPO_ROOT, 'scripts', 'size-gate.mjs');
 const CONFIG = join(REPO_ROOT, 'scripts', 'size-gate.json');
 const SNAPSHOTS = join(REPO_ROOT, 'fixtures', 'snapshots');
@@ -125,7 +125,9 @@ const metric = (m: Matrix, config: string, key: string, by: number) => {
   f.normalized.metrics[key] = (f.normalized.metrics[key] ?? 0) + by;
 };
 
-const holding = (f: Fixture, kind: string) => f.files.filter((x) => !x.normalized.entry && x.normalized.holds.includes(kind));
+const KINDS = (JSON.parse(readFileSync(CONFIG, 'utf8')) as GateConfig).files.kinds;
+const holds = (x: MatrixFile, kind: string) => x.normalized.sources.some((s) => new RegExp(KINDS[kind]!.sources).test(s));
+const holding = (f: Fixture, kind: string) => f.files.filter((x) => !x.normalized.entry && holds(x, kind));
 
 const FAMILIES = {
   isobmff: { rows: ['isobmff', 'firstMp4', 'firstMp4Summary', 'allOwn'], oneFile: 'firstMkv', standalone: ['own.worker.js', 'own-isobmff.worker.js'] },
@@ -284,7 +286,7 @@ describe('size gate against the 0.3.0 baseline', () => {
     const normalized = raised('edited-normalized.json', (m) => metric(m, 'custom', 'firstMp4', 300));
     const n = run(['--config', configAt(1), '--normalized-baseline', normalized]);
     expect(n.status).toBe(1);
-    expect(n.err).toContain('the configuration pins e1b75f21');
+    expect(n.err).toContain('the configuration pins 594fef2a');
     const other = run([
       '--config',
       configAt(1, NORMALIZED, (c) => {
@@ -403,7 +405,7 @@ describe('size gate against the 0.3.0 baseline', () => {
     expect(largest).toBeGreaterThan(0);
     expect(largest).toBeLessThanOrEqual(10);
     const lowered = configAt(3, NORMALIZED, (c) => {
-      const iso = c.files.growth.isobmff!;
+      const iso = c.files.kinds.isobmff!.growth;
       iso['3'] = iso['2']! + largest - 1;
       for (const g of c.groups) {
         const share = (g.growth['3'] ?? 0) - (g.growth['2'] ?? 0);
@@ -515,7 +517,7 @@ describe('size gate against the 0.3.0 baseline', () => {
     );
     expect(added.status).toBe(1);
     expect(added.err).toContain('default file assets/extra-00000000.js (page): not in the stage base, and no file may be added to a configuration of 0.3.0');
-    const moved = at(1, raised('file-holds.json', (m) => (fixtureOf(m, 'default').files.find((x) => x.normalized.file === 'assets/stats-00000000.js')!.normalized.holds = ['isobmff'])));
+    const moved = at(1, raised('file-holds.json', (m) => (fixtureOf(m, 'default').files.find((x) => x.normalized.file === 'assets/stats-00000000.js')!.normalized.sources.push('core/isobmff/index.js'))));
     expect(moved.status).toBe(1);
     expect(moved.err).toContain('default file assets/stats-00000000.js (page): holds isobmff against no parser or engine in the stage base');
   });

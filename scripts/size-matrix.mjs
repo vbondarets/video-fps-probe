@@ -234,8 +234,11 @@ Without --check the report is written to --out, or to report/ (npm run size:matr
 
 size-matrix.json also records a hash-normalized size next to each raw one, under the key normalized: for
 every row of a configuration (normalized.metrics), for every emitted file (normalized.gzip, with the
-normalized file name, whether the file is in the entry chunk and which parsers or engines it holds) and
-for every standalone worker file (normalized.gzip). Before gzip, every name of an emitted file that ends in
+normalized file name, whether the file is in the entry chunk and the modules its sourcemap names, under
+sources) and for every standalone worker file (normalized.gzip). A module of the package is named by its
+path in the package dist, such as core/stats.js, a module of another package as node_modules/<package>,
+any other module by its path from the consumers directory, and a file without a sourcemap that is a copy
+of a standalone worker file as standalone/<file>. Before gzip, every name of an emitted file that ends in
 -<8 character content hash>.<extension> is replaced, in the contents of every file and with the same
 length, by the name with the hash 00000000, so a change in one chunk does not move the size of the
 chunks that only name it. scripts/size-gate.mjs compares these sizes. The markdown report shows only the
@@ -280,13 +283,20 @@ function emittedNames(dir) {
     .map((e) => e.name);
 }
 
-const HOLDS = [
-  ['isobmff', /video-fps-probe\/dist\/core\/isobmff\//],
-  ['matroska', /video-fps-probe\/dist\/core\/matroska\//],
-  ['mp4box', /node_modules\/mp4box\/|video-fps-probe\/dist\/engines\/mp4box\.js$/],
-  ['mediabunny', /node_modules\/mediabunny\/|video-fps-probe\/dist\/engines\/mediabunny\.js$/],
-];
-const STANDALONE_HOLDS = { 'own.worker.js': ['isobmff', 'matroska'], 'own-isobmff.worker.js': ['isobmff'], 'own-matroska.worker.js': ['matroska'] };
+const PACKAGE_DIST = '/video-fps-probe/dist/';
+const NODE_MODULES = '/node_modules/';
+const STANDALONE_FILES = ['own.worker.js', 'own-isobmff.worker.js', 'own-matroska.worker.js'];
+
+export function moduleId(source, root) {
+  const at = source.lastIndexOf(PACKAGE_DIST);
+  if (at >= 0) return source.slice(at + PACKAGE_DIST.length);
+  const nm = source.lastIndexOf(NODE_MODULES);
+  if (nm >= 0) {
+    const parts = source.slice(nm + NODE_MODULES.length).split('/');
+    return `node_modules/${parts.slice(0, parts[0].startsWith('@') ? 2 : 1).join('/')}`;
+  }
+  return posix(relative(root, source));
+}
 
 const B64 = new Map([...'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'].map((c, i) => [c, i]));
 
@@ -491,11 +501,11 @@ export function measureFixture(dir, fixture, { thirdPartyInformational = false }
   const metrics = metricsOf(raw);
 
   const standaloneDir = join(installedPackage(dir), 'dist', 'standalone');
-  const standaloneCopies = Object.entries(STANDALONE_HOLDS).flatMap(([file, holds]) => (existsSync(join(standaloneDir, file)) ? [{ bytes: readFileSync(join(standaloneDir, file)), holds }] : []));
-  const holdsOf = (f) => {
+  const standaloneCopies = STANDALONE_FILES.flatMap((file) => (existsSync(join(standaloneDir, file)) ? [{ bytes: readFileSync(join(standaloneDir, file)), file }] : []));
+  const sourcesOfFile = (f) => {
     const map = maps.get(f);
-    if (!map) return [...(standaloneCopies.find((c) => c.bytes.equals(bytes.get(f)))?.holds ?? [])];
-    return HOLDS.filter(([, re]) => map.sources.some((s) => re.test(s))).map(([name]) => name);
+    if (!map) return standaloneCopies.filter((c) => c.bytes.equals(bytes.get(f))).map((c) => `standalone/${c.file}`);
+    return [...new Set(map.sources.map((s) => moduleId(s, dir)))].sort();
   };
 
   const leaks = [];
@@ -538,7 +548,7 @@ export function measureFixture(dir, fixture, { thirdPartyInformational = false }
       gzip: gz.get(f),
       worker: Object.keys(workers).find((n) => workers[n].side.has(f)) ?? null,
       class: classOf(f),
-      normalized: { file: normalizedName(f), gzip: normalized.gz.get(f), entry: entry.has(f), holds: holdsOf(f) },
+      normalized: { file: normalizedName(f), gzip: normalized.gz.get(f), entry: entry.has(f), sources: sourcesOfFile(f) },
     })),
     mustNot: fixture.mustNot,
     leaks,

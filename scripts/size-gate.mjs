@@ -28,10 +28,12 @@ the report, or standalone:<file> for the prebuilt worker files.
 
 It also gates every emitted file outside the entry chunk of each 0.3.0 configuration on its own, so a
 sum row such as firstMp4, allOwn or lazyTotal cannot hide a change in a file that holds no parser. Files
-are matched by their normalized name and the worker that loads them (page for the main thread). A file
-that holds a parser or an engine may grow by the allowance of each one it holds under files.growth, with
-the same cumulative allowance and stage share rules as a row, and every other file must stay identical to
-the stage base. A file that appears, disappears or changes what it holds fails.
+are matched by their normalized name and the worker that loads them (page for the main thread). Each
+entry of files.kinds names a regular expression over the modules that scripts/size-matrix.mjs records
+for a file under sources, and a growth allowance. A file holds a kind when one of its modules matches it,
+and may grow by the allowance of each kind it holds, with the same cumulative allowance and stage share
+rules as a row. Every other file must stay identical to the stage base. A file that appears, disappears
+or changes the kinds it holds fails.
 
 The share of a stage is its cumulative allowance minus the allowance of the stage before. In a stage
 listed under frozen.stages, every row that no group gates must equal the stage base, except the rows that
@@ -72,7 +74,7 @@ function pinProblem(path, pin, what) {
 }
 
 function normalizedProblem(report, what) {
-  const fixtures = (report.fixtures ?? []).filter((f) => !f.normalized?.metrics || (f.files ?? []).some((x) => !x.normalized)).map((f) => f.name);
+  const fixtures = (report.fixtures ?? []).filter((f) => !f.normalized?.metrics || (f.files ?? []).some((x) => !x.normalized || !Array.isArray(x.normalized.sources))).map((f) => f.name);
   const standalone = (report.standalone ?? []).filter((s) => !s.normalized).map((s) => s.file);
   const missing = [...fixtures, ...standalone];
   return missing.length === 0 ? null : `the ${what} has no normalized sizes for ${missing.join(', ')}: measure it with the current scripts/size-matrix.mjs`;
@@ -133,17 +135,32 @@ function lazyFiles(fixture) {
   return { files: out, twice };
 }
 
-function gateFiles(config, report, baseline, base, stage) {
+function fileKinds(config, stage) {
   const problems = [];
+  const kinds = [];
+  if (!config.files?.kinds || typeof config.files.kinds !== 'object') problems.push('the configuration has no files.kinds');
+  for (const [name, kind] of Object.entries(config.files?.kinds ?? {})) {
+    let re = null;
+    try {
+      re = typeof kind?.sources === 'string' ? new RegExp(kind.sources) : null;
+    } catch {
+      re = null;
+    }
+    if (re === null) problems.push(`files.kinds.${name} has no sources regular expression`);
+    const a = allowances(kind?.growth, stage, `files.kinds.${name}`);
+    if (a.problem) problems.push(a.problem);
+    if (re !== null && !a.problem) kinds.push({ name, re, ...a });
+  }
+  return { kinds, problems };
+}
+
+function gateFiles(config, report, baseline, base, stage) {
+  const { kinds, problems } = fileKinds(config, stage);
   const rows = [];
   let count = 0;
-  const growth = config.files?.growth ?? {};
-  const kinds = new Map();
-  for (const [kind, g] of Object.entries(growth)) {
-    const a = allowances(g, stage, `files.growth.${kind}`);
-    if (a.problem) problems.push(a.problem);
-    else kinds.set(kind, a);
-  }
+  if (problems.length > 0) return { problems, rows, count };
+  const kindsOf = (x) => kinds.filter((k) => x.normalized.sources.some((s) => k.re.test(s)));
+  const named = (list) => list.map((k) => k.name).join(', ') || 'no parser or engine';
   for (const f of base.fixtures ?? []) {
     if (!(baseline.fixtures ?? []).some((b) => b.name === f.name)) continue;
     const sides = { 'stage base': lazyFiles(f), baseline: lazyFiles((baseline.fixtures ?? []).find((b) => b.name === f.name)), measured: lazyFiles((report.fixtures ?? []).find((m) => m.name === f.name)) };
@@ -164,18 +181,12 @@ function gateFiles(config, report, baseline, base, stage) {
         problems.push(`${f.name} file ${key}: not in the 0.3.0 baseline`);
         continue;
       }
-      const holds = n.normalized.holds ?? [];
-      if (JSON.stringify(holds) !== JSON.stringify(s.normalized.holds ?? [])) {
-        problems.push(`${f.name} file ${key}: holds ${holds.join(', ') || 'no parser or engine'} against ${(s.normalized.holds ?? []).join(', ') || 'no parser or engine'} in the stage base`);
+      const parts = kindsOf(n);
+      const holds = parts.map((k) => k.name);
+      if (named(parts) !== named(kindsOf(s))) {
+        problems.push(`${f.name} file ${key}: holds ${named(parts)} against ${named(kindsOf(s))} in the stage base`);
         continue;
       }
-      const unknown = holds.filter((h) => !Object.hasOwn(growth, h));
-      if (unknown.length > 0) {
-        problems.push(`${f.name} file ${key}: holds ${unknown.join(', ')}, which files.growth gives no allowance`);
-        continue;
-      }
-      const parts = holds.map((h) => kinds.get(h)).filter(Boolean);
-      if (parts.length !== holds.length) continue;
       const allowed = parts.some((p) => p.allowed === null) ? null : parts.reduce((t, p) => t + p.allowed, 0);
       const share = parts.some((p) => p.share === null) ? null : parts.reduce((t, p) => t + p.share, 0);
       const value = n.normalized.gzip;

@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { HASH_PLACEHOLDER, hashNormalizer, normalizedName } from '../../scripts/size-matrix.mjs';
+import { HASH_PLACEHOLDER, hashNormalizer, moduleId, normalizedName } from '../../scripts/size-matrix.mjs';
 
 describe('hash-normalized sizes', () => {
   test('replace the content hash of every emitted name with a placeholder of the same length', () => {
@@ -13,5 +13,14 @@ describe('hash-normalized sizes', () => {
     expect(out).toHaveLength(text.length);
     expect(normalize(out)).toBe(out);
     expect(hashNormalizer(['index.html'])(text)).toBe(text);
+  });
+
+  test('name the modules of a file by package path, package name or path from the consumers directory', () => {
+    const root = 'C:/scratch/consumers';
+    expect(moduleId(`${root}/node_modules/video-fps-probe/dist/core/isobmff/track.js`, root)).toBe('core/isobmff/track.js');
+    expect(moduleId(`${root}/react18/node_modules/video-fps-probe/dist/core/stats.js`, root)).toBe('core/stats.js');
+    expect(moduleId(`${root}/node_modules/mp4box/dist/mp4box.all.mjs`, root)).toBe('node_modules/mp4box');
+    expect(moduleId(`${root}/node_modules/@scope/lib/src/index.js`, root)).toBe('node_modules/@scope/lib');
+    expect(moduleId(`${root}/fixtures/custom/fps.worker.ts`, root)).toBe('fixtures/custom/fps.worker.ts');
   });
 });

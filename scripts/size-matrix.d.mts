@@ -18,3 +18,5 @@ export const HASH_PLACEHOLDER: string;
 export function normalizedName(name: string): string;
 
 export function hashNormalizer(names: Iterable<string>): (text: string) => string;
+
+export function moduleId(source: string, root: string): string;

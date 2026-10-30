@@ -92,7 +92,10 @@
             "file": "assets/compare-00000000.js",
             "gzip": 1288,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/agreement.js",
+              "client/compare.js"
+            ]
           }
         },
         {
@@ -104,7 +107,10 @@
             "file": "assets/fallback-00000000.js",
             "gzip": 733,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/guards.js",
+              "client/fallback.js"
+            ]
           }
         },
         {
@@ -116,7 +122,12 @@
             "file": "assets/index-00000000.js",
             "gzip": 1385,
             "entry": true,
-            "holds": []
+            "sources": [
+              "api/errors.js",
+              "client/stub.js",
+              "fixtures/default/main.ts",
+              "lazy.js"
+            ]
           }
         },
         {
@@ -128,7 +139,9 @@
             "file": "assets/inline-00000000.js",
             "gzip": 641,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/inline.js"
+            ]
           }
         },
         {
@@ -140,8 +153,15 @@
             "file": "assets/isobmff-00000000.js",
             "gzip": 12300,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js"
             ]
           }
         },
@@ -154,8 +174,12 @@
             "file": "assets/matroska-00000000.js",
             "gzip": 11885,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js"
             ]
           }
         },
@@ -168,8 +192,26 @@
             "file": "assets/own-isobmff.worker-00000000.js",
             "gzip": 19446,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/abort.js",
+              "core/dispatch.js",
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js",
+              "core/options.js",
+              "core/rational.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/sniff.js",
+              "core/stats.js",
+              "worker/own-isobmff.worker.js",
+              "worker/serve.js",
+              "worker/single.js"
             ]
           }
         },
@@ -182,8 +224,23 @@
             "file": "assets/own-matroska.worker-00000000.js",
             "gzip": 18626,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/abort.js",
+              "core/dispatch.js",
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js",
+              "core/options.js",
+              "core/rational.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/sniff.js",
+              "core/stats.js",
+              "worker/own-matroska.worker.js",
+              "worker/serve.js",
+              "worker/single.js"
             ]
           }
         },
@@ -196,7 +253,14 @@
             "file": "assets/probe-00000000.js",
             "gzip": 3203,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/pool.js",
+              "client/probe.js",
+              "client/route.js",
+              "client/split.js",
+              "plugins/own.js",
+              "probe.js"
+            ]
           }
         },
         {
@@ -208,7 +272,9 @@
             "file": "assets/result-00000000.js",
             "gzip": 381,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/result.js"
+            ]
           }
         },
         {
@@ -220,7 +286,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3610,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -232,7 +300,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3595,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -244,7 +314,14 @@
             "file": "assets/runtime-00000000.js",
             "gzip": 2402,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/abort.js",
+              "core/analyze.js",
+              "core/dispatch.js",
+              "core/options.js",
+              "core/reader.js",
+              "worker/runtime.js"
+            ]
           }
         },
         {
@@ -256,7 +333,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1841,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -268,7 +347,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1805,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -280,7 +361,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1804,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -292,7 +375,9 @@
             "file": "assets/sniff-00000000.js",
             "gzip": 989,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/sniff.js"
+            ]
           }
         },
         {
@@ -304,7 +389,10 @@
             "file": "assets/stats-00000000.js",
             "gzip": 4314,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rational.js",
+              "core/stats.js"
+            ]
           }
         }
       ],
@@ -519,7 +607,10 @@
             "file": "assets/compare-00000000.js",
             "gzip": 1288,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/agreement.js",
+              "client/compare.js"
+            ]
           }
         },
         {
@@ -531,7 +622,10 @@
             "file": "assets/fallback-00000000.js",
             "gzip": 733,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/guards.js",
+              "client/fallback.js"
+            ]
           }
         },
         {
@@ -543,7 +637,12 @@
             "file": "assets/index-00000000.js",
             "gzip": 1385,
             "entry": true,
-            "holds": []
+            "sources": [
+              "api/errors.js",
+              "client/stub.js",
+              "fixtures/zero-config/main.ts",
+              "lazy.js"
+            ]
           }
         },
         {
@@ -555,7 +654,9 @@
             "file": "assets/inline-00000000.js",
             "gzip": 641,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/inline.js"
+            ]
           }
         },
         {
@@ -567,8 +668,15 @@
             "file": "assets/isobmff-00000000.js",
             "gzip": 12300,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js"
             ]
           }
         },
@@ -581,8 +689,12 @@
             "file": "assets/matroska-00000000.js",
             "gzip": 11885,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js"
             ]
           }
         },
@@ -595,8 +707,27 @@
             "file": "assets/own-isobmff.worker-00000000.js",
             "gzip": 21187,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/abort.js",
+              "core/dispatch.js",
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js",
+              "core/options.js",
+              "core/rational.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/segments.js",
+              "core/sniff.js",
+              "core/stats.js",
+              "worker/own-isobmff.worker.js",
+              "worker/serve.js",
+              "worker/single.js"
             ]
           }
         },
@@ -609,8 +740,25 @@
             "file": "assets/own-matroska.worker-00000000.js",
             "gzip": 23793,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/abort.js",
+              "core/dispatch.js",
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js",
+              "core/options.js",
+              "core/rational.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/rfps.js",
+              "core/segments.js",
+              "core/sniff.js",
+              "core/stats.js",
+              "worker/own-matroska.worker.js",
+              "worker/serve.js",
+              "worker/single.js"
             ]
           }
         },
@@ -623,7 +771,14 @@
             "file": "assets/probe-00000000.js",
             "gzip": 3203,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/pool.js",
+              "client/probe.js",
+              "client/route.js",
+              "client/split.js",
+              "plugins/own.js",
+              "probe.js"
+            ]
           }
         },
         {
@@ -635,7 +790,9 @@
             "file": "assets/result-00000000.js",
             "gzip": 381,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/result.js"
+            ]
           }
         },
         {
@@ -647,7 +804,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3595,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -659,7 +818,14 @@
             "file": "assets/runtime-00000000.js",
             "gzip": 2402,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/abort.js",
+              "core/analyze.js",
+              "core/dispatch.js",
+              "core/options.js",
+              "core/reader.js",
+              "worker/runtime.js"
+            ]
           }
         },
         {
@@ -671,7 +837,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1841,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -683,7 +851,9 @@
             "file": "assets/sniff-00000000.js",
             "gzip": 989,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/sniff.js"
+            ]
           }
         },
         {
@@ -695,7 +865,10 @@
             "file": "assets/stats-00000000.js",
             "gzip": 4314,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rational.js",
+              "core/stats.js"
+            ]
           }
         }
       ],
@@ -860,7 +1033,10 @@
             "file": "assets/compare-00000000.js",
             "gzip": 1293,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/agreement.js",
+              "client/compare.js"
+            ]
           }
         },
         {
@@ -872,7 +1048,10 @@
             "file": "assets/fallback-00000000.js",
             "gzip": 733,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/guards.js",
+              "client/fallback.js"
+            ]
           }
         },
         {
@@ -884,7 +1063,18 @@
             "file": "assets/fps.worker-00000000.js",
             "gzip": 4061,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/abort.js",
+              "core/analyze.js",
+              "core/dispatch.js",
+              "core/options.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/sniff.js",
+              "fixtures/custom/fps.worker.ts",
+              "worker/runtime.js",
+              "worker/serve.js"
+            ]
           }
         },
         {
@@ -896,7 +1086,12 @@
             "file": "assets/index-00000000.js",
             "gzip": 1447,
             "entry": true,
-            "holds": []
+            "sources": [
+              "api/errors.js",
+              "client/lazy.js",
+              "client/stub.js",
+              "fixtures/custom/main.ts"
+            ]
           }
         },
         {
@@ -908,7 +1103,9 @@
             "file": "assets/inline-00000000.js",
             "gzip": 641,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/inline.js"
+            ]
           }
         },
         {
@@ -920,8 +1117,15 @@
             "file": "assets/isobmff-00000000.js",
             "gzip": 12300,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js"
             ]
           }
         },
@@ -934,8 +1138,15 @@
             "file": "assets/isobmff-00000000.js",
             "gzip": 12261,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js"
             ]
           }
         },
@@ -948,8 +1159,12 @@
             "file": "assets/matroska-00000000.js",
             "gzip": 11730,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js"
             ]
           }
         },
@@ -962,8 +1177,12 @@
             "file": "assets/matroska-00000000.js",
             "gzip": 11885,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js"
             ]
           }
         },
@@ -976,7 +1195,11 @@
             "file": "assets/probe-client-00000000.js",
             "gzip": 2857,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/pool.js",
+              "client/probe-client.js",
+              "client/probe.js"
+            ]
           }
         },
         {
@@ -988,7 +1211,9 @@
             "file": "assets/result-00000000.js",
             "gzip": 381,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/result.js"
+            ]
           }
         },
         {
@@ -1000,7 +1225,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3597,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -1012,7 +1239,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3595,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -1024,7 +1253,10 @@
             "file": "assets/route-00000000.js",
             "gzip": 424,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/route.js",
+              "client/split.js"
+            ]
           }
         },
         {
@@ -1036,7 +1268,14 @@
             "file": "assets/runtime-00000000.js",
             "gzip": 2402,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/abort.js",
+              "core/analyze.js",
+              "core/dispatch.js",
+              "core/options.js",
+              "core/reader.js",
+              "worker/runtime.js"
+            ]
           }
         },
         {
@@ -1048,7 +1287,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1841,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -1060,7 +1301,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1841,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -1072,7 +1315,9 @@
             "file": "assets/sniff-00000000.js",
             "gzip": 989,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/sniff.js"
+            ]
           }
         },
         {
@@ -1084,7 +1329,10 @@
             "file": "assets/stats-00000000.js",
             "gzip": 4314,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rational.js",
+              "core/stats.js"
+            ]
           }
         },
         {
@@ -1096,7 +1344,10 @@
             "file": "assets/stats-00000000.js",
             "gzip": 4294,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rational.js",
+              "core/stats.js"
+            ]
           }
         }
       ],
@@ -1247,7 +1498,10 @@
             "file": "assets/compare-00000000.js",
             "gzip": 1280,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/agreement.js",
+              "client/compare.js"
+            ]
           }
         },
         {
@@ -1259,7 +1513,10 @@
             "file": "assets/fallback-00000000.js",
             "gzip": 728,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/guards.js",
+              "client/fallback.js"
+            ]
           }
         },
         {
@@ -1271,7 +1528,18 @@
             "file": "assets/fps.worker-00000000.js",
             "gzip": 4061,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/abort.js",
+              "core/analyze.js",
+              "core/dispatch.js",
+              "core/options.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/sniff.js",
+              "fixtures/custom-eager/fps.worker.ts",
+              "worker/runtime.js",
+              "worker/serve.js"
+            ]
           }
         },
         {
@@ -1283,7 +1551,14 @@
             "file": "assets/index-00000000.js",
             "gzip": 3738,
             "entry": true,
-            "holds": []
+            "sources": [
+              "api/errors.js",
+              "client/create.js",
+              "client/pool.js",
+              "client/probe.js",
+              "client/split.js",
+              "fixtures/custom-eager/main.ts"
+            ]
           }
         },
         {
@@ -1295,7 +1570,9 @@
             "file": "assets/inline-00000000.js",
             "gzip": 644,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/inline.js"
+            ]
           }
         },
         {
@@ -1307,8 +1584,15 @@
             "file": "assets/isobmff-00000000.js",
             "gzip": 12261,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js"
             ]
           }
         },
@@ -1321,8 +1605,15 @@
             "file": "assets/isobmff-00000000.js",
             "gzip": 12300,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js"
             ]
           }
         },
@@ -1335,8 +1626,12 @@
             "file": "assets/matroska-00000000.js",
             "gzip": 11730,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js"
             ]
           }
         },
@@ -1349,8 +1644,12 @@
             "file": "assets/matroska-00000000.js",
             "gzip": 11891,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js"
             ]
           }
         },
@@ -1363,7 +1662,9 @@
             "file": "assets/result-00000000.js",
             "gzip": 381,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/result.js"
+            ]
           }
         },
         {
@@ -1375,7 +1676,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3595,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -1387,7 +1690,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3597,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -1399,7 +1704,9 @@
             "file": "assets/route-00000000.js",
             "gzip": 371,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/route.js"
+            ]
           }
         },
         {
@@ -1411,7 +1718,14 @@
             "file": "assets/runtime-00000000.js",
             "gzip": 2408,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/abort.js",
+              "core/analyze.js",
+              "core/dispatch.js",
+              "core/options.js",
+              "core/reader.js",
+              "worker/runtime.js"
+            ]
           }
         },
         {
@@ -1423,7 +1737,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1841,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -1435,7 +1751,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1841,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -1447,7 +1765,9 @@
             "file": "assets/sniff-00000000.js",
             "gzip": 989,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/sniff.js"
+            ]
           }
         },
         {
@@ -1459,7 +1779,10 @@
             "file": "assets/stats-00000000.js",
             "gzip": 4294,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rational.js",
+              "core/stats.js"
+            ]
           }
         },
         {
@@ -1471,7 +1794,10 @@
             "file": "assets/stats-00000000.js",
             "gzip": 4314,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rational.js",
+              "core/stats.js"
+            ]
           }
         }
       ],
@@ -1626,7 +1952,10 @@
             "file": "assets/compare-00000000.js",
             "gzip": 1288,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/agreement.js",
+              "client/compare.js"
+            ]
           }
         },
         {
@@ -1638,7 +1967,10 @@
             "file": "assets/fallback-00000000.js",
             "gzip": 733,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/guards.js",
+              "client/fallback.js"
+            ]
           }
         },
         {
@@ -1650,7 +1982,13 @@
             "file": "assets/index-00000000.js",
             "gzip": 1661,
             "entry": true,
-            "holds": []
+            "sources": [
+              "api/errors.js",
+              "client/stub.js",
+              "fixtures/mp4box/main.ts",
+              "lazy.js",
+              "plugins/mp4box.js"
+            ]
           }
         },
         {
@@ -1662,7 +2000,9 @@
             "file": "assets/inline-00000000.js",
             "gzip": 641,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/inline.js"
+            ]
           }
         },
         {
@@ -1674,8 +2014,15 @@
             "file": "assets/isobmff-00000000.js",
             "gzip": 12292,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js"
             ]
           }
         },
@@ -1688,8 +2035,15 @@
             "file": "assets/isobmff-00000000.js",
             "gzip": 12312,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js"
             ]
           }
         },
@@ -1702,8 +2056,12 @@
             "file": "assets/matroska-00000000.js",
             "gzip": 11861,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js"
             ]
           }
         },
@@ -1716,8 +2074,12 @@
             "file": "assets/matroska-00000000.js",
             "gzip": 11721,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js"
             ]
           }
         },
@@ -1730,8 +2092,11 @@
             "file": "assets/mp4box-00000000.js",
             "gzip": 44911,
             "entry": false,
-            "holds": [
-              "mp4box"
+            "sources": [
+              "engines/common.js",
+              "engines/counting.js",
+              "engines/mp4box.js",
+              "node_modules/mp4box"
             ]
           }
         },
@@ -1744,8 +2109,11 @@
             "file": "assets/mp4box-00000000.js",
             "gzip": 44889,
             "entry": false,
-            "holds": [
-              "mp4box"
+            "sources": [
+              "engines/common.js",
+              "engines/counting.js",
+              "engines/mp4box.js",
+              "node_modules/mp4box"
             ]
           }
         },
@@ -1758,7 +2126,18 @@
             "file": "assets/mp4box.worker-00000000.js",
             "gzip": 4186,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/abort.js",
+              "core/analyze.js",
+              "core/dispatch.js",
+              "core/options.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/sniff.js",
+              "worker/mp4box.worker.js",
+              "worker/runtime.js",
+              "worker/serve.js"
+            ]
           }
         },
         {
@@ -1770,7 +2149,9 @@
             "file": "assets/options-00000000.js",
             "gzip": 366,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/options.js"
+            ]
           }
         },
         {
@@ -1782,8 +2163,26 @@
             "file": "assets/own-isobmff.worker-00000000.js",
             "gzip": 19446,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/abort.js",
+              "core/dispatch.js",
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js",
+              "core/options.js",
+              "core/rational.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/sniff.js",
+              "core/stats.js",
+              "worker/own-isobmff.worker.js",
+              "worker/serve.js",
+              "worker/single.js"
             ]
           }
         },
@@ -1796,8 +2195,23 @@
             "file": "assets/own-matroska.worker-00000000.js",
             "gzip": 18626,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/abort.js",
+              "core/dispatch.js",
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js",
+              "core/options.js",
+              "core/rational.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/sniff.js",
+              "core/stats.js",
+              "worker/own-matroska.worker.js",
+              "worker/serve.js",
+              "worker/single.js"
             ]
           }
         },
@@ -1810,7 +2224,14 @@
             "file": "assets/probe-00000000.js",
             "gzip": 3218,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/pool.js",
+              "client/probe.js",
+              "client/route.js",
+              "client/split.js",
+              "plugins/own.js",
+              "probe.js"
+            ]
           }
         },
         {
@@ -1822,7 +2243,10 @@
             "file": "assets/reader-00000000.js",
             "gzip": 1395,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/abort.js",
+              "core/reader.js"
+            ]
           }
         },
         {
@@ -1834,7 +2258,9 @@
             "file": "assets/result-00000000.js",
             "gzip": 381,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/result.js"
+            ]
           }
         },
         {
@@ -1846,7 +2272,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3595,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -1858,7 +2286,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3597,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -1870,7 +2300,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3610,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -1882,7 +2314,11 @@
             "file": "assets/runtime-00000000.js",
             "gzip": 1039,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/analyze.js",
+              "core/dispatch.js",
+              "worker/runtime.js"
+            ]
           }
         },
         {
@@ -1894,7 +2330,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1805,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -1906,7 +2344,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1804,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -1918,7 +2358,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1841,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -1930,7 +2372,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1841,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -1942,7 +2386,9 @@
             "file": "assets/sniff-00000000.js",
             "gzip": 989,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/sniff.js"
+            ]
           }
         },
         {
@@ -1954,7 +2400,10 @@
             "file": "assets/stats-00000000.js",
             "gzip": 4314,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rational.js",
+              "core/stats.js"
+            ]
           }
         },
         {
@@ -1966,7 +2415,10 @@
             "file": "assets/stats-00000000.js",
             "gzip": 4297,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rational.js",
+              "core/stats.js"
+            ]
           }
         }
       ],
@@ -2124,7 +2576,9 @@
             "file": "assets/abort-00000000.js",
             "gzip": 109,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/abort.js"
+            ]
           }
         },
         {
@@ -2136,7 +2590,10 @@
             "file": "assets/compare-00000000.js",
             "gzip": 1288,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/agreement.js",
+              "client/compare.js"
+            ]
           }
         },
         {
@@ -2148,7 +2605,10 @@
             "file": "assets/fallback-00000000.js",
             "gzip": 733,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/guards.js",
+              "client/fallback.js"
+            ]
           }
         },
         {
@@ -2160,7 +2620,13 @@
             "file": "assets/index-00000000.js",
             "gzip": 1663,
             "entry": true,
-            "holds": []
+            "sources": [
+              "api/errors.js",
+              "client/stub.js",
+              "fixtures/mediabunny/main.ts",
+              "lazy.js",
+              "plugins/mediabunny.js"
+            ]
           }
         },
         {
@@ -2172,7 +2638,9 @@
             "file": "assets/inline-00000000.js",
             "gzip": 641,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/inline.js"
+            ]
           }
         },
         {
@@ -2184,8 +2652,15 @@
             "file": "assets/isobmff-00000000.js",
             "gzip": 12296,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js"
             ]
           }
         },
@@ -2198,8 +2673,15 @@
             "file": "assets/isobmff-00000000.js",
             "gzip": 12262,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js"
             ]
           }
         },
@@ -2212,8 +2694,12 @@
             "file": "assets/matroska-00000000.js",
             "gzip": 11862,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js"
             ]
           }
         },
@@ -2226,8 +2712,12 @@
             "file": "assets/matroska-00000000.js",
             "gzip": 11734,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js"
             ]
           }
         },
@@ -2240,8 +2730,12 @@
             "file": "assets/mediabunny-00000000.js",
             "gzip": 53188,
             "entry": false,
-            "holds": [
-              "mediabunny"
+            "sources": [
+              "engines/common.js",
+              "engines/counting.js",
+              "engines/mediabunny.js",
+              "fixtures/mediabunny/__vite-browser-external",
+              "node_modules/mediabunny"
             ]
           }
         },
@@ -2254,8 +2748,12 @@
             "file": "assets/mediabunny-00000000.js",
             "gzip": 54133,
             "entry": false,
-            "holds": [
-              "mediabunny"
+            "sources": [
+              "engines/common.js",
+              "engines/counting.js",
+              "engines/mediabunny.js",
+              "fixtures/mediabunny/__vite-browser-external",
+              "node_modules/mediabunny"
             ]
           }
         },
@@ -2268,7 +2766,18 @@
             "file": "assets/mediabunny.worker-00000000.js",
             "gzip": 4086,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/abort.js",
+              "core/analyze.js",
+              "core/dispatch.js",
+              "core/options.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/sniff.js",
+              "worker/mediabunny.worker.js",
+              "worker/runtime.js",
+              "worker/serve.js"
+            ]
           }
         },
         {
@@ -2280,7 +2789,9 @@
             "file": "assets/options-00000000.js",
             "gzip": 366,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/options.js"
+            ]
           }
         },
         {
@@ -2292,8 +2803,26 @@
             "file": "assets/own-isobmff.worker-00000000.js",
             "gzip": 19446,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/abort.js",
+              "core/dispatch.js",
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js",
+              "core/options.js",
+              "core/rational.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/sniff.js",
+              "core/stats.js",
+              "worker/own-isobmff.worker.js",
+              "worker/serve.js",
+              "worker/single.js"
             ]
           }
         },
@@ -2306,8 +2835,23 @@
             "file": "assets/own-matroska.worker-00000000.js",
             "gzip": 18626,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/abort.js",
+              "core/dispatch.js",
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js",
+              "core/options.js",
+              "core/rational.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/sniff.js",
+              "core/stats.js",
+              "worker/own-matroska.worker.js",
+              "worker/serve.js",
+              "worker/single.js"
             ]
           }
         },
@@ -2320,7 +2864,14 @@
             "file": "assets/probe-00000000.js",
             "gzip": 3218,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/pool.js",
+              "client/probe.js",
+              "client/route.js",
+              "client/split.js",
+              "plugins/own.js",
+              "probe.js"
+            ]
           }
         },
         {
@@ -2332,7 +2883,9 @@
             "file": "assets/result-00000000.js",
             "gzip": 381,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/result.js"
+            ]
           }
         },
         {
@@ -2344,7 +2897,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3595,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -2356,7 +2911,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3610,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -2368,7 +2925,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3597,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -2380,7 +2939,12 @@
             "file": "assets/runtime-00000000.js",
             "gzip": 2142,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/analyze.js",
+              "core/dispatch.js",
+              "core/reader.js",
+              "worker/runtime.js"
+            ]
           }
         },
         {
@@ -2392,7 +2956,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1805,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -2404,7 +2970,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1841,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -2416,7 +2984,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1841,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -2428,7 +2998,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1804,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -2440,7 +3012,9 @@
             "file": "assets/sniff-00000000.js",
             "gzip": 989,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/sniff.js"
+            ]
           }
         },
         {
@@ -2452,7 +3026,10 @@
             "file": "assets/stats-00000000.js",
             "gzip": 4300,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rational.js",
+              "core/stats.js"
+            ]
           }
         },
         {
@@ -2464,7 +3041,10 @@
             "file": "assets/stats-00000000.js",
             "gzip": 4318,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rational.js",
+              "core/stats.js"
+            ]
           }
         }
       ],
@@ -2616,7 +3196,9 @@
             "file": "assets/abort-00000000.js",
             "gzip": 109,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/abort.js"
+            ]
           }
         },
         {
@@ -2628,7 +3210,10 @@
             "file": "assets/compare-00000000.js",
             "gzip": 1288,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/agreement.js",
+              "client/compare.js"
+            ]
           }
         },
         {
@@ -2640,7 +3225,10 @@
             "file": "assets/fallback-00000000.js",
             "gzip": 733,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/guards.js",
+              "client/fallback.js"
+            ]
           }
         },
         {
@@ -2652,7 +3240,13 @@
             "file": "assets/index-00000000.js",
             "gzip": 1545,
             "entry": true,
-            "holds": []
+            "sources": [
+              "api/errors.js",
+              "client/stub.js",
+              "fixtures/rvfc/main.ts",
+              "lazy.js",
+              "plugins/rvfc.js"
+            ]
           }
         },
         {
@@ -2664,7 +3258,9 @@
             "file": "assets/inline-00000000.js",
             "gzip": 641,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/inline.js"
+            ]
           }
         },
         {
@@ -2676,8 +3272,15 @@
             "file": "assets/isobmff-00000000.js",
             "gzip": 12300,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js"
             ]
           }
         },
@@ -2690,8 +3293,12 @@
             "file": "assets/matroska-00000000.js",
             "gzip": 11892,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js"
             ]
           }
         },
@@ -2704,8 +3311,26 @@
             "file": "assets/own-isobmff.worker-00000000.js",
             "gzip": 19446,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/abort.js",
+              "core/dispatch.js",
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js",
+              "core/options.js",
+              "core/rational.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/sniff.js",
+              "core/stats.js",
+              "worker/own-isobmff.worker.js",
+              "worker/serve.js",
+              "worker/single.js"
             ]
           }
         },
@@ -2718,8 +3343,23 @@
             "file": "assets/own-matroska.worker-00000000.js",
             "gzip": 18626,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/abort.js",
+              "core/dispatch.js",
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js",
+              "core/options.js",
+              "core/rational.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/sniff.js",
+              "core/stats.js",
+              "worker/own-matroska.worker.js",
+              "worker/serve.js",
+              "worker/single.js"
             ]
           }
         },
@@ -2732,7 +3372,14 @@
             "file": "assets/probe-00000000.js",
             "gzip": 3212,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/pool.js",
+              "client/probe.js",
+              "client/route.js",
+              "client/split.js",
+              "plugins/own.js",
+              "probe.js"
+            ]
           }
         },
         {
@@ -2744,7 +3391,9 @@
             "file": "assets/result-00000000.js",
             "gzip": 381,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/result.js"
+            ]
           }
         },
         {
@@ -2756,7 +3405,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3610,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -2768,7 +3419,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3595,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -2780,7 +3433,13 @@
             "file": "assets/runtime-00000000.js",
             "gzip": 2376,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/analyze.js",
+              "core/dispatch.js",
+              "core/options.js",
+              "core/reader.js",
+              "worker/runtime.js"
+            ]
           }
         },
         {
@@ -2792,7 +3451,9 @@
             "file": "assets/rvfc-00000000.js",
             "gzip": 2170,
             "entry": false,
-            "holds": []
+            "sources": [
+              "engines/rvfc.js"
+            ]
           }
         },
         {
@@ -2804,7 +3465,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1805,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -2816,7 +3479,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1841,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -2828,7 +3493,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1804,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -2840,7 +3507,9 @@
             "file": "assets/sniff-00000000.js",
             "gzip": 989,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/sniff.js"
+            ]
           }
         },
         {
@@ -2852,7 +3521,10 @@
             "file": "assets/stats-00000000.js",
             "gzip": 4314,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rational.js",
+              "core/stats.js"
+            ]
           }
         }
       ],
@@ -3003,7 +3675,9 @@
             "file": "assets/abort-00000000.js",
             "gzip": 109,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/abort.js"
+            ]
           }
         },
         {
@@ -3015,7 +3689,10 @@
             "file": "assets/compare-00000000.js",
             "gzip": 1288,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/agreement.js",
+              "client/compare.js"
+            ]
           }
         },
         {
@@ -3027,7 +3704,10 @@
             "file": "assets/counting-00000000.js",
             "gzip": 1566,
             "entry": false,
-            "holds": []
+            "sources": [
+              "engines/common.js",
+              "engines/counting.js"
+            ]
           }
         },
         {
@@ -3039,7 +3719,10 @@
             "file": "assets/fallback-00000000.js",
             "gzip": 733,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/guards.js",
+              "client/fallback.js"
+            ]
           }
         },
         {
@@ -3051,7 +3734,15 @@
             "file": "assets/index-00000000.js",
             "gzip": 1788,
             "entry": true,
-            "holds": []
+            "sources": [
+              "api/errors.js",
+              "client/stub.js",
+              "fixtures/all/main.ts",
+              "lazy.js",
+              "plugins/mediabunny.js",
+              "plugins/mp4box.js",
+              "plugins/rvfc.js"
+            ]
           }
         },
         {
@@ -3063,7 +3754,9 @@
             "file": "assets/inline-00000000.js",
             "gzip": 641,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/inline.js"
+            ]
           }
         },
         {
@@ -3075,8 +3768,15 @@
             "file": "assets/isobmff-00000000.js",
             "gzip": 12287,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js"
             ]
           }
         },
@@ -3089,8 +3789,15 @@
             "file": "assets/isobmff-00000000.js",
             "gzip": 12262,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js"
             ]
           }
         },
@@ -3103,8 +3810,15 @@
             "file": "assets/isobmff-00000000.js",
             "gzip": 12312,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js"
             ]
           }
         },
@@ -3117,8 +3831,12 @@
             "file": "assets/matroska-00000000.js",
             "gzip": 11862,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js"
             ]
           }
         },
@@ -3131,8 +3849,12 @@
             "file": "assets/matroska-00000000.js",
             "gzip": 11734,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js"
             ]
           }
         },
@@ -3145,8 +3867,12 @@
             "file": "assets/matroska-00000000.js",
             "gzip": 11721,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js"
             ]
           }
         },
@@ -3159,8 +3885,12 @@
             "file": "assets/mediabunny-00000000.js",
             "gzip": 54133,
             "entry": false,
-            "holds": [
-              "mediabunny"
+            "sources": [
+              "engines/common.js",
+              "engines/counting.js",
+              "engines/mediabunny.js",
+              "fixtures/all/__vite-browser-external",
+              "node_modules/mediabunny"
             ]
           }
         },
@@ -3173,8 +3903,10 @@
             "file": "assets/mediabunny-00000000.js",
             "gzip": 52124,
             "entry": false,
-            "holds": [
-              "mediabunny"
+            "sources": [
+              "engines/mediabunny.js",
+              "fixtures/all/__vite-browser-external",
+              "node_modules/mediabunny"
             ]
           }
         },
@@ -3187,7 +3919,18 @@
             "file": "assets/mediabunny.worker-00000000.js",
             "gzip": 4086,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/abort.js",
+              "core/analyze.js",
+              "core/dispatch.js",
+              "core/options.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/sniff.js",
+              "worker/mediabunny.worker.js",
+              "worker/runtime.js",
+              "worker/serve.js"
+            ]
           }
         },
         {
@@ -3199,8 +3942,11 @@
             "file": "assets/mp4box-00000000.js",
             "gzip": 44911,
             "entry": false,
-            "holds": [
-              "mp4box"
+            "sources": [
+              "engines/common.js",
+              "engines/counting.js",
+              "engines/mp4box.js",
+              "node_modules/mp4box"
             ]
           }
         },
@@ -3213,8 +3959,9 @@
             "file": "assets/mp4box-00000000.js",
             "gzip": 43780,
             "entry": false,
-            "holds": [
-              "mp4box"
+            "sources": [
+              "engines/mp4box.js",
+              "node_modules/mp4box"
             ]
           }
         },
@@ -3227,7 +3974,18 @@
             "file": "assets/mp4box.worker-00000000.js",
             "gzip": 4186,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/abort.js",
+              "core/analyze.js",
+              "core/dispatch.js",
+              "core/options.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/sniff.js",
+              "worker/mp4box.worker.js",
+              "worker/runtime.js",
+              "worker/serve.js"
+            ]
           }
         },
         {
@@ -3239,7 +3997,9 @@
             "file": "assets/options-00000000.js",
             "gzip": 366,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/options.js"
+            ]
           }
         },
         {
@@ -3251,8 +4011,26 @@
             "file": "assets/own-isobmff.worker-00000000.js",
             "gzip": 19446,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/abort.js",
+              "core/dispatch.js",
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js",
+              "core/options.js",
+              "core/rational.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/sniff.js",
+              "core/stats.js",
+              "worker/own-isobmff.worker.js",
+              "worker/serve.js",
+              "worker/single.js"
             ]
           }
         },
@@ -3265,8 +4043,23 @@
             "file": "assets/own-matroska.worker-00000000.js",
             "gzip": 18626,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/abort.js",
+              "core/dispatch.js",
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js",
+              "core/options.js",
+              "core/rational.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/sniff.js",
+              "core/stats.js",
+              "worker/own-matroska.worker.js",
+              "worker/serve.js",
+              "worker/single.js"
             ]
           }
         },
@@ -3279,7 +4072,14 @@
             "file": "assets/probe-00000000.js",
             "gzip": 3225,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/pool.js",
+              "client/probe.js",
+              "client/route.js",
+              "client/split.js",
+              "plugins/own.js",
+              "probe.js"
+            ]
           }
         },
         {
@@ -3291,7 +4091,9 @@
             "file": "assets/reader-00000000.js",
             "gzip": 1382,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/reader.js"
+            ]
           }
         },
         {
@@ -3303,7 +4105,9 @@
             "file": "assets/result-00000000.js",
             "gzip": 381,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/result.js"
+            ]
           }
         },
         {
@@ -3315,7 +4119,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3597,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -3327,7 +4133,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3595,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -3339,7 +4147,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3610,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -3351,7 +4161,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3597,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -3363,7 +4175,11 @@
             "file": "assets/runtime-00000000.js",
             "gzip": 1049,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/analyze.js",
+              "core/dispatch.js",
+              "worker/runtime.js"
+            ]
           }
         },
         {
@@ -3375,7 +4191,9 @@
             "file": "assets/rvfc-00000000.js",
             "gzip": 2170,
             "entry": false,
-            "holds": []
+            "sources": [
+              "engines/rvfc.js"
+            ]
           }
         },
         {
@@ -3387,7 +4205,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1805,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -3399,7 +4219,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1841,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -3411,7 +4233,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1804,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -3423,7 +4247,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1841,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -3435,7 +4261,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1841,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -3447,7 +4275,9 @@
             "file": "assets/sniff-00000000.js",
             "gzip": 989,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/sniff.js"
+            ]
           }
         },
         {
@@ -3459,7 +4289,10 @@
             "file": "assets/stats-00000000.js",
             "gzip": 4318,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rational.js",
+              "core/stats.js"
+            ]
           }
         },
         {
@@ -3471,7 +4304,10 @@
             "file": "assets/stats-00000000.js",
             "gzip": 4300,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rational.js",
+              "core/stats.js"
+            ]
           }
         },
         {
@@ -3483,7 +4319,10 @@
             "file": "assets/stats-00000000.js",
             "gzip": 4297,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rational.js",
+              "core/stats.js"
+            ]
           }
         }
       ],
@@ -3743,7 +4582,10 @@
             "file": "assets/compare-00000000.js",
             "gzip": 1293,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/agreement.js",
+              "client/compare.js"
+            ]
           }
         },
         {
@@ -3755,7 +4597,10 @@
             "file": "assets/fallback-00000000.js",
             "gzip": 733,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/guards.js",
+              "client/fallback.js"
+            ]
           }
         },
         {
@@ -3767,7 +4612,13 @@
             "file": "assets/index-00000000.js",
             "gzip": 1434,
             "entry": true,
-            "holds": []
+            "sources": [
+              "api/errors.js",
+              "client/lazy.js",
+              "client/stub.js",
+              "fixtures/standalone-url/main.ts",
+              "standalone/own.worker.js?url"
+            ]
           }
         },
         {
@@ -3779,7 +4630,9 @@
             "file": "assets/inline-00000000.js",
             "gzip": 641,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/inline.js"
+            ]
           }
         },
         {
@@ -3791,8 +4644,15 @@
             "file": "assets/isobmff-00000000.js",
             "gzip": 12300,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js"
             ]
           }
         },
@@ -3805,8 +4665,12 @@
             "file": "assets/matroska-00000000.js",
             "gzip": 11885,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js"
             ]
           }
         },
@@ -3819,9 +4683,8 @@
             "file": "assets/own.worker-00000000.js",
             "gzip": 35969,
             "entry": false,
-            "holds": [
-              "isobmff",
-              "matroska"
+            "sources": [
+              "standalone/own.worker.js"
             ]
           }
         },
@@ -3834,7 +4697,11 @@
             "file": "assets/probe-client-00000000.js",
             "gzip": 2857,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/pool.js",
+              "client/probe-client.js",
+              "client/probe.js"
+            ]
           }
         },
         {
@@ -3846,7 +4713,9 @@
             "file": "assets/result-00000000.js",
             "gzip": 381,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/result.js"
+            ]
           }
         },
         {
@@ -3858,7 +4727,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3595,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -3870,7 +4741,10 @@
             "file": "assets/route-00000000.js",
             "gzip": 424,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/route.js",
+              "client/split.js"
+            ]
           }
         },
         {
@@ -3882,7 +4756,14 @@
             "file": "assets/runtime-00000000.js",
             "gzip": 2402,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/abort.js",
+              "core/analyze.js",
+              "core/dispatch.js",
+              "core/options.js",
+              "core/reader.js",
+              "worker/runtime.js"
+            ]
           }
         },
         {
@@ -3894,7 +4775,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1841,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -3906,7 +4789,9 @@
             "file": "assets/sniff-00000000.js",
             "gzip": 989,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/sniff.js"
+            ]
           }
         },
         {
@@ -3918,7 +4803,10 @@
             "file": "assets/stats-00000000.js",
             "gzip": 4314,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rational.js",
+              "core/stats.js"
+            ]
           }
         }
       ],
@@ -4076,7 +4964,10 @@
             "file": "assets/compare-00000000.js",
             "gzip": 1293,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/agreement.js",
+              "client/compare.js"
+            ]
           }
         },
         {
@@ -4088,7 +4979,10 @@
             "file": "assets/fallback-00000000.js",
             "gzip": 733,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/guards.js",
+              "client/fallback.js"
+            ]
           }
         },
         {
@@ -4100,7 +4994,14 @@
             "file": "assets/index-00000000.js",
             "gzip": 1468,
             "entry": true,
-            "holds": []
+            "sources": [
+              "api/errors.js",
+              "client/lazy.js",
+              "client/stub.js",
+              "fixtures/standalone-split-url/main.ts",
+              "standalone/own-isobmff.worker.js?url",
+              "standalone/own-matroska.worker.js?url"
+            ]
           }
         },
         {
@@ -4112,7 +5013,9 @@
             "file": "assets/inline-00000000.js",
             "gzip": 641,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/inline.js"
+            ]
           }
         },
         {
@@ -4124,8 +5027,15 @@
             "file": "assets/isobmff-00000000.js",
             "gzip": 12300,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js"
             ]
           }
         },
@@ -4138,8 +5048,12 @@
             "file": "assets/matroska-00000000.js",
             "gzip": 11885,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js"
             ]
           }
         },
@@ -4152,8 +5066,8 @@
             "file": "assets/own-isobmff.worker-00000000.js",
             "gzip": 21143,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "standalone/own-isobmff.worker.js"
             ]
           }
         },
@@ -4166,8 +5080,8 @@
             "file": "assets/own-matroska.worker-00000000.js",
             "gzip": 23725,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "standalone/own-matroska.worker.js"
             ]
           }
         },
@@ -4180,7 +5094,11 @@
             "file": "assets/probe-client-00000000.js",
             "gzip": 2857,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/pool.js",
+              "client/probe-client.js",
+              "client/probe.js"
+            ]
           }
         },
         {
@@ -4192,7 +5110,9 @@
             "file": "assets/result-00000000.js",
             "gzip": 381,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/result.js"
+            ]
           }
         },
         {
@@ -4204,7 +5124,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3595,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -4216,7 +5138,10 @@
             "file": "assets/route-00000000.js",
             "gzip": 424,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/route.js",
+              "client/split.js"
+            ]
           }
         },
         {
@@ -4228,7 +5153,14 @@
             "file": "assets/runtime-00000000.js",
             "gzip": 2402,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/abort.js",
+              "core/analyze.js",
+              "core/dispatch.js",
+              "core/options.js",
+              "core/reader.js",
+              "worker/runtime.js"
+            ]
           }
         },
         {
@@ -4240,7 +5172,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1841,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -4252,7 +5186,9 @@
             "file": "assets/sniff-00000000.js",
             "gzip": 989,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/sniff.js"
+            ]
           }
         },
         {
@@ -4264,7 +5200,10 @@
             "file": "assets/stats-00000000.js",
             "gzip": 4314,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rational.js",
+              "core/stats.js"
+            ]
           }
         }
       ],
@@ -4447,7 +5386,10 @@
             "file": "assets/compare-00000000.js",
             "gzip": 1288,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/agreement.js",
+              "client/compare.js"
+            ]
           }
         },
         {
@@ -4459,7 +5401,10 @@
             "file": "assets/fallback-00000000.js",
             "gzip": 733,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/guards.js",
+              "client/fallback.js"
+            ]
           }
         },
         {
@@ -4471,7 +5416,12 @@
             "file": "assets/index-00000000.js",
             "gzip": 1385,
             "entry": true,
-            "holds": []
+            "sources": [
+              "api/errors.js",
+              "client/stub.js",
+              "fixtures/iife-nosplit/main.ts",
+              "lazy.js"
+            ]
           }
         },
         {
@@ -4483,7 +5433,9 @@
             "file": "assets/inline-00000000.js",
             "gzip": 641,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/inline.js"
+            ]
           }
         },
         {
@@ -4495,8 +5447,15 @@
             "file": "assets/isobmff-00000000.js",
             "gzip": 12300,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js"
             ]
           }
         },
@@ -4509,8 +5468,12 @@
             "file": "assets/matroska-00000000.js",
             "gzip": 11885,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js"
             ]
           }
         },
@@ -4523,8 +5486,27 @@
             "file": "assets/own-isobmff.worker-00000000.js",
             "gzip": 21187,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/abort.js",
+              "core/dispatch.js",
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js",
+              "core/options.js",
+              "core/rational.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/segments.js",
+              "core/sniff.js",
+              "core/stats.js",
+              "worker/own-isobmff.worker.js",
+              "worker/serve.js",
+              "worker/single.js"
             ]
           }
         },
@@ -4537,8 +5519,25 @@
             "file": "assets/own-matroska.worker-00000000.js",
             "gzip": 23793,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/abort.js",
+              "core/dispatch.js",
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js",
+              "core/options.js",
+              "core/rational.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/rfps.js",
+              "core/segments.js",
+              "core/sniff.js",
+              "core/stats.js",
+              "worker/own-matroska.worker.js",
+              "worker/serve.js",
+              "worker/single.js"
             ]
           }
         },
@@ -4551,7 +5550,14 @@
             "file": "assets/probe-00000000.js",
             "gzip": 3203,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/pool.js",
+              "client/probe.js",
+              "client/route.js",
+              "client/split.js",
+              "plugins/own.js",
+              "probe.js"
+            ]
           }
         },
         {
@@ -4563,7 +5569,9 @@
             "file": "assets/result-00000000.js",
             "gzip": 381,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/result.js"
+            ]
           }
         },
         {
@@ -4575,7 +5583,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3595,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -4587,7 +5597,14 @@
             "file": "assets/runtime-00000000.js",
             "gzip": 2402,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/abort.js",
+              "core/analyze.js",
+              "core/dispatch.js",
+              "core/options.js",
+              "core/reader.js",
+              "worker/runtime.js"
+            ]
           }
         },
         {
@@ -4599,7 +5616,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1841,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -4611,7 +5630,9 @@
             "file": "assets/sniff-00000000.js",
             "gzip": 989,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/sniff.js"
+            ]
           }
         },
         {
@@ -4623,7 +5644,10 @@
             "file": "assets/stats-00000000.js",
             "gzip": 4314,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rational.js",
+              "core/stats.js"
+            ]
           }
         }
       ],
@@ -4793,7 +5817,10 @@
             "file": "assets/compare-00000000.js",
             "gzip": 1288,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/agreement.js",
+              "client/compare.js"
+            ]
           }
         },
         {
@@ -4805,7 +5832,10 @@
             "file": "assets/fallback-00000000.js",
             "gzip": 733,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/guards.js",
+              "client/fallback.js"
+            ]
           }
         },
         {
@@ -4817,7 +5847,17 @@
             "file": "assets/index-00000000.js",
             "gzip": 69845,
             "entry": true,
-            "holds": []
+            "sources": [
+              "api/errors.js",
+              "client/stub.js",
+              "fixtures/react-app.ts",
+              "lazy.js",
+              "node_modules/react",
+              "node_modules/react-dom",
+              "node_modules/scheduler",
+              "react/index.js",
+              "react/store.js"
+            ]
           }
         },
         {
@@ -4829,7 +5869,9 @@
             "file": "assets/inline-00000000.js",
             "gzip": 641,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/inline.js"
+            ]
           }
         },
         {
@@ -4841,8 +5883,15 @@
             "file": "assets/isobmff-00000000.js",
             "gzip": 12300,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js"
             ]
           }
         },
@@ -4855,8 +5904,12 @@
             "file": "assets/matroska-00000000.js",
             "gzip": 11885,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js"
             ]
           }
         },
@@ -4869,8 +5922,26 @@
             "file": "assets/own-isobmff.worker-00000000.js",
             "gzip": 19446,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/abort.js",
+              "core/dispatch.js",
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js",
+              "core/options.js",
+              "core/rational.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/sniff.js",
+              "core/stats.js",
+              "worker/own-isobmff.worker.js",
+              "worker/serve.js",
+              "worker/single.js"
             ]
           }
         },
@@ -4883,8 +5954,23 @@
             "file": "assets/own-matroska.worker-00000000.js",
             "gzip": 18626,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/abort.js",
+              "core/dispatch.js",
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js",
+              "core/options.js",
+              "core/rational.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/sniff.js",
+              "core/stats.js",
+              "worker/own-matroska.worker.js",
+              "worker/serve.js",
+              "worker/single.js"
             ]
           }
         },
@@ -4897,7 +5983,14 @@
             "file": "assets/probe-00000000.js",
             "gzip": 3203,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/pool.js",
+              "client/probe.js",
+              "client/route.js",
+              "client/split.js",
+              "plugins/own.js",
+              "probe.js"
+            ]
           }
         },
         {
@@ -4909,7 +6002,9 @@
             "file": "assets/result-00000000.js",
             "gzip": 381,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/result.js"
+            ]
           }
         },
         {
@@ -4921,7 +6016,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3595,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -4933,7 +6030,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3610,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -4945,7 +6044,14 @@
             "file": "assets/runtime-00000000.js",
             "gzip": 2402,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/abort.js",
+              "core/analyze.js",
+              "core/dispatch.js",
+              "core/options.js",
+              "core/reader.js",
+              "worker/runtime.js"
+            ]
           }
         },
         {
@@ -4957,7 +6063,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1805,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -4969,7 +6077,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1841,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -4981,7 +6091,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1804,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -4993,7 +6105,9 @@
             "file": "assets/sniff-00000000.js",
             "gzip": 989,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/sniff.js"
+            ]
           }
         },
         {
@@ -5005,7 +6119,10 @@
             "file": "assets/stats-00000000.js",
             "gzip": 4314,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rational.js",
+              "core/stats.js"
+            ]
           }
         },
         {
@@ -5017,7 +6134,9 @@
             "file": "assets/summary-00000000.js",
             "gzip": 430,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/summary.js"
+            ]
           }
         }
       ],
@@ -5206,7 +6325,10 @@
             "file": "assets/compare-00000000.js",
             "gzip": 1288,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/agreement.js",
+              "client/compare.js"
+            ]
           }
         },
         {
@@ -5218,7 +6340,10 @@
             "file": "assets/fallback-00000000.js",
             "gzip": 733,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/guards.js",
+              "client/fallback.js"
+            ]
           }
         },
         {
@@ -5230,7 +6355,17 @@
             "file": "assets/index-00000000.js",
             "gzip": 47243,
             "entry": true,
-            "holds": []
+            "sources": [
+              "api/errors.js",
+              "client/stub.js",
+              "fixtures/react-app.ts",
+              "lazy.js",
+              "node_modules/react",
+              "node_modules/react-dom",
+              "node_modules/scheduler",
+              "react/index.js",
+              "react/store.js"
+            ]
           }
         },
         {
@@ -5242,7 +6377,9 @@
             "file": "assets/inline-00000000.js",
             "gzip": 641,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/inline.js"
+            ]
           }
         },
         {
@@ -5254,8 +6391,15 @@
             "file": "assets/isobmff-00000000.js",
             "gzip": 12300,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js"
             ]
           }
         },
@@ -5268,8 +6412,12 @@
             "file": "assets/matroska-00000000.js",
             "gzip": 11885,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js"
             ]
           }
         },
@@ -5282,8 +6430,26 @@
             "file": "assets/own-isobmff.worker-00000000.js",
             "gzip": 19446,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/abort.js",
+              "core/dispatch.js",
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js",
+              "core/options.js",
+              "core/rational.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/sniff.js",
+              "core/stats.js",
+              "worker/own-isobmff.worker.js",
+              "worker/serve.js",
+              "worker/single.js"
             ]
           }
         },
@@ -5296,8 +6462,23 @@
             "file": "assets/own-matroska.worker-00000000.js",
             "gzip": 18626,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/abort.js",
+              "core/dispatch.js",
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js",
+              "core/options.js",
+              "core/rational.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/sniff.js",
+              "core/stats.js",
+              "worker/own-matroska.worker.js",
+              "worker/serve.js",
+              "worker/single.js"
             ]
           }
         },
@@ -5310,7 +6491,14 @@
             "file": "assets/probe-00000000.js",
             "gzip": 3203,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/pool.js",
+              "client/probe.js",
+              "client/route.js",
+              "client/split.js",
+              "plugins/own.js",
+              "probe.js"
+            ]
           }
         },
         {
@@ -5322,7 +6510,9 @@
             "file": "assets/result-00000000.js",
             "gzip": 381,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/result.js"
+            ]
           }
         },
         {
@@ -5334,7 +6524,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3610,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -5346,7 +6538,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3595,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -5358,7 +6552,14 @@
             "file": "assets/runtime-00000000.js",
             "gzip": 2402,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/abort.js",
+              "core/analyze.js",
+              "core/dispatch.js",
+              "core/options.js",
+              "core/reader.js",
+              "worker/runtime.js"
+            ]
           }
         },
         {
@@ -5370,7 +6571,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1805,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -5382,7 +6585,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1804,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -5394,7 +6599,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1841,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -5406,7 +6613,9 @@
             "file": "assets/sniff-00000000.js",
             "gzip": 989,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/sniff.js"
+            ]
           }
         },
         {
@@ -5418,7 +6627,10 @@
             "file": "assets/stats-00000000.js",
             "gzip": 4314,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rational.js",
+              "core/stats.js"
+            ]
           }
         },
         {
@@ -5430,7 +6642,9 @@
             "file": "assets/summary-00000000.js",
             "gzip": 430,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/summary.js"
+            ]
           }
         }
       ],
@@ -5565,7 +6779,10 @@
             "file": "assets/compare-00000000.js",
             "gzip": 1288,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/agreement.js",
+              "client/compare.js"
+            ]
           }
         },
         {
@@ -5577,7 +6794,10 @@
             "file": "assets/fallback-00000000.js",
             "gzip": 733,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/guards.js",
+              "client/fallback.js"
+            ]
           }
         },
         {
@@ -5589,7 +6809,13 @@
             "file": "assets/index-00000000.js",
             "gzip": 5263,
             "entry": true,
-            "holds": []
+            "sources": [
+              "api/errors.js",
+              "check/index.js",
+              "client/stub.js",
+              "fixtures/check/main.ts",
+              "lazy.js"
+            ]
           }
         },
         {
@@ -5601,7 +6827,9 @@
             "file": "assets/inline-00000000.js",
             "gzip": 641,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/inline.js"
+            ]
           }
         },
         {
@@ -5613,8 +6841,15 @@
             "file": "assets/isobmff-00000000.js",
             "gzip": 12300,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js"
             ]
           }
         },
@@ -5627,8 +6862,12 @@
             "file": "assets/matroska-00000000.js",
             "gzip": 11885,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js"
             ]
           }
         },
@@ -5641,8 +6880,26 @@
             "file": "assets/own-isobmff.worker-00000000.js",
             "gzip": 19446,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/abort.js",
+              "core/dispatch.js",
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js",
+              "core/options.js",
+              "core/rational.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/sniff.js",
+              "core/stats.js",
+              "worker/own-isobmff.worker.js",
+              "worker/serve.js",
+              "worker/single.js"
             ]
           }
         },
@@ -5655,8 +6912,23 @@
             "file": "assets/own-matroska.worker-00000000.js",
             "gzip": 18626,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/abort.js",
+              "core/dispatch.js",
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js",
+              "core/options.js",
+              "core/rational.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/sniff.js",
+              "core/stats.js",
+              "worker/own-matroska.worker.js",
+              "worker/serve.js",
+              "worker/single.js"
             ]
           }
         },
@@ -5669,7 +6941,14 @@
             "file": "assets/probe-00000000.js",
             "gzip": 3203,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/pool.js",
+              "client/probe.js",
+              "client/route.js",
+              "client/split.js",
+              "plugins/own.js",
+              "probe.js"
+            ]
           }
         },
         {
@@ -5681,7 +6960,9 @@
             "file": "assets/result-00000000.js",
             "gzip": 381,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/result.js"
+            ]
           }
         },
         {
@@ -5693,7 +6974,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3595,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -5705,7 +6988,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3610,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -5717,7 +7002,14 @@
             "file": "assets/runtime-00000000.js",
             "gzip": 2402,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/abort.js",
+              "core/analyze.js",
+              "core/dispatch.js",
+              "core/options.js",
+              "core/reader.js",
+              "worker/runtime.js"
+            ]
           }
         },
         {
@@ -5729,7 +7021,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1805,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -5741,7 +7035,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1841,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -5753,7 +7049,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1804,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -5765,7 +7063,9 @@
             "file": "assets/sniff-00000000.js",
             "gzip": 989,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/sniff.js"
+            ]
           }
         },
         {
@@ -5777,7 +7077,10 @@
             "file": "assets/stats-00000000.js",
             "gzip": 4314,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rational.js",
+              "core/stats.js"
+            ]
           }
         }
       ],
@@ -5922,7 +7225,10 @@
             "file": "assets/compare-00000000.js",
             "gzip": 1288,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/agreement.js",
+              "client/compare.js"
+            ]
           }
         },
         {
@@ -5934,7 +7240,10 @@
             "file": "assets/fallback-00000000.js",
             "gzip": 733,
             "entry": false,
-            "holds": []
+            "sources": [
+              "api/guards.js",
+              "client/fallback.js"
+            ]
           }
         },
         {
@@ -5946,7 +7255,14 @@
             "file": "assets/index-00000000.js",
             "gzip": 5617,
             "entry": true,
-            "holds": []
+            "sources": [
+              "api/errors.js",
+              "check/index.js",
+              "client/stub.js",
+              "fixtures/preset/main.ts",
+              "lazy.js",
+              "presets/index.js"
+            ]
           }
         },
         {
@@ -5958,7 +7274,9 @@
             "file": "assets/inline-00000000.js",
             "gzip": 641,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/inline.js"
+            ]
           }
         },
         {
@@ -5970,8 +7288,15 @@
             "file": "assets/isobmff-00000000.js",
             "gzip": 12300,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js"
             ]
           }
         },
@@ -5984,8 +7309,12 @@
             "file": "assets/matroska-00000000.js",
             "gzip": 11885,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js"
             ]
           }
         },
@@ -5998,8 +7327,26 @@
             "file": "assets/own-isobmff.worker-00000000.js",
             "gzip": 19446,
             "entry": false,
-            "holds": [
-              "isobmff"
+            "sources": [
+              "core/abort.js",
+              "core/dispatch.js",
+              "core/isobmff/boxes.js",
+              "core/isobmff/codecs.js",
+              "core/isobmff/index.js",
+              "core/isobmff/model.js",
+              "core/isobmff/moof.js",
+              "core/isobmff/moov.js",
+              "core/isobmff/prefetch.js",
+              "core/isobmff/track.js",
+              "core/options.js",
+              "core/rational.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/sniff.js",
+              "core/stats.js",
+              "worker/own-isobmff.worker.js",
+              "worker/serve.js",
+              "worker/single.js"
             ]
           }
         },
@@ -6012,8 +7359,23 @@
             "file": "assets/own-matroska.worker-00000000.js",
             "gzip": 18626,
             "entry": false,
-            "holds": [
-              "matroska"
+            "sources": [
+              "core/abort.js",
+              "core/dispatch.js",
+              "core/matroska/ebml.js",
+              "core/matroska/header.js",
+              "core/matroska/index.js",
+              "core/matroska/scan.js",
+              "core/matroska/source.js",
+              "core/options.js",
+              "core/rational.js",
+              "core/reader.js",
+              "core/result.js",
+              "core/sniff.js",
+              "core/stats.js",
+              "worker/own-matroska.worker.js",
+              "worker/serve.js",
+              "worker/single.js"
             ]
           }
         },
@@ -6026,7 +7388,14 @@
             "file": "assets/probe-00000000.js",
             "gzip": 3203,
             "entry": false,
-            "holds": []
+            "sources": [
+              "client/pool.js",
+              "client/probe.js",
+              "client/route.js",
+              "client/split.js",
+              "plugins/own.js",
+              "probe.js"
+            ]
           }
         },
         {
@@ -6038,7 +7407,9 @@
             "file": "assets/result-00000000.js",
             "gzip": 381,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/result.js"
+            ]
           }
         },
         {
@@ -6050,7 +7421,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3610,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -6062,7 +7435,9 @@
             "file": "assets/rfps-00000000.js",
             "gzip": 3595,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rfps.js"
+            ]
           }
         },
         {
@@ -6074,7 +7449,14 @@
             "file": "assets/runtime-00000000.js",
             "gzip": 2402,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/abort.js",
+              "core/analyze.js",
+              "core/dispatch.js",
+              "core/options.js",
+              "core/reader.js",
+              "worker/runtime.js"
+            ]
           }
         },
         {
@@ -6086,7 +7468,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1805,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -6098,7 +7482,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1841,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -6110,7 +7496,9 @@
             "file": "assets/segments-00000000.js",
             "gzip": 1804,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/segments.js"
+            ]
           }
         },
         {
@@ -6122,7 +7510,9 @@
             "file": "assets/sniff-00000000.js",
             "gzip": 989,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/sniff.js"
+            ]
           }
         },
         {
@@ -6134,7 +7524,10 @@
             "file": "assets/stats-00000000.js",
             "gzip": 4314,
             "entry": false,
-            "holds": []
+            "sources": [
+              "core/rational.js",
+              "core/stats.js"
+            ]
           }
         }
       ],
