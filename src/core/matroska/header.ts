@@ -65,6 +65,7 @@ export interface MkvTrack {
   codecDelay: number;
   codecPrivate: Uint8Array | null;
   encoded: boolean;
+  disabled?: boolean;
   width: number;
   height: number;
 }
@@ -93,6 +94,7 @@ export const HEADER_MAX_BYTES = 1024 * 1024;
 export const MAX_DEPTH = 16;
 const SPARSE_CHILD_MAX = 64 * 1024;
 const CODEC_PRIVATE_MAX = 4096;
+const ID_FLAG_ENABLED = 0xb9;
 const SEGMENT_SEARCH_HOPS = 16;
 const SKIPPED_NAMES: ReadonlyMap<number, string> = new Map([
   [ID_SEEK_HEAD, 'SeekHead'],
@@ -106,7 +108,7 @@ const CHILDREN: ReadonlyMap<number, readonly number[]> = new Map([
   [ID_SEEK, [ID_SEEK_ID, ID_SEEK_POSITION]],
   [ID_INFO, [ID_TIMESTAMP_SCALE, ID_DURATION]],
   [ID_TRACKS, [ID_TRACK_ENTRY]],
-  [ID_TRACK_ENTRY, [ID_TRACK_NUMBER, ID_TRACK_UID, ID_TRACK_TYPE, ID_CODEC_ID, ID_CODEC_PRIVATE, ID_CONTENT_ENCODINGS, ID_DEFAULT_DURATION, ID_TRACK_TIMESTAMP_SCALE, ID_CODEC_DELAY, ID_VIDEO]],
+  [ID_TRACK_ENTRY, [ID_TRACK_NUMBER, ID_TRACK_UID, ID_TRACK_TYPE, ID_FLAG_ENABLED, ID_CODEC_ID, ID_CODEC_PRIVATE, ID_CONTENT_ENCODINGS, ID_DEFAULT_DURATION, ID_TRACK_TIMESTAMP_SCALE, ID_CODEC_DELAY, ID_VIDEO]],
   [ID_VIDEO, [ID_PIXEL_WIDTH, ID_PIXEL_HEIGHT, ID_FRAME_RATE]],
   [ID_TAGS, [ID_TAG]],
   [ID_TAG, [ID_TARGETS, ID_SIMPLE_TAG]],
@@ -196,6 +198,9 @@ export function parseMaster(h: MkvHeader, b: Uint8Array, start: number, end: num
           break;
         case ID_TRACK_TYPE:
           t.type = uint();
+          break;
+        case ID_FLAG_ENABLED:
+          t.disabled = !uint();
           break;
         case ID_CODEC_ID:
           t.codecId = readString(b, p, n);

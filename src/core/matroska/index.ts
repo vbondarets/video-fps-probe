@@ -99,6 +99,7 @@ function headerTrack(h: MkvHeader, t: MkvTrack): VideoTrackResult {
   r.codecName = codecNameOf(t.codecId);
   r.width = t.width;
   r.height = t.height;
+  r.enabled = !t.disabled;
   r.timescale = 1e9 / (Math.trunc(h.timestampScale * t.trackTimestampScale) || h.timestampScale);
   r.provenance.codec = r.provenance.dimensions = 'header';
   const d = declaredRate(t.defaultDuration);

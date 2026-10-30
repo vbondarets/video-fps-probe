@@ -107,6 +107,7 @@ export interface VideoTrackResult {
   isStill: boolean;
   rateProfile?: RateProfile | null;
   medianFrameInterval?: Rational | null;
+  enabled?: boolean | null;
   provenance: Partial<Record<TrackField, Provenance>>;
   warnings: string[];
 }

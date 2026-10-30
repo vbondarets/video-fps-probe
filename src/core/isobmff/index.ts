@@ -238,6 +238,7 @@ function buildVideoTrack(tr: IsoTrack, movie: IsoMovie, opts: ResolvedAnalyzeOpt
   t.width = tr.width;
   t.height = tr.height;
   t.rotation = displayRotation(tr.matrix, movie.matrix);
+  t.enabled = tr.enabled;
   t.timescale = ts;
 
   const totals = sampleTotals(tr);
