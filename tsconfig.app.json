@@ -15,6 +15,7 @@
       "video-fps-probe/client/lazy": ["./src/client/lazy.ts"],
       "video-fps-probe/engines/mediabunny": ["./src/engines/mediabunny.ts"],
       "video-fps-probe/engines/mp4box": ["./src/engines/mp4box.ts"],
+      "video-fps-probe/header": ["./src/header/index.ts"],
       "video-fps-probe/lazy": ["./src/lazy.ts"],
       "video-fps-probe/mediabunny": ["./src/plugins/mediabunny.ts"],
       "video-fps-probe/mp4box": ["./src/plugins/mp4box.ts"],

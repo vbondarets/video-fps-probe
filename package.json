@@ -51,6 +51,9 @@
       "check": [
         "dist/check/index.d.ts"
       ],
+      "header": [
+        "dist/header/index.d.ts"
+      ],
       "presets": [
         "dist/presets/index.d.ts"
       ],
@@ -101,6 +104,10 @@
     "./check": {
       "types": "./dist/check/index.d.ts",
       "default": "./dist/check/index.js"
+    },
+    "./header": {
+      "types": "./dist/header/index.d.ts",
+      "default": "./dist/header/index.js"
     },
     "./presets": {
       "types": "./dist/presets/index.d.ts",
