@@ -341,6 +341,14 @@ node "$TOOLS/patch-mp4.mjs" tkhdsize "$W/sar_base.mp4" sar_tkhd_only.mp4 240x90 
 note sar_tkhd_only.mp4 mp4 sar ok "pasp renamed to free, tkhd says 240x90 over a 160x90 stream (VUI 1:1): ffprobe derives 3:2 from the tkhd size"
 node "$TOOLS/patch-mp4.mjs" matrix "$W/sar_base.mp4" sar_matrix_scale.mp4 2,0,0,1 > /dev/null
 note sar_matrix_scale.mp4 mp4 sar ok "pasp renamed to free, tkhd matrix scales x by 2 (VUI 1:1): ffprobe derives 2:1 from the matrix and prints a Display Matrix side data entry"
+node "$TOOLS/patch-mp4.mjs" pasp sar_h264_4x3.mp4 sar_tkhd_fraction.mp4 free > /dev/null
+note sar_tkhd_fraction.mp4 mp4 sar ok "sar_h264_4x3.mp4 with pasp renamed to free: the tkhd width 213.33 (16.16) that ffmpeg wrote for the 4:3 ratio wins over the 4:3 VUI, and ffprobe derives 213:160 from its integer part"
+node "$TOOLS/patch-mp4.mjs" tkhdsize sar_h264_4x3.mp4 sar_vui_only.mp4 160x120 > /dev/null
+note sar_vui_only.mp4 mp4 sar ok "sar_h264_4x3.mp4 with pasp renamed to free and the tkhd size set to the stored 160x120: only the SPS VUI carries the 4:3 ratio, and ffprobe prints it"
+node "$TOOLS/patch-mp4.mjs" matrix sar_tkhd_only.mp4 sar_tkhd_matrix.mp4 2,0,0,1 > /dev/null
+note sar_tkhd_matrix.mp4 mp4 sar ok "sar_tkhd_only.mp4 (tkhd 240x90, 3:2) with the tkhd matrix scaling x by 2: ffprobe prints 2:1, the matrix ratio beats the tkhd size"
+node "$TOOLS/patch-mp4.mjs" pasp sar_tkhd_matrix.mp4 sar_pasp_tkhd_matrix.mp4 4:3 > /dev/null
+note sar_pasp_tkhd_matrix.mp4 mp4 sar ok "sar_tkhd_matrix.mp4 with a pasp of 4:3 appended: ffprobe prints 4:3, the pasp beats the tkhd matrix and the tkhd size"
 "${FF[@]}" -f lavfi -i "$S1" -vf setsar=0 "${H264[@]}" sar_none.mp4
 note sar_none.mp4 mp4 sar ok "unknown sample aspect ratio: no pasp and no VUI aspect ratio, ffprobe prints N/A for sample_aspect_ratio and display_aspect_ratio"
 "${FF[@]}" -f lavfi -i "$(src 30000/1001 1 160x120)" -vf setsar=4/3 "${H264[@]}" "${BX[@]}" -f matroska sar_4x3.mkv
@@ -372,6 +380,10 @@ note colr_only_h264.mp4 mp4 color ok "H.264 without a VUI video signal type, col
 "${FF[@]}" -f lavfi -i "$S1" "${H265X[@]}" -tag:v hvc1 -f mp4 "$W/hevc10_plain.mp4"
 node "$TOOLS/patch-mp4.mjs" colr "$W/hevc10_plain.mp4" colr_only_hevc.mp4 nclx:9,16,9,0 > /dev/null
 note colr_only_hevc.mp4 mp4 color ok "10-bit HEVC whose VUI has a video signal type without a colour description, colr nclx BT.2020 and PQ added: ffprobe prints the colr values"
+node "$TOOLS/patch-mp4.mjs" colr hdr10_hevc10.mp4 colr_unspecified_hevc.mp4 nclx:2,2,2,1 > /dev/null
+note colr_unspecified_hevc.mp4 mp4 color ok "hdr10_hevc10.mp4 with a colr nclx whose three codes are 2 (unspecified) and whose full range flag is set: ffprobe prints the PQ codes of the SPS VUI and the pc range of the colr"
+node "$TOOLS/patch-mp4.mjs" colr hlg_h264_8bit.mp4 colr_partial_h264.mp4 nclx:1,2,2,1 > /dev/null
+note colr_partial_h264.mp4 mp4 color ok "hlg_h264_8bit.mp4 with a colr nclx of primaries 1 and two unspecified codes, full range: ffprobe prints bt709, two unknowns and pc, nothing from the SPS VUI"
 node "$TOOLS/patch-mp4.mjs" colr hlg_hevc10.mp4 hlg_vui_only.mp4 free > /dev/null
 note hlg_vui_only.mp4 mp4 color ok "hlg_hevc10.mp4 with its colr renamed to free: only the SPS VUI carries the HLG tags, and ffprobe prints them"
 node "$TOOLS/patch-mp4.mjs" dvvc hdr10_hevc10.mp4 dv_p81_dvvc.mp4 8,1,1,1 > /dev/null

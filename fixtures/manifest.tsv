@@ -133,6 +133,10 @@ sar_h264_4x3.mp4	mp4	sar	ok	yes	160x120 with a 4:3 sample aspect ratio in pasp a
 sar_pasp_only.mp4	mp4	sar	ok	yes	pasp says 4:3, the SPS VUI says 1:1: ffprobe prints the pasp ratio 4:3 (display 64:27)	files/sar_pasp_only.mp4
 sar_tkhd_only.mp4	mp4	sar	ok	yes	pasp renamed to free, tkhd says 240x90 over a 160x90 stream (VUI 1:1): ffprobe derives 3:2 from the tkhd size	files/sar_tkhd_only.mp4
 sar_matrix_scale.mp4	mp4	sar	ok	yes	pasp renamed to free, tkhd matrix scales x by 2 (VUI 1:1): ffprobe derives 2:1 from the matrix and prints a Display Matrix side data entry	files/sar_matrix_scale.mp4
+sar_tkhd_fraction.mp4	mp4	sar	ok	yes	sar_h264_4x3.mp4 with pasp renamed to free: the tkhd width 213.33 (16.16) that ffmpeg wrote for the 4:3 ratio wins over the 4:3 VUI, and ffprobe derives 213:160 from its integer part	files/sar_tkhd_fraction.mp4
+sar_vui_only.mp4	mp4	sar	ok	yes	sar_h264_4x3.mp4 with pasp renamed to free and the tkhd size set to the stored 160x120: only the SPS VUI carries the 4:3 ratio, and ffprobe prints it	files/sar_vui_only.mp4
+sar_tkhd_matrix.mp4	mp4	sar	ok	yes	sar_tkhd_only.mp4 (tkhd 240x90, 3:2) with the tkhd matrix scaling x by 2: ffprobe prints 2:1, the matrix ratio beats the tkhd size	files/sar_tkhd_matrix.mp4
+sar_pasp_tkhd_matrix.mp4	mp4	sar	ok	yes	sar_tkhd_matrix.mp4 with a pasp of 4:3 appended: ffprobe prints 4:3, the pasp beats the tkhd matrix and the tkhd size	files/sar_pasp_tkhd_matrix.mp4
 sar_none.mp4	mp4	sar	ok	yes	unknown sample aspect ratio: no pasp and no VUI aspect ratio, ffprobe prints N/A for sample_aspect_ratio and display_aspect_ratio	files/sar_none.mp4
 sar_4x3.mkv	matroska	sar	ok	yes	160x120 with a 4:3 sample aspect ratio: ffmpeg writes DisplayWidth 16, DisplayHeight 9 and DisplayUnit 3 (aspect ratio), ffprobe prints 4:3	files/sar_4x3.mkv
 track_disabled.mp4	mp4	multi	ok	yes	the only video track has the tkhd enabled flag cleared (flags 2): ffprobe disposition.default 0, the track is still decoded	files/track_disabled.mp4
@@ -148,6 +152,8 @@ colr_vui_conflict.mp4	mp4	color	ok	yes	rec_chromium_h264.mp4 with its colr rewri
 colr_vui_conflict_hevc.mp4	mp4	color	ok	yes	hdr10_hevc10.mp4 with its colr rewritten to BT.709 over a PQ SPS VUI: ffprobe prints the colr values	files/colr_vui_conflict_hevc.mp4
 colr_only_h264.mp4	mp4	color	ok	yes	H.264 without a VUI video signal type, colr nclx BT.2020 and PQ added: ffprobe prints the colr values	files/colr_only_h264.mp4
 colr_only_hevc.mp4	mp4	color	ok	yes	10-bit HEVC whose VUI has a video signal type without a colour description, colr nclx BT.2020 and PQ added: ffprobe prints the colr values	files/colr_only_hevc.mp4
+colr_unspecified_hevc.mp4	mp4	color	ok	yes	hdr10_hevc10.mp4 with a colr nclx whose three codes are 2 (unspecified) and whose full range flag is set: ffprobe prints the PQ codes of the SPS VUI and the pc range of the colr	files/colr_unspecified_hevc.mp4
+colr_partial_h264.mp4	mp4	color	ok	yes	hlg_h264_8bit.mp4 with a colr nclx of primaries 1 and two unspecified codes, full range: ffprobe prints bt709, two unknowns and pc, nothing from the SPS VUI	files/colr_partial_h264.mp4
 hlg_vui_only.mp4	mp4	color	ok	yes	hlg_hevc10.mp4 with its colr renamed to free: only the SPS VUI carries the HLG tags, and ffprobe prints them	files/hlg_vui_only.mp4
 dv_p81_dvvc.mp4	mp4	dovi	ok	yes	hdr10_hevc10.mp4 with a dvvC record appended to hvc1: Dolby Vision profile 8, level 1, compatibility id 1, metadata compression 1 (limited)	files/dv_p81_dvvc.mp4
 dv_p5_dvcc_dvh1.mp4	mp4	dovi	ok	yes	hdr10_hevc10.mp4 with the entry renamed to dvh1 and a dvcC record: Dolby Vision profile 5, level 2, compatibility id 0, no metadata compression	files/dv_p5_dvcc_dvh1.mp4
