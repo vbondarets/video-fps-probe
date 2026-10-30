@@ -32,7 +32,7 @@ export const PROFILE_TABLE: readonly ProfileEntry[] = [
   entry('hevc', 3, 'Main Still Picture'),
   entry('hevc', 4, 'Rext'),
   entry('hevc', 6, 'Multiview Main'),
-  entry('hevc', 9, 'SCC'),
+  entry('hevc', 9, 'Scc'),
   entry('av1', 0, 'Main'),
   entry('av1', 1, 'High'),
   entry('av1', 2, 'Professional'),

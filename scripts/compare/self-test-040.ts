@@ -211,18 +211,18 @@ export async function profileCoverage(expectEq: ExpectEq, pathOf: (name: string)
   const printed = new Set<string>();
   for (const m of loadManifest()) {
     const raw = loadRef(m.name);
-    const path = pathOf(m.name);
-    if (!raw || !path) continue;
+    if (!raw) continue;
     const ref = parseRef(m.name, raw);
     if (!ref.ok || ref.videoStreams.length === 0) continue;
+    for (const s of ref.videoStreams) if (s.profile !== null) printed.add(`${s.codecName}\t${s.profile}`);
+    const path = pathOf(m.name);
+    if (!path) continue;
     const size = statSync(path).size;
     const iso = m.container === 'mp4' || m.container === 'mov';
     const layout = iso ? await scanIsoBmffLayout(path, size) : m.container === 'webm' || m.container === 'matroska' ? await scanMatroskaLayout(path, size) : null;
     const isoVideo = (layout?.tracks ?? []).filter((t) => t.handler === 'vide');
     ref.videoStreams.forEach((s, i) => {
-      if (s.profile === null) return;
-      printed.add(`${s.codecName}\t${s.profile}`);
-      if (PROFILE_NOT_READ[s.codecName]) return;
+      if (s.profile === null || PROFILE_NOT_READ[s.codecName]) return;
       const config = iso ? (isoVideo.length === ref.videoStreams.length ? isoVideo[i]?.entry?.config : null) : matroskaTrackOf(layout, ref.videoStreams, s)?.config;
       if (config?.profile == null) return;
       expectEq(`profile table: ${m.name} stream ${s.index} (${s.codecName} ${config.profile}, constraints ${config.constraints ?? 'none'})`, ffmpegProfileName(s.codecName, config.profile, config.constraints), s.profile);
@@ -235,5 +235,6 @@ export async function profileCoverage(expectEq: ExpectEq, pathOf: (name: string)
     expectEq(`profile table covers ${codec} "${name}"`, profileNamesOf(codec).includes(name), true);
   }
   expectEq('profile table: every codec of the table has a name', PROFILE_TABLE.every((e) => e.name.length > 0), true);
+  expectEq('profile table: the HEVC names of FFmpeg 8.1.1', profileNamesOf('hevc').join(', '), 'Main, Main 10, Main Still Picture, Rext, Multiview Main, Scc');
   return checked;
 }
