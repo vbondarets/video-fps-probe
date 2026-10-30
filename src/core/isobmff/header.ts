@@ -13,7 +13,6 @@ const HEADER_PEEK = 16;
 const MFRA_TAIL = 64 * 1024;
 const MFRA_CAP = 16 * 1024 * 1024;
 const MOOF_HARD_CAP = 64 * 1024 * 1024;
-const SIDE_TYPES = new Set(['moof', 'mdat', 'mfra']);
 
 type Limit = Error & { errorCode: string };
 
@@ -51,9 +50,13 @@ interface Resolved {
   provenance: Provenance;
 }
 
+function count(w: Walk): void {
+  if (++w.boxes > w.plan.maxTopLevelBoxes) throw new IsoBmffError('structure-limit', `limit reached: maxTopLevelBoxes ${w.plan.maxTopLevelBoxes}`);
+}
+
 function visit(w: Walk): void {
   w.budget.checkTime();
-  if (++w.boxes > w.plan.maxTopLevelBoxes) throw new IsoBmffError('structure-limit', `limit reached: maxTopLevelBoxes ${w.plan.maxTopLevelBoxes}`);
+  count(w);
 }
 
 function ahead(w: Walk, pos: number, wanted: number): number {
@@ -123,22 +126,6 @@ async function readHeaderMoov(w: Walk, h: BoxHeader): Promise<DataView> {
   return dv;
 }
 
-function noteTruncatedMdat(w: Walk, pos: number): void {
-  const size = w.reader.size;
-  if (pos + 8 > size) return;
-  const hv = w.reader.peek(pos, Math.min(HEADER_PEEK, size - pos));
-  if (!hv) return;
-  try {
-    const h = readBoxHeader(hv, 0, size - pos, pos);
-    if (h && h.type === 'mdat' && h.truncated) {
-      w.movie.truncated = true;
-      w.movie.warnings.push(`'mdat' at ${pos} is truncated`);
-    }
-  } catch {
-    return;
-  }
-}
-
 interface Walked {
   moov: DataView | null;
   fragments: boolean;
@@ -152,17 +139,26 @@ async function walkTop(w: Walk): Promise<Walked> {
   let pos = 0;
   let moov: DataView | null = null;
   let afterMdat = false;
+  const walked = (firstMoof: BoxHeader | null, limit: Limit | null = null): Walked => ({ moov, fragments: movie.hasMvex && (firstMoof !== null || limit !== null), firstMoof, limit });
   try {
     while (pos + 8 <= size) {
-      visit(w);
-      const hv = await peekAt(w, pos, afterMdat && !moov ? w.plan.tail : w.plan.head);
+      const cached = moov !== null && !movie.hasMvex;
+      let hv: DataView | null;
+      if (cached) {
+        hv = reader.peek(pos, Math.min(HEADER_PEEK, size - pos));
+        if (!hv) break;
+        count(w);
+      } else {
+        visit(w);
+        hv = await peekAt(w, pos, afterMdat && !moov ? w.plan.tail : w.plan.head);
+      }
       let rel: BoxHeader | null;
       try {
         rel = readBoxHeader(hv, 0, size - pos, pos);
       } catch (e) {
         if (!moov) throw e;
         movie.warnings.push(`ignored trailing data at ${pos}: ${(e as Error).message}`);
-        return { moov, fragments: false, firstMoof: null, limit: null };
+        break;
       }
       if (!rel) break;
       const h: BoxHeader = { ...rel, start: pos, end: Math.min(pos + rel.size, size) };
@@ -173,8 +169,9 @@ async function walkTop(w: Walk): Promise<Walked> {
       }
       const top: TopBox = { type: h.type, start: pos, end: h.end, sidx: null };
       movie.topLevel.push(top);
-      if (trailer || (moov && SIDE_TYPES.has(h.type))) return { moov, fragments: !trailer, firstMoof: !trailer && h.type === 'moof' ? h : null, limit: null };
-      if (h.type === 'ftyp') {
+      if (trailer || (cached && h.type === 'moof') || (moov && h.type === 'mfra')) break;
+      if (moov && h.type === 'moof') return walked(h);
+      if (h.type === 'ftyp' && !cached) {
         const fv = await reader.view(pos, Math.min(h.size, 1024), ahead(w, pos, w.plan.head));
         const p = h.headerSize;
         if (p + 4 <= fv.byteLength) {
@@ -184,18 +181,12 @@ async function walkTop(w: Walk): Promise<Walked> {
         }
       } else if (h.type === 'moov') {
         if (moov) movie.warnings.push(`ignored a second moov at ${pos}`);
-        else {
-          moov = await readHeaderMoov(w, h);
-          if (!movie.hasMvex) {
-            noteTruncatedMdat(w, pos + rel.size);
-            return { moov, fragments: false, firstMoof: null, limit: null };
-          }
-        }
+        else moov = await readHeaderMoov(w, h);
       } else if (h.type === 'moof') {
         throw new IsoBmffError('corrupt', 'corrupt file: movie fragment (moof) before moov');
       } else if (h.type === 'sidx' && !rel.truncated) {
-        const dv = await reader.view(pos, h.size, 0);
-        const sh = readBoxHeader(dv, 0, dv.byteLength);
+        const dv = cached ? reader.peek(pos, h.size) : await reader.view(pos, h.size, 0);
+        const sh = dv && readBoxHeader(dv, 0, dv.byteLength);
         if (sh) top.sidx = parseSidx(dv, sh, pos);
       }
       afterMdat = h.type === 'mdat';
@@ -205,11 +196,12 @@ async function walkTop(w: Walk): Promise<Walked> {
     if (!moov || isAbort(e, reader)) throw e;
     const limit = w.budget.take() ?? (isLimit(e) ? e : null);
     if (!limit) throw e;
-    return { moov, fragments: movie.hasMvex, firstMoof: null, limit };
+    return walked(null, limit);
   }
   if (!moov) throw new IsoBmffError('no-header', 'incomplete file: no moov');
-  return { moov, fragments: false, firstMoof: null, limit: null };
+  return walked(null);
 }
+
 
 async function readTailIndex(w: Walk): Promise<TailIndex | null> {
   const { reader } = w;
@@ -465,6 +457,10 @@ export async function analyzeIsoBmffHeader(reader: BlobReader, budget: HeaderBud
     else {
       analysis.primaryTrackId = pickPrimary(built);
       analysis.formatDurationSec = formatDuration(movie, new Set(videos));
+      if (walked.limit) {
+        analysis.error = walked.limit.message;
+        analysis.errorCode = whichErrorCode(walked.limit);
+      }
     }
   } catch (e) {
     if (isAbort(e, reader)) throw e;
