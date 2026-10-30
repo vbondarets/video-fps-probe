@@ -102,6 +102,8 @@ In-thread `analyze()` is tested on Node 24, the version in `.nvmrc`, and on Node
 
 A server can branch on `result.errorCode`, a machine-readable code for `error` such as `unrecognised`, `no-header`, `truncated` or `read-failed`, and on `result.layout`, which tells a faststart MP4 from one with its moov at the end or a fragmented one. `errorCodeOf(result)` also codes results of other engines and stored 0.3.0 JSON from their text, and `errorClass(code)` tells a file problem, which can be cached, from a read failure worth a retry ([error codes](docs/api.md#error-codes)).
 
+A server that checks uploads in object storage can read only the header: `analyzeHeader(source, { limits })` from `video-fps-probe/header` reads the moov of an MP4 or MOV file under limits on the bytes, the reads, the time, the tracks and the top-level boxes, in one to three reads for most files, and gives the codec, size, rotation, duration and layout, and the frame count of a file that is not fragmented, without walking the samples. A fragmented file gets its duration from a sidx, the mfra index or mehd, and the error code `no-duration` when it has none of them ([header-only analysis](docs/api.md#header-only-analysis)).
+
 CommonJS works on Node 22.12 and newer, which load ES modules from `require()`: `const { analyze } = require('video-fps-probe')`, the subpaths included, and a TypeScript project with `"module": "commonjs"` and `moduleResolution` `node10`, such as a NestJS 11 app. The package test checks both from the packed tarball on Node 22.12 and 24. Jest needs babel-jest to transform the package, with plugins for `import.meta` and `import()`: the tested configuration and a stub for unit tests are in [Jest](docs/api.md#jest).
 
 ## Cancellation, timeouts and failing open
