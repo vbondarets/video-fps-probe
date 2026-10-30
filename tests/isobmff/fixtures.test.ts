@@ -13,6 +13,7 @@ import { primaryTrack } from '../../src/core/result.ts';
 import type { FileResult, VideoTrackResult } from '../../src/core/types.ts';
 import { FILES_DIR, FIXTURES_DIR, REPO_ROOT, fixturePath, loadManifest, loadRef, type FixtureRef, type ManifestEntry } from '../helpers/fixtures.ts';
 import { openFixture } from '../helpers/open-blob.ts';
+import { expectedLayout, isoBmffFixtureSet, scanIsoBmffLayout } from '../../scripts/compare/layout.ts';
 
 const DEVIATION_FIELDS = new Set([
   'avgFps',
@@ -482,4 +483,26 @@ describe.skipIf(!runLarge)('large ISO BMFF fixtures (FPS_PROBE_LARGE=1)', () => 
       expect(track.co64).not.toBeNull();
     });
   });
+});
+
+describe('layout against an independent top-level scan', () => {
+  test('every committed fixture that sniffs as ISO BMFF has the layout of the scan, and every other one has none', async () => {
+    const names = loadManifest()
+      .filter((m) => m.committed)
+      .map((m) => m.name);
+    const iso = new Set(await isoBmffFixtureSet(names, fixturePath));
+    expect(iso.size).toBeGreaterThan(0);
+    expect(iso.size).toBeLessThan(names.length);
+    for (const name of names) {
+      const path = fixturePath(name)!;
+      const opened = await openFixture(path);
+      try {
+        const result = await analyze(opened.blob, name);
+        const expected = iso.has(name) ? expectedLayout(await scanIsoBmffLayout(path, opened.blob.size)) : null;
+        expect(result.layout, name).toEqual(expected);
+      } finally {
+        await opened.close();
+      }
+    }
+  }, 120_000);
 });
