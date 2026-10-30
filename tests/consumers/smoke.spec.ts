@@ -4,6 +4,7 @@ import { pathToFileURL } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
 import { expect, test, type Page } from '@playwright/test';
 import { CONSUMERS_PORT, FIXTURES, OWN_WORKERS, SPLIT_ROUTING, buildUrl, consumersDir, devUrl, fixtureDist, installedPackage } from '../../scripts/consumers.mjs';
+import type { HeaderResult } from '../../src/header/index.ts';
 import type { EngineDescriptor, ProbeResult } from '../../src/index.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
 
@@ -46,6 +47,7 @@ const FAMILIES: Record<WorkerEngine, readonly string[]> = {
 };
 
 const RVFC_FILES = ['cfr_h264_29.97.mp4', 'cfr_vp9_29.97.webm'] as const;
+const HEADER_FILES = ['cfr_h264_29.97.mp4', 'cfr_vp9_29.97.webm', 'vfr_two_phase_5_200.mp4', 'fmp4_global_sidx.mp4', 'rec_chromium_h264.mp4', 'corrupt_trunc_no_moov.mp4'] as const;
 const RVFC_UNSUPPORTED = 'requestVideoFrameCallback unsupported';
 
 const DIST = pathToFileURL(join(installedPackage(consumersDir()), 'dist')).href;
@@ -133,7 +135,39 @@ async function libraryOutcome(page: Page, name: string, engine: WorkerEngine): P
   }
 }
 
-for (const fixture of FIXTURES) {
+async function nodeHeader(name: string): Promise<HeaderResult> {
+  const { analyzeHeader } = (await import(`${DIST}/header/index.js`)) as { analyzeHeader: (input: Blob, options: { name: string }) => Promise<HeaderResult> };
+  return analyzeHeader(await openAsBlob(join(FILES_DIR, name)), { name });
+}
+
+const withoutMs = (r: HeaderResult): unknown => plain({ ...r, io: { ...r.io, ms: 0 } });
+
+for (const fixture of FIXTURES.filter((f) => f.pageOnly)) {
+  for (const mode of ['build', 'dev'] as const) {
+    test(`${fixture.name} under vite ${mode} equals Node analyzeHeader from the same tarball`, async ({ page }) => {
+      const pageErrors: string[] = [];
+      page.on('pageerror', (e) => pageErrors.push(`${e.name}: ${e.message}`));
+      const workerUrls: string[] = [];
+      page.on('worker', (worker) => workerUrls.push(worker.url()));
+      await page.goto(mode === 'build' ? buildUrl(CONSUMERS_PORT, fixture.name) : devUrl(CONSUMERS_PORT, fixture.name));
+      await page.waitForFunction(() => window.__header !== undefined);
+      for (const name of HEADER_FILES) {
+        await page.locator('#file').setInputFiles(join(FILES_DIR, name));
+        const actual = await page.evaluate(async (fileName) => {
+          const file = document.querySelector<HTMLInputElement>('#file')?.files?.[0];
+          if (!file) throw new Error('no file picked');
+          return window.__header!.analyzeHeader(file, { name: fileName });
+        }, name);
+        expect(actual.scan, name).toBe('header');
+        expect(withoutMs(actual), name).toEqual(withoutMs(await nodeHeader(name)));
+      }
+      expect(workerUrls, 'the header entry starts no worker').toEqual([]);
+      expect(pageErrors).toEqual([]);
+    });
+  }
+}
+
+for (const fixture of FIXTURES.filter((f) => !f.pageOnly)) {
   for (const mode of ['build', 'dev'] as const) {
     test(`${fixture.name} under vite ${mode} equals Node analyze from the same tarball`, async ({ page, browserName }) => {
       const pageErrors: string[] = [];

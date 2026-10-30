@@ -30,6 +30,8 @@ export const WORKER_MUST_NOT = {
   [OWN_WORKERS.matroska]: ['video-fps-probe/dist/core/isobmff/', 'video-fps-probe/dist/core/analyze.js'],
 };
 
+export const HEADER_MUST_NOT = ['video-fps-probe/dist/core/isobmff/index.js', 'video-fps-probe/dist/core/stats.js', 'video-fps-probe/dist/core/rfps.js'];
+
 export const FIXTURES = [
   { name: 'default', imports: ['./lazy'], worker: ES, engines: ['own'], workers: OWN, mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/', 'video-fps-probe/dist/engines/'] },
   {
@@ -100,6 +102,16 @@ export const FIXTURES = [
   { name: 'react18', imports: ['./lazy', './react'], note: `React ${REACT_18}`, worker: ES, engines: ['own'], workers: OWN, mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/', 'video-fps-probe/dist/engines/'] },
   { name: 'check', imports: ['./lazy', './check'], worker: ES, engines: ['own'], workers: OWN, mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/', 'video-fps-probe/dist/engines/'] },
   { name: 'preset', imports: ['./lazy', './check', './presets'], note: 'klingO1ReferenceVideo', worker: ES, engines: ['own'], workers: OWN, mustNot: ['node_modules/mp4box/', 'node_modules/mediabunny/', 'video-fps-probe/dist/engines/'] },
+  {
+    name: 'header',
+    imports: ['./header'],
+    note: 'analyzeHeader in the page',
+    worker: 'none needed: the header entry runs in the calling thread',
+    engines: [],
+    workers: [],
+    pageOnly: true,
+    mustNot: [...HEADER_MUST_NOT, 'video-fps-probe/dist/core/matroska/', 'video-fps-probe/dist/client/', 'video-fps-probe/dist/worker/', 'video-fps-probe/dist/engines/', 'node_modules/mp4box/', 'node_modules/mediabunny/'],
+  },
 ];
 
 function lockPath(packages, from, name) {

@@ -9,6 +9,7 @@ export interface ConsumerFixture {
   byContainer?: boolean;
   mustNot: string[];
   clientMustNot?: string[];
+  pageOnly?: boolean;
 }
 
 export const SPLIT_ROUTING: string;
@@ -16,6 +17,8 @@ export const SPLIT_ROUTING: string;
 export const OWN_WORKERS: Record<'isobmff' | 'matroska', string>;
 
 export const WORKER_MUST_NOT: Record<string, string[]>;
+
+export const HEADER_MUST_NOT: string[];
 
 export const FIXTURES: ConsumerFixture[];
 
