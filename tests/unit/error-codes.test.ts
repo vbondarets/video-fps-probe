@@ -110,11 +110,24 @@ describe('error codes at the throw sites', () => {
     expect(short).toMatchObject({ error: 'file read failed: short read at 0: expected 100 bytes, got 10', errorCode: 'read-failed' });
   });
 
-  test('a size that is not a safe integer is corrupt', async () => {
-    const r = await run({ size: -1, slice: () => new Blob([]) }, () => {
+  test('invalid caller input is internal, never a file code, and keeps its 0.3.0 text', async () => {
+    const notReached = () => {
       throw new Error('not reached');
+    };
+    for (const size of [-1, Number.NaN, 2 ** 53]) {
+      const r = await run({ size, slice: () => new Blob([]) }, notReached);
+      expect(r).toMatchObject({ error: `blob size must be a non-negative safe integer, got ${size}`, errorCode: 'internal' });
+    }
+    const valid = readFileSync(join(REPO_ROOT, 'fixtures', 'files', 'edge_single_frame.mp4'));
+    expect(await analyze(new Blob([valid]), 'valid.mp4', { readAhead: { head: -1 } })).toMatchObject({
+      error: 'headWindow must be a non-negative safe integer, got -1',
+      errorCode: 'internal',
     });
-    expect(r).toMatchObject({ error: 'blob size must be a non-negative safe integer, got -1', errorCode: 'corrupt' });
+    const fragmented = readFileSync(join(REPO_ROOT, 'fixtures', 'files', 'fmp4_frag_duration.mp4'));
+    expect(await analyze(new Blob([fragmented]), 'fragmented.mp4', { readAhead: { fragment: -1 } })).toMatchObject({
+      error: 'corrupt file: readAhead must be a non-negative safe integer, got -1',
+      errorCode: 'internal',
+    });
   });
 
   test('a parser that fails to load is load-failed, a thrown error after it is coded by its kind', async () => {

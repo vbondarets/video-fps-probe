@@ -30,8 +30,8 @@ interface Interval {
   end: number;
 }
 
-function assertSafeCount(value: number, what: string): void {
-  if (!Number.isSafeInteger(value) || value < 0) throw new RangeError(`${what} must be a non-negative safe integer, got ${value}`);
+function assertSafeCount(value: number, what: string, kind: ErrorConstructor = RangeError): void {
+  if (!Number.isSafeInteger(value) || value < 0) throw new kind(`${what} must be a non-negative safe integer, got ${value}`);
 }
 
 export function toSafeNumber(value: bigint, what = 'value'): number {
@@ -51,13 +51,13 @@ export class BlobReader {
   #unique = 0;
 
   constructor(source: BlobLike, options: BlobReaderOptions = {}) {
-    assertSafeCount(source.size, 'blob size');
+    assertSafeCount(source.size, 'blob size', TypeError);
     this.#source = source;
     this.size = source.size;
     this.headWindow = options.headWindow ?? DEFAULT_HEAD_WINDOW;
     this.maxWindows = Math.max(1, options.maxWindows ?? DEFAULT_MAX_WINDOWS);
     this.signal = options.signal ?? null;
-    assertSafeCount(this.headWindow, 'headWindow');
+    assertSafeCount(this.headWindow, 'headWindow', TypeError);
   }
 
   get reads(): number {
@@ -130,7 +130,7 @@ export class BlobReader {
   async view(offset: number, length: number, readAhead: number = this.headWindow): Promise<DataView> {
     assertSafeCount(offset, 'offset');
     assertSafeCount(length, 'length');
-    assertSafeCount(readAhead, 'readAhead');
+    assertSafeCount(readAhead, 'readAhead', TypeError);
     if (offset > this.size) throw new RangeError(`offset ${offset} is beyond the end of the file (${this.size})`);
     const end = Math.min(this.size, offset + length);
     if (end === offset) return new DataView(new ArrayBuffer(0));
