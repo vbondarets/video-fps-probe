@@ -68,7 +68,7 @@ const RULE = {
   codecString: 'Equal to the codec string mp4box.js 2.4.1 reports for the track (MP4 and MOV), n/a on Matroska and for codecs without a codec string rule',
   dolbyVision: 'Field by field vs the DOVI configuration record side data, mdCompression vs dv_md_compression',
   layout: 'Equal to the layout of an independent top-level scan: mvex, the first mdat against the moov, a sidx before the first moof, the moov sample counts',
-  errorCode: 'null exactly when error is null, and equal to the manifest code when the row has one',
+  errorCode: 'null exactly when error is null, and equal to the code column of the manifest, which every row that expects an error names',
 } as const;
 
 export const BITSTREAM_SAR = 'bitstream-derived: ffprobe takes the ratio from the SPS VUI, and the container declares none';
@@ -837,7 +837,9 @@ function errorCodeDraft(info: FixtureInfo, result: FileResult & FileFields040): 
   const code = result.errorCode;
   if ((result.error === null) !== (code === null)) return { ...base, verdict: 'mismatch', app: code, ffprobe: info.code ?? null, detail: `error is ${result.error === null ? 'null' : 'set'}, errorCode ${code === null ? 'null' : 'set'}` };
   if (code !== null && info.code) return { ...base, verdict: code === info.code ? 'exact' : 'mismatch', app: code, ffprobe: info.code };
-  return { ...base, verdict: 'exact', app: code, ffprobe: info.code ?? null, detail: code === null ? null : 'the manifest row names no code' };
+  if (code !== null) return { ...base, verdict: 'mismatch', app: code, ffprobe: null, detail: 'the manifest row names no code' };
+  if (info.code) return { ...base, verdict: 'mismatch', app: null, ffprobe: info.code, detail: 'the manifest row names a code, and the result has no error' };
+  return { ...base, verdict: 'exact', app: null, ffprobe: null };
 }
 
 function drafts040(family: ContainerFamily, t: VideoTrackResult, s: RefStream, result: FileResult, facts: TrackFacts, codecStrings: ReadonlyMap<number, string> | null | undefined): Draft[] {

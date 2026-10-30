@@ -78,7 +78,7 @@ These are the research 6.4 tolerances as implemented in `scripts/compare/rules.t
 | `codecString` | the codec string of mp4box.js 2.4.1 | `n/a` |
 | `dolbyVision` | field by field vs the `DOVI configuration record` side data, `mdCompression` vs `dv_md_compression` (`none` 0, `limited` 1, `reserved` 2, `extended` 3). A side data type or key the script does not map is a harness problem | same |
 | `layout` | the kind, moov offset and size, sidx and empty moov of an independent top-level scan | none expected |
-| `errorCode` | null exactly when `error` is null, and the manifest `code` column when the row has one | same |
+| `errorCode` | null exactly when `error` is null, and the manifest `code` column, which every row that expects an error names | same |
 
 ## Example
 

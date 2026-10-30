@@ -5,7 +5,7 @@ import { PROFILE_NOT_READ, PROFILE_TABLE, ffmpegProfileName, profileNamesOf } fr
 import { bitDepthOfPixFmt, parseColonRatio, parseRef, type RefFile, type RefStream } from './ref.ts';
 import { BITSTREAM_COLOR, BITSTREAM_SAR, evaluate, matroskaTrackOf, type EvaluateInput, type Evaluation } from './rules.ts';
 import { loadManifest, loadRef } from '../../tests/helpers/fixtures.ts';
-import type { CheckResult, ColorLike, FileFields040, FileLayout, FixtureInfo, LayoutTrack, MatroskaLayoutTrack, SampleEntryFacts, TrackFields040 } from './types.ts';
+import { FILE_ERROR_CODES, type CheckResult, type ColorLike, type FileFields040, type FileLayout, type FixtureInfo, type LayoutTrack, type MatroskaLayoutTrack, type SampleEntryFacts, type TrackFields040 } from './types.ts';
 
 type ExpectEq = (label: string, actual: unknown, expected: unknown) => void;
 
@@ -188,6 +188,14 @@ export function selfTest040(expectEq: ExpectEq, kit: SelfTestKit): void {
   expectEq('errorCode: null with an error', verdict(withLayout({ errorCode: null }, null, { ...MP4_INFO, expect: 'error' }, { error: 'corrupt file: x', videoTracks: [], primaryTrackId: null }), 'errorCode'), 'mismatch');
   expectEq('errorCode: the manifest code', verdict(withLayout({ errorCode: 'corrupt' }, null, { ...MP4_INFO, expect: 'error', code: 'corrupt' }, { error: 'corrupt file: x', videoTracks: [], primaryTrackId: null }), 'errorCode'), 'exact');
   expectEq('errorCode: another code than the manifest', verdict(withLayout({ errorCode: 'truncated' }, null, { ...MP4_INFO, expect: 'error', code: 'corrupt' }, { error: 'corrupt file: x', videoTracks: [], primaryTrackId: null }), 'errorCode'), 'mismatch');
+  expectEq('errorCode: an error row without a manifest code', verdict(withLayout({ errorCode: 'corrupt' }, null, { ...MP4_INFO, expect: 'error' }, { error: 'corrupt file: x', videoTracks: [], primaryTrackId: null }), 'errorCode'), 'mismatch');
+  expectEq('errorCode: no error on a row that names a code', verdict(withLayout({ errorCode: null }, null, { ...MP4_INFO, code: 'corrupt' }), 'errorCode'), 'mismatch');
+  const codes: readonly string[] = FILE_ERROR_CODES;
+  for (const m of loadManifest()) {
+    const code = m.columns.code ?? '';
+    expectEq(`manifest: ${m.name} names a code exactly when it expects an error`, code !== '', m.expect === 'error');
+    if (code !== '') expectEq(`manifest: ${m.name} names a file error code`, codes.includes(code), true);
+  }
 
   let unmapped = 0;
   for (const m of loadManifest()) {

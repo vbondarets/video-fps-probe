@@ -41,6 +41,8 @@ export const FIELD_NAMES = [
 
 export type FieldName = (typeof FIELD_NAMES)[number];
 
+export const FILE_ERROR_CODES = ['empty-file', 'unrecognised', 'unsupported-container', 'unsupported', 'too-large', 'no-header', 'truncated', 'corrupt', 'no-duration'] as const;
+
 export const FIELD_SUBS: Partial<Record<FieldName, readonly string[]>> = {
   avgFps: ['declared', 'measured'],
 };
