@@ -47,6 +47,20 @@
       "why": "The 0.4.0 parser additions may spend 0.20 KB, then 0.05 KB on the first MKV path, under the 0.3.0 budgets of these rows."
     },
     {
+      "name": "first MP4 of the other configurations",
+      "rows": ["mp4box:firstMp4", "mediabunny:firstMp4", "rvfc:firstMp4", "react18:firstMp4"],
+      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 450, "6": 450 },
+      "cap": null,
+      "why": "The same shares as the first MP4 rows above. These rows have no budget in the size matrix, so only their growth is gated."
+    },
+    {
+      "name": "first MP4 of the other configurations with a budget",
+      "rows": ["all:firstMp4", "react:firstMp4", "check:firstMp4", "preset:firstMp4", "react:firstMp4Summary", "react18:firstMp4Summary"],
+      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 450, "6": 450 },
+      "cap": { "all:firstMp4": 24500, "react:firstMp4": 24500, "check:firstMp4": 24500, "preset:firstMp4": 24500, "react:firstMp4Summary": 25000, "react18:firstMp4Summary": 25000 },
+      "why": "The same shares as the first MP4 rows above, under the 0.3.0 budgets of these rows."
+    },
+    {
       "name": "first MKV of the other configurations",
       "rows": ["custom:firstMkv", "custom-eager:firstMkv", "mp4box:firstMkv", "mediabunny:firstMkv", "rvfc:firstMkv", "all:firstMkv", "react:firstMkv", "react18:firstMkv", "check:firstMkv", "preset:firstMkv"],
       "growth": { "1": 0, "2": 200, "3": 200, "4": 200, "5": 250, "6": 250 },
@@ -89,6 +103,22 @@
       "exact": true,
       "cap": { "check:trigger": 5000, "preset:trigger": 5000 },
       "why": "Byte-identical to 0.3.0 until the last 0.4.0 step, which adds the check rules and re-sets the preset budget."
+    },
+    {
+      "name": "check chunk of the rule entries",
+      "rows": ["check:check", "preset:check"],
+      "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": null },
+      "exact": true,
+      "cap": { "check:check": 4500, "preset:check": 4500 },
+      "why": "The check rules stay byte-identical to 0.3.0 until the last 0.4.0 step, which adds the new rules, and then stay at or below 4.50 KB."
+    },
+    {
+      "name": "preset data chunk",
+      "rows": ["preset:presets"],
+      "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0 },
+      "exact": true,
+      "cap": 500,
+      "why": "No preset value changes in 0.4.0, so the preset data stays byte-identical to 0.3.0 for the whole release."
     }
   ]
 }

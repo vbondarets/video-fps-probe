@@ -107,7 +107,7 @@ describe('size gate against the 0.3.0 baseline', () => {
   test('passes the committed report', () => {
     const r = run([]);
     expect(r.status, r.err).toBe(0);
-    expect(r.out).toMatch(/size gate: 44 gated rows within the stage \d allowances, shares and caps/);
+    expect(r.out).toMatch(/size gate: 57 gated rows within the stage \d allowances, shares and caps/);
   });
 
   test('passes the baseline itself at every stage', () => {
@@ -184,7 +184,13 @@ describe('size gate against the 0.3.0 baseline', () => {
     expect(own.err).toContain('check:allOwn: measured 49,114 B against 48,614 B in the stage base');
     const first = at(6, raised('check-first.json', (m) => metric(m, 'check', 'firstMp4', 500)));
     expect(first.status).toBe(1);
-    expect(first.err).toContain('check:firstMp4: measured 23,237 B against 22,737 B in the stage base, and stage 6 keeps every other row byte-identical');
+    expect(first.err).toContain('check:firstMp4: 23,237 B differs from the stage base of 22,737 B by +500 B, and stage 6 keeps it byte-identical');
+    const presets = at(6, raised('presets.json', (m) => metric(m, 'preset', 'presets', 1)));
+    expect(presets.status).toBe(1);
+    expect(presets.err).toContain('preset:presets: 456 B differs from the 0.3.0 baseline of 455 B by +1 B, and the group keeps it byte-identical');
+    const capped = at(6, raised('check-cap.json', (m) => metric(m, 'check', 'check', 511)));
+    expect(capped.status).toBe(1);
+    expect(capped.err).toContain('check:check: 4,501 B is above its cap of 4,500 B');
     const host = at(6, raised('host.json', (m) => metric(m, 'default', 'trigger', 1)));
     expect(host.status).toBe(1);
     expect(host.err).toContain('default:trigger: 667 B differs from the 0.3.0 baseline of 666 B by +1 B, and the group keeps it byte-identical');
@@ -197,6 +203,38 @@ describe('size gate against the 0.3.0 baseline', () => {
     const r = run(['--config', configAt(6, BASELINE, (c) => ((c.frozen as { stages: Record<string, string[]> }).stages['6'] = ['check'])), '--report', BASELINE]);
     expect(r.status).toBe(1);
     expect(r.err).toContain('frozen.stages of stage 6 lists check, which is not a <configuration>:<metric> row');
+  });
+
+  test('gates the first MP4 of every configuration and the rule chunks in the stages that freeze nothing', () => {
+    const rows = ['mp4box:firstMp4', 'preset:firstMp4', 'react:firstMp4Summary'];
+    const grow = (m: Matrix, by: number) => {
+      for (const row of rows) metric(m, row.slice(0, row.indexOf(':')), row.slice(row.indexOf(':') + 1), by);
+    };
+    const stage4End = raised('stage-4-end.json', (m) => grow(m, 400));
+    for (const [stage, base, start, share] of [
+      [2, BASELINE, 0, 390],
+      [5, stage4End, 400, 50],
+    ] as const) {
+      const within = at(stage, raised(`first-${stage}-ok.json`, (m) => grow(m, start + share)), base);
+      expect(within.status, `stage ${stage}: ${within.err}`).toBe(0);
+      const over = at(stage, raised(`first-${stage}-over.json`, (m) => grow(m, start + share + 1)), base);
+      expect(over.status).toBe(1);
+      for (const row of rows) expect(over.err, row).toContain(`${row}: `);
+      const rules = at(
+        stage,
+        raised(`rules-${stage}.json`, (m) => {
+          grow(m, start);
+          metric(m, 'check', 'check', 1);
+          metric(m, 'preset', 'presets', -1);
+        }),
+        base,
+      );
+      expect(rules.status).toBe(1);
+      expect(rules.err).toContain('check:check: 3,991 B differs from the 0.3.0 baseline of 3,990 B by +1 B, and the group keeps it byte-identical');
+      expect(rules.err).toContain('preset:presets: 454 B differs from the 0.3.0 baseline of 455 B by -1 B, and the group keeps it byte-identical');
+    }
+    const over = at(2, raised('mp4box-first.json', (m) => metric(m, 'mp4box', 'firstMp4', 391)));
+    expect(over.err).toContain('mp4box:firstMp4: 23,161 B is 391 B above the 0.3.0 baseline of 22,770 B, stage 2 allows 390 B');
   });
 
   test('fails a critical path that shrinks', () => {
