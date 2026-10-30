@@ -320,20 +320,23 @@ const READ_PAIRS: ReadonlyArray<readonly [string, string]> = [
 
 const CATEGORY_TEXT: Record<string, string> = {
   cfr: 'H.264 MP4 and VP9 WebM at film, PAL, NTSC and high frame rates',
-  mov: 'MOV and MP4 with and without B-frames, edit lists (empty edit, trimmed start), faststart',
-  fmp4: 'fragmented MP4: empty moov, default-base-is-moof, CMAF, DASH, sidx, hybrid',
+  mov: 'MOV and MP4 with and without B-frames, edit lists (empty edit, trimmed start), faststart, a faststart moov above 64 KiB, a zlib-compressed moov (cmov)',
+  fmp4: 'fragmented MP4: empty moov, default-base-is-moof, CMAF, DASH, sidx, hybrid, a valid mehd, audio that outlasts the video',
   codec: 'HEVC (hvc1, hev1), AV1, VP8, VP9 and ProRes in MP4, MOV, WebM and Matroska',
   live: 'WebM from live, pipe and MediaRecorder-like muxing: unknown sizes, no Duration or Cues, a false Duration, an audio-only tail',
   vfr: 'VFR from concatenation, non-linear setpts, frame dropping, mpdecimate, screen recording, pulldown, a 5/200 fps two-phase file, a 2 s freeze and changes after more than 5000 constant frames, also with B-frames, fragmented, in MOV, WebM and Matroska',
   recorder: 'MediaRecorder output of headless Chromium 156: WebM VP8, VP9 and AV1, Matroska H.264, fragmented MP4 H.264 and VP9, each in one piece and with a 250 ms timeslice',
   box64: '64-bit mdat headers, co64 chunk offsets, an mdat with size 0',
-  multi: 'video plus audio, two video tracks, a still image track before the video',
+  multi: 'video plus audio, two video tracks, a still image track before the video, a disabled video track',
   cover: 'cover art in M4A, MP4 and Matroska',
   audio: 'audio-only MP4, M4A and WebM',
   edge: 'a single-frame video',
   corrupt: 'empty, random, text and PNG files, truncated moov, mdat or fragment, a lying stts count',
   sniff: 'files with the wrong extension',
   matroska: 'H.264 in Matroska, WebM without DefaultDuration',
+  sar: 'sample aspect ratio from pasp, the tkhd size, the tkhd matrix, the SPS VUI and Matroska DisplayWidth and DisplayHeight, their precedence, and none at all',
+  color: 'color in colr nclx and nclc, vpcC, Matroska Colour and the H.264 and HEVC VUI: PQ and HLG, 10-bit HEVC, VP9 profile 2 and AV1, the container against the VUI, unspecified codes',
+  dovi: 'Dolby Vision configuration records: dvvC and dvcC in MP4, one on a dvh1 entry, and a BlockAdditionMapping in Matroska',
   long: 'long CFR and VFR MP4 (generated, not committed)',
   sparse: 'sparse MP4 above 4 GiB with 64-bit offsets (generated, not committed)',
 };
@@ -644,7 +647,7 @@ function headline(inp: Inputs): string[] {
   ];
 }
 
-const LARGE_TEXT: Record<string, string> = { long: 'long files', big: '1080p files of 604 MB', sparse: 'sparse files' };
+const LARGE_TEXT: Record<string, string> = { long: 'long files', big: '1080p files of 604 MB', sparse: 'sparse file of 4.5 GB' };
 
 function scopeLine(inp: Inputs): string {
   const own = engine(inp.acc, 'own');
