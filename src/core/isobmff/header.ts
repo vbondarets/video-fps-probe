@@ -16,7 +16,6 @@ const SIDE_TYPES = new Set(['moof', 'mdat', 'mfra']);
 
 export interface HeaderBudget {
   readonly bytesLeft: number;
-  readonly readsLeft: number;
   checkTime(): void;
   reserve(reads: number, bytes: number, offset: number): void;
   take(): (Error & { errorCode: string }) | null;

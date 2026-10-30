@@ -33,6 +33,7 @@ interface SignalRead {
 }
 
 const noop = (): void => {};
+const MAX_TIMER_MS = 0x7fffffff;
 
 function wholeBuffer(bytes: Uint8Array): ArrayBuffer {
   if (bytes.byteOffset === 0 && bytes.byteLength === bytes.buffer.byteLength && bytes.buffer instanceof ArrayBuffer) return bytes.buffer;
@@ -71,11 +72,11 @@ export class LimitedSource implements BlobLike {
       if (caller.aborted) this.#forward();
       else caller.addEventListener('abort', this.#forward, { once: true });
     }
-    if (Number.isFinite(limits.maxMs) && !internal.aborted) {
+    if (limits.maxMs <= MAX_TIMER_MS && !internal.aborted) {
       this.#timer = setTimeout(() => {
         this.#timer = null;
         this.#timedOut = true;
-        this.#controller.abort(this.#trip('time-limit', `limit reached: maxMs ${this.#maxMs}`));
+        this.#controller.abort(new LimitError('time-limit', `limit reached: maxMs ${this.#maxMs}`));
       }, limits.maxMs);
       (this.#timer as { unref?: () => void }).unref?.();
     }
@@ -85,16 +86,8 @@ export class LimitedSource implements BlobLike {
     return this.#maxBytes - this.#bytes;
   }
 
-  get readsLeft(): number {
-    return this.#maxReads - this.#reads;
-  }
-
   get bytesRequested(): number {
     return this.#bytes;
-  }
-
-  get readsIssued(): number {
-    return this.#reads;
   }
 
   checkTime(): void {
@@ -152,6 +145,9 @@ export class LimitedSource implements BlobLike {
       pending = Promise.reject(e);
     }
     pending.catch(noop);
-    return Promise.race([pending, this.#stopped]);
+    return Promise.race([pending, this.#stopped]).catch((e: unknown) => {
+      if (e instanceof LimitError) this.#tripped = e;
+      throw e;
+    });
   }
 }
