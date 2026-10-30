@@ -133,7 +133,7 @@ Rules are JSON, such as `{ fps: { min: 24, max: 60 }, duration: { max: 10 }, vfr
 
 <!-- tables:size:start -->
 
-**0.66 KB gzip on the critical path**: the package code in the entry chunk of a Vite 8.3.5 app that imports `video-fps-probe/lazy` (1.40 KB with Vite's preload helper). The rest loads lazily, on the first file:
+**0.66 KB gzip on the critical path**: the package code in the entry chunk of a Vite 8.3.5 app that imports `video-fps-probe/lazy` (1.39 KB with Vite's preload helper). The rest loads lazily, on the first file:
 
 | Host Vite config | Critical path | First MP4 | First MKV | All own paths | Worker files |
 |---|---:|---:|---:|---:|---:|
@@ -148,7 +148,7 @@ import { defineConfig } from 'vite';
 export default defineConfig({ worker: { format: 'es' } });
 ```
 
-Engines cost nothing until imported. Importing a descriptor grows the critical path a little, from 0.66 KB to 0.89 KB with mp4box or mediabunny, 0.76 KB with rVFC and 1.01 KB with all three, and the engine itself loads lazily: mp4box 44.95 KB, mediabunny 54.16 KB, rVFC 2.19 KB. Gzip -9 of production builds from the packed tarball, budgeted in CI. Every configuration is in [docs/benchmarks.md](docs/benchmarks.md#package-size).
+Engines cost nothing until imported. Importing a descriptor grows the critical path a little, from 0.66 KB to 0.89 KB with mp4box or mediabunny, 0.77 KB with rVFC and 1.01 KB with all three, and the engine itself loads lazily: mp4box 44.95 KB, mediabunny 54.17 KB, rVFC 2.19 KB. Gzip -9 of production builds from the packed tarball, budgeted in CI. Every configuration is in [docs/benchmarks.md](docs/benchmarks.md#package-size).
 
 `video-fps-probe/react` adds 1.20 KB to the critical path for the provider, `useVideoFps` and its store (React itself not counted); its first analysis also fetches a 0.43 KB summary module, in parallel with the probe client. `video-fps-probe/check` adds 3.99 KB when imported statically, and nothing lazily; one preset from `video-fps-probe/presets` adds 0.46 KB.
 
