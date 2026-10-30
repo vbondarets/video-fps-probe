@@ -455,7 +455,7 @@ export default defineConfig({ worker: { format: 'es' } });
 | react18 | `video-fps-probe/lazy` + `video-fps-probe/react` (React 18.3.1) | format: 'es' | **1.64 KB** | 23.07 KB | 25.73 KB | 49.14 KB | - | 2 | ok (4 budgets) |
 | check | `video-fps-probe/lazy` + `video-fps-probe/check` | format: 'es' | **4.55 KB** | 23.06 KB | 25.73 KB | 49.13 KB | - | 2 | ok (5 budgets) |
 | preset | `video-fps-probe/lazy` + `video-fps-probe/check` + `video-fps-probe/presets` (klingO1ReferenceVideo) | format: 'es' | **4.90 KB** | 23.06 KB | 25.73 KB | 49.13 KB | - | 2 | ok (6 budgets) |
-| header | `video-fps-probe/header` (analyzeHeader in the page) | none needed: the header entry runs in the calling thread | **17.91 KB** | - | - | - | - | 0 | ok (3 budgets) |
+| header | `video-fps-probe/header` (analyzeHeader in the page) | none needed: the header entry runs in the calling thread | **17.92 KB** | - | - | - | - | 0 | ok (3 budgets) |
 | standalone worker file | `video-fps-probe/standalone/own.worker.js` | - | - | 36.39 KB | 36.39 KB | 36.39 KB | - | 1 file, no imports | ok |
 | standalone worker file | `video-fps-probe/standalone/own-isobmff.worker.js` | - | - | 21.51 KB | - | 21.51 KB | - | 1 file, no imports | ok |
 | standalone worker file | `video-fps-probe/standalone/own-matroska.worker.js` | - | - | - | 23.86 KB | 23.86 KB | - | 1 file, no imports | ok |
@@ -472,25 +472,25 @@ The demo in `demo/` is a React app that consumes the package through a custom wo
 
 | Chunk | Loaded | Raw | gzip -9 | brotli q11 | Budget (gzip) | Headroom | Status |
 |---|---|---:|---:|---:|---:|---:|---|
-| main (React, UI, store) | page load | 238.86 KB | **74.49 KB** | 64.46 KB | 77.00 KB | 2.51 KB | ok |
+| main (React, UI, store) | page load | 238.86 KB | **74.49 KB** | 64.58 KB | 77.00 KB | 2.51 KB | ok |
 | CSS | page load | 4.98 KB | **1.81 KB** | 1.53 KB | not budgeted | - | - |
-| probe client (lazy) | first file | 7.47 KB | **3.24 KB** | 3.01 KB | 3.50 KB | 0.26 KB | ok |
+| probe client (lazy) | first file | 7.47 KB | **3.24 KB** | 2.99 KB | 3.50 KB | 0.26 KB | ok |
 | probe fallback chain | first call with a fallback chain or a skipped engine | 1.01 KB | **0.64 KB** | 0.56 KB | not budgeted | - | - |
 | probe compare (agreement rules) | first probe.compare | 2.60 KB | **1.32 KB** | 1.20 KB | not budgeted | - | - |
-| in-thread engine runner | first main-thread engine run (rVFC) | 1.12 KB | **0.66 KB** | 0.57 KB | not budgeted | - | - |
+| in-thread engine runner | first main-thread engine run (rVFC) | 1.12 KB | **0.66 KB** | 0.58 KB | not budgeted | - | - |
 | shared by the lazy client parts and rVFC (result builders, sniffing): `abort` | with the fallback chain, compare, rVFC or the own engine in this thread | 0.10 KB | **0.11 KB** | 0.09 KB | not budgeted | - | - |
 | shared by the lazy client parts and rVFC (result builders, sniffing): `result` | with the fallback chain, compare, rVFC or the own engine in this thread | 0.73 KB | **0.39 KB** | 0.34 KB | not budgeted | - | - |
 | shared by the lazy client parts and rVFC (result builders, sniffing): `sniff` | with the fallback chain, compare, rVFC or the own engine in this thread | 2.12 KB | **0.99 KB** | 0.89 KB | not budgeted | - | - |
-| own engine in this thread (runtime and parser copies for worker inline): `isobmff` | only with worker inline or without a Worker global (own engine in this thread) | 31.78 KB | **12.57 KB** | 11.34 KB | not budgeted | - | - |
-| own engine in this thread (runtime and parser copies for worker inline): `matroska` | only with worker inline or without a Worker global (own engine in this thread) | 31.24 KB | **12.07 KB** | 10.96 KB | not budgeted | - | - |
+| own engine in this thread (runtime and parser copies for worker inline): `isobmff` | only with worker inline or without a Worker global (own engine in this thread) | 31.66 KB | **12.56 KB** | 11.38 KB | not budgeted | - | - |
+| own engine in this thread (runtime and parser copies for worker inline): `matroska` | only with worker inline or without a Worker global (own engine in this thread) | 31.24 KB | **12.07 KB** | 10.97 KB | not budgeted | - | - |
 | own engine in this thread (runtime and parser copies for worker inline): `rfps` | only with worker inline or without a Worker global (own engine in this thread) | 7.31 KB | **3.60 KB** | 3.36 KB | not budgeted | - | - |
 | own engine in this thread (runtime and parser copies for worker inline): `runtime` | only with worker inline or without a Worker global (own engine in this thread) | 5.90 KB | **2.48 KB** | 2.30 KB | not budgeted | - | - |
 | own engine in this thread (runtime and parser copies for worker inline): `segments` | only with worker inline or without a Worker global (own engine in this thread) | 3.35 KB | **1.84 KB** | 1.71 KB | not budgeted | - | - |
 | own engine in this thread (runtime and parser copies for worker inline): `stats` | only with worker inline or without a Worker global (own engine in this thread) | 10.39 KB | **4.37 KB** | 3.98 KB | not budgeted | - | - |
-| worker entry (reader, sniffing, worker runtime) | first file | 10.21 KB | **4.28 KB** | 3.88 KB | 5.00 KB | 0.72 KB | ok |
-| shared by the parsers and engines (timeline statistics) | with the first parser, in parallel, once per worker | 10.29 KB | **4.33 KB** | 3.95 KB | 5.00 KB | 0.67 KB | ok |
-| ISO BMFF parser | first MP4 or MOV file, once per worker | 31.70 KB | **12.54 KB** | 11.32 KB | 13.50 KB | 0.96 KB | ok |
-| Matroska parser | first WebM or MKV file, once per worker | 30.75 KB | **11.80 KB** | 10.72 KB | 12.50 KB | 0.70 KB | ok |
+| worker entry (reader, sniffing, worker runtime) | first file | 10.21 KB | **4.28 KB** | 3.89 KB | 5.00 KB | 0.72 KB | ok |
+| shared by the parsers and engines (timeline statistics) | with the first parser, in parallel, once per worker | 10.29 KB | **4.33 KB** | 3.96 KB | 5.00 KB | 0.67 KB | ok |
+| ISO BMFF parser | first MP4 or MOV file, once per worker | 31.59 KB | **12.54 KB** | 11.32 KB | 13.50 KB | 0.96 KB | ok |
+| Matroska parser | first WebM or MKV file, once per worker | 30.75 KB | **11.80 KB** | 10.73 KB | 12.50 KB | 0.70 KB | ok |
 | ffprobe frame rate estimate (Matroska without DefaultDuration) | lazy | 7.32 KB | **3.59 KB** | 3.34 KB | 4.00 KB | 0.41 KB | ok |
 | rate profile core (segments, anomalies, sparkline buckets) | first VFR timeline, once per worker | 3.35 KB | **1.84 KB** | 1.71 KB | 2.00 KB | 0.15 KB | ok |
 | rate profile panel (UI) | first card with a rate profile | 2.17 KB | **0.94 KB** | 0.85 KB | 1.50 KB | 0.56 KB | ok |
@@ -498,15 +498,15 @@ The demo in `demo/` is a React app that consumes the package through a custom wo
 | sample file loader | click on Try sample files | 0.36 KB | **0.28 KB** | 0.24 KB | not budgeted | - | - |
 | rVFC fallback | click on Run (approximate) | 4.24 KB | **2.19 KB** | 1.98 KB | 2.50 KB | 0.31 KB | ok |
 | Compare panel | first open of a Compare engines panel | 2.91 KB | **1.21 KB** | 1.10 KB | not budgeted | - | - |
-| mp4box.js engine | Compare engines on an MP4 or MOV card | 187.95 KB | **43.73 KB** | 37.45 KB | not budgeted | - | - |
+| mp4box.js engine | Compare engines on an MP4 or MOV card | 187.95 KB | **43.73 KB** | 37.42 KB | not budgeted | - | - |
 | mediabunny engine | Compare engines | 201.40 KB | **52.99 KB** | 44.65 KB | not budgeted | - | - |
-| shared by mp4box and mediabunny | with mp4box or mediabunny | 3.24 KB | **1.60 KB** | 1.44 KB | not budgeted | - | - |
+| shared by mp4box and mediabunny | with mp4box or mediabunny | 3.24 KB | **1.59 KB** | 1.44 KB | not budgeted | - | - |
 | other | lazy | 0.56 KB | **0.38 KB** | 0.33 KB | not budgeted | - | - |
-| initial: main + CSS + worker entry |  | 254.05 KB | **80.58 KB** | 69.88 KB | 83.00 KB | 2.42 KB | ok |
-| first MP4 analysis: initial + probe client + statistics + ISO BMFF parser |  | 303.51 KB | **100.69 KB** | 88.15 KB | 103.00 KB | 2.31 KB | ok |
-| first VFR MP4 analysis: first MP4 + rate profile core |  | 306.86 KB | **102.53 KB** | 89.86 KB | 105.00 KB | 2.47 KB | ok |
-| first Matroska analysis: initial + probe client + statistics + Matroska parser |  | 302.56 KB | **99.95 KB** | 87.55 KB | 102.00 KB | 2.05 KB | ok |
-| first Matroska analysis without DefaultDuration: first Matroska + ffprobe frame rate estimate |  | 309.88 KB | **103.54 KB** | 90.89 KB | 105.50 KB | 1.96 KB | ok |
+| initial: main + CSS + worker entry |  | 254.05 KB | **80.58 KB** | 70.00 KB | 83.00 KB | 2.42 KB | ok |
+| first MP4 analysis: initial + probe client + statistics + ISO BMFF parser |  | 303.40 KB | **100.69 KB** | 88.27 KB | 103.00 KB | 2.31 KB | ok |
+| first VFR MP4 analysis: first MP4 + rate profile core |  | 306.75 KB | **102.53 KB** | 89.99 KB | 105.00 KB | 2.47 KB | ok |
+| first Matroska analysis: initial + probe client + statistics + Matroska parser |  | 302.56 KB | **99.95 KB** | 87.68 KB | 102.00 KB | 2.05 KB | ok |
+| first Matroska analysis without DefaultDuration: first Matroska + ffprobe frame rate estimate |  | 309.88 KB | **103.54 KB** | 91.02 KB | 105.50 KB | 1.96 KB | ok |
 
 <!-- tables:bundle:end -->
 
@@ -566,7 +566,7 @@ Node: `npm run compare` (`analyze()` on `fs.openAsBlob`), median of 3 runs per f
 | Time per file, Chrome headless shell 156 (median; geometric mean vs own) | 0.80 ms | 1.30 ms (1.46x own) | 0.90 ms (1.26x own) | 2.01 s (max 8.88 s) |
 | 3 h CFR MP4, 12.42 MiB | 2 reads, 2.56 MiB; Node 3.98 ms, Chrome 3.50 ms | 3 reads, 2.56 MiB; Node 164 ms, Chrome 151 ms | 3 reads, 2.73 MiB; Node 727 ms, Chrome 422 ms | not measured |
 | 1 h VFR MP4, 3.76 MiB | 2 reads, 1.53 MiB; Node 46.6 ms, Chrome 62.4 ms | 3 reads, 1.53 MiB; Node 67.3 ms, Chrome 51.1 ms | 3 reads, 1.70 MiB; Node 249 ms, Chrome 117 ms | not measured |
-| gzip, loaded on demand | probe client 3.24 KB + worker entry 4.28 KB + statistics 4.33 KB + ISO BMFF 12.54 KB or Matroska 11.80 KB | 43.73 KB + 1.60 KB shared | 52.99 KB + 1.60 KB shared | 2.19 KB |
+| gzip, loaded on demand | probe client 3.24 KB + worker entry 4.28 KB + statistics 4.33 KB + ISO BMFF 12.54 KB or Matroska 11.80 KB | 43.73 KB + 1.59 KB shared | 52.99 KB + 1.59 KB shared | 2.19 KB |
 | Main risk | own code to maintain; cases outside the corpus are flagged, not verified | last sample duration overridden; must be fed box by box; no Matroska | adapter: packet-rate average, edit-trimmed packets counted as presented; whole-cluster Matroska reads | needs a visible tab and a playable codec; wrong on VFR; seconds per file |
 
 <!-- tables:approaches:end -->
