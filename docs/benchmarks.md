@@ -455,7 +455,7 @@ export default defineConfig({ worker: { format: 'es' } });
 | react18 | `video-fps-probe/lazy` + `video-fps-probe/react` (React 18.3.1) | format: 'es' | **1.64 KB** | 23.07 KB | 25.73 KB | 49.14 KB | - | 2 | ok (4 budgets) |
 | check | `video-fps-probe/lazy` + `video-fps-probe/check` | format: 'es' | **4.55 KB** | 23.06 KB | 25.73 KB | 49.13 KB | - | 2 | ok (5 budgets) |
 | preset | `video-fps-probe/lazy` + `video-fps-probe/check` + `video-fps-probe/presets` (klingO1ReferenceVideo) | format: 'es' | **4.90 KB** | 23.06 KB | 25.73 KB | 49.13 KB | - | 2 | ok (6 budgets) |
-| header | `video-fps-probe/header` (analyzeHeader in the page) | none needed: the header entry runs in the calling thread | **17.92 KB** | - | - | - | - | 0 | ok (3 budgets) |
+| header | `video-fps-probe/header` (analyzeHeader in the page) | none needed: the header entry runs in the calling thread | **18.48 KB** | - | - | - | - | 0 | ok (3 budgets) |
 | standalone worker file | `video-fps-probe/standalone/own.worker.js` | - | - | 36.39 KB | 36.39 KB | 36.39 KB | - | 1 file, no imports | ok |
 | standalone worker file | `video-fps-probe/standalone/own-isobmff.worker.js` | - | - | 21.51 KB | - | 21.51 KB | - | 1 file, no imports | ok |
 | standalone worker file | `video-fps-probe/standalone/own-matroska.worker.js` | - | - | - | 23.86 KB | 23.86 KB | - | 1 file, no imports | ok |
