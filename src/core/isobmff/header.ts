@@ -436,7 +436,7 @@ async function resolveFragmented(w: Walk, walked: Walked, videos: IsoTrack[], bu
     for (const tr of tracks) tr.fragments.length = firstCount.get(tr) ?? 0;
   }
   const mehd = walked.moov ? mehdDuration(walked.moov) : null;
-  if (limit && mehd !== null && open().length > 0) analysis.warnings.push(`fragment index not read: ${limit.message}`);
+  const unread = open().length > 0 ? limit : null;
   for (const tr of open()) if (mehd !== null) resolved.set(tr, { ticks: mehd, timescale: movie.timescale, provenance: 'estimated' });
   for (const tr of tracks) {
     if (!resolved.has(tr) && !videos.includes(tr) && !hasFragmentData(tr, movie, index)) resolved.set(tr, { ticks: timingOf(tr, movie, []).durationTs, timescale: tr.timescale, provenance: 'header' });
@@ -459,6 +459,7 @@ async function resolveFragmented(w: Walk, walked: Walked, videos: IsoTrack[], bu
   });
   const unresolved = open();
   const failed = videos.length > 0 ? !videos.some((tr) => resolved.has(tr)) : ![...resolved.keys()].some(isMain) && unresolved.some(isMain);
+  if (unread && !failed) analysis.warnings.push(`fragment index not read: ${unread.message}`);
   const estimate = [...resolved].some(([tr, r]) => isMain(tr) && tr.hasMdhd && r.provenance === 'estimated');
   const loose = (tr: IsoTrack): boolean => !estimate && !isMain(tr) && tracks.some((t) => isMain(t) && t.hasMdhd);
   const dropped = unresolved.filter(loose);
