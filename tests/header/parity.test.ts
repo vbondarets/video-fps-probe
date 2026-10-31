@@ -6,7 +6,7 @@ import { analyze } from '../../src/core/analyze.ts';
 import type { FileResult, VideoTrackResult } from '../../src/core/types.ts';
 import { analyzeHeader, warningCodesOf, type HeaderResult } from '../../src/header/index.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
-import { bytes, ftyp, mdatHeader, mfra, moof, moov, mvex, recording, sidx, virtualSource, type VirtualSource } from '../helpers/iso-builder.ts';
+import { bytes, ftyp, mdatHeader, mfra, moof, moov, mvex, recording, sidx, virtualSource, type FragmentSpec, type Segment, type VirtualSource } from '../helpers/iso-builder.ts';
 
 const TRACK_FIELDS = ['codecName', 'fourccOrCodecId', 'width', 'height', 'rotation', 'frames', 'isStill', 'enabled', 'durationSec', 'startSec', 'avgFpsFfprobe', 'sampleAspectRatio', 'displayWidth', 'displayHeight'] as const;
 const FILE_FIELDS = ['container', 'brand', 'formatDurationSec', 'layout', 'error', 'errorCode', 'audioTrackCount', 'primaryTrackId'] as const;
@@ -106,6 +106,23 @@ function oneFrame(): VirtualSource {
   return virtualSource([head, moof(1, [{ id: 1, baseDts: 0, count: 1, duration: 512 }], 500), mdatHeader(500), { zeros: 500 }, mfra([{ id: 1, offsets: [head.length] }])]);
 }
 
+function withText(fragments: number, textMs: number): VirtualSource {
+  const head = bytes(ftyp('iso5'), moov([{ id: 1, timescale: 15360 }, { id: 2, handler: 'text', timescale: 1000 }], [mvex({ trex: [{ id: 1, duration: 512 }, { id: 2, duration: 1000 }] })]));
+  const segments: Segment[] = [head];
+  const offsets: number[] = [];
+  let at = head.length;
+  for (let i = 0; i < fragments; i++) {
+    const trafs: FragmentSpec[] = [{ id: 1, baseDts: i * 30 * 512, count: 30, duration: 512 }];
+    if (i === 0) trafs.push({ id: 2, baseDts: 0, count: 1, duration: textMs });
+    const m = moof(i + 1, trafs, 100_000);
+    offsets.push(at);
+    segments.push(m, mdatHeader(100_000), { zeros: 100_000 });
+    at += m.length + 8 + 100_000;
+  }
+  segments.push(mfra([{ id: 1, offsets }, { id: 2, offsets: [offsets[0]] }]));
+  return virtualSource(segments);
+}
+
 const VIRTUAL: Array<[string, () => VirtualSource]> = [
   ['a single moof with an mfra', () => recording({ fragments: 1, mdatBytes: 300_000 }).source],
   ['a single moof with longer audio', () => recording({ fragments: 1, mdatBytes: 300_000, audio: true, audioLonger: 9 }).source],
@@ -116,6 +133,10 @@ const VIRTUAL: Array<[string, () => VirtualSource]> = [
   ['composition offsets with separate moofs and shorter audio in one fragment', () => recording({ fragments: 1, mdatBytes: 150_000, cts: 1024, audio: true, audioShorter: 10, separate: true }).source],
   ['a hybrid file with a sidx after its first mdat', () => hybrid(true)],
   ['a hybrid file without a sidx', () => hybrid(false)],
+  ['a text track that ends 0.5 s after the video', () => withText(1, 1500)],
+  ['a text track that ends 1.5 s after the video', () => withText(1, 2500)],
+  ['a text track in the first of three moofs that ends 0.5 s after the video', () => withText(3, 3500)],
+  ['a text track of one empty sample in the first of three moofs', () => withText(3, 0)],
 ];
 
 describe('header mode against full mode on virtual sources', () => {
@@ -133,6 +154,39 @@ describe('header mode against full mode on virtual sources', () => {
     const header = await analyzeHeader(rec.source);
     expect(header.error).toBeNull();
     expect(header.videoTracks[0].durationSec).toBe(full.videoTracks[0].durationSec);
+    expect(header.formatDurationSec).toBeNull();
+    expect(header.warnings).toContain('format duration unresolved: track 2');
+  });
+
+  test('a text track that outlasts the video sets the format duration as in full mode', async () => {
+    for (const [fragments, textMs] of [[1, 1500], [3, 3500]]) {
+      const full = await analyze(withText(fragments, textMs), 'text.mp4', {});
+      const header = await analyzeHeader(withText(fragments, textMs));
+      expect(full.formatDurationSec, String(fragments)).toBe(textMs / 1000);
+      expect(header.formatDurationSec, String(fragments)).toBe(full.formatDurationSec);
+      expect(header.videoTracks[0].durationSec, String(fragments)).toBe(fragments);
+    }
+  });
+
+  test('a text track whose last fragment comes before the walk of the video gets no format duration under a read limit rather than a short one', async () => {
+    const full = await analyze(withText(3, 3500), 'text.mp4', {});
+    const header = await analyzeHeader(withText(3, 3500), { limits: { maxReads: 3 } });
+    expect(header.error).toBeNull();
+    expect(header.io.reads).toBe(3);
+    expect(header.videoTracks[0].durationSec).toBe(full.videoTracks[0].durationSec);
+    expect(header.formatDurationSec).toBeNull();
+    expect(header.warnings).toContain('format duration unresolved: track 2');
+  });
+
+  test('a text track next to a covering sidx in header mode leaves the format duration null with the warning', async () => {
+    const head = bytes(ftyp('iso5'), moov([{ id: 1, timescale: 15360 }, { id: 2, handler: 'text', timescale: 1000 }], [mvex({ trex: [{ id: 1, duration: 512 }, { id: 2, duration: 1000 }] })]));
+    const m = moof(1, [{ id: 1, baseDts: 0, count: 30, duration: 512 }, { id: 2, baseDts: 0, count: 1, duration: 1500 }], 3000);
+    const open = (): VirtualSource => virtualSource([head, sidx(1, 15360, 0, [[m.length + 8 + 3000, 30 * 512]]), m, mdatHeader(3000), { zeros: 3000 }]);
+    const full = await analyze(open(), 'text.mp4', {});
+    const header = await analyzeHeader(open(), { fragmentedDuration: 'header' });
+    expect(full.formatDurationSec).toBe(1.5);
+    expect(header.error).toBeNull();
+    expect(header.videoTracks[0].durationSec).toBe(1);
     expect(header.formatDurationSec).toBeNull();
     expect(header.warnings).toContain('format duration unresolved: track 2');
   });

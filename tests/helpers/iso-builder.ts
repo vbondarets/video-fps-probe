@@ -38,7 +38,7 @@ export const mvhd = (timescale: number, duration: number): Bytes =>
 
 export interface TrackSpec {
   id: number;
-  handler?: 'vide' | 'soun';
+  handler?: 'vide' | 'soun' | 'text';
   timescale?: number;
   samples?: Array<[count: number, delta: number]>;
   chunkOffset?: number;
@@ -50,6 +50,7 @@ export interface TrackSpec {
 
 function sampleEntry(spec: TrackSpec): Bytes {
   if (spec.handler === 'soun') return box('mp4a', zeros(6), u16(1), zeros(8), u16(2), u16(16), zeros(4), u32(48000 << 16));
+  if (spec.handler === 'text') return box('tx3g', zeros(6), u16(1), zeros(32));
   return box('avc1', zeros(6), u16(1), zeros(16), u16(spec.width ?? 160), u16(spec.height ?? 90), u32(0x480000), u32(0x480000), u32(0), u16(1), zeros(32), u16(24), u16(0xffff));
 }
 
