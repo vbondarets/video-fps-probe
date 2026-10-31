@@ -4,6 +4,33 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## Unreleased
 
+### Summary of 0.4.0
+
+What 0.4.0 adds over 0.3.0, in one place. The 0.4.0-beta.1 and 0.4.0-beta.2 sections of the changelog give the details. Every 0.3.0 field and option stays, and the only change to an existing `check()` verdict is the duration window marked as a behaviour change under Changed.
+
+- **Header-only analysis on a server.** `video-fps-probe/header` reads only the header of an MP4 or MOV file in the calling thread, under limits on the bytes, the reads, the time, the tracks and the top-level boxes, and resolves the duration of a fragmented file from a sidx, the mfra index or mehd ([header-only analysis](docs/api.md#header-only-analysis)).
+- **A Range source.** `video-fps-probe/url` turns any function that fetches a byte range, such as `fetch` with a presigned URL or an object-storage SDK client, into a source for `analyzeHeader` and the in-thread `analyze`, and checks every reply before it reads the body ([Range source](docs/api.md#range-source)).
+- **Codes and layout.** `errorCode` on every own result, `errorCodeOf`, `errorClass`, `warningCodeOf` and `warningCodesOf` for results of any engine or version, and `layout` on ISO BMFF results: faststart, moov at the end or fragmented ([error codes](docs/api.md#error-codes)).
+- **Color, HDR and aspect ratio.** `codecConfig: true` keeps the codec configuration of each video track. `video-fps-probe/color` reads from it the color names ffprobe 8.1.1 prints, the bit depth, the profile, the RFC 6381 codec string, `hdr` and the Dolby Vision record, and `video-fps-probe/aspect` the sample and display aspect ratios and the display size ([color](docs/api.md#color), [aspect ratio and display size](docs/api.md#aspect-ratio-and-display-size)).
+- **New track fields.** `medianFrameInterval` on the tracks of own, mp4box and mediabunny, and `enabled` on own tracks.
+- **New check rules.** `sizeBasis: 'display'` judges the display size and the `hdr` policy PQ, HLG and Dolby Vision, and the duration window of a WebM or Matroska track takes the median frame interval ([check](docs/api.md#check)).
+- **CommonJS for the server entries.** The seven server entries load with `require()` and in Jest with no configuration, and their types name no DOM type. The browser entries stay ESM ([CommonJS](docs/api.md#commonjs)).
+- **The same accuracy and the same critical path.** 0 mismatches against ffprobe 8.1.1 on the 168 committed fixtures and 4878 checks. The package code in the entry chunk of the default configuration is byte for byte that of 0.3.0, 0.67 KB. The first MP4 loads 23.13 KB gzip (22.73 KB in 0.3.0), 24.91 KB with Vite's default worker format (24.47 KB), and the first WebM or MKV 25.76 KB (25.54 KB) ([size matrix](report/size-matrix.md)).
+- **Frozen API.** The codes, the layout, the header and Range source APIs, the color and aspect entries and the new check rule keys are frozen: later releases only add to them ([versioning](docs/api.md#versioning)).
+
+### Added
+
+- `check()` rules `sizeBasis` and `hdr`. `sizeBasis: 'display'` makes `frameSize`, `aspectRatio` and `pixels` judge `displayWidth` x `displayHeight`, which `withAspect` sets with the rotation applied, so an anamorphic 1440x1080 file stored for 16:9 display passes `aspectRatio: { oneOf: ['16:9'] }`. The default, `'stored'`, judges the stored size as before. `hdr` is a `RatePolicy` over the `color` that `withColor` sets: PQ, HLG, an 8-bit HLG file included, and Dolby Vision are HDR, BT.2020 primaries or 10 bits alone are not. A missing display size or color is unknown, never a pass, each with a hint: `no display size (needs codecConfig: true and withAspect)`, `no color (needs codecConfig: true and withColor)`, `no color in codecConfig` for a codec configuration without a color source and `no transfer in codecConfig` when the container and the SPS are silent, as for an AV1 or VP9 file whose container carries no color. A result analyzed without `codecConfig: true`, and one persisted by 0.3.0, are therefore unknown under these rules. A 0.3.x `check()` throws on rules that use `sizeBasis` or `hdr`, since it validates the keys strictly ([check](docs/api.md#check)).
+
+### Frozen from 0.4.0
+
+The `CheckRules` keys `hdr`, a `RatePolicy`, and `sizeBasis`, `'stored'` or `'display'` with `'stored'` the default, join the lists of 0.4.0-beta.1 and 0.4.0-beta.2.
+
+### Changed
+
+- **Behaviour change:** `check()` now takes the median frame interval, `medianFrameInterval`, as the typical frame interval of a WebM or Matroska track that has no dominant rate and is not constant, where 0.3.0 and the betas took the average interval. `duration` judges the format duration of such a track when it is within that interval of the measured span, so the window of the Chromium recordings narrows from about 27 ms to 17 ms, and a format duration 18 to 27 ms off the span now leaves the span. Tracks with a dominant rate or a constant rate, MP4 and MOV tracks, Matroska header scans and results persisted by 0.3.0, which have no `medianFrameInterval`, are judged as before, and every preset verdict over the committed fixtures is unchanged.
+- `video-fps-probe/check` puts 4.21 KB gzip in the entry chunk (3.99 KB in 0.3.0), after a trim that kept every message and every verdict. The critical path of a host that imports it is 4.77 KB (4.55 KB), under its 5.00 KB budget, and with one preset 5.12 KB (4.90 KB). That is over the 5.00 KB budget of the preset configuration, so that budget moved to its measurement plus 3 percent, rounded up to 0.5 KB, 5.50 KB, as the 0.4.0 plan allowed for this opt-in entry. The default critical path does not change.
+
 ### Fixed
 
 - The docs and the 0.4.0-beta.2 notes said a probe posts the bytes of the moov and nothing else. That holds for every moov whose size fits in the file. For a moov whose size field runs past the end of the file, the walk reads and copies everything from the start of the moov to the end of the file, up to 16 MiB, so when such a moov is not the last box the posted copy also holds the boxes after it, an mdat included. The text now says so, and the code is unchanged.
