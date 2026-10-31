@@ -187,7 +187,7 @@ function viewOf(moovBytes: Uint8Array): DataView {
 
 function expectSameCut(moovBytes: Uint8Array, trak: number, label: string): ColorInfo | null | undefined {
   const dv = viewOf(moovBytes);
-  const viewForm: CodecConfig = { family: 'isobmff', moov: dv, trak };
+  const viewForm: CodecConfig = { family: 'isobmff-moov', moov: dv, trak };
   const boxForm = isoBoxes(dv, trak);
   expect(isoConfig(viewForm), label).toEqual(isoConfig(boxForm));
   const track = (codecConfig: CodecConfig) => ({ codecName: 'h264', width: 320, height: 240, rotation: 0, codecConfig });
@@ -226,7 +226,7 @@ describe('colorOf and aspectOf on a view of the moov, as the probes capture it',
 
   test('a view that does not survive a JSON round trip gives undefined', async () => {
     const moovBytes = await fixtureMoov('colr_only_h264.mp4');
-    const config = JSON.parse(JSON.stringify({ family: 'isobmff', moov: viewOf(moovBytes), trak: 0 })) as CodecConfig;
+    const config = JSON.parse(JSON.stringify({ family: 'isobmff-moov', moov: viewOf(moovBytes), trak: 0 })) as CodecConfig;
     expect(colorOf({ codecName: 'h264', codecConfig: config })).toBeUndefined();
     expect(aspectOf({ codecName: 'h264', width: 320, height: 240, rotation: 0, codecConfig: config })).toBeUndefined();
   });

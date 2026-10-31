@@ -75,7 +75,7 @@ describe('analyze with codecConfig on MP4 and MOV', () => {
     expect(withoutConfig(r)).toEqual(withoutConfig(plain));
     expect(warningCodesOf(r)).toEqual([]);
     const t = r.videoTracks[0];
-    expect(t.codecConfig).toMatchObject({ family: 'isobmff', trak: 0 });
+    expect(t.codecConfig).toMatchObject({ family: 'isobmff-moov', trak: 0 });
     expect(metadataOf(t)).toEqual(metadataOf((await headerTracks(blob, '')).get(t.trackId)!));
   });
 
@@ -106,7 +106,7 @@ describe('the probe engines with codecConfig on MP4 and MOV', () => {
       r.videoTracks.forEach((t, i) => {
         const at = `${name} track ${t.trackId}`;
         const c = t.codecConfig;
-        if (c?.family !== 'isobmff' || !('moov' in c)) throw new Error(`${at}: no view of the moov`);
+        if (c?.family !== 'isobmff-moov') throw new Error(`${at}: no view of the moov`);
         expect(c.moov, at).toBeInstanceOf(DataView);
         const moovOffset = r.layout?.moovOffset ?? NaN;
         const moovSize = r.layout?.moovSize ?? NaN;
@@ -132,7 +132,7 @@ describe('the probe engines with codecConfig on MP4 and MOV', () => {
         const r = await run(blob, true);
         expect(r.warnings, name).toEqual(plain.warnings);
         expect(withoutConfig(r), name).toEqual(withoutConfig(plain));
-        expect(r.videoTracks[0].codecConfig, name).toMatchObject({ family: 'isobmff', trak: expect.any(Number) });
+        expect(r.videoTracks[0].codecConfig, name).toMatchObject({ family: 'isobmff-moov', trak: expect.any(Number) });
         expect(metadataOf(r.videoTracks[0]), name).toEqual(metadataOf((await headerTracks(blob, name)).get(r.videoTracks[0].trackId)!));
       }
       expect((await run(await fixture('audio_only_aac.mp4'), true)).warnings).toEqual([]);

@@ -298,7 +298,7 @@ for (const fixture of FIXTURES.filter((f) => !f.pageOnly)) {
       if (engines.includes('own') && !LIBRARY_REPORT) {
         for (const name of CAPTURE_FILES) {
           const captured = await browserCapture(page, name);
-          expect(captured, `${name} with codecConfig`).toEqual({ error: null, warnings: (await nodeAnalyze(name, 'own')).warnings, family: 'isobmff', trak: 0, view: true, same: true });
+          expect(captured, `${name} with codecConfig`).toEqual({ error: null, warnings: (await nodeAnalyze(name, 'own')).warnings, family: 'isobmff-moov', trak: 0, view: true, same: true });
         }
       }
       if (LIBRARY_REPORT && library.length > 0) {

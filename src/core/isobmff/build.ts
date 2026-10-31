@@ -235,7 +235,7 @@ export function buildVideoTrack(tr: IsoTrack, movie: IsoMovie, opts: Pick<Resolv
   t.rotation = displayRotation(tr.matrix, movie.matrix);
   t.enabled = tr.enabled;
   t.timescale = ts;
-  if (opts.codecConfig) t.codecConfig = { family: 'isobmff', moov: tr.dv as DataView, trak: movie.tracks.indexOf(tr) };
+  if (opts.codecConfig) t.codecConfig = { family: 'isobmff-moov', moov: tr.dv as DataView, trak: movie.tracks.indexOf(tr) };
 
   const totals = sampleTotals(tr);
   const truncated = movie.truncated;

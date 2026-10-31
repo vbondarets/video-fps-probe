@@ -12,10 +12,10 @@ export async function analyze(input: Blob | BlobLike, options: InThreadOptions =
   const { name = typeof File !== 'undefined' && input instanceof File ? input.name : '', engine, ...opts } = options;
   const module = engine ? await engine.load() : (await import('./worker/runtime.ts')).ownEngine;
   const result = await module.run(input, name, opts);
-  if (!result.videoTracks.some((t) => t.codecConfig && 'moov' in t.codecConfig)) return result;
+  if (!result.videoTracks.some((t) => t.codecConfig?.family === 'isobmff-moov')) return result;
   try {
     const { isoBoxes } = await import('./core/isobmff/config.ts');
-    return { ...result, videoTracks: result.videoTracks.map((t) => (t.codecConfig && 'moov' in t.codecConfig ? { ...t, codecConfig: isoBoxes(t.codecConfig.moov, t.codecConfig.trak) } : t)) };
+    return { ...result, videoTracks: result.videoTracks.map((t) => (t.codecConfig?.family === 'isobmff-moov' ? { ...t, codecConfig: isoBoxes(t.codecConfig.moov, t.codecConfig.trak) } : t)) };
   } catch {
     return result;
   }

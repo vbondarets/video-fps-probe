@@ -149,8 +149,7 @@ function moovBoxes(moov: DataView, trak: number): IsoBoxes | null {
 }
 
 export function isoConfig(config: CodecConfig): IsoConfig | null {
-  if (config.family !== 'isobmff') return null;
-  const found = 'moov' in config ? (ArrayBuffer.isView(config.moov) ? moovBoxes(config.moov, config.trak) : null) : config;
+  const found = config.family === 'isobmff' ? config : config.family === 'isobmff-moov' && ArrayBuffer.isView(config.moov) ? moovBoxes(config.moov, config.trak) : null;
   const bytes = found && bytesOf(found.stsd);
   return bytes ? { bytes, entries: sampleEntries(bytes), tkhd: bytesOf(found.tkhd), mvhd: bytesOf(found.mvhd) } : null;
 }

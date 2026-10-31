@@ -120,7 +120,7 @@ export interface VideoTrackResult {
 
 export type CodecConfig =
   | { family: 'isobmff'; stsd: Uint8Array | null; tkhd: Uint8Array | null; mvhd: Uint8Array | null }
-  | { family: 'isobmff'; moov: DataView; trak: number }
+  | { family: 'isobmff-moov'; moov: DataView; trak: number }
   | { family: 'matroska'; trackEntry: Uint8Array | null };
 
 export type ColorSource = 'sps' | 'colr' | 'vpcC' | 'Colour';

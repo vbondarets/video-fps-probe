@@ -143,7 +143,7 @@ function matroskaColor(codecName: string, config: CodecConfig): ColorInfo | null
 export function colorOf(track: ColorTrack): ColorInfo | null | undefined {
   const config = track.codecConfig;
   if (!config) return undefined;
-  return config.family === 'isobmff' ? isoColor(track.codecName, config) : matroskaColor(track.codecName, config);
+  return config.family === 'matroska' ? matroskaColor(track.codecName, config) : isoColor(track.codecName, config);
 }
 
 export function withColor<R extends Pick<FileResult, 'videoTracks'>>(result: R, options: { keepCodecConfig?: boolean } = {}): R {
