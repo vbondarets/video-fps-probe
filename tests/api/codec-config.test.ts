@@ -12,7 +12,7 @@ import { createProbe } from '../../src/probe.ts';
 import { singleContainerEngine } from '../../src/worker/single.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
 
-const CAPTURE = '../../src/core/isobmff/config.ts';
+const CAPTURE = '../../src/core/isobmff/capture.ts';
 const UNBOUNDED = { maxBytes: Infinity, maxReads: Infinity, maxMs: Infinity, maxTracks: Infinity, maxTopLevelBoxes: Infinity };
 const fixture = (name: string) => openAsBlob(join(FILES_DIR, name));
 

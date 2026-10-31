@@ -16,7 +16,7 @@ export async function analyze(input: Blob | BlobLike, options: InThreadOptions =
   const result = await module.run(input, name, opts);
   if (!opts.codecConfig || !result.warnings.includes(UNCAPTURED)) return result;
   try {
-    const { withIsoCodecConfig } = await import('./core/isobmff/config.ts');
+    const { withIsoCodecConfig } = await import('./core/isobmff/capture.ts');
     return await withIsoCodecConfig(input, result, opts.signal ?? null);
   } catch (e) {
     if (opts.signal?.aborted || (e as { name?: unknown } | null)?.name === 'AbortError') throw e;
