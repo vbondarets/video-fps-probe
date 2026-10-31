@@ -7,19 +7,24 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 ### Added
 
 - `errorCode` on every own result: a code for `error` from a closed list, such as `no-header`, `truncated` or `read-failed`, null exactly when `error` is null. Every `error` text is unchanged ([error codes](docs/api.md#error-codes)).
-- `errorCodeOf`, `errorClass`, `warningCodeOf` and `warningCodesOf` in the root entry, for results of any engine or version and four stable warning prefixes.
+- `errorCodeOf`, `errorClass`, `warningCodeOf` and `warningCodesOf` in the root entry, for results of any engine or version, with stable warning codes: `invalid-timescale`, `truncated-mdat`, `truncated-box` and `trailing-data` from the parsers, `fragment-index-unread`, `duration-unresolved` and `fragments-ignored` from the header entry, and `structure-limit` for `too many top-level boxes` ([error codes](docs/api.md#error-codes)).
 - `layout` on ISO BMFF results: `faststart`, `moov-at-end` or `fragmented`, the moov offset and size, a sidx before the first moof, and an empty moov.
 - `medianFrameInterval` on video tracks of own, mp4box and mediabunny, and `enabled` (tkhd or FlagEnabled) on own tracks. `TrackField` gains `'medianFrameInterval'`, so an exhaustive `switch` needs the case.
-- `video-fps-probe/header`: `analyzeHeader(source, options)` reads only the header of an MP4 or MOV file, in the calling thread, under limits on the bytes requested, the reads, the wall time, the tracks and the top-level boxes (`HEADER_DEFAULT_LIMITS`: 16 MiB, 8 reads, 10 s, 64 tracks and 1024 boxes). A fragmented file gets its duration from a covering sidx, the mfra index or mehd, and new codes name what stopped it: `no-duration`, `byte-limit`, `read-limit`, `time-limit` and `structure-limit`. It rejects only on the caller's abort and on an invalid option, with a `TypeError`, and adds at most 1 byte to the other entries ([header-only analysis](docs/api.md#header-only-analysis)).
+- `video-fps-probe/header`: `analyzeHeader(source, options)` reads only the header of an MP4 or MOV file, in the calling thread, under limits on the bytes requested, the reads, the wall time, the tracks and the top-level boxes (`HEADER_DEFAULT_LIMITS`: 16 MiB, 8 reads, 10 s, 64 tracks and 1024 boxes). A fragmented file gets its duration from a covering sidx, the mfra index or mehd, and new codes name what stopped it: `no-duration`, `byte-limit`, `read-limit`, `time-limit` and `structure-limit`. It rejects only on the caller's abort and on an invalid option, with a `TypeError`, and adds at most 1 byte to the other entries ([header-only analysis](docs/api.md#header-only-analysis)). `readAhead` takes `head` and `tail` only, and another key such as `fragment` is a `TypeError`. The entry also exports `isAbortError` and `isTimeoutError`. The signature, the members of `HeaderOptions` and `HeaderLimits`, the error and warning codes and these exports are frozen from 0.4.0-beta.1.
 
 ### Changed
 
 - The installed package may take up to 632 KB unpacked (580 KB in 0.3.0), for the error codes, layout, median frame interval and the header-only entry, measured at 618 KB. A bundler still takes only the modules a host imports.
 - The first MP4 loads 23.07 KB gzip (22.73 KB in 0.3.0), 24.85 KB with Vite's default worker format (24.47 KB), and the first WebM or MKV 25.73 KB (25.54 KB) ([size matrix](report/size-matrix.md)).
+- Still 0 mismatches against ffprobe 8.1.1, now on 167 committed fixtures, with 2 known deviations on a new `+cmaf+global_sidx` fixture with B-frames: ffprobe adds the largest negative composition offset of the fragments it reads to every video timestamp, and own does not yet, so its video starts at 0 instead of 0.066667 s and the file ends 0.045 s earlier ([accuracy](docs/benchmarks.md#accuracy-vs-ffprobe)).
 
 ### Fixed
 
 - A `readAhead.tail` that is NaN no longer spins the Matroska probe forever: it scans the smallest tail, as every value below 4096 does.
+
+### Known limitations
+
+- Full mode reads every fragment, so on a `+cmaf+global_sidx` output of several fragments whose last AAC fragment runs past the sidx it reports that end, 1024 samples later than ffprobe 8.1.1, for example 20.521333 s against 20.5 s, as in 0.3.0. `analyzeHeader` gives the ffprobe value there.
 
 ## 0.3.0 - 2026-10-30
 
