@@ -1125,9 +1125,17 @@ describe('check: hdr', () => {
     },
   );
 
-  it.each(['rec_chromium_h264.mp4', 'rec_chromium_vp9.webm', 'colr_nclc.mov', 'colr_vui_conflict_hevc.mp4'])('passes %s, whose transfer is known and not PQ or HLG', async (name) => {
+  it.each(['rec_chromium_h264.mp4', 'rec_chromium_vp9.webm', 'colr_nclc.mov'])('passes %s, whose transfer is known and not PQ or HLG', async (name) => {
     const r = withColor(await withConfig(name));
     expect(r.videoTracks[0]!.color?.transfer).toMatch(/^(bt709|iec61966-2-1)$/);
+    expect(check(r, reject)).toEqual({ verdict: 'pass', violations: [] });
+  });
+
+  it('follows the container as the stream keys of ffprobe do, so colr_vui_conflict_hevc.mp4 passes with a bt709 colr over a PQ SPS', async () => {
+    const r = withColor(await withConfig('colr_vui_conflict_hevc.mp4'));
+    const streams = (loadRef('colr_vui_conflict_hevc.mp4') as { probe?: { streams?: Array<{ codec_type: string; color_transfer?: string }> } } | null)?.probe?.streams;
+    expect(streams?.find((s) => s.codec_type === 'video')?.color_transfer).toBe('bt709');
+    expect(r.videoTracks[0]!.color).toMatchObject({ transfer: 'bt709', source: 'colr', hdr: null });
     expect(check(r, reject)).toEqual({ verdict: 'pass', violations: [] });
   });
 
@@ -1158,12 +1166,14 @@ describe('check: hdr', () => {
     expect(judged(color({ transfer: 'bt709', dolbyVision: dv }))).toBe('fail');
     expect(judged(color({ primaries: 'bt2020', transfer: 'bt2020-10', space: 'bt2020nc', bitDepth: 10 }))).toBe('pass');
     expect(judged(color({ primaries: 'bt2020', transfer: null, bitDepth: 10 }))).toBe('unknown');
+    expect(judged(color({ transfer: 'reserved' }))).toBe('unknown');
     expect(judged(null)).toBe('unknown');
     expect(judged(undefined)).toBe('unknown');
   });
 
   it('gives each missing color its own hint, never suggests a frame rate and keeps the severity rule', () => {
     expect(check(result({ color: color({ transfer: null }) }), reject).violations[0]!.message).toBe(silent);
+    expect(check(result({ color: color({ transfer: 'reserved' }) }), reject).violations[0]!.message).toBe(silent);
     expect(check(result({ color: null }), reject).violations[0]!.message).toBe(empty);
     expect(check(result({}), reject).violations[0]!.message).toBe(asked);
     expect(new Set([silent, empty, asked]).size).toBe(3);
