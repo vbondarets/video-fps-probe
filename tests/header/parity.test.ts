@@ -49,6 +49,13 @@ describe('header mode against full mode on the computed ISO BMFF set', () => {
     }
   });
 
+  test('every non-fragmented file gives the full-mode warning codes with the smallest head window too', async () => {
+    for (const { name, full } of pairs.filter((p) => !p.fragmented)) {
+      const header = await analyzeHeader(await openAsBlob(join(FILES_DIR, name)), { name, readAhead: { head: 1024 } });
+      expect(warningCodesOf(header), name).toEqual(warningCodesOf(full));
+    }
+  });
+
   test('every fragmented file gives the full-mode isStill, enabled and layout, and never a shorter format duration', () => {
     for (const { name, header, full } of pairs.filter((p) => p.fragmented)) {
       expect(header.layout, name).toEqual(full.layout);
