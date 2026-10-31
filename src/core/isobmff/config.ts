@@ -12,12 +12,10 @@ function child(dv: DataView, parent: BoxHeader, type: string): BoxHeader | undef
   return last;
 }
 
-export function isoCodecConfig(movie: IsoMovie, track: IsoTrack): CodecConfig {
+export function isoBoxes(dv: DataView | null, index: number): CodecConfig {
   const config: CodecConfig = { family: 'isobmff', stsd: null, tkhd: null, mvhd: null };
-  const dv = track.dv ?? movie.tracks.find((t) => t.dv)?.dv;
   const moov = dv ? readBoxHeader(dv, 0, dv.byteLength) : null;
   if (!dv || !moov || moov.type !== 'moov') return config;
-  const index = movie.tracks.indexOf(track);
   let n = 0;
   for (const c of childBoxes(dv, moov.headerSize, moov.end)) {
     if (c.type === 'mvhd') config.mvhd = copy(dv, c);
@@ -31,4 +29,8 @@ export function isoCodecConfig(movie: IsoMovie, track: IsoTrack): CodecConfig {
     }
   }
   return config;
+}
+
+export function isoCodecConfig(movie: IsoMovie, track: IsoTrack): CodecConfig {
+  return isoBoxes(track.dv, movie.tracks.indexOf(track));
 }
