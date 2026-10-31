@@ -47,6 +47,16 @@ const CLASS_OF: Readonly<Record<FileErrorCode, ErrorClass>> = {
   internal: 'internal',
 };
 
+const WARNING_PREFIXES: ReadonlyArray<readonly [prefix: string, code: WarningCode]> = [
+  ['invalid mdhd timescale ', 'invalid-timescale'],
+  ['invalid timescale ', 'invalid-timescale'],
+  ['ignored trailing data at ', 'trailing-data'],
+  ['fragment index not read: ', 'fragment-index-unread'],
+  ['format duration unresolved: ', 'duration-unresolved'],
+  ['fragments ignored: ', 'fragments-ignored'],
+  ['too many top-level boxes', 'structure-limit'],
+];
+
 const TRUNCATED_BOX = /^'(.{4})' at \d+ is truncated/;
 
 export function errorCodeOf(result: Pick<FileResult, 'error'> & Partial<Pick<FileResult, 'errorCode' | 'engine'>>): FileErrorCode | null {
@@ -64,8 +74,7 @@ export function errorClass(code: FileErrorCode): ErrorClass {
 
 export function warningCodeOf(warning: string): WarningCode | null {
   if (typeof warning !== 'string') return null;
-  if (warning.startsWith('invalid mdhd timescale ') || warning.startsWith('invalid timescale ')) return 'invalid-timescale';
-  if (warning.startsWith('ignored trailing data at ')) return 'trailing-data';
+  for (const [prefix, code] of WARNING_PREFIXES) if (warning.startsWith(prefix)) return code;
   const box = TRUNCATED_BOX.exec(warning);
   return box ? (box[1] === 'mdat' ? 'truncated-mdat' : 'truncated-box') : null;
 }

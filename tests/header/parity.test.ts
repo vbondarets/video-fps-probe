@@ -299,7 +299,7 @@ describe('header mode against full mode on virtual sources', () => {
       expect(header.videoTracks[0].durationSec, label).toBe(full.videoTracks[0].durationSec);
       expect(header.videoTracks[0].provenance.durationSec, label).toBe('header');
       expect(header.warnings, label).toContain('format duration unresolved: track 3');
-      expect(warningCodesOf(header), label).toEqual([]);
+      expect(warningCodesOf(header), label).toEqual(['duration-unresolved']);
     }
   });
 

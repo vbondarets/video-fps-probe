@@ -1,7 +1,7 @@
 import { openAsBlob } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { analyzeHeader, type HeaderResult } from '../../src/header/index.ts';
+import { analyzeHeader, warningCodesOf, type HeaderResult } from '../../src/header/index.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
 import { box, bytes, ftyp, fullBox, mdatHeader, mfra, moof, moov, moovOfSize, mvex, recording, sidx, u32, virtualSource, zeros, type Segment } from '../helpers/iso-builder.ts';
 
@@ -284,6 +284,7 @@ describe('read plan of virtual sources', () => {
     expect(counted).toMatchObject({ error: null, errorCode: null, primaryTrackId: 1, formatDurationSec: 3 });
     expect(counted.videoTracks[0]).toMatchObject({ frames: 90, durationSec: 3 });
     expect(counted.warnings).toEqual(['too many top-level boxes']);
+    expect(warningCodesOf(counted)).toEqual(['structure-limit']);
     expect(counted.io.reads).toBe(1);
   });
 

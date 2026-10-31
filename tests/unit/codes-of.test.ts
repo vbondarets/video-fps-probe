@@ -126,6 +126,14 @@ describe('warningCodeOf', () => {
     expect(warningCodeOf("ignored trailing data at 12: corrupt file: box 'abcd' at 12 is smaller than its header")).toBe('trailing-data');
   });
 
+  test('classifies the prefixes of the header warnings', () => {
+    expect(warningCodeOf('fragment index not read: limit reached: maxReads 3')).toBe('fragment-index-unread');
+    expect(warningCodeOf('format duration unresolved: track 2')).toBe('duration-unresolved');
+    expect(warningCodeOf('format duration unresolved: track 2 (3 times)')).toBe('duration-unresolved');
+    expect(warningCodeOf('fragments ignored: moof at 962 after a moov without an mvex')).toBe('fragments-ignored');
+    expect(warningCodeOf('too many top-level boxes')).toBe('structure-limit');
+  });
+
   test('leaves every other warning as free text', () => {
     for (const w of [
       'moov size exceeds the file; parsed what is there',
@@ -134,6 +142,8 @@ describe('warningCodeOf', () => {
       'truncated file: the last Cluster or block ends beyond EOF',
       "corrupt file: box 'sidx' at 100 is truncated",
       'mdhd timescale 0',
+      'walk stopped: too many top-level boxes',
+      'ffprobe 8.1.1 rejects this file: trun without a tfhd that has a trex',
       '',
     ]) {
       expect(warningCodeOf(w), w).toBeNull();
