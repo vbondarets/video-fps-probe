@@ -14,7 +14,7 @@ export async function analyze(input: Blob | BlobLike, options: InThreadOptions =
   const { name = typeof File !== 'undefined' && input instanceof File ? input.name : '', engine, ...opts } = options;
   const module = engine ? await engine.load() : (await import('./worker/runtime.ts')).ownEngine;
   const result = await module.run(input, name, opts);
-  if (!opts.codecConfig || !result.warnings.includes(UNCAPTURED)) return result;
+  if (!opts.codecConfig || result.videoTracks.length === 0 || !result.warnings.includes(UNCAPTURED)) return result;
   try {
     const { withIsoCodecConfig } = await import('./core/isobmff/capture.ts');
     return await withIsoCodecConfig(input, result, opts.signal ?? null);

@@ -29,8 +29,8 @@ function capturedTracks(dv: DataView, result: FileResult, start: number, beyond:
 
 export async function withIsoCodecConfig<R extends FileResult>(source: BlobLike, result: R, signal: AbortSignal | null = null): Promise<R> {
   const at = result.warnings.indexOf(UNCAPTURED);
-  if (at < 0) return result;
-  const warnings = result.warnings.filter((_, i) => i !== at);
+  if (at < 0 || result.videoTracks.length === 0) return result;
+  const warnings = (text: string | null) => result.warnings.flatMap((w, i) => (i !== at ? [w] : text === null ? [] : [text]));
   const t0 = performance.now();
   let reads = 0;
   let bytes = 0;
@@ -44,9 +44,9 @@ export async function withIsoCodecConfig<R extends FileResult>(source: BlobLike,
     bytes = buffer.byteLength;
     if (bytes !== end - start) throw new IsoBmffError('read-failed', `file read failed: short read at ${start}: expected ${end - start} bytes, got ${bytes}`);
     const videoTracks = capturedTracks(new DataView(buffer), result, start, beyond, source.size);
-    return { ...result, videoTracks, warnings, io: io() };
+    return { ...result, videoTracks, warnings: warnings(null), io: io() };
   } catch (e) {
     if (signal?.aborted || (e as { name?: unknown } | null)?.name === 'AbortError') throw e;
-    return { ...result, warnings: [...warnings, `${UNCAPTURED}: ${e instanceof Error ? e.message : String(e)}`], io: io() };
+    return { ...result, warnings: warnings(`${UNCAPTURED}: ${e instanceof Error ? e.message : String(e)}`), io: io() };
   }
 }
