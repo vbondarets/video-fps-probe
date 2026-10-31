@@ -24,7 +24,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ### Known limitations
 
-- Full mode reads every fragment, so on a `+cmaf+global_sidx` output of several fragments where every track has a sidx that covers the file and the last AAC fragment runs past its sidx, it reports that end, 1024 samples later than ffprobe 8.1.1, for example 20.521333 s against 20.5 s, as in 0.3.0. `analyzeHeader` gives the ffprobe value there. When one track has no such sidx, such as the `mov_text` track of such a file, ffprobe reads every fragment too, and both modes give its value.
+- Full mode reads every fragment, so on a `+cmaf+global_sidx` output of several fragments where every track has a sidx that covers the file and the last AAC fragment runs past its sidx, it reports that end, 1024 samples later than ffprobe 8.1.1, for example 20.521333 s against 20.5 s, as in 0.3.0. `analyzeHeader` gives the ffprobe value there. On ffmpeg's `+cmaf+global_sidx` output with a `mov_text` or `-timecode` track, whose sidx is written last and ends early, ffprobe reads every fragment too, and both modes give its value. When the one sidx before the first moof covers the file and another track has none, ffprobe gives the sidx end for every stream, 6.0 s where full mode gives 6.021333 s. `analyzeHeader` then gives the full-mode value through the mfra, or without one keeps the video duration and leaves `formatDurationSec` null with a warning.
 
 ## 0.3.0 - 2026-10-30
 
