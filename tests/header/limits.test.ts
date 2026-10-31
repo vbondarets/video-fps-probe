@@ -24,6 +24,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+const withoutMs = (r: HeaderResult): unknown => ({ ...r, io: { ...r.io, ms: 0 } });
 const HEAD = new Uint8Array(await (await openAsBlob(join(FILES_DIR, 'cfr_h264_30.mp4'))).arrayBuffer());
 
 function hanging(size = 10 * 1024 * 1024): BlobLike & { calls: number } {
@@ -258,11 +259,13 @@ describe('argument validation', () => {
     expect(r.error).toBeNull();
   });
 
-  test('limits and the options take only their own keys, so a misspelt limit is refused rather than ignored', async () => {
-    await expect(analyzeHeader(blob, { limits: { maxbytes: 1000 } as HeaderLimits })).rejects.toThrow(new TypeError('limits takes only maxBytes, maxReads, maxMs, maxTracks and maxTopLevelBoxes, got maxbytes'));
-    await expect(analyzeHeader(blob, { maxBytes: 1000 } as HeaderOptions)).rejects.toThrow(new TypeError('options takes only name, signal, limits, readAhead and fragmentedDuration, got maxBytes'));
+  test('unknown keys of the options and the limits are ignored, so an option of a later version does not fail', async () => {
+    const plain = withoutMs(await analyzeHeader(blob));
+    expect(withoutMs(await analyzeHeader(blob, { limits: { maxbytes: 1000, maxSegments: 2 } as HeaderLimits }))).toEqual(plain);
+    expect(withoutMs(await analyzeHeader(blob, { maxBytes: 1000, codecConfig: true, color: true } as HeaderOptions))).toEqual(plain);
     const r = await analyzeHeader(blob, { limits: { maxBytes: undefined, maxReads: 8 }, signal: undefined } as HeaderOptions);
     expect(r.error).toBeNull();
+    await expect(analyzeHeader(blob, { limits: { maxReads: -1, later: 1 } as HeaderLimits })).rejects.toThrow(new TypeError('limits.maxReads must be a non-negative safe integer or Infinity, got -1'));
   });
 
   test('the other options are checked too', async () => {
