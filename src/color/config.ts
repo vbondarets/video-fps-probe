@@ -119,7 +119,9 @@ function sampleEntries(stsd: Uint8Array): SampleEntry[] {
   return out;
 }
 
-const bytesOf = (b: Uint8Array | null): Uint8Array | null => (b && ArrayBuffer.isView(b) ? b : null);
+const live = <T extends ArrayBufferView>(b: T | null | undefined): b is T => ArrayBuffer.isView(b) && b.buffer.byteLength > 0;
+
+const absentOrLive = (b: Uint8Array | null): boolean => b == null || live(b);
 
 interface IsoBoxes {
   stsd: Uint8Array | null;
@@ -149,9 +151,8 @@ function moovBoxes(moov: DataView, trak: number): IsoBoxes | null {
 }
 
 export function isoConfig(config: CodecConfig): IsoConfig | null {
-  const found = config.family === 'isobmff' ? config : config.family === 'isobmff-moov' && ArrayBuffer.isView(config.moov) && config.moov.buffer.byteLength ? moovBoxes(config.moov, config.trak) : null;
-  const bytes = found && bytesOf(found.stsd);
-  return bytes ? { bytes, entries: sampleEntries(bytes), tkhd: bytesOf(found.tkhd), mvhd: bytesOf(found.mvhd) } : null;
+  const found = config.family === 'isobmff' ? config : config.family === 'isobmff-moov' && live(config.moov) ? moovBoxes(config.moov, config.trak) : null;
+  return found && live(found.stsd) && absentOrLive(found.tkhd) && absentOrLive(found.mvhd) ? { bytes: found.stsd, entries: sampleEntries(found.stsd), tkhd: found.tkhd, mvhd: found.mvhd } : null;
 }
 
 export function firstBox(entry: SampleEntry | undefined, type: string): Span | null {
@@ -213,7 +214,7 @@ function codecIdAt(b: Uint8Array, span: Span): string {
 
 export function matroskaConfig(config: CodecConfig): MatroskaConfig | null {
   const b = config.family === 'matroska' ? config.trackEntry : null;
-  if (!b || !ArrayBuffer.isView(b)) return null;
+  if (!live(b)) return null;
   const out: MatroskaConfig = { bytes: b, codecId: '', codecPrivate: null, video: new Map(), colour: new Map(), mappings: [] };
   for (const e of elements(b, 0, b.length)) {
     if (e.id === ID_CODEC_ID) out.codecId = codecIdAt(b, e);
