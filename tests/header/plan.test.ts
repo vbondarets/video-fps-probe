@@ -149,6 +149,19 @@ describe('read plan of virtual sources', () => {
     expect(far.io.reads).toBe(2);
   });
 
+  test("fragmentedDuration 'header' completes a first moof that the head window cuts only for a covering sidx", async () => {
+    const head = bytes(ftyp('iso5'), moov([{ id: 1, timescale: 15360 }], [mvex({ trex: [{ id: 1, duration: 512 }] })]));
+    const m = moof(1, [{ id: 1, baseDts: 0, count: 300, duration: 512, cts: 1024 }], 3000);
+    const options = { fragmentedDuration: 'header', readAhead: { head: KIB } } as const;
+    const plain = await analyzeHeader(virtualSource([head, m, mdatHeader(3000), { zeros: 3000 }]), options);
+    expect(plain.errorCode).toBe('no-duration');
+    expect(plain.io.reads).toBe(1);
+    const covered = await analyzeHeader(virtualSource([head, sidx(1, 15360, 1024, [[m.length + 8 + 3000, 300 * 512]]), m, mdatHeader(3000), { zeros: 3000 }]), options);
+    expect(covered).toMatchObject({ error: null, formatDurationSec: 10.066667 });
+    expect(covered.videoTracks[0].durationSec).toBe((300 * 512 + 1024) / 15360);
+    expect(covered.io.reads).toBe(2);
+  });
+
   test('a sound track that ends later sets the format duration', async () => {
     const rec = recording({ fragments: 3, mdatBytes: 2 * MIB, audio: true, audioLonger: 25 });
     const r = await analyzeHeader(rec.source);
