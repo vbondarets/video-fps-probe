@@ -4,6 +4,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## Unreleased
 
+## 0.4.0-beta.1 - 2026-10-31
+
 ### Added
 
 - `errorCode` on every own result: a code for `error` from a closed list, such as `no-header`, `truncated` or `read-failed`, null exactly when `error` is null. Every `error` text is unchanged ([error codes](docs/api.md#error-codes)).
