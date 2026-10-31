@@ -47,7 +47,7 @@ What `require()` of each server entry loads from the CommonJS copy in `dist/cjs`
 
 | Entry | File | Files at require | Raw | gzip -9 | Files with lazy chunks | Raw | gzip -9 |
 |---|---|---:|---:|---:|---:|---:|---:|
-| video-fps-probe | dist/cjs/index.cjs | 4 | 15.99 KB | 6.59 KB | 20 | 124.48 KB | 50.04 KB |
+| video-fps-probe | dist/cjs/index.cjs | 4 | 16.02 KB | 6.60 KB | 20 | 124.58 KB | 50.08 KB |
 | video-fps-probe/header | dist/cjs/header.cjs | 7 | 69.42 KB | 25.93 KB | 10 | 87.98 KB | 33.25 KB |
 | video-fps-probe/url | dist/cjs/url.cjs | 1 | 9.97 KB | 3.42 KB | 1 | 9.97 KB | 3.42 KB |
 | video-fps-probe/color | dist/cjs/color.cjs | 2 | 17.87 KB | 6.92 KB | 2 | 17.87 KB | 6.92 KB |

@@ -8535,11 +8535,11 @@
       "entry": "video-fps-probe",
       "file": "dist/cjs/index.cjs",
       "files": 4,
-      "raw": 15989,
-      "gzip": 6589,
+      "raw": 16015,
+      "gzip": 6602,
       "lazyFiles": 20,
-      "lazyRaw": 124479,
-      "lazyGzip": 50041
+      "lazyRaw": 124578,
+      "lazyGzip": 50084
     },
     {
       "entry": "video-fps-probe/header",
