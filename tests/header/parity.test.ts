@@ -100,12 +100,23 @@ describe('header mode against full mode on the computed ISO BMFF set', () => {
   });
 });
 
-function hybrid(withSidx: boolean): VirtualSource {
+function hybrid(withSidx: boolean, fragments = 1): VirtualSource {
   const head = bytes(ftyp('iso5'), moov([{ id: 1, timescale: 15360, samples: [[30, 512]] }], [mvex({ trex: [{ id: 1, duration: 512 }] })]));
-  const m = moof(1, [{ id: 1, baseDts: 30 * 512, count: 30, duration: 512, cts: 1024 }], 3000);
-  const s = withSidx ? sidx(1, 15360, 30 * 512 + 1024, [[m.length + 8 + 3000, 30 * 512]]) : bytes();
-  const at = head.length + 8 + 100_000 + s.length;
-  return virtualSource([head, mdatHeader(100_000), { zeros: 100_000 }, s, m, mdatHeader(3000), { zeros: 3000 }, mfra([{ id: 1, offsets: [at] }])]);
+  const pieces: Segment[] = [];
+  const references: Array<[number, number]> = [];
+  for (let i = 0; i < fragments; i++) {
+    const m = moof(i + 1, [{ id: 1, baseDts: (i + 1) * 30 * 512, count: 30, duration: 512, cts: 1024 }], 3000);
+    pieces.push(m, mdatHeader(3000), { zeros: 3000 });
+    references.push([m.length + 8 + 3000, 30 * 512]);
+  }
+  const s = withSidx ? sidx(1, 15360, 30 * 512 + 1024, references) : bytes();
+  const offsets: number[] = [];
+  let at = head.length + 8 + 100_000 + s.length;
+  for (const [n] of references) {
+    offsets.push(at);
+    at += n;
+  }
+  return virtualSource([head, mdatHeader(100_000), { zeros: 100_000 }, s, ...pieces, mfra([{ id: 1, offsets }])]);
 }
 
 function oneFrame(): VirtualSource {
@@ -350,8 +361,8 @@ describe('header mode against full mode on virtual sources', () => {
   });
 
   test('a hybrid file whose last moof is inside the tail resolves within three reads', async () => {
-    const full = await analyze(hybrid(false), 'hybrid.mp4', {});
-    const header = await analyzeHeader(hybrid(false), { limits: { maxReads: 3 } });
+    const full = await analyze(hybrid(false, 2), 'hybrid.mp4', {});
+    const header = await analyzeHeader(hybrid(false, 2), { limits: { maxReads: 3 } });
     expect(header).toMatchObject({ error: null, formatDurationSec: full.formatDurationSec });
     expect(header.videoTracks[0].durationSec).toBe(full.videoTracks[0].durationSec);
     expect(header.io.reads).toBe(3);

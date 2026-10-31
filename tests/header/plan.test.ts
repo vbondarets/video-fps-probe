@@ -244,9 +244,9 @@ describe('read plan of virtual sources', () => {
 
   test('a sidx that does not reach the end of the file is not a duration', async () => {
     const short = sidx(1, 15360, 0, [[10, 512]]);
-    const src = virtualSource([ftyp('iso5'), moov([{ id: 1 }], [mvex({ trex: [{ id: 1, duration: 512 }] })]), short, moof(1, [{ id: 1, baseDts: 0, count: 30, duration: 512 }], 300), mdatHeader(300), zeros(300)]);
-    const r = await analyzeHeader(src);
-    expect(r.errorCode).toBe('no-duration');
+    const fragment = (i: number): Segment[] => [moof(i + 1, [{ id: 1, baseDts: i * 30 * 512, count: 30, duration: 512 }], 300), mdatHeader(300), zeros(300)];
+    const src = virtualSource([ftyp('iso5'), moov([{ id: 1 }], [mvex({ trex: [{ id: 1, duration: 512 }] })]), short, ...fragment(0), ...fragment(1)]);
+    for (const fragmentedDuration of ['index', 'header'] as const) expect((await analyzeHeader(src, { fragmentedDuration })).errorCode, fragmentedDuration).toBe('no-duration');
   });
 
   test('a single moof indexed by the mfra resolves every track from that moof', async () => {
