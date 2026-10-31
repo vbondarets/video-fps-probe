@@ -2,7 +2,7 @@ import { openAsBlob, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { isoBmffFixtureSet } from '../../scripts/compare/layout.ts';
-import { analyzeHeader, type BlobLike, type HeaderLimits, type HeaderResult } from '../../src/header/index.ts';
+import { analyzeHeader, warningCodesOf, type BlobLike, type HeaderLimits, type HeaderResult } from '../../src/header/index.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
 import { box, bytes, ftyp, mdatHeader, moov, moovOfSize, recording, virtualSource, zeros, type Segment } from '../helpers/iso-builder.ts';
 
@@ -54,8 +54,11 @@ function check(label: string, r: HeaderResult, unlimited: HeaderResult, limits: 
     expect({ ...comparable(r) as object, warnings: null }, label).toEqual({ ...comparable(unlimited) as object, warnings: null });
     return;
   }
-  if (r.warnings.some((w) => w.startsWith('fragment index not read: limit reached: '))) {
-    expect(r.videoTracks.every((t) => t.provenance.durationSec === 'estimated'), label).toBe(true);
+  if (warningCodesOf(r).includes('fragment-index-unread')) {
+    expect(r.videoTracks.map((t) => t.trackId), label).toEqual(unlimited.videoTracks.map((t) => t.trackId));
+    r.videoTracks.forEach((t, i) => {
+      if (t.durationSec !== null && t.provenance.durationSec !== 'estimated') expect(t.durationSec, `${label} track ${t.trackId}`).toBe(unlimited.videoTracks[i].durationSec);
+    });
     return;
   }
   expect(comparable(r), label).toEqual(comparable(unlimited));
