@@ -719,7 +719,7 @@ export function renderMarkdown(matrix) {
     out.push('## Node CommonJS');
     out.push('');
     out.push(
-      'What `require()` of each server entry loads from the CommonJS copy in `dist/cjs` of the installed tarball, minified like the standalone worker files. Node 22.12 and newer load the ESM build through the `module-sync` condition instead, so these files load only where `require(esm)` is off, such as under `--no-experimental-require-module` or in Jest without vm modules. No bundler resolves them, because the `module` condition comes first, so this table is informational and has no budget. The columns with lazy chunks add the chunks that the entry loads on first use, such as the parsers of `analyze`.',
+      'What `require()` of each server entry loads from the CommonJS copy in `dist/cjs` of the installed tarball, minified like the standalone worker files, with the names of its classes and functions kept. Node 22.12 and newer load the ESM build through the `module-sync` condition instead, so these files load only where `require(esm)` is off, such as under `--no-experimental-require-module` or in Jest without vm modules. A bundler that matches the `module` condition, as Vite, webpack, Rspack and esbuild do by default, resolves the ESM build, and no consumer fixture, each built with Vite, holds these files, so this table is informational and has no budget. The columns with lazy chunks add the chunks that the entry loads on first use, such as the parsers of `analyze`.',
     );
     out.push('');
     out.push('| Entry | File | Files at require | Raw | gzip -9 | Files with lazy chunks | Raw | gzip -9 |');
