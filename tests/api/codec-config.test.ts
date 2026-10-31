@@ -30,6 +30,22 @@ function withoutConfig(r: FileResult) {
 
 const metadataOf = (t: VideoTrackResult) => ({ color: colorOf(t), aspect: aspectOf(t) });
 
+function postedBytes(message: unknown): number {
+  const buffers = new Set<ArrayBufferLike>();
+  const seen = new Set<object>();
+  const visit = (value: unknown): void => {
+    if (typeof value !== 'object' || value === null || seen.has(value)) return;
+    seen.add(value);
+    if (ArrayBuffer.isView(value)) buffers.add(value.buffer);
+    else if (value instanceof ArrayBuffer) buffers.add(value);
+    else for (const v of Object.values(value)) visit(v);
+  };
+  visit(structuredClone(message));
+  let total = 0;
+  for (const b of buffers) total += b.byteLength;
+  return total;
+}
+
 afterEach(() => {
   vi.doUnmock(CONFIG);
   vi.resetModules();
@@ -122,6 +138,28 @@ describe('the probe engines with codecConfig on MP4 and MOV', () => {
       });
     }
     expect(captured).toBeGreaterThan(100);
+  });
+
+  test('a probe posts only the bytes of the moov, one copy for every video track, with the moov at the end or before the fragments', async () => {
+    const files = [
+      ['elst_trim_vfr_copy.mp4', 'moov-at-end', 1],
+      ['multi_video_2tracks.mp4', 'moov-at-end', 2],
+      ['fmp4_cmaf.mp4', 'fragmented', 1],
+      ['fmp4_dash_single_file.mp4', 'fragmented', 1],
+    ] as const;
+    for (const [label, run] of Object.entries(engines)) {
+      for (const [name, kind, videos] of files) {
+        const blob = await fixture(name);
+        const r = await run(blob, true);
+        const at = `${label}, ${name}`;
+        expect(r.layout?.kind, at).toBe(kind);
+        expect(r.videoTracks.length, at).toBe(videos);
+        expect(r.videoTracks.every((t) => t.codecConfig?.family === 'isobmff-moov'), at).toBe(true);
+        expect(r.layout?.moovSize, at).toBeLessThan(blob.size / 10);
+        expect(postedBytes(r), at).toBe(r.layout?.moovSize);
+        expect(postedBytes(await run(blob, false)), at).toBe(0);
+      }
+    }
   });
 
   for (const [label, run] of Object.entries(engines)) {
