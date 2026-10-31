@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { analyze as ownAnalyze } from '../src/core/analyze.ts';
 import type { BlobLike } from '../src/core/reader.ts';
+import { warningCodesOf } from '../src/api/codes.ts';
 import { withAspect } from '../src/aspect/index.ts';
 import { withColor } from '../src/color/index.ts';
 import { analyzeHeader, type HeaderResult } from '../src/header/index.ts';
@@ -112,10 +113,18 @@ async function runTimedInner(engine: EngineHandle, blob: BlobLike, name: string,
   return { result, threw, ms: times.length > 0 ? median(times) : 0, msFirst: times[0] ?? 0 };
 }
 
-async function withOwnMetadata(engine: EngineHandle, blob: BlobLike, name: string, opts: AnalyzeOptions, timed: Timed): Promise<FileResult> {
+const UNDELIVERED = ['codec-config-unavailable', 'metadata-unavailable'] as const;
+
+async function withOwnMetadata(engine: EngineHandle, blob: BlobLike, name: string, opts: AnalyzeOptions, timed: Timed, problems: Set<string>): Promise<FileResult> {
   if (timed.threw) return timed.result;
   const configured = await engine.analyze(blob, name, { ...opts, codecConfig: true });
-  return { ...withAspect(withColor(configured, { keepCodecConfig: true })), io: timed.result.io };
+  const result = withAspect(withColor(configured, { keepCodecConfig: true }));
+  for (const code of warningCodesOf(result)) if ((UNDELIVERED as readonly string[]).includes(code)) problems.add(`${name}: the own arm got the warning code ${code}, so its color and aspect checks did not run`);
+  result.videoTracks.forEach((t, i) => {
+    if (!configured.videoTracks[i].codecConfig) problems.add(`${name} track ${t.trackId}: the own arm captured no codec configuration`);
+    else if (t.color === undefined || t.sampleAspectRatio === undefined) problems.add(`${name} track ${t.trackId}: withColor or withAspect left a field undefined over the captured bytes`);
+  });
+  return { ...result, io: timed.result.io };
 }
 
 function isLarge(entry: ManifestEntry): boolean {
@@ -387,7 +396,7 @@ async function main(): Promise<number> {
         for (const s of ref?.videoStreams ?? []) for (const u of s.unmappedSideData) harnessProblems.add(`${entry.name} stream ${s.index}: ffprobe prints ${u}, which the comparison does not map`);
         const runs = engine.informational && isLarge(entry) ? 1 : repeat;
         const timed = await runTimed(engine, opened.blob, entry.name, opts, runs, engine.informational && !verbose);
-        const result = engineName === 'own' ? await withOwnMetadata(engine, opened.blob, entry.name, opts, timed) : timed.result;
+        const result = engineName === 'own' ? await withOwnMetadata(engine, opened.blob, entry.name, opts, timed, harnessProblems) : timed.result;
         const codecStrings = isIso ? await codecStringsOf(entry.name, opened.blob, result) : null;
         const evaluation = evaluate({ info, ref, result, layout, threw: timed.threw, deviations: forFixture(deviations, entry.name), codecStrings });
         classifyEvaluation({ arm: ARMS[engineName], info, ref, result, layout, family: evaluation.family }, evaluation);
