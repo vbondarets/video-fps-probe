@@ -100,27 +100,33 @@ function resolve(codecName: string, container: ContainerColor | null, facts: Con
   };
 }
 
-function isoColor(codecName: string, config: CodecConfig): ColorInfo | null {
+function isoColor(codecName: string, config: CodecConfig): ColorInfo | null | undefined {
   const iso = isoConfig(config);
-  const first = iso?.entries[0];
-  if (!iso || !first) return null;
+  if (!iso) return undefined;
+  const first = iso.entries[0];
+  if (!first) return null;
   const b = iso.bytes;
   let container: ContainerColor | null = null;
+  let fullRange: boolean | null = null;
   let dv: DolbyVisionConfig | null = null;
   for (const entry of iso.entries) {
     for (const c of entry.children) {
-      container = (c.type === 'colr' ? colrOf(b, c) : c.type === 'vpcC' ? vpcOf(b, c) : null) ?? container;
+      const found = c.type === 'colr' ? colrOf(b, c) : c.type === 'vpcC' ? vpcOf(b, c) : null;
+      if (found) {
+        container = found;
+        fullRange = found.fullRange ?? fullRange;
+      }
       if (DOLBY_VISION_BOXES.includes(c.type)) dv = dolbyVision(b, c) ?? dv;
     }
   }
   const facts = isoConfigFacts(codecName, b, first);
   if (dv && facts && DOLBY_VISION_FOURCCS.has(first.type)) facts.codecString = dolbyVisionString(first.type, dv.profile, dv.level);
-  return container || facts || dv ? resolve(codecName, container, facts, dv, null) : null;
+  return container || facts || dv ? resolve(codecName, container && { ...container, fullRange }, facts, dv, null) : null;
 }
 
-function matroskaColor(codecName: string, config: CodecConfig): ColorInfo | null {
+function matroskaColor(codecName: string, config: CodecConfig): ColorInfo | null | undefined {
   const mkv = matroskaConfig(config);
-  if (!mkv) return null;
+  if (!mkv) return undefined;
   const b = mkv.bytes;
   const container = matroskaColour(b, mkv.colour);
   let dv: DolbyVisionConfig | null = null;

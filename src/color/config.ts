@@ -51,6 +51,7 @@ export const ID_BLOCK_ADD_ID_EXTRA_DATA = 0x41ed;
 
 const VISUAL_ENTRY_HEADER = 86;
 const MAX_CODEC_ID = 64;
+const MIXED_ENTRY_TYPES = ['apcn', 'apch', 'dvpp', 'dvcp', 'jpeg'];
 
 export function u16(b: Uint8Array, p: number): number {
   return (b[p] << 8) | b[p + 1];
@@ -98,8 +99,12 @@ function sampleEntries(stsd: Uint8Array): SampleEntry[] {
   const s = top.value;
   if (s.payload + 8 > s.end) return out;
   const count = u32(stsd, s.payload + 4);
+  let seen = 0;
+  let first = '';
   for (const e of boxes(stsd, s.payload + 8, s.end)) {
-    if (out.length >= count) break;
+    if (seen++ >= count) break;
+    first ||= e.type;
+    if (e.type !== first && !MIXED_ENTRY_TYPES.includes(first) && (first !== 'AV1x' || e.type !== 'AVup')) continue;
     const entry: SampleEntry = { type: e.type, children: [] };
     out.push(entry);
     if (e.start + VISUAL_ENTRY_HEADER > e.end) continue;
@@ -113,10 +118,11 @@ function sampleEntries(stsd: Uint8Array): SampleEntry[] {
   return out;
 }
 
+const bytesOf = (b: Uint8Array | null): Uint8Array | null => (b && ArrayBuffer.isView(b) ? b : null);
+
 export function isoConfig(config: CodecConfig): IsoConfig | null {
-  if (config.family !== 'isobmff') return null;
-  const bytes = config.stsd ?? new Uint8Array(0);
-  return { bytes, entries: sampleEntries(bytes), tkhd: config.tkhd, mvhd: config.mvhd };
+  const bytes = config.family === 'isobmff' ? bytesOf(config.stsd) : null;
+  return bytes && config.family === 'isobmff' ? { bytes, entries: sampleEntries(bytes), tkhd: bytesOf(config.tkhd), mvhd: bytesOf(config.mvhd) } : null;
 }
 
 export function firstBox(entry: SampleEntry | undefined, type: string): Span | null {

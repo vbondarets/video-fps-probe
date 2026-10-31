@@ -69,6 +69,11 @@ describe('colorOf on hand-built sample entries', () => {
     expect(colorOf(track(stsdOf(avc1(avcC(sps)))))).toMatchObject({ range: 'pc', transfer: 'arib-std-b67', source: 'sps' });
   });
 
+  test('SPS codes without an FFmpeg name read as unspecified, as the H.264 and HEVC decoders read them', () => {
+    const sps = h264Sps({ profile: 100, vui: { fullRange: true, colour: [13, 19, 18] } });
+    expect(colorOf(track(stsdOf(avc1(avcC(sps)))))).toMatchObject({ range: 'pc', primaries: null, transfer: null, space: null, source: null });
+  });
+
   test('a walker that runs out of bits falls back to the container values', () => {
     const sps = h264Sps({ profile: 100, vui: { fullRange: true, colour: [9, 18, 9] } });
     const cut = sps.subarray(0, sps.length - 12);
@@ -85,25 +90,45 @@ describe('colorOf on hand-built sample entries', () => {
     expect(colorOf(track(stsdOf(box('vp09', AVC1_FIELDS(), nclx(9, 16, 9, false), vpcC)), 'vp9'))).toMatchObject({ range: 'pc', primaries: 'bt709', source: 'vpcC', bitDepth: 10, profile: 2, codecString: 'vp09.02.31.10' });
   });
 
-  test('undefined without a codec configuration, null when the configuration holds nothing that colorOf reads', () => {
+  test('undefined without captured bytes, null when the bytes hold nothing that colorOf reads', () => {
     expect(colorOf({ codecName: 'h264' })).toBeUndefined();
-    expect(colorOf(track(null))).toBeNull();
+    expect(colorOf(track(null))).toBeUndefined();
+    expect(colorOf(track(JSON.parse(JSON.stringify(stsdOf(avc1(nclx(9, 16, 9, false)))))))).toBeUndefined();
     expect(colorOf(track(stsdOf()))).toBeNull();
     expect(colorOf(track(stsdOf(box('mp4v', AVC1_FIELDS())), 'mpeg4'))).toBeNull();
     expect(colorOf(track(Uint8Array.from([0, 0, 0, 9, 0x73, 0x74])))).toBeNull();
     const config: CodecConfig = { family: 'matroska', trackEntry: null };
-    expect(colorOf({ codecName: 'h264', codecConfig: config })).toBeNull();
+    expect(colorOf({ codecName: 'h264', codecConfig: config })).toBeUndefined();
+  });
+
+  test('a later nclc keeps the range of an earlier nclx or vpcC, as it has no range of its own', () => {
+    const sps = h264Sps({ profile: 100, vui: { fullRange: true, colour: [1, 1, 1] } });
+    const nclc = box('colr', tag('nclc'), u16(1), u16(1), u16(1));
+    expect(colorOf(track(stsdOf(avc1(avcC(sps), nclx(9, 16, 9, false), nclc))))).toMatchObject({ range: 'tv', primaries: 'bt709', source: 'colr' });
+    const vpcC = fullBox('vpcC', 1, 0, [2, 31, 0xa1, 1, 1, 1], u16(0));
+    expect(colorOf(track(stsdOf(box('vp09', AVC1_FIELDS(), vpcC, nclc)), 'vp9'))).toMatchObject({ range: 'pc', primaries: 'bt709', source: 'colr' });
+  });
+
+  test('sample entries of another type than the first are skipped, as the mov demuxer skips them', () => {
+    const hlg = avc1(nclx(9, 18, 9, false));
+    const sdr = box('avc3', AVC1_FIELDS(), nclx(1, 1, 1, false));
+    expect(colorOf(track(stsdOf(hlg, sdr)))).toMatchObject({ primaries: 'bt2020', transfer: 'arib-std-b67', hdr: 'hlg' });
+    expect(colorOf(track(stsdOf(hlg, sdr, avc1(nclx(1, 1, 1, false)))))).toMatchObject({ primaries: 'bt709', hdr: null });
+    const prores = (type: string, ...children: Uint8Array[]): Uint8Array => box(type, AVC1_FIELDS(), ...children);
+    expect(colorOf(track(stsdOf(prores('apcn'), prores('apch', nclx(1, 1, 1, false))), 'prores'))).toMatchObject({ primaries: 'bt709' });
   });
 });
 
 describe('withColor', () => {
-  test('leaves color undefined on a track without codecConfig, sets null on a configuration without a source and drops the bytes', async () => {
+  test('leaves color undefined on a track without captured bytes, sets null on a configuration without a source and drops the bytes', async () => {
     const blob = await openAsBlob(join(FILES_DIR, 'cfr_h264_29.97.mp4'));
     const plain = await analyze(blob, 'a.mp4');
     expect(withColor(plain).videoTracks[0]).not.toHaveProperty('color');
     const raw = await analyzeHeader(blob, { codecConfig: true });
     const empty = { ...raw, videoTracks: raw.videoTracks.map((t) => ({ ...t, codecConfig: { family: 'isobmff' as const, stsd: null, tkhd: null, mvhd: null } })) };
-    expect(withColor(empty).videoTracks[0].color).toBeNull();
+    expect(withColor(empty).videoTracks[0].color).toBeUndefined();
+    const none = { ...raw, videoTracks: raw.videoTracks.map((t) => ({ ...t, codecConfig: { family: 'isobmff' as const, stsd: stsdOf(), tkhd: null, mvhd: null } })) };
+    expect(withColor(none).videoTracks[0].color).toBeNull();
     expect(withColor(raw).videoTracks[0]).not.toHaveProperty('codecConfig');
     expect(withColor(raw, { keepCodecConfig: true }).videoTracks[0].codecConfig).toEqual(raw.videoTracks[0].codecConfig);
     expect(raw.videoTracks[0].color).toBeUndefined();
