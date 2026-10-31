@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, openAsBlob, readFileSync, writeFileSync } from '
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { CONSUMERS_PORT, FIXTURES, OWN_WORKERS, SPLIT_ROUTING, buildUrl, consumersDir, devUrl, fixtureDist, installedPackage } from '../../scripts/consumers.mjs';
 import type { HeaderResult } from '../../src/header/index.ts';
 import type { EngineDescriptor, ProbeResult } from '../../src/index.ts';
@@ -51,6 +51,7 @@ const HEADER_FILES = ['cfr_h264_29.97.mp4', 'cfr_vp9_29.97.webm', 'vfr_two_phase
 const METADATA_FILES = [...HEADER_FILES, 'hdr10_hevc10.mp4', 'dv_p81_dvvc.mp4', 'sar_h264_4x3.mp4', 'sar_matrix_scale.mp4'] as const;
 const RVFC_UNSUPPORTED = 'requestVideoFrameCallback unsupported';
 const CAPTURE_FILES = ['hdr10_hevc10.mp4', 'colr_nclc.mov', 'fmp4_cmaf.mp4', 'multi_video_2tracks.mp4', 'elst_trim_vfr_copy.mp4', 'faststart_large_moov.mp4'] as const;
+const POSTED_METADATA_FILES = [...CAPTURE_FILES, 'dv_p81_dvvc.mp4', 'sar_h264_4x3.mp4', 'sar_matrix_scale.mp4'] as const;
 
 const DIST = pathToFileURL(join(installedPackage(consumersDir()), 'dist')).href;
 const LIBRARY_REPORT = process.env.CONSUMERS_LIBRARY_REPORT ? resolve(process.env.CONSUMERS_LIBRARY_REPORT) : null;
@@ -156,6 +157,38 @@ async function browserCapture(page: Page, name: string) {
   });
 }
 
+interface PostedMoov {
+  bytes: number[];
+  tracks: Array<Pick<ProbeResult['videoTracks'][number], 'codecName' | 'width' | 'height' | 'rotation'> & { family: 'isobmff-moov'; trak: number; byteOffset: number; byteLength: number }>;
+}
+
+async function probePostedMoovs(context: BrowserContext, pageErrors: string[]): Promise<Map<string, PostedMoov>> {
+  const probe = await context.newPage();
+  probe.on('pageerror', (e) => pageErrors.push(`${e.name}: ${e.message}`));
+  try {
+    await probe.goto(buildUrl(CONSUMERS_PORT, 'default'));
+    await probe.waitForFunction(() => window.__probe !== undefined);
+    const posted = new Map<string, PostedMoov>();
+    for (const name of POSTED_METADATA_FILES) {
+      await probe.locator('#file').setInputFiles(join(FILES_DIR, name));
+      const moov = await probe.evaluate(async () => {
+        const file = document.querySelector<HTMLInputElement>('#file')?.files?.[0];
+        if (!file) throw new Error('no file picked');
+        const r = await (window.__probe as ConsumerProbe).analyze(file, { engine: 'own', codecConfig: true });
+        const views = r.videoTracks.map((t) => t.codecConfig as { family: 'isobmff-moov'; moov: DataView; trak: number });
+        return {
+          bytes: Array.from(new Uint8Array(views[0]!.moov.buffer)),
+          tracks: r.videoTracks.map(({ codecName, width, height, rotation }, i) => ({ codecName, width, height, rotation, family: views[i]!.family, trak: views[i]!.trak, byteOffset: views[i]!.moov.byteOffset, byteLength: views[i]!.moov.byteLength })),
+        };
+      });
+      posted.set(name, moov);
+    }
+    return posted;
+  } finally {
+    await probe.close();
+  }
+}
+
 function withoutTiming(r: ProbeResult) {
   const { io, mediabunny, ...rest } = r;
   return { ...rest, io: { reads: io.reads, bytesRead: io.bytesRead }, ...(mediabunny ? { mediabunny: { ...mediabunny, nativeStatsMs: 0 } } : {}) };
@@ -249,7 +282,7 @@ async function nodeMetadata(name: string, option: 'color' | 'aspect'): Promise<H
 
 for (const option of ['color', 'aspect'] as const) {
   for (const mode of ['build', 'dev'] as const) {
-    test(`${option} under vite ${mode} gives the ${option} of Node analyzeHeader, through the option and through the entry`, async ({ page }) => {
+    test(`${option} under vite ${mode} gives the ${option} of Node analyzeHeader, through the option, the entry and the moov a probe posts`, async ({ page, context }) => {
       const pageErrors: string[] = [];
       page.on('pageerror', (e) => pageErrors.push(`${e.name}: ${e.message}`));
       await page.goto(mode === 'build' ? buildUrl(CONSUMERS_PORT, option) : devUrl(CONSUMERS_PORT, option));
@@ -271,6 +304,22 @@ for (const option of ['color', 'aspect'] as const) {
         const expected = withoutMs(await nodeMetadata(name, option));
         expect(withoutMs(actual.viaOption), name).toEqual(expected);
         expect(withoutMs(actual.viaEntry), name).toEqual(expected);
+      }
+      for (const [name, posted] of await probePostedMoovs(context, pageErrors)) {
+        const actual = await page.evaluate(
+          ([key, { bytes, tracks }]) => {
+            const buffer = Uint8Array.from(bytes).buffer;
+            return tracks.map(({ family, trak, byteOffset, byteLength, ...track }) => {
+              const t = { ...track, codecConfig: { family, moov: new DataView(buffer, byteOffset, byteLength), trak } };
+              return key === 'color' ? window.__color!.colorOf(t) : window.__aspect!.aspectOf(t);
+            });
+          },
+          [option, posted] as const,
+        );
+        const expected = (await nodeMetadata(name, option)).videoTracks.map((t) =>
+          option === 'color' ? t.color : { sampleAspectRatio: t.sampleAspectRatio, displayAspectRatio: t.displayAspectRatio, displayWidth: t.displayWidth, displayHeight: t.displayHeight },
+        );
+        expect(plain(actual), `${name} posted by a probe`).toEqual(plain(expected));
       }
       expect(pageErrors).toEqual([]);
     });
