@@ -4,9 +4,9 @@
   "normalizedBaseline": "fixtures/snapshots/size-matrix-v0.3.0-normalized.json",
   "normalizedBaselineSha256": "594fef2ab36ae0c2d665bc6d3ddb36ff800e3cdabe90bded04e75945defd7617",
   "report": "report/size-matrix.json",
-  "stage": 4,
-  "stageBase": "fixtures/snapshots/size-matrix-s3.json",
-  "stageBaseSha256": "e7565f049b1cb814158849c6a7f7511dcbcc21e40a79068f94887303f88d838c",
+  "stage": 5,
+  "stageBase": "fixtures/snapshots/size-matrix-s4.json",
+  "stageBaseSha256": "33190d6505122ce8c470a63db566e7cab538eab9a933a818294bcf1a2677db77",
   "unit": "gzip bytes, KB = 1000 bytes. Every growth, share and identity rule compares the hash-normalized sizes of the report, the key normalized, measured with the content hash of every emitted file name replaced by a fixed placeholder, and cap applies to the raw size as built. growth is the cumulative allowance over the 0.3.0 baseline after each 0.4.0 stage (null: no growth limit), the share of a stage is its growth minus the growth of the stage before and bounds the growth over the stage base, a row whose share in a stage is 0 must equal the stage base in that stage, cap is a fixed limit in bytes (null: a growth-only row), and exact keeps a row identical to the baseline while its growth is not null",
   "frozen": {
     "stages": {
