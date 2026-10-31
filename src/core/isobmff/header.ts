@@ -397,6 +397,8 @@ async function resolveFragmented(w: Walk, walked: Walked, videos: IsoTrack[], bu
   const isMain = (t: IsoTrack): boolean => videos.includes(t) || t.handler === 'soun';
   const tracks = movie.tracks.filter((t) => isMain(t) || t.hasMdhd);
   const resolved = new Map<IsoTrack, Resolved>();
+  const early = new Map<IsoTrack, Resolved>();
+  const uncovered = new Set<IsoTrack>();
   const parsed = new Set<number>();
   const firstCount = new Map<IsoTrack, number>();
   const first = walked.firstMoof;
@@ -405,20 +407,25 @@ async function resolveFragmented(w: Walk, walked: Walked, videos: IsoTrack[], bu
   let whole = false;
   let low = size;
   const open = (): IsoTrack[] => tracks.filter((t) => !resolved.has(t) && (videos.includes(t) || hasFragmentData(t, movie, index)));
-  const settle = (tr: IsoTrack, ends: number[] | null, fragments: IsoTrack['fragments']): void => {
+  const settle = (tr: IsoTrack, ends: number[] | null, fragments: IsoTrack['fragments'], into = resolved): void => {
     const x = lastSidx(movie, tr, ends)?.sidx;
     const end = x ? x.earliestPts + x.durationSum : 0;
     const ticks = timingOf(tr, movie, fragments).durationTs;
     if (ends ? !x : !whole && x && x.start < low && x.coverageEnd <= low && end < ticks) return;
-    resolved.set(tr, { ticks: Math.max(ticks, end), timescale: tr.timescale, provenance: 'header' });
+    into.set(tr, { ticks: Math.max(ticks, end), timescale: tr.timescale, provenance: 'header' });
   };
-  const covers = (ends: number[]): boolean => open().every((tr) => lastSidx(movie, tr, ends) !== null);
   const bySidx = (ends: number[]): void => {
-    if (covers(ends)) for (const tr of open()) settle(tr, ends, tr.fragments);
+    const list = open();
+    const own = list.filter((tr) => lastSidx(movie, tr, ends) !== null);
+    uncovered.clear();
+    for (const tr of list) {
+      if (own.includes(tr)) settle(tr, ends, tr.fragments, own.length === list.length ? resolved : early);
+      else uncovered.add(tr);
+    }
   };
   try {
     const cut = first ? reader.peek(first.start, first.size) === null : false;
-    if (first && !limit && (plan.index || !cut || covers([size]))) {
+    if (first && !limit && (plan.index || !cut || open().some((tr) => lastSidx(movie, tr, [size]) !== null))) {
       if (first.size > MOOF_HARD_CAP) throw new IsoBmffError('too-large', `corrupt file: moof larger than 64 MiB at ${first.start}`);
       parseFragment(w, reader.peek(first.start, first.size) ?? (await reader.view(first.start, first.size, ahead(w, first.start, plan.head))), first.start, parsed);
       whole = onlyFragment(reader, first);
@@ -465,6 +472,8 @@ async function resolveFragmented(w: Walk, walked: Walked, videos: IsoTrack[], bu
   }
   const mehd = walked.moov ? mehdDuration(walked.moov) : null;
   const unread = open().length > 0 ? limit : null;
+  const kept = [...early.keys()].filter((tr) => !resolved.has(tr));
+  for (const tr of kept) resolved.set(tr, early.get(tr)!);
   for (const tr of open()) if (mehd !== null) resolved.set(tr, { ticks: mehd, timescale: movie.timescale, provenance: 'estimated' });
   for (const tr of tracks) {
     if (!resolved.has(tr) && !videos.includes(tr) && !hasFragmentData(tr, movie, index)) resolved.set(tr, { ticks: timingOf(tr, movie, []).durationTs, timescale: tr.timescale, provenance: 'header' });
@@ -523,9 +532,11 @@ async function resolveFragmented(w: Walk, walked: Walked, videos: IsoTrack[], bu
   let dur = av.dur === -NONE || (av.dur < text.dur && text.dur - av.dur < 1e6) ? text.dur : av.dur;
   if (span && av.start !== NONE && av.end !== -NONE && av.end >= av.start) dur = Math.max(dur, av.end - av.start);
   if (!span || counted < 2) unstarted.length = 0;
-  const flagged = new Set([...missing, ...unstarted, ...dropped]);
+  const unsure = kept.length > 0 ? [...uncovered].filter((tr) => resolved.get(tr)?.provenance !== 'header') : [];
+  if (kept.length > 0 && unsure.length === 0) unsure.push(...kept);
+  const flagged = new Set([...missing, ...unstarted, ...dropped, ...unsure]);
   if (!failed) for (const tr of tracks) if (flagged.has(tr)) analysis.warnings.push(`format duration unresolved: track ${tr.id}`);
-  analysis.formatDurationSec = missing.length + unstarted.length === 0 && dur > 0 ? dur / 1e6 : null;
+  analysis.formatDurationSec = missing.length + unstarted.length + unsure.length === 0 && dur > 0 ? dur / 1e6 : null;
   analysis.primaryTrackId = fragmentedPrimary(built);
   if (failed) {
     const err = limit ?? new IsoBmffError('no-duration', 'incomplete header: fragmented file without a sidx, mfra or mehd duration');
