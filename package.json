@@ -54,6 +54,9 @@
       "header": [
         "dist/header/index.d.ts"
       ],
+      "url": [
+        "dist/url/index.d.ts"
+      ],
       "presets": [
         "dist/presets/index.d.ts"
       ],
@@ -108,6 +111,10 @@
     "./header": {
       "types": "./dist/header/index.d.ts",
       "default": "./dist/header/index.js"
+    },
+    "./url": {
+      "types": "./dist/url/index.d.ts",
+      "default": "./dist/url/index.js"
     },
     "./presets": {
       "types": "./dist/presets/index.d.ts",

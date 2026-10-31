@@ -22,6 +22,7 @@
       "video-fps-probe/presets": ["./src/presets/index.ts"],
       "video-fps-probe/react": ["./src/react/index.ts"],
       "video-fps-probe/rvfc": ["./src/plugins/rvfc.ts"],
+      "video-fps-probe/url": ["./src/url/index.ts"],
       "video-fps-probe/worker-runtime": ["./src/worker/runtime.ts"]
     },
 

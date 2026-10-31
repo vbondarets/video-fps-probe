@@ -9,15 +9,15 @@ import ts from 'typescript';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const KB = 1000;
 
-export const UNPACKED_CAP = 632 * KB;
+export const UNPACKED_CAP = 661 * KB;
 
-const ALLOWED = [/^(?:index|lazy|analyze|probe)\.(?:js|d\.ts)$/, /^(?:core|engines|worker|client|api|plugins|react|check|presets|header|standalone)\/[\w./-]+\.(?:js|d\.ts)$/, /^presets\/sources\.json$/];
+const ALLOWED = [/^(?:index|lazy|analyze|probe)\.(?:js|d\.ts)$/, /^(?:core|engines|worker|client|api|plugins|react|check|presets|header|url|standalone)\/[\w./-]+\.(?:js|d\.ts)$/, /^presets\/sources\.json$/];
 const PACK_EXTRAS = new Set(['package.json', 'README.md', 'LICENSE', 'CHANGELOG.md']);
 const LITERAL_HOSTS = ['plugins/own.js', 'plugins/mp4box.js', 'plugins/mediabunny.js'];
 const PEER_ENGINES = ['engines/mp4box.js', 'engines/mediabunny.js'];
 const PARSER_DIRS = ['core/isobmff/', 'core/matroska/'];
 const PEERS = ['mp4box', 'mediabunny'];
-const PURE_ENTRIES = ['check/index.js', 'presets/index.js'];
+const PURE_ENTRIES = ['check/index.js', 'presets/index.js', 'url/index.js'];
 export const SPLIT_WORKERS = {
   'worker/own-isobmff.worker.js': ['core/matroska/', 'core/rfps.js', 'core/analyze.js'],
   'worker/own-matroska.worker.js': ['core/isobmff/', 'core/analyze.js'],
