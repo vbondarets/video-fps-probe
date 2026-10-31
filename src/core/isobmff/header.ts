@@ -563,7 +563,21 @@ function collapse(list: string[]): void {
   for (const [s, n] of seen) list.push(n > 1 ? `${s} (${n} times)` : s);
 }
 
-let capture: typeof import('./config.ts') | undefined;
+type Capture = typeof import('./config.ts');
+
+let capture: Capture | undefined;
+let captureLoad: Promise<Capture> | undefined;
+
+function loadCapture(): Promise<Capture> {
+  captureLoad ??= import('./config.ts').then(
+    (m) => (capture = m),
+    (e: unknown) => {
+      captureLoad = undefined;
+      throw e;
+    },
+  );
+  return captureLoad;
+}
 
 export async function analyzeIsoBmffHeader(reader: BlobReader, budget: HeaderBudget, plan: HeaderPlan): Promise<ContainerAnalysis> {
   const movie = newMovie(reader.size);
@@ -587,7 +601,7 @@ export async function analyzeIsoBmffHeader(reader: BlobReader, budget: HeaderBud
     let loadError: unknown = null;
     if (plan.codecConfig) {
       try {
-        const { isoCodecConfig } = (capture ??= await budget.race(import('./config.ts')));
+        const { isoCodecConfig } = capture ?? (await budget.race(loadCapture()));
         videos.forEach((t, i) => (built[i].result.codecConfig = isoCodecConfig(movie, t)));
       } catch (e) {
         if (isAbort(e, reader)) throw e;

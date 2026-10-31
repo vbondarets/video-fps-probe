@@ -143,11 +143,25 @@ async function analyzeSource(reader: BlobReader, limited: LimitedSource, o: Reso
 
 const messageOf = (e: unknown): string => (e instanceof Error ? e.message || e.name : String(e));
 
-let metadata: typeof import('./metadata.ts') | undefined;
+type Metadata = typeof import('./metadata.ts');
+
+let metadata: Metadata | undefined;
+let metadataLoad: Promise<Metadata> | undefined;
+
+function loadMetadata(): Promise<Metadata> {
+  metadataLoad ??= import('./metadata.ts').then(
+    (m) => (metadata = m),
+    (e: unknown) => {
+      metadataLoad = undefined;
+      throw e;
+    },
+  );
+  return metadataLoad;
+}
 
 async function withMetadata(analysis: ContainerAnalysis, o: Resolved, limited: LimitedSource): Promise<ContainerAnalysis> {
   try {
-    const { withAspect, withColor } = (metadata ??= await limited.race(import('./metadata.ts')));
+    const { withAspect, withColor } = metadata ?? (await limited.race(loadMetadata()));
     throwIfAborted(o.signal);
     const last = { keepCodecConfig: o.codecConfig };
     const colored = o.color ? withColor(analysis, o.aspect ? { keepCodecConfig: true } : last) : analysis;
