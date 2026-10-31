@@ -50,7 +50,7 @@ const RVFC_FILES = ['cfr_h264_29.97.mp4', 'cfr_vp9_29.97.webm'] as const;
 const HEADER_FILES = ['cfr_h264_29.97.mp4', 'cfr_vp9_29.97.webm', 'vfr_two_phase_5_200.mp4', 'fmp4_global_sidx.mp4', 'rec_chromium_h264.mp4', 'corrupt_trunc_no_moov.mp4'] as const;
 const METADATA_FILES = [...HEADER_FILES, 'hdr10_hevc10.mp4', 'dv_p81_dvvc.mp4', 'sar_h264_4x3.mp4', 'sar_matrix_scale.mp4'] as const;
 const RVFC_UNSUPPORTED = 'requestVideoFrameCallback unsupported';
-const CAPTURE_FILES = ['hdr10_hevc10.mp4', 'colr_nclc.mov', 'fmp4_cmaf.mp4'] as const;
+const CAPTURE_FILES = ['hdr10_hevc10.mp4', 'colr_nclc.mov', 'fmp4_cmaf.mp4', 'multi_video_2tracks.mp4', 'elst_trim_vfr_copy.mp4', 'faststart_large_moov.mp4'] as const;
 
 const DIST = pathToFileURL(join(installedPackage(consumersDir()), 'dist')).href;
 const LIBRARY_REPORT = process.env.CONSUMERS_LIBRARY_REPORT ? resolve(process.env.CONSUMERS_LIBRARY_REPORT) : null;
@@ -122,12 +122,37 @@ async function browserCapture(page: Page, name: string) {
     const file = document.querySelector<HTMLInputElement>('#file')?.files?.[0];
     if (!file) throw new Error('no file picked');
     const r = await (window.__probe as ConsumerProbe).analyze(file, { engine: 'own', codecConfig: true });
-    const c = r.videoTracks[0]?.codecConfig as { family?: unknown; moov?: unknown; trak?: unknown } | undefined;
-    const moov = c?.moov instanceof DataView ? c.moov : null;
     const at = r.layout?.moovOffset ?? 0;
     const expected = new Uint8Array(await file.slice(at, at + (r.layout?.moovSize ?? 0)).arrayBuffer());
-    const same = moov !== null && moov.byteLength === expected.length && expected.every((b, i) => moov.getUint8(i) === b);
-    return { error: r.error, warnings: r.warnings, family: c?.family, trak: c?.trak, view: moov !== null, same, posted: moov?.buffer.byteLength };
+    const fourcc = (dv: DataView, p: number) => String.fromCharCode(dv.getUint8(p), dv.getUint8(p + 1), dv.getUint8(p + 2), dv.getUint8(p + 3));
+    const trakTrackId = (moov: DataView, trak: unknown): number | null => {
+      let seen = 0;
+      for (let p = 8, size = 0; p + 8 <= moov.byteLength && (size = moov.getUint32(p)) >= 8; p += size) {
+        if (fourcc(moov, p + 4) !== 'trak' || seen++ !== trak) continue;
+        for (let q = p + 8, s = 0; q + 8 <= p + size && (s = moov.getUint32(q)) >= 8; q += s) {
+          if (fourcc(moov, q + 4) === 'tkhd') return moov.getUint32(q + (moov.getUint8(q + 8) === 1 ? 28 : 20));
+        }
+        return null;
+      }
+      return null;
+    };
+    const views = r.videoTracks.map((t) => {
+      const c = t.codecConfig as { family?: unknown; moov?: unknown; trak?: unknown } | undefined;
+      return { family: c?.family, trak: c?.trak, moov: c?.moov instanceof DataView ? c.moov : null };
+    });
+    const buffers = new Set(views.map((v) => v.moov?.buffer ?? null));
+    return {
+      error: r.error,
+      warnings: r.warnings,
+      tracks: views.map(({ family, trak, moov }, i) => ({
+        family,
+        trackId: r.videoTracks[i]!.trackId,
+        trakTrackId: moov && trakTrackId(moov, trak),
+        same: moov !== null && moov.byteLength === expected.length && expected.every((b, k) => moov.getUint8(k) === b),
+      })),
+      buffers: buffers.size,
+      posted: [...buffers].reduce((n, b) => n + (b?.byteLength ?? 0), 0),
+    };
   });
 }
 
@@ -299,7 +324,8 @@ for (const fixture of FIXTURES.filter((f) => !f.pageOnly)) {
         for (const name of CAPTURE_FILES) {
           const captured = await browserCapture(page, name);
           const own = await nodeAnalyze(name, 'own');
-          expect(captured, `${name} with codecConfig`).toEqual({ error: null, warnings: own.warnings, family: 'isobmff-moov', trak: 0, view: true, same: true, posted: own.layout?.moovSize });
+          const tracks = own.videoTracks.map((t) => ({ family: 'isobmff-moov', trackId: t.trackId, trakTrackId: t.trackId, same: true }));
+          expect(captured, `${name} with codecConfig`).toEqual({ error: null, warnings: own.warnings, tracks, buffers: 1, posted: own.layout?.moovSize });
         }
       }
       if (LIBRARY_REPORT && library.length > 0) {
