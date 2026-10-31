@@ -380,11 +380,11 @@ async function resolveFragmented(w: Walk, walked: Walked, videos: IsoTrack[], bu
   let low = size;
   const open = (): IsoTrack[] => tracks.filter((t) => !resolved.has(t) && (videos.includes(t) || hasFragmentData(t, movie, index)));
   const settle = (tr: IsoTrack, ends: number[] | null, fragments: IsoTrack['fragments']): void => {
-    const b = lastSidx(movie, tr, ends);
-    const end = b?.sidx ? b.sidx.earliestPts + b.sidx.durationSum : null;
+    const x = lastSidx(movie, tr, ends)?.sidx;
+    const end = x ? x.earliestPts + x.durationSum : 0;
     const ticks = timingOf(tr, movie, fragments).durationTs;
-    if (ends ? end === null : !whole && b !== null && b.start < low && end !== null && end < ticks) return;
-    resolved.set(tr, { ticks: Math.max(ticks, end ?? 0), timescale: tr.timescale, provenance: 'header' });
+    if (ends ? !x : !whole && x && x.start < low && x.coverageEnd <= low && end < ticks) return;
+    resolved.set(tr, { ticks: Math.max(ticks, end), timescale: tr.timescale, provenance: 'header' });
   };
   const bySidx = (ends: number[]): void => {
     for (const tr of open()) settle(tr, ends, tr.fragments);
