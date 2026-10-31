@@ -2,6 +2,7 @@ import { openAsBlob, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { isoBmffFixtureSet } from '../../scripts/compare/layout.ts';
+import { analyze as rootAnalyze } from '../../src/analyze.ts';
 import { aspectOf, withAspect } from '../../src/aspect/index.ts';
 import { isoConfig } from '../../src/color/config.ts';
 import { colorOf, withColor, type ColorInfo } from '../../src/color/index.ts';
@@ -247,6 +248,32 @@ describe('colorOf and aspectOf on a view of the moov, as the probes capture it',
     expect(aspectOf(r.videoTracks[0])).toBeUndefined();
     expect(withColor(r).videoTracks[0].color).toBeUndefined();
     expect(withAspect(r).videoTracks[0].sampleAspectRatio).toBeUndefined();
+  });
+
+  test('boxes whose buffer was transferred away give undefined, as missing bytes and a transferred view do', async () => {
+    const name = 'sar_matrix_scale.mp4';
+    const runs = {
+      'the root analyze': async () => rootAnalyze(await openAsBlob(join(FILES_DIR, name)), { codecConfig: true }),
+      analyzeHeader: async () => analyzeHeader(await openAsBlob(join(FILES_DIR, name)), { name, codecConfig: true }),
+    };
+    for (const [label, run] of Object.entries(runs)) {
+      for (const member of ['stsd', 'tkhd', 'mvhd'] as const) {
+        const r = await run();
+        const t = r.videoTracks[0];
+        const config = t.codecConfig;
+        if (config?.family !== 'isobmff') throw new Error(`${label}: no boxes`);
+        expect(colorOf(t), label).not.toBeUndefined();
+        expect(aspectOf(t)?.sampleAspectRatio, label).not.toBeUndefined();
+        const b = config[member];
+        if (!b) throw new Error(`${label}: no ${member}`);
+        structuredClone(b.buffer, { transfer: [b.buffer] });
+        expect(b.buffer.byteLength, `${label}, ${member}`).toBe(0);
+        expect(colorOf(t), `${label}, ${member}`).toBeUndefined();
+        expect(aspectOf(t), `${label}, ${member}`).toBeUndefined();
+        expect(withColor(r).videoTracks[0].color, `${label}, ${member}`).toBeUndefined();
+        expect(withAspect(r).videoTracks[0].sampleAspectRatio, `${label}, ${member}`).toBeUndefined();
+      }
+    }
   });
 
   test('a view that does not survive a JSON round trip gives undefined', async () => {

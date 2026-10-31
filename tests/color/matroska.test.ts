@@ -1,6 +1,7 @@
 import { openAsBlob } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
+import { aspectOf, withAspect } from '../../src/aspect/index.ts';
 import { colorOf, withColor } from '../../src/color/index.ts';
 import { analyze } from '../../src/core/analyze.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
@@ -28,6 +29,21 @@ describe('color of the Matroska fixtures, as ffprobe 8.1.1 prints it', () => {
     const blob = await openAsBlob(join(FILES_DIR, 'hdr10_hevc10.mkv'));
     expect((await analyze(blob, 'a.mkv')).videoTracks[0]).not.toHaveProperty('codecConfig');
     expect((await analyze(blob, 'a.mkv', { codecConfig: true })).videoTracks[0].codecConfig?.family).toBe('matroska');
+  });
+
+  test('a TrackEntry whose buffer was transferred away gives undefined, as missing bytes do', async () => {
+    const r = await analyze(await openAsBlob(join(FILES_DIR, 'hdr10_hevc10.mkv')), 'a.mkv', { codecConfig: true });
+    const t = r.videoTracks[0];
+    const config = t.codecConfig;
+    if (config?.family !== 'matroska' || !config.trackEntry) throw new Error('no TrackEntry');
+    expect(colorOf(t)?.hdr).toBe('pq');
+    expect(aspectOf(t)?.sampleAspectRatio).not.toBeUndefined();
+    structuredClone(config.trackEntry.buffer, { transfer: [config.trackEntry.buffer] });
+    expect(config.trackEntry.buffer.byteLength).toBe(0);
+    expect(colorOf(t)).toBeUndefined();
+    expect(aspectOf(t)).toBeUndefined();
+    expect(withColor(r).videoTracks[0].color).toBeUndefined();
+    expect(withAspect(r).videoTracks[0].sampleAspectRatio).toBeUndefined();
   });
 });
 
