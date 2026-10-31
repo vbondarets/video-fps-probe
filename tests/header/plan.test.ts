@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { analyzeHeader, warningCodesOf, type HeaderResult } from '../../src/header/index.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
-import { box, bytes, ftyp, fullBox, mdatHeader, mfra, moof, moov, moovOfSize, mvex, recording, sidx, u32, virtualSource, zeros, type Segment } from '../helpers/iso-builder.ts';
+import { box, bytes, ftyp, fullBox, mdatHeader, mfra, moof, moov, moovOfSize, mvex, recording, sidx, u32, virtualSource, zeros, type Segment, type VirtualSource } from '../helpers/iso-builder.ts';
 
 const KIB = 1024;
 const MIB = 1024 * 1024;
@@ -23,10 +23,10 @@ describe('read plan of the committed fixtures', () => {
     expect(r.io.reads).toBe(1);
   });
 
-  test('a faststart moov that ends past the head window takes a second read for exactly the rest', async () => {
+  test('a faststart moov that ends past the head window takes a second read for the rest and the next box header', async () => {
     const r = await fixture('faststart_large_moov.mp4');
     expect(r.layout).toMatchObject({ kind: 'faststart', moovOffset: 32, moovSize: 72831 });
-    expect(reads(r)).toEqual([2, 32 + 72831]);
+    expect(reads(r)).toEqual([2, 32 + 72831 + 32]);
   });
 
   test('a moov at the end inside the tail window takes two reads', async () => {
@@ -88,7 +88,16 @@ describe('read plan of virtual sources', () => {
     const r = await analyzeHeader(src);
     expect(r.error).toBeNull();
     expect(r.layout).toMatchObject({ kind: 'faststart', moovSize: m.length });
-    expect(reads(r)).toEqual([2, head.length]);
+    expect(reads(r)).toEqual([2, head.length + 32]);
+  });
+
+  test('a faststart moov over 64 KiB before a truncated mdat gets the truncated-mdat warning in the same two reads', async () => {
+    const head = bytes(ftyp(), moovOfSize(102_411, { id: 1 }));
+    const r = await analyzeHeader(virtualSource([head, mdatHeader(8 * MIB), { zeros: 2 * MIB }]));
+    expect(r.error).toBeNull();
+    expect(r.warnings).toEqual([`'mdat' at ${head.length} is truncated`]);
+    expect(warningCodesOf(r)).toEqual(['truncated-mdat']);
+    expect(reads(r)).toEqual([2, head.length + 32]);
   });
 
   test('a moov at the end inside the tail window takes two reads', async () => {
@@ -311,6 +320,27 @@ describe('read plan of virtual sources', () => {
     expect(r.warnings).toEqual([`fragments ignored: moof at ${head.length} after a moov without an mvex`]);
     expect(warningCodesOf(r)).toEqual(['fragments-ignored']);
     expect(r.io.reads).toBe(1);
+  });
+
+  test('a moof after an mdat that ends past the bytes read is found by one peek after a moov without mvex', async () => {
+    for (const payload of [70_000, MIB]) {
+      const head = bytes(ftyp(), moov([VIDEO]), mdatHeader(payload));
+      const at = head.length + payload;
+      const open = (): VirtualSource => virtualSource([head, { zeros: payload }, moof(1, [{ id: 1, baseDts: 90 * 512, count: 30, duration: 512 }], 300), mdatHeader(300), zeros(300)]);
+      const r = await analyzeHeader(open());
+      expect(r, String(payload)).toMatchObject({ error: null, formatDurationSec: 3, warnings: [`fragments ignored: moof at ${at} after a moov without an mvex`] });
+      expect(r.io.reads, String(payload)).toBe(2);
+      const limited = await analyzeHeader(open(), { limits: { maxReads: 1 } });
+      expect(limited, String(payload)).toMatchObject({ errorCode: 'read-limit', formatDurationSec: 3 });
+      expect(limited.videoTracks[0], String(payload)).toMatchObject({ frames: 90, durationSec: 3 });
+    }
+  });
+
+  test('an mdat that ends before the end of the file costs one peek past it, and only one', async () => {
+    const head = bytes(ftyp(), moov([VIDEO]), mdatHeader(MIB));
+    const r = await analyzeHeader(virtualSource([head, { zeros: MIB }, box('free', zeros(8)), mdatHeader(MIB), { zeros: MIB }, box('free', zeros(8))]));
+    expect(r).toMatchObject({ error: null, warnings: [] });
+    expect(r.io.reads).toBe(2);
   });
 
   test('a truncated mdat and trailing data after a moov without mvex are noted from the bytes read', async () => {

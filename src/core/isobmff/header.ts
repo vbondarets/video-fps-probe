@@ -122,7 +122,7 @@ async function readHeaderMoov(w: Walk, h: BoxHeader): Promise<DataView> {
   const beyond = h.start + h.size > size;
   w.movie.moov = [h.start, h.size];
   if (!beyond && h.size > MOOV_HARD_CAP) throw new IsoBmffError('too-large', 'unsupported: moov larger than 256 MiB');
-  const dv = await w.reader.view(h.start, beyond ? Math.min(size - h.start, MOOV_SUSPECT_CAP) : h.size, 0);
+  const dv = await w.reader.view(h.start, beyond ? Math.min(size - h.start, MOOV_SUSPECT_CAP) : h.size, beyond ? 0 : ahead(w, h.start, h.size + 2 * HEADER_PEEK));
   countTracks(dv, w.plan.maxTracks);
   await readMoov(w.reader, h, w.movie);
   return dv;
@@ -143,6 +143,7 @@ async function walkTop(w: Walk): Promise<Walked> {
   let moov: DataView | null = null;
   let afterMdat = false;
   let runFrom = 0;
+  let peeked = false;
   const walked = (firstMoof: BoxHeader | null, limit: Limit | null = null): Walked => ({ moov, fragments: movie.hasMvex && (firstMoof !== null || limit !== null), firstMoof, run: firstMoof ? firstMoof.start - runFrom : 0, limit });
   try {
     while (pos + 8 <= size) {
@@ -150,7 +151,11 @@ async function walkTop(w: Walk): Promise<Walked> {
       let hv: DataView | null;
       if (cached) {
         hv = reader.peek(pos, Math.min(HEADER_PEEK, size - pos));
-        if (!hv) break;
+        if (!hv) {
+          if (peeked) break;
+          peeked = true;
+          hv = await peekAt(w, pos, w.plan.head);
+        }
         if (++w.boxes > w.plan.maxTopLevelBoxes) {
           movie.warnings.push('too many top-level boxes');
           break;
@@ -193,7 +198,7 @@ async function walkTop(w: Walk): Promise<Walked> {
       } else if (h.type === 'moof') {
         throw new IsoBmffError('corrupt', 'corrupt file: movie fragment (moof) before moov');
       } else if (h.type === 'sidx' && !rel.truncated) {
-        const dv = cached ? reader.peek(pos, h.size) : await reader.view(pos, h.size, 0);
+        const dv = cached ? reader.peek(pos, h.size) : await reader.view(pos, h.size, ahead(w, pos, w.plan.head));
         const sh = dv && readBoxHeader(dv, 0, dv.byteLength);
         if (sh) top.sidx = parseSidx(dv, sh, pos);
       }
