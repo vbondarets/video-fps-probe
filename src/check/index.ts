@@ -352,7 +352,7 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   const summary = record(profile) && typeof profile.summary === 'string' ? `: ${profile.summary}` : '';
   const uneven = policy('uneven', t && unevenOf(t), `${profile == null ? '' : 'uneven flag in the '}rate profile`, `the frame rate is uneven${summary}`);
   const c = t?.color as Record<string, unknown> | null | undefined;
-  const hdr = record(c?.dolbyVision) || c?.hdr === 'pq' || c?.hdr === 'hlg' || (typeof c?.transfer === 'string' && c.transfer ? false : null);
+  const hdr = record(c?.dolbyVision) || c?.hdr === 'pq' || c?.hdr === 'hlg' || (typeof c?.transfer === 'string' && c.transfer && c.transfer !== 'reserved' ? false : null);
   policy('hdr', hdr, c === undefined ? 'color (needs codecConfig: true and withColor)' : c ? 'transfer in codecConfig' : 'color in codecConfig', 'the video is HDR');
 
   const report: CheckReport = { verdict: 'pass', violations };
