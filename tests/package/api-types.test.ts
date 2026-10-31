@@ -1,5 +1,6 @@
 import { execFileSync, execSync } from 'node:child_process';
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import ts from 'typescript';
@@ -11,6 +12,7 @@ const DOC = readFileSync(join(REPO_ROOT, 'docs', 'api.md'), 'utf8');
 const EVERY_TYPE = 'every type on this page';
 const PROSE_TYPES = ['VideoTrackResult', 'RateProfile', 'Provenance', 'TrackField'];
 const REACT_TYPES = ['@types/react', 'csstype'];
+const SERVER_ENTRIES = ['', '/header', '/url', '/color', '/aspect', '/check', '/presets'];
 const OPTIONS: ts.CompilerOptions = {
   module: ts.ModuleKind.ESNext,
   moduleResolution: ts.ModuleResolutionKind.Bundler,
@@ -109,6 +111,12 @@ describe('the types and values docs/api.md names', () => {
     expect([...expected.get(`${PACKAGE}/url`)!].sort()).toEqual(['BlobLike', 'BlobSlice', 'HttpRangeInit', 'OpenRangeSourceInit', 'RangeFetcher', 'RangeReply', 'RangeRequest', 'RangeSource', 'RangeSourceError', 'RangeSourceErrorCode', 'RangeSourceErrorOptions', 'RangeSourceInit', 'httpRange', 'openRangeSource', 'rangeSource', 'readCapped']);
     expect(['RangeSource', 'RangeFetcher', 'RangeReply', 'RangeSourceError', 'HttpRangeInit'].filter((name) => expected.get(PACKAGE)!.has(name) || expected.get(`${PACKAGE}/client`)!.has(name))).toEqual([]);
     expect(expected.get(PACKAGE)!.has('Promise')).toBe(false);
+  });
+
+  it('cover every value a server entry exports at run time', () => {
+    const load = createRequire(join(dir, 'index.js'));
+    const undocumented = SERVER_ENTRIES.flatMap((e) => Object.keys(load(`${PACKAGE}${e}`) as object).filter((name) => !expected.get(`${PACKAGE}${e}`)!.has(name)).map((name) => `${PACKAGE}${e}: ${name}`));
+    expect(undocumented).toEqual([]);
   });
 
   it('resolve from the packed tarball, each from the entry the doc names', () => {
