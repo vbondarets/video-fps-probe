@@ -59,6 +59,9 @@ jobs:
       - name: Compare the own engine and every library arm against committed ffprobe references
         run: node scripts/compare-ffprobe.ts --no-write
 
+      - name: Compare the header-only analysis against the references and full mode
+        run: node scripts/compare-ffprobe.ts --header --no-write
+
       - name: Self-test the size report
         run: node scripts/size-report.mjs --self-test
 
@@ -109,13 +112,22 @@ jobs:
       - name: Build the library
         run: npm run build:lib
 
+      - name: Check the package (publint and check-dist)
+        run: npm run check:package
+
+      - name: Check the package types (attw, strict for the server entries)
+        run: npm run check:types
+
       - name: Install TypeScript 5.9.3 for the CommonJS package test
         run: npm ci --prefix tests/package/ts59
 
-      - name: Install Jest 30.5.2 and Babel 7 for the Jest package test
+      - name: Install Jest 30.5.2 and Babel 7 for the Babel Jest package test
         run: npm ci --prefix tests/package/jest-cjs
 
-      - name: Check dist parity and the api.md types against the packed tarball
+      - name: Install Jest 30.5.2 alone for the plain Jest package test
+        run: npm ci --prefix tests/package/jest-plain
+
+      - name: Check dist parity, the CommonJS copy, Jest, the api.md types and the DOM-free types against the packed tarball
         run: npm run test:package
 
   package:
@@ -147,16 +159,22 @@ jobs:
       - name: Check the package (publint and check-dist)
         run: npm run check:package
 
-      - name: Check the package types (attw)
+      - name: Check the package types (attw, strict for the server entries)
         run: npm run check:types
 
       - name: Install TypeScript 5.9.3 for the CommonJS package test
         run: npm ci --prefix tests/package/ts59
 
-      - name: Install Jest 30.5.2 and Babel 7 for the Jest package test
+      - name: Install Jest 30.5.2 and Babel 7 for the Babel Jest package test
         run: npm ci --prefix tests/package/jest-cjs
 
-      - name: Check dist parity and the api.md types against the packed tarball
+      - name: Install Jest 30.5.2 alone for the plain Jest package test
+        run: npm ci --prefix tests/package/jest-plain
+
+      - name: Install Jest 30.5.2 alone for the Jest package test with vm modules
+        run: npm ci --prefix tests/package/jest-vm
+
+      - name: Check dist parity, the CommonJS copy, Jest, the api.md types and the DOM-free types against the packed tarball
         run: npm run test:package
 
   e2e:
