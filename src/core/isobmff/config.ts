@@ -2,10 +2,8 @@ import type { CodecConfig } from '../types.ts';
 import { childBoxes, readBoxHeader, type BoxHeader } from './boxes.ts';
 import type { IsoMovie, IsoTrack } from './model.ts';
 
-const MAX_BOX_COPY = 65536;
-
 function copy(dv: DataView, h: BoxHeader | undefined): Uint8Array | null {
-  return h ? new Uint8Array(dv.buffer, dv.byteOffset + h.start, Math.min(h.end - h.start, MAX_BOX_COPY)).slice() : null;
+  return h ? new Uint8Array(dv.buffer, dv.byteOffset + h.start, h.end - h.start).slice() : null;
 }
 
 function child(dv: DataView, parent: BoxHeader, type: string): BoxHeader | undefined {
@@ -29,6 +27,7 @@ export function isoCodecConfig(movie: IsoMovie, track: IsoTrack): CodecConfig {
       const minf = mdia && child(dv, mdia, 'minf');
       const stbl = minf && child(dv, minf, 'stbl');
       config.stsd = copy(dv, stbl && child(dv, stbl, 'stsd'));
+      break;
     }
   }
   return config;
