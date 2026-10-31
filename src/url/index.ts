@@ -273,7 +273,7 @@ export async function openRangeSource(fetcher: RangeFetcher, init: OpenRangeSour
     if (contentRange !== null && (!r || r.first !== 0 || r.last !== length! - 1 || r.total !== length)) refuse('range-mismatch', `Content-Range ${shown(contentRange)} does not match the whole object of ${length} bytes`);
     size = length!;
   } else if (status === 206 || (status === null && contentRange !== null)) {
-    if (contentRange === null) refuse('range-mismatch', `the 206 reply to ${range} has no Content-Range, so the object size is unknown: pass init.size`);
+    if (contentRange === null) refuse('unverifiable-reply', `the 206 reply to ${range} has no Content-Range, or does not expose it to a cross-origin page, so the object size is unknown: pass init.size`);
     if (!r || r.total === null || r.first !== 0 || r.last !== Math.min(headBytes, r.total) - 1) refuse('range-mismatch', `Content-Range ${shown(contentRange)} does not match ${range} of an object of known size`);
     if (length !== null && length !== r!.last + 1) refuse('length-mismatch', `Content-Length ${length} does not match Content-Range ${shown(contentRange)}`);
     size = r!.total!;
