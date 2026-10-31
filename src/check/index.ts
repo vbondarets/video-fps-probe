@@ -44,6 +44,7 @@ export interface CheckRules {
   audio?: 'required' | 'forbidden';
   vfr?: RatePolicy;
   uneven?: RatePolicy;
+  hdr?: RatePolicy;
   sizeBasis?: 'stored' | 'display';
   severity?: 'fail' | 'warn';
 }
@@ -96,7 +97,7 @@ const GROUP_KEYS: Record<(typeof GROUPS)[number], readonly string[]> = {
   pixels: RANGE,
   fileSize: RANGE,
 };
-const RULE_KEYS: readonly string[] = [...GROUPS, 'containers', 'codecs', 'audio', 'vfr', 'uneven', 'sizeBasis', 'severity'];
+const RULE_KEYS: readonly string[] = [...GROUPS, 'containers', 'codecs', 'audio', 'vfr', 'uneven', 'hdr', 'sizeBasis', 'severity'];
 
 const invalid = (rule: string, v: unknown, what: string): never => {
   throw new TypeError(`${rule}: ${typeof v === 'number' ? v : JSON.stringify(v)} is not ${what}`);
@@ -260,6 +261,7 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
     ['audio', rules.audio, ['required', 'forbidden']],
     ['vfr', rules.vfr, POLICIES],
     ['uneven', rules.uneven, POLICIES],
+    ['hdr', rules.hdr, POLICIES],
     ['sizeBasis', rules.sizeBasis, ['stored', 'display']],
     ['severity', rules.severity, ['fail', 'warn']],
   ];
@@ -308,7 +310,7 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
     else if (!list.some((x) => x.toLowerCase() === actual.toLowerCase()))
       add(rule, severity, list, actual, `${actual} is not one of ${list.length ? list.join(', ') : 'an empty list'}`);
   };
-  const policy = (rule: 'vfr' | 'uneven', state: unknown, missing: string, message: string): boolean => {
+  const policy = (rule: 'vfr' | 'uneven' | 'hdr', state: unknown, missing: string, message: string): boolean => {
     const p = rules[rule];
     if (!p || p === 'allow') return false;
     if (typeof state !== 'boolean') unknown(rule, missing);
@@ -355,6 +357,9 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   const profile: unknown = t?.rateProfile;
   const summary = record(profile) && typeof profile.summary === 'string' ? `: ${profile.summary}` : '';
   const uneven = policy('uneven', t && unevenOf(t), `${profile == null ? '' : 'uneven flag in the '}rate profile`, `the frame rate is uneven${summary}`);
+  const c = t?.color as Record<string, unknown> | null | undefined;
+  const hdr = record(c?.dolbyVision) || c?.hdr === 'pq' || c?.hdr === 'hlg' || (typeof c?.transfer === 'string' && c.transfer ? false : null);
+  policy('hdr', hdr, c === undefined ? 'color (needs codecConfig: true and withColor)' : c ? 'transfer in codecConfig' : 'color in codecConfig', 'the video is HDR');
 
   const report: CheckReport = { verdict: 'pass', violations };
   const fpsOff = violations.some((v) => v.rule.startsWith('fps.'));
