@@ -175,6 +175,22 @@ function coveringSidx(fragments: number): VirtualSource {
   return virtualSource([head, first, second, ...pieces]);
 }
 
+function sidxBefore(segment: (i: number) => boolean): VirtualSource {
+  const head = bytes(ftyp('iso5'), moov([{ id: 1, timescale: 15360 }], [mvex({ trex: [{ id: 1, duration: 512 }] })]));
+  const segments: Segment[] = [head];
+  const offsets: number[] = [];
+  let at = head.length;
+  for (let i = 0; i < 6; i++) {
+    const m = moof(i + 1, [{ id: 1, baseDts: i * 30 * 512, count: 30, duration: 512, cts: 1024 }], 100_000);
+    const s = segment(i) ? sidx(1, 15360, i * 30 * 512 + 1024, [[m.length + 8 + 100_000, 30 * 512]]) : bytes();
+    segments.push(s, m, mdatHeader(100_000), { zeros: 100_000 });
+    offsets.push(at + s.length);
+    at += s.length + m.length + 8 + 100_000;
+  }
+  segments.push(mfra([{ id: 1, offsets }]));
+  return virtualSource(segments);
+}
+
 function emsgInSegment(segment: number, emsgBytes = 0): VirtualSource {
   const head = bytes(ftyp('iso5'), moov([{ id: 1, timescale: 15360 }], [mvex({ trex: [{ id: 1, duration: 512 }] })]));
   const segments: Segment[] = [head];
@@ -204,6 +220,8 @@ const VIRTUAL: Array<[string, () => VirtualSource]> = [
   ['a hybrid file without a sidx', () => hybrid(false)],
   ['an emsg between the sidx and the moof of the last segment', () => emsgInSegment(5)],
   ['an emsg between the sidx and the moof of the first segment', () => emsgInSegment(0)],
+  ['a sidx before every moof but the first', () => sidxBefore((i) => i > 0)],
+  ['a sidx before the last moof only', () => sidxBefore((i) => i === 5)],
   ['a text track that ends 0.5 s after the video', () => withText(1, 1500)],
   ['a text track that ends 1.5 s after the video', () => withText(1, 2500)],
   ['a text track in the first of three moofs that ends 0.5 s after the video', () => withText(3, 3500)],
