@@ -186,10 +186,15 @@ function exactly(value: unknown, length: number, what: string): Uint8Array {
 
 async function bodyOf(reply: RangeReply, length: number, range: string, signal: AbortSignal | null): Promise<Uint8Array> {
   const what = `the body of ${range}`;
-  if (present(reply.bytes)) return exactly(reply.bytes, length, what);
-  const read = reply.body;
-  if (typeof read !== 'function') throw new RangeSourceError('invalid-reply', `the reply to ${range} has neither bytes nor a body function`);
-  return exactly(await untilAborted(attempt(() => read.call(reply, length)), signal), length, what);
+  try {
+    if (present(reply.bytes)) return exactly(reply.bytes, length, what);
+    const read = reply.body;
+    if (typeof read !== 'function') throw new RangeSourceError('invalid-reply', `the reply to ${range} has neither bytes nor a body function`);
+    return exactly(await untilAborted(attempt(() => read.call(reply, length)), signal), length, what);
+  } catch (e) {
+    discard(reply);
+    throw e;
+  }
 }
 
 function request(fetcher: RangeFetcher, start: number, end: number, signal: AbortSignal | null): [string, Promise<RangeReply>] {
@@ -316,7 +321,10 @@ export async function readCapped(body: ReadableStream<Uint8Array> | AsyncIterabl
   } else if (typeof b?.[Symbol.asyncIterator] === 'function') {
     const it = (body as AsyncIterable<Uint8Array>)[Symbol.asyncIterator]();
     next = () => it.next();
-    stop = () => void attempt(() => it.return?.()).catch(noop);
+    stop = () => {
+      attempt(() => (body as { destroy?: () => void }).destroy?.()).catch(noop);
+      attempt(() => it.return?.()).catch(noop);
+    };
   } else {
     throw new TypeError(`body must be a ReadableStream or an async iterable, got ${shown(body)}`);
   }
