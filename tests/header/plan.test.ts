@@ -259,8 +259,10 @@ describe('read plan of virtual sources', () => {
     expect(gap.videoTracks).toHaveLength(1);
     const plain = virtualSource([ftyp(), moov([VIDEO]), ...free, mdatHeader(MIB), { zeros: MIB }]);
     const counted = await analyzeHeader(plain, { limits: { maxTopLevelBoxes: 32 } });
-    expect(counted).toMatchObject({ errorCode: 'structure-limit', primaryTrackId: 1 });
-    expect(counted.videoTracks[0]).toMatchObject({ frames: 90 });
+    expect(counted).toMatchObject({ error: null, errorCode: null, primaryTrackId: 1, formatDurationSec: 3 });
+    expect(counted.videoTracks[0]).toMatchObject({ frames: 90, durationSec: 3 });
+    expect(counted.warnings).toEqual(['too many top-level boxes']);
+    expect(counted.io.reads).toBe(1);
   });
 
   test('a hostile mfro size above 16 MiB is not read', async () => {

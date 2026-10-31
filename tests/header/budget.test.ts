@@ -50,6 +50,10 @@ function check(label: string, r: HeaderResult, unlimited: HeaderResult, limits: 
     if (r.videoTracks.length > 0) expect(r.videoTracks.map((t) => t.trackId), label).toEqual(unlimited.videoTracks.map((t) => t.trackId));
     return;
   }
+  if (r.warnings.includes('too many top-level boxes')) {
+    expect({ ...comparable(r) as object, warnings: null }, label).toEqual({ ...comparable(unlimited) as object, warnings: null });
+    return;
+  }
   if (r.warnings.some((w) => w.startsWith('fragment index not read: limit reached: '))) {
     expect(r.videoTracks.every((t) => t.provenance.durationSec === 'estimated'), label).toBe(true);
     return;
