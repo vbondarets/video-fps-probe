@@ -7758,12 +7758,12 @@
       "worker": "none needed: the header entry runs in the calling thread",
       "engines": [],
       "metrics": {
-        "entry": 20347,
-        "trigger": 19576,
+        "entry": 20463,
+        "trigger": 19703,
         "react": null,
         "check": null,
         "presets": null,
-        "header": 2743,
+        "header": 2818,
         "url": null,
         "color": null,
         "aspect": null,
@@ -7782,16 +7782,16 @@
         "pageEngineShared": null,
         "summary": null,
         "firstMp4Summary": null,
-        "lazyTotal": 6418
+        "lazyTotal": 6956
       },
       "normalized": {
         "metrics": {
-          "entry": 20331,
-          "trigger": 19559,
+          "entry": 20450,
+          "trigger": 19688,
           "react": null,
           "check": null,
           "presets": null,
-          "header": 2736,
+          "header": 2810,
           "url": null,
           "color": null,
           "aspect": null,
@@ -7810,19 +7810,19 @@
           "pageEngineShared": null,
           "summary": null,
           "firstMp4Summary": null,
-          "lazyTotal": 6409
+          "lazyTotal": 6948
         }
       },
       "workers": [],
       "files": [
         {
-          "file": "assets/config-BPzC49g7.js",
-          "gzip": 461,
+          "file": "assets/config-ZTCH5avt.js",
+          "gzip": 443,
           "worker": null,
           "class": "isobmff",
           "normalized": {
             "file": "assets/config-00000000.js",
-            "gzip": 452,
+            "gzip": 435,
             "entry": false,
             "sources": [
               "core/isobmff/config.js"
@@ -7830,13 +7830,13 @@
           }
         },
         {
-          "file": "assets/index-BIX_ux2Y.js",
-          "gzip": 20347,
+          "file": "assets/index-Cry9WXQX.js",
+          "gzip": 20463,
           "worker": null,
           "class": "isobmff",
           "normalized": {
             "file": "assets/index-00000000.js",
-            "gzip": 20331,
+            "gzip": 20450,
             "entry": true,
             "sources": [
               "core/abort.js",
@@ -7861,16 +7861,17 @@
           }
         },
         {
-          "file": "assets/metadata-DZHG1BBZ.js",
-          "gzip": 5957,
+          "file": "assets/metadata-ok8hMXbY.js",
+          "gzip": 6513,
           "worker": null,
           "class": "shared",
           "normalized": {
             "file": "assets/metadata-00000000.js",
-            "gzip": 5957,
+            "gzip": 6513,
             "entry": false,
             "sources": [
               "aspect/index.js",
+              "aspect/rational.js",
               "color/codec-string.js",
               "color/config.js",
               "color/index.js",
@@ -7899,8 +7900,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 20000,
-          "gzip": 19576,
-          "headroom": 424,
+          "gzip": 19703,
+          "headroom": 297,
           "status": "ok",
           "why": "The package code in the entry chunk of a host that imports video-fps-probe/header statically: analyzeHeader with its option checks, the limited source, the reader, the sniffer, the ISO BMFF box parsers, the header walk, the fragmented duration and the track builder it shares with the full parser. It starts no worker and loads nothing lazily, and it reaches neither the full ISO BMFF parser nor the statistics. Design estimate 11 to 13 KB, measured 17.92 KB, of which 2.37 KB is the per-sample part of the shared track builder, which header mode never runs: moving it out of the shared builder would cost the first MP4 more than the 0.01 KB share of stage 3. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 18.49 KB once the walk followed full mode on hybrid files, single moofs, sidx ends, start offsets and limits after the moov, 18.83 KB once the fragmented duration counted text tracks and searched the sidx before the moof its walk starts at, 18.97 KB once an auxiliary track stopped shortening the span of the video and sound tracks, a covering sidx took the end of the first moof, the sidx search ran before every walk and a moof after a moov without an mvex got a warning, 19.05 KB once a covering sidx counted only when every track had one, every limit that left a track open was noted, the walk read the box header after the moov and after the mdat, and the options and the limits refused unknown keys, and 19.29 KB once a file of one fragment resolved from it, each track with its own covering sidx kept its duration beside a track without one, and a failed peek after the mdat kept the moov, and 19.32 KB once that peek began to carry a warning, and 19.28 KB once the options and the limits ignored unknown keys."
         },
@@ -7908,8 +7909,8 @@
           "key": "header",
           "label": "header entry (analyzeHeader, its option checks and the limited source, in the entry chunk)",
           "limit": 3000,
-          "gzip": 2743,
-          "headroom": 257,
+          "gzip": 2818,
+          "headroom": 182,
           "status": "ok",
           "why": "The part of the critical path under dist/header/: analyzeHeader, its option checks, the Matroska DocType check and the limited source with its deadline. Measured 2.34 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 2.50 KB once the limited source coded an abort of the source itself and a read without bytes as read failures and kept its deadline past the timer range, and 2.48 KB once it lost the two-read reservation before the mfra tail, and 2.50 KB once readAhead took head and tail only, and 2.54 KB once the options and the limits refused unknown keys, and 2.49 KB once they ignored them, with readAhead still refusing them."
         },
@@ -7917,10 +7918,19 @@
           "key": "entry",
           "label": "entry chunk with the preload helper",
           "limit": 21000,
-          "gzip": 20347,
-          "headroom": 653,
+          "gzip": 20463,
+          "headroom": 537,
           "status": "ok",
           "why": "The trigger of this configuration plus the Vite runtime of the entry chunk. Measured 17.94 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 18.51 KB, then 18.86 KB, 19.00 KB, 19.07 KB, 19.31 KB, 19.34 KB and 19.30 KB, 0.02 to 0.03 KB over the trigger above each time. Raised from 20 KB to 21 KB in 0.4.0, measured 20.35 KB, the measurement plus 3 percent rounded up to 0.5 KB, once analyzeHeader began to load the codec configuration capture and the color and aspect code with import(): Vite adds its preload helper, 0.75 KB, to the entry chunk of any app with a dynamic import, and the trigger grew by 0.30 KB for the codecConfig, color and aspect options. An app with another dynamic import already has the helper."
+        },
+        {
+          "key": "lazyTotal",
+          "label": "emitted lazy total (every file outside the entry chunk)",
+          "limit": 8000,
+          "gzip": 6956,
+          "headroom": 1044,
+          "status": "ok",
+          "why": "Every JavaScript file the build emits outside the entry chunk: the codec configuration capture, which analyzeHeader loads with import() only with codecConfig, color or aspect, and the color and aspect code, which it loads with import() only with color or aspect. Measured 6.96 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         }
       ],
       "problems": []
@@ -7935,12 +7945,12 @@
       "worker": "none needed: both entries run in the calling thread",
       "engines": [],
       "metrics": {
-        "entry": 23156,
-        "trigger": 22275,
+        "entry": 23285,
+        "trigger": 22428,
         "react": null,
         "check": null,
         "presets": null,
-        "header": 2738,
+        "header": 2811,
         "url": 3212,
         "color": null,
         "aspect": null,
@@ -7959,16 +7969,16 @@
         "pageEngineShared": null,
         "summary": null,
         "firstMp4Summary": null,
-        "lazyTotal": 6417
+        "lazyTotal": 6954
       },
       "normalized": {
         "metrics": {
-          "entry": 23142,
-          "trigger": 22259,
+          "entry": 23267,
+          "trigger": 22412,
           "react": null,
           "check": null,
           "presets": null,
-          "header": 2732,
+          "header": 2806,
           "url": 3212,
           "color": null,
           "aspect": null,
@@ -7987,19 +7997,19 @@
           "pageEngineShared": null,
           "summary": null,
           "firstMp4Summary": null,
-          "lazyTotal": 6409
+          "lazyTotal": 6948
         }
       },
       "workers": [],
       "files": [
         {
-          "file": "assets/config-D5IBmntZ.js",
-          "gzip": 460,
+          "file": "assets/config-jHyVRwYB.js",
+          "gzip": 441,
           "worker": null,
           "class": "isobmff",
           "normalized": {
             "file": "assets/config-00000000.js",
-            "gzip": 452,
+            "gzip": 435,
             "entry": false,
             "sources": [
               "core/isobmff/config.js"
@@ -8007,13 +8017,13 @@
           }
         },
         {
-          "file": "assets/index-qflTgKPH.js",
-          "gzip": 23156,
+          "file": "assets/index-CVujl-Qv.js",
+          "gzip": 23285,
           "worker": null,
           "class": "isobmff",
           "normalized": {
             "file": "assets/index-00000000.js",
-            "gzip": 23142,
+            "gzip": 23267,
             "entry": true,
             "sources": [
               "core/abort.js",
@@ -8039,16 +8049,17 @@
           }
         },
         {
-          "file": "assets/metadata-DZHG1BBZ.js",
-          "gzip": 5957,
+          "file": "assets/metadata-ok8hMXbY.js",
+          "gzip": 6513,
           "worker": null,
           "class": "shared",
           "normalized": {
             "file": "assets/metadata-00000000.js",
-            "gzip": 5957,
+            "gzip": 6513,
             "entry": false,
             "sources": [
               "aspect/index.js",
+              "aspect/rational.js",
               "color/codec-string.js",
               "color/config.js",
               "color/index.js",
@@ -8077,8 +8088,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 24500,
-          "gzip": 22275,
-          "headroom": 2225,
+          "gzip": 22428,
+          "headroom": 2072,
           "status": "ok",
           "why": "The package code in the entry chunk of a host that reads object storage from the page: analyzeHeader as in the header configuration, and rangeSource, openRangeSource, httpRange, readCapped and RangeSourceError from video-fps-probe/url. It starts no worker and loads nothing lazily. Measured 21.86 KB, the 19.32 KB of the header configuration plus the Range entry, and 21.94 KB with the smaller header entry and the larger Range entry. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -8095,10 +8106,19 @@
           "key": "entry",
           "label": "entry chunk with the preload helper",
           "limit": 24500,
-          "gzip": 23156,
-          "headroom": 1344,
+          "gzip": 23285,
+          "headroom": 1215,
           "status": "ok",
           "why": "The trigger of this configuration plus the Vite runtime of the entry chunk. Measured 22.00 KB, then 22.09 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "lazyTotal",
+          "label": "emitted lazy total (every file outside the entry chunk)",
+          "limit": 8000,
+          "gzip": 6954,
+          "headroom": 1046,
+          "status": "ok",
+          "why": "As in the header configuration: the Range entry adds no lazy file. Measured 6.95 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         }
       ],
       "problems": []
@@ -8113,14 +8133,14 @@
       "worker": "none needed: both entries run in the calling thread",
       "engines": [],
       "metrics": {
-        "entry": 24625,
-        "trigger": 23784,
+        "entry": 24884,
+        "trigger": 24062,
         "react": null,
         "check": null,
         "presets": null,
-        "header": 2729,
+        "header": 2808,
         "url": null,
-        "color": 4543,
+        "color": 4669,
         "aspect": null,
         "client": null,
         "isobmff": null,
@@ -8137,18 +8157,18 @@
         "pageEngineShared": null,
         "summary": null,
         "firstMp4Summary": null,
-        "lazyTotal": 2163
+        "lazyTotal": 2607
       },
       "normalized": {
         "metrics": {
-          "entry": 24610,
-          "trigger": 23768,
+          "entry": 24871,
+          "trigger": 24048,
           "react": null,
           "check": null,
           "presets": null,
-          "header": 2725,
+          "header": 2803,
           "url": null,
-          "color": 4543,
+          "color": 4669,
           "aspect": null,
           "client": null,
           "isobmff": null,
@@ -8165,19 +8185,19 @@
           "pageEngineShared": null,
           "summary": null,
           "firstMp4Summary": null,
-          "lazyTotal": 2150
+          "lazyTotal": 2594
         }
       },
       "workers": [],
       "files": [
         {
-          "file": "assets/config-CQrgTjEj.js",
-          "gzip": 460,
+          "file": "assets/config-DnsP5oRc.js",
+          "gzip": 443,
           "worker": null,
           "class": "isobmff",
           "normalized": {
             "file": "assets/config-00000000.js",
-            "gzip": 452,
+            "gzip": 435,
             "entry": false,
             "sources": [
               "core/isobmff/config.js"
@@ -8185,13 +8205,13 @@
           }
         },
         {
-          "file": "assets/index-BH3k4tDZ.js",
-          "gzip": 24625,
+          "file": "assets/index-DFpnRuGG.js",
+          "gzip": 24884,
           "worker": null,
           "class": "isobmff",
           "normalized": {
             "file": "assets/index-00000000.js",
-            "gzip": 24610,
+            "gzip": 24871,
             "entry": true,
             "sources": [
               "color/codec-string.js",
@@ -8221,16 +8241,17 @@
           }
         },
         {
-          "file": "assets/metadata-7f7RoCQ2.js",
-          "gzip": 1703,
+          "file": "assets/metadata-D9i8epqR.js",
+          "gzip": 2164,
           "worker": null,
           "class": "shared",
           "normalized": {
             "file": "assets/metadata-00000000.js",
-            "gzip": 1698,
+            "gzip": 2159,
             "entry": false,
             "sources": [
-              "aspect/index.js"
+              "aspect/index.js",
+              "aspect/rational.js"
             ]
           }
         }
@@ -8254,8 +8275,8 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 26500,
-          "gzip": 23784,
-          "headroom": 2716,
+          "gzip": 24062,
+          "headroom": 2438,
           "status": "ok",
           "why": "The package code in the entry chunk of a host that reads color in the page: analyzeHeader as in the header configuration, and colorOf and withColor from video-fps-probe/color. Measured 23.78 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
@@ -8263,19 +8284,28 @@
           "key": "color",
           "label": "color entry (colorOf and withColor with the codec configuration readers, in the entry chunk)",
           "limit": 5000,
-          "gzip": 4543,
-          "headroom": 457,
+          "gzip": 4669,
+          "headroom": 331,
           "status": "ok",
-          "why": "The part of the critical path under dist/color/: colorOf and withColor, the readers of the sample description, the Matroska TrackEntry and the H.264 and HEVC SPS, the FFmpeg name tables, the codec strings and the Dolby Vision record. It imports nothing outside dist/color/ at run time. Design estimate 3.0 to 3.6 KB, measured 4.54 KB: the two SPS walkers read every syntax element up to the VUI colour fields, and the name tables follow FFmpeg 8.1 with its extended codes. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+          "why": "The part of the critical path under dist/color/: colorOf and withColor, the readers of the sample description, the Matroska TrackEntry and the H.264 and HEVC SPS, the FFmpeg name tables, the codec strings and the Dolby Vision record. It imports nothing outside dist/color/ at run time. Design estimate 3.0 to 3.6 KB, measured 4.54 KB: the two SPS walkers read every syntax element up to the VUI colour fields, and the name tables follow FFmpeg 8.1 with its extended codes. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 4.67 KB once the Matroska Colour codes, repeated and empty EBML elements, the CodecID, the range of a later nclc, the sample entries the mov demuxer skips and the HEVC profile and depth followed FFmpeg."
         },
         {
           "key": "entry",
           "label": "entry chunk with the preload helper",
           "limit": 27500,
-          "gzip": 24625,
-          "headroom": 2875,
+          "gzip": 24884,
+          "headroom": 2616,
           "status": "ok",
           "why": "The trigger of this configuration plus the Vite runtime of the entry chunk, with the preload helper of the lazy imports of analyzeHeader. Measured 24.63 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "lazyTotal",
+          "label": "emitted lazy total (every file outside the entry chunk)",
+          "limit": 3000,
+          "gzip": 2607,
+          "headroom": 393,
+          "status": "ok",
+          "why": "As in the header configuration, without the color code, which this host already has in its entry chunk: the codec configuration capture and the aspect code. Measured 2.61 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         }
       ],
       "problems": []
@@ -8290,15 +8320,15 @@
       "worker": "none needed: both entries run in the calling thread",
       "engines": [],
       "metrics": {
-        "entry": 25059,
-        "trigger": 24199,
+        "entry": 24500,
+        "trigger": 23673,
         "react": null,
         "check": null,
         "presets": null,
-        "header": 2738,
+        "header": 2811,
         "url": null,
         "color": null,
-        "aspect": 1630,
+        "aspect": 4371,
         "client": null,
         "isobmff": null,
         "matroska": null,
@@ -8314,19 +8344,19 @@
         "pageEngineShared": null,
         "summary": null,
         "firstMp4Summary": null,
-        "lazyTotal": 1752
+        "lazyTotal": 2949
       },
       "normalized": {
         "metrics": {
-          "entry": 25045,
-          "trigger": 24185,
+          "entry": 24485,
+          "trigger": 23655,
           "react": null,
           "check": null,
           "presets": null,
-          "header": 2732,
+          "header": 2804,
           "url": null,
           "color": null,
-          "aspect": 1630,
+          "aspect": 4371,
           "client": null,
           "isobmff": null,
           "matroska": null,
@@ -8342,19 +8372,19 @@
           "pageEngineShared": null,
           "summary": null,
           "firstMp4Summary": null,
-          "lazyTotal": 1742
+          "lazyTotal": 2937
         }
       },
       "workers": [],
       "files": [
         {
-          "file": "assets/config-BemttxmE.js",
-          "gzip": 457,
+          "file": "assets/config-B4H0bPZX.js",
+          "gzip": 442,
           "worker": null,
           "class": "isobmff",
           "normalized": {
             "file": "assets/config-00000000.js",
-            "gzip": 452,
+            "gzip": 435,
             "entry": false,
             "sources": [
               "core/isobmff/config.js"
@@ -8362,19 +8392,18 @@
           }
         },
         {
-          "file": "assets/index-RJcaq5sd.js",
-          "gzip": 25059,
+          "file": "assets/index-MXAr7Tt0.js",
+          "gzip": 24500,
           "worker": null,
           "class": "isobmff",
           "normalized": {
             "file": "assets/index-00000000.js",
-            "gzip": 25045,
+            "gzip": 24485,
             "entry": true,
             "sources": [
               "aspect/index.js",
-              "color/codec-string.js",
+              "aspect/rational.js",
               "color/config.js",
-              "color/names.js",
               "color/sps.js",
               "core/abort.js",
               "core/isobmff/boxes.js",
@@ -8398,16 +8427,18 @@
           }
         },
         {
-          "file": "assets/metadata-BsZRrFU8.js",
-          "gzip": 1295,
+          "file": "assets/metadata-CyV6RXWA.js",
+          "gzip": 2507,
           "worker": null,
           "class": "shared",
           "normalized": {
             "file": "assets/metadata-00000000.js",
-            "gzip": 1290,
+            "gzip": 2502,
             "entry": false,
             "sources": [
-              "color/index.js"
+              "color/codec-string.js",
+              "color/index.js",
+              "color/names.js"
             ]
           }
         }
@@ -8431,28 +8462,37 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 27000,
-          "gzip": 24199,
-          "headroom": 2801,
+          "gzip": 23673,
+          "headroom": 3327,
           "status": "ok",
           "why": "The package code in the entry chunk of a host that reads the aspect ratio and the display size in the page: analyzeHeader as in the header configuration, and aspectOf and withAspect from video-fps-probe/aspect with the codec configuration readers they share with video-fps-probe/color. Measured 24.20 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         },
         {
           "key": "aspect",
           "label": "aspect entry (aspectOf and withAspect with the codec configuration readers, in the entry chunk)",
-          "limit": 2000,
-          "gzip": 1630,
-          "headroom": 370,
+          "limit": 5000,
+          "gzip": 4371,
+          "headroom": 629,
           "status": "ok",
-          "why": "The part of the critical path under dist/aspect/: aspectOf and withAspect with the FFmpeg ports of av_reduce and av_d2q, the pasp, tkhd matrix, tkhd size, Matroska display and VUI rules. The readers it shares with the color entry are counted in the trigger. Measured 1.63 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+          "why": "The part of the critical path under dist/aspect/ and the modules of dist/color/ it reaches: aspectOf and withAspect with the FFmpeg ports of av_reduce and av_d2q, the pasp, tkhd matrix, tkhd size, Matroska display, PixelCrop, ProjectionPoseRoll and VUI rules, the readers of the sample description and the TrackEntry and the two SPS walkers for the VUI ratio. It reaches no name table and no codec string. Measured 1.63 KB when the row counted dist/aspect/ alone. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 2 KB to 5 KB in 0.4.0, measured 4.37 KB, once the row also counted the color modules the entry reaches, which an app that imports only video-fps-probe/aspect loads too, and the entry stopped reaching the name tables and the codec strings."
         },
         {
           "key": "entry",
           "label": "entry chunk with the preload helper",
           "limit": 28000,
-          "gzip": 25059,
-          "headroom": 2941,
+          "gzip": 24500,
+          "headroom": 3500,
           "status": "ok",
           "why": "The trigger of this configuration plus the Vite runtime of the entry chunk, with the preload helper of the lazy imports of analyzeHeader. Measured 25.06 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
+        },
+        {
+          "key": "lazyTotal",
+          "label": "emitted lazy total (every file outside the entry chunk)",
+          "limit": 3500,
+          "gzip": 2949,
+          "headroom": 551,
+          "status": "ok",
+          "why": "As in the header configuration, without the color modules this host already has in its entry chunk: the codec configuration capture and the rest of the color code. Measured 2.95 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB."
         }
       ],
       "problems": []
@@ -8505,11 +8545,11 @@
       "entry": "video-fps-probe/header",
       "file": "dist/cjs/header.cjs",
       "files": 6,
-      "raw": 68789,
-      "gzip": 25622,
-      "lazyFiles": 11,
-      "lazyRaw": 87629,
-      "lazyGzip": 33308
+      "raw": 69186,
+      "gzip": 25745,
+      "lazyFiles": 9,
+      "lazyRaw": 87743,
+      "lazyGzip": 33077
     },
     {
       "entry": "video-fps-probe/url",
@@ -8525,21 +8565,21 @@
       "entry": "video-fps-probe/color",
       "file": "dist/cjs/color.cjs",
       "files": 2,
-      "raw": 14027,
-      "gzip": 5325,
+      "raw": 17868,
+      "gzip": 6937,
       "lazyFiles": 2,
-      "lazyRaw": 14027,
-      "lazyGzip": 5325
+      "lazyRaw": 17868,
+      "lazyGzip": 6937
     },
     {
       "entry": "video-fps-probe/aspect",
       "file": "dist/cjs/aspect.cjs",
       "files": 2,
-      "raw": 15138,
-      "gzip": 5792,
+      "raw": 17870,
+      "gzip": 6938,
       "lazyFiles": 2,
-      "lazyRaw": 15138,
-      "lazyGzip": 5792
+      "lazyRaw": 17870,
+      "lazyGzip": 6938
     },
     {
       "entry": "video-fps-probe/check",
