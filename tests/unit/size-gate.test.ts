@@ -279,7 +279,8 @@ describe('size gate against the 0.3.0 baseline', () => {
     expect(r.out).toMatch(/size gate: 138 gated rows and 292 files within the stage \d allowances, shares and caps/);
     const config = JSON.parse(readFileSync(CONFIG, 'utf8')) as GateConfig;
     const atBase = readFileSync(join(REPO_ROOT, config.report)).equals(readFileSync(join(REPO_ROOT, config.stageBase)));
-    if (atBase) expect(r.out).toContain('0 of them changed since the stage base or failed');
+    const noShare = Object.values(config.files.kinds).every((k) => k.growth[String(config.stage)] === k.growth[String(config.stage - 1)]);
+    if (atBase || noShare) expect(r.out).toContain('0 of them changed since the stage base or failed');
     else expect(r.out).toMatch(/files: 292 emitted files outside the entry chunk of the 0\.3\.0 configurations, [1-9]\d* of them changed since the stage base or failed/);
   });
 
