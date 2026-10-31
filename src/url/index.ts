@@ -285,6 +285,12 @@ export async function openRangeSource(fetcher: RangeFetcher, init: OpenRangeSour
   return sourceOf(f, size, signal, await bodyOf(reply, Math.min(size, headBytes), range, signal));
 }
 
+function named(e: unknown, signal: AbortSignal | null): unknown {
+  const c = (e as { cause?: { code?: unknown; message?: unknown } | null } | null)?.cause;
+  const detail = c?.code ?? c?.message;
+  return signal?.aborted || (e as Error | null)?.name !== 'TypeError' || typeof detail !== 'string' ? e : new TypeError(`${(e as Error).message}: ${detail}`, { cause: e });
+}
+
 export function httpRange(url: string | URL, init: HttpRangeInit = {}): RangeFetcher {
   const href = typeof url === 'string' ? url : typeof (url as Partial<URL> | null)?.href === 'string' ? (url as URL).href : null;
   if (!href) throw new TypeError(`url must be a non-empty string or a URL, got ${shown(url)}`);
@@ -296,13 +302,16 @@ export function httpRange(url: string | URL, init: HttpRangeInit = {}): RangeFet
     const h = new Headers(headers as Record<string, string>);
     h.set('range', range);
     h.set('accept-encoding', 'identity');
-    const res = await (run as typeof globalThis.fetch)(href, { headers: h, signal });
+    const fail = (e: unknown): never => {
+      throw named(e, signal);
+    };
+    const res = await (run as typeof globalThis.fetch)(href, { headers: h, signal }).catch(fail);
     const length = res.headers.get('content-length');
     return {
       status: res.status,
       contentRange: res.headers.get('content-range'),
       contentLength: length === null ? null : /^\s*\d+\s*$/.test(length) ? Number(length) : Number.NaN,
-      body: (expectedLength) => (res.body ? readCapped(res.body, expectedLength, signal) : Promise.resolve(new Uint8Array(0))),
+      body: (expectedLength) => (res.body ? readCapped(res.body, expectedLength, signal).catch(fail) : Promise.resolve(new Uint8Array(0))),
       discard: () => void res.body?.cancel().catch(noop),
     };
   };
