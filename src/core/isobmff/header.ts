@@ -288,7 +288,7 @@ function runTo(dv: DataView, q: number, at: number): TopBox[] | null {
 
 async function preRun(w: Walk, from: number, run: number, after: number): Promise<number> {
   const at = Math.max(after, from - Math.max(run, RUN_WINDOW));
-  if (run <= 0 || from - at < 8) return from;
+  if (from - at < 8) return from;
   const dv = await w.reader.view(at, from - at, ahead(w, at, w.plan.head));
   for (let q = 0; q + 8 <= dv.byteLength; q++) {
     const found = dv.getUint32(q + 4) === SIDX ? runTo(dv, q, at) : null;
