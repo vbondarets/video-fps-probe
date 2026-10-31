@@ -43,12 +43,10 @@ function count(value: unknown, what: string, min = 0, infinite = false): number 
   return value;
 }
 
-function record(value: unknown, what: string, keys: string[]): Record<string, unknown> {
+function record(value: unknown, what: string): Record<string, unknown> {
   if (value === undefined) return {};
   if (typeof value !== 'object' || value === null || Array.isArray(value)) throw new TypeError(`${what} must be an object, got ${shown(value)}`);
-  const o = value as Record<string, unknown>;
-  for (const key of Object.keys(o)) if (!keys.includes(key) && o[key] !== undefined) throw new TypeError(`${what} takes only ${keys.slice(0, -1).join(', ')} and ${keys[keys.length - 1]}, got ${key}`);
-  return o;
+  return value as Record<string, unknown>;
 }
 
 interface Resolved {
@@ -65,17 +63,18 @@ function resolveHeaderOptions(source: unknown, options: unknown): Resolved {
   const src = source as Partial<BlobLike> | null;
   if (typeof src !== 'object' || src === null || typeof src.slice !== 'function') throw new TypeError(`source must be a Blob or a BlobLike with a size and a slice method, got ${shown(source)}`);
   const size = count(src.size, 'source.size');
-  const o = record(options, 'options', ['name', 'signal', 'limits', 'readAhead', 'fragmentedDuration']);
+  const o = record(options, 'options');
   if (o.name !== undefined && typeof o.name !== 'string') throw new TypeError(`name must be a string, got ${shown(o.name)}`);
   const signal = o.signal ?? null;
   if (signal !== null) {
     const s = signal as Partial<AbortSignal>;
     if (typeof s !== 'object' || typeof s.aborted !== 'boolean' || typeof s.addEventListener !== 'function' || typeof s.removeEventListener !== 'function') throw new TypeError(`signal must be an AbortSignal, got ${shown(signal)}`);
   }
-  const l = record(o.limits, 'limits', Object.keys(HEADER_DEFAULT_LIMITS));
+  const l = record(o.limits, 'limits');
   const limits = { ...HEADER_DEFAULT_LIMITS };
   for (const key of Object.keys(HEADER_DEFAULT_LIMITS) as (keyof HeaderLimits)[]) if (l[key] !== undefined) limits[key] = count(l[key], `limits.${key}`, 0, true);
-  const r = record(o.readAhead, 'readAhead', ['head', 'tail']);
+  const r = record(o.readAhead, 'readAhead');
+  for (const key of Object.keys(r)) if (key !== 'head' && key !== 'tail' && r[key] !== undefined) throw new TypeError(`readAhead takes only head and tail, got ${key}`);
   const head = r.head === undefined ? DEFAULT_READ_AHEAD.head : count(r.head, 'readAhead.head', MIN_HEAD);
   const tail = r.tail === undefined ? DEFAULT_READ_AHEAD.tail : count(r.tail, 'readAhead.tail', MIN_TAIL);
   const mode = o.fragmentedDuration ?? 'index';
