@@ -364,6 +364,27 @@ function isLimit(e: unknown): e is Limit {
   return typeof code === 'string' && code.endsWith('-limit');
 }
 
+function cachedBox(reader: BlobReader, pos: number): BoxHeader | null {
+  const size = reader.size;
+  const hv = pos + 8 <= size ? reader.peek(pos, Math.min(HEADER_PEEK, size - pos)) : null;
+  try {
+    const h = hv && readBoxHeader(hv, 0, size - pos, pos);
+    return h && !h.truncated ? h : null;
+  } catch {
+    return null;
+  }
+}
+
+function onlyFragment(reader: BlobReader, first: BoxHeader): boolean {
+  const after = first.start + first.size;
+  const data = cachedBox(reader, after);
+  if (after === reader.size) return true;
+  if (data?.type !== 'mdat') return false;
+  const end = after + data.size;
+  const next = cachedBox(reader, end);
+  return end === reader.size || (next?.type === 'mfra' && end + next.size === reader.size);
+}
+
 function lastOffset(set: Set<number> | undefined): number | null {
   let last: number | null = null;
   for (const o of set ?? []) if (last === null || o > last) last = o;
@@ -400,7 +421,9 @@ async function resolveFragmented(w: Walk, walked: Walked, videos: IsoTrack[], bu
     if (first && !limit && (plan.index || !cut || covers([size]))) {
       if (first.size > MOOF_HARD_CAP) throw new IsoBmffError('too-large', `corrupt file: moof larger than 64 MiB at ${first.start}`);
       parseFragment(w, reader.peek(first.start, first.size) ?? (await reader.view(first.start, first.size, ahead(w, first.start, plan.head))), first.start, parsed);
-      bySidx([size]);
+      whole = onlyFragment(reader, first);
+      if (whole) for (const tr of open()) settle(tr, null, tr.fragments);
+      else bySidx([size]);
     }
     for (const tr of tracks) firstCount.set(tr, tr.fragments.length);
     if (plan.index && !limit && open().length > 0) {

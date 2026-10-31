@@ -249,6 +249,23 @@ describe('read plan of virtual sources', () => {
     for (const fragmentedDuration of ['index', 'header'] as const) expect((await analyzeHeader(src, { fragmentedDuration })).errorCode, fragmentedDuration).toBe('no-duration');
   });
 
+  test('a first moof whose mdat ends the file is the whole file, so it resolves in the first read without an index', async () => {
+    const short = sidx(1, 15360, 0, [[10, 512]]);
+    const head = bytes(ftyp('iso5'), moov([{ id: 1 }], [mvex({ trex: [{ id: 1, duration: 512 }] })]));
+    const fragment = [moof(1, [{ id: 1, baseDts: 0, count: 30, duration: 512 }], 300), mdatHeader(300), zeros(300)];
+    for (const segments of [[head, short, ...fragment], [head, ...fragment], [head, ...fragment, mfra([])]]) {
+      for (const fragmentedDuration of ['index', 'header'] as const) {
+        const label = `${segments.length} ${fragmentedDuration}`;
+        const r = await analyzeHeader(virtualSource(segments), { fragmentedDuration });
+        expect(r, label).toMatchObject({ error: null, formatDurationSec: 1, warnings: [] });
+        expect(r.videoTracks[0], label).toMatchObject({ durationSec: 1, provenance: { durationSec: 'header' } });
+        expect(r.io.reads, label).toBe(1);
+      }
+    }
+    const tail = virtualSource([head, ...fragment, box('free', zeros(8))]);
+    expect((await analyzeHeader(tail, { fragmentedDuration: 'header' })).errorCode).toBe('no-duration');
+  });
+
   test('a single moof indexed by the mfra resolves every track from that moof', async () => {
     const rec = recording({ fragments: 1, mdatBytes: 200 * KIB, audio: true, audioLonger: 5 });
     const r = await analyzeHeader(rec.source);
