@@ -44,6 +44,7 @@ export interface CheckRules {
   audio?: 'required' | 'forbidden';
   vfr?: RatePolicy;
   uneven?: RatePolicy;
+  sizeBasis?: 'stored' | 'display';
   severity?: 'fail' | 'warn';
 }
 
@@ -95,7 +96,7 @@ const GROUP_KEYS: Record<(typeof GROUPS)[number], readonly string[]> = {
   pixels: RANGE,
   fileSize: RANGE,
 };
-const RULE_KEYS: readonly string[] = [...GROUPS, 'containers', 'codecs', 'audio', 'vfr', 'uneven', 'severity'];
+const RULE_KEYS: readonly string[] = [...GROUPS, 'containers', 'codecs', 'audio', 'vfr', 'uneven', 'sizeBasis', 'severity'];
 
 const invalid = (rule: string, v: unknown, what: string): never => {
   throw new TypeError(`${rule}: ${typeof v === 'number' ? v : JSON.stringify(v)} is not ${what}`);
@@ -259,6 +260,7 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
     ['audio', rules.audio, ['required', 'forbidden']],
     ['vfr', rules.vfr, POLICIES],
     ['uneven', rules.uneven, POLICIES],
+    ['sizeBasis', rules.sizeBasis, ['stored', 'display']],
     ['severity', rules.severity, ['fail', 'warn']],
   ];
   for (const [rule, v, list] of choices) if (v != null && !list.includes(v as string)) invalid(rule, v, `one of ${list.join(', ')}`);
@@ -324,17 +326,19 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   const seconds = span ? value(span) : 0;
   limits('duration', rules.duration, span, seconds, (against) => `${digits(span!, against)}`, ' s', 'duration');
 
-  const size = t ? (Math.abs(t.rotation) % 180 === 90 ? [t.height, t.width] : [t.width, t.height]) : [0, 0];
+  const display = rules.sizeBasis === 'display';
+  const size = t ? (display ? [t.displayWidth, t.displayHeight] : Math.abs(t.rotation) % 180 === 90 ? [t.height, t.width] : [t.width, t.height]) : [0, 0];
   const sized = size.every(whole);
-  const [w, h] = sized ? size : [0, 0];
+  const [w, h] = sized ? (size as number[]) : [0, 0];
+  const sizeOf = display ? `display size${t?.displayWidth === undefined ? ' (needs codecConfig: true and withAspect)' : ''}` : 'frame size';
   const sides = { Width: w, Height: h, ShortSide: Math.min(w, h), LongSide: Math.max(w, h) };
   const d = rules.frameSize as Record<string, RatioValue | undefined> | undefined;
   for (const [side, x] of Object.entries(sides)) {
-    limits('frameSize', { min: d?.[`min${side}`], max: d?.[`max${side}`] }, sized ? [BigInt(x), 1n] : null, x, `${x}`, ' px', 'frame size', side);
+    limits('frameSize', { min: d?.[`min${side}`], max: d?.[`max${side}`] }, sized ? [BigInt(x), 1n] : null, x, `${x}`, ' px', sizeOf, side);
   }
   const area: Q = [BigInt(w), BigInt(h)];
-  limits('aspectRatio', rules.aspectRatio, sized ? area : null, fraction(area), `${w}x${h} (${round(w / h)})`, '', 'frame size');
-  limits('pixels', rules.pixels, sized ? [BigInt(w) * BigInt(h), 1n] : null, w * h, `${w * h}`, ' px', 'frame size');
+  limits('aspectRatio', rules.aspectRatio, sized ? area : null, fraction(area), `${w}x${h} (${round(w / h)})`, '', sizeOf);
+  limits('pixels', rules.pixels, sized ? [BigInt(w) * BigInt(h), 1n] : null, w * h, `${w * h}`, ' px', sizeOf);
   limits('fileSize', rules.fileSize, quantity(result?.size), result?.size ?? '', `${result?.size}`, ' bytes', 'file size');
   allow('containers', rules.containers, result?.container, 'container');
   allow('codecs', rules.codecs, t?.codecName, 'codec name');
