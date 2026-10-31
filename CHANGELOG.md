@@ -4,6 +4,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## Unreleased
 
+## 0.4.0-beta.2 - 2026-10-31
+
 ### Added
 
 - `video-fps-probe/color`: `colorOf(track)` and `withColor(result)` read the codec configuration of a video track and give `color`: the range, primaries, transfer and matrix names that ffprobe 8.1.1 prints, where they came from (`sps`, `colr`, `vpcC` or `Colour`), the bit depth, the numeric profile, the RFC 6381 codec string, `hdr` (`'pq'` or `'hlg'`) and the Dolby Vision configuration record. The container wins over the H.264 or HEVC SPS, as in FFmpeg, and the SPS speaks when the container is silent. A value that is not null equals ffprobe on every committed fixture ([color](docs/api.md#color)).
