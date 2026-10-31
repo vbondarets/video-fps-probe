@@ -198,7 +198,7 @@ function emsgInSegment(segment: number, emsgBytes = 0): VirtualSource {
   let at = head.length;
   for (let i = 0; i < 6; i++) {
     const m = moof(i + 1, [{ id: 1, baseDts: i * 30 * 512, count: 30, duration: 512, cts: 1024 }], 100_000);
-    const emsg = i === segment ? fullBox('emsg', 0, 0, tag('urn:x '), tag('v '), u32(1000), u32(0), u32(10), u32(i), zeros(emsgBytes)) : bytes();
+    const emsg = i === segment ? fullBox('emsg', 0, 0, tag('urn:x\0'), tag('v\0'), u32(1000), u32(0), u32(10), u32(i), zeros(emsgBytes)) : bytes();
     const s = sidx(1, 15360, i * 30 * 512 + 1024, [[emsg.length + m.length + 8 + 100_000, 30 * 512]]);
     segments.push(s, emsg, m, mdatHeader(100_000), { zeros: 100_000 });
     offsets.push(at + s.length + emsg.length);
