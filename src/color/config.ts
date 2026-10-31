@@ -133,22 +133,19 @@ function lastChild(b: Uint8Array, parent: Box | undefined, type: string): Box | 
   return last;
 }
 
-function moovBoxes(moov: DataView, trak: number): IsoBoxes {
-  const out: IsoBoxes = { stsd: null, tkhd: null, mvhd: null };
+function moovBoxes(moov: DataView, trak: number): IsoBoxes | null {
   const b = new Uint8Array(moov.buffer, moov.byteOffset, moov.byteLength);
   const cut = (box: Box | undefined): Uint8Array | null => (box ? b.subarray(box.start, box.end) : null);
-  const top = boxes(b, 0, b.length, true).next();
-  if (top.done || top.value.type !== 'moov') return out;
+  const top: Box | undefined = boxes(b, 0, b.length, true).next().value;
+  let mvhd: Box | undefined;
   let n = 0;
-  for (const c of boxes(b, top.value.payload, top.value.end, true)) {
-    if (c.type === 'mvhd') out.mvhd = cut(c);
-    else if (c.type === 'trak' && n++ === trak) {
-      out.tkhd = cut(lastChild(b, c, 'tkhd'));
-      out.stsd = cut(lastChild(b, lastChild(b, lastChild(b, lastChild(b, c, 'mdia'), 'minf'), 'stbl'), 'stsd'));
-      break;
+  if (top?.type === 'moov') {
+    for (const c of boxes(b, top.payload, top.end, true)) {
+      if (c.type === 'mvhd') mvhd = c;
+      else if (c.type === 'trak' && n++ === trak) return { stsd: cut(lastChild(b, lastChild(b, lastChild(b, lastChild(b, c, 'mdia'), 'minf'), 'stbl'), 'stsd')), tkhd: cut(lastChild(b, c, 'tkhd')), mvhd: cut(mvhd) };
     }
   }
-  return out;
+  return null;
 }
 
 export function isoConfig(config: CodecConfig): IsoConfig | null {
