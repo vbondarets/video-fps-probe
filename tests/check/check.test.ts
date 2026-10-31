@@ -1050,6 +1050,51 @@ describe('check: sizeBasis', () => {
     expect(check(await run('sar_h264_4x3.mp4'), { aspectRatio: { oneOf: ['4:3'] } })).toEqual({ verdict: 'pass', violations: [] });
   });
 
+  it.each([
+    ['sar_4x3.mkv', 213, 120],
+    ['sar_vui_only.mp4', 213, 120],
+    ['sar_pasp_only.mp4', 213, 90],
+    ['sar_pasp_tkhd_matrix.mp4', 213, 90],
+  ])('judges the aspect ratio of %s by the display aspect ratio ffprobe prints, and its size by the rounded display size', async (name, width, height) => {
+    const shown = withAspect(await withConfig(name));
+    const streams = (loadRef(name) as { probe?: { streams?: Array<{ codec_type: string; display_aspect_ratio?: string }> } } | null)?.probe?.streams;
+    const printed = streams?.find((s) => s.codec_type === 'video')?.display_aspect_ratio as `${number}:${number}`;
+    const [num, den] = printed.split(':').map(Number);
+    expect([shown.videoTracks[0]!.displayWidth, shown.videoTracks[0]!.displayHeight]).toEqual([width, height]);
+    expect(check(shown, { aspectRatio: { oneOf: [printed] }, frameSize: { minWidth: width, maxWidth: width, minHeight: height, maxHeight: height }, pixels: { min: width * height, max: width * height }, sizeBasis: 'display' })).toEqual({ verdict: 'pass', violations: [] });
+    expect(check(shown, { aspectRatio: { min: printed, max: printed }, sizeBasis: 'display' })).toEqual({ verdict: 'pass', violations: [] });
+    expect(check(shown, { aspectRatio: { oneOf: ['4:3'] }, sizeBasis: 'display' }).violations).toEqual([
+      { rule: 'aspectRatio.oneOf', severity: 'fail', expected: ['4:3'], actual: `${num}/${den}`, message: `aspectRatio.oneOf: ${width}x${height} (${+(num! / den!).toFixed(3)}) is not one of 4:3` },
+    ]);
+  });
+
+  it('judges NTSC widescreen, 720x480 with a sample aspect ratio of 32:27, as 16:9 and 853x480', () => {
+    const ntsc = { width: 720, height: 480, sampleAspectRatio: rate(32, 27), displayAspectRatio: rate(16, 9) };
+    const rules: CheckRules = { aspectRatio: { oneOf: ['16:9'], min: '16:9' }, frameSize: { minWidth: 853, maxWidth: 853 }, pixels: { min: 409440, max: 409440 }, sizeBasis: 'display' };
+    expect(check(result({ ...ntsc, displayWidth: 853, displayHeight: 480 }), rules)).toEqual({ verdict: 'pass', violations: [] });
+    expect(failed(result({ ...ntsc, displayWidth: 853, displayHeight: 480 }), { aspectRatio: { max: 1.777 }, sizeBasis: 'display' })).toEqual(['aspectRatio.max']);
+    expect(failed(result({ ...ntsc, displayWidth: 853, displayHeight: 480 }), { aspectRatio: { oneOf: ['16:9'] } })).toEqual(['aspectRatio.oneOf']);
+  });
+
+  it('inverts the display aspect ratio when withAspect turned the display size, by the rotation or by a Matroska projection', () => {
+    const ntsc = { width: 720, height: 480, sampleAspectRatio: rate(32, 27), displayAspectRatio: rate(16, 9) };
+    const portrait: CheckRules = { aspectRatio: { oneOf: ['9:16'] }, frameSize: { maxWidth: 480, minHeight: 853 }, sizeBasis: 'display' };
+    expect(check(result({ ...ntsc, rotation: 90, displayWidth: 480, displayHeight: 853 }), portrait)).toEqual({ verdict: 'pass', violations: [] });
+    expect(check(result({ ...ntsc, rotation: -90, displayWidth: 480, displayHeight: 853 }), portrait)).toEqual({ verdict: 'pass', violations: [] });
+    expect(check(result({ ...ntsc, rotation: 0, displayWidth: 480, displayHeight: 853 }), portrait)).toEqual({ verdict: 'pass', violations: [] });
+    expect(check(result({ ...ntsc, rotation: 180, displayWidth: 853, displayHeight: 480 }), { aspectRatio: { oneOf: ['16:9'] }, sizeBasis: 'display' })).toEqual({ verdict: 'pass', violations: [] });
+    const nearlySquare = { width: 719, height: 720, rotation: 90, sampleAspectRatio: rate(1001, 1000), displayAspectRatio: rate(719719, 720000), displayWidth: 720, displayHeight: 720 };
+    expect(check(result(nearlySquare), { aspectRatio: { oneOf: ['720000:719719'] }, sizeBasis: 'display' })).toEqual({ verdict: 'pass', violations: [] });
+  });
+
+  it('judges the display size when there is no display aspect ratio, and never reads the ratio with the stored basis', () => {
+    const square = { width: 1920, height: 1080, displayWidth: 1920, displayHeight: 1080 };
+    expect(check(result({ ...square, displayAspectRatio: null }), { aspectRatio: { oneOf: ['16:9'] }, sizeBasis: 'display' })).toEqual({ verdict: 'pass', violations: [] });
+    expect(failed(result({ ...square, displayAspectRatio: rate(4, 3) }), { aspectRatio: { oneOf: ['16:9'] }, sizeBasis: 'display' })).toEqual(['aspectRatio.oneOf']);
+    expect(check(result({ ...square, displayAspectRatio: rate(4, 3) }), { aspectRatio: { oneOf: ['16:9'] } })).toEqual({ verdict: 'pass', violations: [] });
+    expect(check(result({ ...square, displayWidth: null, displayHeight: null, displayAspectRatio: rate(16, 9) }), { aspectRatio: { oneOf: ['16:9'] }, sizeBasis: 'display' }).violations.map((v) => v.message)).toEqual(['aspectRatio: unknown, no display size']);
+  });
+
   it('is unknown with display for a persisted 0.3.0 result, which has no display size', () => {
     const old = persisted('cfr_h264_30.mp4');
     expect(old.videoTracks[0]).not.toHaveProperty('displayWidth');
