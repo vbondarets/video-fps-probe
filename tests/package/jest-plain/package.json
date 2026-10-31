@@ -1,0 +1,9 @@
+{
+  "name": "video-fps-probe-jest-plain",
+  "private": true,
+  "description": "Jest 30 with no configuration and no transform setup for the CommonJS server entries",
+  "type": "commonjs",
+  "dependencies": {
+    "jest": "30.5.2"
+  }
+}

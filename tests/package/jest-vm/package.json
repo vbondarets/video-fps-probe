@@ -1,0 +1,9 @@
+{
+  "name": "video-fps-probe-jest-vm",
+  "private": true,
+  "description": "Jest 30 with no configuration under --experimental-vm-modules for the ESM server entries",
+  "type": "commonjs",
+  "dependencies": {
+    "jest": "30.5.2"
+  }
+}
