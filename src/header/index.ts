@@ -5,7 +5,7 @@ import { BlobReader, whichErrorCode, type BlobLike } from '../core/reader.ts';
 import { emptyAnalysis } from '../core/result.ts';
 import { sniff } from '../core/sniff.ts';
 import type { ContainerAnalysis, FileErrorCode, FileResult, IoStats } from '../core/types.ts';
-import { HEADER_DEFAULT_LIMITS, LimitedSource, type HeaderLimits } from './limits.ts';
+import { HEADER_DEFAULT_LIMITS, LimitedSource, LimitError, type HeaderLimits } from './limits.ts';
 
 export { errorClass, errorCodeOf, warningCodeOf, warningCodesOf, type ErrorClass } from '../api/codes.ts';
 export { isAbortError, isTimeoutError } from '../api/guards.ts';
@@ -143,9 +143,9 @@ async function analyzeSource(reader: BlobReader, limited: LimitedSource, o: Reso
 
 const messageOf = (e: unknown): string => (e instanceof Error ? e.message || e.name : String(e));
 
-async function withMetadata(analysis: ContainerAnalysis, o: Resolved): Promise<ContainerAnalysis> {
+async function withMetadata(analysis: ContainerAnalysis, o: Resolved, limited: LimitedSource): Promise<ContainerAnalysis> {
   try {
-    const { withAspect, withColor } = await import('./metadata.ts');
+    const { withAspect, withColor } = await limited.race(import('./metadata.ts'));
     throwIfAborted(o.signal);
     const last = { keepCodecConfig: o.codecConfig };
     const colored = o.color ? withColor(analysis, o.aspect ? { keepCodecConfig: true } : last) : analysis;
@@ -158,7 +158,7 @@ async function withMetadata(analysis: ContainerAnalysis, o: Resolved): Promise<C
       return kept;
     });
     if (analysis.error) return { ...analysis, videoTracks, warnings: [...analysis.warnings, `color and aspect not applied: ${messageOf(e)}`] };
-    return failed({ ...analysis, videoTracks }, messageOf(e), 'load-failed');
+    return failed({ ...analysis, videoTracks }, messageOf(e), e instanceof LimitError ? e.errorCode : 'load-failed');
   }
 }
 
@@ -171,6 +171,7 @@ export async function analyzeHeader(source: Blob | BlobLike, options: HeaderOpti
   let analysis: ContainerAnalysis;
   try {
     analysis = await analyzeSource(reader, limited, o);
+    if ((o.color || o.aspect) && analysis.videoTracks.some((t) => t.codecConfig)) analysis = await withMetadata(analysis, o, limited);
   } catch (e) {
     throwIfAborted(o.signal);
     const limit = limited.take();
@@ -179,7 +180,6 @@ export async function analyzeHeader(source: Blob | BlobLike, options: HeaderOpti
   } finally {
     limited.dispose();
   }
-  if ((o.color || o.aspect) && analysis.videoTracks.some((t) => t.codecConfig)) analysis = await withMetadata(analysis, o);
   return {
     name: o.name,
     size: o.size,

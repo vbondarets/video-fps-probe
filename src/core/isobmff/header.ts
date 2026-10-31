@@ -1,7 +1,7 @@
 import { MAX_EXPANDED_SAMPLES } from '../options.ts';
 import { emptyAnalysis } from '../result.ts';
 import { fourcc, whichErrorCode, type BlobReader } from '../reader.ts';
-import type { ContainerAnalysis, Provenance, VideoTrackResult } from '../types.ts';
+import type { ContainerAnalysis, FileErrorCode, Provenance, VideoTrackResult } from '../types.ts';
 import { childBoxes, IsoBmffError, readBoxHeader, type BoxHeader } from './boxes.ts';
 import { buildVideoTrack, containerOf, formatDuration, isAbort, isVideoTrack, layoutOf, MOOV_HARD_CAP, MOOV_SUSPECT_CAP, pickPrimary, readMoov, reportedIds, type Built } from './build.ts';
 import { newMovie, type IsoMovie, type IsoTrack, type TopBox } from './model.ts';
@@ -23,6 +23,7 @@ export interface HeaderBudget {
   readonly bytesLeft: number;
   checkTime(): void;
   take(): Limit | null;
+  race<T>(pending: Promise<T>): Promise<T>;
 }
 
 export interface HeaderPlan {
@@ -583,7 +584,8 @@ export async function analyzeIsoBmffHeader(reader: BlobReader, budget: HeaderBud
     for (const b of built) headerTrack(b.result);
     let loadError: unknown = null;
     if (plan.codecConfig) {
-      const capture = await import('./config.ts').catch((e: unknown) => {
+      const capture = await budget.race(import('./config.ts')).catch((e: unknown) => {
+        if (isAbort(e, reader)) throw e;
         loadError = e;
         return null;
       });
@@ -605,7 +607,7 @@ export async function analyzeIsoBmffHeader(reader: BlobReader, budget: HeaderBud
       if (analysis.error) analysis.warnings.push(`codec configuration not read: ${message}`);
       else {
         analysis.error = message;
-        analysis.errorCode = 'load-failed';
+        analysis.errorCode = (loadError as { errorCode?: FileErrorCode }).errorCode ?? 'load-failed';
       }
     }
   } catch (e) {

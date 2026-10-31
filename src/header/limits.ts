@@ -111,6 +111,11 @@ export class LimitedSource implements BlobLike {
     return t;
   }
 
+  race<T>(pending: Promise<T>): Promise<T> {
+    pending.catch(noop);
+    return Promise.race([pending, this.#stopped]);
+  }
+
   slice(start = 0, end = this.size): BlobSlice {
     return { arrayBuffer: () => this.#fetch(start, end) };
   }
