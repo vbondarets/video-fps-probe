@@ -3,7 +3,7 @@ import { openAsBlob } from 'node:fs';
 import { join } from 'node:path';
 import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
 import { DEFAULT_READ_AHEAD } from '../../src/core/options.ts';
-import { analyzeHeader, HEADER_DEFAULT_LIMITS, isAbortError, isTimeoutError, type BlobLike, type HeaderOptions, type HeaderResult } from '../../src/header/index.ts';
+import { analyzeHeader, HEADER_DEFAULT_LIMITS, isAbortError, isTimeoutError, type BlobLike, type HeaderLimits, type HeaderOptions, type HeaderResult } from '../../src/header/index.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
 
 const unhandled: unknown[] = [];
@@ -247,6 +247,13 @@ describe('argument validation', () => {
     await expect(analyzeHeader(blob, loose({ head: 1024, matroskaScan: 1048576 }))).rejects.toThrow(new TypeError('readAhead takes only head and tail, got matroskaScan'));
     await expect(analyzeHeader(blob, loose({ ...DEFAULT_READ_AHEAD }))).rejects.toThrow(TypeError);
     const r = await analyzeHeader(blob, loose({ head: 1024, fragment: undefined }));
+    expect(r.error).toBeNull();
+  });
+
+  test('limits and the options take only their own keys, so a misspelt limit is refused rather than ignored', async () => {
+    await expect(analyzeHeader(blob, { limits: { maxbytes: 1000 } as HeaderLimits })).rejects.toThrow(new TypeError('limits takes only maxBytes, maxReads, maxMs, maxTracks and maxTopLevelBoxes, got maxbytes'));
+    await expect(analyzeHeader(blob, { maxBytes: 1000 } as HeaderOptions)).rejects.toThrow(new TypeError('options takes only name, signal, limits, readAhead and fragmentedDuration, got maxBytes'));
+    const r = await analyzeHeader(blob, { limits: { maxBytes: undefined, maxReads: 8 }, signal: undefined } as HeaderOptions);
     expect(r.error).toBeNull();
   });
 
