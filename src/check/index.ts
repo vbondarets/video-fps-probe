@@ -321,7 +321,8 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   limits('duration', rules.duration, span, seconds, ' s', 'duration', '', (against) => `${digits(span!, against)}`);
 
   const display = rules.sizeBasis === 'display';
-  const size = t ? (display ? [t.displayWidth, t.displayHeight] : Math.abs(t.rotation) % 180 === 90 ? [t.height, t.width] : [t.width, t.height]) : [0, 0];
+  const turned = Math.abs(t?.rotation as number) % 180 === 90;
+  const size = t ? (display ? [t.displayWidth, t.displayHeight] : turned ? [t.height, t.width] : [t.width, t.height]) : [0, 0];
   const sized = size.every(whole);
   const [w, h] = sized ? (size as number[]) : [0, 0];
   const sizeOf = display ? `display size${t?.displayWidth === undefined ? ' (needs codecConfig: true and withAspect)' : ''}` : 'frame size';
@@ -330,7 +331,8 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   for (const [side, x] of Object.entries(sides)) {
     limits('frameSize', { min: d?.[`min${side}`], max: d?.[`max${side}`] }, sized ? [BigInt(x), 1n] : null, x, ' px', sizeOf, side);
   }
-  const area: Q = [BigInt(w), BigInt(h)];
+  const dar = display && fromRational(t?.displayAspectRatio);
+  const area: Q = dar ? (turned || t!.displayHeight !== t!.height ? [dar[1], dar[0]] : dar) : [BigInt(w), BigInt(h)];
   limits('aspectRatio', rules.aspectRatio, sized ? area : null, fraction(area), '', sizeOf, '', () => `${w}x${h} (${digits(area, [])})`);
   limits('pixels', rules.pixels, sized ? [BigInt(w) * BigInt(h), 1n] : null, w * h, ' px', sizeOf);
   limits('fileSize', rules.fileSize, quantity(result?.size), result?.size ?? '', ' bytes', 'file size');
