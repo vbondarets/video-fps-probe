@@ -195,7 +195,6 @@ function parseStsd(dv: DataView, h: BoxHeader, tr: IsoTrack, ctx: ParseContext):
 }
 
 function parseStbl(dv: DataView, h: BoxHeader, tr: IsoTrack, ctx: ParseContext): void {
-  tr.dv = dv;
   for (const c of children(dv, h, ctx)) {
     const p = payload(c);
     switch (c.type) {
@@ -261,6 +260,7 @@ function parseMdia(dv: DataView, h: BoxHeader, tr: IsoTrack, ctx: ParseContext):
 
 function parseTrak(dv: DataView, h: BoxHeader, movie: IsoMovie, ctx: ParseContext): IsoTrack {
   const tr = newTrack();
+  tr.dv = dv;
   for (const c of children(dv, h, ctx)) {
     const p = payload(c);
     if (c.type === 'tkhd' && p + 84 <= c.end) {
