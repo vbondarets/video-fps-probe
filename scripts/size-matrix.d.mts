@@ -20,3 +20,18 @@ export function normalizedName(name: string): string;
 export function hashNormalizer(names: Iterable<string>): (text: string) => string;
 
 export function moduleId(source: string, root: string): string;
+
+export const COMMONJS_ENTRIES: [entry: string, file: string][];
+
+export interface CommonJsSize {
+  entry: string;
+  file: string;
+  files: number;
+  raw: number;
+  gzip: number;
+  lazyFiles: number;
+  lazyRaw: number;
+  lazyGzip: number;
+}
+
+export function commonJsSizes(cjsDir: string): CommonJsSize[] | null;

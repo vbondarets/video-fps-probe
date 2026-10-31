@@ -99,17 +99,20 @@ export function scanCode(text, fileName) {
 
 export function scanCommonJs(text, fileName) {
   const source = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, false, ts.ScriptKind.JS);
-  const found = { importMeta: 0, dynamicImports: 0, requires: [] };
-  const visit = (node) => {
+  const found = { importMeta: 0, dynamicImports: 0, requires: [], eager: [] };
+  const visit = (node, nested) => {
     if (ts.isMetaProperty(node) && node.keywordToken === ts.SyntaxKind.ImportKeyword) found.importMeta++;
     else if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) found.dynamicImports++;
     else if (ts.isCallExpression(node) && calleeName(node) === 'require') {
       const [arg] = node.arguments;
-      found.requires.push(arg && ts.isStringLiteralLike(arg) ? arg.text : null);
+      const specifier = arg && ts.isStringLiteralLike(arg) ? arg.text : null;
+      found.requires.push(specifier);
+      if (!nested && specifier !== null) found.eager.push(specifier);
     }
-    ts.forEachChild(node, visit);
+    const inner = nested || ts.isFunctionLike(node);
+    ts.forEachChild(node, (child) => visit(child, inner));
   };
-  visit(source);
+  visit(source, false);
   return found;
 }
 

@@ -1,15 +1,24 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { basename, dirname, join, relative, resolve } from 'node:path';
+import { basename, dirname, join, posix as posixPath, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
+import { scanCommonJs } from './check-dist.mjs';
 import { FIXTURES, OWN_WORKERS, SPLIT_ROUTING, WORKER_MUST_NOT, consumersDir, fixtureDist, installedPackage, pinDrift } from './consumers.mjs';
 import { discover, measure, scanReferences } from './size-report.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const KB = 1000;
 const PACKAGE_SOURCE = 'node_modules/video-fps-probe/';
-const ENTRY_SOURCES = { react: ['./react', `${PACKAGE_SOURCE}dist/react/`], check: ['./check', `${PACKAGE_SOURCE}dist/check/`], presets: ['./presets', `${PACKAGE_SOURCE}dist/presets/`], header: ['./header', `${PACKAGE_SOURCE}dist/header/`] };
+const ENTRY_SOURCES = { react: ['./react', `${PACKAGE_SOURCE}dist/react/`], check: ['./check', `${PACKAGE_SOURCE}dist/check/`], presets: ['./presets', `${PACKAGE_SOURCE}dist/presets/`], header: ['./header', `${PACKAGE_SOURCE}dist/header/`], url: ['./url', `${PACKAGE_SOURCE}dist/url/`] };
+const CJS_COPY = `${PACKAGE_SOURCE}dist/cjs/`;
+export const COMMONJS_ENTRIES = [
+  ['video-fps-probe', 'index.cjs'],
+  ['video-fps-probe/header', 'header.cjs'],
+  ['video-fps-probe/url', 'url.cjs'],
+  ['video-fps-probe/check', 'check.cjs'],
+  ['video-fps-probe/presets', 'presets.cjs'],
+];
 
 const RESET = 'The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.';
 const RESET_020 =
@@ -170,6 +179,11 @@ export const BUDGETS = {
     { key: 'header', limit: 3 * KB, why: `The part of the critical path under dist/header/: analyzeHeader, its option checks, the Matroska DocType check and the limited source with its deadline. Measured 2.34 KB. ${RESET} Measured 2.50 KB once the limited source coded an abort of the source itself and a read without bytes as read failures and kept its deadline past the timer range, and 2.48 KB once it lost the two-read reservation before the mfra tail, and 2.50 KB once readAhead took head and tail only, and 2.54 KB once the options and the limits refused unknown keys.` },
     { key: 'entry', limit: 20 * KB, why: `The trigger of this configuration plus the Vite runtime of the entry chunk. Measured 17.94 KB. ${RESET} Measured 18.51 KB, then 18.86 KB, 19.00 KB, 19.07 KB, 19.31 KB and 19.34 KB, 0.02 to 0.03 KB over the trigger above each time.` },
   ],
+  'url-entry': [
+    { key: 'trigger', limit: 24.5 * KB, why: `The package code in the entry chunk of a host that reads object storage from the page: analyzeHeader as in the header configuration, and rangeSource, openRangeSource, httpRange, readCapped and RangeSourceError from video-fps-probe/url. It starts no worker and loads nothing lazily. Measured 21.86 KB, the 19.32 KB of the header configuration plus the Range entry. ${RESET}` },
+    { key: 'url', limit: 3.5 * KB, why: `The part of the critical path under dist/url/: the Range source with the checks of every reply before its body is read, the discovery request, the fetch fetcher and the streaming body cap. It imports nothing at run time. Design estimate 1.2 KB, measured 3.07 KB: every error names the check that failed and the range it failed on, and every argument is checked before the first request. ${RESET}` },
+    { key: 'entry', limit: 24.5 * KB, why: `The trigger of this configuration plus the Vite runtime of the entry chunk. Measured 22.00 KB. ${RESET}` },
+  ],
 };
 
 export const STANDALONE_BUDGETS = {
@@ -184,6 +198,7 @@ const LABELS = {
   check: 'check entry (in the entry chunk)',
   presets: 'presets entry (the imported presets, in the entry chunk)',
   header: 'header entry (analyzeHeader, its option checks and the limited source, in the entry chunk)',
+  url: 'Range entry (rangeSource, openRangeSource, httpRange, readCapped and RangeSourceError, in the entry chunk)',
   entry: 'entry chunk with the preload helper',
   client: 'probe client (lazy)',
   isobmff: 'ISO BMFF parser (in the own worker)',
@@ -472,6 +487,7 @@ export function measureFixture(dir, fixture, { thirdPartyInformational = false }
     check: entryCode('check'),
     presets: entryCode('presets'),
     header: entryCode('header'),
+    url: entryCode('url'),
     client: clientFiles.size > 0 ? { files: [...without(clientFiles)] } : null,
     isobmff: share(isoWorker, 'isobmff'),
     matroska: share(mkvWorker, 'matroska'),
@@ -520,6 +536,7 @@ export function measureFixture(dir, fixture, { thirdPartyInformational = false }
     for (const s of maps.get(f)?.sources ?? []) for (const pattern of fixture.mustNot) if (s.includes(pattern)) leaks.push(`${f}: ${pattern} (${s.slice(s.indexOf('node_modules/'))})`);
   }
   for (const l of leaks) problems.push(`must not exist: ${l}`);
+  for (const f of files) for (const s of maps.get(f)?.sources ?? []) if (s.includes(CJS_COPY)) problems.push(`the CommonJS copy reached a browser build: ${f}: ${s.slice(s.indexOf('node_modules/'))}`);
   const workerLeaks = [];
   for (const [name, patterns] of Object.entries(WORKER_MUST_NOT)) {
     for (const f of workers[name]?.side ?? []) {
@@ -571,6 +588,41 @@ function versionOf(dir, name) {
   return existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')).version : null;
 }
 
+export function commonJsSizes(cjsDir) {
+  if (!existsSync(cjsDir)) return null;
+  const read = new Map();
+  const fileOf = (file) => {
+    if (!read.has(file)) {
+      const bytes = readFileSync(join(cjsDir, file));
+      read.set(file, { bytes, gzip: gzipOf(bytes), scan: scanCommonJs(bytes.toString('utf8'), file) });
+    }
+    return read.get(file);
+  };
+  const closureOf = (start, eagerOnly) => {
+    const seen = new Set([start]);
+    for (const stack = [start]; stack.length > 0; ) {
+      const file = stack.pop();
+      const { scan } = fileOf(file);
+      for (const s of eagerOnly ? scan.eager : scan.requires) {
+        if (typeof s !== 'string' || !s.startsWith('.')) continue;
+        const target = posixPath.join(posixPath.dirname(file), s);
+        if (!seen.has(target)) {
+          seen.add(target);
+          stack.push(target);
+        }
+      }
+    }
+    return [...seen];
+  };
+  const raw = (list) => list.reduce((n, f) => n + fileOf(f).bytes.length, 0);
+  const gzip = (list) => list.reduce((n, f) => n + fileOf(f).gzip, 0);
+  return COMMONJS_ENTRIES.map(([entry, file]) => {
+    const eager = closureOf(file, true);
+    const all = closureOf(file, false);
+    return { entry, file: `dist/cjs/${file}`, files: eager.length, raw: raw(eager), gzip: gzip(eager), lazyFiles: all.length, lazyRaw: raw(all), lazyGzip: gzip(all) };
+  });
+}
+
 export function buildMatrix(dir, { thirdPartyInformational = false } = {}) {
   const fixtures = FIXTURES.map((f) => measureFixture(dir, f, { thirdPartyInformational }));
   const standaloneDir = join(installedPackage(dir), 'dist', 'standalone');
@@ -593,6 +645,7 @@ export function buildMatrix(dir, { thirdPartyInformational = false } = {}) {
     versions: { 'video-fps-probe': versionOf(dir, 'video-fps-probe'), vite: versionOf(dir, 'vite'), rolldown: versionOf(dir, 'rolldown'), mp4box: versionOf(dir, 'mp4box'), mediabunny: versionOf(dir, 'mediabunny') },
     fixtures,
     standalone,
+    commonJs: commonJsSizes(join(installedPackage(dir), 'dist', 'cjs')),
     failures,
     ...(thirdPartyInformational && {
       informational: fixtures.flatMap((f) => f.budgets.filter((b) => measuresThirdParty(f, b.key)).map(({ key, label, limit, gzip, status }) => ({ fixture: f.name, key, label, limit, gzip, status }))),
@@ -660,6 +713,18 @@ export function renderMarkdown(matrix) {
   for (const f of matrix.fixtures.filter((x) => typeof x.metrics.check === 'number')) {
     const preset = typeof f.metrics.presets === 'number' ? ` and ${cell(f.metrics.presets)} the one preset it imports (${f.note})` : '';
     out.push(`In ${f.name}, ${cell(f.metrics.check)} of the ${cell(f.metrics.trigger)} critical path is \`check\`${preset}, imported statically next to the lazy stub. ${preset ? 'Neither entry imports another module or loads anything' : 'It imports no other module and loads nothing'} lazily, so the lazy columns equal the default configuration's.`);
+    out.push('');
+  }
+  if (matrix.commonJs) {
+    out.push('## Node CommonJS');
+    out.push('');
+    out.push(
+      'What `require()` of each server entry loads from the CommonJS copy in `dist/cjs` of the installed tarball, minified like the standalone worker files. Node 22.12 and newer load the ESM build through the `module-sync` condition instead, so these files load only where `require(esm)` is off, such as under `--no-experimental-require-module` or in Jest without vm modules. No bundler resolves them, because the `module` condition comes first, so this table is informational and has no budget. The columns with lazy chunks add the chunks that the entry loads on first use, such as the parsers of `analyze`.',
+    );
+    out.push('');
+    out.push('| Entry | File | Files at require | Raw | gzip -9 | Files with lazy chunks | Raw | gzip -9 |');
+    out.push('|---|---|---:|---:|---:|---:|---:|---:|');
+    for (const c of matrix.commonJs) out.push(`| ${c.entry} | ${c.file} | ${c.files} | ${kb(c.raw)} | ${kb(c.gzip)} | ${c.lazyFiles} | ${kb(c.lazyRaw)} | ${kb(c.lazyGzip)} |`);
     out.push('');
   }
   out.push('## Budgets (gzip)');
