@@ -152,7 +152,10 @@ async function walkTop(w: Walk): Promise<Walked> {
       if (cached) {
         hv = reader.peek(pos, Math.min(HEADER_PEEK, size - pos));
         if (!hv) break;
-        count(w);
+        if (++w.boxes > w.plan.maxTopLevelBoxes) {
+          movie.warnings.push('too many top-level boxes');
+          break;
+        }
       } else {
         visit(w);
         hv = await peekAt(w, pos, afterMdat && !moov ? w.plan.tail : w.plan.head);
