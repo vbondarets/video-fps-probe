@@ -7668,8 +7668,8 @@
       "worker": "none needed: the header entry runs in the calling thread",
       "engines": [],
       "metrics": {
-        "entry": 19313,
-        "trigger": 19291,
+        "entry": 19343,
+        "trigger": 19320,
         "react": null,
         "check": null,
         "presets": null,
@@ -7693,8 +7693,8 @@
       },
       "normalized": {
         "metrics": {
-          "entry": 19313,
-          "trigger": 19291,
+          "entry": 19343,
+          "trigger": 19320,
           "react": null,
           "check": null,
           "presets": null,
@@ -7720,13 +7720,13 @@
       "workers": [],
       "files": [
         {
-          "file": "assets/index-DqLusiKf.js",
-          "gzip": 19313,
+          "file": "assets/index-avtn1yhq.js",
+          "gzip": 19343,
           "worker": null,
           "class": "isobmff",
           "normalized": {
             "file": "assets/index-00000000.js",
-            "gzip": 19313,
+            "gzip": 19343,
             "entry": true,
             "sources": [
               "core/abort.js",
@@ -7770,10 +7770,10 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 20000,
-          "gzip": 19291,
-          "headroom": 709,
+          "gzip": 19320,
+          "headroom": 680,
           "status": "ok",
-          "why": "The package code in the entry chunk of a host that imports video-fps-probe/header statically: analyzeHeader with its option checks, the limited source, the reader, the sniffer, the ISO BMFF box parsers, the header walk, the fragmented duration and the track builder it shares with the full parser. It starts no worker and loads nothing lazily, and it reaches neither the full ISO BMFF parser nor the statistics. Design estimate 11 to 13 KB, measured 17.92 KB, of which 2.37 KB is the per-sample part of the shared track builder, which header mode never runs: moving it out of the shared builder would cost the first MP4 more than the 0.01 KB share of stage 3. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 18.49 KB once the walk followed full mode on hybrid files, single moofs, sidx ends, start offsets and limits after the moov, 18.83 KB once the fragmented duration counted text tracks and searched the sidx before the moof its walk starts at, 18.97 KB once an auxiliary track stopped shortening the span of the video and sound tracks, a covering sidx took the end of the first moof, the sidx search ran before every walk and a moof after a moov without an mvex got a warning, 19.05 KB once a covering sidx counted only when every track had one, every limit that left a track open was noted, the walk read the box header after the moov and after the mdat, and the options and the limits refused unknown keys, and 19.29 KB once a file of one fragment resolved from it, each track with its own covering sidx kept its duration beside a track without one, and a failed peek after the mdat kept the moov."
+          "why": "The package code in the entry chunk of a host that imports video-fps-probe/header statically: analyzeHeader with its option checks, the limited source, the reader, the sniffer, the ISO BMFF box parsers, the header walk, the fragmented duration and the track builder it shares with the full parser. It starts no worker and loads nothing lazily, and it reaches neither the full ISO BMFF parser nor the statistics. Design estimate 11 to 13 KB, measured 17.92 KB, of which 2.37 KB is the per-sample part of the shared track builder, which header mode never runs: moving it out of the shared builder would cost the first MP4 more than the 0.01 KB share of stage 3. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 18.49 KB once the walk followed full mode on hybrid files, single moofs, sidx ends, start offsets and limits after the moov, 18.83 KB once the fragmented duration counted text tracks and searched the sidx before the moof its walk starts at, 18.97 KB once an auxiliary track stopped shortening the span of the video and sound tracks, a covering sidx took the end of the first moof, the sidx search ran before every walk and a moof after a moov without an mvex got a warning, 19.05 KB once a covering sidx counted only when every track had one, every limit that left a track open was noted, the walk read the box header after the moov and after the mdat, and the options and the limits refused unknown keys, and 19.29 KB once a file of one fragment resolved from it, each track with its own covering sidx kept its duration beside a track without one, and a failed peek after the mdat kept the moov, and 19.32 KB once that peek began to carry a warning."
         },
         {
           "key": "header",
@@ -7788,10 +7788,10 @@
           "key": "entry",
           "label": "entry chunk with the preload helper",
           "limit": 20000,
-          "gzip": 19313,
-          "headroom": 687,
+          "gzip": 19343,
+          "headroom": 657,
           "status": "ok",
-          "why": "The trigger of this configuration plus the Vite runtime of the entry chunk. Measured 17.94 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 18.51 KB, then 18.86 KB, 19.00 KB, 19.07 KB and 19.31 KB, 0.02 to 0.03 KB over the trigger above each time."
+          "why": "The trigger of this configuration plus the Vite runtime of the entry chunk. Measured 17.94 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 18.51 KB, then 18.86 KB, 19.00 KB, 19.07 KB, 19.31 KB and 19.34 KB, 0.02 to 0.03 KB over the trigger above each time."
         }
       ],
       "problems": []
