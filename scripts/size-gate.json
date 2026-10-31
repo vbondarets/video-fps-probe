@@ -190,7 +190,7 @@
       "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": null },
       "exact": true,
       "cap": { "check:trigger": 5000, "preset:trigger": 5500 },
-      "why": "Byte-identical to 0.3.0 until the last 0.4.0 step, which adds the check rules and re-sets the preset budget. Stage 6 adds the median frame interval in the duration window, the sizeBasis rule and the hdr policy, and a trim of the shared helpers of check that kept every message: at the end of stage 6 the check row measured 4,772 B and the preset row 5,124 B as built, so the preset budget of the size matrix, and this cap with it, moved from 5.00 KB to its measurement plus 3 percent rounded up to 0.5 KB, 5.50 KB."
+      "why": "Byte-identical to 0.3.0 until the last 0.4.0 step, which adds the check rules and re-sets the preset budget. Stage 6 adds the median frame interval in the duration window, the sizeBasis rule and the hdr policy, and a trim of the shared helpers of check that kept every message: at the end of stage 6 the check row measured 4,776 B and the preset row 5,125 B as built, so the preset budget of the size matrix, and this cap with it, moved from 5.00 KB to its measurement plus 3 percent rounded up to 0.5 KB, 5.50 KB."
     },
     {
       "name": "check chunk of the rule entries",
@@ -198,7 +198,7 @@
       "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": null },
       "exact": true,
       "cap": { "check:check": 4500, "preset:check": 4500 },
-      "why": "The check rules stay identical to 0.3.0 until the last 0.4.0 step, which adds the new rules, and then stay at or below 4.50 KB. At the end of stage 6 both rows measured 4,213 B as built."
+      "why": "The check rules stay identical to 0.3.0 until the last 0.4.0 step, which adds the new rules, and then stay at or below 4.50 KB. At the end of stage 6 the check row measured 4,216 B and the preset row 4,213 B as built."
     },
     {
       "name": "preset data chunk",
