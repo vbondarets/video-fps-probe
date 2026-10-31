@@ -74,18 +74,19 @@ interface Box extends Span {
   payload: number;
 }
 
-function* boxes(b: Uint8Array, start: number, end: number): Generator<Box> {
+function* boxes(b: Uint8Array, start: number, end: number, likeParser = false): Generator<Box> {
   let p = start;
   while (p + 8 <= end) {
     let size = u32(b, p);
     const type = fourccAt(b, p + 4);
     let header = 8;
     if (size === 1) {
-      if (p + 16 > end || u32(b, p + 8) !== 0) return;
-      size = u32(b, p + 12);
+      if (p + 16 > end || (!likeParser && u32(b, p + 8) !== 0)) return;
+      size = u32(b, p + 8) * 2 ** 32 + u32(b, p + 12);
       header = 16;
     } else if (size === 0) size = end - p;
-    if (size < header) return;
+    if (likeParser && type === 'uuid') header += 16;
+    if (size < header || size > Number.MAX_SAFE_INTEGER) return;
     const boxEnd = Math.min(p + size, end);
     yield { type, start: p, end: boxEnd, payload: p + header };
     p += size;
@@ -120,9 +121,41 @@ function sampleEntries(stsd: Uint8Array): SampleEntry[] {
 
 const bytesOf = (b: Uint8Array | null): Uint8Array | null => (b && ArrayBuffer.isView(b) ? b : null);
 
+interface IsoBoxes {
+  stsd: Uint8Array | null;
+  tkhd: Uint8Array | null;
+  mvhd: Uint8Array | null;
+}
+
+function lastChild(b: Uint8Array, parent: Box | undefined, type: string): Box | undefined {
+  let last: Box | undefined;
+  if (parent) for (const c of boxes(b, parent.payload, parent.end, true)) if (c.type === type) last = c;
+  return last;
+}
+
+function moovBoxes(moov: DataView, trak: number): IsoBoxes {
+  const out: IsoBoxes = { stsd: null, tkhd: null, mvhd: null };
+  const b = new Uint8Array(moov.buffer, moov.byteOffset, moov.byteLength);
+  const cut = (box: Box | undefined): Uint8Array | null => (box ? b.subarray(box.start, box.end) : null);
+  const top = boxes(b, 0, b.length, true).next();
+  if (top.done || top.value.type !== 'moov') return out;
+  let n = 0;
+  for (const c of boxes(b, top.value.payload, top.value.end, true)) {
+    if (c.type === 'mvhd') out.mvhd = cut(c);
+    else if (c.type === 'trak' && n++ === trak) {
+      out.tkhd = cut(lastChild(b, c, 'tkhd'));
+      out.stsd = cut(lastChild(b, lastChild(b, lastChild(b, lastChild(b, c, 'mdia'), 'minf'), 'stbl'), 'stsd'));
+      break;
+    }
+  }
+  return out;
+}
+
 export function isoConfig(config: CodecConfig): IsoConfig | null {
-  const bytes = config.family === 'isobmff' ? bytesOf(config.stsd) : null;
-  return bytes && config.family === 'isobmff' ? { bytes, entries: sampleEntries(bytes), tkhd: bytesOf(config.tkhd), mvhd: bytesOf(config.mvhd) } : null;
+  if (config.family !== 'isobmff') return null;
+  const found = 'moov' in config ? (ArrayBuffer.isView(config.moov) ? moovBoxes(config.moov, config.trak) : null) : config;
+  const bytes = found && bytesOf(found.stsd);
+  return bytes ? { bytes, entries: sampleEntries(bytes), tkhd: bytesOf(found.tkhd), mvhd: bytesOf(found.mvhd) } : null;
 }
 
 export function firstBox(entry: SampleEntry | undefined, type: string): Span | null {
