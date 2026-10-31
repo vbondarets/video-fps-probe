@@ -6,7 +6,7 @@ import { analyze } from '../../src/core/analyze.ts';
 import type { FileResult, VideoTrackResult } from '../../src/core/types.ts';
 import { analyzeHeader, warningCodesOf, type HeaderResult } from '../../src/header/index.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
-import { auxiliary, bytes, ftyp, fullBox, mdatHeader, mfra, moof, moov, mvex, recording, sidx, tag, u32, virtualSource, withText, zeros, type Segment, type VirtualSource } from '../helpers/iso-builder.ts';
+import { auxiliary, bytes, ftyp, fullBox, mdatHeader, mfra, moof, moov, mvex, recording, sidx, tag, u32, virtualSource, withText, zeros, type FragmentSpec, type Segment, type VirtualSource } from '../helpers/iso-builder.ts';
 
 const TRACK_FIELDS = ['codecName', 'fourccOrCodecId', 'width', 'height', 'rotation', 'frames', 'isStill', 'enabled', 'durationSec', 'startSec', 'avgFpsFfprobe', 'sampleAspectRatio', 'displayWidth', 'displayHeight'] as const;
 const FILE_FIELDS = ['container', 'brand', 'formatDurationSec', 'layout', 'error', 'errorCode', 'audioTrackCount', 'primaryTrackId'] as const;
@@ -139,6 +139,32 @@ function coveringSidx(fragments: number): VirtualSource {
   return virtualSource([head, first, second, ...pieces]);
 }
 
+function globalSidxShorterSound(): VirtualSource {
+  const head = bytes(ftyp('cmfc'), moov([{ id: 1, timescale: 15360 }, { id: 2, handler: 'soun', timescale: 48000 }], [mvex({ trex: [{ id: 1, duration: 512 }, { id: 2, duration: 1024 }] })]));
+  const pieces: Segment[] = [];
+  const sizes: number[] = [];
+  const video: Array<[number, number]> = [];
+  const audio: Array<[number, number]> = [];
+  for (let i = 0; i < 6; i++) {
+    const trafs: FragmentSpec[] = [{ id: 1, baseDts: i * 30 * 512, count: 30, duration: 512 }];
+    if (i < 4) trafs.push({ id: 2, baseDts: i * 47 * 1024, count: i === 3 ? 48 : 47, duration: 1024 });
+    const m = moof(i + 1, trafs, 100_000);
+    pieces.push(m, mdatHeader(100_000), { zeros: 100_000 });
+    sizes.push(m.length + 8 + 100_000);
+    video.push([m.length + 8 + 100_000, 30 * 512]);
+    if (i < 4) audio.push([m.length + 8 + 100_000, 47 * 1024]);
+  }
+  const second = sidx(2, 48000, 0, audio);
+  const first = sidx(1, 15360, 0, video, second.length);
+  const offsets: number[] = [];
+  let at = head.length + first.length + second.length;
+  for (const n of sizes) {
+    offsets.push(at);
+    at += n;
+  }
+  return virtualSource([head, first, second, ...pieces, mfra([{ id: 1, offsets }, { id: 2, offsets: offsets.slice(0, 4) }])]);
+}
+
 function sidxBefore(segment: (i: number) => boolean): VirtualSource {
   const head = bytes(ftyp('iso5'), moov([{ id: 1, timescale: 15360 }], [mvex({ trex: [{ id: 1, duration: 512 }] })]));
   const segments: Segment[] = [head];
@@ -186,6 +212,7 @@ const VIRTUAL: Array<[string, () => VirtualSource]> = [
   ['an emsg between the sidx and the moof of the first segment', () => emsgInSegment(0)],
   ['a sidx before every moof but the first', () => sidxBefore((i) => i > 0)],
   ['a sidx before the last moof only', () => sidxBefore((i) => i === 5)],
+  ['a global sidx per track whose shorter sound runs past its sidx', globalSidxShorterSound],
   ['a text track that ends 0.5 s after the video', () => withText(1, 1500)],
   ['a text track that ends 1.5 s after the video', () => withText(1, 2500)],
   ['a text track in the first of three moofs that ends 0.5 s after the video', () => withText(3, 3500)],
