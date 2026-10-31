@@ -38,12 +38,13 @@ export function containerOf(movie: IsoMovie): ContainerKind {
   return movie.brand === 'qt  ' || (!movie.hasFtyp && movie.topLevel.length > 0) ? 'mov' : 'mp4';
 }
 
-export async function readMoov(reader: BlobReader, h: BoxHeader, movie: IsoMovie): Promise<void> {
+export async function readMoov(reader: BlobReader, h: BoxHeader, movie: IsoMovie, copyMoov?: boolean): Promise<void> {
   const size = reader.size;
   const beyond = h.start + h.size > size;
   if (!beyond && h.size > MOOV_HARD_CAP) throw new IsoBmffError('too-large', 'unsupported: moov larger than 256 MiB');
   const len = beyond ? Math.min(size - h.start, MOOV_SUSPECT_CAP) : h.size;
-  const dv = await reader.view(h.start, len, 0);
+  const read = await reader.view(h.start, len, 0);
+  const dv = copyMoov ? new DataView(read.buffer.slice(read.byteOffset, read.byteOffset + len)) : read;
   const mh = readBoxHeader(dv, 0, dv.byteLength);
   if (!mh) throw new IsoBmffError('truncated', 'incomplete file: moov is truncated');
   parseMoov(dv, mh, movie, beyond, h.start);
@@ -100,7 +101,7 @@ export async function walk(reader: BlobReader, opts: ResolvedAnalyzeOptions, mov
       if (sawMoov) movie.warnings.push(`ignored a second moov at ${pos}`);
       else {
         movie.moov = [pos, rel.size];
-        await readMoov(reader, h, movie);
+        await readMoov(reader, h, movie, opts.codecConfig);
         sawMoov = true;
       }
     } else if (h.type === 'moof') {
