@@ -6,7 +6,7 @@ import { analyze } from '../../src/core/analyze.ts';
 import type { FileResult, VideoTrackResult } from '../../src/core/types.ts';
 import { analyzeHeader, warningCodesOf, type HeaderResult } from '../../src/header/index.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
-import { bytes, ftyp, fullBox, mdatHeader, mfra, moof, moov, mvex, recording, sidx, tag, u32, virtualSource, zeros, type FragmentSpec, type Segment, type VirtualSource } from '../helpers/iso-builder.ts';
+import { auxiliary, bytes, ftyp, fullBox, mdatHeader, mfra, moof, moov, mvex, recording, sidx, tag, u32, virtualSource, withText, zeros, type Segment, type VirtualSource } from '../helpers/iso-builder.ts';
 
 const TRACK_FIELDS = ['codecName', 'fourccOrCodecId', 'width', 'height', 'rotation', 'frames', 'isStill', 'enabled', 'durationSec', 'startSec', 'avgFpsFfprobe', 'sampleAspectRatio', 'displayWidth', 'displayHeight'] as const;
 const FILE_FIELDS = ['container', 'brand', 'formatDurationSec', 'layout', 'error', 'errorCode', 'audioTrackCount', 'primaryTrackId'] as const;
@@ -104,42 +104,6 @@ function hybrid(withSidx: boolean): VirtualSource {
 function oneFrame(): VirtualSource {
   const head = bytes(ftyp('iso5'), moov([{ id: 1, timescale: 15360 }], [mvex({ trex: [{ id: 1, duration: 512 }] })]));
   return virtualSource([head, moof(1, [{ id: 1, baseDts: 0, count: 1, duration: 512 }], 500), mdatHeader(500), { zeros: 500 }, mfra([{ id: 1, offsets: [head.length] }])]);
-}
-
-function withText(fragments: number, textMs: number): VirtualSource {
-  const head = bytes(ftyp('iso5'), moov([{ id: 1, timescale: 15360 }, { id: 2, handler: 'text', timescale: 1000 }], [mvex({ trex: [{ id: 1, duration: 512 }, { id: 2, duration: 1000 }] })]));
-  const segments: Segment[] = [head];
-  const offsets: number[] = [];
-  let at = head.length;
-  for (let i = 0; i < fragments; i++) {
-    const trafs: FragmentSpec[] = [{ id: 1, baseDts: i * 30 * 512, count: 30, duration: 512 }];
-    if (i === 0) trafs.push({ id: 2, baseDts: 0, count: 1, duration: textMs });
-    const m = moof(i + 1, trafs, 100_000);
-    offsets.push(at);
-    segments.push(m, mdatHeader(100_000), { zeros: 100_000 });
-    at += m.length + 8 + 100_000;
-  }
-  segments.push(mfra([{ id: 1, offsets }, { id: 2, offsets: [offsets[0]] }]));
-  return virtualSource(segments);
-}
-
-function auxiliary(mehd: number | null, textInIndex: boolean): VirtualSource {
-  const head = bytes(ftyp('iso5'), moov([{ id: 1, timescale: 15360 }, { id: 2, handler: 'soun', timescale: 48000 }, { id: 3, handler: 'text', timescale: 1000 }], [mvex({ trex: [{ id: 1, duration: 512 }, { id: 2, duration: 1024 }, { id: 3, duration: 1000 }], mehd })]));
-  const segments: Segment[] = [head];
-  const offsets: number[] = [];
-  let at = head.length;
-  for (let i = 0; i < 6; i++) {
-    const trafs: FragmentSpec[] = [{ id: 1, baseDts: i * 30 * 512, count: 30, duration: 512, cts: 1024 }, { id: 2, baseDts: i * 48000, count: 1, duration: 48000 }];
-    if (i === 0) trafs.push({ id: 3, baseDts: 0, count: 1, duration: 6000 });
-    const m = moof(i + 1, trafs, 100_000);
-    offsets.push(at);
-    segments.push(m, mdatHeader(100_000), { zeros: 100_000 });
-    at += m.length + 8 + 100_000;
-  }
-  const entries = [{ id: 1, offsets }, { id: 2, offsets }];
-  if (textInIndex) entries.push({ id: 3, offsets: [offsets[0]] });
-  segments.push(mfra(entries));
-  return virtualSource(segments);
 }
 
 function hybridWithText(): VirtualSource {
@@ -272,7 +236,8 @@ describe('header mode against full mode on virtual sources', () => {
     expect(header.io.reads).toBe(3);
     expect(header.videoTracks[0].durationSec).toBe(full.videoTracks[0].durationSec);
     expect(header.formatDurationSec).toBe(full.videoTracks[0].durationSec);
-    expect(header.warnings).toContain('format duration unresolved: track 2');
+    expect(header.warnings).toEqual(['fragment index not read: limit reached: maxReads 3', 'format duration unresolved: track 2']);
+    expect(warningCodesOf(header)).toEqual(['fragment-index-unread', 'duration-unresolved']);
   });
 
   test('a text track next to a covering sidx in header mode keeps the video span, with the warning', async () => {

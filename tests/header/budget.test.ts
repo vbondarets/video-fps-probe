@@ -4,7 +4,7 @@ import { describe, expect, test } from 'vitest';
 import { isoBmffFixtureSet } from '../../scripts/compare/layout.ts';
 import { analyzeHeader, warningCodesOf, type BlobLike, type HeaderLimits, type HeaderResult } from '../../src/header/index.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
-import { box, bytes, ftyp, mdatHeader, moov, moovOfSize, recording, virtualSource, zeros, type Segment } from '../helpers/iso-builder.ts';
+import { auxiliary, box, bytes, ftyp, mdatHeader, moof, moov, moovOfSize, mvex, recording, sidx, virtualSource, withText, zeros, type Segment, type VirtualSource } from '../helpers/iso-builder.ts';
 
 const MIB = 1024 * 1024;
 const LIMIT_CODES = new Set(['byte-limit', 'read-limit', 'time-limit', 'structure-limit']);
@@ -16,6 +16,21 @@ const SWEEPS: Array<[keyof HeaderLimits, number[]]> = [
 ];
 
 const UNLIMITED: HeaderLimits = { maxBytes: Number.POSITIVE_INFINITY, maxReads: Number.POSITIVE_INFINITY, maxMs: Number.POSITIVE_INFINITY, maxTracks: Number.POSITIVE_INFINITY, maxTopLevelBoxes: Number.POSITIVE_INFINITY };
+const HEADS = [undefined, 1024];
+
+function singleSound(): VirtualSource {
+  const head = bytes(ftyp('cmfc'), moov([{ id: 1, handler: 'soun', timescale: 48000 }], [mvex({ trex: [{ id: 1, duration: 1024 }] })]));
+  const m = moof(1, [{ id: 1, baseDts: 0, count: 470, duration: 1024 }], 20_000);
+  const pad = 65_536 - 40 - head.length - sidx(1, 48000, 0, [[0, 0]]).length;
+  return virtualSource([head, sidx(1, 48000, 0, [[m.length + 8 + 20_000, 469 * 1024]], pad), box('free', zeros(pad - 8)), m, mdatHeader(20_000), { zeros: 20_000 }]);
+}
+
+function slow(open: () => BlobLike, ms: number): () => BlobLike {
+  return () => {
+    const inner = open();
+    return { size: inner.size, slice: (start, end) => ({ arrayBuffer: () => new Promise<ArrayBuffer>((resolve, reject) => setTimeout(() => inner.slice(start, end).arrayBuffer().then(resolve, reject), ms)) }) };
+  };
+}
 
 function virtualSources(): Array<[string, () => BlobLike]> {
   const video = { id: 1, samples: [[90, 512]] as Array<[number, number]> };
@@ -38,6 +53,10 @@ function virtualSources(): Array<[string, () => BlobLike]> {
     ['40 free boxes after a moov without mvex', () => virtualSource([ftyp(), moov([video]), ...Array.from({ length: 40 }, () => box('free')), mdatHeader(MIB), { zeros: MIB }])],
     ['2000 free boxes', () => virtualSource(free)],
     ['20,000 trak boxes', () => virtualSource([ftyp(), box('moov', ...Array.from({ length: 20_000 }, () => box('trak'))), bytes(mdatHeader(8)), zeros(8)])],
+    ['one sound fragment across the head window with a sidx to the end and no mfra', singleSound],
+    ['a video sidx with shorter sound found through the mfra', () => recording({ fragments: 4, mdatBytes: 100_000, audio: true, audioShorter: 10, sidx: true }).source],
+    ['a text track in the first of three moofs that ends 0.5 s after the video', () => withText(3, 3500)],
+    ['a text track indexed in the mfra beside B-frame video, sound and mehd', () => auxiliary(6000, true)],
   ];
 }
 
@@ -66,13 +85,16 @@ function check(label: string, r: HeaderResult, unlimited: HeaderResult, limits: 
 
 async function sweep(label: string, open: () => BlobLike): Promise<number> {
   let runs = 0;
-  const unlimited = await analyzeHeader(open(), { name: label, limits: UNLIMITED });
-  for (const [key, values] of SWEEPS) {
-    for (const value of values) {
-      const limits = { ...UNLIMITED, [key]: value };
-      const r = await analyzeHeader(open(), { name: label, limits });
-      check(`${label} ${key} ${value}`, r, unlimited, { [key]: value });
-      runs++;
+  for (const head of HEADS) {
+    const readAhead = { head };
+    const unlimited = await analyzeHeader(open(), { name: label, limits: UNLIMITED, readAhead });
+    for (const [key, values] of SWEEPS) {
+      for (const value of values) {
+        const limits = { ...UNLIMITED, [key]: value };
+        const r = await analyzeHeader(open(), { name: label, limits, readAhead });
+        check(`${label} head ${head ?? 'default'} ${key} ${value}`, r, unlimited, { [key]: value });
+        runs++;
+      }
     }
   }
   return runs;
@@ -88,7 +110,7 @@ describe('budget sweep', () => {
       const blob = await openAsBlob(join(FILES_DIR, name));
       runs += await sweep(name, () => blob);
     }
-    expect(runs).toBe(iso.length * 22);
+    expect(runs).toBe(iso.length * 22 * HEADS.length);
   }, 300_000);
 
   test('every virtual source stays inside every swept limit and never rejects', async () => {
@@ -98,8 +120,20 @@ describe('budget sweep', () => {
   test('the recommended tight server limits hold on every virtual source', async () => {
     const limits = { maxBytes: 2 * MIB, maxReads: 3, maxMs: 2500, maxTracks: 16, maxTopLevelBoxes: 32 };
     for (const [label, open] of virtualSources()) {
-      const unlimited = await analyzeHeader(open(), { limits: UNLIMITED });
-      check(label, await analyzeHeader(open(), { limits }), unlimited, limits);
+      for (const head of HEADS) {
+        const unlimited = await analyzeHeader(open(), { limits: UNLIMITED, readAhead: { head } });
+        check(`${label} head ${head ?? 'default'}`, await analyzeHeader(open(), { limits, readAhead: { head } }), unlimited, limits);
+      }
     }
   }, 300_000);
+
+  test('a slow source under maxMs equals the unlimited result or carries a limit code', async () => {
+    const sources = virtualSources().filter(([label]) => /sound fragment across|video sidx with shorter sound|text track in the first/.test(label));
+    expect(sources.length).toBe(3);
+    for (const [label, open] of sources) {
+      const source = slow(open, 40);
+      const unlimited = await analyzeHeader(source(), { limits: UNLIMITED });
+      for (const maxMs of [0, 30, 70, 110, 150]) check(`${label} maxMs ${maxMs}`, await analyzeHeader(source(), { limits: { ...UNLIMITED, maxMs } }), unlimited, {});
+    }
+  }, 60_000);
 });
