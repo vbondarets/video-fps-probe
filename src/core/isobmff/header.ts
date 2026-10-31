@@ -294,9 +294,13 @@ async function preRun(w: Walk, from: number, run: number, after: number): Promis
 
 function sidxEnd(movie: IsoMovie, tr: IsoTrack, ends: number[] | null): number | null {
   let end: number | null = null;
+  let at = -1;
   for (const b of movie.topLevel) {
     const x = b.sidx;
-    if (x && !x.hierarchical && x.referenceId === tr.id && x.timescale === tr.timescale && (!ends || ends.includes(x.coverageEnd))) end = x.earliestPts + x.durationSum;
+    if (x && b.start > at && !x.hierarchical && x.referenceId === tr.id && x.timescale === tr.timescale && (!ends || ends.includes(x.coverageEnd))) {
+      end = x.earliestPts + x.durationSum;
+      at = b.start;
+    }
   }
   return end;
 }
@@ -357,7 +361,8 @@ function lastOffset(set: Set<number> | undefined): number | null {
 async function resolveFragmented(w: Walk, walked: Walked, videos: IsoTrack[], built: Built[], analysis: ContainerAnalysis): Promise<void> {
   const { reader, plan, movie } = w;
   const size = reader.size;
-  const tracks = movie.tracks.filter((t) => videos.includes(t) || t.handler === 'soun');
+  const isMain = (t: IsoTrack): boolean => videos.includes(t) || t.handler === 'soun';
+  const tracks = movie.tracks.filter((t) => isMain(t) || t.hasMdhd);
   const resolved = new Map<IsoTrack, Resolved>();
   const parsed = new Set<number>();
   const firstCount = new Map<IsoTrack, number>();
@@ -385,14 +390,25 @@ async function resolveFragmented(w: Walk, walked: Walked, videos: IsoTrack[], bu
       if (index) {
         const stop = size - index.mfraSize;
         bySidx([size, stop]);
-        let from: number | null = null;
-        for (const tr of open()) {
-          const last = lastOffset(index.offsets.get(tr.id));
-          if (last !== null && (from === null || last < from)) from = last;
-        }
-        if (from !== null) {
-          if (first) await preRun(w, from, walked.run, first.start + first.size);
-          whole = (await walkFragments(w, from, stop, parsed)) && first !== null && from <= first.start;
+        let low = stop;
+        let reached = true;
+        for (const main of [true, false]) {
+          let from: number | null = null;
+          for (const tr of open()) {
+            const last = isMain(tr) === main ? lastOffset(index.offsets.get(tr.id)) : null;
+            if (last !== null && last < low && (from === null || last < from)) from = last;
+          }
+          if (from === null) continue;
+          const before = tracks.map((t) => t.fragments.length);
+          if (main && first) await preRun(w, from, walked.run, first.start + first.size);
+          reached = (await walkFragments(w, from, low, parsed)) && reached;
+          tracks.forEach((t, i) => {
+            const f = t.fragments;
+            const a = firstCount.get(t) ?? 0;
+            t.fragments = [...f.slice(0, a), ...f.slice(before[i]), ...f.slice(a, before[i])];
+          });
+          low = from;
+          whole = reached && first !== null && from <= first.start;
           for (const tr of open()) {
             const tail = tr.fragments.slice(firstCount.get(tr));
             if (whole || (tail.length > 0 && tail[0].baseDts !== null)) settle(tr, null, tr.fragments);
@@ -410,9 +426,7 @@ async function resolveFragmented(w: Walk, walked: Walked, videos: IsoTrack[], bu
   if (limit && mehd !== null && open().length > 0) analysis.warnings.push(`fragment index not read: ${limit.message}`);
   for (const tr of open()) if (mehd !== null) resolved.set(tr, { ticks: mehd, timescale: movie.timescale, provenance: 'estimated' });
   for (const tr of tracks) {
-    if (resolved.has(tr) || videos.includes(tr) || hasFragmentData(tr, movie, index)) continue;
-    const ticks = timingOf(tr, movie, []).durationTs;
-    if (ticks > 0) resolved.set(tr, { ticks, timescale: tr.timescale, provenance: 'header' });
+    if (!resolved.has(tr) && !videos.includes(tr) && !hasFragmentData(tr, movie, index)) resolved.set(tr, { ticks: timingOf(tr, movie, []).durationTs, timescale: tr.timescale, provenance: 'header' });
   }
   videos.forEach((tr, i) => {
     const t = built[i].result;
@@ -431,25 +445,32 @@ async function resolveFragmented(w: Walk, walked: Walked, videos: IsoTrack[], bu
     else delete p.durationSec;
   });
   const unresolved = open();
-  const failed = videos.length > 0 ? !videos.some((tr) => resolved.has(tr)) : resolved.size === 0 && unresolved.length > 0;
+  const failed = videos.length > 0 ? !videos.some((tr) => resolved.has(tr)) : ![...resolved.keys()].some(isMain) && unresolved.some(isMain);
   const unstarted: IsoTrack[] = [];
-  let dur = 0;
-  let start = Number.POSITIVE_INFINITY;
-  let end = Number.NEGATIVE_INFINITY;
+  const NONE = Number.MAX_SAFE_INTEGER;
+  const av = { start: NONE, end: -NONE, dur: -NONE };
+  const text = { ...av };
   let span = true;
+  let counted = 0;
   for (const [tr, r] of resolved) {
+    if (!tr.hasMdhd) continue;
+    counted++;
+    const m = isMain(tr) ? av : text;
     const d = rescaleRound(r.ticks, 1e6, r.timescale);
-    dur = Math.max(dur, d);
+    m.dur = Math.max(m.dur, d);
     const s = timingOf(tr, movie, whole ? tr.fragments : tr.fragments.slice(0, firstCount.get(tr) ?? 0)).startPts;
     if (r.provenance === 'estimated') span = false;
     else if (s !== null) {
       const at = rescaleRound(s, 1e6, tr.timescale);
-      start = Math.min(start, at);
-      end = Math.max(end, at + d);
+      m.start = Math.min(m.start, at);
+      m.end = Math.max(m.end, at + d);
     } else if (!whole && hasFragmentData(tr, movie, index)) unstarted.push(tr);
   }
-  if (span && end >= start) dur = Math.max(dur, end - start);
-  if (!span || resolved.size < 2) unstarted.length = 0;
+  if (av.start === NONE || (av.start > text.start && av.start - text.start < 1e6)) av.start = text.start;
+  if (av.end === -NONE || (av.end < text.end && text.end - av.end < 1e6)) av.end = text.end;
+  let dur = av.dur === -NONE || (av.dur < text.dur && text.dur - av.dur < 1e6) ? text.dur : av.dur;
+  if (span && av.start !== NONE && av.end !== -NONE && av.end >= av.start) dur = Math.max(dur, av.end - av.start);
+  if (!span || counted < 2) unstarted.length = 0;
   if (!failed) for (const tr of [...unresolved, ...unstarted]) analysis.warnings.push(`format duration unresolved: track ${tr.id}`);
   analysis.formatDurationSec = unresolved.length + unstarted.length === 0 && dur > 0 ? dur / 1e6 : null;
   analysis.primaryTrackId = fragmentedPrimary(built);
