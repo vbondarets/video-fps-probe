@@ -23,6 +23,8 @@ How the package ships its workers, what each bundler needs, and what is verified
 
 Verified means the consumer smoke test (`npm run test:consumers`): every fixture of `tests/consumers/fixtures/` gives the same results in the browser as Node `analyze` from the same tarball, under `vite build` and `vite dev`, and the dev page must not reload when an engine first runs.
 
+The five server entries, `video-fps-probe`, `video-fps-probe/header`, `video-fps-probe/url`, `video-fps-probe/check` and `video-fps-probe/presets`, also carry a CommonJS copy in `dist/cjs` under a `require` condition. Their `module` condition comes first, so Vite, webpack, Rspack, Parcel and esbuild resolve the ESM build for `import` and for `require()` alike, and the size matrix fails a build of any consumer fixture that holds a file of `dist/cjs`. The CommonJS copy is meant for Node and Jest: a tool that resolved `require` before `module` would take it, and its root entry has no worker reference a bundler can follow. The `url-entry` fixture runs `analyzeHeader` over a `rangeSource` in the page and gives the Node results under `vite build` and `vite dev`.
+
 ## Vite 8
 
 <!-- tables:vite:start -->
