@@ -72,7 +72,7 @@ export interface CheckReport {
 
 type Q = readonly [bigint, bigint];
 type Bound = 'min' | 'max' | 'exact' | 'oneOf';
-type Text = string | ((against: readonly Q[]) => string);
+type Text = (against: readonly Q[]) => string;
 
 const UNEVEN_SPREAD = 1.075;
 const DECIMATE_FROM: Q = [3n, 2n];
@@ -80,7 +80,8 @@ const SPAN_SLACK_MS = 3n;
 const MAX_EXPONENT = 400;
 const NOMINAL_SLACK_PER_S = 10_000_000n;
 const NTSC = [24n, 30n, 48n, 60n, 120n];
-const STANDARD: Q[] = [...[24n, 25n, 30n, 48n, 50n, 60n, 100n, 120n].map((m): Q => [m, 1n]), ...NTSC.map((m): Q => [m * 1000n, 1001n])];
+const drop = (m: bigint): Q => [m * 1000n, 1001n];
+const STANDARD: Q[] = [...[24n, 25n, 30n, 48n, 50n, 60n, 100n, 120n].map((m): Q => [m, 1n]), ...NTSC.map(drop)];
 const RELATION: Record<Bound, string> = { min: 'below the minimum', max: 'above the maximum', exact: 'not', oneOf: 'not one of' };
 const BOUNDS = Object.keys(RELATION) as Bound[];
 const GROUPS = ['fps', 'duration', 'frameSize', 'aspectRatio', 'pixels', 'fileSize'] as const;
@@ -90,7 +91,7 @@ const AUDIO_ENGINES: readonly string[] = ['own', 'mp4box', 'mediabunny'];
 const RANGE = ['min', 'max'];
 const FILE_RULES: readonly string[] = ['fileSize', 'containers', 'audio'];
 const GROUP_KEYS: Record<(typeof GROUPS)[number], readonly string[]> = {
-  fps: [...RANGE, 'exact', 'oneOf', 'source'],
+  fps: [...BOUNDS, 'source'],
   duration: RANGE,
   frameSize: ['Width', 'Height', 'ShortSide', 'LongSide'].flatMap((side) => RANGE.map((b) => b + side)),
   aspectRatio: [...RANGE, 'oneOf'],
@@ -124,7 +125,7 @@ function ratio(v: unknown, rule: string, amount = false): Q {
 
 const cmp = (a: Q, b: Q): bigint => a[0] * b[1] - b[0] * a[1];
 
-const ntsc = (v: unknown, q: Q): Q[] => (/[/:]/.test(String(v)) ? [] : NTSC.filter((m) => q[0] * 1000n === q[1] * m * 999n).map((m): Q => [m * 1000n, 1001n]));
+const ntsc = (v: unknown, q: Q): Q[] => (/[/:]/.test(String(v)) ? [] : NTSC.filter((m) => q[0] * 1000n === q[1] * m * 999n).map(drop));
 
 const readings = (v: unknown, rule: string): Q[] => {
   const q = ratio(v, rule);
@@ -157,8 +158,6 @@ const fromRational = (r: Pick<Rational, 'num' | 'den'> | null | undefined): Q | 
 const gcd = (a: bigint, b: bigint): bigint => (b === 0n ? a : gcd(b, a % b));
 
 const value = (q: Q): number => Number(q[0]) / Number(q[1]);
-
-const round = (x: number): number => +x.toFixed(3);
 
 const micros = (q: Q): bigint => (q[0] * 2_000_000n + q[1]) / (2n * q[1]);
 
@@ -247,28 +246,22 @@ function fit(target: Q, rule: FpsRule = {}): readonly [Q, number] | null {
   return (decimates && divided(allowed)) || [closest, 0];
 }
 
-function known(path: string, v: unknown, keys: readonly string[]): void {
+function known(path: string, v: unknown, keys: readonly string[], prefix = `${path}.`): void {
   if (!record(v)) invalid(path, v, 'an object');
-  const prefix = path === 'rules' ? '' : `${path}.`;
   for (const k of Object.keys(v as object)) if (!keys.includes(k)) throw new TypeError(`${prefix}${k}: not a rule; expected one of ${keys.join(', ')}`);
 }
 
 export function check(result: FileResult | null | undefined, rules: CheckRules): CheckReport {
-  known('rules', rules, RULE_KEYS);
+  known('rules', rules, RULE_KEYS, '');
   for (const g of GROUPS) if (rules[g] != null) known(g, rules[g], GROUP_KEYS[g]);
-  const choices: Array<[string, unknown, readonly string[]]> = [
-    ['fps.source', rules.fps?.source, SOURCES],
-    ['audio', rules.audio, ['required', 'forbidden']],
-    ['vfr', rules.vfr, POLICIES],
-    ['uneven', rules.uneven, POLICIES],
-    ['hdr', rules.hdr, POLICIES],
-    ['sizeBasis', rules.sizeBasis, ['stored', 'display']],
-    ['severity', rules.severity, ['fail', 'warn']],
-  ];
-  for (const [rule, v, list] of choices) if (v != null && !list.includes(v as string)) invalid(rule, v, `one of ${list.join(', ')}`);
+  const choices: Record<string, readonly string[]> = { 'fps.source': SOURCES, audio: ['required', 'forbidden'], vfr: POLICIES, uneven: POLICIES, hdr: POLICIES, sizeBasis: ['stored', 'display'], severity: ['fail', 'warn'] };
+  for (const [rule, list] of Object.entries(choices)) {
+    const v = rule === 'fps.source' ? rules.fps?.source : rules[rule as keyof CheckRules];
+    if (v != null && !list.includes(v as string)) invalid(rule, v, `one of ${list.join(', ')}`);
+  }
   const violations: CheckViolation[] = [];
   const severity = rules.severity === 'warn' ? 'warn' : 'fail';
-  const failure = result == null ? 'the analysis failed: no result' : result.error ? failedWith(result.error) : null;
+  const failure = result == null ? failedWith('no result') : result.error ? failedWith(result.error) : null;
   const found = failure ?? primaryTrack(result!);
   const t = typeof found === 'string' ? null : found;
   const add = (rule: string, s: CheckSeverity, expected: CheckExpected, actual: number | string | boolean | null, message: string): number =>
@@ -282,25 +275,24 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
     rule: Partial<Record<Bound, RatioValue | readonly RatioValue[]>> | undefined,
     actual: Q | null,
     shown: number | string,
-    text: Text,
     unit: string,
     missing: string,
     side = '',
+    text: Text = () => `${shown}`,
     near?: (q: Q) => boolean,
   ): void => {
     const bounds = BOUNDS.filter((b) => rule?.[b] != null).map((b) => {
       const path = `${group}.${b}${side}`;
       const values = (b === 'oneOf' ? [rule![b]!].flat() : [rule![b]!]).map((v) => (group === 'fps' ? readings(v, path) : [ratio(v, path, group !== 'aspectRatio')]));
-      return [b, rule![b]!, values] as const;
+      return [b, rule![b]!, values, path] as const;
     });
     if (bounds.length === 0) return;
     if (!actual) return void unknown(group, missing);
-    for (const [b, expected, values] of bounds) {
+    for (const [b, expected, values, path] of bounds) {
       const meets = (q: Q): boolean | undefined => near?.(q) || (b === 'min' ? cmp(actual, q) >= 0n : b === 'max' ? cmp(actual, q) <= 0n : cmp(actual, q) === 0n);
       const listed = [expected].flat();
       const named = listed.length ? `${listed.join(', ')}${unit}` : 'an empty list';
-      const actualText = typeof text === 'string' ? text : text(values.flat());
-      if (!values.flat().some(meets)) add(`${group}.${b}${side}`, severity, expected, shown, `${actualText}${unit} is ${RELATION[b]} ${named}`);
+      if (!values.flat().some(meets)) add(path, severity, expected, shown, `${text(values.flat())}${unit} is ${RELATION[b]} ${named}`);
     }
   };
   const allow = (rule: 'containers' | 'codecs', list: readonly string[] | undefined, actual: unknown, missing: string): void => {
@@ -322,11 +314,11 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   const source = rules.fps?.source ?? 'avg';
   const fps = t && judgedFps(t, source, cfr);
   const near = t && source === 'avg' ? resolution(t, cfr) : undefined;
-  limits('fps', rules.fps, fps, fps ? fraction(fps) : '', (against) => fpsText(fps!, against), ' fps', `${source} frame rate`, '', near);
+  limits('fps', rules.fps, fps, fps ? fraction(fps) : '', ' fps', `${source} frame rate`, '', (against) => fpsText(fps!, against), near);
   const exact = cfr?.[1] ?? quantity(t && printedDuration(t, result!));
   const span: Q | null = exact && [micros(exact), 1_000_000n];
   const seconds = span ? value(span) : 0;
-  limits('duration', rules.duration, span, seconds, (against) => `${digits(span!, against)}`, ' s', 'duration');
+  limits('duration', rules.duration, span, seconds, ' s', 'duration', '', (against) => `${digits(span!, against)}`);
 
   const display = rules.sizeBasis === 'display';
   const size = t ? (display ? [t.displayWidth, t.displayHeight] : Math.abs(t.rotation) % 180 === 90 ? [t.height, t.width] : [t.width, t.height]) : [0, 0];
@@ -336,12 +328,12 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   const sides = { Width: w, Height: h, ShortSide: Math.min(w, h), LongSide: Math.max(w, h) };
   const d = rules.frameSize as Record<string, RatioValue | undefined> | undefined;
   for (const [side, x] of Object.entries(sides)) {
-    limits('frameSize', { min: d?.[`min${side}`], max: d?.[`max${side}`] }, sized ? [BigInt(x), 1n] : null, x, `${x}`, ' px', sizeOf, side);
+    limits('frameSize', { min: d?.[`min${side}`], max: d?.[`max${side}`] }, sized ? [BigInt(x), 1n] : null, x, ' px', sizeOf, side);
   }
   const area: Q = [BigInt(w), BigInt(h)];
-  limits('aspectRatio', rules.aspectRatio, sized ? area : null, fraction(area), `${w}x${h} (${round(w / h)})`, '', sizeOf);
-  limits('pixels', rules.pixels, sized ? [BigInt(w) * BigInt(h), 1n] : null, w * h, `${w * h}`, ' px', sizeOf);
-  limits('fileSize', rules.fileSize, quantity(result?.size), result?.size ?? '', `${result?.size}`, ' bytes', 'file size');
+  limits('aspectRatio', rules.aspectRatio, sized ? area : null, fraction(area), '', sizeOf, '', () => `${w}x${h} (${digits(area, [])})`);
+  limits('pixels', rules.pixels, sized ? [BigInt(w) * BigInt(h), 1n] : null, w * h, ' px', sizeOf);
+  limits('fileSize', rules.fileSize, quantity(result?.size), result?.size ?? '', ' bytes', 'file size');
   allow('containers', rules.containers, result?.container, 'container');
   allow('codecs', rules.codecs, t?.codecName, 'codec name');
   if (rules.audio) {
