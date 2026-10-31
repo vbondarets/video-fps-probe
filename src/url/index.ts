@@ -167,8 +167,8 @@ function refusal(reply: RangeReply, start: number, end: number, size: number, ra
   }
   if (contentRange !== null) {
     const r = parseRange(contentRange);
+    if (r && r.total !== null && r.total !== size) return new RangeSourceError('size-changed', `Content-Range ${shown(contentRange)} gives an object of ${r.total} bytes, the source was opened at ${size} bytes`, { status });
     if (!r || r.first !== start || r.last !== end - 1) return new RangeSourceError('range-mismatch', `Content-Range ${shown(contentRange)} does not match ${range}`, { status });
-    if (r.total !== null && r.total !== size) return new RangeSourceError('size-changed', `Content-Range ${shown(contentRange)} gives an object of ${r.total} bytes, the source was opened at ${size} bytes`, { status });
   }
   if (present(reply.contentLength) && reply.contentLength !== end - start) return new RangeSourceError('length-mismatch', `Content-Length ${reply.contentLength} does not match ${range} (${end - start} bytes)`, { status });
   return null;
