@@ -1,9 +1,9 @@
-import { namedCodes, type ColorCodes } from './names.ts';
+import { u16, type Span } from './config.ts';
 
 export interface VuiInfo {
   sar: [num: number, den: number] | null;
   fullRange: boolean | null;
-  colour: ColorCodes | null;
+  colour: [primaries: number, transfer: number, matrix: number] | null;
 }
 
 export interface SpsInfo {
@@ -17,7 +17,8 @@ const PIXEL_ASPECT = [0, 1, 1, 1, 12, 11, 10, 11, 16, 11, 40, 33, 24, 11, 20, 11
 
 const EXTENDED_SAR = 255;
 
-const GIVE_UP = new RangeError('the SPS is cut or holds a value out of range');
+const GIVE_UP = new RangeError();
+const HEVC_SPS_NAL = 33;
 
 export function unescapeRbsp(nal: Uint8Array): Uint8Array {
   const out = new Uint8Array(nal.length);
@@ -90,7 +91,7 @@ function readVui(r: BitReader): VuiInfo {
   if (bit()) {
     skip(3);
     vui.fullRange = bit() === 1;
-    if (bit()) vui.colour = namedCodes([bits(8), bits(8), bits(8)]);
+    if (bit()) vui.colour = [bits(8), bits(8), bits(8)];
   }
   return vui;
 }
@@ -251,4 +252,25 @@ export function parseHevcSps(nal: Uint8Array): SpsInfo | null {
     if (e === GIVE_UP) return null;
     throw e;
   }
+}
+
+export function avcConfigSps(b: Uint8Array, s: Span): SpsInfo | null {
+  const len = s.end - s.start >= 8 && b[s.start + 5] & 31 ? u16(b, s.start + 6) : -1;
+  return len >= 0 && s.start + 8 + len <= s.end ? parseH264Sps(b.subarray(s.start + 8, s.start + 8 + len)) : null;
+}
+
+export function hevcConfigSps(b: Uint8Array, s: Span): SpsInfo | null {
+  let q = s.start + 23;
+  for (let a = 0, arrays = s.end - s.start >= 23 ? b[s.start + 22] : 0; a < arrays && q + 3 <= s.end; a++) {
+    const type = b[q] & 63;
+    const count = u16(b, q + 1);
+    q += 3;
+    for (let i = 0; i < count && q + 2 <= s.end; i++) {
+      const len = u16(b, q);
+      if (q + 2 + len > s.end) return null;
+      if (type === HEVC_SPS_NAL) return parseHevcSps(b.subarray(q + 2, q + 2 + len));
+      q += 2 + len;
+    }
+  }
+  return null;
 }

@@ -48,8 +48,8 @@ describe('H.264 SPS', () => {
     expect(parseH264Sps(h264Sps({ profile: 77, vui: { sar: [0, 1] } }))?.vui?.sar).toBeNull();
   });
 
-  test('codes without an FFmpeg name read as unspecified', () => {
-    expect(parseH264Sps(h264Sps({ profile: 100, vui: { colour: [13, 19, 18] } }))?.vui?.colour).toEqual([2, 2, 2]);
+  test('the walker returns the codes as coded, and colorOf names them', () => {
+    expect(parseH264Sps(h264Sps({ profile: 100, vui: { colour: [13, 19, 18] } }))?.vui?.colour).toEqual([13, 19, 18]);
     expect(parseH264Sps(h264Sps({ profile: 100, vui: { colour: [22, 0, 0] } }))?.vui?.colour).toEqual([22, 0, 0]);
   });
 

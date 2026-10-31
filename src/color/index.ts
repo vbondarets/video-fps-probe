@@ -81,7 +81,7 @@ function hdrOf(transfer: string | null): ColorInfo['hdr'] {
 function resolve(codecName: string, container: ContainerColor | null, facts: ConfigFacts | null, dv: DolbyVisionConfig | null, bitDepth: number | null): ColorInfo {
   const vui = SPS_CODECS.has(codecName) ? (facts?.sps?.vui ?? null) : null;
   const specified = container !== null && container.codes.some((c) => c !== UNSPECIFIED);
-  const codes = specified ? container.codes : (vui?.colour ?? null);
+  const codes = specified ? container.codes : vui?.colour ? namedCodes(vui.colour) : null;
   const source: ColorSource | null = specified ? container.source : vui?.colour ? 'sps' : null;
   let fullRange = container?.fullRange ?? vui?.fullRange ?? null;
   if (fullRange === null && codecName === 'hevc' && facts?.sps) fullRange = false;

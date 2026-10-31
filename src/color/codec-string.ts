@@ -1,5 +1,5 @@
 import { firstBox, u16, u32, type SampleEntry, type Span } from './config.ts';
-import { parseH264Sps, parseHevcSps, type SpsInfo } from './sps.ts';
+import { avcConfigSps, hevcConfigSps, type SpsInfo } from './sps.ts';
 
 export interface ConfigFacts {
   profile: number | null;
@@ -9,7 +9,6 @@ export interface ConfigFacts {
 }
 
 const H264_WITHOUT_EXTENSION = new Set([66, 77, 88]);
-const HEVC_SPS_NAL = 33;
 
 const hex2 = (v: number): string => v.toString(16).padStart(2, '0');
 const dec2 = (v: number): string => String(v).padStart(2, '0');
@@ -26,22 +25,17 @@ function reverseBits32(v: number): number {
 function avcFacts(b: Uint8Array, s: Span, fourcc: string): ConfigFacts | null {
   if (s.end - s.start < 6) return null;
   const profile = b[s.start + 1];
-  const facts: ConfigFacts = { profile, bitDepth: null, codecString: `${fourcc}.${hex2(profile)}${hex2(b[s.start + 2])}${hex2(b[s.start + 3])}`, sps: null };
+  const sps = avcConfigSps(b, s);
   let q = s.start + 6;
-  const spsCount = b[s.start + 5] & 31;
-  for (let i = 0; i < spsCount && q + 2 <= s.end; i++) {
-    const len = u16(b, q);
-    if (q + 2 + len > s.end) return facts;
-    if (i === 0) facts.sps = parseH264Sps(b.subarray(q + 2, q + 2 + len));
-    q += 2 + len;
-  }
-  if (q < s.end) {
-    const ppsCount = b[q++];
-    for (let i = 0; i < ppsCount && q + 2 <= s.end; i++) q += 2 + u16(b, q);
-  }
+  for (let i = 0, n = b[s.start + 5] & 31; i < n && q + 2 <= s.end; i++) q += 2 + u16(b, q);
+  if (q < s.end) for (let i = 0, n = b[q++]; i < n && q + 2 <= s.end; i++) q += 2 + u16(b, q);
   const extended = !H264_WITHOUT_EXTENSION.has(profile);
-  facts.bitDepth = facts.sps?.bitDepth ?? (!extended ? 8 : q + 4 <= s.end ? (b[q + 1] & 7) + 8 : null);
-  return facts;
+  return {
+    profile,
+    bitDepth: sps?.bitDepth ?? (!extended ? 8 : q + 4 <= s.end ? (b[q + 1] & 7) + 8 : null),
+    codecString: `${fourcc}.${hex2(profile)}${hex2(b[s.start + 2])}${hex2(b[s.start + 3])}`,
+    sps,
+  };
 }
 
 function hevcFacts(b: Uint8Array, s: Span, fourcc: string): ConfigFacts | null {
@@ -58,20 +52,8 @@ function hevcFacts(b: Uint8Array, s: Span, fourcc: string): ConfigFacts | null {
     }
   }
   const codecString = `${fourcc}.${['', 'A', 'B', 'C'][space]}${profile}.${reverseBits32(u32(b, p + 2)).toString(16)}.${b[p + 1] & 0x20 ? 'H' : 'L'}${b[p + 12]}${constraints}`;
-  const facts: ConfigFacts = { profile, bitDepth: (b[p + 17] & 7) + 8, codecString, sps: null };
-  let q = p + 23;
-  for (let a = 0, arrays = b[p + 22]; a < arrays && q + 3 <= s.end; a++) {
-    const type = b[q] & 63;
-    const count = u16(b, q + 1);
-    q += 3;
-    for (let i = 0; i < count && q + 2 <= s.end; i++) {
-      const len = u16(b, q);
-      if (q + 2 + len > s.end) return facts;
-      if (type === HEVC_SPS_NAL && !facts.sps) facts.sps = parseHevcSps(b.subarray(q + 2, q + 2 + len));
-      q += 2 + len;
-    }
-  }
-  return facts;
+  const sps = hevcConfigSps(b, s);
+  return { profile, bitDepth: (b[p + 17] & 7) + 8, codecString, sps };
 }
 
 function av1Facts(b: Uint8Array, s: Span): ConfigFacts | null {
