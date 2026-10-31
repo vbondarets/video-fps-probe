@@ -360,6 +360,23 @@ describe('read plan of virtual sources', () => {
     expect(r.io.reads).toBe(2);
   });
 
+  test('a failing peek past the mdat after a moov without mvex keeps the result of the moov', async () => {
+    const inner = virtualSource([bytes(ftyp(), moov([VIDEO]), mdatHeader(MIB)), { zeros: MIB }, box('free', zeros(8))]);
+    const failing = (error: unknown) => ({ size: inner.size, slice: (start = 0, end = inner.size) => (end > 100_000 ? { arrayBuffer: () => Promise.reject(error) } : inner.slice(start, end)) });
+    for (const error of [new Error('range not available'), Object.assign(new Error('socket closed'), { name: 'AbortError' })]) {
+      const r = await analyzeHeader(failing(error));
+      expect(r, error.name).toMatchObject({ error: null, errorCode: null, formatDurationSec: 3, warnings: [] });
+      expect(r.videoTracks.map((t) => [t.trackId, t.frames, t.durationSec]), error.name).toEqual([[1, 90, 3]]);
+    }
+    const controller = new AbortController();
+    const abort = (): Promise<ArrayBuffer> => {
+      controller.abort(new Error('stop'));
+      return Promise.reject(new Error('aborted'));
+    };
+    const aborting = { size: inner.size, slice: (start = 0, end = inner.size) => (end > 100_000 ? { arrayBuffer: abort } : inner.slice(start, end)) };
+    await expect(analyzeHeader(aborting, { signal: controller.signal })).rejects.toThrow('stop');
+  });
+
   test('a truncated mdat and trailing data after a moov without mvex are noted from the bytes read', async () => {
     const m = moov([VIDEO]);
     const head = bytes(ftyp(), m, box('free', zeros(100)));
