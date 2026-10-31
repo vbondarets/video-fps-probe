@@ -320,6 +320,32 @@ describe('header mode against full mode on virtual sources', () => {
     expect(indexed.videoTracks[0].durationSec).toBe(4.5);
   });
 
+  test('a covering video sidx that the mfra walk does not resolve again leaves the format duration unresolved beside a sound track the walk resolves', async () => {
+    const head = bytes(ftyp('cmfc'), moov([{ id: 1, timescale: 15360 }, { id: 2, handler: 'soun', timescale: 48000 }], [mvex({ trex: [{ id: 1, duration: 512 }, { id: 2, duration: 1024 }] })]));
+    const pieces: Segment[] = [];
+    const references: Array<[number, number]> = [];
+    for (let i = 0; i < 3; i++) {
+      const m = moof(i + 1, [{ id: 1, baseDts: i === 2 ? null : i * 45 * 512, count: 45, duration: 512 }, { id: 2, baseDts: i * 70 * 1024, count: 70, duration: 1024 }], 20_000);
+      pieces.push(m, mdatHeader(20_000), { zeros: 20_000 });
+      references.push([m.length + 8 + 20_000, 45 * 512]);
+    }
+    const index = sidx(1, 15360, 0, references);
+    const offsets: number[] = [];
+    let at = head.length + index.length;
+    for (const [n] of references) {
+      offsets.push(at);
+      at += n;
+    }
+    const open = (): VirtualSource => virtualSource([head, index, ...pieces, mfra([{ id: 1, offsets }, { id: 2, offsets }])]);
+    const full = await analyze(open(), 'untimed.mp4', {});
+    expect(full).toMatchObject({ error: null, formatDurationSec: 4.5 });
+    const header = await analyzeHeader(open());
+    expect(header).toMatchObject({ error: null, errorCode: null, formatDurationSec: null, warnings: ['format duration unresolved: track 1'] });
+    expect(warningCodesOf(header)).toEqual(['duration-unresolved']);
+    expect(header.videoTracks[0].durationSec).toBe(4.5);
+    expect(header.videoTracks[0].provenance.durationSec).toBe('header');
+  });
+
   test('a text track without a sidx beside a covering one in several fragments keeps the video duration, never a short span', async () => {
     const head = bytes(ftyp('iso5'), moov([{ id: 1, timescale: 15360 }, { id: 2, handler: 'text', timescale: 1000 }], [mvex({ trex: [{ id: 1, duration: 512 }, { id: 2, duration: 1000 }] })]));
     const pieces: Segment[] = [];
