@@ -262,7 +262,7 @@ describe('argument validation', () => {
   test('unknown keys of the options and the limits are ignored, so an option of a later version does not fail', async () => {
     const plain = withoutMs(await analyzeHeader(blob));
     expect(withoutMs(await analyzeHeader(blob, { limits: { maxbytes: 1000, maxSegments: 2 } as HeaderLimits }))).toEqual(plain);
-    expect(withoutMs(await analyzeHeader(blob, { maxBytes: 1000, codecConfig: true, color: true } as HeaderOptions))).toEqual(plain);
+    expect(withoutMs(await analyzeHeader(blob, { maxBytes: 1000, later: true, laterToo: 'x' } as HeaderOptions))).toEqual(plain);
     const r = await analyzeHeader(blob, { limits: { maxBytes: undefined, maxReads: 8 }, signal: undefined } as HeaderOptions);
     expect(r.error).toBeNull();
     await expect(analyzeHeader(blob, { limits: { maxReads: -1, later: 1 } as HeaderLimits })).rejects.toThrow(new TypeError('limits.maxReads must be a non-negative safe integer or Infinity, got -1'));

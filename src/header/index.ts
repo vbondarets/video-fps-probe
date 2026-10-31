@@ -21,6 +21,9 @@ export interface HeaderOptions {
   limits?: HeaderLimits;
   readAhead?: { head?: number; tail?: number };
   fragmentedDuration?: FragmentedDuration;
+  codecConfig?: boolean;
+  color?: boolean;
+  aspect?: boolean;
 }
 
 export type HeaderResult = FileResult & { io: IoStats & { bytesRequested: number } };
@@ -57,6 +60,14 @@ interface Resolved {
   head: number;
   tail: number;
   index: boolean;
+  codecConfig: boolean;
+  color: boolean;
+  aspect: boolean;
+}
+
+function flag(value: unknown, what: string): boolean {
+  if (value !== undefined && typeof value !== 'boolean') throw new TypeError(`${what} must be a boolean, got ${shown(value)}`);
+  return value === true;
 }
 
 function resolveHeaderOptions(source: unknown, options: unknown): Resolved {
@@ -80,7 +91,7 @@ function resolveHeaderOptions(source: unknown, options: unknown): Resolved {
   const mode = o.fragmentedDuration ?? 'index';
   if (mode !== 'index' && mode !== 'header') throw new TypeError(`fragmentedDuration must be 'header' or 'index', got ${shown(mode)}`);
   const name = (o.name as string | undefined) ?? (typeof File !== 'undefined' && source instanceof File ? source.name : '');
-  return { name, size, signal: signal as AbortSignal | null, limits, head, tail, index: mode === 'index' };
+  return { name, size, signal: signal as AbortSignal | null, limits, head, tail, index: mode === 'index', codecConfig: flag(o.codecConfig, 'codecConfig'), color: flag(o.color, 'color'), aspect: flag(o.aspect, 'aspect') };
 }
 
 function docTypeOf(head: Uint8Array): string | null {
@@ -127,7 +138,22 @@ async function analyzeSource(reader: BlobReader, limited: LimitedSource, o: Reso
     return failed(analysis, `container not read by the header entry: ${analysis.container}`, 'unsupported-container');
   }
   const { maxTracks, maxTopLevelBoxes } = o.limits;
-  return analyzeIsoBmffHeader(reader, limited, { head: o.head, tail: o.tail, maxTracks, maxTopLevelBoxes, index: o.index });
+  return analyzeIsoBmffHeader(reader, limited, { head: o.head, tail: o.tail, maxTracks, maxTopLevelBoxes, index: o.index, codecConfig: o.codecConfig || o.color || o.aspect });
+}
+
+const messageOf = (e: unknown): string => (e instanceof Error ? e.message || e.name : String(e));
+
+async function withMetadata(analysis: ContainerAnalysis, o: Resolved): Promise<ContainerAnalysis> {
+  try {
+    const { withAspect, withColor } = await import('./metadata.ts');
+    throwIfAborted(o.signal);
+    const last = { keepCodecConfig: o.codecConfig };
+    const colored = o.color ? withColor(analysis, o.aspect ? { keepCodecConfig: true } : last) : analysis;
+    return o.aspect ? withAspect(colored, last) : colored;
+  } catch (e) {
+    throwIfAborted(o.signal);
+    return failed({ ...analysis }, messageOf(e), 'load-failed');
+  }
 }
 
 export async function analyzeHeader(source: Blob | BlobLike, options: HeaderOptions = {}): Promise<HeaderResult> {
@@ -143,10 +169,11 @@ export async function analyzeHeader(source: Blob | BlobLike, options: HeaderOpti
     throwIfAborted(o.signal);
     const limit = limited.take();
     analysis = { ...emptyAnalysis('unknown'), scan: 'header', errorCode: null, layout: null };
-    failed(analysis, limit ? limit.message : e instanceof Error ? e.message || e.name : String(e), whichErrorCode(limit ?? e));
+    failed(analysis, limit ? limit.message : messageOf(e), whichErrorCode(limit ?? e));
   } finally {
     limited.dispose();
   }
+  if ((o.color || o.aspect) && analysis.videoTracks.some((t) => t.codecConfig)) analysis = await withMetadata(analysis, o);
   return {
     name: o.name,
     size: o.size,
