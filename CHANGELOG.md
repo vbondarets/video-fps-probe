@@ -4,6 +4,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## Unreleased
 
+## 0.4.0 - 2026-11-01
+
 ### Summary of 0.4.0
 
 What 0.4.0 adds over 0.3.0, in one place. The [0.4.0-beta.1](CHANGELOG.md#040-beta1---2026-10-31) and [0.4.0-beta.2](CHANGELOG.md#040-beta2---2026-10-31) sections of the changelog give the details. Every 0.3.0 field and option stays, and the only change to an existing `check()` verdict is the duration window marked as a behaviour change under Changed.
