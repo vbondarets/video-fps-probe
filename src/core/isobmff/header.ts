@@ -31,6 +31,7 @@ export interface HeaderPlan {
   maxTracks: number;
   maxTopLevelBoxes: number;
   index: boolean;
+  codecConfig?: boolean;
 }
 
 interface Walk {
@@ -580,6 +581,10 @@ export async function analyzeIsoBmffHeader(reader: BlobReader, budget: HeaderBud
     const videos = movie.tracks.filter((t) => isVideoTrack(t, movie));
     const built = videos.map((t) => buildVideoTrack(t, movie, { maxExpandedSamples: 0 }, { reportedId: ids.get(t) ?? t.id, ffprobeFails }));
     for (const b of built) headerTrack(b.result);
+    if (plan.codecConfig) {
+      const { isoCodecConfig } = await import('./config.ts');
+      videos.forEach((t, i) => (built[i].result.codecConfig = isoCodecConfig(movie, t)));
+    }
     analysis.videoTracks = built.map((b) => b.result);
     analysis.audioTrackCount = movie.tracks.filter((t) => t.handler === 'soun').length;
     if (walked.fragments) await resolveFragmented(w, walked, videos, built, analysis);

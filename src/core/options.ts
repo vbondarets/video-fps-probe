@@ -28,6 +28,7 @@ function mergeDefined<T extends object>(base: Readonly<T>, patch: Partial<T> | u
 
 export function resolveOptions(opts: AnalyzeOptions = {}): ResolvedAnalyzeOptions {
   return {
+    ...opts,
     signal: opts.signal ?? null,
     matroskaMode: opts.matroskaMode ?? 'auto',
     exactBudgetMs: opts.exactBudgetMs ?? DEFAULT_EXACT_BUDGET_MS,

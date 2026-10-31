@@ -173,22 +173,25 @@ function oracleTrack(s: RefStream, trackId: number, matroska: boolean): VideoTra
   };
 }
 
-function oracleFields040(s: RefStream): TrackFields040 & Pick<VideoTrackResult, 'medianFrameInterval'> {
+function oracleFields040(s: RefStream): Omit<TrackFields040, 'sampleAspectRatio' | 'displayAspectRatio'> & Pick<VideoTrackResult, 'medianFrameInterval' | 'sampleAspectRatio' | 'displayAspectRatio'> {
   const median = s.packets?.medianDeltaTicks ?? null;
   const sar = s.sampleAspectRatio;
   return {
     medianFrameInterval: median === null ? null : rat(median * s.timeBase.num, s.timeBase.den),
-    sampleAspectRatio: sar ? { ...sar } : null,
+    sampleAspectRatio: sar ? { ...sar, value: sar.num / sar.den } : null,
+    displayAspectRatio: s.displayAspectRatio ? { ...s.displayAspectRatio, value: s.displayAspectRatio.num / s.displayAspectRatio.den } : null,
     displayWidth: s.width > 0 ? Math.round((s.width * (sar?.num ?? 1)) / (sar?.den ?? 1)) : null,
     displayHeight: s.height > 0 ? s.height : null,
     color: {
-      range: s.colorRange,
+      range: s.colorRange === 'tv' || s.colorRange === 'pc' ? s.colorRange : null,
       primaries: s.colorPrimaries,
       transfer: s.colorTransfer,
       space: s.colorSpace,
+      source: null,
       bitDepth: s.bitDepth,
       profile: null,
       codecString: null,
+      hdr: s.colorTransfer === 'smpte2084' ? 'pq' : s.colorTransfer === 'arib-std-b67' ? 'hlg' : null,
       dolbyVision: s.dolbyVision ? { ...s.dolbyVision } : null,
     },
   };

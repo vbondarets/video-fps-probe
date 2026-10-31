@@ -108,8 +108,45 @@ export interface VideoTrackResult {
   rateProfile?: RateProfile | null;
   medianFrameInterval?: Rational | null;
   enabled?: boolean;
+  codecConfig?: CodecConfig;
+  color?: ColorInfo | null;
+  sampleAspectRatio?: Rational | null;
+  displayAspectRatio?: Rational | null;
+  displayWidth?: number | null;
+  displayHeight?: number | null;
   provenance: Partial<Record<TrackField, Provenance>>;
   warnings: string[];
+}
+
+export type CodecConfig =
+  | { family: 'isobmff'; stsd: Uint8Array | null; tkhd: Uint8Array | null; mvhd: Uint8Array | null }
+  | { family: 'matroska'; trackEntry: Uint8Array | null };
+
+export type ColorSource = 'sps' | 'colr' | 'vpcC' | 'Colour';
+
+export interface DolbyVisionConfig {
+  versionMajor: number;
+  versionMinor: number;
+  profile: number;
+  level: number;
+  rpu: boolean;
+  el: boolean;
+  bl: boolean;
+  compatibilityId: number;
+  mdCompression: number;
+}
+
+export interface ColorInfo {
+  range: 'tv' | 'pc' | null;
+  primaries: string | null;
+  transfer: string | null;
+  space: string | null;
+  source: ColorSource | null;
+  bitDepth: number | null;
+  profile: number | null;
+  codecString: string | null;
+  hdr: 'pq' | 'hlg' | null;
+  dolbyVision: DolbyVisionConfig | null;
 }
 
 export interface IoStats {
@@ -196,6 +233,7 @@ export interface AnalyzeOptions {
   costModel?: Partial<CostModel>;
   maxExpandedSamples?: number;
   onProgress?: ((progress: AnalyzeProgress) => void) | null;
+  codecConfig?: boolean;
 }
 
 export interface ResolvedAnalyzeOptions {
@@ -206,6 +244,7 @@ export interface ResolvedAnalyzeOptions {
   costModel: CostModel;
   maxExpandedSamples: number;
   onProgress: ((progress: AnalyzeProgress) => void) | null;
+  codecConfig?: boolean;
 }
 
 export type ContainerAnalyzer = (reader: BlobReader, opts: ResolvedAnalyzeOptions) => Promise<ContainerAnalysis>;

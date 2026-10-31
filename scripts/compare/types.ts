@@ -174,13 +174,15 @@ export interface DolbyVisionLike {
 }
 
 export interface ColorLike {
-  range: string | null;
+  range: 'tv' | 'pc' | null;
   primaries: string | null;
   transfer: string | null;
   space: string | null;
+  source: 'sps' | 'colr' | 'vpcC' | 'Colour' | null;
   bitDepth: number | null;
   profile: number | null;
   codecString: string | null;
+  hdr: 'pq' | 'hlg' | null;
   dolbyVision: DolbyVisionLike | null;
 }
 
@@ -189,6 +191,7 @@ export type ContainerLayoutLike = ContainerLayout;
 export interface TrackFields040 {
   medianFrameInterval?: RationalLike | null;
   sampleAspectRatio?: RationalLike | null;
+  displayAspectRatio?: RationalLike | null;
   displayWidth?: number | null;
   displayHeight?: number | null;
   enabled?: boolean;

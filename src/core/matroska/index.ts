@@ -93,8 +93,9 @@ function fillRates(r: VideoTrackResult, s: RateStats, prov: Provenance): void {
   for (const f of ['minFps', 'maxFps', 'isVfr', 'duplicateTimestamps', 'medianFrameInterval'] as const) r.provenance[f] = prov;
 }
 
-function headerTrack(h: MkvHeader, t: MkvTrack): VideoTrackResult {
+function headerTrack(h: MkvHeader, t: MkvTrack, opts: ResolvedAnalyzeOptions): VideoTrackResult {
   const r = emptyTrack(t.number);
+  if (opts.codecConfig) r.codecConfig = { family: 'matroska', trackEntry: t.entry ?? null };
   r.fourccOrCodecId = t.codecId;
   r.codecName = codecNameOf(t.codecId);
   r.width = t.width;
@@ -406,7 +407,7 @@ export async function analyzeMatroska(reader: BlobReader, opts: ResolvedAnalyzeO
     return a;
   }
   a.primaryTrackId = video[0].number;
-  a.videoTracks = video.map((t) => headerTrack(h, t));
+  a.videoTracks = video.map((t) => headerTrack(h, t, opts));
 
   let mode = opts.matroskaMode;
   let first: number | null = null;

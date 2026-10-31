@@ -23,7 +23,7 @@ const all = (e: Evaluation): CheckResult[] => [...e.fileChecks, ...e.tracks.flat
 const find = (e: Evaluation, id: string): CheckResult | undefined => all(e).find((c) => c.id === id);
 const verdict = (e: Evaluation, id: string): string => find(e, id)?.verdict ?? 'missing';
 
-const NO_COLOR: ColorLike = { range: null, primaries: null, transfer: null, space: null, bitDepth: null, profile: null, codecString: null, dolbyVision: null };
+const NO_COLOR: ColorLike = { range: null, primaries: null, transfer: null, space: null, source: null, bitDepth: null, profile: null, codecString: null, hdr: null, dolbyVision: null };
 
 function entry(over: Partial<SampleEntryFacts> = {}): SampleEntryFacts {
   return { type: 'avc1', width: 160, height: 90, pasp: null, colr: null, vpcC: null, config: null, dolbyVision: null, ...over };

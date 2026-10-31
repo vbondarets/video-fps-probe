@@ -68,6 +68,7 @@ export interface MkvTrack {
   disabled?: boolean;
   width: number;
   height: number;
+  entry?: Uint8Array;
 }
 
 export interface MkvHeader {
@@ -167,6 +168,7 @@ export function parseMaster(h: MkvHeader, b: Uint8Array, start: number, end: num
       switch (c.id) {
         case ID_TRACK_ENTRY:
           t = newTrack();
+          t.entry = b.slice(p, p + n);
           nest();
           finishTrack(h, t);
           break;
