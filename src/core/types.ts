@@ -184,7 +184,7 @@ export interface ContainerLayout {
   emptyMoov: boolean;
 }
 
-export type WarningCode = 'invalid-timescale' | 'truncated-mdat' | 'truncated-box' | 'trailing-data' | 'fragment-index-unread' | 'duration-unresolved' | 'fragments-ignored' | 'structure-limit';
+export type WarningCode = 'invalid-timescale' | 'truncated-mdat' | 'truncated-box' | 'trailing-data' | 'fragment-index-unread' | 'duration-unresolved' | 'fragments-ignored' | 'structure-limit' | 'codec-config-unavailable' | 'metadata-unavailable';
 
 export interface FileResult {
   name: string;

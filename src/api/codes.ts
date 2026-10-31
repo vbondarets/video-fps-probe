@@ -55,6 +55,8 @@ const WARNING_PREFIXES: ReadonlyArray<readonly [prefix: string, code: WarningCod
   ['format duration unresolved: ', 'duration-unresolved'],
   ['fragments ignored: ', 'fragments-ignored'],
   ['too many top-level boxes', 'structure-limit'],
+  ['codec configuration unavailable', 'codec-config-unavailable'],
+  ['color and aspect unavailable', 'metadata-unavailable'],
 ];
 
 const TRUNCATED_BOX = /^'(.{4})' at \d+ is truncated/;

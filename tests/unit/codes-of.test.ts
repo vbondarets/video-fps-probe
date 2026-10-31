@@ -134,6 +134,14 @@ describe('warningCodeOf', () => {
     expect(warningCodeOf('too many top-level boxes')).toBe('structure-limit');
   });
 
+  test('classifies the warnings of a codec configuration or a color and aspect step that did not run', () => {
+    expect(warningCodeOf('codec configuration unavailable')).toBe('codec-config-unavailable');
+    expect(warningCodeOf('codec configuration unavailable: limit reached: maxMs 200')).toBe('codec-config-unavailable');
+    expect(warningCodeOf('color and aspect unavailable: limit reached: maxMs 200')).toBe('metadata-unavailable');
+    expect(warningCodeOf('color and aspect unavailable: Failed to fetch dynamically imported module')).toBe('metadata-unavailable');
+    expect(warningCodeOf('the codec configuration unavailable')).toBeNull();
+  });
+
   test('leaves every other warning as free text', () => {
     for (const w of [
       'moov size exceeds the file; parsed what is there',
