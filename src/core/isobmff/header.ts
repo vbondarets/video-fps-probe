@@ -1,7 +1,7 @@
 import { MAX_EXPANDED_SAMPLES } from '../options.ts';
 import { emptyAnalysis } from '../result.ts';
 import { fourcc, whichErrorCode, type BlobReader } from '../reader.ts';
-import type { ContainerAnalysis, FileErrorCode, Provenance, VideoTrackResult } from '../types.ts';
+import type { ContainerAnalysis, Provenance, VideoTrackResult } from '../types.ts';
 import { childBoxes, IsoBmffError, readBoxHeader, type BoxHeader } from './boxes.ts';
 import { buildVideoTrack, containerOf, formatDuration, isAbort, isVideoTrack, layoutOf, MOOV_HARD_CAP, MOOV_SUSPECT_CAP, pickPrimary, readMoov, reportedIds, type Built } from './build.ts';
 import { newMovie, type IsoMovie, type IsoTrack, type TopBox } from './model.ts';
@@ -563,6 +563,8 @@ function collapse(list: string[]): void {
   for (const [s, n] of seen) list.push(n > 1 ? `${s} (${n} times)` : s);
 }
 
+let capture: typeof import('./config.ts') | undefined;
+
 export async function analyzeIsoBmffHeader(reader: BlobReader, budget: HeaderBudget, plan: HeaderPlan): Promise<ContainerAnalysis> {
   const movie = newMovie(reader.size);
   const w: Walk = { reader, budget, plan, movie, boxes: 0 };
@@ -584,12 +586,13 @@ export async function analyzeIsoBmffHeader(reader: BlobReader, budget: HeaderBud
     for (const b of built) headerTrack(b.result);
     let loadError: unknown = null;
     if (plan.codecConfig) {
-      const capture = await budget.race(import('./config.ts')).catch((e: unknown) => {
+      try {
+        const { isoCodecConfig } = (capture ??= await budget.race(import('./config.ts')));
+        videos.forEach((t, i) => (built[i].result.codecConfig = isoCodecConfig(movie, t)));
+      } catch (e) {
         if (isAbort(e, reader)) throw e;
         loadError = e;
-        return null;
-      });
-      if (capture) videos.forEach((t, i) => (built[i].result.codecConfig = capture.isoCodecConfig(movie, t)));
+      }
     }
     analysis.videoTracks = built.map((b) => b.result);
     analysis.audioTrackCount = movie.tracks.filter((t) => t.handler === 'soun').length;
@@ -602,14 +605,7 @@ export async function analyzeIsoBmffHeader(reader: BlobReader, budget: HeaderBud
         analysis.errorCode = whichErrorCode(walked.limit);
       }
     }
-    if (loadError !== null) {
-      const message = loadError instanceof Error ? loadError.message : String(loadError);
-      if (analysis.error) analysis.warnings.push(`codec configuration not read: ${message}`);
-      else {
-        analysis.error = message;
-        analysis.errorCode = (loadError as { errorCode?: FileErrorCode }).errorCode ?? 'load-failed';
-      }
-    }
+    if (loadError !== null) analysis.warnings.push(`codec configuration unavailable: ${loadError instanceof Error ? loadError.message : String(loadError)}`);
   } catch (e) {
     if (isAbort(e, reader)) throw e;
     const limit = budget.take();
