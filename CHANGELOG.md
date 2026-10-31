@@ -14,7 +14,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ### Changed
 
-- The installed package may take up to 632 KB unpacked (580 KB in 0.3.0), for the error codes, layout, median frame interval and the header-only entry, measured at 622 KB. A bundler still takes only the modules a host imports.
+- The installed package may take up to 632 KB unpacked (580 KB in 0.3.0), for the error codes, layout, median frame interval and the header-only entry, measured at 624 KB. A bundler still takes only the modules a host imports.
 - The first MP4 loads 23.07 KB gzip (22.73 KB in 0.3.0), 24.85 KB with Vite's default worker format (24.47 KB), and the first WebM or MKV 25.73 KB (25.54 KB) ([size matrix](report/size-matrix.md)).
 - Still 0 mismatches against ffprobe 8.1.1, now on 168 committed fixtures, with 2 known deviations on a new `+cmaf+global_sidx` fixture with B-frames: ffprobe adds the largest negative composition offset of the fragments it reads to every video timestamp, and own does not yet, so its video starts at 0 instead of 0.066667 s and the file ends 0.045 s earlier ([accuracy](docs/benchmarks.md#accuracy-vs-ffprobe)).
 
