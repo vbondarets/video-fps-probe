@@ -1,7 +1,8 @@
-import { isoConfigFacts, matroskaConfigFacts } from '../color/codec-string.ts';
 import {
   boxPayload,
   elementUint,
+  elements,
+  firstBox,
   i32,
   ID_DISPLAY_HEIGHT,
   ID_DISPLAY_UNIT,
@@ -14,8 +15,11 @@ import {
   u32,
   type IsoConfig,
   type MatroskaConfig,
+  type Span,
 } from '../color/config.ts';
-import type { CodecConfig, FileResult, Rational, VideoTrackResult } from '../core/types.ts';
+import { avcConfigSps, hevcConfigSps, type SpsInfo } from '../color/sps.ts';
+import type { FileResult, Rational, VideoTrackResult } from '../core/types.ts';
+import { avD2q, avReduce, INT_MAX, type Ratio } from './rational.ts';
 
 export type { CodecConfig, Rational } from '../core/types.ts';
 
@@ -28,77 +32,37 @@ export interface AspectInfo {
 
 export type AspectTrack = Pick<VideoTrackResult, 'codecName' | 'width' | 'height' | 'rotation' | 'codecConfig'>;
 
-type Ratio = [num: bigint, den: bigint];
-
-const INT_MAX = 2147483647n;
 const DAR_MAX = 1048576n;
 const MATRIX_SCALE_LIMIT = 1 << 24;
 const MATRIX_SCALE_TOLERANCE = 0.01;
 const DISPLAY_UNIT_UNKNOWN = 4;
 const WIDTH_TIMES_TWO = new Set([1, 8, 9, 11]);
 const HEIGHT_TIMES_TWO = new Set([2, 3, 6, 7]);
-
-const abs = (v: bigint): bigint => (v < 0n ? -v : v);
-
-function gcd(a: bigint, b: bigint): bigint {
-  while (b) [a, b] = [b, a % b];
-  return a;
-}
-
-export function avReduce(num: bigint, den: bigint, max: bigint): Ratio {
-  let a0: Ratio = [0n, 1n];
-  let a1: Ratio = [1n, 0n];
-  const negative = num < 0n !== den < 0n;
-  const g = gcd(abs(num), abs(den));
-  if (g) {
-    num = abs(num) / g;
-    den = abs(den) / g;
-  }
-  if (num <= max && den <= max) {
-    a1 = [num, den];
-    den = 0n;
-  }
-  while (den) {
-    let x = num / den;
-    const nextDen = num - den * x;
-    const a2n = x * a1[0] + a0[0];
-    const a2d = x * a1[1] + a0[1];
-    if (a2n > max || a2d > max) {
-      if (a1[0]) x = (max - a0[0]) / a1[0];
-      if (a1[1]) x = x < (max - a0[1]) / a1[1] ? x : (max - a0[1]) / a1[1];
-      if (den * (2n * x * a1[1] + a0[1]) > num * a1[1]) a1 = [x * a1[0] + a0[0], x * a1[1] + a0[1]];
-      break;
-    }
-    a0 = a1;
-    a1 = [a2n, a2d];
-    num = den;
-    den = nextDen;
-  }
-  return [negative ? -a1[0] : a1[0], a1[1]];
-}
-
-function binaryExponent(v: number): number {
-  if (v === 0) return 0;
-  let e = Math.floor(Math.log2(v));
-  while (2 ** e > v) e--;
-  while (2 ** (e + 1) <= v) e++;
-  return e;
-}
-
-function avD2q(d: number, max: bigint): Ratio {
-  if (Number.isNaN(d)) return [0n, 0n];
-  if (Math.abs(d) > Number(INT_MAX) + 3) return [d < 0 ? -1n : 1n, 0n];
-  const exponent = Math.max(binaryExponent(Math.abs(d)), 0);
-  const den = 1n << BigInt(61 - exponent);
-  const num = BigInt(Math.floor(d * Number(den) + 0.5));
-  return avReduce(num, den, max);
-}
+const ID_PIXEL_CROP_BOTTOM = 0x54aa;
+const ID_PIXEL_CROP_TOP = 0x54bb;
+const ID_PIXEL_CROP_LEFT = 0x54cc;
+const ID_PIXEL_CROP_RIGHT = 0x54dd;
+const ID_PROJECTION = 0x7670;
+const ID_PROJECTION_TYPE = 0x7671;
+const ID_PROJECTION_PRIVATE = 0x7672;
+const ID_PROJECTION_POSE_YAW = 0x7673;
+const ID_PROJECTION_POSE_PITCH = 0x7674;
+const ID_PROJECTION_POSE_ROLL = 0x7675;
 
 function rational([num, den]: Ratio): Rational {
   return { num: Number(num), den: Number(den), value: Number(num) / Number(den) };
 }
 
 const valid = (r: Ratio | null): r is Ratio => r !== null && r[0] > 0n && r[1] > 0n;
+
+function vuiRatio(sps: SpsInfo | null): Ratio | null {
+  const sar = sps?.vui?.sar;
+  return sar ? avReduce(BigInt(sar[0]), BigInt(sar[1]), INT_MAX) : null;
+}
+
+function configSps(codec: string, b: Uint8Array, s: Span | null): SpsInfo | null {
+  return !s ? null : codec === 'h264' ? avcConfigSps(b, s) : codec === 'hevc' ? hevcConfigSps(b, s) : null;
+}
 
 function matrixOf(box: Uint8Array | null, offset: (version: number) => number): bigint[] | null {
   const p = boxPayload(box);
@@ -108,12 +72,14 @@ function matrixOf(box: Uint8Array | null, offset: (version: number) => number): 
   return Array.from({ length: 9 }, (_, i) => BigInt(i32(box, at + i * 4)));
 }
 
-function matrixRatio(iso: IsoConfig): Ratio | null {
+function tkhdSizeAt(iso: IsoConfig): number {
   const tkhd = boxPayload(iso.tkhd);
-  if (!iso.tkhd || !tkhd) return null;
-  const v1 = iso.tkhd[tkhd.start] === 1;
-  const sizeAt = tkhd.start + (v1 ? 88 : 76);
-  if (sizeAt + 8 > tkhd.end || !u32(iso.tkhd, sizeAt) || !u32(iso.tkhd, sizeAt + 4)) return null;
+  const at = iso.tkhd && tkhd ? tkhd.start + (iso.tkhd[tkhd.start] === 1 ? 88 : 76) : -1;
+  return tkhd && at + 8 <= tkhd.end ? at : -1;
+}
+
+function matrixRatio(iso: IsoConfig, sizeAt: number): Ratio | null {
+  if (!iso.tkhd || sizeAt < 0 || !u32(iso.tkhd, sizeAt) || !u32(iso.tkhd, sizeAt + 4)) return null;
   const track = matrixOf(iso.tkhd, (v) => (v === 1 ? 52 : 40));
   if (!track) return null;
   const movie = matrixOf(iso.mvhd, (v) => (v === 1 ? 48 : 36)) ?? Array<bigint>(9).fill(0n);
@@ -135,68 +101,90 @@ function matrixRatio(iso: IsoConfig): Ratio | null {
 }
 
 function isoRatio(track: AspectTrack, iso: IsoConfig): Ratio | null {
-  let sar = matrixRatio(iso);
+  const sizeAt = tkhdSizeAt(iso);
+  let pasp: Ratio | null = null;
   for (const entry of iso.entries) {
     for (const c of entry.children) {
-      if (c.type !== 'pasp' || c.end - c.start < 8) continue;
-      const den = i32(iso.bytes, c.start + 4);
-      if (den !== 0) sar = avReduce(BigInt(i32(iso.bytes, c.start)), BigInt(den), INT_MAX);
+      if (c.type === 'pasp' && c.end - c.start >= 8 && i32(iso.bytes, c.start + 4)) pasp = [BigInt(i32(iso.bytes, c.start)), BigInt(i32(iso.bytes, c.start + 4))];
     }
   }
-  if (!sar || !sar[0]) {
-    const tkhd = boxPayload(iso.tkhd);
-    const sizeAt = iso.tkhd && tkhd ? tkhd.start + (iso.tkhd[tkhd.start] === 1 ? 88 : 76) : -1;
-    if (iso.tkhd && tkhd && sizeAt + 8 <= tkhd.end) {
-      const w = BigInt(u32(iso.tkhd, sizeAt) >>> 16);
-      const h = BigInt(u32(iso.tkhd, sizeAt + 4) >>> 16);
-      const sw = BigInt(track.width);
-      const sh = BigInt(track.height);
-      if (w && h && sw && sh && (sw !== w || sh !== h)) sar = avReduce(sh * w, sw * h, INT_MAX);
-    }
+  let sar = pasp?.[0] ? avReduce(pasp[0], pasp[1], INT_MAX) : matrixRatio(iso, sizeAt);
+  if (!sar?.[0] && iso.tkhd && sizeAt >= 0) {
+    const w = BigInt(i32(iso.tkhd, sizeAt) >> 16);
+    const h = BigInt(i32(iso.tkhd, sizeAt + 4) >> 16);
+    const sw = BigInt(track.width);
+    const sh = BigInt(track.height);
+    if (w && h && sw && sh && (sw !== w || sh !== h)) sar = avReduce(sh * w, sw * h, INT_MAX);
   }
   if (valid(sar)) return sar;
-  const vui = iso.entries[0] ? isoConfigFacts(track.codecName, iso.bytes, iso.entries[0])?.sps?.vui?.sar : null;
-  return vui ? avReduce(BigInt(vui[0]), BigInt(vui[1]), INT_MAX) : null;
+  const entry = iso.entries[0];
+  return vuiRatio(configSps(track.codecName, iso.bytes, firstBox(entry, track.codecName === 'h264' ? 'avcC' : 'hvcC')));
 }
 
-function matroskaRatio(track: AspectTrack, mkv: MatroskaConfig): Ratio | null {
+function matroskaCodec(mkv: MatroskaConfig): string {
+  return mkv.codecId === 'V_MPEG4/ISO/AVC' ? 'h264' : mkv.codecId === 'V_MPEGH/ISO/HEVC' ? 'hevc' : '';
+}
+
+function matroskaRatio(mkv: MatroskaConfig): Ratio | null {
   const b = mkv.bytes;
-  const unit = elementUint(b, mkv.video.get(ID_DISPLAY_UNIT)) ?? 0;
+  const video = (id: number): number | null => elementUint(b, mkv.video.get(id));
+  const unit = video(ID_DISPLAY_UNIT) ?? 0;
   let sar: Ratio | null = null;
-  if (unit < DISPLAY_UNIT_UNKNOWN) {
-    const pixelWidth = elementUint(b, mkv.video.get(ID_PIXEL_WIDTH)) ?? 0;
-    const pixelHeight = elementUint(b, mkv.video.get(ID_PIXEL_HEIGHT)) ?? 0;
-    const dw = elementUint(b, mkv.video.get(ID_DISPLAY_WIDTH)) ?? (unit === 0 ? pixelWidth : null);
-    const dh = elementUint(b, mkv.video.get(ID_DISPLAY_HEIGHT)) ?? (unit === 0 ? pixelHeight : null);
-    const stereo = elementUint(b, mkv.video.get(ID_STEREO_MODE)) ?? 0;
+  const croppedWidth = (video(ID_PIXEL_WIDTH) ?? 0) - (video(ID_PIXEL_CROP_LEFT) ?? 0) - (video(ID_PIXEL_CROP_RIGHT) ?? 0);
+  const croppedHeight = (video(ID_PIXEL_HEIGHT) ?? 0) - (video(ID_PIXEL_CROP_TOP) ?? 0) - (video(ID_PIXEL_CROP_BOTTOM) ?? 0);
+  if (unit < DISPLAY_UNIT_UNKNOWN && croppedWidth > 0 && croppedHeight > 0) {
+    const dw = video(ID_DISPLAY_WIDTH) ?? (unit === 0 ? croppedWidth : null);
+    const dh = video(ID_DISPLAY_HEIGHT) ?? (unit === 0 ? croppedHeight : null);
+    const stereo = video(ID_STEREO_MODE) ?? 0;
     if (dw && dh) {
       const wmul = WIDTH_TIMES_TWO.has(stereo) ? 2n : 1n;
       const hmul = HEIGHT_TIMES_TWO.has(stereo) ? 2n : 1n;
-      sar = avReduce(BigInt(track.height) * BigInt(dw) * wmul, BigInt(track.width) * BigInt(dh) * hmul, INT_MAX);
+      sar = avReduce(BigInt(croppedHeight) * BigInt(dw) * wmul, BigInt(croppedWidth) * BigInt(dh) * hmul, INT_MAX);
     }
   }
-  if (valid(sar)) return sar;
-  const vui = matroskaConfigFacts(mkv.codecId, b, mkv.codecPrivate)?.sps?.vui?.sar;
-  return vui ? avReduce(BigInt(vui[0]), BigInt(vui[1]), INT_MAX) : null;
+  return valid(sar) ? sar : vuiRatio(configSps(matroskaCodec(mkv), b, mkv.codecPrivate));
 }
 
-function sampleRatio(track: AspectTrack, config: CodecConfig): Ratio | null {
-  const iso = isoConfig(config);
-  if (iso) return isoRatio(track, iso);
-  const mkv = matroskaConfig(config);
-  return mkv ? matroskaRatio(track, mkv) : null;
+function elementFloat(b: Uint8Array, span: Span | undefined): number {
+  const n = span ? span.end - span.start : 0;
+  if (!span || (n !== 4 && n !== 8)) return 0;
+  const dv = new DataView(b.buffer, b.byteOffset + span.start, n);
+  return n === 4 ? dv.getFloat32(0) : dv.getFloat64(0);
+}
+
+function projectionRotation(mkv: MatroskaConfig): number {
+  const span = mkv.video.get(ID_PROJECTION);
+  if (!span) return 0;
+  const b = mkv.bytes;
+  const projection = new Map<number, Span>();
+  for (const e of elements(b, span.start, span.end)) projection.set(e.id, e);
+  const extra = projection.get(ID_PROJECTION_PRIVATE);
+  if ((elementUint(b, projection.get(ID_PROJECTION_TYPE)) ?? 0) !== 0 || (extra && extra.end > extra.start && b[extra.start] !== 0)) return 0;
+  const yaw = elementFloat(b, projection.get(ID_PROJECTION_POSE_YAW));
+  const roll = elementFloat(b, projection.get(ID_PROJECTION_POSE_ROLL));
+  if (elementFloat(b, projection.get(ID_PROJECTION_POSE_PITCH)) !== 0 || (yaw !== 0 && Math.abs(yaw) !== 180) || Number.isNaN(roll)) return 0;
+  const flip = yaw !== 0 ? -1 : 1;
+  const radians = (roll * flip * Math.PI) / 180;
+  const a = (flip * Math.trunc(Math.cos(radians) * 65536)) / 65536;
+  const c = Math.trunc(-Math.sin(radians) * 65536) / 65536;
+  const s0 = Math.hypot(a, (flip * Math.trunc(Math.sin(radians) * 65536)) / 65536);
+  const s1 = Math.hypot(c, Math.trunc(Math.cos(radians) * 65536) / 65536);
+  return s0 && s1 ? Math.trunc(-((Math.atan2(c / s1, a / s0) * 180) / Math.PI)) || 0 : 0;
 }
 
 export function aspectOf(track: AspectTrack): AspectInfo | undefined {
   const config = track.codecConfig;
-  if (!config) return undefined;
-  const sar = sampleRatio(track, config);
+  const iso = config && isoConfig(config);
+  const mkv = config && !iso ? matroskaConfig(config) : null;
+  if (!iso && !mkv) return undefined;
+  const sar = iso ? isoRatio(track, iso) : matroskaRatio(mkv as MatroskaConfig);
   const usable = valid(sar) ? sar : null;
   const { width, height } = track;
   if (width <= 0 || height <= 0) return { sampleAspectRatio: usable && rational(usable), displayAspectRatio: null, displayWidth: null, displayHeight: null };
   const [num, den] = usable ?? [1n, 1n];
   const storedWidth = Number((2n * BigInt(width) * num + den) / (2n * den));
-  const swap = Math.abs(track.rotation) % 180 === 90;
+  const rotation = track.rotation || (mkv ? projectionRotation(mkv) : 0);
+  const swap = Math.abs(rotation) % 180 === 90;
   return {
     sampleAspectRatio: usable && rational(usable),
     displayAspectRatio: usable && rational(avReduce(BigInt(width) * num, BigInt(height) * den, DAR_MAX)),

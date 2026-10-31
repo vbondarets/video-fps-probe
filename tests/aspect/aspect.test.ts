@@ -1,14 +1,15 @@
 import { openAsBlob } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { aspectOf, avReduce, withAspect } from '../../src/aspect/index.ts';
+import { aspectOf, withAspect } from '../../src/aspect/index.ts';
+import { avReduce } from '../../src/aspect/rational.ts';
 import { analyze } from '../../src/core/analyze.ts';
 import { emptyTrack } from '../../src/core/result.ts';
 import type { CodecConfig } from '../../src/core/types.ts';
 import { analyzeHeader } from '../../src/header/index.ts';
 import { ebml, h264Sps, uint } from '../color/bits.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
-import { box, bytes, fullBox, u16, u32, zeros } from '../helpers/iso-builder.ts';
+import { box, bytes, ftyp, fullBox, mdatHeader, tag, u16, u32, zeros } from '../helpers/iso-builder.ts';
 
 const ratio = (r: { num: number; den: number } | null | undefined): string | null => (r ? `${r.num}:${r.den}` : null);
 
@@ -71,6 +72,18 @@ describe('aspectOf on hand-built boxes', () => {
     expect(aspectOf(isoTrack([avc1(pasp(0, 0))]))?.sampleAspectRatio).toBeNull();
   });
 
+  test('a pasp with a zero hSpacing replaces an earlier pasp but leaves the tkhd matrix ratio in place', () => {
+    const scaled = [2 * 65536, 0, 0, 0, 65536, 0, 0, 0, 1 << 30];
+    expect(ratio(aspectOf(isoTrack([avc1(pasp(0, 1))], { tkhd: tkhd(160 << 16, 90 << 16, scaled) }))?.sampleAspectRatio)).toBe('2:1');
+    expect(ratio(aspectOf(isoTrack([avc1(pasp(4, 3)), avc1(pasp(0, 1))], { tkhd: tkhd(240 << 16, 90 << 16) }))?.sampleAspectRatio)).toBe('3:2');
+    expect(ratio(aspectOf(isoTrack([avc1(pasp(4, 3)), avc1(pasp(1, 0))]))?.sampleAspectRatio)).toBe('4:3');
+  });
+
+  test('the tkhd size is a signed 16.16 value, so a size from 32768 on turns negative as in FFmpeg', () => {
+    const t = isoTrack([avc1()], { tkhd: tkhd(65519 * 65536, 65521 * 65536), width: 65521, height: 65519 });
+    expect(ratio(aspectOf(t)?.sampleAspectRatio)).toBe('1113823:982815');
+  });
+
   test('the tkhd matrix, times the mvhd matrix, comes before the tkhd size and after the pasp', () => {
     const scaled = [2 * 65536, 0, 0, 0, 65536, 0, 0, 0, 1 << 30];
     expect(ratio(aspectOf(isoTrack([avc1()], { tkhd: tkhd(240 << 16, 90 << 16, scaled) }))?.sampleAspectRatio)).toBe('2:1');
@@ -89,8 +102,12 @@ describe('aspectOf on hand-built boxes', () => {
     expect(aspectOf({ ...t, width: 0 })).toMatchObject({ displayAspectRatio: null, displayWidth: null, displayHeight: null });
   });
 
-  test('undefined without a codec configuration, and withAspect drops the bytes unless asked to keep them', () => {
+  test('undefined without captured bytes, and withAspect drops the bytes unless asked to keep them', () => {
     expect(aspectOf({ codecName: 'h264', width: 1, height: 1, rotation: 0 })).toBeUndefined();
+    const persisted = isoTrack([avc1(pasp(4, 3))]);
+    expect(aspectOf({ ...persisted, codecConfig: JSON.parse(JSON.stringify(persisted.codecConfig)) as CodecConfig })).toBeUndefined();
+    expect(aspectOf({ ...persisted, codecConfig: { family: 'isobmff', stsd: null, tkhd: null, mvhd: null } })).toBeUndefined();
+    expect(aspectOf({ ...persisted, codecConfig: { family: 'matroska', trackEntry: null } })).toBeUndefined();
     const result = { videoTracks: [{ ...emptyTrack(1), ...isoTrack([avc1(pasp(4, 3))]) }] };
     expect(withAspect(result).videoTracks[0]).not.toHaveProperty('codecConfig');
     expect(withAspect(result, { keepCodecConfig: true }).videoTracks[0]).toHaveProperty('codecConfig');
@@ -98,14 +115,64 @@ describe('aspectOf on hand-built boxes', () => {
   });
 });
 
+describe('the codec configuration analyzeHeader captures', () => {
+  const SCALED = [2 * 65536, 0, 0, 0, 65536, 0, 0, 0, 1 << 30];
+  const trak = (entry: Uint8Array): Uint8Array => {
+    const stbl = box('stbl', fullBox('stsd', 0, 0, u32(1), entry), fullBox('stts', 0, 0, u32(1), u32(1), u32(512)), fullBox('stsz', 0, 0, u32(10), u32(1)), fullBox('stsc', 0, 0, u32(1), u32(1), u32(1), u32(1)), fullBox('stco', 0, 0, u32(1), u32(0)));
+    const mdia = box('mdia', fullBox('mdhd', 0, 0, u32(0), u32(0), u32(15360), u32(512), u16(0x55c4), u16(0)), fullBox('hdlr', 0, 0, u32(0), tag('vide'), zeros(12), [0]), box('minf', stbl));
+    return box('trak', tkhd(160 << 16, 90 << 16), mdia);
+  };
+  const file = (...moov: Uint8Array[]) => new Blob([bytes(ftyp(), box('moov', ...moov), mdatHeader(10), zeros(10))]);
+  const header = async (blob: Blob) => (await analyzeHeader(blob, { aspect: true, codecConfig: true })).videoTracks[0];
+
+  test('takes the mvhd known when the trak starts, so a later mvhd does not scale the tkhd matrix', async () => {
+    expect(ratio((await header(file(mvhd(SCALED), trak(avc1()))))?.sampleAspectRatio)).toBe('2:1');
+    const late = await header(file(trak(avc1()), mvhd(SCALED)));
+    expect(late.codecConfig).toMatchObject({ mvhd: null });
+    expect(late.sampleAspectRatio).toBeNull();
+  });
+
+  test('copies a sample description of any size, so a pasp after a large box still counts', async () => {
+    const t = await header(file(mvhd(), trak(avc1(box('free', zeros(70000)), pasp(4, 3)))));
+    expect(ratio(t.sampleAspectRatio)).toBe('4:3');
+  });
+});
+
 describe('Matroska display elements', () => {
-  const ID = { video: 0xe0, pixelWidth: 0xb0, pixelHeight: 0xba, displayWidth: 0x54b0, displayHeight: 0x54ba, displayUnit: 0x54b2, stereo: 0x53b8 };
+  const ID = { video: 0xe0, pixelWidth: 0xb0, pixelHeight: 0xba, displayWidth: 0x54b0, displayHeight: 0x54ba, displayUnit: 0x54b2, stereo: 0x53b8, cropTop: 0x54bb, cropBottom: 0x54aa, cropLeft: 0x54cc, cropRight: 0x54dd, projection: 0x7670, projectionType: 0x7671, yaw: 0x7673, pitch: 0x7674, roll: 0x7675 };
+  const float = (id: number, v: number): Uint8Array => {
+    const b = new Uint8Array(8);
+    new DataView(b.buffer).setFloat64(0, v);
+    return ebml(id, b);
+  };
   const mkv = (...video: Uint8Array[]) => ({ codecName: 'h264', width: 160, height: 120, rotation: 0, codecConfig: { family: 'matroska' as const, trackEntry: ebml(ID.video, uint(ID.pixelWidth, 160), uint(ID.pixelHeight, 120), ...video) } });
   test('units 0 to 3 apply the display size, a missing element takes the pixel size only with unit 0', () => {
     expect(ratio(aspectOf(mkv(uint(ID.displayWidth, 16), uint(ID.displayHeight, 9), uint(ID.displayUnit, 3)))?.sampleAspectRatio)).toBe('4:3');
     expect(ratio(aspectOf(mkv())?.sampleAspectRatio)).toBe('1:1');
     expect(aspectOf(mkv(uint(ID.displayWidth, 16), uint(ID.displayUnit, 2)))?.sampleAspectRatio).toBeNull();
     expect(aspectOf(mkv(uint(ID.displayWidth, 16), uint(ID.displayHeight, 9), uint(ID.displayUnit, 4)))?.sampleAspectRatio).toBeNull();
+  });
+
+  test('PixelCrop shrinks the size the ratio and the unit 0 defaults use, while the display size keeps the full width', () => {
+    expect(aspectOf(mkv(uint(ID.displayWidth, 8), uint(ID.displayHeight, 5), uint(ID.displayUnit, 3), uint(ID.cropLeft, 8), uint(ID.cropRight, 8)))).toEqual({ sampleAspectRatio: { num: 4, den: 3, value: 4 / 3 }, displayAspectRatio: { num: 16, den: 9, value: 16 / 9 }, displayWidth: 213, displayHeight: 120 });
+    expect(aspectOf(mkv(uint(ID.displayWidth, 16), uint(ID.displayHeight, 9), uint(ID.cropLeft, 16)))).toMatchObject({ sampleAspectRatio: { num: 40, den: 27 }, displayAspectRatio: { num: 160, den: 81 } });
+    expect(ratio(aspectOf(mkv(uint(ID.cropTop, 20), uint(ID.cropBottom, 10)))?.sampleAspectRatio)).toBe('1:1');
+    expect(aspectOf(mkv(uint(ID.displayWidth, 16), uint(ID.displayHeight, 9), uint(ID.cropLeft, 80), uint(ID.cropRight, 80)))?.sampleAspectRatio).toBeNull();
+  });
+
+  test('a repeated display element takes its last value and an empty one its default, as the EBML parser of FFmpeg reads them', () => {
+    expect(ratio(aspectOf(mkv(uint(ID.displayWidth, 16), uint(ID.displayHeight, 9), uint(ID.displayWidth, 32)))?.sampleAspectRatio)).toBe('8:3');
+    expect(ratio(aspectOf(mkv(ebml(ID.displayWidth, []), uint(ID.displayHeight, 9)))?.sampleAspectRatio)).toBe('40:3');
+  });
+
+  test('ProjectionPoseRoll rotates the display size as the display matrix of ffprobe does', () => {
+    const rotated = (...pose: Uint8Array[]) => aspectOf(mkv(uint(ID.displayWidth, 16), uint(ID.displayHeight, 9), ebml(ID.projection, ...pose)));
+    expect(rotated(float(ID.roll, 90))).toMatchObject({ displayWidth: 120, displayHeight: 213 });
+    expect(rotated(float(ID.roll, -90))).toMatchObject({ displayWidth: 120, displayHeight: 213 });
+    expect(rotated(float(ID.roll, 90), float(ID.yaw, 180))).toMatchObject({ displayWidth: 120, displayHeight: 213 });
+    expect(rotated(float(ID.roll, 180))).toMatchObject({ displayWidth: 213, displayHeight: 120 });
+    expect(rotated(float(ID.roll, 90), float(ID.pitch, 10))).toMatchObject({ displayWidth: 213, displayHeight: 120 });
+    expect(rotated(float(ID.roll, 90), uint(ID.projectionType, 1))).toMatchObject({ displayWidth: 213, displayHeight: 120 });
   });
 
   test('a side by side stereo mode doubles the display width and a top and bottom mode the height', () => {
