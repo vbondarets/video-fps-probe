@@ -63,7 +63,7 @@ async function buildCommonJs() {
     input: Object.fromEntries(Object.entries(CJS_ENTRIES).map(([name, file]) => [name, join(DIST, file)])),
     platform: 'node',
     logLevel: 'warn',
-    output: { dir, format: 'cjs', exports: 'named', entryFileNames: '[name].cjs', chunkFileNames: 'chunks/[name]-[hash].cjs', minify: true, comments: false },
+    output: { dir, format: 'cjs', exports: 'named', entryFileNames: '[name].cjs', chunkFileNames: 'chunks/[name]-[hash].cjs', minify: { compress: { keepNames: { function: true, class: true } }, mangle: { keepNames: true } }, comments: false },
   });
   const declarations = [...declarationClosureOf(DIST, Object.values(CJS_ENTRIES).map((f) => f.replace(/\.js$/, '.d.ts')))].sort();
   for (const file of declarations) {
