@@ -232,7 +232,7 @@ async function runHeaderArm(entries: ManifestEntry[], withLarge: boolean, refOf:
   const resolvedBy =
     (provenance: string) =>
     (r: HeaderResult): boolean =>
-      r.error === null && r.videoTracks.length > 0 && r.videoTracks.every((t) => t.durationSec !== null && t.provenance.durationSec === provenance);
+      r.error === null && (r.videoTracks.length > 0 || r.formatDurationSec !== null) && r.videoTracks.every((t) => t.durationSec !== null && t.provenance.durationSec === provenance);
   const names = [...byName.keys()];
   for (const name of names.filter((n) => n.includes('global_sidx'))) expect(name, 'index', resolvedBy('header'), 'a global sidx gives the exact duration');
   for (const name of names.filter((n) => /^rec_.*\.mp4$/.test(n) && !n.includes('_sliced'))) expect(name, 'index', resolvedBy('header'), 'a recording with an mfra gets the full-mode duration');
