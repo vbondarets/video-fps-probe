@@ -176,6 +176,7 @@ async function walkTop(w: Walk): Promise<Walked> {
       }
       const top: TopBox = { type: h.type, start: pos, end: h.end, sidx: null };
       movie.topLevel.push(top);
+      if (cached && h.type === 'moof') movie.warnings.push(`fragments ignored: moof at ${pos} after a moov without an mvex`);
       if (trailer || (cached && h.type === 'moof') || (moov && h.type === 'mfra')) break;
       if (moov && h.type === 'moof') return walked(h);
       if (h.type === 'ftyp' && !cached) {

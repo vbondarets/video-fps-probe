@@ -303,6 +303,16 @@ describe('read plan of virtual sources', () => {
     expect(r.warnings.filter((w) => w.startsWith('fragment for unknown track 77'))).toEqual(['fragment for unknown track 77 (1000 times)']);
   });
 
+  test('a moof after a moov without mvex is ignored with a coded warning', async () => {
+    const head = bytes(ftyp(), moov([VIDEO]), mdatHeader(1000), zeros(1000));
+    const r = await analyzeHeader(virtualSource([head, moof(1, [{ id: 1, baseDts: 90 * 512, count: 30, duration: 512 }], 300), mdatHeader(300), zeros(300)]));
+    expect(r).toMatchObject({ error: null, formatDurationSec: 3, layout: { kind: 'faststart' } });
+    expect(r.videoTracks[0]).toMatchObject({ frames: 90, durationSec: 3 });
+    expect(r.warnings).toEqual([`fragments ignored: moof at ${head.length} after a moov without an mvex`]);
+    expect(warningCodesOf(r)).toEqual(['fragments-ignored']);
+    expect(r.io.reads).toBe(1);
+  });
+
   test('a truncated mdat and trailing data after a moov without mvex are noted from the bytes read', async () => {
     const m = moov([VIDEO]);
     const head = bytes(ftyp(), m, box('free', zeros(100)));
