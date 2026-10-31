@@ -6,7 +6,7 @@ import { analyze } from '../../src/core/analyze.ts';
 import type { FileResult, VideoTrackResult } from '../../src/core/types.ts';
 import { analyzeHeader, warningCodesOf, type HeaderResult } from '../../src/header/index.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
-import { bytes, ftyp, mdatHeader, mfra, moof, moov, mvex, recording, sidx, virtualSource, type FragmentSpec, type Segment, type VirtualSource } from '../helpers/iso-builder.ts';
+import { bytes, ftyp, fullBox, mdatHeader, mfra, moof, moov, mvex, recording, sidx, tag, u32, virtualSource, zeros, type FragmentSpec, type Segment, type VirtualSource } from '../helpers/iso-builder.ts';
 
 const TRACK_FIELDS = ['codecName', 'fourccOrCodecId', 'width', 'height', 'rotation', 'frames', 'isStill', 'enabled', 'durationSec', 'startSec', 'avgFpsFfprobe', 'sampleAspectRatio', 'displayWidth', 'displayHeight'] as const;
 const FILE_FIELDS = ['container', 'brand', 'formatDurationSec', 'layout', 'error', 'errorCode', 'audioTrackCount', 'primaryTrackId'] as const;
@@ -123,6 +123,23 @@ function withText(fragments: number, textMs: number): VirtualSource {
   return virtualSource(segments);
 }
 
+function emsgInSegment(segment: number, emsgBytes = 0): VirtualSource {
+  const head = bytes(ftyp('iso5'), moov([{ id: 1, timescale: 15360 }], [mvex({ trex: [{ id: 1, duration: 512 }] })]));
+  const segments: Segment[] = [head];
+  const offsets: number[] = [];
+  let at = head.length;
+  for (let i = 0; i < 6; i++) {
+    const m = moof(i + 1, [{ id: 1, baseDts: i * 30 * 512, count: 30, duration: 512, cts: 1024 }], 100_000);
+    const emsg = i === segment ? fullBox('emsg', 0, 0, tag('urn:x '), tag('v '), u32(1000), u32(0), u32(10), u32(i), zeros(emsgBytes)) : bytes();
+    const s = sidx(1, 15360, i * 30 * 512 + 1024, [[emsg.length + m.length + 8 + 100_000, 30 * 512]]);
+    segments.push(s, emsg, m, mdatHeader(100_000), { zeros: 100_000 });
+    offsets.push(at + s.length + emsg.length);
+    at += s.length + emsg.length + m.length + 8 + 100_000;
+  }
+  segments.push(mfra([{ id: 1, offsets }]));
+  return virtualSource(segments);
+}
+
 const VIRTUAL: Array<[string, () => VirtualSource]> = [
   ['a single moof with an mfra', () => recording({ fragments: 1, mdatBytes: 300_000 }).source],
   ['a single moof with longer audio', () => recording({ fragments: 1, mdatBytes: 300_000, audio: true, audioLonger: 9 }).source],
@@ -133,6 +150,8 @@ const VIRTUAL: Array<[string, () => VirtualSource]> = [
   ['composition offsets with separate moofs and shorter audio in one fragment', () => recording({ fragments: 1, mdatBytes: 150_000, cts: 1024, audio: true, audioShorter: 10, separate: true }).source],
   ['a hybrid file with a sidx after its first mdat', () => hybrid(true)],
   ['a hybrid file without a sidx', () => hybrid(false)],
+  ['an emsg between the sidx and the moof of the last segment', () => emsgInSegment(5)],
+  ['an emsg between the sidx and the moof of the first segment', () => emsgInSegment(0)],
   ['a text track that ends 0.5 s after the video', () => withText(1, 1500)],
   ['a text track that ends 1.5 s after the video', () => withText(1, 2500)],
   ['a text track in the first of three moofs that ends 0.5 s after the video', () => withText(3, 3500)],
@@ -156,6 +175,14 @@ describe('header mode against full mode on virtual sources', () => {
     expect(header.videoTracks[0].durationSec).toBe(full.videoTracks[0].durationSec);
     expect(header.formatDurationSec).toBeNull();
     expect(header.warnings).toContain('format duration unresolved: track 2');
+  });
+
+  test('a sidx before the last moof that the search window misses gives no duration rather than a short one', async () => {
+    const full = await analyze(emsgInSegment(5, 8000), 'emsg.mp4', {});
+    const header = await analyzeHeader(emsgInSegment(5, 8000));
+    expect(full.videoTracks[0].durationSec).toBeCloseTo(6 + 1024 / 15360, 9);
+    expect(header).toMatchObject({ errorCode: 'no-duration', formatDurationSec: null });
+    expect(header.videoTracks[0].durationSec).toBeNull();
   });
 
   test('a text track that outlasts the video sets the format duration as in full mode', async () => {
