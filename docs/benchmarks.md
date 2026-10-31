@@ -464,10 +464,10 @@ export default defineConfig({ worker: { format: 'es' } });
 | react18 | `video-fps-probe/lazy` + `video-fps-probe/react` (React 18.3.1) | format: 'es' | **1.64 KB** | 23.07 KB | 25.77 KB | 49.18 KB | - | 2 | ok (4 budgets) |
 | check | `video-fps-probe/lazy` + `video-fps-probe/check` | format: 'es' | **4.55 KB** | 23.07 KB | 25.77 KB | 49.18 KB | - | 2 | ok (5 budgets) |
 | preset | `video-fps-probe/lazy` + `video-fps-probe/check` + `video-fps-probe/presets` (klingO1ReferenceVideo) | format: 'es' | **4.90 KB** | 23.07 KB | 25.77 KB | 49.17 KB | - | 2 | ok (6 budgets) |
-| header | `video-fps-probe/header` (analyzeHeader in the page) | none needed: the header entry runs in the calling thread | **19.58 KB** | - | - | - | - | 0 | ok (3 budgets) |
-| url-entry | `video-fps-probe/header` + `video-fps-probe/url` (analyzeHeader over a rangeSource in the page) | none needed: both entries run in the calling thread | **22.27 KB** | - | - | - | - | 0 | ok (3 budgets) |
-| color | `video-fps-probe/header` + `video-fps-probe/color` (withColor over analyzeHeader with codecConfig in the page) | none needed: both entries run in the calling thread | **23.78 KB** | - | - | - | - | 0 | ok (3 budgets) |
-| aspect | `video-fps-probe/header` + `video-fps-probe/aspect` (withAspect over analyzeHeader with codecConfig in the page) | none needed: both entries run in the calling thread | **24.20 KB** | - | - | - | - | 0 | ok (3 budgets) |
+| header | `video-fps-probe/header` (analyzeHeader in the page) | none needed: the header entry runs in the calling thread | **19.70 KB** | - | - | - | - | 0 | ok (4 budgets) |
+| url-entry | `video-fps-probe/header` + `video-fps-probe/url` (analyzeHeader over a rangeSource in the page) | none needed: both entries run in the calling thread | **22.43 KB** | - | - | - | - | 0 | ok (4 budgets) |
+| color | `video-fps-probe/header` + `video-fps-probe/color` (withColor over analyzeHeader with codecConfig in the page) | none needed: both entries run in the calling thread | **24.06 KB** | - | - | - | - | 0 | ok (4 budgets) |
+| aspect | `video-fps-probe/header` + `video-fps-probe/aspect` (withAspect over analyzeHeader with codecConfig in the page) | none needed: both entries run in the calling thread | **23.67 KB** | - | - | - | - | 0 | ok (4 budgets) |
 | standalone worker file | `video-fps-probe/standalone/own.worker.js` | - | - | 36.43 KB | 36.43 KB | 36.43 KB | - | 1 file, no imports | ok |
 | standalone worker file | `video-fps-probe/standalone/own-isobmff.worker.js` | - | - | 21.52 KB | - | 21.52 KB | - | 1 file, no imports | ok |
 | standalone worker file | `video-fps-probe/standalone/own-matroska.worker.js` | - | - | - | 23.89 KB | 23.89 KB | - | 1 file, no imports | ok |
