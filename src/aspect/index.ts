@@ -197,9 +197,8 @@ export function withAspect<R extends Pick<FileResult, 'videoTracks'>>(result: R,
   return {
     ...result,
     videoTracks: result.videoTracks.map((t) => {
-      const aspect = aspectOf(t);
-      if (!aspect) return t;
-      const out = { ...t, ...aspect };
+      if (!t.codecConfig) return t;
+      const out = { ...t, ...aspectOf(t) };
       if (!options.keepCodecConfig) delete out.codecConfig;
       return out;
     }),

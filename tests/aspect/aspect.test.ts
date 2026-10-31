@@ -2,6 +2,7 @@ import { openAsBlob } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { aspectOf, withAspect } from '../../src/aspect/index.ts';
+import { withColor } from '../../src/color/index.ts';
 import { avReduce } from '../../src/aspect/rational.ts';
 import { analyze } from '../../src/core/analyze.ts';
 import { emptyTrack } from '../../src/core/result.ts';
@@ -112,6 +113,38 @@ describe('aspectOf on hand-built boxes', () => {
     expect(withAspect(result).videoTracks[0]).not.toHaveProperty('codecConfig');
     expect(withAspect(result, { keepCodecConfig: true }).videoTracks[0]).toHaveProperty('codecConfig');
     expect(withAspect(result).videoTracks[0].sampleAspectRatio).toEqual({ num: 4, den: 3, value: 4 / 3 });
+  });
+
+  test('withAspect drops bytes it cannot read too, as withColor does', () => {
+    const base = { ...emptyTrack(1), ...isoTrack([avc1(pasp(4, 3))]) };
+    const lost: CodecConfig[] = [JSON.parse(JSON.stringify(base.codecConfig)) as CodecConfig, { family: 'isobmff', stsd: null, tkhd: null, mvhd: null }, { family: 'matroska', trackEntry: null }];
+    for (const codecConfig of lost) {
+      const result = { videoTracks: [{ ...base, codecConfig }] };
+      const t = withAspect(result).videoTracks[0];
+      expect(t).not.toHaveProperty('codecConfig');
+      expect(t).not.toHaveProperty('sampleAspectRatio');
+      expect(t).not.toHaveProperty('displayWidth');
+      expect(withAspect(result, { keepCodecConfig: true }).videoTracks[0].codecConfig).toBe(codecConfig);
+      expect(withAspect(withColor(result, { keepCodecConfig: true })).videoTracks[0]).not.toHaveProperty('codecConfig');
+    }
+    const plain = { videoTracks: [emptyTrack(2)] };
+    expect(withAspect(plain).videoTracks[0]).toBe(plain.videoTracks[0]);
+  });
+
+  test('analyzeHeader with aspect drops a configuration without an stsd unless codecConfig is asked for', async () => {
+    const original = new Uint8Array(await (await openAsBlob(join(FILES_DIR, 'cfr_h264_29.97.mp4'))).arrayBuffer());
+    const patched = original.slice();
+    const at = Buffer.from(patched.buffer).indexOf('stsd');
+    expect(at).toBeGreaterThan(0);
+    patched.set([0x66, 0x72, 0x65, 0x65], at);
+    const blob = new Blob([patched]);
+    for (const options of [{ aspect: true }, { color: true, aspect: true }]) {
+      const t = (await analyzeHeader(blob, options)).videoTracks[0];
+      expect(t, JSON.stringify(options)).not.toHaveProperty('codecConfig');
+      expect(t.sampleAspectRatio, JSON.stringify(options)).toBeUndefined();
+    }
+    const kept = (await analyzeHeader(blob, { aspect: true, codecConfig: true })).videoTracks[0];
+    expect(kept.codecConfig).toMatchObject({ family: 'isobmff', stsd: null });
   });
 });
 
