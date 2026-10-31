@@ -2,17 +2,18 @@
 
 Everything the package exports, by entry, with options, defaults, errors and the result schema. The [README](../README.md) has the short version; [bundlers.md](bundlers.md) covers worker setup per bundler, and [architecture.md](architecture.md) how the pieces fit together.
 
-The package is ESM only, targets ES2022 and ships its own types. Every entry except the standalone worker files can be imported in Node and during SSR: nothing touches `Worker`, `window` or `document` at import time. CommonJS code can `require()` the entries on Node 22.12 and newer ([CommonJS](#commonjs)).
+The package is ESM, targets ES2022 and ships its own types. The five server entries, `video-fps-probe`, `video-fps-probe/header`, `video-fps-probe/url`, `video-fps-probe/check` and `video-fps-probe/presets`, also ship a minified CommonJS copy for `require()` where `require(esm)` is off, such as in Jest. Every entry except the standalone worker files can be imported in Node and during SSR: nothing touches `Worker`, `window` or `document` at import time. CommonJS code can `require()` every entry on Node 22.12 and newer, the lowest supported version ([CommonJS](#commonjs)).
 
 ## Entries
 
 | Entry | Exports | Worker literal in the build |
 |---|---|---|
-| `video-fps-probe` | `createProbe`, `analyze`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, `errorCodeOf`, `errorClass`, `warningCodeOf`, `warningCodesOf`, every type on this page except `HeaderOptions`, `HeaderLimits`, `HeaderResult`, `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions`, `VideoFpsState` and the check types (`CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `FrameSizeRule`, `RangeRule`, `RatioValue`, `RatePolicy`) and the preset types (`ProviderPreset`, `PresetSourceKind`) | the two own workers |
+| `video-fps-probe` | `createProbe`, `analyze`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, `errorCodeOf`, `errorClass`, `warningCodeOf`, `warningCodesOf`, every type on this page except `HeaderOptions`, `HeaderLimits`, `HeaderResult`, the Range types (`RangeSourceError`, `RangeSourceErrorCode`, `RangeSourceErrorOptions`, `RangeRequest`, `RangeReply`, `RangeFetcher`, `RangeSource`, `RangeSourceInit`, `OpenRangeSourceInit`, `HttpRangeInit`), `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions`, `VideoFpsState` and the check types (`CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `FrameSizeRule`, `RangeRule`, `RatioValue`, `RatePolicy`) and the preset types (`ProviderPreset`, `PresetSourceKind`) | the two own workers |
 | `video-fps-probe/lazy` | `lazyProbe`, `lazyProbeFrom`, `LazyProbe`, `ProbeOptions` | the two own workers |
-| `video-fps-probe/client` | `createProbeClient`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, every type on this page except `InThreadOptions`, `ErrorClass`, `HeaderOptions`, `HeaderLimits`, `HeaderResult`, `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions`, `VideoFpsState` and the check types (`CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `FrameSizeRule`, `RangeRule`, `RatioValue`, `RatePolicy`) and the preset types (`ProviderPreset`, `PresetSourceKind`) | none |
+| `video-fps-probe/client` | `createProbeClient`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, every type on this page except `InThreadOptions`, `ErrorClass`, `HeaderOptions`, `HeaderLimits`, `HeaderResult`, the Range types (`RangeSourceError`, `RangeSourceErrorCode`, `RangeSourceErrorOptions`, `RangeRequest`, `RangeReply`, `RangeFetcher`, `RangeSource`, `RangeSourceInit`, `OpenRangeSourceInit`, `HttpRangeInit`), `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions`, `VideoFpsState` and the check types (`CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `FrameSizeRule`, `RangeRule`, `RatioValue`, `RatePolicy`) and the preset types (`ProviderPreset`, `PresetSourceKind`) | none |
 | `video-fps-probe/client/lazy` | `lazyProbeClient`, `lazyProbeFrom`, `ClientOptions`, `LazyProbe`, `Probe` | none |
 | `video-fps-probe/header` | `analyzeHeader`, `HEADER_DEFAULT_LIMITS`, `errorCodeOf`, `errorClass`, `warningCodeOf`, `warningCodesOf`, `isAbortError`, `isTimeoutError`, `HeaderOptions`, `HeaderLimits`, `HeaderResult`, `FragmentedDuration`, `ErrorClass`, `BlobLike`, `BlobSlice` and the result types of `video-fps-probe/client` such as `FileResult`, `VideoTrackResult`, `FileErrorCode` and `ContainerLayout` ([header-only analysis](#header-only-analysis)) | none |
+| `video-fps-probe/url` | `rangeSource`, `openRangeSource`, `httpRange`, `readCapped`, `RangeSourceError`, `RangeSourceErrorCode`, `RangeSourceErrorOptions`, `RangeRequest`, `RangeReply`, `RangeFetcher`, `RangeSource`, `RangeSourceInit`, `OpenRangeSourceInit`, `HttpRangeInit`, `BlobLike`, `BlobSlice` ([Range source](#range-source)) | none |
 | `video-fps-probe/check` | `check`, `CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `FrameSizeRule`, `RangeRule`, `RatioValue`, `RatePolicy` | none |
 | `video-fps-probe/presets` | `klingO1ReferenceVideo`, `klingMotionControl`, `runwayAleph2`, `veoExtend`, `wan26ReferenceToVideoFal`, `seedance2ReferenceVideo`, `ProviderPreset`, `PresetSourceKind` | none |
 | `video-fps-probe/presets/sources.json` | a JSON file, not a module: the source page of every preset, keyed by the name of its export, which replaces the deprecated sourceUrl of a preset | none |
@@ -31,7 +32,7 @@ There are two flavors because bundlers emit a worker file for every `new Worker(
 - **Default flavor** (`video-fps-probe`, `video-fps-probe/lazy`): the own engine and its two prebuilt workers, one per container family, are built in. Use it unless you build your own worker.
 - **Client flavor** (`video-fps-probe/client`, `video-fps-probe/client/lazy`): no worker is built in. You pass a worker, `'inline'`, or prebuilt descriptors. A host with its own worker uses this flavor so the unused own worker is never emitted.
 
-The `mp4box` and `mediabunny` descriptors each carry their own prebuilt worker, which serves that engine and own. `rvfc`, `worker-runtime`, `header` and `engines/*` never reach a worker literal, `header` reaches neither the full ISO BMFF parser nor the statistics, and `check` and `presets` import no other module. `check-dist` enforces all of this on every build.
+The `mp4box` and `mediabunny` descriptors each carry their own prebuilt worker, which serves that engine and own. `rvfc`, `worker-runtime`, `header`, `url` and `engines/*` never reach a worker literal, `header` reaches neither the full ISO BMFF parser nor the statistics, and `url`, `check` and `presets` import no other module, in the ESM build and in the CommonJS copy. `check-dist` enforces all of this on every build.
 
 ## Probes
 
@@ -263,11 +264,39 @@ interface BlobLike {
 }
 ```
 
-Runs in the calling thread, without a worker: for Node, scripts and tests. `analyze(await fs.openAsBlob(path), { name: path })` in Node; in Node 24 `openAsBlob` wraps the size of files above 4 GiB modulo 2^32, so pass a `BlobLike` over a file handle for those. The parser chunks load with `import()` on first use. `{ engine: mp4box() }` or `{ engine: mediabunny() }` runs that library instead (the peer must be installed). With own it rejects on an abort (the signal's reason, or an `AbortError`) and, with the import error as it is, when the chunk with the worker runtime fails to load. A parser or statistics chunk that fails to load is not a rejection: own returns a result whose `error` is the import error's message. A library engine also rejects when its chunk fails to load, and rvfc without a host or a DOM. The type declarations name DOM types such as `Worker` and `HTMLElement`, so a TypeScript project for Node compiles them with `"DOM"` in `lib` or with `skipLibCheck: true`; without either, `tsc` reports `TS2304: Cannot find name 'Worker'`.
+Runs in the calling thread, without a worker: for Node, scripts and tests. `analyze(await fs.openAsBlob(path), { name: path })` in Node. In Node 24 `openAsBlob` wraps the size of files above 4 GiB modulo 2^32, so pass a `BlobLike` over a file handle for those. The parser chunks load with `import()` on first use. `{ engine: mp4box() }` or `{ engine: mediabunny() }` runs that library instead (the peer must be installed). With own it rejects on an abort (the signal's reason, or an `AbortError`) and, with the import error as it is, when the chunk with the worker runtime fails to load. A parser or statistics chunk that fails to load is not a rejection: own returns a result whose `error` is the import error's message. A library engine also rejects when its chunk fails to load, and rvfc without a host or a DOM. The type declarations name DOM types such as `Worker` and `HTMLElement`, so a TypeScript project for Node compiles them with `"DOM"` in `lib` or with `skipLibCheck: true`, and without either `tsc` reports `TS2304: Cannot find name 'Worker'`. The declarations of `video-fps-probe/header`, `video-fps-probe/url`, `video-fps-probe/check` and `video-fps-probe/presets` name no DOM type, so a server that imports only those compiles with `"lib": ["ES2022"]`, `"types": ["node"]` and no `skipLibCheck`, which `tests/package/dom-free.test.ts` checks from an ESM and a CommonJS file.
 
 ### CommonJS
 
-Node 22.12 and newer load an ES module from `require()` (`require(esm)`), so CommonJS code takes the package as it is, every entry included; no entry has a top-level `await`. Node 22.12 prints an `ExperimentalWarning` for it, Node 24 prints nothing. Older Node versions need `await import('video-fps-probe')` from CommonJS.
+Node 22.12 and newer load an ES module from `require()` (`require(esm)`), so CommonJS code takes the package as it is, every entry included, and no entry has a top-level `await`. Node 22.12 prints an `ExperimentalWarning` for it, Node 24 prints nothing. Node 22.12 is the lowest supported version, since Node 20 is past its end of life.
+
+The five server entries, `video-fps-probe`, `video-fps-probe/header`, `video-fps-probe/url`, `video-fps-probe/check` and `video-fps-probe/presets`, also ship a CommonJS copy in `dist/cjs`, minified like the standalone worker files, with `.d.cts` declarations, for the loaders that do not run `require(esm)`. Each of them takes these conditions, with its own files:
+
+```json
+".": {
+  "module-sync": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+  "module": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+  "require": { "types": "./dist/cjs/index.d.cts", "default": "./dist/cjs/index.cjs" },
+  "types": "./dist/index.d.ts",
+  "default": "./dist/index.js"
+}
+```
+
+| Loader | Server entries resolve to | Why |
+|---|---|---|
+| Node 22.12 and newer, `import` or `require()` | the ESM build, one instance | `module-sync`, with `require(esm)` on by default |
+| Node with `--no-experimental-require-module`, `require()` | the CommonJS copy, a second instance next to the ESM one | `require` |
+| Jest 30 without vm modules, in the node or jsdom environment | the CommonJS copy | Jest resolves `require()` with `require`, `node` and `default` |
+| Jest 30.5 with `--experimental-vm-modules` on Node 24.9 and newer | the ESM build | Jest adds `module-sync` when it can evaluate ES modules from `require()` |
+| Vite, webpack and esbuild, `import` or `require()` | the ESM build | `module`, so no browser bundle holds the CommonJS copy |
+| TypeScript `node16` or `nodenext`, a CommonJS file | the `.d.cts` declarations | `require` |
+| TypeScript, an ES module file or `bundler` | the `.d.ts` declarations | `types` |
+| TypeScript `node10` | the `.d.ts` declarations | `typesVersions` |
+| a tool that reads no `exports` map | `dist/cjs/index.cjs` | `main` |
+
+The other entries (`lazy`, `client`, `client/lazy`, `react`, `mp4box`, `mediabunny`, `rvfc`, `worker-runtime`, `engines/*` and the standalone worker files) stay ESM only. The CommonJS copy has no `import.meta` and no `import()`: the parser chunks load lazily through `require()`, and the root entry turns the worker URLs into file URLs that only `createProbe` reaches, which stops at `unsupported-environment` in Node before it uses them. It requires no peer and no builtin but `url`, and the copies of `url`, `check` and `presets` require nothing, which `check-dist` enforces.
+
+**Two copies in one process.** Where `require(esm)` is off, an app that mixes `import` and `require()` loads both copies. Their module state is only caches, so a result of one copy is a plain object that the other copy's `check`, `errorCodeOf` and `warningCodesOf` read as their own. Each copy has its own classes, so test errors with `isAbortError`, `isTimeoutError` and the `name` and `code` of `ProbeError` and `RangeSourceError`, not with `instanceof`. `tests/package/dual-instance.test.ts` loads both copies under `--no-experimental-require-module` and checks all of this.
 
 ```js
 const { openAsBlob } = require('node:fs');
@@ -282,9 +311,13 @@ openAsBlob(path)
 
 A TypeScript project that compiles to CommonJS, such as a NestJS 11 app (`"module": "commonjs"`, `moduleResolution` `node10`, `skipLibCheck: true`), writes `import { analyze } from 'video-fps-probe'` and gets a `require()` in its output. `moduleResolution: node10` reads no `exports` map, so the package also lists every subpath's types under `typesVersions`; TypeScript 6.0 needs `"ignoreDeprecations": "6.0"` for `node10`, TypeScript 5.9 does not. `tests/package/commonjs.test.ts` installs the packed tarball, `require()`s it from a `.cjs` file and compiles such a project with TypeScript 6.0.3 and with 5.9.3 (the nested project `tests/package/ts59`, with its own `package.json` and `package-lock.json`, so its `tsc` stays out of the repo's `node_modules/.bin`: CI installs it with `npm ci --prefix tests/package/ts59` before the package tests, which fail in CI without it; locally the test installs it with `npm ci --offline` and an empty npmrc, and skips the 5.9.3 cases with a message when the npm cache lacks it), runs `analyze` on an MP4 and `check` with a preset, and compares both with the source, on Node 24 and on Node 22.12 in CI.
 
+`tests/package/commonjs.test.ts` also checks from the packed tarball that `require.resolve` of every server entry lands on its ESM file by default and on its `.cjs` file under `--no-experimental-require-module`, with the results of the source either way, and `tests/package/cjs-parity.test.ts` checks that the CommonJS copy exports the names of the ESM build and gives its results on every committed fixture, with `analyze`, `analyzeHeader`, a Range source and every preset.
+
 ### Jest
 
-Jest runs CommonJS tests through its own module loader, not Node's `require(esm)`, so `require('video-fps-probe')` fails there with an ESM syntax error. The root entry also reaches `import.meta.url` through the worker URLs of the own engine, which is a syntax error in a CommonJS module even though `analyze` never creates a worker. Test server code against the in-thread `analyze` and `check`, and let babel-jest transform the package:
+Jest 30 runs the server entries with no configuration and with `jest` as the only dependency. A test file writes `const { analyze } = require('video-fps-probe')`, `const { analyzeHeader } = require('video-fps-probe/header')` or `const { rangeSource } = require('video-fps-probe/url')`. Without vm modules Jest loads the CommonJS copy, and Jest 30.5 with `NODE_OPTIONS=--experimental-vm-modules` on Node 24.9 and newer loads the ESM build from `require()`. `tests/package/jest-plain` and `tests/package/jest-vm` prove both. They are nested projects with their own `package.json` and `package-lock.json`, Jest 30.5.2 alone and the same test file, which calls `analyze` and `analyzeHeader` on an MP4, `analyzeHeader` over a `rangeSource`, `check` with a preset and the guards, and `tests/package/jest-plain.test.ts` and `jest-vm.test.ts` compare its results with the source. CI installs them with `npm ci --prefix tests/package/jest-plain` on Node 24 and 22.12 and `npm ci --prefix tests/package/jest-vm` on Node 24. Locally the tests install them with `npm ci --offline` and an empty npmrc, and skip with a message when the npm cache lacks Jest.
+
+The other entries, such as `video-fps-probe/lazy`, `video-fps-probe/mp4box` and `video-fps-probe/mediabunny`, are ESM only and reach `import.meta.url`, which is a syntax error in a CommonJS module, so Jest without vm modules needs babel-jest to transform them:
 
 ```js
 // jest.config.cjs, with jest, babel-jest, @babel/core, @babel/plugin-transform-dynamic-import,
@@ -390,6 +423,152 @@ const result = await analyzeHeader(source, {
 ```
 
 With these limits the 3 h moov-at-end file stops with `byte-limit` after 2 reads, with `layout.kind` `moov-at-end` and `layout.moovSize` set, the 604 MB moov-at-end file takes 2 reads and about 77 KB, and the 604 MB faststart file 1 read. A hybrid file, with samples in the moov and an mdat before the first moof such as the plain `frag_keyframe` output of ffmpeg, costs a peek past that mdat, so it resolves in the 3 reads when its last indexed moof is inside the 64 KiB tail. `fragmentedDuration: 'header'` reads neither the tail nor any fragment after the first moof, and it completes a first moof that the head window cuts only when every track has a sidx that covers the file, so a fragmented file costs the reads up to its first moof, at the cost of `no-duration` for files whose duration only the mfra gives, such as the browser recordings of MediaRecorder.
+
+A file in object storage reaches `analyzeHeader` through a [Range source](#range-source).
+
+## Range source
+
+```ts
+function rangeSource(fetcher: RangeFetcher, init: RangeSourceInit): RangeSource; // video-fps-probe/url
+function openRangeSource(fetcher: RangeFetcher, init?: OpenRangeSourceInit): Promise<RangeSource>;
+function httpRange(url: string | URL, init?: HttpRangeInit): RangeFetcher;
+function readCapped(body: ReadableStream<Uint8Array> | AsyncIterable<Uint8Array>, expectedLength: number, signal?: AbortSignal | null): Promise<Uint8Array>;
+
+interface RangeSourceInit {
+  size: number; // the object size in bytes, a non-negative safe integer
+  signal?: AbortSignal | null; // aborts every read of the source
+}
+
+interface OpenRangeSourceInit {
+  size?: number; // a known size: no request, as rangeSource
+  headBytes?: number; // the discovery window, default 65536, at least 1
+  signal?: AbortSignal | null;
+}
+
+interface HttpRangeInit {
+  headers?: Readonly<Record<string, string>>; // sent with every request, such as If-Match
+  fetch?: typeof globalThis.fetch; // default: the global fetch
+}
+
+interface RangeRequest {
+  readonly start: number; // inclusive
+  readonly end: number; // exclusive
+  readonly range: string; // the Range header value, bytes=start-(end-1)
+  readonly signal: AbortSignal | null; // aborts on the caller's abort and at the analyzeHeader deadline
+}
+
+interface RangeReply {
+  readonly status?: number | null;
+  readonly contentRange?: string | null;
+  readonly contentLength?: number | null;
+  readonly bytes?: ArrayBuffer | ArrayBufferView | null; // a body already read
+  readonly body?: (expectedLength: number) => Promise<ArrayBuffer | ArrayBufferView>; // called only after the reply passes its checks
+  readonly discard?: () => void; // releases a body that will not be read
+}
+
+type RangeFetcher = (request: RangeRequest) => Promise<RangeReply>;
+
+interface RangeSource extends BlobLike {
+  read(start: number, end: number, signal?: AbortSignal | null): Promise<Uint8Array>;
+}
+
+class RangeSourceError extends Error {
+  constructor(code: RangeSourceErrorCode, message: string, options?: RangeSourceErrorOptions);
+  readonly code: RangeSourceErrorCode;
+  readonly status: number | null; // the status of the reply, when it had one
+}
+
+interface RangeSourceErrorOptions {
+  status?: number | null;
+  cause?: unknown;
+}
+
+type RangeSourceErrorCode =
+  | 'unverifiable-reply' | 'unexpected-status' | 'range-mismatch' | 'size-changed'
+  | 'length-mismatch' | 'body-too-long' | 'body-too-short' | 'invalid-reply';
+```
+
+`video-fps-probe/url` turns any function that fetches a byte range into a source for `analyzeHeader` and for the in-thread `analyze`: `fetch` with a presigned URL, or the client of an object-storage SDK that the caller creates. It depends on no SDK, imports nothing at run time and runs in the calling thread in Node and in browsers, and a bundler takes 3.07 KB gzip of it ([size matrix](../report/size-matrix.md)). A `RangeSource` is a `BlobLike`: `slice(start, end)` clamps as `Blob.slice` does and its `arrayBuffer()` reads with `init.signal`, and `read(start, end, signal)` is what `analyzeHeader` calls with its own signal. The worker client accepts only a `Blob`.
+
+**Size.** `rangeSource` takes the size the caller knows, for example from a HEAD request or an upload record, and issues no request. `init.size` must be a non-negative safe integer, else `TypeError`.
+
+**Discovery.** `openRangeSource` without a size issues one request for `bytes=0-(headBytes-1)`, 65536 bytes by default, and accepts three replies:
+
+- a 206 whose `Content-Range` is `bytes 0-b/total` with a numeric total, `b` equal to `min(headBytes, total) - 1`, and a `Content-Length`, when present, of `b + 1`. Object stores and HTTP servers clamp a range that runs past the end, so a 1000-byte object answers `bytes 0-999/1000`, which is accepted. A reply with such a `Content-Range` and no status counts as a 206.
+- a 200 with a `Content-Length` of at most `headBytes`, the whole small object, read with that cap.
+- a 416 with `bytes */0`, an empty object.
+
+Anything else, such as a 200 for a larger object or a `*` total, rejects with a `RangeSourceError` after `discard()`. The bytes of the accepted reply are kept and serve every later read inside them, so with `headBytes` equal to the `readAhead.head` of `analyzeHeader`, both 65536 by default, the first read of the analysis costs no request and the requests equal `io.reads`. Discovery runs before the deadline of `analyzeHeader` starts, so pass the same signal to both. With `size`, `openRangeSource` issues no request, as `rangeSource` does.
+
+**Every other read** is one fetcher call, with no retry and no option for one. The source never reads ahead of the analysis and never sends a suffix range. Each reply is checked before its body is read, in this order, and fails closed:
+
+| Check | Code when it fails |
+|---|---|
+| the reply has a `status` or a `contentRange` | `unverifiable-reply` |
+| `status`, when present, is 206, or 200 when the read is the whole object | `unexpected-status`, with `error.status` set |
+| `contentRange`, when present, is `bytes start-(end-1)/total` | `range-mismatch` |
+| that `total` is the size of the source, or `*` | `size-changed` |
+| `contentLength`, when present, is `end - start` | `length-mismatch` |
+
+An empty `contentRange` counts as absent, as in a browser that does not expose the header of a cross-origin reply, where the status and length checks remain. When a check fails, `discard()` runs and the read rejects. The body, `bytes` or else `await body(end - start)`, must then be bytes of exactly `end - start`, else `body-too-long`, `body-too-short` or `invalid-reply`, which also covers a reply that is not an object or has neither `bytes` nor `body`. A view is copied only when it does not cover its whole buffer.
+
+**Errors.** In `analyzeHeader` and `analyze` every read failure becomes `file read failed: <error>` with `errorCode` `read-failed`, for example `file read failed: RangeSourceError: status 200 to bytes=0-65535 of an object of 100000 bytes, expected 206`. An error of the fetcher passes through as it is, so its text keeps a code such as `ECONNRESET`. An `AbortError` that the fetcher raises while the signal of the read is open, such as the timeout of an SDK client, is a read failure, not an abort. `openRangeSource` and `read` reject with the `RangeSourceError` itself: branch on its `code` and `status` and test it by `name === 'RangeSourceError'`, because `instanceof` fails across the ESM and the CommonJS copy ([CommonJS](#commonjs)).
+
+**Signals.** The signal of a request aborts on the signal of the read, on `init.signal` and, in `analyzeHeader`, at the `maxMs` deadline. `httpRange` passes it to `fetch`, so the socket closes. A read settles on an abort even when the fetcher ignores its signal, a reply that arrives later is discarded, and a caller abort rejects with the signal's reason.
+
+**Body cap.** `readCapped(body, expectedLength, signal)` reads a `ReadableStream` or an async iterable, such as a Node stream, chunk by chunk into one buffer of `expectedLength` bytes. It cancels the stream and rejects with `body-too-long` as soon as the total passes `expectedLength`, rejects with `body-too-short` on an early end, and cancels the stream on an abort. `httpRange` reads `res.body` through it, so a 206 without a `Content-Length` whose chunked body runs past the range is cut at `end - start` bytes and never buffered whole. A custom fetcher gets the same cap from the `expectedLength` argument of `body()`.
+
+**httpRange** sends `Range` and `Accept-Encoding: identity`, which a browser drops and which `fetch` adds by itself to a Range request, and the caller's `headers`, such as `If-Match` with the ETag from the server's own HEAD, so that an overwritten object fails the read instead of mixing two versions. Its `discard` cancels `res.body`. In a browser a cross-origin server must list `Content-Range` in `Access-Control-Expose-Headers`, or that check is skipped.
+
+**Full mode.** The in-thread `analyze` takes a Range source too, without limits, and reads it through `slice()`, so pass the caller's signal as `init.signal` to close the socket on an abort.
+
+A URL presigned for GET usually fails on HEAD, so the size comes from the first ranged GET:
+
+```ts
+import { analyzeHeader, errorClass } from 'video-fps-probe/header';
+import { httpRange, openRangeSource } from 'video-fps-probe/url';
+
+const signal = AbortSignal.timeout(3000);
+const source = await openRangeSource(httpRange(presignedGetUrl), { signal });
+const result = await analyzeHeader(source, {
+  name: key,
+  signal,
+  limits: { maxBytes: 2 * 1024 * 1024, maxReads: 3, maxMs: 2500, maxTracks: 16, maxTopLevelBoxes: 32 },
+});
+if (result.errorCode && errorClass(result.errorCode) === 'file') rememberPermanentFailure(key, result.errorCode);
+```
+
+A rejection of `analyzeHeader` here is the caller's own abort or timeout, `isAbortError(e) || isTimeoutError(e)`, and a rejection of `openRangeSource` is a `RangeSourceError` of the discovery reply or an error of `fetch`.
+
+The client of an object-storage SDK works the same way from CommonJS. The library imports no SDK. Give the probe a client of its own with one attempt and explicit connection and request timeouts, because a default client retries, which a degraded store should not cost every upload, and send the ETag of the caller's HEAD as the precondition:
+
+```js
+const { analyzeHeader } = require('video-fps-probe/header');
+const { rangeSource, readCapped } = require('video-fps-probe/url');
+
+const probeClient = createStorageClient({ maxAttempts: 1, requestHandler: { connectionTimeout: 1000, requestTimeout: 2000 } });
+
+async function probeObject(bucket, key, signal) {
+  const head = await probeClient.headObject({ Bucket: bucket, Key: key });
+  const fetcher = async ({ range, signal: abortSignal }) => {
+    const out = await probeClient.getObject({ Bucket: bucket, Key: key, Range: range, IfMatch: head.ETag }, { abortSignal });
+    return {
+      status: out.$metadata?.httpStatusCode ?? null,
+      contentRange: out.ContentRange ?? null,
+      contentLength: out.ContentLength ?? null,
+      body: (expectedLength) => readCapped(out.Body, expectedLength, abortSignal),
+      discard: () => out.Body?.destroy?.(),
+    };
+  };
+  return analyzeHeader(rangeSource(fetcher, { size: head.ContentLength, signal }), {
+    name: key,
+    signal,
+    limits: { maxBytes: 2 * 1024 * 1024, maxReads: 3, maxMs: 2500, maxTracks: 16, maxTopLevelBoxes: 32 },
+  });
+}
+```
+
+`createStorageClient` stands for the constructor of the SDK client in use, and its option names follow a common SDK shape: map them to the SDK. `tests/url` runs every committed fixture through a fetcher and through `httpRange` against a `node:http` server, both against the `Blob` results, with one request per read, and covers each failed check, the body cap, a caller abort and a stalled server under `maxMs`, which closes the socket.
 
 ## Engines
 
@@ -584,7 +763,7 @@ The code travels with the failure, not with its text: every `error` reads as it 
 | `corrupt` | file | every other `corrupt file: ...` of a malformed file, `invalid EBML header`, and a malformed value that stopped the parser |
 | `no-duration` | file | `incomplete header: fragmented file without a sidx, mfra or mehd duration`, from `video-fps-probe/header` only |
 | `byte-limit`, `read-limit`, `time-limit`, `structure-limit` | limit | `limit reached: maxBytes <n> (<m> more bytes needed at offset <o>)`, `limit reached: maxReads <n>`, `limit reached: maxMs <n>`, `limit reached: maxTracks <n>` and `limit reached: maxTopLevelBoxes <n>`, from `video-fps-probe/header` only ([limits](#header-only-analysis)) |
-| `read-failed` | io | `file read failed: <error>` and `file read failed: short read ...`, and from `video-fps-probe/header` also an `AbortError` of the source itself while the caller's signal is open and a read that resolves no bytes |
+| `read-failed` | io | `file read failed: <error>` and `file read failed: short read ...`, every failure of a [Range source](#range-source) such as `file read failed: RangeSourceError: ...`, and from `video-fps-probe/header` also an `AbortError` of the source itself while the caller's signal is open and a read that resolves no bytes |
 | `load-failed` | environment | the parser or statistics chunk of own did not load, for example after a redeploy |
 | `engine-failed` | file | a failure of mp4box, mediabunny or rvfc, from `errorCodeOf` only |
 | `internal` | internal | an invalid argument to `analyze` or a probe, such as a `readAhead.head` or `readAhead.fragment` that is not a non-negative safe integer or a `BlobLike` whose `size` is not a non-negative safe integer, and any other exception, a bug in the package. Never a property of the file. In ISO BMFF its text starts with `corrupt file: ` as in 0.3.0, for example `corrupt file: readAhead must be a non-negative safe integer, got -1`. `analyzeHeader` checks every option before it reads and throws a `TypeError` for an invalid one instead, so its `internal` is a bug only |
@@ -867,6 +1046,13 @@ The package follows semantic versioning, with these rules:
 - **Minor**: new optional result fields, new engines or entries, new options.
 - **Major**: removing or retyping a field, a new major of a peer, or a higher browser floor.
 - Items marked experimental here (`compare`, `CompareResult`, the native `mp4box`, `mediabunny` and `rvfc` details on `ProbeResult`) can change in a minor release.
+- **Frozen from 0.4.0-beta.1.** These are API from 0.4.0-beta.1 on, and 0.4.0-beta.2, 0.4.0 and every later release only add to them:
+  - the `FileErrorCode` values `empty-file`, `unrecognised`, `unsupported-container`, `unsupported`, `too-large`, `no-header`, `truncated`, `corrupt`, `no-duration`, `byte-limit`, `read-limit`, `time-limit`, `structure-limit`, `read-failed`, `load-failed`, `engine-failed` and `internal`, and the `ErrorClass` of each.
+  - the `WarningCode` values with the warning prefixes they classify: `invalid mdhd timescale ` and `invalid timescale ` (`invalid-timescale`), `'mdat' at <offset> is truncated` (`truncated-mdat`), `'<type>' at <offset> is truncated` (`truncated-box`), `ignored trailing data at ` (`trailing-data`), `fragment index not read: ` (`fragment-index-unread`), `format duration unresolved: ` (`duration-unresolved`), `fragments ignored: ` (`fragments-ignored`) and `too many top-level boxes` (`structure-limit`).
+  - `LayoutKind` and the members of `ContainerLayout`: `kind`, `moovOffset`, `moovSize`, `sidx` and `emptyMoov`.
+  - the members of `HeaderLimits` (`maxBytes`, `maxReads`, `maxMs`, `maxTracks`, `maxTopLevelBoxes`) and of `HeaderOptions` (`name`, `signal`, `limits`, `readAhead` with `head` and `tail` only, `fragmentedDuration`), the `analyzeHeader` signature, `HEADER_DEFAULT_LIMITS`, and the exports `isAbortError` and `isTimeoutError` of `video-fps-probe/header`.
+  - the whole `video-fps-probe/url` API: `rangeSource`, `openRangeSource`, `httpRange`, `readCapped`, `RangeSourceError` with its `code` and `status`, the `RangeSourceErrorCode` values, and the types `RangeRequest`, `RangeReply`, `RangeFetcher`, `RangeSource`, `RangeSourceInit`, `OpenRangeSourceInit`, `HttpRangeInit` and `RangeSourceErrorOptions`.
+  - `ColorInfo` and `DolbyVisionConfig` join the list at 0.4.0-beta.2.
 - A minor release may add error codes, error classes and warning codes. Treat an error code or an error class you do not know like `internal` and a warning code you do not know like null. Moving a failure to another code is a behaviour change and the changelog says so. The code `errorCodeOf` reads from the text of another engine (mp4box, mediabunny or rvfc) is best effort and may change in a minor release, because those texts come from the libraries and the browser. The text of an `error` or a warning outside the coded prefixes is not part of the API.
 - The rules of a preset follow its source: when a provider changes its published limits, the preset changes with them in the next minor release, with the new `verifiedAt` and a changelog entry. Pin your own rules if they must not move.
 

@@ -95,7 +95,7 @@ describe('the types and values docs/api.md names', () => {
 
   it('are read from the entries table and the code blocks', () => {
     expect(PROSE_TYPES.filter((name) => !new RegExp(`\\b${name}\\b`).test(DOC))).toEqual([]);
-    expect([...expected.keys()].sort()).toEqual([PACKAGE, ...['check', 'client', 'client/lazy', 'engines/mediabunny', 'engines/mp4box', 'header', 'lazy', 'mediabunny', 'mp4box', 'presets', 'react', 'rvfc', 'worker-runtime'].map((e) => `${PACKAGE}/${e}`)]);
+    expect([...expected.keys()].sort()).toEqual([PACKAGE, ...['check', 'client', 'client/lazy', 'engines/mediabunny', 'engines/mp4box', 'header', 'lazy', 'mediabunny', 'mp4box', 'presets', 'react', 'rvfc', 'url', 'worker-runtime'].map((e) => `${PACKAGE}/${e}`)]);
     expect([...expected.get(`${PACKAGE}/presets`)!].sort()).toEqual(['PresetSourceKind', 'ProviderPreset', 'klingMotionControl', 'klingO1ReferenceVideo', 'runwayAleph2', 'seedance2ReferenceVideo', 'veoExtend', 'wan26ReferenceToVideoFal']);
     expect([...expected.get(`${PACKAGE}/check`)!].sort()).toEqual(['AspectRatioRule', 'CheckExpected', 'CheckReport', 'CheckRules', 'CheckSeverity', 'CheckVerdict', 'CheckViolation', 'FpsRule', 'FpsSource', 'FrameSizeRule', 'RangeRule', 'RatePolicy', 'RatioValue', 'SuggestedFps', 'check']);
     expect(['check', 'CheckRules', 'CheckReport', 'RatioValue', 'ProviderPreset', 'PresetSourceKind'].filter((name) => expected.get(PACKAGE)!.has(name) || expected.get(`${PACKAGE}/client`)!.has(name))).toEqual([]);
@@ -106,6 +106,8 @@ describe('the types and values docs/api.md names', () => {
     expect(expected.get(`${PACKAGE}/client`)!.has('InThreadOptions')).toBe(false);
     expect([...expected.get(`${PACKAGE}/header`)!]).toEqual(expect.arrayContaining(['analyzeHeader', 'HEADER_DEFAULT_LIMITS', 'HeaderOptions', 'HeaderLimits', 'HeaderResult', 'FileResult', 'BlobLike', 'isTimeoutError']));
     expect(['HeaderOptions', 'HeaderLimits', 'HeaderResult'].filter((name) => expected.get(PACKAGE)!.has(name) || expected.get(`${PACKAGE}/client`)!.has(name))).toEqual([]);
+    expect([...expected.get(`${PACKAGE}/url`)!].sort()).toEqual(['BlobLike', 'BlobSlice', 'HttpRangeInit', 'OpenRangeSourceInit', 'RangeFetcher', 'RangeReply', 'RangeRequest', 'RangeSource', 'RangeSourceError', 'RangeSourceErrorCode', 'RangeSourceErrorOptions', 'RangeSourceInit', 'httpRange', 'openRangeSource', 'rangeSource', 'readCapped']);
+    expect(['RangeSource', 'RangeFetcher', 'RangeReply', 'RangeSourceError', 'HttpRangeInit'].filter((name) => expected.get(PACKAGE)!.has(name) || expected.get(`${PACKAGE}/client`)!.has(name))).toEqual([]);
     expect(expected.get(PACKAGE)!.has('Promise')).toBe(false);
   });
 
