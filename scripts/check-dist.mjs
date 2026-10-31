@@ -376,6 +376,10 @@ export function checkDist({ pack = true, ssr = true, repo = REPO_ROOT } = {}) {
     for (const f of reached.files) if (!inside.some((d) => f.startsWith(d))) fail(`metadata closure: ${root} reaches ${f}, a color or aspect entry imports only its own modules at run time`);
     for (const b of reached.bare) fail(`metadata closure: ${root} imports ${b}`);
   }
+  const metadataFree = ['index.js', 'lazy.js', 'analyze.js', 'client/index.js', 'client/lazy.js', 'react/index.js', 'plugins/rvfc.js', 'worker/runtime.js', ...files.filter((f) => /^worker\/[^/]+\.worker\.js$/.test(f) || /^engines\/[^/]+\.js$/.test(f))].filter(has);
+  for (const root of metadataFree) {
+    for (const f of closure(edges, root, { dynamic: true }).files) if (/^(color|aspect)\//.test(f)) fail(`metadata hygiene: ${root} reaches ${f}, only the header entry loads the color and aspect code`);
+  }
   const hygieneRoots = ['client/index.js', 'client/lazy.js', 'react/index.js', 'plugins/rvfc.js', 'worker/runtime.js', ...Object.keys(SPLIT_WORKERS), ...Object.keys(HEADER_CLOSURE), ...files.filter((f) => /^engines\/[^/]+\.js$/.test(f))].filter(has);
   for (const root of hygieneRoots) {
     const reached = closure(edges, root, { dynamic: true }).files;
@@ -535,6 +539,9 @@ export function runSelfTest() {
     expectProblem('the CommonJS color entry that requires url fails', problemsOf({ 'cjs/color.cjs': 'exports.u = require("url");\n' }), 'cjs/color.cjs: requires url', true);
     const metadata = { 'color/index.js': "export { a } from './a.js';\n", 'color/a.js': 'export const a = 1;\n', 'aspect/index.js': "export { a } from '../color/a.js';\n" };
     expectProblem('color and aspect entries that import only their own modules pass', problemsOf(metadata), 'metadata closure', false);
+    expectProblem('the header entry may load the color code lazily', problemsOf({ ...metadata, 'header/index.js': "export const m = () => import('../color/index.js');\n" }), 'metadata hygiene', false);
+    expectProblem('a worker that reaches the color code fails', problemsOf({ ...metadata, 'worker/own-isobmff.worker.js': "export const m = () => import('../color/index.js');\n" }), 'metadata hygiene: worker/own-isobmff.worker.js reaches color/index.js', true);
+    expectProblem('the root entry that reaches the aspect code fails', problemsOf({ ...metadata, 'index.js': "export * from './aspect/index.js';\n" }), 'metadata hygiene: index.js reaches aspect/index.js', true);
     expectProblem('a color entry that imports the core fails', problemsOf({ ...metadata, 'core/x.js': 'export const x = 1;\n', 'color/a.js': "export { x as a } from '../core/x.js';\n" }), 'metadata closure: color/index.js reaches core/x.js', true);
     expectProblem('an aspect entry that imports a package fails', problemsOf({ ...metadata, 'aspect/index.js': "export { a } from 'some-package';\n" }), 'metadata closure: aspect/index.js imports some-package', true);
     expectProblem('an ESM file that imports the CommonJS copy fails', problemsOf({ ...chunk, 'core/a.js': "export { x } from '../cjs/chunks/x.cjs';\n" }), 'core/a.js: ../cjs/chunks/x.cjs reaches the CommonJS copy in dist/cjs', true);
