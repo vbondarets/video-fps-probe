@@ -21,7 +21,7 @@
   },
   "files": {
     "kinds": {
-      "isobmff": { "sources": "^(core/isobmff/|standalone/own(-isobmff)?\\.worker\\.js$)", "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 450, "6": 450 } },
+      "isobmff": { "sources": "^(core/isobmff/|standalone/own(-isobmff)?\\.worker\\.js$)", "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480 } },
       "matroska": { "sources": "^(core/matroska/|standalone/own(-matroska)?\\.worker\\.js$)", "growth": { "1": 0, "2": 200, "3": 200, "4": 200, "5": 250, "6": 250 } },
       "core": { "sources": "^(core/(dispatch|options|reader|result|stats)\\.js|standalone/own(-isobmff|-matroska)?\\.worker\\.js)$", "growth": { "1": 0, "2": 390, "3": 390, "4": 390, "5": 440, "6": 440 } },
       "engine": { "sources": "^engines/common\\.js$", "growth": { "1": 0, "2": 30, "3": 30, "4": 30, "5": 30, "6": 30 } }
@@ -32,28 +32,28 @@
     {
       "name": "first MP4 under the 25.00 KB promise",
       "rows": ["zero-config:firstMp4", "iife-nosplit:firstMp4", "standalone-split-url:firstMp4"],
-      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 450, "6": 450 },
+      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480 },
       "cap": 24950,
-      "why": "The 0.4.0 parser additions may spend 0.39 KB, then 0.01 KB, then 0.05 KB on the first MP4 path, and the three configurations that inline the worker stay at or below 24.95 KB, inside the 25.00 KB promise."
+      "why": "The 0.4.0 parser additions may spend 0.39 KB, then 0.01 KB, then 0.08 KB on the first MP4 path, and the three configurations that inline the worker stay at or below 24.95 KB, inside the 25.00 KB promise. Stage 5 planned 0.05 KB and spends 0.03 KB more on the copy that bounds what a probe posts to the bytes of the moov. At the end of stage 5 the first MP4 rows measured 65 to 80 B over the stage base, 42 to 45 B for the view of the moov and 23 to 35 B for the copy: custom and custom-eager 80 B, zero-config, iife-nosplit and standalone-split-url 70 B, at 24,910, 24,910 and 24,935 B as built, and the other rows 65 B. Every row that holds the ISO BMFF parser gets the same 0.08 KB share for each copy of the parser it holds."
     },
     {
       "name": "first MP4 of the default configuration",
       "rows": ["default:firstMp4"],
-      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 450, "6": 450 },
+      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480 },
       "cap": 24000,
       "why": "The same shares, under the 24.00 KB promise of the default configuration."
     },
     {
       "name": "first MP4 of the custom worker configurations",
       "rows": ["custom:firstMp4", "custom-eager:firstMp4"],
-      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 450, "6": 450 },
+      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480 },
       "cap": { "custom:firstMp4": 24500, "custom-eager:firstMp4": 21500 },
       "why": "The same shares, under the 0.3.0 budgets of the custom configurations."
     },
     {
       "name": "standalone ISO BMFF worker file",
       "rows": ["standalone:own-isobmff.worker.js"],
-      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 450, "6": 450 },
+      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480 },
       "cap": 22000,
       "why": "The prebuilt ISO BMFF worker carries the same parser code as the first MP4 path."
     },
@@ -67,14 +67,14 @@
     {
       "name": "first MP4 of the other configurations",
       "rows": ["mp4box:firstMp4", "mediabunny:firstMp4", "rvfc:firstMp4", "react18:firstMp4"],
-      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 450, "6": 450 },
+      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480 },
       "cap": null,
       "why": "The same shares as the first MP4 rows above. These rows have no budget in the size matrix, so only their growth is gated."
     },
     {
       "name": "first MP4 of the other configurations with a budget",
       "rows": ["all:firstMp4", "react:firstMp4", "check:firstMp4", "preset:firstMp4", "react:firstMp4Summary", "react18:firstMp4Summary"],
-      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 450, "6": 450 },
+      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480 },
       "cap": { "all:firstMp4": 24500, "react:firstMp4": 24500, "check:firstMp4": 24500, "preset:firstMp4": 24500, "react:firstMp4Summary": 25000, "react18:firstMp4Summary": 25000 },
       "why": "The same shares as the first MP4 rows above, under the 0.3.0 budgets of these rows."
     },
@@ -88,21 +88,21 @@
     {
       "name": "both parsers in one file",
       "rows": ["standalone:own.worker.js", "standalone-url:firstMp4", "standalone-url:firstMkv"],
-      "growth": { "1": 0, "2": 590, "3": 600, "4": 600, "5": 700, "6": 700 },
+      "growth": { "1": 0, "2": 590, "3": 600, "4": 600, "5": 730, "6": 730 },
       "cap": { "standalone:own.worker.js": 37500, "standalone-url:firstMp4": 40000, "standalone-url:firstMkv": 40000 },
       "why": "The single standalone worker holds both parsers, so it, and the first file of the configuration that loads it, may grow by the ISO BMFF and the Matroska shares together."
     },
     {
       "name": "ISO BMFF parser chunk",
       "rows": ["default:isobmff", "custom:isobmff"],
-      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 450, "6": 450 },
+      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480 },
       "cap": 13000,
       "why": "The parser chunk carries most of the first MP4 growth and stays under 13.00 KB."
     },
     {
       "name": "ISO BMFF parser chunk of the other configurations",
       "rows": ["zero-config:isobmff", "iife-nosplit:isobmff", "custom-eager:isobmff", "mp4box:isobmff", "mediabunny:isobmff", "rvfc:isobmff", "all:isobmff", "react:isobmff", "react18:isobmff", "check:isobmff", "preset:isobmff"],
-      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 450, "6": 450 },
+      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480 },
       "cap": 13000,
       "why": "These rows measure the same parser code as the parser chunk above, so they get the same shares under the same 13.00 KB cap."
     },
@@ -130,37 +130,37 @@
     {
       "name": "all own paths",
       "rows": ["default:allOwn", "zero-config:allOwn", "all:allOwn", "standalone-split-url:allOwn", "iife-nosplit:allOwn", "react:allOwn"],
-      "growth": { "1": 0, "2": 590, "3": 600, "4": 600, "5": 700, "6": 700 },
+      "growth": { "1": 0, "2": 590, "3": 600, "4": 600, "5": 730, "6": 730 },
       "cap": { "default:allOwn": 50500, "zero-config:allOwn": 50000, "all:allOwn": 50500, "standalone-split-url:allOwn": 50000, "iife-nosplit:allOwn": 50000, "react:allOwn": 50500 },
       "why": "Every own path holds the ISO BMFF parser and the Matroska parser once, so it may grow by the ISO BMFF and the Matroska shares together, under the 0.3.0 budgets of these rows."
     },
     {
       "name": "all own paths of the other configurations",
       "rows": ["custom:allOwn", "custom-eager:allOwn", "mp4box:allOwn", "mediabunny:allOwn", "rvfc:allOwn", "standalone-url:allOwn", "react18:allOwn", "check:allOwn", "preset:allOwn"],
-      "growth": { "1": 0, "2": 590, "3": 600, "4": 600, "5": 700, "6": 700 },
+      "growth": { "1": 0, "2": 590, "3": 600, "4": 600, "5": 730, "6": 730 },
       "cap": null,
       "why": "The same shares as the all own paths above. These rows have no budget in the size matrix, so only their growth is gated."
     },
     {
       "name": "emitted lazy totals",
       "rows": ["default:lazyTotal", "zero-config:lazyTotal", "custom:lazyTotal", "custom-eager:lazyTotal", "rvfc:lazyTotal", "standalone-url:lazyTotal", "standalone-split-url:lazyTotal", "iife-nosplit:lazyTotal", "react:lazyTotal", "react18:lazyTotal", "check:lazyTotal", "preset:lazyTotal"],
-      "growth": { "1": 0, "2": 1180, "3": 1200, "4": 1200, "5": 1400, "6": 1400 },
+      "growth": { "1": 0, "2": 1180, "3": 1200, "4": 1200, "5": 1460, "6": 1460 },
       "cap": { "default:lazyTotal": 92000, "zero-config:lazyTotal": 92000, "custom:lazyTotal": 84000, "custom-eager:lazyTotal": 81500, "rvfc:lazyTotal": 94500, "standalone-url:lazyTotal": 82000, "standalone-split-url:lazyTotal": 91500, "iife-nosplit:lazyTotal": 92000, "react:lazyTotal": 92500, "react18:lazyTotal": 92500, "check:lazyTotal": 92000, "preset:lazyTotal": 92000 },
       "why": "The emitted lazy total holds two copies of each parser, the one the worker loads and the main-thread copy, so it may grow by twice the ISO BMFF and the Matroska shares together, under the 0.3.0 budgets of these rows."
     },
     {
       "name": "emitted lazy totals with one engine worker",
       "rows": ["mp4box:lazyTotal", "mediabunny:lazyTotal"],
-      "growth": { "1": 0, "2": 1770, "3": 1800, "4": 1800, "5": 2100, "6": 2100 },
+      "growth": { "1": 0, "2": 1770, "3": 1800, "4": 1800, "5": 2190, "6": 2190 },
       "cap": { "mp4box:lazyTotal": 224000, "mediabunny:lazyTotal": 241500 },
       "why": "The engine worker carries a third copy of each parser because it also serves own, so these rows may grow by three times the ISO BMFF and the Matroska shares together, under their 0.3.0 budgets."
     },
     {
       "name": "emitted lazy total with both engine workers",
       "rows": ["all:lazyTotal"],
-      "growth": { "1": 0, "2": 2360, "3": 2400, "4": 2400, "5": 2800, "6": 2800 },
+      "growth": { "1": 0, "2": 2360, "3": 2400, "4": 2400, "5": 2920, "6": 2920 },
       "cap": 367000,
-      "why": "Both engine workers carry a copy of each parser, so this row holds four copies and may grow by four times the ISO BMFF and the Matroska shares together, under its 0.3.0 budget. That budget of 367.00 KB is below the stage 5 allowance, 364,569 B as built in 0.3.0 plus 2,800 B, and leaves 71 B above the full stage 2 allowance of 2,360 B. The cap applies to the raw size, and in a real build of a change in the shared core the raw size of this row moved 23 B more than the normalized one, because the content hashes compress differently. If the full design shares do not fit under it, stage 5 may re-set the lazy total budget of the all configuration, and this cap with it, to its measurement plus 1 percent, with a changelog note, and stage 2 may do the same under the same rule if its own share already crosses the cap."
+      "why": "Both engine workers carry a copy of each parser, so this row holds four copies and may grow by four times the ISO BMFF and the Matroska shares together, under its 0.3.0 budget. That budget of 367.00 KB is below the stage 5 allowance, 364,569 B as built in 0.3.0 plus 2,920 B, and leaves 71 B above the full stage 2 allowance of 2,360 B. At the end of stage 5 the row measured 366,933 B as built, 67 B under that budget. The cap applies to the raw size, and in a real build of a change in the shared core the raw size of this row moved 23 B more than the normalized one, because the content hashes compress differently. If the full design shares do not fit under it, stage 5 may re-set the lazy total budget of the all configuration, and this cap with it, to its measurement plus 1 percent, with a changelog note, and stage 2 may do the same under the same rule if its own share already crosses the cap."
     },
     {
       "name": "engine chunks",

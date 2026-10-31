@@ -552,24 +552,30 @@ describe('size gate against the 0.3.0 baseline', () => {
 
   test('lets both parsers spend the stage 5 shares, under the all:lazyTotal cap only once stage 5 re-sets it', () => {
     const base = raised('stage-4-both.json', bothParsers(400, 200));
-    const full = raised('stage-5-both.json', bothParsers(450, 250));
+    const promise = ['zero-config', 'iife-nosplit', 'standalone-split-url'];
+    const atShare = at(5, raised('stage-5-iso-share.json', bothParsers(480, 250)), base);
+    expect(failures(atShare.err).filter((l) => !l.startsWith('FAIL all:lazyTotal'))).toEqual(promise.map((c) => `FAIL ${c}:firstMp4: ${fmt(raw(c, 'firstMp4') + 480)} B as built is above its cap of 24,950 B (first MP4 under the 25.00 KB promise)`));
+    const room = Math.min(...promise.map((c) => 24950 - raw(c, 'firstMp4')));
+    expect(room).toBeLessThan(480);
+    const full = raised('stage-5-both.json', bothParsers(room, 250));
     const capped = at(5, full, base);
     expect(capped.status).toBe(1);
-    const allLazy = raw('all', 'lazyTotal') + 4 * 450 + 4 * 250;
+    const allLazy = raw('all', 'lazyTotal') + 4 * room + 4 * 250;
     expect(failures(capped.err)).toEqual([`FAIL all:lazyTotal: ${fmt(allLazy)} B as built is above its cap of 367,000 B (emitted lazy total with both engine workers)`]);
     const reset = (c: GateConfig) => {
       c.groups.find((g) => g.rows.includes('all:lazyTotal'))!.cap = Math.ceil(allLazy * 1.01);
     };
     const ok = run(['--config', configAt(5, base, reset), '--report', full]);
     expect(ok.status, ok.err).toBe(0);
-    for (const [family, iso, mkv] of [
-      ['isobmff', 451, 250],
-      ['matroska', 450, 251],
+    const capRows = promise.map((c) => `${c}:firstMp4`);
+    for (const [family, iso, mkv, alsoCapped] of [
+      ['isobmff', 481, 250, []],
+      ['matroska', 480, 251, capRows],
     ] as const) {
       const r = run(['--config', configAt(5, base, reset), '--report', raised(`stage-5-${family}-over.json`, bothParsers(iso, mkv))]);
       expect(r.status, family).toBe(1);
       const failed = new Set(failures(r.err).map(failedRow));
-      expect([...failed].sort(), family).toEqual([...new Set([...parserRows(START, family), ...parserOnlyFiles(START, family)])].sort());
+      expect([...failed].sort(), family).toEqual([...new Set([...parserRows(START, family), ...parserOnlyFiles(START, family), ...alsoCapped])].sort());
     }
   });
 
@@ -711,7 +717,7 @@ describe('size gate against the 0.3.0 baseline', () => {
     const first = at(6, raised('check-first.json', (m) => metric(m, 'check', 'firstMp4', 500)));
     expect(first.status).toBe(1);
     const firstMp4 = norm('check', 'firstMp4');
-    expect(first.err).toContain(`check:firstMp4: ${fmt(firstMp4 + 500)} B is 500 B above the 0.3.0 baseline of ${fmt(firstMp4)} B, stage 6 allows 450 B`);
+    expect(first.err).toContain(`check:firstMp4: ${fmt(firstMp4 + 500)} B is 500 B above the 0.3.0 baseline of ${fmt(firstMp4)} B, stage 6 allows 480 B`);
     const presets = at(6, raised('presets.json', (m) => metric(m, 'preset', 'presets', 1)));
     expect(presets.status).toBe(1);
     const p = norm('preset', 'presets');
@@ -743,7 +749,7 @@ describe('size gate against the 0.3.0 baseline', () => {
     const stage4End = raised('stage-4-end.json', (m) => growRows(m, 400));
     for (const [stage, base, start, share] of [
       [2, NORMALIZED, 0, 390],
-      [5, stage4End, 400, 50],
+      [5, stage4End, 400, 80],
     ] as const) {
       const within = at(stage, raised(`first-${stage}-ok.json`, (m) => growRows(m, start + share)), base);
       expect(within.status, `stage ${stage}: ${within.err}`).toBe(0);
