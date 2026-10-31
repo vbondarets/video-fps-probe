@@ -224,6 +224,17 @@ describe('colorOf and aspectOf on a view of the moov, as the probes capture it',
     expect(expectSameCut(before(bytes(u32(4), tag('free'))), 0, 'a size below the header')).toBeUndefined();
   });
 
+  test('the family narrows a configuration to the member that holds its bytes', async () => {
+    const view: CodecConfig = { family: 'isobmff-moov', moov: viewOf(await fixtureMoov('colr_only_h264.mp4')), trak: 0 };
+    const boxes = isoBoxes(view.moov, view.trak);
+    const stsdOf = (c: CodecConfig) => (c.family === 'isobmff' ? c.stsd : null);
+    const moovOf = (c: CodecConfig) => (c.family === 'isobmff-moov' ? c.moov : null);
+    expect(stsdOf(boxes)).toBeInstanceOf(Uint8Array);
+    expect(moovOf(boxes)).toBeNull();
+    expect(moovOf(view)).toBe(view.moov);
+    expect(stsdOf(view)).toBeNull();
+  });
+
   test('a view that does not survive a JSON round trip gives undefined', async () => {
     const moovBytes = await fixtureMoov('colr_only_h264.mp4');
     const config = JSON.parse(JSON.stringify({ family: 'isobmff-moov', moov: viewOf(moovBytes), trak: 0 })) as CodecConfig;
