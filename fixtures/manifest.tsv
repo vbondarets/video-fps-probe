@@ -162,6 +162,8 @@ dv_p81.mkv	matroska	dovi	ok	yes	hdr10_hevc10.mkv with a BlockAdditionMapping of 
 fmp4_mehd_valid.mp4	mp4	fmp4	ok	yes	fmp4_default_base_moof.mp4 with a version 1 mehd of 4004 ms, the true duration: ffprobe never reads mehd	files/fmp4_mehd_valid.mp4	
 fmp4_audio_longer.mp4	mp4	fmp4	ok	yes	fragmented 2 s video with 2.5 s of AAC audio, empty moov, mfra at the end: the format duration follows the audio	files/fmp4_audio_longer.mp4	
 fmp4_audio_longer_sidx.mp4	mp4	fmp4	ok	yes	the same with a global sidx per track after the moov, and an mfra at the end	files/fmp4_audio_longer_sidx.mp4	
+fmp4_cmaf_global_sidx_audio.mp4	mp4	audio	no-video	yes	one fragment of 10 s of AAC with -movflags +cmaf+global_sidx: the sidx ends at 10 s, its fragment 1024 samples later, and ffprobe takes the later end	files/fmp4_cmaf_global_sidx_audio.mp4	
+fmp4_cmaf_global_sidx_bframes.mp4	mp4	fmp4	ok	yes	1.5 s of H.264 with B-frames and AAC in one fragment with -movflags +cmaf+global_sidx: the sound fragment ends after the sidx, and ffprobe adds the largest negative composition offset to every video timestamp	files/fmp4_cmaf_global_sidx_bframes.mp4	
 faststart_large_moov.mp4	mp4	mov	ok	yes	faststart with a moov of 72831 bytes, above 64 KiB: 6000 frames whose durations alternate 3500 and 2500 ticks, one stts entry per frame	files/faststart_large_moov.mp4	
 mov_cmov.mov	mov	mov	error	yes	MOV whose moov is zlib-compressed into cmov (dcom, cmvd), as old QuickTime writers did: ffprobe reads it, the app reports it unsupported	files/mov_cmov.mov	unsupported
 long_cfr_3h_60fps.mp4	mp4	long	ok	no	3 h x 60 fps = 648000 frames, 64x36, crf 51: 13 MB, moov 2.6 MB at the end (stsz 4 B/frame)	large/long_cfr_3h_60fps.mp4	

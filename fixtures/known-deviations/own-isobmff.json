@@ -1,1 +1,6 @@
-{}
+{
+  "fmp4_cmaf_global_sidx_bframes.mp4": {
+    "startSec": "ffprobe 8.1.1 adds the largest negative composition offset of the fragments it reads to every video timestamp, so the video starts at 0.066667 s. The own fragment timeline does not shift the offsets of the trun, so the video starts at 0.",
+    "formatDurationSec": "ffprobe 8.1.1 shifts the video by the largest negative composition offset of its fragments, so the video ends at 1.566667 s. The own fragment timeline does not shift it, so the file ends with the sound at 1.521333 s."
+  }
+}

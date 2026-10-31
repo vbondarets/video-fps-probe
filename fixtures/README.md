@@ -1,16 +1,16 @@
 # Fixtures
 
-Test corpus for the FPS probe, measured with ffprobe 8.1.1. 153 files are made by the generator: ffmpeg 8.1.1
+Test corpus for the FPS probe, measured with ffprobe 8.1.1. 155 files are made by the generator: ffmpeg 8.1.1
 output from lavfi test sources (`testsrc2`, `color`, `sine`), byte patches of committed files and deliberately
 broken files. The other 12 are real MediaRecorder recordings of a canvas animation made by this repository in
-headless Chromium, so there is no third-party content. 165 core fixtures (about 15.1 MB) are committed, and six
+headless Chromium, so there is no third-party content. 167 core fixtures (about 15.2 MB) are committed, and six
 optional heavy ones are generated on demand.
 
 ## Layout
 
 | Path | Content | Committed |
 | --- | --- | --- |
-| `files/` | the 165 core fixtures | yes |
+| `files/` | the 167 core fixtures | yes |
 | `large/` | optional `--with-long`, `--with-sparse` and `--with-big` files | no (git-ignored) |
 | `manifest.tsv` | one row per fixture, optional ones included | yes |
 | `ref/<file name>.ref.json` | ffprobe ground truth per fixture | yes |
@@ -74,14 +74,14 @@ although ffprobe reads its compressed moov and all 30 frames.
 | `cfr` | 23 | constant rates 23.976 to 240 fps, H.264 in MP4 and VP9 in WebM, exact rationals; two WebM files stream-copied to MP4 (timescale 16000, 1 ms grid) and 240 fps at timescale 600 |
 | `vfr` | 22 | variable rate made by concat, `setpts`, `select`, `mpdecimate`, `setts` (2:3 pulldown) and stream copy, in MP4, MOV, WebM, fragmented MP4 and Matroska, plus the four rate profile fixtures and the three late-change fixtures below, a first frame held 2 s with B-frames and a `-ss -c copy` trim of a VFR file |
 | `mov` | 15 | QuickTime and MP4 muxing variants, B-frames, edit lists (empty edit, trimmed start), faststart, a faststart moov above 64 KiB, bytes after the moov that are not a box, two sample descriptions, a zlib-compressed moov (`cmov`) |
-| `fmp4` | 19 | fragmented MP4: `empty_moov`, `default_base_moof`, `global_sidx`, `dash`, `cmaf`, hybrid, DASH segments, plus two fragmented VFR files where ffprobe under-reads the fragments, a file with one fragment removed (tfdt gap), plain DASH output with B-frames (global sidx with a non-zero earliest presentation time), an all-ones and a valid `mehd`, and audio that outlasts the video, with and without a global sidx |
+| `fmp4` | 20 | fragmented MP4: `empty_moov`, `default_base_moof`, `global_sidx`, `dash`, `cmaf`, hybrid, DASH segments, plus two fragmented VFR files where ffprobe under-reads the fragments, a file with one fragment removed (tfdt gap), plain DASH output with B-frames (global sidx with a non-zero earliest presentation time), an all-ones and a valid `mehd`, audio that outlasts the video, with and without a global sidx, and CMAF output with B-frames, a global sidx and the sound fragment ending after it |
 | `codec` | 9 | HEVC (`hvc1`, `hev1`, in Matroska), AV1, VP8, VP9, ProRes |
 | `matroska` | 2 | plain Matroska H.264, WebM without `DefaultDuration` |
 | `live` | 5 | WebM written without seeking: unknown sizes, no Cues or Duration, a false Duration, audio that outlasts the video |
 | `box64` | 4 | 64-bit `mdat` headers, `co64`, `mdat` with size 0 |
 | `multi` | 5 | video plus audio, two real video tracks, a one-frame still track placed before the video, a video track whose `tkhd` enabled flag is cleared |
 | `cover` | 3 | cover art that ffprobe lists as an extra `attached_pic` video stream: M4A, MP4 and Matroska |
-| `audio` | 3 | audio only (`no-video`) |
+| `audio` | 4 | audio only (`no-video`), one of them a single CMAF fragment of AAC that ends after its global sidx |
 | `edge` | 1 | a single video sample |
 | `corrupt` | 10 | empty, garbage, text, a PNG, truncated at different places, a lying `stts` count, an all-ones 64-bit `elst` duration |
 | `sniff` | 3 | real containers under the wrong extension |

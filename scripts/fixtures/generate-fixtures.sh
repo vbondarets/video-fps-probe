@@ -402,6 +402,10 @@ AUD25=(-f lavfi -i "sine=frequency=440:sample_rate=44100:duration=2.5")
 note fmp4_audio_longer.mp4 mp4 fmp4 ok "fragmented 2 s video with 2.5 s of AAC audio, empty moov, mfra at the end: the format duration follows the audio"
 "${FF[@]}" -f lavfi -i "$(src 30 2)" "${AUD25[@]}" -map 0:v -map 1:a "${H264V[@]}" -c:a aac -b:a 32k -movflags frag_keyframe+empty_moov+default_base_moof+global_sidx fmp4_audio_longer_sidx.mp4
 note fmp4_audio_longer_sidx.mp4 mp4 fmp4 ok "the same with a global sidx per track after the moov, and an mfra at the end"
+"${FF[@]}" -f lavfi -i "sine=frequency=440:sample_rate=48000:duration=10" -c:a aac -b:a 32k -movflags +cmaf+global_sidx -f mp4 fmp4_cmaf_global_sidx_audio.mp4
+note fmp4_cmaf_global_sidx_audio.mp4 mp4 audio no-video "one fragment of 10 s of AAC with -movflags +cmaf+global_sidx: the sidx ends at 10 s, its fragment 1024 samples later, and ffprobe takes the later end"
+"${FF[@]}" -f lavfi -i "$(src 30 1.5)" -f lavfi -i "sine=frequency=440:sample_rate=48000:duration=1.5" -map 0:v -map 1:a -c:v libx264 -preset veryfast -crf 30 -pix_fmt yuv420p -bf 3 -c:a aac -b:a 32k -movflags +cmaf+global_sidx fmp4_cmaf_global_sidx_bframes.mp4
+note fmp4_cmaf_global_sidx_bframes.mp4 mp4 fmp4 ok "1.5 s of H.264 with B-frames and AAC in one fragment with -movflags +cmaf+global_sidx: the sound fragment ends after the sidx, and ffprobe adds the largest negative composition offset to every video timestamp"
 "${FF[@]}" -f lavfi -i "color=c=gray:size=64x36:rate=30:duration=200" -vf "settb=1/90000,setpts='N*3000+mod(N,2)*500'" -c:v libx264 -preset ultrafast -crf 51 -pix_fmt yuv420p -g 600 -bf 0 -an -x264-params scenecut=0:keyint=600 "${VFR[@]}" -enc_time_base:v 1/90000 -video_track_timescale 90000 -movflags +faststart faststart_large_moov.mp4
 note faststart_large_moov.mp4 mp4 mov ok "faststart with a moov of 72831 bytes, above 64 KiB: 6000 frames whose durations alternate 3500 and 2500 ticks, one stts entry per frame"
 "${FF[@]}" -f lavfi -i "$S1" "${H264[@]}" -f mov "$W/mov_1s.mov"
