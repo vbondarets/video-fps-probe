@@ -187,6 +187,42 @@ describe('a lazy chunk of the header entry after a deadline that the walk tolera
     expect(codecConfig).toEqual(expected);
   });
 
+  for (const [label, module, first, options, name, expectedWarnings] of [
+    ['codec configuration capture', CAPTURE, { codecConfig: true }, { codecConfig: true, ...STALLED_WALK }, 'fmp4_global_sidx.mp4', null],
+    ['color and aspect chunk', METADATA, { color: true }, { color: true, ...LATE }, 'fmp4_mehd_valid.mp4', ['fragment index not read: limit reached: maxMs 200']],
+  ] as const) {
+    test(`a ${label} that lost its first race to the deadline is applied once it has loaded`, async () => {
+      const blob = await fixture(name);
+      const full = (await (await freshHeader())(blob, { codecConfig: true, color: true })).videoTracks[0];
+      vi.resetModules();
+      let release = () => {};
+      const gate = new Promise<void>((r) => (release = r));
+      vi.doMock(module, async (importOriginal) => {
+        await gate;
+        return importOriginal();
+      });
+      const { LimitedSource } = await import('../../src/header/limits.ts');
+      const race = vi.spyOn(LimitedSource.prototype, 'race');
+      const { analyzeHeader } = await import('../../src/header/index.ts');
+      const lost = await analyzeHeader(await fixture('hdr10_hevc10.mp4'), { ...first, limits: { maxMs: 200 } });
+      expect(lost.errorCode).toBeNull();
+      expect(warningCodesOf(lost)).toEqual([module === CAPTURE ? 'codec-config-unavailable' : 'metadata-unavailable']);
+      release();
+      await import(module);
+      await new Promise((r) => setTimeout(r, 0));
+      const races = race.mock.calls.length;
+      const r = await analyzeHeader(stalledAfter(blob, 1), options);
+      expect(race.mock.calls.length, 'a loaded chunk is applied without a race').toBe(races);
+      if (expectedWarnings) expect(r.warnings).toEqual(expectedWarnings);
+      else expect(r.errorCode).toBe('time-limit');
+      expect(warningCodesOf(r)).not.toContain(module === CAPTURE ? 'codec-config-unavailable' : 'metadata-unavailable');
+      const t = r.videoTracks[0];
+      if (module === CAPTURE) expect(t.codecConfig).toEqual(full.codecConfig);
+      else expect(t.color).toEqual(full.color);
+      race.mockRestore();
+    });
+  }
+
   test('a codec configuration capture that has not loaded after the walk stalled gives codec-config-unavailable', async () => {
     const blob = await fixture('fmp4_global_sidx.mp4');
     for (const option of ['codecConfig', 'color', 'aspect'] as const) {
