@@ -7668,12 +7668,12 @@
       "worker": "none needed: the header entry runs in the calling thread",
       "engines": [],
       "metrics": {
-        "entry": 18996,
-        "trigger": 18973,
+        "entry": 19073,
+        "trigger": 19050,
         "react": null,
         "check": null,
         "presets": null,
-        "header": 2496,
+        "header": 2540,
         "client": null,
         "isobmff": null,
         "matroska": null,
@@ -7693,12 +7693,12 @@
       },
       "normalized": {
         "metrics": {
-          "entry": 18996,
-          "trigger": 18973,
+          "entry": 19073,
+          "trigger": 19050,
           "react": null,
           "check": null,
           "presets": null,
-          "header": 2496,
+          "header": 2540,
           "client": null,
           "isobmff": null,
           "matroska": null,
@@ -7720,13 +7720,13 @@
       "workers": [],
       "files": [
         {
-          "file": "assets/index-Hv8dW2an.js",
-          "gzip": 18996,
+          "file": "assets/index-Bz7hbvJC.js",
+          "gzip": 19073,
           "worker": null,
           "class": "isobmff",
           "normalized": {
             "file": "assets/index-00000000.js",
-            "gzip": 18996,
+            "gzip": 19073,
             "entry": true,
             "sources": [
               "core/abort.js",
@@ -7770,28 +7770,28 @@
           "key": "trigger",
           "label": "critical path (package code in the entry chunk)",
           "limit": 20000,
-          "gzip": 18973,
-          "headroom": 1027,
+          "gzip": 19050,
+          "headroom": 950,
           "status": "ok",
-          "why": "The package code in the entry chunk of a host that imports video-fps-probe/header statically: analyzeHeader with its option checks, the limited source, the reader, the sniffer, the ISO BMFF box parsers, the header walk, the fragmented duration and the track builder it shares with the full parser. It starts no worker and loads nothing lazily, and it reaches neither the full ISO BMFF parser nor the statistics. Design estimate 11 to 13 KB, measured 17.92 KB, of which 2.37 KB is the per-sample part of the shared track builder, which header mode never runs: moving it out of the shared builder would cost the first MP4 more than the 0.01 KB share of stage 3. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 18.49 KB once the walk followed full mode on hybrid files, single moofs, sidx ends, start offsets and limits after the moov, and 18.83 KB once the fragmented duration counted text tracks and searched the sidx before the moof its walk starts at, and 18.97 KB once an auxiliary track stopped shortening the span of the video and sound tracks, a covering sidx took the end of the first moof, the sidx search ran before every walk and a moof after a moov without an mvex got a warning."
+          "why": "The package code in the entry chunk of a host that imports video-fps-probe/header statically: analyzeHeader with its option checks, the limited source, the reader, the sniffer, the ISO BMFF box parsers, the header walk, the fragmented duration and the track builder it shares with the full parser. It starts no worker and loads nothing lazily, and it reaches neither the full ISO BMFF parser nor the statistics. Design estimate 11 to 13 KB, measured 17.92 KB, of which 2.37 KB is the per-sample part of the shared track builder, which header mode never runs: moving it out of the shared builder would cost the first MP4 more than the 0.01 KB share of stage 3. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 18.49 KB once the walk followed full mode on hybrid files, single moofs, sidx ends, start offsets and limits after the moov, 18.83 KB once the fragmented duration counted text tracks and searched the sidx before the moof its walk starts at, 18.97 KB once an auxiliary track stopped shortening the span of the video and sound tracks, a covering sidx took the end of the first moof, the sidx search ran before every walk and a moof after a moov without an mvex got a warning, and 19.05 KB once a covering sidx counted only when every track had one, every limit that left a track open was noted, the walk read the box header after the moov and after the mdat, and the options and the limits refused unknown keys."
         },
         {
           "key": "header",
           "label": "header entry (analyzeHeader, its option checks and the limited source, in the entry chunk)",
           "limit": 3000,
-          "gzip": 2496,
-          "headroom": 504,
+          "gzip": 2540,
+          "headroom": 460,
           "status": "ok",
-          "why": "The part of the critical path under dist/header/: analyzeHeader, its option checks, the Matroska DocType check and the limited source with its deadline. Measured 2.34 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 2.50 KB once the limited source coded an abort of the source itself and a read without bytes as read failures and kept its deadline past the timer range, and 2.48 KB once it lost the two-read reservation before the mfra tail, and 2.50 KB once readAhead took head and tail only."
+          "why": "The part of the critical path under dist/header/: analyzeHeader, its option checks, the Matroska DocType check and the limited source with its deadline. Measured 2.34 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 2.50 KB once the limited source coded an abort of the source itself and a read without bytes as read failures and kept its deadline past the timer range, and 2.48 KB once it lost the two-read reservation before the mfra tail, and 2.50 KB once readAhead took head and tail only, and 2.54 KB once the options and the limits refused unknown keys."
         },
         {
           "key": "entry",
           "label": "entry chunk with the preload helper",
           "limit": 20000,
-          "gzip": 18996,
-          "headroom": 1004,
+          "gzip": 19073,
+          "headroom": 927,
           "status": "ok",
-          "why": "The trigger of this configuration plus the Vite runtime of the entry chunk. Measured 17.94 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 18.51 KB, then 18.86 KB and 19.00 KB, 0.02 to 0.03 KB over the trigger above each time."
+          "why": "The trigger of this configuration plus the Vite runtime of the entry chunk. Measured 17.94 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 18.51 KB, then 18.86 KB, 19.00 KB and 19.07 KB, 0.02 to 0.03 KB over the trigger above each time."
         }
       ],
       "problems": []
