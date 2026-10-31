@@ -360,12 +360,19 @@ describe('read plan of virtual sources', () => {
     expect(r.io.reads).toBe(2);
   });
 
-  test('a failing peek past the mdat after a moov without mvex keeps the result of the moov', async () => {
-    const inner = virtualSource([bytes(ftyp(), moov([VIDEO]), mdatHeader(MIB)), { zeros: MIB }, box('free', zeros(8))]);
+  test('a failing peek past the mdat after a moov without mvex keeps the result of the moov with a coded warning', async () => {
+    const head = bytes(ftyp(), moov([VIDEO]), mdatHeader(MIB));
+    const inner = virtualSource([head, { zeros: MIB }, box('free', zeros(8))]);
     const failing = (error: unknown) => ({ size: inner.size, slice: (start = 0, end = inner.size) => (end > 100_000 ? { arrayBuffer: () => Promise.reject(error) } : inner.slice(start, end)) });
-    for (const error of [new Error('range not available'), Object.assign(new Error('socket closed'), { name: 'AbortError' })]) {
+    const failures: Array<[Error, string]> = [
+      [new Error('range not available'), 'Error: range not available'],
+      [Object.assign(new Error('socket closed'), { name: 'AbortError' }), 'AbortError: socket closed'],
+    ];
+    for (const [error, shown] of failures) {
       const r = await analyzeHeader(failing(error));
-      expect(r, error.name).toMatchObject({ error: null, errorCode: null, formatDurationSec: 3, warnings: [] });
+      const warning = `fragments ignored: read at ${head.length + MIB} after a moov without an mvex failed: file read failed: ${shown}`;
+      expect(r, error.name).toMatchObject({ error: null, errorCode: null, formatDurationSec: 3, warnings: [warning] });
+      expect(warningCodesOf(r), error.name).toEqual(['fragments-ignored']);
       expect(r.videoTracks.map((t) => [t.trackId, t.frames, t.durationSec]), error.name).toEqual([[1, 90, 3]]);
     }
     const controller = new AbortController();

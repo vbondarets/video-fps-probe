@@ -160,6 +160,7 @@ async function walkTop(w: Walk): Promise<Walked> {
             if (isAbort(e, reader)) throw e;
             const limit = w.budget.take();
             if (limit) throw limit;
+            movie.warnings.push(`fragments ignored: read at ${pos} after a moov without an mvex failed: ${(e as Error).message}`);
             break;
           }
         }
