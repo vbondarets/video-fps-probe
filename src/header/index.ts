@@ -152,7 +152,13 @@ async function withMetadata(analysis: ContainerAnalysis, o: Resolved): Promise<C
     return o.aspect ? withAspect(colored, last) : colored;
   } catch (e) {
     throwIfAborted(o.signal);
-    return failed({ ...analysis }, messageOf(e), 'load-failed');
+    const videoTracks = analysis.videoTracks.map((t) => {
+      const kept = { ...t };
+      if (!o.codecConfig) delete kept.codecConfig;
+      return kept;
+    });
+    if (analysis.error) return { ...analysis, videoTracks, warnings: [...analysis.warnings, `color and aspect not applied: ${messageOf(e)}`] };
+    return failed({ ...analysis, videoTracks }, messageOf(e), 'load-failed');
   }
 }
 

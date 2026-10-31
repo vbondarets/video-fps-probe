@@ -581,9 +581,13 @@ export async function analyzeIsoBmffHeader(reader: BlobReader, budget: HeaderBud
     const videos = movie.tracks.filter((t) => isVideoTrack(t, movie));
     const built = videos.map((t) => buildVideoTrack(t, movie, { maxExpandedSamples: 0 }, { reportedId: ids.get(t) ?? t.id, ffprobeFails }));
     for (const b of built) headerTrack(b.result);
+    let loadError: unknown = null;
     if (plan.codecConfig) {
-      const { isoCodecConfig } = await import('./config.ts');
-      videos.forEach((t, i) => (built[i].result.codecConfig = isoCodecConfig(movie, t)));
+      const capture = await import('./config.ts').catch((e: unknown) => {
+        loadError = e;
+        return null;
+      });
+      if (capture) videos.forEach((t, i) => (built[i].result.codecConfig = capture.isoCodecConfig(movie, t)));
     }
     analysis.videoTracks = built.map((b) => b.result);
     analysis.audioTrackCount = movie.tracks.filter((t) => t.handler === 'soun').length;
@@ -594,6 +598,14 @@ export async function analyzeIsoBmffHeader(reader: BlobReader, budget: HeaderBud
       if (walked.limit) {
         analysis.error = walked.limit.message;
         analysis.errorCode = whichErrorCode(walked.limit);
+      }
+    }
+    if (loadError !== null) {
+      const message = loadError instanceof Error ? loadError.message : String(loadError);
+      if (analysis.error) analysis.warnings.push(`codec configuration not read: ${message}`);
+      else {
+        analysis.error = message;
+        analysis.errorCode = 'load-failed';
       }
     }
   } catch (e) {
