@@ -2,8 +2,11 @@ import { openAsBlob, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { isoBmffFixtureSet } from '../../scripts/compare/layout.ts';
+import { aspectOf } from '../../src/aspect/index.ts';
+import { isoConfig } from '../../src/color/config.ts';
 import { colorOf, withColor, type ColorInfo } from '../../src/color/index.ts';
 import { analyze } from '../../src/core/analyze.ts';
+import { isoBoxes } from '../../src/core/isobmff/config.ts';
 import type { CodecConfig, VideoTrackResult } from '../../src/core/types.ts';
 import { analyzeHeader } from '../../src/header/index.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
@@ -156,5 +159,75 @@ describe('analyzeHeader with color equals withColor over analyzeHeader with code
         name,
       ).toEqual(plain.videoTracks);
     }
+  });
+});
+
+function childrenOf(moovBytes: Uint8Array): Uint8Array[] {
+  const out: Uint8Array[] = [];
+  const dv = new DataView(moovBytes.buffer, moovBytes.byteOffset, moovBytes.byteLength);
+  for (let p = 8; p + 8 <= moovBytes.length; ) {
+    const size = dv.getUint32(p);
+    out.push(moovBytes.subarray(p, p + size));
+    p += size;
+  }
+  return out;
+}
+
+async function fixtureMoov(name: string): Promise<Uint8Array> {
+  const blob = await openAsBlob(join(FILES_DIR, name));
+  const { moovOffset, moovSize } = (await analyze(blob, name)).layout ?? {};
+  return new Uint8Array(await blob.slice(moovOffset ?? 0, (moovOffset ?? 0) + (moovSize ?? 0)).arrayBuffer());
+}
+
+function viewOf(moovBytes: Uint8Array): DataView {
+  const padded = new Uint8Array(moovBytes.length + 11);
+  padded.set(moovBytes, 7);
+  return new DataView(padded.buffer, 7, moovBytes.length);
+}
+
+function expectSameCut(moovBytes: Uint8Array, trak: number, label: string): ColorInfo | null | undefined {
+  const dv = viewOf(moovBytes);
+  const viewForm: CodecConfig = { family: 'isobmff', moov: dv, trak };
+  const boxForm = isoBoxes(dv, trak);
+  expect(isoConfig(viewForm), label).toEqual(isoConfig(boxForm));
+  const track = (codecConfig: CodecConfig) => ({ codecName: 'h264', width: 320, height: 240, rotation: 0, codecConfig });
+  expect(aspectOf(track(viewForm)), label).toEqual(aspectOf(track(boxForm)));
+  const color = colorOf(track(viewForm));
+  expect(color, label).toEqual(colorOf(track(boxForm)));
+  return color;
+}
+
+describe('colorOf and aspectOf on a view of the moov, as the probes capture it', () => {
+  test('cut the boxes analyzeHeader copies, from a view inside a larger buffer', async () => {
+    const moovBytes = await fixtureMoov('colr_only_h264.mp4');
+    expect(expectSameCut(moovBytes, 0, 'trak 0')).toEqual(await headerColor('colr_only_h264.mp4'));
+    expect(expectSameCut(moovBytes, 1, 'a trak index past the last trak')).toBeUndefined();
+  });
+
+  test('pick the trak by its index among the trak boxes and the mvhd before it', async () => {
+    const children = childrenOf(await fixtureMoov('colr_only_h264.mp4'));
+    const trakAt = children.findIndex((c) => String.fromCharCode(...c.subarray(4, 8)) === 'trak');
+    const other = childrenOf(await fixtureMoov('hdr10_hevc10.mp4')).find((c) => String.fromCharCode(...c.subarray(4, 8)) === 'trak')!;
+    const two = box('moov', ...children.slice(0, trakAt + 1), other, ...children.slice(trakAt + 1));
+    expect(expectSameCut(two, 0, 'first trak')?.transfer).toBe('smpte2084');
+    expect(expectSameCut(two, 1, 'second trak')).not.toBeUndefined();
+  });
+
+  test('read box headers as the parser of the full walk reads them', async () => {
+    const children = childrenOf(await fixtureMoov('colr_only_h264.mp4'));
+    const trakAt = children.findIndex((c) => String.fromCharCode(...c.subarray(4, 8)) === 'trak');
+    const before = (extra: Uint8Array) => box('moov', ...children.slice(0, trakAt), extra, ...children.slice(trakAt));
+    expect(expectSameCut(before(box('uuid', zeros(8))), 0, 'a uuid box shorter than its 24 byte header stops the walk')).toBeUndefined();
+    expect(expectSameCut(before(box('uuid', zeros(16))), 0, 'a uuid box with its 24 byte header')).not.toBeUndefined();
+    expect(expectSameCut(before(bytes(u32(1), tag('free'), u32(0), u32(24), zeros(8))), 0, 'a 64-bit size')).not.toBeUndefined();
+    expect(expectSameCut(before(bytes(u32(1), tag('free'), u32(1), u32(0), zeros(8))), 0, 'a 64-bit size past the moov')).toBeUndefined();
+    expect(expectSameCut(before(bytes(u32(4), tag('free'))), 0, 'a size below the header')).toBeUndefined();
+  });
+
+  test('a view that does not survive a JSON round trip gives undefined', async () => {
+    const moovBytes = await fixtureMoov('colr_only_h264.mp4');
+    const config = JSON.parse(JSON.stringify({ family: 'isobmff', moov: viewOf(moovBytes), trak: 0 })) as CodecConfig;
+    expect(colorOf({ codecName: 'h264', codecConfig: config })).toBeUndefined();
+    expect(aspectOf({ codecName: 'h264', width: 320, height: 240, rotation: 0, codecConfig: config })).toBeUndefined();
   });
 });
