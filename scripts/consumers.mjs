@@ -122,6 +122,26 @@ export const FIXTURES = [
     pageOnly: true,
     mustNot: [...HEADER_MUST_NOT, 'video-fps-probe/dist/core/matroska/', 'video-fps-probe/dist/client/', 'video-fps-probe/dist/worker/', 'video-fps-probe/dist/engines/', 'node_modules/mp4box/', 'node_modules/mediabunny/'],
   },
+  {
+    name: 'color',
+    imports: ['./header', './color'],
+    note: 'withColor over analyzeHeader with codecConfig in the page',
+    worker: 'none needed: both entries run in the calling thread',
+    engines: [],
+    workers: [],
+    pageOnly: true,
+    mustNot: [...HEADER_MUST_NOT, 'video-fps-probe/dist/core/matroska/', 'video-fps-probe/dist/client/', 'video-fps-probe/dist/worker/', 'video-fps-probe/dist/engines/', 'node_modules/mp4box/', 'node_modules/mediabunny/'],
+  },
+  {
+    name: 'aspect',
+    imports: ['./header', './aspect'],
+    note: 'withAspect over analyzeHeader with codecConfig in the page',
+    worker: 'none needed: both entries run in the calling thread',
+    engines: [],
+    workers: [],
+    pageOnly: true,
+    mustNot: [...HEADER_MUST_NOT, 'video-fps-probe/dist/core/matroska/', 'video-fps-probe/dist/client/', 'video-fps-probe/dist/worker/', 'video-fps-probe/dist/engines/', 'node_modules/mp4box/', 'node_modules/mediabunny/'],
+  },
 ];
 
 function lockPath(packages, from, name) {

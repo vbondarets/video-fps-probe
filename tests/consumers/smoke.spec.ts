@@ -48,6 +48,7 @@ const FAMILIES: Record<WorkerEngine, readonly string[]> = {
 
 const RVFC_FILES = ['cfr_h264_29.97.mp4', 'cfr_vp9_29.97.webm'] as const;
 const HEADER_FILES = ['cfr_h264_29.97.mp4', 'cfr_vp9_29.97.webm', 'vfr_two_phase_5_200.mp4', 'fmp4_global_sidx.mp4', 'rec_chromium_h264.mp4', 'corrupt_trunc_no_moov.mp4'] as const;
+const METADATA_FILES = [...HEADER_FILES, 'hdr10_hevc10.mp4', 'dv_p81_dvvc.mp4', 'sar_h264_4x3.mp4', 'sar_matrix_scale.mp4'] as const;
 const RVFC_UNSUPPORTED = 'requestVideoFrameCallback unsupported';
 
 const DIST = pathToFileURL(join(installedPackage(consumersDir()), 'dist')).href;
@@ -198,6 +199,41 @@ for (const mode of ['build', 'dev'] as const) {
     }
     expect(pageErrors).toEqual([]);
   });
+}
+
+async function nodeMetadata(name: string, option: 'color' | 'aspect'): Promise<HeaderResult> {
+  const { analyzeHeader } = (await import(`${DIST}/header/index.js`)) as { analyzeHeader: (input: Blob, options: Record<string, unknown>) => Promise<HeaderResult> };
+  return analyzeHeader(await openAsBlob(join(FILES_DIR, name)), { name, [option]: true });
+}
+
+for (const option of ['color', 'aspect'] as const) {
+  for (const mode of ['build', 'dev'] as const) {
+    test(`${option} under vite ${mode} gives the ${option} of Node analyzeHeader, through the option and through the entry`, async ({ page }) => {
+      const pageErrors: string[] = [];
+      page.on('pageerror', (e) => pageErrors.push(`${e.name}: ${e.message}`));
+      await page.goto(mode === 'build' ? buildUrl(CONSUMERS_PORT, option) : devUrl(CONSUMERS_PORT, option));
+      await page.waitForFunction((key) => (window as unknown as Record<string, unknown>)[`__${key}`] !== undefined, option);
+      for (const name of METADATA_FILES) {
+        await page.locator('#file').setInputFiles(join(FILES_DIR, name));
+        const actual = await page.evaluate(
+          async ([fileName, key]) => {
+            const file = document.querySelector<HTMLInputElement>('#file')?.files?.[0];
+            if (!file) throw new Error('no file picked');
+            const api = key === 'color' ? window.__color! : window.__aspect!;
+            const viaOption = await api.analyzeHeader(file, { name: fileName, [key]: true });
+            const raw = await api.analyzeHeader(file, { name: fileName, codecConfig: true });
+            const viaEntry = 'withColor' in api ? api.withColor(raw) : api.withAspect(raw);
+            return { viaOption, viaEntry };
+          },
+          [name, option] as const,
+        );
+        const expected = withoutMs(await nodeMetadata(name, option));
+        expect(withoutMs(actual.viaOption), name).toEqual(expected);
+        expect(withoutMs(actual.viaEntry), name).toEqual(expected);
+      }
+      expect(pageErrors).toEqual([]);
+    });
+  }
 }
 
 for (const fixture of FIXTURES.filter((f) => !f.pageOnly)) {
