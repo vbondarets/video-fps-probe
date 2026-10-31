@@ -66,7 +66,7 @@ const OWN_REQUIRED_FIELDS: readonly FieldName[] = [
 ];
 
 export const ARMS: Readonly<Record<EngineName, ArmSpec>> = {
-  own: { library: 'own', style: 'own', families: BOTH, provides: null, requires: { isobmff: OWN_REQUIRED_FIELDS, matroska: OWN_REQUIRED_FIELDS }, picksPrimary: true, primaryOnly: false, recipe: 'analyze() of the root entry, the engine this package ships' },
+  own: { library: 'own', style: 'own', families: BOTH, provides: null, requires: { isobmff: OWN_REQUIRED_FIELDS, matroska: OWN_REQUIRED_FIELDS }, picksPrimary: true, primaryOnly: false, recipe: 'analyze() of the root entry, the engine this package ships, with the reads and timings of a plain run and the color and aspect checks of a second run with codecConfig: true through withColor and withAspect' },
   'mp4box-idiomatic': {
     library: 'mp4box',
     style: 'idiomatic',
