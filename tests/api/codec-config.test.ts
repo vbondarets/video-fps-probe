@@ -5,6 +5,7 @@ import { isoBmffFixtureSet } from '../../scripts/compare/layout.ts';
 import { analyze } from '../../src/analyze.ts';
 import { warningCodesOf } from '../../src/api/codes.ts';
 import { analyze as engineAnalyze } from '../../src/core/analyze.ts';
+import { withIsoCodecConfig } from '../../src/core/isobmff/capture.ts';
 import { analyzeIsoBmff } from '../../src/core/isobmff/index.ts';
 import type { FileResult } from '../../src/core/types.ts';
 import { analyzeHeader } from '../../src/header/index.ts';
@@ -102,6 +103,21 @@ describe('analyze with codecConfig on MP4 and MOV', () => {
       }),
     };
     await expect(analyze(source, { codecConfig: true, signal: controller.signal })).rejects.toBe(reason);
+  });
+
+  test('the capture leaves a result without a video track as it is and reads nothing', async () => {
+    const unreadable = { size: 100, slice: () => ({ arrayBuffer: () => Promise.reject(new Error('read')) }) };
+    const failed = { ...(await analyze(await fixture('hdr10_hevc10.mp4'))), videoTracks: [], error: 'corrupt file: x', warnings: ['codec configuration unavailable'] };
+    expect(await withIsoCodecConfig(unreadable, failed)).toBe(failed);
+  });
+
+  test('the capture names its failure in place of the warning it replaces', async () => {
+    const r = await analyze(await fixture('hdr10_hevc10.mp4'));
+    const located = { ...r, layout: null, warnings: ['first', 'codec configuration unavailable', 'last'] };
+    const out = await withIsoCodecConfig(await fixture('hdr10_hevc10.mp4'), located);
+    expect(out.warnings).toEqual(['first', 'codec configuration unavailable: the result locates no moov', 'last']);
+    expect(out.io).toMatchObject({ reads: r.io.reads, bytesRead: r.io.bytesRead });
+    expect(out.videoTracks).toEqual(r.videoTracks);
   });
 
   test('a file without a video track gets no capture and no warning', async () => {
