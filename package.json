@@ -58,6 +58,12 @@
       "url": [
         "dist/url/index.d.ts"
       ],
+      "color": [
+        "dist/color/index.d.ts"
+      ],
+      "aspect": [
+        "dist/aspect/index.d.ts"
+      ],
       "presets": [
         "dist/presets/index.d.ts"
       ],
@@ -165,6 +171,38 @@
       "types": "./dist/url/index.d.ts",
       "default": "./dist/url/index.js"
     },
+    "./color": {
+      "module-sync": {
+        "types": "./dist/color/index.d.ts",
+        "default": "./dist/color/index.js"
+      },
+      "module": {
+        "types": "./dist/color/index.d.ts",
+        "default": "./dist/color/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/color/index.d.cts",
+        "default": "./dist/cjs/color.cjs"
+      },
+      "types": "./dist/color/index.d.ts",
+      "default": "./dist/color/index.js"
+    },
+    "./aspect": {
+      "module-sync": {
+        "types": "./dist/aspect/index.d.ts",
+        "default": "./dist/aspect/index.js"
+      },
+      "module": {
+        "types": "./dist/aspect/index.d.ts",
+        "default": "./dist/aspect/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/aspect/index.d.cts",
+        "default": "./dist/cjs/aspect.cjs"
+      },
+      "types": "./dist/aspect/index.d.ts",
+      "default": "./dist/aspect/index.js"
+    },
     "./presets": {
       "module-sync": {
         "types": "./dist/presets/index.d.ts",
@@ -242,8 +280,8 @@
     "preview": "vite preview --config demo/vite.config.ts",
     "check:package": "publint --strict && node scripts/check-dist.mjs",
     "check:types": "npm run check:types:server && npm run check:types:browser",
-    "check:types:server": "npx --yes @arethetypeswrong/cli@0.18.5 --pack . --entrypoints . ./header ./url ./check ./presets",
-    "check:types:browser": "npx --yes @arethetypeswrong/cli@0.18.5 --pack . --ignore-rules cjs-resolves-to-esm --exclude-entrypoints . ./header ./url ./check ./presets ./standalone/own.worker.js ./standalone/own-isobmff.worker.js ./standalone/own-matroska.worker.js",
+    "check:types:server": "npx --yes @arethetypeswrong/cli@0.18.5 --pack . --entrypoints . ./header ./url ./color ./aspect ./check ./presets",
+    "check:types:browser": "npx --yes @arethetypeswrong/cli@0.18.5 --pack . --ignore-rules cjs-resolves-to-esm --exclude-entrypoints . ./header ./url ./color ./aspect ./check ./presets ./standalone/own.worker.js ./standalone/own-isobmff.worker.js ./standalone/own-matroska.worker.js",
     "prepack": "npm run build:lib && node scripts/check-dist.mjs",
     "check:aliases": "node scripts/src-aliases.mjs --check",
     "check:stable-chunks": "node scripts/check-stable-chunks.mjs",

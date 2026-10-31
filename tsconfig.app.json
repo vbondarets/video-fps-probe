@@ -10,9 +10,11 @@
 
     "paths": {
       "video-fps-probe": ["./src/index.ts"],
+      "video-fps-probe/aspect": ["./src/aspect/index.ts"],
       "video-fps-probe/check": ["./src/check/index.ts"],
       "video-fps-probe/client": ["./src/client/index.ts"],
       "video-fps-probe/client/lazy": ["./src/client/lazy.ts"],
+      "video-fps-probe/color": ["./src/color/index.ts"],
       "video-fps-probe/engines/mediabunny": ["./src/engines/mediabunny.ts"],
       "video-fps-probe/engines/mp4box": ["./src/engines/mp4box.ts"],
       "video-fps-probe/header": ["./src/header/index.ts"],

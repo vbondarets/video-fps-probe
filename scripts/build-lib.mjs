@@ -9,7 +9,7 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(REPO_ROOT, 'dist');
 export const STANDALONE = ['own.worker', 'own-isobmff.worker', 'own-matroska.worker'];
 const JSON_ENTRIES = ['presets/sources.json'];
-export const CJS_ENTRIES = { index: 'index.js', header: 'header/index.js', url: 'url/index.js', check: 'check/index.js', presets: 'presets/index.js' };
+export const CJS_ENTRIES = { index: 'index.js', header: 'header/index.js', url: 'url/index.js', color: 'color/index.js', aspect: 'aspect/index.js', check: 'check/index.js', presets: 'presets/index.js' };
 
 const WORKER_URL = /(new\s+URL\(\s*)(['"])([^'"]+\.worker)\.ts\2/g;
 const DTS_SPECIFIER = /(['"])(\.{1,2}\/[^'"]+)\.ts\1/g;

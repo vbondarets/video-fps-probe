@@ -10,11 +10,12 @@ import ts from 'typescript';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const KB = 1000;
 
-export const UNPACKED_CAP = 867 * KB;
+export const UNPACKED_CAP = 935 * KB;
 
-const ALLOWED = [/^(?:index|lazy|analyze|probe)\.(?:js|d\.ts)$/, /^(?:core|engines|worker|client|api|plugins|react|check|presets|header|url|standalone)\/[\w./-]+\.(?:js|d\.ts)$/, /^presets\/sources\.json$/, /^cjs\/[\w./-]+\.(?:cjs|d\.cts)$/];
+const ALLOWED = [/^(?:index|lazy|analyze|probe)\.(?:js|d\.ts)$/, /^(?:core|engines|worker|client|api|plugins|react|check|presets|header|url|color|aspect|standalone)\/[\w./-]+\.(?:js|d\.ts)$/, /^presets\/sources\.json$/, /^cjs\/[\w./-]+\.(?:cjs|d\.cts)$/];
 const CJS_BUILTINS = ['url'];
 const PURE_CJS_ENTRIES = ['cjs/url.cjs', 'cjs/check.cjs', 'cjs/presets.cjs'];
+const METADATA_CJS_ENTRIES = ['cjs/color.cjs', 'cjs/aspect.cjs'];
 const PACK_EXTRAS = new Set(['package.json', 'README.md', 'LICENSE', 'CHANGELOG.md']);
 const LITERAL_HOSTS = ['plugins/own.js', 'plugins/mp4box.js', 'plugins/mediabunny.js'];
 const PEER_ENGINES = ['engines/mp4box.js', 'engines/mediabunny.js'];
@@ -25,6 +26,7 @@ export const SPLIT_WORKERS = {
   'worker/own-isobmff.worker.js': ['core/matroska/', 'core/rfps.js', 'core/analyze.js'],
   'worker/own-matroska.worker.js': ['core/isobmff/', 'core/analyze.js'],
 };
+export const METADATA_CLOSURE = { 'color/index.js': 'color/', 'aspect/index.js': ['aspect/', 'color/'] };
 export const HEADER_CLOSURE = { 'header/index.js': ['core/isobmff/index.js', 'core/stats.js', 'core/rfps.js', 'core/analyze.js', 'core/matroska/', 'client/', 'worker/', 'engines/', 'plugins/'] };
 const WORKER_CALL = /\bnew\s+(?:Worker|SharedWorker)\s*\(/g;
 const WORKER_LITERAL = /^new\s+(?:Worker|SharedWorker)\s*\(\s*new\s+URL\s*\(\s*(?:'([^']+)'|"([^"]+)")\s*,\s*import\.meta\.url\s*\)/;
@@ -123,6 +125,13 @@ function checkCommonJs(dist, files, fail) {
     if (scan.importMeta > 0) fail(`${file}: import.meta in the CommonJS copy`);
     if (scan.dynamicImports > 0) fail(`${file}: import() in the CommonJS copy`);
     if (PURE_CJS_ENTRIES.includes(file) && scan.requires.length > 0) fail(`${file}: requires ${scan.requires.map((s) => s ?? '<non-literal>').join(', ')}, a CommonJS rule or Range entry requires nothing`);
+    if (METADATA_CJS_ENTRIES.includes(file)) {
+      for (const specifier of scan.requires) {
+        const target = specifier && posix(join(dirname(file), specifier));
+        const inner = target && target.startsWith('cjs/chunks/') && existsSync(join(dist, target)) ? scanCommonJs(readFileSync(join(dist, target), 'utf8'), target).requires : null;
+        if (!inner || inner.length > 0) fail(`${file}: requires ${specifier ?? '<non-literal>'}, a color or aspect entry requires only a shared chunk that requires nothing`);
+      }
+    }
     for (const specifier of scan.requires) {
       if (specifier === null) fail(`${file}: require() with a non-literal specifier`);
       else if (peerOf(specifier) || isReact(specifier)) fail(`${file}: requires the peer ${specifier}`);
@@ -361,6 +370,12 @@ export function checkDist({ pack = true, ssr = true, repo = REPO_ROOT } = {}) {
   const edges = graph(files, texts);
   const has = (f) => texts.has(f);
   for (const root of PURE_ENTRIES.filter(has)) for (const edge of edges.get(root) ?? []) fail(`${root}: imports ${edge.specifier} at run time, a main-thread rule entry imports nothing`);
+  for (const [root, allowed] of Object.entries(METADATA_CLOSURE).filter(([root]) => has(root))) {
+    const inside = [allowed].flat();
+    const reached = closure(edges, root, { dynamic: true });
+    for (const f of reached.files) if (!inside.some((d) => f.startsWith(d))) fail(`metadata closure: ${root} reaches ${f}, a color or aspect entry imports only its own modules at run time`);
+    for (const b of reached.bare) fail(`metadata closure: ${root} imports ${b}`);
+  }
   const hygieneRoots = ['client/index.js', 'client/lazy.js', 'react/index.js', 'plugins/rvfc.js', 'worker/runtime.js', ...Object.keys(SPLIT_WORKERS), ...Object.keys(HEADER_CLOSURE), ...files.filter((f) => /^engines\/[^/]+\.js$/.test(f))].filter(has);
   for (const root of hygieneRoots) {
     const reached = closure(edges, root, { dynamic: true }).files;
@@ -515,6 +530,13 @@ export function runSelfTest() {
     expectProblem('require("url") and a relative chunk pass', problemsOf({ ...chunk, 'cjs/index.cjs': 'exports.u = require("url").pathToFileURL(__filename).href;\nexports.x = () => Promise.resolve().then(() => require("./chunks/x.cjs"));\n' }), 'cjs/index.cjs', false);
     expectProblem('the CommonJS url entry that requires a chunk fails', problemsOf({ ...chunk, 'cjs/url.cjs': 'exports.x = require("./chunks/x.cjs");\n' }), 'cjs/url.cjs: requires ./chunks/x.cjs, a CommonJS rule or Range entry requires nothing', true);
     expectProblem('the CommonJS check entry that requires url fails', problemsOf({ 'cjs/check.cjs': 'exports.u = require("url");\n' }), 'cjs/check.cjs: requires url', true);
+    expectProblem('the CommonJS color entry that requires a pure shared chunk passes', problemsOf({ ...chunk, 'cjs/color.cjs': 'exports.x = require("./chunks/x.cjs");\n' }), 'cjs/color.cjs', false);
+    expectProblem('the CommonJS aspect entry that requires a chunk with a require fails', problemsOf({ ...chunk, 'cjs/chunks/y.cjs': 'exports.y = require("./x.cjs");\n', 'cjs/aspect.cjs': 'exports.y = require("./chunks/y.cjs");\n' }), 'cjs/aspect.cjs: requires ./chunks/y.cjs, a color or aspect entry requires only a shared chunk that requires nothing', true);
+    expectProblem('the CommonJS color entry that requires url fails', problemsOf({ 'cjs/color.cjs': 'exports.u = require("url");\n' }), 'cjs/color.cjs: requires url', true);
+    const metadata = { 'color/index.js': "export { a } from './a.js';\n", 'color/a.js': 'export const a = 1;\n', 'aspect/index.js': "export { a } from '../color/a.js';\n" };
+    expectProblem('color and aspect entries that import only their own modules pass', problemsOf(metadata), 'metadata closure', false);
+    expectProblem('a color entry that imports the core fails', problemsOf({ ...metadata, 'core/x.js': 'export const x = 1;\n', 'color/a.js': "export { x as a } from '../core/x.js';\n" }), 'metadata closure: color/index.js reaches core/x.js', true);
+    expectProblem('an aspect entry that imports a package fails', problemsOf({ ...metadata, 'aspect/index.js': "export { a } from 'some-package';\n" }), 'metadata closure: aspect/index.js imports some-package', true);
     expectProblem('an ESM file that imports the CommonJS copy fails', problemsOf({ ...chunk, 'core/a.js': "export { x } from '../cjs/chunks/x.cjs';\n" }), 'core/a.js: ../cjs/chunks/x.cjs reaches the CommonJS copy in dist/cjs', true);
     expectProblem('a .d.cts with a .js specifier fails', problemsOf({ 'cjs/a.d.cts': "export type { X } from './x.js';\n", 'cjs/x.d.cts': 'export type X = 1;\n' }), 'cjs/a.d.cts: specifier ./x.js does not name a .cjs file', true);
     expectProblem('a .d.cts with a missing target fails', problemsOf({ 'cjs/a.d.cts': "export type { X } from './y.cjs';\n" }), 'cjs/a.d.cts: import ./y.cjs does not resolve inside dist (no cjs/y.d.cts)', true);
