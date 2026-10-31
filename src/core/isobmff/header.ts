@@ -386,16 +386,17 @@ async function resolveFragmented(w: Walk, walked: Walked, videos: IsoTrack[], bu
     resolved.set(tr, { ticks: Math.max(ticks, end ?? 0), timescale: tr.timescale, provenance: 'header' });
   };
   const bySidx = (ends: number[]): void => {
-    for (const tr of open()) settle(tr, ends, []);
+    for (const tr of open()) settle(tr, ends, tr.fragments);
   };
   try {
-    bySidx([size]);
+    const covered = open().some((tr) => lastSidx(movie, tr, [size]) !== null);
     const cut = first ? reader.peek(first.start, first.size) === null : false;
-    if (first && !limit && (plan.index || !cut || resolved.size > 0)) {
+    if (first && !limit && (plan.index || !cut || covered)) {
       if (first.size > MOOF_HARD_CAP) throw new IsoBmffError('too-large', `corrupt file: moof larger than 64 MiB at ${first.start}`);
       parseFragment(w, reader.peek(first.start, first.size) ?? (await reader.view(first.start, first.size, ahead(w, first.start, plan.head))), first.start, parsed);
     }
     for (const tr of tracks) firstCount.set(tr, tr.fragments.length);
+    bySidx([size]);
     if (plan.index && !limit && open().length > 0) {
       index = await readTailIndex(w);
       if (index) {
@@ -432,6 +433,7 @@ async function resolveFragmented(w: Walk, walked: Walked, videos: IsoTrack[], bu
     limit = w.budget.take() ?? (isLimit(e) ? e : null);
     if (!limit) throw e;
     for (const tr of tracks) tr.fragments.length = firstCount.get(tr) ?? 0;
+    bySidx([size]);
   }
   const mehd = walked.moov ? mehdDuration(walked.moov) : null;
   if (limit && mehd !== null && open().length > 0) analysis.warnings.push(`fragment index not read: ${limit.message}`);
