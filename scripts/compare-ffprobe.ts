@@ -112,7 +112,11 @@ async function runTimedInner(engine: EngineHandle, blob: BlobLike, name: string,
   return { result, threw, ms: times.length > 0 ? median(times) : 0, msFirst: times[0] ?? 0 };
 }
 
-const withOwnMetadata = (result: FileResult): FileResult => withAspect(withColor(result, { keepCodecConfig: true }));
+async function withOwnMetadata(engine: EngineHandle, blob: BlobLike, name: string, opts: AnalyzeOptions, timed: Timed): Promise<FileResult> {
+  if (timed.threw) return timed.result;
+  const configured = await engine.analyze(blob, name, { ...opts, codecConfig: true });
+  return { ...withAspect(withColor(configured, { keepCodecConfig: true })), io: timed.result.io };
+}
 
 function isLarge(entry: ManifestEntry): boolean {
   return !entry.committed || (entry.columns.path ?? '').startsWith('large/');
@@ -382,8 +386,8 @@ async function main(): Promise<number> {
         if (contradiction) harnessProblems.add(contradiction);
         for (const s of ref?.videoStreams ?? []) for (const u of s.unmappedSideData) harnessProblems.add(`${entry.name} stream ${s.index}: ffprobe prints ${u}, which the comparison does not map`);
         const runs = engine.informational && isLarge(entry) ? 1 : repeat;
-        const timed = await runTimed(engine, opened.blob, entry.name, engineName === 'own' ? { ...opts, codecConfig: true } : opts, runs, engine.informational && !verbose);
-        const result = engineName === 'own' ? withOwnMetadata(timed.result) : timed.result;
+        const timed = await runTimed(engine, opened.blob, entry.name, opts, runs, engine.informational && !verbose);
+        const result = engineName === 'own' ? await withOwnMetadata(engine, opened.blob, entry.name, opts, timed) : timed.result;
         const codecStrings = isIso ? await codecStringsOf(entry.name, opened.blob, result) : null;
         const evaluation = evaluate({ info, ref, result, layout, threw: timed.threw, deviations: forFixture(deviations, entry.name), codecStrings });
         classifyEvaluation({ arm: ARMS[engineName], info, ref, result, layout, family: evaluation.family }, evaluation);
