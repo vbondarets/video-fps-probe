@@ -158,6 +158,23 @@ function hybridWithText(): VirtualSource {
   return virtualSource(segments);
 }
 
+function coveringSidx(fragments: number): VirtualSource {
+  const head = bytes(ftyp('cmfc'), moov([{ id: 1, timescale: 15360 }, { id: 2, handler: 'soun', timescale: 48000 }], [mvex({ trex: [{ id: 1, duration: 512 }, { id: 2, duration: 1024 }] })]));
+  const pieces: Segment[] = [];
+  const video: Array<[number, number]> = [];
+  const audio: Array<[number, number]> = [];
+  for (let i = 0; i < fragments; i++) {
+    const frames = i === fragments - 1 ? 71 : 70;
+    const m = moof(i + 1, [{ id: 1, baseDts: i * 45 * 512, count: 45, duration: 512 }, { id: 2, baseDts: i * 70 * 1024, count: frames, duration: 1024 }], 20_000);
+    pieces.push(m, mdatHeader(20_000), { zeros: 20_000 });
+    video.push([m.length + 8 + 20_000, 45 * 512]);
+    audio.push([m.length + 8 + 20_000, 72_000]);
+  }
+  const second = sidx(2, 48000, 0, audio);
+  const first = sidx(1, 15360, 0, video, second.length);
+  return virtualSource([head, first, second, ...pieces]);
+}
+
 function emsgInSegment(segment: number, emsgBytes = 0): VirtualSource {
   const head = bytes(ftyp('iso5'), moov([{ id: 1, timescale: 15360 }], [mvex({ trex: [{ id: 1, duration: 512 }] })]));
   const segments: Segment[] = [head];
@@ -288,6 +305,27 @@ describe('header mode against full mode on virtual sources', () => {
       expect(header.videoTracks[0].provenance.durationSec, String(maxReads)).toBe('header');
       expect(header.warnings, String(maxReads)).toEqual([`fragment index not read: limit reached: maxReads ${maxReads}`, 'format duration unresolved: track 3']);
     }
+  });
+
+  test('a covering sidx of one fragment gives the later end of its sound fragment in both modes, also with a cut moof', async () => {
+    const full = await analyze(coveringSidx(1), 'cmaf.mp4', {});
+    expect(full.formatDurationSec).toBe(1.514667);
+    for (const options of [{}, { fragmentedDuration: 'header' as const }, { fragmentedDuration: 'header' as const, readAhead: { head: 1024 } }]) {
+      const header = await analyzeHeader(coveringSidx(1), options);
+      expect(header.error, JSON.stringify(options)).toBeNull();
+      expect(header.formatDurationSec, JSON.stringify(options)).toBe(full.formatDurationSec);
+      expect(header.videoTracks[0].durationSec, JSON.stringify(options)).toBe(1.5);
+    }
+  });
+
+  test('a covering sidx of several fragments gives its end where only the last fragment runs past it, as ffprobe reads it', async () => {
+    const full = await analyze(coveringSidx(3), 'cmaf.mp4', {});
+    const header = await analyzeHeader(coveringSidx(3));
+    expect(full.formatDurationSec).toBe(4.501333);
+    expect(header.error).toBeNull();
+    expect(header.formatDurationSec).toBe(4.5);
+    expect(header.videoTracks[0].durationSec).toBe(full.videoTracks[0].durationSec);
+    expect(header.io.reads).toBe(1);
   });
 
   test('a hybrid file whose last moof is inside the tail resolves within three reads', async () => {
