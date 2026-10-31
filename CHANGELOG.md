@@ -7,8 +7,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 ### Added
 
 - `video-fps-probe/color`: `colorOf(track)` and `withColor(result)` read the codec configuration of a video track and give `color`: the range, primaries, transfer and matrix names that ffprobe 8.1.1 prints, where they came from (`sps`, `colr`, `vpcC` or `Colour`), the bit depth, the numeric profile, the RFC 6381 codec string, `hdr` (`'pq'` or `'hlg'`) and the Dolby Vision configuration record. The container wins over the H.264 or HEVC SPS, as in FFmpeg, and the SPS speaks when the container is silent. A value that is not null equals ffprobe on every committed fixture ([color](docs/api.md#color)).
-- `video-fps-probe/aspect`: `aspectOf(track)` and `withAspect(result)` give `sampleAspectRatio`, `displayAspectRatio`, `displayWidth` and `displayHeight`, with the pasp, tkhd matrix, tkhd size and SPS VUI precedence of ffprobe 8.1.1 for MP4 and MOV and the Display elements for Matroska and WebM. The display size has the rotation applied ([aspect ratio and display size](docs/api.md#aspect-ratio-and-display-size)).
-- `codecConfig: true` keeps the raw codec configuration of each video track in `codecConfig` for both entries: the TrackEntry of a Matroska or WebM track in `analyze` and the probes, and the stsd, tkhd and mvhd boxes of an MP4 or MOV track in `analyzeHeader`.
+- `video-fps-probe/aspect`: `aspectOf(track)` and `withAspect(result)` give `sampleAspectRatio`, `displayAspectRatio`, `displayWidth` and `displayHeight`, with the pasp, tkhd matrix, tkhd size and SPS VUI precedence of ffprobe 8.1.1 for MP4 and MOV and the Display and PixelCrop elements for Matroska and WebM. The display size has the rotation applied, for Matroska and WebM the ProjectionPoseRoll that ffprobe reports as the display matrix ([aspect ratio and display size](docs/api.md#aspect-ratio-and-display-size)).
+- `codecConfig: true` keeps the raw codec configuration of each video track in `codecConfig` for both entries: the TrackEntry of a Matroska or WebM track in `analyze` and the probes, and the stsd, tkhd and mvhd boxes of an MP4 or MOV track in `analyzeHeader`. A configuration whose bytes are missing or no longer `Uint8Array` values, as after `JSON.parse`, gives `color` and the aspect fields undefined, as a track without one does.
 - `analyzeHeader` options `codecConfig`, `color` and `aspect`. `color: true` and `aspect: true` apply the two entries from a chunk loaded with `import()` and read no extra byte.
 - The new optional result fields `codecConfig`, `color`, `sampleAspectRatio`, `displayAspectRatio`, `displayWidth` and `displayHeight` on `VideoTrackResult`, and the types `CodecConfig`, `ColorInfo`, `ColorSource` and `DolbyVisionConfig`.
 - CommonJS copies of `video-fps-probe/color` and `video-fps-probe/aspect`, so the seven server entries load with `require()` and in Jest with no configuration, and their types name no DOM type.
@@ -19,15 +19,15 @@ The members of `ColorInfo` and `DolbyVisionConfig`, the `ColorSource` values, th
 
 ### Changed
 
-- The installed package may take up to 936 KB unpacked (867 KB in 0.4.0-beta.1), measured at 908 KB, for the two entries, their CommonJS copies and the longer docs.
-- The first MKV or WebM loads 25.77 KB gzip (25.73 KB in 0.4.0-beta.1) for the TrackEntry copy behind the option. The first MP4 is unchanged at 23.07 KB, 24.85 KB with Vite's default worker format.
-- `video-fps-probe/header` puts 19.58 KB gzip of package code in the entry chunk (19.28 KB in 0.4.0-beta.1). It loads the codec configuration capture and the two entries with `import()`, so an app whose only dynamic import is this one gets Vite's preload helper, 0.75 KB, in its entry chunk too.
+- The installed package may take up to 936 KB unpacked (867 KB in 0.4.0-beta.1), measured at 913 KB, for the two entries, their CommonJS copies and the longer docs.
+- The first MKV or WebM loads 25.77 KB gzip (25.73 KB in 0.4.0-beta.1) for the TrackEntry copy: the Matroska header walk copies every TrackEntry, and the analyzer attaches the copy to the video tracks only with the option. The first MP4 is unchanged at 23.07 KB, 24.85 KB with Vite's default worker format.
+- `video-fps-probe/header` puts 19.70 KB gzip of package code in the entry chunk (19.28 KB in 0.4.0-beta.1). It loads the codec configuration capture and the two entries with `import()`, so an app whose only dynamic import is this one gets Vite's preload helper, 0.75 KB, in its entry chunk too.
 - Still 0 mismatches against ffprobe 8.1.1 on the 168 committed fixtures, now with checks of the color names, bit depth, profile, codec string, Dolby Vision record and both aspect ratios: 4878 checks, with 5 new known deviations where ffprobe takes the color range or matrix from a bitstream the color entry does not read (the AV1 sequence header, ProRes, MPEG-4 Part 2).
 
 ### Known limitations
 
-- In `analyze` and the probes, an MP4 or MOV track carries no `codecConfig` yet, so `withColor` and `withAspect` leave it unchanged. `analyzeHeader` captures it.
-- The color entry does not read the AV1 sequence header, the VP9 frame header, ProRes or HDR10 static metadata (`mdcv`, `clli`, MasteringMetadata), so their values stay null where ffprobe takes them from the decoder. The aspect entry does not apply Matroska PixelCrop.
+- In `analyze` and the probes, an MP4 or MOV track carries no `codecConfig` yet, so `withColor` and `withAspect` leave it unchanged. `analyzeHeader` captures it. Capturing it in the full parser measured 0.06 to 0.11 KB on the first MP4 path, over the 0.05 KB this release allows there.
+- The color entry does not read the AV1 sequence header, the VP9 frame header, ProRes or HDR10 static metadata (`mdcv`, `clli`, MasteringMetadata), so their values stay null where ffprobe takes them from the decoder. An HLG stream signalled only by an alternative transfer characteristics SEI keeps the `bt2020-10` transfer of its VUI, as the stream keys of ffprobe do. The `rotation` of a Matroska or WebM track stays 0, while `withAspect` applies its ProjectionPoseRoll to the display size.
 
 ## 0.4.0-beta.1 - 2026-10-31
 
