@@ -4,7 +4,7 @@ import { DEFAULT_READ_AHEAD } from '../core/options.ts';
 import { BlobReader, whichErrorCode, type BlobLike } from '../core/reader.ts';
 import { emptyAnalysis } from '../core/result.ts';
 import { sniff } from '../core/sniff.ts';
-import type { ContainerAnalysis, FileErrorCode, FileResult, IoStats, ReadAheadSizes } from '../core/types.ts';
+import type { ContainerAnalysis, FileErrorCode, FileResult, IoStats } from '../core/types.ts';
 import { HEADER_DEFAULT_LIMITS, LimitedSource, type HeaderLimits } from './limits.ts';
 
 export { errorClass, errorCodeOf, warningCodeOf, warningCodesOf, type ErrorClass } from '../api/codes.ts';
@@ -19,7 +19,7 @@ export interface HeaderOptions {
   name?: string;
   signal?: AbortSignal | null;
   limits?: HeaderLimits;
-  readAhead?: Partial<ReadAheadSizes>;
+  readAhead?: { head?: number; tail?: number };
   fragmentedDuration?: FragmentedDuration;
 }
 
@@ -74,10 +74,9 @@ function resolveHeaderOptions(source: unknown, options: unknown): Resolved {
   const limits = { ...HEADER_DEFAULT_LIMITS };
   for (const key of Object.keys(HEADER_DEFAULT_LIMITS) as (keyof HeaderLimits)[]) if (l[key] !== undefined) limits[key] = count(l[key], `limits.${key}`, 0, true);
   const r = record(o.readAhead, 'readAhead');
+  for (const key of Object.keys(r)) if (key !== 'head' && key !== 'tail' && r[key] !== undefined) throw new TypeError(`readAhead takes only head and tail, got ${key}`);
   const head = r.head === undefined ? DEFAULT_READ_AHEAD.head : count(r.head, 'readAhead.head', MIN_HEAD);
   const tail = r.tail === undefined ? DEFAULT_READ_AHEAD.tail : count(r.tail, 'readAhead.tail', MIN_TAIL);
-  if (r.fragment !== undefined) count(r.fragment, 'readAhead.fragment');
-  if (r.matroskaScan !== undefined) count(r.matroskaScan, 'readAhead.matroskaScan');
   const mode = o.fragmentedDuration ?? 'index';
   if (mode !== 'index' && mode !== 'header') throw new TypeError(`fragmentedDuration must be 'header' or 'index', got ${shown(mode)}`);
   const name = (o.name as string | undefined) ?? (typeof File !== 'undefined' && source instanceof File ? source.name : '');

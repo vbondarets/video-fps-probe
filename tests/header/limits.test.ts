@@ -2,7 +2,8 @@ import { getEventListeners } from 'node:events';
 import { openAsBlob } from 'node:fs';
 import { join } from 'node:path';
 import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
-import { analyzeHeader, HEADER_DEFAULT_LIMITS, isAbortError, isTimeoutError, type BlobLike, type HeaderResult } from '../../src/header/index.ts';
+import { DEFAULT_READ_AHEAD } from '../../src/core/options.ts';
+import { analyzeHeader, HEADER_DEFAULT_LIMITS, isAbortError, isTimeoutError, type BlobLike, type HeaderOptions, type HeaderResult } from '../../src/header/index.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
 
 const unhandled: unknown[] = [];
@@ -235,9 +236,17 @@ describe('argument validation', () => {
   test('every read-ahead size is checked, head from the sniff window and tail from 16 bytes', async () => {
     await expect(analyzeHeader(blob, { readAhead: { head: 1023 } })).rejects.toThrow(new TypeError('readAhead.head must be a non-negative safe integer of at least 1024, got 1023'));
     await expect(analyzeHeader(blob, { readAhead: { tail: 15 } })).rejects.toThrow(new TypeError('readAhead.tail must be a non-negative safe integer of at least 16, got 15'));
-    await expect(analyzeHeader(blob, { readAhead: { fragment: -1 } })).rejects.toThrow(new TypeError('readAhead.fragment must be a non-negative safe integer, got -1'));
-    await expect(analyzeHeader(blob, { readAhead: { matroskaScan: Number.NaN } })).rejects.toThrow(new TypeError('readAhead.matroskaScan must be a non-negative safe integer, got NaN'));
-    const r = await analyzeHeader(blob, { readAhead: { head: 1024, tail: 16, fragment: 0, matroskaScan: 0 } });
+    const r = await analyzeHeader(blob, { readAhead: { head: 1024, tail: 16 } });
+    expect(r.error).toBeNull();
+  });
+
+  test('read-ahead takes only head and tail, so the sizes of analyze are refused rather than ignored', async () => {
+    const loose = (readAhead: object) => ({ readAhead }) as HeaderOptions;
+    // @ts-expect-error
+    await expect(analyzeHeader(blob, { readAhead: { fragment: 0 } })).rejects.toThrow(new TypeError('readAhead takes only head and tail, got fragment'));
+    await expect(analyzeHeader(blob, loose({ head: 1024, matroskaScan: 1048576 }))).rejects.toThrow(new TypeError('readAhead takes only head and tail, got matroskaScan'));
+    await expect(analyzeHeader(blob, loose({ ...DEFAULT_READ_AHEAD }))).rejects.toThrow(TypeError);
+    const r = await analyzeHeader(blob, loose({ head: 1024, fragment: undefined }));
     expect(r.error).toBeNull();
   });
 
