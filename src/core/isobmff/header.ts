@@ -14,6 +14,8 @@ const MFRA_TAIL = 64 * 1024;
 const MFRA_CAP = 16 * 1024 * 1024;
 const MOOF_HARD_CAP = 64 * 1024 * 1024;
 const RUN_TYPES = new Set(['sidx', 'styp', 'prft', 'emsg']);
+const RUN_WINDOW = 4096;
+const SIDX = 0x73696478;
 
 type Limit = Error & { errorCode: string };
 
@@ -271,38 +273,44 @@ async function walkFragments(w: Walk, from: number, end: number, parsed: Set<num
   return true;
 }
 
-async function preRun(w: Walk, from: number, run: number, after: number): Promise<void> {
-  const at = from - run;
-  if (run <= 0 || at < after) return;
-  const dv = await w.reader.view(at, run, ahead(w, at, w.plan.head));
+function runTo(dv: DataView, q: number, at: number): TopBox[] | null {
   const found: TopBox[] = [];
   try {
-    for (let p = 0; p < run; ) {
-      const h = readBoxHeader(dv, p, run);
-      if (!h || h.truncated || !RUN_TYPES.has(h.type)) return;
+    for (let p = q; p < dv.byteLength; ) {
+      const h = readBoxHeader(dv, p, dv.byteLength);
+      if (!h || h.truncated || !RUN_TYPES.has(h.type)) return null;
       found.push({ type: h.type, start: at + p, end: at + h.end, sidx: h.type === 'sidx' ? parseSidx(dv, h, at + p) : null });
       p = h.end;
     }
   } catch {
-    return;
+    return null;
   }
-  for (const b of found) {
-    count(w);
-    w.movie.topLevel.push(b);
-  }
+  return found;
 }
 
-function sidxEnd(movie: IsoMovie, tr: IsoTrack, ends: number[] | null): number | null {
-  let end: number | null = null;
-  let at = -1;
+async function preRun(w: Walk, from: number, run: number, after: number): Promise<number> {
+  const at = Math.max(after, from - Math.max(run, RUN_WINDOW));
+  if (run <= 0 || from - at < 8) return from;
+  const dv = await w.reader.view(at, from - at, ahead(w, at, w.plan.head));
+  for (let q = 0; q + 8 <= dv.byteLength; q++) {
+    const found = dv.getUint32(q + 4) === SIDX ? runTo(dv, q, at) : null;
+    if (!found) continue;
+    for (const b of found) {
+      count(w);
+      w.movie.topLevel.push(b);
+    }
+    return at + q;
+  }
+  return from;
+}
+
+function lastSidx(movie: IsoMovie, tr: IsoTrack, ends: number[] | null): TopBox | null {
+  let last: TopBox | null = null;
   for (const b of movie.topLevel) {
     const x = b.sidx;
-    if (x && b.start > at && !x.hierarchical && x.referenceId === tr.id && x.timescale === tr.timescale && (!ends || ends.includes(x.coverageEnd))) {
-      end = x.earliestPts + x.durationSum;
-      at = b.start;
-    }
+    if (x && (!last || b.start > last.start) && !x.hierarchical && x.referenceId === tr.id && x.timescale === tr.timescale && (!ends || ends.includes(x.coverageEnd))) last = b;
   }
-  return end;
+  return last;
 }
 
 function timingOf(tr: IsoTrack, movie: IsoMovie, fragments: IsoTrack['fragments']): { durationTs: number; startPts: number | null } {
@@ -370,10 +378,14 @@ async function resolveFragmented(w: Walk, walked: Walked, videos: IsoTrack[], bu
   let index: TailIndex | null = null;
   let limit = walked.limit;
   let whole = false;
+  let low = size;
   const open = (): IsoTrack[] => tracks.filter((t) => !resolved.has(t) && (videos.includes(t) || hasFragmentData(t, movie, index)));
   const settle = (tr: IsoTrack, ends: number[] | null, fragments: IsoTrack['fragments']): void => {
-    const end = sidxEnd(movie, tr, ends);
-    if (!ends || end !== null) resolved.set(tr, { ticks: Math.max(timingOf(tr, movie, fragments).durationTs, end ?? 0), timescale: tr.timescale, provenance: 'header' });
+    const b = lastSidx(movie, tr, ends);
+    const end = b?.sidx ? b.sidx.earliestPts + b.sidx.durationSum : null;
+    const ticks = timingOf(tr, movie, fragments).durationTs;
+    if (ends ? end === null : !whole && b !== null && b.start < low && end !== null && end < ticks) return;
+    resolved.set(tr, { ticks: Math.max(ticks, end ?? 0), timescale: tr.timescale, provenance: 'header' });
   };
   const bySidx = (ends: number[]): void => {
     for (const tr of open()) settle(tr, ends, []);
@@ -390,7 +402,7 @@ async function resolveFragmented(w: Walk, walked: Walked, videos: IsoTrack[], bu
       if (index) {
         const stop = size - index.mfraSize;
         bySidx([size, stop]);
-        let low = stop;
+        low = stop;
         let reached = true;
         for (const main of [true, false]) {
           let from: number | null = null;
@@ -400,14 +412,14 @@ async function resolveFragmented(w: Walk, walked: Walked, videos: IsoTrack[], bu
           }
           if (from === null) continue;
           const before = tracks.map((t) => t.fragments.length);
-          if (main && first) await preRun(w, from, walked.run, first.start + first.size);
+          const seen = main && first ? await preRun(w, from, walked.run, first.start + first.size) : from;
           reached = (await walkFragments(w, from, low, parsed)) && reached;
           tracks.forEach((t, i) => {
             const f = t.fragments;
             const a = firstCount.get(t) ?? 0;
             t.fragments = [...f.slice(0, a), ...f.slice(before[i]), ...f.slice(a, before[i])];
           });
-          low = from;
+          low = seen;
           whole = reached && first !== null && from <= first.start;
           for (const tr of open()) {
             const tail = tr.fragments.slice(firstCount.get(tr));
