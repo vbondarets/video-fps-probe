@@ -647,3 +647,34 @@ Full mode differs from ffprobe 8.1.1 on some fragmented files, the same at 0.3.0
 | `big_1080p_moov_end.mp4` | 2 reads, 76,837 B | the same |
 | `big_1080p_faststart.mp4` | 1 read, 65,536 B | the same |
 | `sparse_4_5gb_co64.mp4`, through a `FileSlice` | 2 reads, 66,712 B | the same |
+
+## 19. The color and aspect entries (0.4.0 stage 5)
+
+### Where the codec configuration is captured
+
+`codecConfig: true` keeps the raw bytes `./color` and `./aspect` read. For Matroska and WebM the header walk copies the payload of every TrackEntry, which holds the CodecPrivate, the Video element with Colour and the Display elements, and every BlockAdditionMapping, and the analyzer attaches it to the video tracks only when the option is set. The copy is bounded by the 1 MiB header budget of the walk. A Tracks element read sparsely, child by child, because it is larger than that budget gives `trackEntry: null`, and `colorOf` then returns null.
+
+For MP4 and MOV, `analyzeHeader` walks the moov it read once more, in a module it loads with `import()` only when the option is set, and copies the last mvhd, the last tkhd of the track and its stsd with every sample entry, each at most 64 KiB. The full parser does not capture them in this release. Measured with `npm run build:lib` and gzip level 9 on `dist/standalone/own-isobmff.worker.js`:
+
+| Arrangement in the full parser | Growth over stage 4 |
+|---|---:|
+| the option alone, read with a spread of the options | +2 |
+| the stsd, tkhd and mvhd box headers kept on the track, the option checked and the three references attached | +49 |
+| the same with the three boxes copied | +96 to +102 |
+| the moov walked again by the module of the header entry | +290 |
+
+The share of stage 5 on the first MP4 path is 50 bytes, so the full parser keeps only the option and the Matroska parser the TrackEntry copy, +36 bytes on `own-matroska.worker.js`. The compare harness takes the ISO BMFF codec configuration of its own arm from `analyzeHeader`, which reads the same moov.
+
+### What ffprobe 8.1.1 does that stage 1 did not record
+
+Measured with ffprobe 8.1.1 on patched copies of the committed fixtures, not committed:
+
+- **Extended color codes.** A colr primaries code of 22 prints `ebu3213`, 256 prints `vgamut`, 257 and 13 print nothing (unspecified). A transfer of 256 prints `vlog`. Matrix codes 15 to 17 print `ipt-c2`, `ycgco-re` and `ycgco-ro`, and 18, 19 and 256 nothing. The name table of `src/color/names.ts` follows this.
+- **vpcC.** The mov demuxer reads the vpcC codes and range: with the colr renamed to `free`, `vp9_p2_10bit.mp4` still prints bt2020 and smpte2084, and with both renamed the primaries and transfer print unknown while the VP9 decoder gives the matrix and range. A colr after the vpcC that disagrees with it wins, including its range, so the last of the two boxes in an entry gives the codes.
+- **pasp.** A pasp of 40000:30001 prints exactly, so the reduction bound is INT_MAX and not 32767. A pasp of 0:1, 1:0 or 0:0 gives no container ratio, and neither does one whose value read as a signed 32-bit integer is negative, so the VUI ratio prints. The display aspect ratio is reduced within 1024 x 1024: 65536:3 on 160x90 prints 1048576:27.
+
+The HEVC decoder of FFmpeg, as its source reads, sets the range to `tv` when the SPS has no video signal type, where the H.264 decoder leaves it unset, which `sar_h264_4x3.mp4` shows as `unknown`. `colorOf` follows that, but no committed HEVC file lacks a video signal type, since x265 writes one, so the rule is not verified on a file.
+
+### Size of the entries
+
+Measured in the size matrix with Vite 8.3.5: the color entry code is 4.54 KB gzip in the entry chunk, against the design estimate of 3.0 to 3.6 KB. Bundled alone, the two SPS walkers with the name tables they use measure 1.67 KB and the readers of the sample description and the TrackEntry 1.47 KB. Dropping the error texts of the SPS walkers, closures in place of a class and one helper for the three color names saved 0.30 KB together. The aspect entry adds 1.63 KB to the readers it shares. analyzeHeader grew by 0.30 KB for the three options and the lazy loading, and an app whose only dynamic import is this one gets Vite's preload helper in its entry chunk too.
