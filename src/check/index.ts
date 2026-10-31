@@ -191,7 +191,9 @@ function resolution(t: VideoTrackResult, cfr: readonly [Q, Q] | null): ((x: Q) =
 function printedDuration(t: VideoTrackResult, result: FileResult): number | null | undefined {
   const span = t.durationSec;
   const format = result.formatDurationSec;
-  const typical = fromRational(t.dominantFps?.rate ?? (t.isVfr === false ? t.nominalFps : null) ?? t.avgFps);
+  const rate = t.dominantFps?.rate ?? (t.isVfr === false ? t.nominalFps : null);
+  const median = rate ? null : t.medianFrameInterval;
+  const typical = fromRational(median ? { num: median.den, den: median.num } : (rate ?? t.avgFps));
   const matroska = result.container === 'webm' || result.container === 'matroska';
   const [a, b] = [span, format].map((x) => (typeof x === 'number' ? decimal(String(x)) : null));
   const gap = a && b && abs(micros(a) - micros(b));
