@@ -106,7 +106,9 @@ A server that checks uploads in object storage can read only the header: `analyz
 
 `video-fps-probe/url` reads such an object over HTTP Range requests: `analyzeHeader(await openRangeSource(httpRange(presignedUrl)), { limits })`, or `rangeSource(fetcher, { size })` over the client of any object-storage SDK. It needs no SDK and makes one request per read, with no retries, and it checks the status, `Content-Range` and `Content-Length` of every reply before the body is read and caps the body while it streams, so a server that ignores the range or an object whose size changed fails the read as `read-failed` instead of returning wrong bytes. An `If-Match` with the object's ETag, which the caller sends, also catches an overwrite at the same size ([Range source](docs/api.md#range-source)).
 
-CommonJS works on Node 22.12 and newer, the lowest supported version, which load ES modules from `require()`: `const { analyze } = require('video-fps-probe')`, the subpaths included, and a TypeScript project with `"module": "commonjs"` and `moduleResolution` `node10`, such as a NestJS 11 app. The five server entries, `video-fps-probe`, `video-fps-probe/header`, `video-fps-probe/url`, `video-fps-probe/check` and `video-fps-probe/presets`, also ship a minified CommonJS copy with `.d.cts` types for loaders that do not run `require(esm)`, so Jest 30 runs them with no configuration and `jest` as the only dependency, and with `--experimental-vm-modules` on Node 24.9 it loads the ESM build instead. The package tests check all of this from the packed tarball on Node 22.12 and 24. The other entries still need babel-jest in Jest: the tested configuration and a stub for unit tests are in [Jest](docs/api.md#jest).
+The same call can tell an HDR upload from an SDR one and give the display size: `analyzeHeader(source, { color: true, aspect: true })` fills `color` with the range, primaries, transfer and matrix names ffprobe prints, the bit depth, the profile, the RFC 6381 codec string, `hdr` (`'pq'` or `'hlg'`) and the Dolby Vision record, and fills `sampleAspectRatio`, `displayAspectRatio`, `displayWidth` and `displayHeight`, from the boxes of the moov it reads anyway. The container wins over the H.264 or HEVC SPS as in FFmpeg 8.1.1, and the SPS speaks when the container is silent. `video-fps-probe/color` and `video-fps-probe/aspect` do the same for any result analyzed with `codecConfig: true`, Matroska and WebM included ([Color](docs/api.md#color), [Aspect ratio and display size](docs/api.md#aspect-ratio-and-display-size)).
+
+CommonJS works on Node 22.12 and newer, the lowest supported version, which load ES modules from `require()`: `const { analyze } = require('video-fps-probe')`, the subpaths included, and a TypeScript project with `"module": "commonjs"` and `moduleResolution` `node10`, such as a NestJS 11 app. The seven server entries, `video-fps-probe`, `video-fps-probe/header`, `video-fps-probe/url`, `video-fps-probe/color`, `video-fps-probe/aspect`, `video-fps-probe/check` and `video-fps-probe/presets`, also ship a minified CommonJS copy with `.d.cts` types for loaders that do not run `require(esm)`, so Jest 30 runs them with no configuration and `jest` as the only dependency, and with `--experimental-vm-modules` on Node 24.9 it loads the ESM build instead. The package tests check all of this from the packed tarball on Node 22.12 and 24. The other entries still need babel-jest in Jest: the tested configuration and a stub for unit tests are in [Jest](docs/api.md#jest).
 
 ## Cancellation, timeouts and failing open
 
@@ -137,12 +139,12 @@ Rules are JSON, such as `{ fps: { min: 24, max: 60 }, duration: { max: 10 }, vfr
 
 <!-- tables:size:start -->
 
-**0.66 KB gzip on the critical path**: the package code in the entry chunk of a Vite 8.3.5 app that imports `video-fps-probe/lazy` (1.40 KB with Vite's preload helper). The rest loads lazily, on the first file:
+**0.67 KB gzip on the critical path**: the package code in the entry chunk of a Vite 8.3.5 app that imports `video-fps-probe/lazy` (1.40 KB with Vite's preload helper). The rest loads lazily, on the first file:
 
 | Host Vite config | Critical path | First MP4 | First MKV | All own paths | Worker files |
 |---|---:|---:|---:|---:|---:|
-| `worker: { format: 'es' }` (recommended) | **0.66 KB** | 23.07 KB | 25.73 KB | 49.14 KB | 2 |
-| none (Vite's default, 'iife') | **0.66 KB** | 24.85 KB | 27.19 KB | 48.75 KB | 2 |
+| `worker: { format: 'es' }` (recommended) | **0.67 KB** | 23.07 KB | 25.77 KB | 49.18 KB | 2 |
+| none (Vite's default, 'iife') | **0.66 KB** | 24.85 KB | 27.22 KB | 48.79 KB | 2 |
 
 Own runs on one worker per container family, picked by the first four bytes of the file, so a first file loads only the worker of its family. An iife worker cannot split, so without the option each own worker is one file with its lazy parts inlined:
 
@@ -152,7 +154,7 @@ import { defineConfig } from 'vite';
 export default defineConfig({ worker: { format: 'es' } });
 ```
 
-Engines cost nothing until imported. Importing a descriptor grows the critical path a little, from 0.66 KB to 0.89 KB with mp4box or mediabunny, 0.76 KB with rVFC and 1.01 KB with all three, and the engine itself loads lazily: mp4box 44.94 KB, mediabunny 54.17 KB, rVFC 2.19 KB. Gzip -9 of production builds from the packed tarball, budgeted in CI. Every configuration is in [docs/benchmarks.md](docs/benchmarks.md#package-size).
+Engines cost nothing until imported. Importing a descriptor grows the critical path a little, from 0.67 KB to 0.89 KB with mp4box or mediabunny, 0.77 KB with rVFC and 1.01 KB with all three, and the engine itself loads lazily: mp4box 44.95 KB, mediabunny 54.16 KB, rVFC 2.19 KB. Gzip -9 of production builds from the packed tarball, budgeted in CI. Every configuration is in [docs/benchmarks.md](docs/benchmarks.md#package-size).
 
 `video-fps-probe/react` adds 1.20 KB to the critical path for the provider, `useVideoFps` and its store (React itself not counted), and its first analysis also fetches a 0.43 KB summary module, in parallel with the probe client. `video-fps-probe/check` adds 3.99 KB when imported statically, and nothing lazily. One preset from `video-fps-probe/presets` adds 0.46 KB.
 
@@ -162,7 +164,7 @@ Engines cost nothing until imported. Importing a descriptor grows the critical p
 
 <!-- tables:accuracy-summary:start -->
 
-**0 mismatches against ffprobe 8.1.1** on the 168 committed fixtures: 3318 field checks, 3229 exact, 13 within tolerance (9 of them a definition difference by design: the measured average of a Matroska file that stores no duration for its last frame, which avgFps gives the median interval and ffprobe its own estimate), 2 known deviations with a recorded reason, 74 not applicable. The same comparison runs mp4box.js 2.4.1 and mediabunny 1.62.1 in 5 arms (their idiomatic recipes, mediabunny with a full scan, and this package's tuned adapters) and sorts each difference into wrong, definition differs, unverified, not provided or unsupported container. The [accuracy section](docs/benchmarks.md#accuracy-vs-ffprobe) has the outcomes and where the libraries win.
+**0 mismatches against ffprobe 8.1.1** on the 168 committed fixtures: 4878 field checks, 4675 exact, 13 within tolerance (9 of them a definition difference by design: the measured average of a Matroska file that stores no duration for its last frame, which avgFps gives the median interval and ffprobe its own estimate), 7 known deviations with a recorded reason, 183 not applicable. The same comparison runs mp4box.js 2.4.1 and mediabunny 1.62.1 in 5 arms (their idiomatic recipes, mediabunny with a full scan, and this package's tuned adapters) and sorts each difference into wrong, definition differs, unverified, not provided or unsupported container. The [accuracy section](docs/benchmarks.md#accuracy-vs-ffprobe) has the outcomes and where the libraries win.
 
 Of the 168 committed fixtures, 156 are synthetic files made with ffmpeg and 12 are real MediaRecorder recordings from headless Chromium, committed as recorded. Per-engine tables, speed and method: [docs/benchmarks.md](docs/benchmarks.md).
 
