@@ -227,6 +227,22 @@ describe('httpRange', () => {
     expect(seen['accept-encoding']).toMatch(/^identity(?:, identity)?$/);
   });
 
+  test('adds the code of a network error to the text and keeps the error of fetch as its cause', async () => {
+    const closed = await startServer();
+    const url = closed.url('/gone');
+    await closed.close();
+    const error = await rangeSource(httpRange(url), { size: SIZE }).read(0, 10).catch((e: unknown) => e);
+    expect(error).toMatchObject({ name: 'TypeError', message: 'fetch failed: ECONNREFUSED', cause: { name: 'TypeError', message: 'fetch failed' } });
+    expect(await analyzeHeader(rangeSource(httpRange(url), { size: SIZE }))).toMatchObject({ errorCode: 'read-failed', error: 'file read failed: TypeError: fetch failed: ECONNREFUSED' });
+    server.route('/cut', (req, res) => {
+      res.writeHead(206, { 'content-range': `bytes 0-65535/${SIZE}`, 'content-length': '65536' }).write(Buffer.alloc(100), () => req.socket.destroy());
+    });
+    const cut = await rangeSource(httpRange(server.url('/cut')), { size: SIZE }).read(0, 65536).catch((e: unknown) => e);
+    expect(cut).toMatchObject({ name: 'TypeError', message: expect.stringMatching(/^terminated: [A-Z_]+$/) });
+    const plain = await rangeSource(httpRange('https://example.invalid/', { fetch: async () => Promise.reject(new TypeError('Failed to fetch')) }), { size: SIZE }).read(0, 10).catch((e: unknown) => e);
+    expect(plain).toMatchObject({ name: 'TypeError', message: 'Failed to fetch' });
+  });
+
   test('uses the fetch it is given', async () => {
     const calls: string[] = [];
     const fetcher = httpRange('https://example.invalid/object', {
