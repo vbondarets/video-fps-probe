@@ -10,12 +10,14 @@ import { discover, measure, scanReferences } from './size-report.mjs';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const KB = 1000;
 const PACKAGE_SOURCE = 'node_modules/video-fps-probe/';
-const ENTRY_SOURCES = { react: ['./react', `${PACKAGE_SOURCE}dist/react/`], check: ['./check', `${PACKAGE_SOURCE}dist/check/`], presets: ['./presets', `${PACKAGE_SOURCE}dist/presets/`], header: ['./header', `${PACKAGE_SOURCE}dist/header/`], url: ['./url', `${PACKAGE_SOURCE}dist/url/`] };
+const ENTRY_SOURCES = { react: ['./react', `${PACKAGE_SOURCE}dist/react/`], check: ['./check', `${PACKAGE_SOURCE}dist/check/`], presets: ['./presets', `${PACKAGE_SOURCE}dist/presets/`], header: ['./header', `${PACKAGE_SOURCE}dist/header/`], url: ['./url', `${PACKAGE_SOURCE}dist/url/`], color: ['./color', `${PACKAGE_SOURCE}dist/color/`], aspect: ['./aspect', `${PACKAGE_SOURCE}dist/aspect/`] };
 const CJS_COPY = `${PACKAGE_SOURCE}dist/cjs/`;
 export const COMMONJS_ENTRIES = [
   ['video-fps-probe', 'index.cjs'],
   ['video-fps-probe/header', 'header.cjs'],
   ['video-fps-probe/url', 'url.cjs'],
+  ['video-fps-probe/color', 'color.cjs'],
+  ['video-fps-probe/aspect', 'aspect.cjs'],
   ['video-fps-probe/check', 'check.cjs'],
   ['video-fps-probe/presets', 'presets.cjs'],
 ];
@@ -177,7 +179,17 @@ export const BUDGETS = {
   header: [
     { key: 'trigger', limit: 20 * KB, why: `The package code in the entry chunk of a host that imports video-fps-probe/header statically: analyzeHeader with its option checks, the limited source, the reader, the sniffer, the ISO BMFF box parsers, the header walk, the fragmented duration and the track builder it shares with the full parser. It starts no worker and loads nothing lazily, and it reaches neither the full ISO BMFF parser nor the statistics. Design estimate 11 to 13 KB, measured 17.92 KB, of which 2.37 KB is the per-sample part of the shared track builder, which header mode never runs: moving it out of the shared builder would cost the first MP4 more than the 0.01 KB share of stage 3. ${RESET} Measured 18.49 KB once the walk followed full mode on hybrid files, single moofs, sidx ends, start offsets and limits after the moov, 18.83 KB once the fragmented duration counted text tracks and searched the sidx before the moof its walk starts at, 18.97 KB once an auxiliary track stopped shortening the span of the video and sound tracks, a covering sidx took the end of the first moof, the sidx search ran before every walk and a moof after a moov without an mvex got a warning, 19.05 KB once a covering sidx counted only when every track had one, every limit that left a track open was noted, the walk read the box header after the moov and after the mdat, and the options and the limits refused unknown keys, and 19.29 KB once a file of one fragment resolved from it, each track with its own covering sidx kept its duration beside a track without one, and a failed peek after the mdat kept the moov, and 19.32 KB once that peek began to carry a warning, and 19.28 KB once the options and the limits ignored unknown keys.` },
     { key: 'header', limit: 3 * KB, why: `The part of the critical path under dist/header/: analyzeHeader, its option checks, the Matroska DocType check and the limited source with its deadline. Measured 2.34 KB. ${RESET} Measured 2.50 KB once the limited source coded an abort of the source itself and a read without bytes as read failures and kept its deadline past the timer range, and 2.48 KB once it lost the two-read reservation before the mfra tail, and 2.50 KB once readAhead took head and tail only, and 2.54 KB once the options and the limits refused unknown keys, and 2.49 KB once they ignored them, with readAhead still refusing them.` },
-    { key: 'entry', limit: 20 * KB, why: `The trigger of this configuration plus the Vite runtime of the entry chunk. Measured 17.94 KB. ${RESET} Measured 18.51 KB, then 18.86 KB, 19.00 KB, 19.07 KB, 19.31 KB, 19.34 KB and 19.30 KB, 0.02 to 0.03 KB over the trigger above each time.` },
+    { key: 'entry', limit: 21 * KB, why: `The trigger of this configuration plus the Vite runtime of the entry chunk. Measured 17.94 KB. ${RESET} Measured 18.51 KB, then 18.86 KB, 19.00 KB, 19.07 KB, 19.31 KB, 19.34 KB and 19.30 KB, 0.02 to 0.03 KB over the trigger above each time. Raised from 20 KB to 21 KB in 0.4.0, measured 20.35 KB, the measurement plus 3 percent rounded up to 0.5 KB, once analyzeHeader began to load the codec configuration capture and the color and aspect code with import(): Vite adds its preload helper, 0.75 KB, to the entry chunk of any app with a dynamic import, and the trigger grew by 0.30 KB for the codecConfig, color and aspect options. An app with another dynamic import already has the helper.` },
+  ],
+  color: [
+    { key: 'trigger', limit: 26.5 * KB, why: `The package code in the entry chunk of a host that reads color in the page: analyzeHeader as in the header configuration, and colorOf and withColor from video-fps-probe/color. Measured 23.78 KB. ${RESET}` },
+    { key: 'color', limit: 5 * KB, why: `The part of the critical path under dist/color/: colorOf and withColor, the readers of the sample description, the Matroska TrackEntry and the H.264 and HEVC SPS, the FFmpeg name tables, the codec strings and the Dolby Vision record. It imports nothing outside dist/color/ at run time. Design estimate 3.0 to 3.6 KB, measured 4.54 KB: the two SPS walkers read every syntax element up to the VUI colour fields, and the name tables follow FFmpeg 8.1 with its extended codes. ${RESET}` },
+    { key: 'entry', limit: 27.5 * KB, why: `The trigger of this configuration plus the Vite runtime of the entry chunk, with the preload helper of the lazy imports of analyzeHeader. Measured 24.63 KB. ${RESET}` },
+  ],
+  aspect: [
+    { key: 'trigger', limit: 27 * KB, why: `The package code in the entry chunk of a host that reads the aspect ratio and the display size in the page: analyzeHeader as in the header configuration, and aspectOf and withAspect from video-fps-probe/aspect with the codec configuration readers they share with video-fps-probe/color. Measured 24.20 KB. ${RESET}` },
+    { key: 'aspect', limit: 2 * KB, why: `The part of the critical path under dist/aspect/: aspectOf and withAspect with the FFmpeg ports of av_reduce and av_d2q, the pasp, tkhd matrix, tkhd size, Matroska display and VUI rules. The readers it shares with the color entry are counted in the trigger. Measured 1.63 KB. ${RESET}` },
+    { key: 'entry', limit: 28 * KB, why: `The trigger of this configuration plus the Vite runtime of the entry chunk, with the preload helper of the lazy imports of analyzeHeader. Measured 25.06 KB. ${RESET}` },
   ],
   'url-entry': [
     { key: 'trigger', limit: 24.5 * KB, why: `The package code in the entry chunk of a host that reads object storage from the page: analyzeHeader as in the header configuration, and rangeSource, openRangeSource, httpRange, readCapped and RangeSourceError from video-fps-probe/url. It starts no worker and loads nothing lazily. Measured 21.86 KB, the 19.32 KB of the header configuration plus the Range entry, and 21.94 KB with the smaller header entry and the larger Range entry. ${RESET}` },
@@ -199,6 +211,8 @@ const LABELS = {
   presets: 'presets entry (the imported presets, in the entry chunk)',
   header: 'header entry (analyzeHeader, its option checks and the limited source, in the entry chunk)',
   url: 'Range entry (rangeSource, openRangeSource, httpRange, readCapped and RangeSourceError, in the entry chunk)',
+  color: 'color entry (colorOf and withColor with the codec configuration readers, in the entry chunk)',
+  aspect: 'aspect entry (aspectOf and withAspect with the codec configuration readers, in the entry chunk)',
   entry: 'entry chunk with the preload helper',
   client: 'probe client (lazy)',
   isobmff: 'ISO BMFF parser (in the own worker)',
@@ -488,6 +502,8 @@ export function measureFixture(dir, fixture, { thirdPartyInformational = false }
     presets: entryCode('presets'),
     header: entryCode('header'),
     url: entryCode('url'),
+    color: entryCode('color'),
+    aspect: entryCode('aspect'),
     client: clientFiles.size > 0 ? { files: [...without(clientFiles)] } : null,
     isobmff: share(isoWorker, 'isobmff'),
     matroska: share(mkvWorker, 'matroska'),
