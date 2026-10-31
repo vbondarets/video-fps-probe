@@ -8,8 +8,24 @@ import { REPO_ROOT } from '../helpers/fixtures.ts';
 
 const PACKAGE = 'video-fps-probe';
 const PROJECT = join(REPO_ROOT, 'tests', 'package', 'dom-free');
-const FILES = ['tsconfig.json', 'server.mts', 'server.cts'];
+const FILES = ['tsconfig.json', 'server.mts', 'server.cts', 'server.ts'];
 const NODE_TYPES = ['@types/node', 'undici-types'];
+const ENTRIES = ['header', 'url', 'check', 'presets'];
+const VARIANTS = [
+  { name: 'node16', compilerOptions: { module: 'node16', moduleResolution: 'node16' }, files: ['server.mts', 'server.cts'], cts: true },
+  { name: 'commonjs and node10', compilerOptions: { module: 'commonjs', moduleResolution: 'node10', ignoreDeprecations: '6.0' }, files: ['server.ts'], cts: false },
+  { name: 'esnext and bundler', compilerOptions: { module: 'esnext', moduleResolution: 'bundler' }, files: ['server.ts'], cts: false },
+  { name: 'preserve and bundler', compilerOptions: { module: 'preserve', moduleResolution: 'bundler' }, files: ['server.ts'], cts: false },
+];
+
+function compile(dir: string, config: string): { problems: string[]; declarations: string[] } {
+  const parsed = ts.getParsedCommandLineOfConfigFile(join(dir, config), {}, { ...ts.sys, onUnRecoverableConfigFileDiagnostic: () => {} })!;
+  expect(parsed.errors).toEqual([]);
+  const program = ts.createProgram(parsed.fileNames, parsed.options);
+  const problems = ts.getPreEmitDiagnostics(program).map((d) => `${d.file ? `${d.file.fileName.slice(dir.length + 1)}: ` : ''}TS${d.code} ${ts.flattenDiagnosticMessageText(d.messageText, ' ')}`);
+  const declarations = program.getSourceFiles().map((f) => f.fileName.split('\\').join('/')).filter((f) => f.includes(`/node_modules/${PACKAGE}/`)).map((f) => f.slice(f.indexOf('/dist/') + 1));
+  return { problems, declarations };
+}
 
 describe('a DOM-free TypeScript project for Node', () => {
   let dir: string;
@@ -36,13 +52,18 @@ describe('a DOM-free TypeScript project for Node', () => {
   });
 
   it(`compiles ./header, ./url, ./check and ./presets from an ESM and a CommonJS file with TypeScript ${ts.version}`, () => {
-    const config = ts.getParsedCommandLineOfConfigFile(join(dir, 'tsconfig.json'), {}, { ...ts.sys, onUnRecoverableConfigFileDiagnostic: () => {} })!;
-    expect(config.errors).toEqual([]);
-    const program = ts.createProgram(config.fileNames, config.options);
-    const problems = ts.getPreEmitDiagnostics(program).map((d) => `${d.file ? `${d.file.fileName.slice(dir.length + 1)}: ` : ''}TS${d.code} ${ts.flattenDiagnosticMessageText(d.messageText, ' ')}`);
+    const { problems, declarations } = compile(dir, 'tsconfig.json');
     expect(problems).toEqual([]);
-    const declarations = program.getSourceFiles().map((f) => f.fileName.split('\\').join('/')).filter((f) => f.includes(`/node_modules/${PACKAGE}/`)).map((f) => f.slice(f.indexOf('/dist/') + 1));
-    expect(declarations.filter((f) => f.endsWith('.d.cts'))).toEqual(expect.arrayContaining(['dist/cjs/header/index.d.cts', 'dist/cjs/url/index.d.cts', 'dist/cjs/check/index.d.cts', 'dist/cjs/presets/index.d.cts']));
-    expect(declarations.filter((f) => f.endsWith('.d.ts'))).toEqual(expect.arrayContaining(['dist/header/index.d.ts', 'dist/url/index.d.ts', 'dist/check/index.d.ts', 'dist/presets/index.d.ts']));
+    expect(declarations.filter((f) => f.endsWith('.d.cts'))).toEqual(expect.arrayContaining(ENTRIES.map((e) => `dist/cjs/${e}/index.d.cts`)));
+    expect(declarations.filter((f) => f.endsWith('.d.ts'))).toEqual(expect.arrayContaining(ENTRIES.map((e) => `dist/${e}/index.d.ts`)));
+  });
+
+  it.each(VARIANTS)(`compiles the same entries under $name with TypeScript ${ts.version}, without skipLibCheck`, ({ name, compilerOptions, files, cts }) => {
+    const config = `tsconfig.${name.replace(/ /g, '-')}.json`;
+    writeFileSync(join(dir, config), JSON.stringify({ extends: './tsconfig.json', compilerOptions, files }));
+    const { problems, declarations } = compile(dir, config);
+    expect(problems).toEqual([]);
+    expect(declarations.filter((f) => f.endsWith('.d.ts'))).toEqual(expect.arrayContaining(ENTRIES.map((e) => `dist/${e}/index.d.ts`)));
+    expect(declarations.filter((f) => f.endsWith('.d.cts'))).toEqual(cts ? expect.arrayContaining(ENTRIES.map((e) => `dist/cjs/${e}/index.d.cts`)) : []);
   });
 });
