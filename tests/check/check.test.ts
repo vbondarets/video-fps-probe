@@ -812,10 +812,10 @@ describe('check: committed fixtures', () => {
     ['late_freeze_10s.mkv', 0.04, 0.039, 0.041],
     ['late_25_to_12.5.webm', 0.04, 0.04, 0.040001],
     ['vfr_screenrec_ts1000.webm', 0.017, 0.016, 0.018],
-    ['rec_chromium_av1.webm', 0.017, 0.016, 0.028],
-    ['rec_chromium_h264.mkv', 0.017, 0.016, 0.028],
-    ['rec_chromium_vp8.webm', 0.017, 0.016, 0.028],
-    ['rec_chromium_vp9.webm', 0.017, 0.016, 0.028],
+    ['rec_chromium_av1.webm', 0.017, 0.016, 0.018],
+    ['rec_chromium_h264.mkv', 0.017, 0.016, 0.018],
+    ['rec_chromium_vp8.webm', 0.017, 0.016, 0.018],
+    ['rec_chromium_vp9.webm', 0.017, 0.016, 0.018],
   ] as const)('%s: judges the format duration ffprobe prints within one typical frame interval of the measured span, %s s between its ffprobe 8.1.1 packets', async (name, median, inside, outside) => {
     const r = await run(name);
     const t = r.videoTracks.find((x) => x.trackId === r.primaryTrackId)!;
@@ -920,16 +920,52 @@ describe('check: committed fixtures', () => {
     expect(failed(webm({ isVfr: true, avgFps: null, nominalFps: null }, 3.001), { duration: { min: 3.001 } })).toEqual(['duration.min']);
   });
 
-  it.each(['rec_chromium_av1.webm', 'rec_chromium_h264.mkv', 'rec_chromium_vp8.webm', 'rec_chromium_vp9.webm'])('%s: without a dominant rate takes its average frame interval of about 27 ms, not the median of 17 ms between its packets', async (name) => {
+  it('takes the median frame interval after the dominant rate and a constant nominal rate and before the average, and keeps the span when it is no interval', () => {
+    const webm = (track: Partial<VideoTrackResult>, formatDurationSec: number) => result({ durationSec: 3, ...track }, { container: 'webm', formatDurationSec });
+    const vfr = { isVfr: true, avgFps: rate(10), medianFrameInterval: rate(1, 60) };
+    expect(failed(webm(vfr, 3.016), { duration: { min: 3.016 } })).toEqual([]);
+    expect(failed(webm(vfr, 3.017), { duration: { min: 3.017 } })).toEqual(['duration.min']);
+    expect(failed(webm({ ...vfr, medianFrameInterval: null }, 3.05), { duration: { min: 3.05 } })).toEqual([]);
+    expect(failed(webm({ ...vfr, isVfr: null }, 3.017), { duration: { min: 3.017 } })).toEqual(['duration.min']);
+    expect(failed(webm({ ...vfr, dominantFps: { rate: rate(5), share: 0.9 } }, 3.1), { duration: { min: 3.1 } })).toEqual([]);
+    expect(failed(webm({ ...vfr, isVfr: false, nominalFps: { ...rate(5), kind: 'declared' as const } }, 3.1), { duration: { min: 3.1 } })).toEqual([]);
+    expect(failed(webm({ ...vfr, medianFrameInterval: { num: 0, den: 1, value: 0 } }, 3.001), { duration: { min: 3.001 } })).toEqual(['duration.min']);
+    expect(failed(webm({ ...vfr, medianFrameInterval: 'x' as unknown as Rational }, 3.001), { duration: { min: 3.001 } })).toEqual(['duration.min']);
+    expect(failed(webm(vfr, 3.016), { duration: { min: 3.016 } })).toEqual(failed(result({ durationSec: 3, ...vfr }, { container: 'matroska', formatDurationSec: 3.016 }), { duration: { min: 3.016 } }));
+    expect(failed(result({ durationSec: 3, ...vfr }, { formatDurationSec: 3.016 }), { duration: { min: 3.016 } })).toEqual(['duration.min']);
+  });
+
+  it.each(['rec_chromium_av1.webm', 'rec_chromium_h264.mkv', 'rec_chromium_vp8.webm', 'rec_chromium_vp9.webm'])('%s: without a dominant rate takes its median frame interval of 17 ms, not the average of about 27 ms, and as 0.3.0 JSON its average', async (name) => {
     const r = await run(name);
     const t = r.videoTracks.find((x) => x.trackId === r.primaryTrackId)!;
-    expect([t.dominantFps, t.isVfr]).toEqual([null, true]);
+    expect([t.dominantFps, t.isVfr, t.medianFrameInterval]).toEqual([null, true, rate(17, 1000)]);
     expect(t.avgFps!.den / t.avgFps!.num).toBeCloseTo(0.0272, 4);
-    const judged = (gap: number): boolean => {
+    const judged = (gap: number, track: VideoTrackResult = t): boolean => {
       const format = +(t.durationSec! - gap).toFixed(6);
-      return check({ ...r, formatDurationSec: format }, { duration: { min: format, max: format } }).verdict === 'pass';
+      return check({ ...r, videoTracks: [track], formatDurationSec: format }, { duration: { min: format, max: format } }).verdict === 'pass';
     };
-    expect([0.017, 0.018, 0.027, 0.028].map(judged)).toEqual([true, true, true, false]);
+    expect([0.016, 0.017, 0.018, 0.027].map((gap) => judged(gap))).toEqual([true, true, false, false]);
+    const { medianFrameInterval: _, ...persisted } = t;
+    expect([0.017, 0.018, 0.027, 0.028].map((gap) => judged(gap, persisted as VideoTrackResult))).toEqual([true, true, true, false]);
+  });
+
+  it('moves the judged duration only for WebM and Matroska tracks without a dominant rate that are not constant', async () => {
+    const moved: string[] = [];
+    for (const name of readdirSync(FILES_DIR).filter((n) => /\.(webm|mkv)$/.test(n))) {
+      const r = await run(name);
+      const t = r.videoTracks.find((x) => x.trackId === r.primaryTrackId);
+      if (!t?.durationSec) continue;
+      const { medianFrameInterval: _, ...persisted } = t;
+      for (const gap of [0.005, 0.01, 0.017, 0.02, 0.03, 0.05, 0.1]) {
+        const format = +(t.durationSec - gap).toFixed(6);
+        const judge = (track: object) => check({ ...r, videoTracks: [track as VideoTrackResult], formatDurationSec: format }, { duration: { min: format, max: format } }).verdict;
+        if (judge(t) === judge(persisted)) continue;
+        expect([name, t.dominantFps, t.isVfr === false]).toEqual([name, null, false]);
+        moved.push(name);
+        break;
+      }
+    }
+    expect(moved).toEqual(expect.arrayContaining(['rec_chromium_av1.webm', 'rec_chromium_h264.mkv', 'rec_chromium_vp8.webm', 'rec_chromium_vp9.webm']));
   });
 
   it('judges the 3 s of a constant 60 fps WebM whose 1 ms ticks span 2.999 s', async () => {
