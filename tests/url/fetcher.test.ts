@@ -225,11 +225,20 @@ describe('the source as a BlobLike', () => {
     const { fetcher, calls } = served(OBJECT);
     const source = rangeSource(fetcher, { size });
     const blob = new Blob([OBJECT]);
-    for (const [s, e] of [[undefined, undefined], [10, 20], [-100, undefined], [-100, -50], [4000, 99999], [50, 10], [-99999, 3], [4096, 5000], [1.7, 9.9]] as const) {
+    for (const [s, e] of [[undefined, undefined], [10, 20], [-100, undefined], [-100, -50], [4000, 99999], [50, 10], [-99999, 3], [4096, 5000]] as const) {
       const got = new Uint8Array(await source.slice(s, e).arrayBuffer());
       expect(got, `${s}, ${e}`).toEqual(new Uint8Array(await blob.slice(s, e).arrayBuffer()));
     }
     expect(calls.every((c) => c.end > c.start)).toBe(true);
+  });
+
+  test('slice rounds fractional offsets to the nearest whole byte', async () => {
+    const { fetcher } = served(OBJECT);
+    const source = rangeSource(fetcher, { size });
+    for (const [s, e, from, to] of [[1.7, 9.9, 2, 10], [2.4, 7.6, 2, 8], [0.5, 1.5, 1, 2], [-10.4, -2.6, size - 10, size - 3]] as const) {
+      const got = new Uint8Array(await source.slice(s, e).arrayBuffer());
+      expect(got, `${s}, ${e}`).toEqual(OBJECT.subarray(from, to));
+    }
   });
 
   test('read checks its arguments, and an empty read makes no request', async () => {
