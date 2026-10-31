@@ -25,7 +25,7 @@ describe.skipIf(SKIPPED !== null)('the packed tarball under Jest with --experime
 
   it(`loads the ESM server entries from require() and gives the source results on Node ${process.versions.node}`, async () => {
     const out = runJest(PROJECT, { JEST_FIXTURE, NODE_OPTIONS: '--experimental-vm-modules' }) as Record<string, unknown>;
-    expect(relativeToPackage(out.resolved)).toEqual(['dist/index.js', 'dist/header/index.js', 'dist/url/index.js', 'dist/check/index.js', 'dist/presets/index.js']);
+    expect(relativeToPackage(out.resolved)).toEqual(['dist/index.js', 'dist/header/index.js', 'dist/url/index.js', 'dist/color/index.js', 'dist/aspect/index.js', 'dist/check/index.js', 'dist/presets/index.js']);
     const { resolved: _, ...rest } = out;
     expect(rest).toEqual(await expectedRun());
   });

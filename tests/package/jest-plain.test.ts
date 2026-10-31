@@ -25,7 +25,7 @@ describe.skipIf(SKIPPED !== null)('the packed tarball under Jest with no configu
 
   it(`loads the CommonJS copies of the server entries without vm modules and gives the source results on Node ${process.versions.node}`, async () => {
     const out = runJest(PROJECT, { JEST_FIXTURE }) as Record<string, unknown>;
-    expect(relativeToPackage(out.resolved)).toEqual(['dist/cjs/index.cjs', 'dist/cjs/header.cjs', 'dist/cjs/url.cjs', 'dist/cjs/check.cjs', 'dist/cjs/presets.cjs']);
+    expect(relativeToPackage(out.resolved)).toEqual(['dist/cjs/index.cjs', 'dist/cjs/header.cjs', 'dist/cjs/url.cjs', 'dist/cjs/color.cjs', 'dist/cjs/aspect.cjs', 'dist/cjs/check.cjs', 'dist/cjs/presets.cjs']);
     const { resolved: _, ...rest } = out;
     expect(rest).toEqual(await expectedRun());
   });

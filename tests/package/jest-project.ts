@@ -79,11 +79,14 @@ export async function expectedRun(): Promise<Record<string, unknown>> {
   const blob = await openAsBlob(JEST_FIXTURE);
   const result = await analyze(blob, { name });
   const header = await analyzeHeader(blob, { name });
+  const color = await analyzeHeader(blob, { name, color: true, aspect: true });
   const withoutMs = (r: HeaderResult) => ({ ...r, io: { ...r.io, ms: 0 } });
   return JSON.parse(
     JSON.stringify({
       result: { ...result, io: null },
       header: withoutMs(header),
+      color: withoutMs(color),
+      colorByEntry: withoutMs(color),
       ranged: withoutMs(header),
       calls: header.io.reads,
       report: check(result, klingO1ReferenceVideo.rules),

@@ -1,13 +1,15 @@
 'use strict';
 const { openAsBlob, writeFileSync } = require('node:fs');
 
-const ENTRIES = ['video-fps-probe', 'video-fps-probe/header', 'video-fps-probe/url', 'video-fps-probe/check', 'video-fps-probe/presets'];
+const ENTRIES = ['video-fps-probe', 'video-fps-probe/header', 'video-fps-probe/url', 'video-fps-probe/color', 'video-fps-probe/aspect', 'video-fps-probe/check', 'video-fps-probe/presets'];
 const withoutMs = (r) => ({ ...r, io: { ...r.io, ms: 0 } });
 
 test('the server entries load with no configuration and analyze an MP4 in full, header and Range mode', async () => {
   const { analyze, isAbortError } = require('video-fps-probe');
   const { analyzeHeader, errorClass, isTimeoutError } = require('video-fps-probe/header');
   const { rangeSource, RangeSourceError } = require('video-fps-probe/url');
+  const { withColor } = require('video-fps-probe/color');
+  const { withAspect } = require('video-fps-probe/aspect');
   const { check } = require('video-fps-probe/check');
   const { klingO1ReferenceVideo } = require('video-fps-probe/presets');
   const name = 'cfr_h264_30.mp4';
@@ -15,6 +17,8 @@ test('the server entries load with no configuration and analyze an MP4 in full, 
   const bytes = new Uint8Array(await blob.arrayBuffer());
   const result = await analyze(blob, { name });
   const header = await analyzeHeader(blob, { name });
+  const color = await analyzeHeader(blob, { name, color: true, aspect: true });
+  const raw = await analyzeHeader(blob, { name, codecConfig: true });
   let calls = 0;
   const source = rangeSource(
     async ({ start, end }) => {
@@ -33,6 +37,8 @@ test('the server entries load with no configuration and analyze an MP4 in full, 
       resolved: ENTRIES.map((e) => require.resolve(e)),
       result: { ...result, io: null },
       header: withoutMs(header),
+      color: withoutMs(color),
+      colorByEntry: withoutMs(withAspect(withColor(raw, { keepCodecConfig: true }))),
       ranged: withoutMs(ranged),
       calls,
       report: check(result, klingO1ReferenceVideo.rules),

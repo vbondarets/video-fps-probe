@@ -107,9 +107,9 @@ const nestLike = (compiler: typeof ts): ts.CompilerOptions => ({
 const runNode = (dir: string, file: string, flags: string[] = []): unknown =>
   JSON.parse(execFileSync(process.execPath, [...flags, file, FIXTURE], { cwd: dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
 
-const SERVER_ENTRIES = ['', '/header', '/url', '/check', '/presets'].map((e) => `${PACKAGE}${e}`);
-const ESM_FILES = ['dist/index.js', 'dist/header/index.js', 'dist/url/index.js', 'dist/check/index.js', 'dist/presets/index.js'];
-const CJS_FILES = ['dist/cjs/index.cjs', 'dist/cjs/header.cjs', 'dist/cjs/url.cjs', 'dist/cjs/check.cjs', 'dist/cjs/presets.cjs'];
+const SERVER_ENTRIES = ['', '/header', '/url', '/color', '/aspect', '/check', '/presets'].map((e) => `${PACKAGE}${e}`);
+const ESM_FILES = ['dist/index.js', 'dist/header/index.js', 'dist/url/index.js', 'dist/color/index.js', 'dist/aspect/index.js', 'dist/check/index.js', 'dist/presets/index.js'];
+const CJS_FILES = ['dist/cjs/index.cjs', 'dist/cjs/header.cjs', 'dist/cjs/url.cjs', 'dist/cjs/color.cjs', 'dist/cjs/aspect.cjs', 'dist/cjs/check.cjs', 'dist/cjs/presets.cjs'];
 
 const RESOLVE_MJS = `import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);

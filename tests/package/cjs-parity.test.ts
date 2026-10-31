@@ -3,7 +3,9 @@ import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import type * as Aspect from '../../src/aspect/index.ts';
 import type * as Check from '../../src/check/index.ts';
+import type * as Color from '../../src/color/index.ts';
 import type * as Header from '../../src/header/index.ts';
 import type * as Root from '../../src/index.ts';
 import type * as Presets from '../../src/presets/index.ts';
@@ -17,15 +19,15 @@ const load = createRequire(import.meta.url);
 const pairs = Object.fromEntries(
   await Promise.all(Object.entries(CJS_ENTRIES).map(async ([name, file]) => [name, { esm: (await import(pathToFileURL(join(DIST, file)).href)) as Record<string, unknown>, cjs: load(join(DIST, 'cjs', `${name}.cjs`)) as Record<string, unknown> }] as const)),
 );
-const esm = { root: pairs.index!.esm as unknown as typeof Root, header: pairs.header!.esm as unknown as typeof Header, check: pairs.check!.esm as unknown as typeof Check, presets: pairs.presets!.esm as unknown as typeof Presets, url: pairs.url!.esm as unknown as typeof Url };
-const cjs = { root: pairs.index!.cjs as unknown as typeof Root, header: pairs.header!.cjs as unknown as typeof Header, check: pairs.check!.cjs as unknown as typeof Check, presets: pairs.presets!.cjs as unknown as typeof Presets, url: pairs.url!.cjs as unknown as typeof Url };
+const esm = { root: pairs.index!.esm as unknown as typeof Root, header: pairs.header!.esm as unknown as typeof Header, check: pairs.check!.esm as unknown as typeof Check, presets: pairs.presets!.esm as unknown as typeof Presets, url: pairs.url!.esm as unknown as typeof Url, color: pairs.color!.esm as unknown as typeof Color, aspect: pairs.aspect!.esm as unknown as typeof Aspect };
+const cjs = { root: pairs.index!.cjs as unknown as typeof Root, header: pairs.header!.cjs as unknown as typeof Header, check: pairs.check!.cjs as unknown as typeof Check, presets: pairs.presets!.cjs as unknown as typeof Presets, url: pairs.url!.cjs as unknown as typeof Url, color: pairs.color!.cjs as unknown as typeof Color, aspect: pairs.aspect!.cjs as unknown as typeof Aspect };
 
 const fixtures = loadManifest().filter((e) => e.committed).map((e) => e.name);
 const withoutMs = <T extends { io: object }>(r: T): T => ({ ...r, io: { ...r.io, ms: 0 } });
 
 describe('the CommonJS copy against the ESM build', () => {
-  it('covers the five server entries, each a separate copy', () => {
-    expect(Object.keys(pairs)).toEqual(['index', 'header', 'url', 'check', 'presets']);
+  it('covers the seven server entries, each a separate copy', () => {
+    expect(Object.keys(pairs)).toEqual(['index', 'header', 'url', 'color', 'aspect', 'check', 'presets']);
     for (const [name, { esm: e, cjs: c }] of Object.entries(pairs)) {
       const key = Object.keys(e).find((k) => typeof e[k] === 'function' || typeof e[k] === 'object')!;
       expect(c[key], `${name} ${key}`).toBeDefined();
@@ -69,5 +71,9 @@ describe('the CommonJS copy against the ESM build', () => {
     for (const preset of Object.values(esm.presets)) expect(cjs.check.check(c, preset.rules)).toEqual(esm.check.check(e, preset.rules));
     expect(cjs.root.errorCodeOf(c)).toBe(esm.root.errorCodeOf(e));
     expect(cjs.root.warningCodesOf(c)).toEqual(esm.root.warningCodesOf(e));
+    const [er, cr] = await Promise.all([esm.root.analyze(blob, { name, codecConfig: true }), cjs.root.analyze(blob, { name, codecConfig: true })]);
+    expect(withoutMs(cjs.aspect.withAspect(cjs.color.withColor(cr, { keepCodecConfig: true })))).toEqual(withoutMs(esm.aspect.withAspect(esm.color.withColor(er, { keepCodecConfig: true }))));
+    const [ec, cc] = await Promise.all([esm.header.analyzeHeader(blob, { name, color: true, aspect: true }), cjs.header.analyzeHeader(blob, { name, color: true, aspect: true })]);
+    expect(withoutMs(cc)).toEqual(withoutMs(ec));
   });
 });

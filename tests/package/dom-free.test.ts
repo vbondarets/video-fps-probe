@@ -10,7 +10,7 @@ const PACKAGE = 'video-fps-probe';
 const PROJECT = join(REPO_ROOT, 'tests', 'package', 'dom-free');
 const FILES = ['tsconfig.json', 'server.mts', 'server.cts', 'server.ts'];
 const NODE_TYPES = ['@types/node', 'undici-types'];
-const ENTRIES = ['header', 'url', 'check', 'presets'];
+const ENTRIES = ['header', 'url', 'color', 'aspect', 'check', 'presets'];
 const VARIANTS = [
   { name: 'node16', compilerOptions: { module: 'node16', moduleResolution: 'node16' }, files: ['server.mts', 'server.cts'], cts: true },
   { name: 'commonjs and node10', compilerOptions: { module: 'commonjs', moduleResolution: 'node10', ignoreDeprecations: '6.0' }, files: ['server.ts'], cts: false },
@@ -51,7 +51,7 @@ describe('a DOM-free TypeScript project for Node', () => {
     expect(compilerOptions.skipLibCheck).toBeUndefined();
   });
 
-  it(`compiles ./header, ./url, ./check and ./presets from an ESM and a CommonJS file with TypeScript ${ts.version}`, () => {
+  it(`compiles ./header, ./url, ./color, ./aspect, ./check and ./presets from an ESM and a CommonJS file with TypeScript ${ts.version}`, () => {
     const { problems, declarations } = compile(dir, 'tsconfig.json');
     expect(problems).toEqual([]);
     expect(declarations.filter((f) => f.endsWith('.d.cts'))).toEqual(expect.arrayContaining(ENTRIES.map((e) => `dist/cjs/${e}/index.d.cts`)));
