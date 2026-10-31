@@ -60,12 +60,12 @@ const RULE = {
   duplicates: 'Equal to the reference count of deltas that are 0 or less',
   medianFrameInterval: 'Equal rational vs medianDeltaTicks x time_base on exact scans, within-tol when fewer than 2 deltas remain after the tail and the app kept the tail, which the reference never keeps, and n/a for probe and header scans',
   sampleAspectRatio: 'Equal ratio vs sample_aspect_ratio. No ratio is exact against 1:1 or N/A, and a built-in deviation against another ratio only when an independent scan finds no pasp, tkhd size, non-uniform tkhd matrix (times the mvhd matrix) or Matroska display size (DisplayWidth and DisplayHeight with a DisplayUnit below 4, unit 0 defaulting to the pixel size)',
-  displayAspectRatio: 'width x SAR over height vs display_aspect_ratio, with the display size equal to round(width x SAR) by height. No ratio is judged as for sampleAspectRatio',
+  displayAspectRatio: 'displayAspectRatio vs display_aspect_ratio, with the display size equal to round(width x SAR) by height, swapped for a rotation of 90 or 270 degrees. No ratio is judged as for sampleAspectRatio',
   enabled: 'Equal to the tkhd enabled flag (MP4 and MOV) or FlagEnabled (Matroska) of an independent scan. ffprobe disposition.default is shown for information',
   color: 'Never wrong, sometimes silent: a value equals the ffprobe name, none against none is exact, and none against a value is a built-in deviation only when ffprobe takes it from a bitstream the library does not read (no colr, vpcC or Colour that declares it, and no SPS in an H.264 or HEVC codec configuration)',
   bitDepth: 'Equal to the component depth of pix_fmt, and none is n/a unless a codec configuration carries a depth',
   profile: 'The numeric profile and constraint flags through the FFmpeg name table vs profile, and none is n/a unless a codec configuration carries a profile',
-  codecString: 'Equal to the codec string mp4box.js 2.4.1 reports for the track (MP4 and MOV), n/a on Matroska and for codecs without a codec string rule',
+  codecString: 'Equal to the codec string mp4box.js 2.4.1 reports for the track (MP4 and MOV), n/a on Matroska, for codecs without a codec string rule and where mp4box.js gives only the sample entry fourcc',
   dolbyVision: 'Field by field vs the DOVI configuration record side data, mdCompression vs dv_md_compression',
   layout: 'Equal to the layout of an independent top-level scan: mvex, the first mdat against the moov, a sidx before the first moof, the moov sample counts',
   errorCode: 'null exactly when error is null, and equal to the code column of the manifest, which every row that expects an error names',
@@ -692,17 +692,17 @@ function sarDrafts(t: Track040, s: RefStream, facts: TrackFacts): Draft[] {
     else if (silent(ff)) out.push({ ...base, verdict: 'exact', app: null, ffprobe: fmtColon(ff) ?? 'N/A', detail: 'no ratio in the container, ffprobe prints 1:1 or N/A' });
     else out.push({ ...base, verdict: 'mismatch', app: null, ffprobe: fmtColon(ff), builtinDeviation: declared === false ? BITSTREAM_SAR : null, detail: declared === null ? 'no independent scan of the container' : null });
   }
-  if (t.displayWidth !== undefined || t.displayHeight !== undefined) {
+  if (t.displayWidth !== undefined || t.displayHeight !== undefined || t.displayAspectRatio !== undefined) {
     const base = trackBase('displayAspectRatio', null, t, RULE.displayAspectRatio);
     const ratio = sar ?? null;
     const ff = s.displayAspectRatio;
-    const width = t.width > 0 ? Math.round((t.width * (ratio?.num ?? 1)) / (ratio?.den ?? 1)) : null;
-    const height = t.height > 0 ? t.height : null;
-    const appDar = t.width > 0 && t.height > 0 ? reduced(t.width * (ratio?.num ?? 1), t.height * (ratio?.den ?? 1)) : null;
+    const stored = t.width > 0 && t.height > 0 ? [Math.round((t.width * (ratio?.num ?? 1)) / (ratio?.den ?? 1)), t.height] : null;
+    const [width, height] = stored ? (Math.abs(t.rotation) % 180 === 90 ? [stored[1], stored[0]] : stored) : [null, null];
+    const appDar = t.displayAspectRatio ?? null;
     const app = `${fmtColon(appDar) ?? '-'} (${t.displayWidth ?? '-'}x${t.displayHeight ?? '-'})`;
     if ((t.displayWidth ?? null) !== width || (t.displayHeight ?? null) !== height) {
-      out.push({ ...base, verdict: 'mismatch', app, ffprobe: fmtColon(ff), detail: `the display size should be ${width ?? '-'}x${height ?? '-'}, round(width x SAR) by height` });
-    } else if (!ff) out.push({ ...base, verdict: ratio ? 'mismatch' : 'exact', app, ffprobe: 'N/A', detail: ratio ? null : 'no ratio on either side' });
+      out.push({ ...base, verdict: 'mismatch', app, ffprobe: fmtColon(ff), detail: `the display size should be ${width ?? '-'}x${height ?? '-'}, round(width x SAR) by height, swapped for a rotation of 90 or 270 degrees` });
+    } else if (!ff) out.push({ ...base, verdict: appDar ? 'mismatch' : 'exact', app, ffprobe: 'N/A', detail: appDar ? null : 'no ratio on either side' });
     else if (appDar && sameRatio(appDar, ff)) out.push({ ...base, verdict: 'exact', app, ffprobe: fmtColon(ff) });
     else out.push({ ...base, verdict: 'mismatch', app, ffprobe: fmtColon(ff), builtinDeviation: !ratio && declared === false ? BITSTREAM_SAR : null });
   }
@@ -799,6 +799,7 @@ function codecStringDraft(family: ContainerFamily, t: Track040, codecStrings: Re
   if (family === 'matroska') return { ...base, verdict: 'n/a', app, ffprobe: null, detail: 'no codec string oracle for Matroska' };
   const expected = codecStrings?.get(t.trackId);
   if (expected === undefined) return { ...base, verdict: 'n/a', app, ffprobe: null, detail: 'mp4box.js gave no codec string for the track' };
+  if (!expected.includes('.')) return { ...base, verdict: 'n/a', app, ffprobe: expected, detail: 'mp4box.js gives only the sample entry fourcc for this track' };
   if (app === null && !CODEC_STRING_RULE.test(expected)) return { ...base, verdict: 'n/a', app: null, ffprobe: expected, detail: 'no codec string rule for this codec' };
   return { ...base, verdict: app === expected ? 'exact' : 'mismatch', app, ffprobe: expected };
 }

@@ -3,6 +3,8 @@ import { join } from 'node:path';
 import { parseArgs } from 'node:util';
 import { analyze as ownAnalyze } from '../src/core/analyze.ts';
 import type { BlobLike } from '../src/core/reader.ts';
+import { withAspect } from '../src/aspect/index.ts';
+import { withColor } from '../src/color/index.ts';
 import { analyzeHeader, type HeaderResult } from '../src/header/index.ts';
 import { emptyAnalysis } from '../src/core/result.ts';
 import type { AnalyzeOptions, FileResult, MatroskaMode } from '../src/core/types.ts';
@@ -108,6 +110,16 @@ async function runTimedInner(engine: EngineHandle, blob: BlobLike, name: string,
   }
   const result = first ?? failedResult(name, blob.size, threw ?? 'no result');
   return { result, threw, ms: times.length > 0 ? median(times) : 0, msFirst: times[0] ?? 0 };
+}
+
+async function withOwnMetadata(blob: BlobLike, name: string, result: FileResult, iso: boolean): Promise<FileResult> {
+  let r = result;
+  if (iso && r.videoTracks.some((t) => !t.codecConfig)) {
+    const header = await analyzeHeader(blob, { name, codecConfig: true, limits: { maxBytes: Infinity, maxReads: Infinity, maxMs: Infinity, maxTracks: Infinity, maxTopLevelBoxes: Infinity } });
+    const configs = new Map(header.videoTracks.map((t) => [t.trackId, t.codecConfig]));
+    r = { ...r, videoTracks: r.videoTracks.map((t) => (t.codecConfig || !configs.get(t.trackId) ? t : { ...t, codecConfig: configs.get(t.trackId) })) };
+  }
+  return withAspect(withColor(r, { keepCodecConfig: true }));
 }
 
 function isLarge(entry: ManifestEntry): boolean {
@@ -378,8 +390,8 @@ async function main(): Promise<number> {
         if (contradiction) harnessProblems.add(contradiction);
         for (const s of ref?.videoStreams ?? []) for (const u of s.unmappedSideData) harnessProblems.add(`${entry.name} stream ${s.index}: ffprobe prints ${u}, which the comparison does not map`);
         const runs = engine.informational && isLarge(entry) ? 1 : repeat;
-        const timed = await runTimed(engine, opened.blob, entry.name, opts, runs, engine.informational && !verbose);
-        const result = timed.result;
+        const timed = await runTimed(engine, opened.blob, entry.name, engineName === 'own' ? { ...opts, codecConfig: true } : opts, runs, engine.informational && !verbose);
+        const result = engineName === 'own' ? await withOwnMetadata(opened.blob, entry.name, timed.result, isIso) : timed.result;
         const codecStrings = isIso ? await codecStringsOf(entry.name, opened.blob, result) : null;
         const evaluation = evaluate({ info, ref, result, layout, threw: timed.threw, deviations: forFixture(deviations, entry.name), codecStrings });
         classifyEvaluation({ arm: ARMS[engineName], info, ref, result, layout, family: evaluation.family }, evaluation);

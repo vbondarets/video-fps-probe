@@ -133,11 +133,14 @@ export function selfTest040(expectEq: ExpectEq, kit: SelfTestKit): void {
   expectEq('colr: a later nclc keeps the range of an earlier nclx', JSON.stringify(laterColr(lastNclx, lastNclc)), JSON.stringify({ ...lastNclc, fullRange: true }));
   expectEq('colr: a colr of another type changes nothing', laterColr(lastNclx, null), lastNclx);
 
-  const dar = (fields: TrackFields040, ff: string | null) => mp4(fields, { width: 160, height: 120, sampleAspectRatio: parseColonRatio('4:3'), displayAspectRatio: parseColonRatio(ff) }, isoLayout(), { width: 160, height: 120 });
-  expectEq('dar: 4:3 pixels on 160x120', verdict(dar({ sampleAspectRatio: { num: 4, den: 3 }, displayWidth: 213, displayHeight: 120 }, '16:9'), 'displayAspectRatio'), 'exact');
-  expectEq('dar: a display width that is not round(width x SAR)', verdict(dar({ sampleAspectRatio: { num: 4, den: 3 }, displayWidth: 214, displayHeight: 120 }, '16:9'), 'displayAspectRatio'), 'mismatch');
-  expectEq('dar: another ratio', verdict(dar({ sampleAspectRatio: { num: 1, den: 1 }, displayWidth: 160, displayHeight: 120 }, '16:9'), 'displayAspectRatio'), 'mismatch');
-  expectEq('dar: none on both sides', verdict(dar({ sampleAspectRatio: null, displayWidth: 160, displayHeight: 120 }, null), 'displayAspectRatio'), 'exact');
+  const dar = (fields: TrackFields040, ff: string | null, rotation = 0) => mp4(fields, { width: 160, height: 120, sampleAspectRatio: parseColonRatio('4:3'), displayAspectRatio: parseColonRatio(ff) }, isoLayout(), { width: 160, height: 120, rotation });
+  const r169 = { num: 16, den: 9 };
+  expectEq('dar: 4:3 pixels on 160x120', verdict(dar({ sampleAspectRatio: { num: 4, den: 3 }, displayAspectRatio: r169, displayWidth: 213, displayHeight: 120 }, '16:9'), 'displayAspectRatio'), 'exact');
+  expectEq('dar: a display width that is not round(width x SAR)', verdict(dar({ sampleAspectRatio: { num: 4, den: 3 }, displayAspectRatio: r169, displayWidth: 214, displayHeight: 120 }, '16:9'), 'displayAspectRatio'), 'mismatch');
+  expectEq('dar: another ratio', verdict(dar({ sampleAspectRatio: { num: 1, den: 1 }, displayAspectRatio: { num: 4, den: 3 }, displayWidth: 160, displayHeight: 120 }, '16:9'), 'displayAspectRatio'), 'mismatch');
+  expectEq('dar: none on both sides', verdict(dar({ sampleAspectRatio: null, displayAspectRatio: null, displayWidth: 160, displayHeight: 120 }, null), 'displayAspectRatio'), 'exact');
+  expectEq('dar: a rotation of 90 degrees swaps the display size', verdict(dar({ sampleAspectRatio: { num: 4, den: 3 }, displayAspectRatio: r169, displayWidth: 120, displayHeight: 213 }, '16:9', 90), 'displayAspectRatio'), 'exact');
+  expectEq('dar: a rotation of 270 degrees without the swap', verdict(dar({ sampleAspectRatio: { num: 4, den: 3 }, displayAspectRatio: r169, displayWidth: 213, displayHeight: 120 }, '16:9', 270), 'displayAspectRatio'), 'mismatch');
 
   const disabled = isoLayout({ enabled: false });
   expectEq('enabled: equal to the tkhd flag', verdict(mp4({ enabled: false }, {}, disabled), 'enabled'), 'exact');
