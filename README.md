@@ -98,7 +98,7 @@ import { analyze } from 'video-fps-probe';
 const result = await analyze(await openAsBlob(path), { name: path }); // in the calling thread, no worker
 ```
 
-In-thread `analyze()` is tested on Node 24, the version in `.nvmrc`, and on Node 22.12, the lowest supported version: CI runs the unit, fixture and package tests on both. The example needs `fs.openAsBlob`, available since Node 19.8 and stable in Node 24. Files above 4 GiB need a `BlobLike` in Node 24 ([in-thread analyze](docs/api.md#in-thread-analyze)). The type declarations of the root entry name DOM types such as `Worker` and `HTMLElement`, so a TypeScript project for Node that imports it needs `"DOM"` in `lib` or `skipLibCheck: true`. The server entries `video-fps-probe/header`, `video-fps-probe/url`, `video-fps-probe/check` and `video-fps-probe/presets` need neither.
+In-thread `analyze()` is tested on Node 24, the version in `.nvmrc`, and on Node 22.12, the lowest supported version: CI runs the unit, fixture and package tests on both. The example needs `fs.openAsBlob`, available since Node 19.8 and stable in Node 24. Files above 4 GiB need a `BlobLike` in Node 24 ([in-thread analyze](docs/api.md#in-thread-analyze)). The type declarations of the root entry name DOM types such as `Worker` and `HTMLElement`, so a TypeScript project for Node that imports it needs `"DOM"` in `lib` or `skipLibCheck: true`. The server entries `video-fps-probe/header`, `video-fps-probe/url`, `video-fps-probe/color`, `video-fps-probe/aspect`, `video-fps-probe/check` and `video-fps-probe/presets` need neither.
 
 A server can branch on `result.errorCode`, a machine-readable code for `error` such as `unrecognised`, `no-header`, `truncated` or `read-failed`, and on `result.layout`, which tells a faststart MP4 from one with its moov at the end or a fragmented one. `errorCodeOf(result)` also codes results of other engines and stored 0.3.0 JSON from their text, and `errorClass(code)` tells a file problem, which can be cached, from a read failure worth a retry ([error codes](docs/api.md#error-codes)).
 
@@ -133,7 +133,7 @@ if (report.verdict === 'fail') showErrors(report.violations, report.suggestedFps
 else upload(file); // 'pass', 'warn', or 'unknown': no result, an error or a missing field fails open
 ```
 
-Rules are JSON, such as `{ fps: { min: 24, max: 60 }, duration: { max: 10 }, vfr: 'warn' }`, and frame rates compare as exact rationals: 23.976 fps (`24000/1001`) is below a minimum of 24, 59.94 meets a maximum of 60. The presets hold the published input limits of Kling O1 and Motion Control, Runway Aleph 2.0, Veo 3.1, and Wan 2.6 on fal and Seedance 2.0 on EvoLink (gateways, so they only warn), each with its source and the day it was verified. The source pages are also in `video-fps-probe/presets/sources.json`, where `sources[name]` replaces the deprecated `sourceUrl`. On a result analyzed with `codecConfig: true`, `sizeBasis: 'display'` judges the display size that `withAspect` sets, and `hdr: 'reject'` fails PQ, HLG and Dolby Vision from the color that `withColor` sets, while a file whose color is not known stays unknown ([check](docs/api.md#check), [presets](docs/api.md#presets)).
+Rules are JSON, such as `{ fps: { min: 24, max: 60 }, duration: { max: 10 }, vfr: 'warn' }`, and frame rates compare as exact rationals: 23.976 fps (`24000/1001`) is below a minimum of 24, 59.94 meets a maximum of 60. The presets hold the published input limits of Kling O1 and Motion Control, Runway Aleph 2.0, Veo 3.1, and Wan 2.6 on fal and Seedance 2.0 on EvoLink (gateways, so they only warn), each with its source and the day it was verified. The source pages are also in `video-fps-probe/presets/sources.json`, where `sources[name]` replaces the deprecated `sourceUrl`. On a result analyzed with `codecConfig: true`, `sizeBasis: 'display'` judges the display size and the display aspect ratio that `withAspect` sets, and `hdr: 'reject'` fails PQ, HLG and Dolby Vision as the container signals them, from the color that `withColor` sets, while a file whose color is not known stays unknown ([check](docs/api.md#check), [presets](docs/api.md#presets)).
 
 ## Size
 
@@ -179,6 +179,7 @@ Known limitations: [changelog](CHANGELOG.md#known-limitations), [benchmarks](doc
 ## Roadmap
 
 - **0.4.1**: a bundler matrix in CI: webpack 5, Rspack, Next.js, Angular CLI, SvelteKit, Nuxt, Parcel, Bun and Deno, with pnpm, Yarn PnP and bun installs.
+- **0.4.2**: a CI guarantee of a clean console: the e2e and consumer smoke tests fail on any console warning or error, page error or unhandled rejection in Chromium, Firefox and WebKit, and a Node test checks that the library writes nothing to stdout or stderr.
 - **Later in 0.4.x**: HDR10 static metadata (`mdcv`, `clli`, MasteringMetadata) and the color of the AV1 sequence header, which the color entry of 0.4.0 does not read yet.
 - **0.5.0**: a Node entry (`fromPath`, DOM-free types, a `worker_threads` pool), NestJS validators, a CLI, bitrate, GOP and audio details, cadence detection, framework adapters for Vue, Svelte and Angular, and later MPEG-TS and HLS.
 
