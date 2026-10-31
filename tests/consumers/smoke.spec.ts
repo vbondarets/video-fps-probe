@@ -50,7 +50,7 @@ const RVFC_FILES = ['cfr_h264_29.97.mp4', 'cfr_vp9_29.97.webm'] as const;
 const HEADER_FILES = ['cfr_h264_29.97.mp4', 'cfr_vp9_29.97.webm', 'vfr_two_phase_5_200.mp4', 'fmp4_global_sidx.mp4', 'rec_chromium_h264.mp4', 'corrupt_trunc_no_moov.mp4'] as const;
 const METADATA_FILES = [...HEADER_FILES, 'hdr10_hevc10.mp4', 'dv_p81_dvvc.mp4', 'sar_h264_4x3.mp4', 'sar_matrix_scale.mp4'] as const;
 const RVFC_UNSUPPORTED = 'requestVideoFrameCallback unsupported';
-const CAPTURE_FILES = ['hdr10_hevc10.mp4', 'colr_nclc.mov'] as const;
+const CAPTURE_FILES = ['hdr10_hevc10.mp4', 'colr_nclc.mov', 'fmp4_cmaf.mp4'] as const;
 
 const DIST = pathToFileURL(join(installedPackage(consumersDir()), 'dist')).href;
 const LIBRARY_REPORT = process.env.CONSUMERS_LIBRARY_REPORT ? resolve(process.env.CONSUMERS_LIBRARY_REPORT) : null;
@@ -127,7 +127,7 @@ async function browserCapture(page: Page, name: string) {
     const at = r.layout?.moovOffset ?? 0;
     const expected = new Uint8Array(await file.slice(at, at + (r.layout?.moovSize ?? 0)).arrayBuffer());
     const same = moov !== null && moov.byteLength === expected.length && expected.every((b, i) => moov.getUint8(i) === b);
-    return { error: r.error, warnings: r.warnings, family: c?.family, trak: c?.trak, view: moov !== null, same };
+    return { error: r.error, warnings: r.warnings, family: c?.family, trak: c?.trak, view: moov !== null, same, posted: moov?.buffer.byteLength };
   });
 }
 
@@ -298,7 +298,8 @@ for (const fixture of FIXTURES.filter((f) => !f.pageOnly)) {
       if (engines.includes('own') && !LIBRARY_REPORT) {
         for (const name of CAPTURE_FILES) {
           const captured = await browserCapture(page, name);
-          expect(captured, `${name} with codecConfig`).toEqual({ error: null, warnings: (await nodeAnalyze(name, 'own')).warnings, family: 'isobmff-moov', trak: 0, view: true, same: true });
+          const own = await nodeAnalyze(name, 'own');
+          expect(captured, `${name} with codecConfig`).toEqual({ error: null, warnings: own.warnings, family: 'isobmff-moov', trak: 0, view: true, same: true, posted: own.layout?.moovSize });
         }
       }
       if (LIBRARY_REPORT && library.length > 0) {
