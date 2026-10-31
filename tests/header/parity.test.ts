@@ -267,17 +267,21 @@ describe('header mode against full mode on virtual sources', () => {
     expect(warningCodesOf(header)).toEqual(['fragment-index-unread', 'duration-unresolved']);
   });
 
-  test('a text track next to a covering sidx in header mode keeps the video span, with the warning', async () => {
+  test('a text track without a sidx beside a covering one leaves the duration to the mfra index, never a short span', async () => {
     const head = bytes(ftyp('iso5'), moov([{ id: 1, timescale: 15360 }, { id: 2, handler: 'text', timescale: 1000 }], [mvex({ trex: [{ id: 1, duration: 512 }, { id: 2, duration: 1000 }] })]));
     const m = moof(1, [{ id: 1, baseDts: 0, count: 30, duration: 512 }, { id: 2, baseDts: 0, count: 1, duration: 1500 }], 3000);
-    const open = (): VirtualSource => virtualSource([head, sidx(1, 15360, 0, [[m.length + 8 + 3000, 30 * 512]]), m, mdatHeader(3000), { zeros: 3000 }]);
-    const full = await analyze(open(), 'text.mp4', {});
-    const header = await analyzeHeader(open(), { fragmentedDuration: 'header' });
+    const s1 = sidx(1, 15360, 0, [[m.length + 8 + 3000, 30 * 512]]);
+    const open = (index: boolean): VirtualSource => virtualSource([head, s1, m, mdatHeader(3000), { zeros: 3000 }, ...(index ? [mfra([{ id: 1, offsets: [head.length + s1.length] }, { id: 2, offsets: [head.length + s1.length] }])] : [])]);
+    for (const fragmentedDuration of ['header', 'index'] as const) {
+      const header = await analyzeHeader(open(false), { fragmentedDuration });
+      expect(header, fragmentedDuration).toMatchObject({ errorCode: 'no-duration', formatDurationSec: null });
+      expect(header.videoTracks[0].durationSec, fragmentedDuration).toBeNull();
+    }
+    const full = await analyze(open(true), 'text.mp4', {});
+    const header = await analyzeHeader(open(true));
     expect(full.formatDurationSec).toBe(1.5);
-    expect(header.error).toBeNull();
+    expect(header).toMatchObject({ error: null, formatDurationSec: 1.5, warnings: [] });
     expect(header.videoTracks[0].durationSec).toBe(1);
-    expect(header.formatDurationSec).toBe(1);
-    expect(header.warnings).toContain('format duration unresolved: track 2');
   });
 
   test('a text track that resolves only from mehd or not at all keeps the span of B-frame video and sound', async () => {

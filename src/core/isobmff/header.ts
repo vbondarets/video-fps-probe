@@ -386,13 +386,13 @@ async function resolveFragmented(w: Walk, walked: Walked, videos: IsoTrack[], bu
     if (ends ? !x : !whole && x && x.start < low && x.coverageEnd <= low && end < ticks) return;
     resolved.set(tr, { ticks: Math.max(ticks, end), timescale: tr.timescale, provenance: 'header' });
   };
+  const covers = (ends: number[]): boolean => open().every((tr) => lastSidx(movie, tr, ends) !== null);
   const bySidx = (ends: number[]): void => {
-    for (const tr of open()) settle(tr, ends, tr.fragments);
+    if (covers(ends)) for (const tr of open()) settle(tr, ends, tr.fragments);
   };
   try {
-    const covered = open().some((tr) => lastSidx(movie, tr, [size]) !== null);
     const cut = first ? reader.peek(first.start, first.size) === null : false;
-    if (first && !limit && (plan.index || !cut || covered)) {
+    if (first && !limit && (plan.index || !cut || covers([size]))) {
       if (first.size > MOOF_HARD_CAP) throw new IsoBmffError('too-large', `corrupt file: moof larger than 64 MiB at ${first.start}`);
       parseFragment(w, reader.peek(first.start, first.size) ?? (await reader.view(first.start, first.size, ahead(w, first.start, plan.head))), first.start, parsed);
       bySidx([size]);
