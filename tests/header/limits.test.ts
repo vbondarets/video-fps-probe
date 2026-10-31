@@ -141,6 +141,14 @@ describe('the deadline', () => {
     expect(r.errorCode).toBe('time-limit');
     expect(performance.now() - t0).toBeLessThan(1000);
   });
+
+  test('the deadline keeps the process alive while a call waits on a source that holds nothing alive', async () => {
+    const timers = (): number => process.getActiveResourcesInfo().filter((t) => t === 'Timeout').length;
+    const before = timers();
+    const pending = analyzeHeader(hanging(), { limits: { maxMs: 50 } });
+    expect(timers()).toBe(before + 1);
+    expect((await pending).errorCode).toBe('time-limit');
+  });
 });
 
 describe('the caller signal', () => {

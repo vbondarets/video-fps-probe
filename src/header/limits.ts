@@ -91,7 +91,6 @@ export class LimitedSource implements BlobLike {
       this.#timedOut = true;
       this.#controller.abort(new LimitError('time-limit', `limit reached: maxMs ${this.#maxMs}`));
     }, step);
-    (this.#timer as { unref?: () => void }).unref?.();
   }
 
   get bytesLeft(): number {
