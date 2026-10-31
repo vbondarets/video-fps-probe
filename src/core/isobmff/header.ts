@@ -154,7 +154,14 @@ async function walkTop(w: Walk): Promise<Walked> {
         if (!hv) {
           if (peeked) break;
           peeked = true;
-          hv = await peekAt(w, pos, w.plan.head);
+          try {
+            hv = await peekAt(w, pos, w.plan.head);
+          } catch (e) {
+            if (isAbort(e, reader)) throw e;
+            const limit = w.budget.take();
+            if (limit) throw limit;
+            break;
+          }
         }
         if (++w.boxes > w.plan.maxTopLevelBoxes) {
           movie.warnings.push('too many top-level boxes');
