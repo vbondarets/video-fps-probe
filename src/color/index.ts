@@ -71,7 +71,7 @@ function matroskaColour(b: Uint8Array, colour: ReadonlyMap<number, Span>): Conta
     return reserved.includes(v) ? UNSPECIFIED : v;
   };
   const range = elementUint(b, colour.get(ID_RANGE));
-  return { source: 'Colour', codes: namedCodes([code(ID_PRIMARIES, [0, 3]), code(ID_TRANSFER_CHARACTERISTICS, [0, 3]), code(ID_MATRIX_COEFFICIENTS, [3])]), fullRange: range === 1 ? false : range === 2 ? true : null };
+  return { source: 'Colour', codes: [code(ID_PRIMARIES, [0, 3]), code(ID_TRANSFER_CHARACTERISTICS, [0, 3]), code(ID_MATRIX_COEFFICIENTS, [3])], fullRange: range === 1 ? false : range === 2 ? true : null };
 }
 
 function hdrOf(transfer: string | null): ColorInfo['hdr'] {

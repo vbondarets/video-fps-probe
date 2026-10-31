@@ -50,6 +50,7 @@ export const ID_BLOCK_ADD_ID_TYPE = 0x41e7;
 export const ID_BLOCK_ADD_ID_EXTRA_DATA = 0x41ed;
 
 const VISUAL_ENTRY_HEADER = 86;
+const MAX_CODEC_ID = 64;
 
 export function u16(b: Uint8Array, p: number): number {
   return (b[p] << 8) | b[p + 1];
@@ -158,30 +159,34 @@ export function* elements(b: Uint8Array, start: number, end: number): Generator<
 }
 
 export function elementUint(b: Uint8Array, span: Span | null | undefined): number | null {
-  if (!span || span.end - span.start > 8) return null;
+  if (!span || span.end === span.start || span.end - span.start > 8) return null;
   let v = 0;
   for (let p = span.start; p < span.end; p++) v = v * 256 + b[p];
   return v;
 }
 
-function children(b: Uint8Array, span: Span): Map<number, Span> {
-  const out = new Map<number, Span>();
-  for (const e of elements(b, span.start, span.end)) if (!out.has(e.id)) out.set(e.id, e);
+function children(b: Uint8Array, span: Span, out = new Map<number, Span>()): Map<number, Span> {
+  for (const e of elements(b, span.start, span.end)) if (e.id !== ID_COLOUR || !out.has(e.id)) out.set(e.id, e);
   return out;
 }
 
+function codecIdAt(b: Uint8Array, span: Span): string {
+  let id = '';
+  for (let p = span.start; p < span.end && p < span.start + MAX_CODEC_ID && b[p]; p++) id += String.fromCharCode(b[p]);
+  return id;
+}
+
 export function matroskaConfig(config: CodecConfig): MatroskaConfig | null {
-  if (config.family !== 'matroska' || !config.trackEntry) return null;
-  const b = config.trackEntry;
+  const b = config.family === 'matroska' ? config.trackEntry : null;
+  if (!b || !ArrayBuffer.isView(b)) return null;
   const out: MatroskaConfig = { bytes: b, codecId: '', codecPrivate: null, video: new Map(), colour: new Map(), mappings: [] };
   for (const e of elements(b, 0, b.length)) {
-    if (e.id === ID_CODEC_ID && !out.codecId) out.codecId = String.fromCharCode(...b.subarray(e.start, e.end)).replace(/\0+$/, '');
-    else if (e.id === ID_CODEC_PRIVATE && !out.codecPrivate) out.codecPrivate = e;
-    else if (e.id === ID_VIDEO && !out.video.size) {
-      out.video = children(b, e);
-      const colour = out.video.get(ID_COLOUR);
-      if (colour) out.colour = children(b, colour);
-    } else if (e.id === ID_BLOCK_ADDITION_MAPPING) out.mappings.push(children(b, e));
+    if (e.id === ID_CODEC_ID) out.codecId = codecIdAt(b, e);
+    else if (e.id === ID_CODEC_PRIVATE) out.codecPrivate = e;
+    else if (e.id === ID_VIDEO) children(b, e, out.video);
+    else if (e.id === ID_BLOCK_ADDITION_MAPPING) out.mappings.push(children(b, e));
   }
+  const colour = out.video.get(ID_COLOUR);
+  if (colour) out.colour = children(b, colour);
   return out;
 }
