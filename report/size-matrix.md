@@ -23,10 +23,10 @@ The critical path is the package code inside the host entry chunk, cut out of th
 | react18 | video-fps-probe/lazy + video-fps-probe/react (React 18.3.1) | format: 'es' | **1.64 KB** | 47.26 KB | 23.07 KB | 25.77 KB | 49.18 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
 | check | video-fps-probe/lazy + video-fps-probe/check | format: 'es' | **4.55 KB** | 5.27 KB | 23.07 KB | 25.77 KB | 49.18 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
 | preset | video-fps-probe/lazy + video-fps-probe/check + video-fps-probe/presets (klingO1ReferenceVideo) | format: 'es' | **4.90 KB** | 5.62 KB | 23.07 KB | 25.77 KB | 49.17 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
-| header | video-fps-probe/header (analyzeHeader in the page) | none needed: the header entry runs in the calling thread | **19.70 KB** | 20.46 KB | - | - | - | - | 0 | ok |
+| header | video-fps-probe/header (analyzeHeader in the page) | none needed: the header entry runs in the calling thread | **19.72 KB** | 20.47 KB | - | - | - | - | 0 | ok |
 | url-entry | video-fps-probe/header + video-fps-probe/url (analyzeHeader over a rangeSource in the page) | none needed: both entries run in the calling thread | **22.43 KB** | 23.29 KB | - | - | - | - | 0 | ok |
-| color | video-fps-probe/header + video-fps-probe/color (withColor over analyzeHeader with codecConfig in the page) | none needed: both entries run in the calling thread | **24.06 KB** | 24.88 KB | - | - | - | - | 0 | ok |
-| aspect | video-fps-probe/header + video-fps-probe/aspect (withAspect over analyzeHeader with codecConfig in the page) | none needed: both entries run in the calling thread | **23.67 KB** | 24.50 KB | - | - | - | - | 0 | ok |
+| color | video-fps-probe/header + video-fps-probe/color (withColor over analyzeHeader with codecConfig in the page) | none needed: both entries run in the calling thread | **24.09 KB** | 24.91 KB | - | - | - | - | 0 | ok |
+| aspect | video-fps-probe/header + video-fps-probe/aspect (withAspect over analyzeHeader with codecConfig in the page) | none needed: both entries run in the calling thread | **23.70 KB** | 24.52 KB | - | - | - | - | 0 | ok |
 | standalone worker file | video-fps-probe/standalone/own.worker.js | - | - | - | 36.43 KB | 36.43 KB | 36.43 KB | - | 1 file, no imports | ok |
 | standalone worker file | video-fps-probe/standalone/own-isobmff.worker.js | - | - | - | 21.52 KB | - | 21.52 KB | - | 1 file, no imports | ok |
 | standalone worker file | video-fps-probe/standalone/own-matroska.worker.js | - | - | - | - | 23.89 KB | 23.89 KB | - | 1 file, no imports | ok |
@@ -48,10 +48,10 @@ What `require()` of each server entry loads from the CommonJS copy in `dist/cjs`
 | Entry | File | Files at require | Raw | gzip -9 | Files with lazy chunks | Raw | gzip -9 |
 |---|---|---:|---:|---:|---:|---:|---:|
 | video-fps-probe | dist/cjs/index.cjs | 4 | 15.48 KB | 6.37 KB | 17 | 121.44 KB | 48.36 KB |
-| video-fps-probe/header | dist/cjs/header.cjs | 6 | 69.19 KB | 25.75 KB | 9 | 87.74 KB | 33.08 KB |
+| video-fps-probe/header | dist/cjs/header.cjs | 6 | 69.34 KB | 25.78 KB | 9 | 87.90 KB | 33.10 KB |
 | video-fps-probe/url | dist/cjs/url.cjs | 1 | 9.97 KB | 3.42 KB | 1 | 9.97 KB | 3.42 KB |
-| video-fps-probe/color | dist/cjs/color.cjs | 2 | 17.87 KB | 6.94 KB | 2 | 17.87 KB | 6.94 KB |
-| video-fps-probe/aspect | dist/cjs/aspect.cjs | 2 | 17.87 KB | 6.94 KB | 2 | 17.87 KB | 6.94 KB |
+| video-fps-probe/color | dist/cjs/color.cjs | 2 | 17.87 KB | 6.92 KB | 2 | 17.87 KB | 6.92 KB |
+| video-fps-probe/aspect | dist/cjs/aspect.cjs | 2 | 17.87 KB | 6.93 KB | 2 | 17.87 KB | 6.93 KB |
 | video-fps-probe/check | dist/cjs/check.cjs | 1 | 9.40 KB | 4.21 KB | 1 | 9.40 KB | 4.21 KB |
 | video-fps-probe/presets | dist/cjs/presets.cjs | 1 | 4.17 KB | 1.58 KB | 1 | 4.17 KB | 1.58 KB |
 
@@ -174,21 +174,21 @@ What `require()` of each server entry loads from the CommonJS copy in `dist/cjs`
 | preset | entry chunk with the preload helper | 6.00 KB | 5.62 KB | 0.38 KB | ok |
 | preset | first MP4 analysis, lazy total | 24.50 KB | 23.07 KB | 1.43 KB | ok |
 | preset | emitted lazy total (every file outside the entry chunk) | 92.00 KB | 90.22 KB | 1.78 KB | ok |
-| header | critical path (package code in the entry chunk) | 20.00 KB | 19.70 KB | 0.30 KB | ok |
-| header | header entry (analyzeHeader, its option checks and the limited source, in the entry chunk) | 3.00 KB | 2.82 KB | 0.18 KB | ok |
-| header | entry chunk with the preload helper | 21.00 KB | 20.46 KB | 0.54 KB | ok |
-| header | emitted lazy total (every file outside the entry chunk) | 8.00 KB | 6.96 KB | 1.04 KB | ok |
-| url-entry | critical path (package code in the entry chunk) | 24.50 KB | 22.43 KB | 2.07 KB | ok |
+| header | critical path (package code in the entry chunk) | 20.00 KB | 19.72 KB | 0.28 KB | ok |
+| header | header entry (analyzeHeader, its option checks and the limited source, in the entry chunk) | 3.00 KB | 2.83 KB | 0.17 KB | ok |
+| header | entry chunk with the preload helper | 21.00 KB | 20.47 KB | 0.53 KB | ok |
+| header | emitted lazy total (every file outside the entry chunk) | 8.00 KB | 6.94 KB | 1.06 KB | ok |
+| url-entry | critical path (package code in the entry chunk) | 24.50 KB | 22.43 KB | 2.06 KB | ok |
 | url-entry | Range entry (rangeSource, openRangeSource, httpRange, readCapped and RangeSourceError, in the entry chunk) | 3.50 KB | 3.21 KB | 0.29 KB | ok |
-| url-entry | entry chunk with the preload helper | 24.50 KB | 23.29 KB | 1.22 KB | ok |
-| url-entry | emitted lazy total (every file outside the entry chunk) | 8.00 KB | 6.95 KB | 1.05 KB | ok |
-| color | critical path (package code in the entry chunk) | 26.50 KB | 24.06 KB | 2.44 KB | ok |
+| url-entry | entry chunk with the preload helper | 24.50 KB | 23.29 KB | 1.21 KB | ok |
+| url-entry | emitted lazy total (every file outside the entry chunk) | 8.00 KB | 6.94 KB | 1.06 KB | ok |
+| color | critical path (package code in the entry chunk) | 26.50 KB | 24.09 KB | 2.41 KB | ok |
 | color | color entry (colorOf and withColor with the codec configuration readers, in the entry chunk) | 5.00 KB | 4.67 KB | 0.33 KB | ok |
-| color | entry chunk with the preload helper | 27.50 KB | 24.88 KB | 2.62 KB | ok |
+| color | entry chunk with the preload helper | 27.50 KB | 24.91 KB | 2.59 KB | ok |
 | color | emitted lazy total (every file outside the entry chunk) | 3.00 KB | 2.61 KB | 0.39 KB | ok |
-| aspect | critical path (package code in the entry chunk) | 27.00 KB | 23.67 KB | 3.33 KB | ok |
+| aspect | critical path (package code in the entry chunk) | 27.00 KB | 23.70 KB | 3.30 KB | ok |
 | aspect | aspect entry (aspectOf and withAspect with the codec configuration readers, in the entry chunk) | 5.00 KB | 4.37 KB | 0.63 KB | ok |
-| aspect | entry chunk with the preload helper | 28.00 KB | 24.50 KB | 3.50 KB | ok |
+| aspect | entry chunk with the preload helper | 28.00 KB | 24.52 KB | 3.48 KB | ok |
 | aspect | emitted lazy total (every file outside the entry chunk) | 3.50 KB | 2.95 KB | 0.55 KB | ok |
 | standalone | own.worker.js | 37.50 KB | 36.43 KB | 1.07 KB | ok |
 | standalone | own-isobmff.worker.js | 22.00 KB | 21.52 KB | 0.48 KB | ok |
@@ -667,15 +667,15 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | preset | assets/sniff.js | page | shared | 0.99 KB |
 | preset | assets/stats.js | page | stats | 4.37 KB |
 | header | assets/config.js | page | isobmff | 0.44 KB |
-| header | assets/index.js | page | isobmff | 20.46 KB |
-| header | assets/metadata.js | page | shared | 6.51 KB |
+| header | assets/index.js | page | isobmff | 20.47 KB |
+| header | assets/metadata.js | page | shared | 6.50 KB |
 | url-entry | assets/config.js | page | isobmff | 0.44 KB |
 | url-entry | assets/index.js | page | isobmff | 23.29 KB |
-| url-entry | assets/metadata.js | page | shared | 6.51 KB |
+| url-entry | assets/metadata.js | page | shared | 6.50 KB |
 | color | assets/config.js | page | isobmff | 0.44 KB |
-| color | assets/index.js | page | isobmff | 24.88 KB |
+| color | assets/index.js | page | isobmff | 24.91 KB |
 | color | assets/metadata.js | page | shared | 2.16 KB |
 | aspect | assets/config.js | page | isobmff | 0.44 KB |
-| aspect | assets/index.js | page | isobmff | 24.50 KB |
+| aspect | assets/index.js | page | isobmff | 24.52 KB |
 | aspect | assets/metadata.js | page | shared | 2.51 KB |
 
