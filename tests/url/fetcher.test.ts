@@ -1,5 +1,6 @@
 import { openAsBlob, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { Readable } from 'node:stream';
 import { describe, expect, test, vi } from 'vitest';
 import { analyze } from '../../src/analyze.ts';
 import { analyzeHeader } from '../../src/header/index.ts';
@@ -92,7 +93,7 @@ describe('reply validation before the body is read', () => {
     const discard = vi.fn();
     const { fetcher } = served(OBJECT, () => ({ ...patch, discard }));
     expect(await fileCode(rangeSource(fetcher, { size }).read(0, 101))).toBe(code);
-    if (!code.startsWith('body') && code !== 'invalid-reply') expect(discard).toHaveBeenCalledTimes(1);
+    expect(discard).toHaveBeenCalledTimes(1);
     const result = await analyzeHeader(rangeSource(served(OBJECT, () => patch).fetcher, { size }));
     expect(result.errorCode).toBe('read-failed');
     expect(result.error).toMatch(/^file read failed: RangeSourceError: /);
@@ -181,6 +182,25 @@ describe('signals', () => {
     init.abort(new Error('closed'));
     await expect(source.read(0, 10, call.signal)).rejects.toThrow('closed');
     await expect(source.slice(0, 10).arrayBuffer()).rejects.toThrow('closed');
+  });
+
+  test('a body that ignores its signal is discarded once at the deadline, and a body that rejects once', async () => {
+    const stalled = vi.fn();
+    const hanging = rangeSource(async () => ({ status: 206, body: () => new Promise<Uint8Array>(() => {}), discard: stalled }), { size });
+    expect(await analyzeHeader(hanging, { limits: { maxMs: 50 } })).toMatchObject({ errorCode: 'time-limit' });
+    await new Promise((done) => setTimeout(done, 20));
+    expect(stalled).toHaveBeenCalledTimes(1);
+    const reset = vi.fn();
+    const failing = rangeSource(async () => ({ status: 206, body: async () => Promise.reject(new Error('reset')), discard: reset }), { size });
+    expect(await fileCode(failing.read(0, 10))).toBe('Error: reset');
+    expect(reset).toHaveBeenCalledTimes(1);
+    const caller = vi.fn();
+    const controller = new AbortController();
+    const aborted = rangeSource(async () => ({ status: 206, body: () => new Promise<Uint8Array>(() => {}), discard: caller }), { size }).read(0, 10, controller.signal);
+    await new Promise((done) => setTimeout(done, 10));
+    controller.abort(new Error('stop'));
+    await expect(aborted).rejects.toThrow('stop');
+    expect(caller).toHaveBeenCalledTimes(1);
   });
 
   test('an AbortSignal.timeout reason reaches the caller', async () => {
@@ -287,6 +307,22 @@ describe('readCapped', () => {
     await expect(pending).rejects.toBe(reason);
     expect(onCancel).toHaveBeenCalledTimes(1);
     await expect(readCapped(stream([]).body, 0, AbortSignal.abort(reason))).rejects.toBe(reason);
+  });
+
+  test('an abort or a long body destroys a Node stream, also with a chunk pending', async () => {
+    const stalled = new Readable({ read() {} });
+    stalled.push(OBJECT.subarray(0, 10));
+    const controller = new AbortController();
+    const pending = readCapped(stalled, 100, controller.signal);
+    await new Promise((done) => setTimeout(done, 10));
+    const reason = new Error('stop');
+    controller.abort(reason);
+    await expect(pending).rejects.toBe(reason);
+    expect(stalled.destroyed).toBe(true);
+    const long = new Readable({ read() {} });
+    long.push(OBJECT.subarray(0, 64));
+    expect(await fileCode(readCapped(long, 32))).toBe('body-too-long');
+    expect(long.destroyed).toBe(true);
   });
 
   test('checks its arguments', async () => {

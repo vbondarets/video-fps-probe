@@ -142,7 +142,7 @@ describe('discovery replies', () => {
   ] as const)('%s is refused with RangeSourceError', async (_, patch, code) => {
     const discard = vi.fn();
     expect(await codeOf(openRangeSource(reply({ ...patch, discard })))).toBe(code);
-    if (!code.startsWith('body')) expect(discard).toHaveBeenCalledTimes(1);
+    expect(discard).toHaveBeenCalledTimes(1);
   });
 
   test('a Content-Range without a status is enough, and 416 with bytes */0 needs no body', async () => {

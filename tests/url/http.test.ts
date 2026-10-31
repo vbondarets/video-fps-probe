@@ -1,9 +1,10 @@
 import { openAsBlob, readFileSync, readdirSync } from 'node:fs';
+import { get, type IncomingMessage } from 'node:http';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { analyze } from '../../src/analyze.ts';
 import { analyzeHeader } from '../../src/header/index.ts';
-import { RangeSourceError, httpRange, rangeSource, type RangeFetcher, type RangeRequest } from '../../src/url/index.ts';
+import { RangeSourceError, httpRange, rangeSource, readCapped, type RangeFetcher, type RangeRequest } from '../../src/url/index.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
 import { objectRoute, startServer, type TestServer } from './server.ts';
 
@@ -175,6 +176,40 @@ describe('aborts and deadlines close the socket', () => {
     expect(ms).toBeLessThan(1500);
     expect(spy.requests).toHaveLength(1);
     expect(spy.requests[0]!.signal?.aborted).toBe(true);
+    await within(closed, 1000, 'the close of the socket');
+  });
+});
+
+describe('a node:http client that stops watching the signal once the reply arrives', () => {
+  const nodeFetcher = (url: string): RangeFetcher => ({ range, signal }) =>
+    new Promise((resolve, reject) => {
+      const stop = (): void => void req.destroy(signal?.reason as Error);
+      const req = get(url, { headers: { range } }, (res: IncomingMessage) => {
+        signal?.removeEventListener('abort', stop);
+        resolve({
+          status: res.statusCode ?? null,
+          contentRange: res.headers['content-range'] ?? null,
+          contentLength: res.headers['content-length'] === undefined ? null : Number(res.headers['content-length']),
+          body: (n) => readCapped(res, n, signal),
+          discard: () => res.destroy(),
+        });
+      });
+      signal?.addEventListener('abort', stop, { once: true });
+      req.once('error', reject);
+    });
+
+  test.each(['deadline', 'caller abort'] as const)('closes the socket of a stalled body on the %s', async (how) => {
+    const route = `/node-client-${how.replace(' ', '-')}`;
+    server.route(route, (_req, res) => void res.writeHead(206, { 'content-range': `bytes 0-65535/${SIZE}`, 'content-length': '65536' }).write(Buffer.alloc(1000)));
+    const closed = server.socketClosed(route);
+    const source = rangeSource(nodeFetcher(server.url(route)), { size: SIZE });
+    if (how === 'deadline') {
+      expect(await analyzeHeader(source, { limits: { maxMs: 300 } })).toMatchObject({ errorCode: 'time-limit' });
+    } else {
+      const controller = new AbortController();
+      setTimeout(() => controller.abort(new Error('caller stopped')), 100);
+      await expect(analyzeHeader(source, { signal: controller.signal })).rejects.toThrow('caller stopped');
+    }
     await within(closed, 1000, 'the close of the socket');
   });
 });
