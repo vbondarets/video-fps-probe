@@ -218,6 +218,14 @@ describe('header mode against full mode on virtual sources', () => {
     expect(header.warnings).toContain('format duration unresolved: track 2');
   });
 
+  test('a hybrid file whose last moof is inside the tail resolves within three reads', async () => {
+    const full = await analyze(hybrid(false), 'hybrid.mp4', {});
+    const header = await analyzeHeader(hybrid(false), { limits: { maxReads: 3 } });
+    expect(header).toMatchObject({ error: null, formatDurationSec: full.formatDurationSec });
+    expect(header.videoTracks[0].durationSec).toBe(full.videoTracks[0].durationSec);
+    expect(header.io.reads).toBe(3);
+  });
+
   test('a first moof that the head window cuts is read for the start offsets', async () => {
     const name = 'fmp4_global_sidx_bframes.mp4';
     const blob = await openAsBlob(join(FILES_DIR, name));

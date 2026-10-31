@@ -140,6 +140,15 @@ describe('read plan of virtual sources', () => {
     expect(r2.formatDurationSec).toBe(far.videoTicks / 15360);
   });
 
+  test('one read left is enough for the tail when the last moof is inside it', async () => {
+    const near = await analyzeHeader(recording({ fragments: 4, mdatBytes: 40 * KIB }).source, { limits: { maxReads: 2 } });
+    expect(near).toMatchObject({ error: null, errorCode: null });
+    expect(near.io.reads).toBe(2);
+    const far = await analyzeHeader(recording({ fragments: 4, mdatBytes: MIB }).source, { limits: { maxReads: 2 } });
+    expect(far).toMatchObject({ errorCode: 'read-limit', error: 'limit reached: maxReads 2' });
+    expect(far.io.reads).toBe(2);
+  });
+
   test('a sound track that ends later sets the format duration', async () => {
     const rec = recording({ fragments: 3, mdatBytes: 2 * MIB, audio: true, audioLonger: 25 });
     const r = await analyzeHeader(rec.source);
