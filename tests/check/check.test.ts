@@ -1,14 +1,19 @@
-import { openAsBlob, readdirSync } from 'node:fs';
+import { openAsBlob, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { withAspect } from '../../src/aspect/index.ts';
 import { check, type CheckRules, type FpsRule } from '../../src/check/index.ts';
+import { withColor } from '../../src/color/index.ts';
 import { analyze } from '../../src/core/analyze.ts';
 import { emptyAnalysis, emptyTrack } from '../../src/core/result.ts';
 import { makeRational } from '../../src/core/rational.ts';
-import type { FileResult, NominalFps, Rational, VideoTrackResult } from '../../src/core/types.ts';
+import type { ColorInfo, FileResult, NominalFps, Rational, VideoTrackResult } from '../../src/core/types.ts';
+import { OWN_SNAPSHOT, type OwnSnapshot } from '../../scripts/own-snapshot.ts';
 import { FILES_DIR, loadRef } from '../helpers/fixtures.ts';
 
 const run = async (name: string) => analyze(await openAsBlob(join(FILES_DIR, name)), name);
+const withConfig = async (name: string) => analyze(await openAsBlob(join(FILES_DIR, name)), name, { codecConfig: true });
+const persisted = (name: string): FileResult => (JSON.parse(readFileSync(OWN_SNAPSHOT, 'utf8')) as OwnSnapshot).results[name] as FileResult;
 
 const rate = (num: number, den = 1) => makeRational(num, den);
 
@@ -163,6 +168,8 @@ describe('check: rule validation', () => {
     ['an audio rule it does not know', '{"audio":"require"}', 'audio: "require" is not one of required, forbidden'],
     ['a vfr policy it does not know', '{"vfr":"rejected"}', 'vfr: "rejected" is not one of allow, warn, reject'],
     ['an uneven policy it does not know', '{"uneven":true}', 'uneven: true is not one of allow, warn, reject'],
+    ['an hdr policy it does not know', '{"hdr":"block"}', 'hdr: "block" is not one of allow, warn, reject'],
+    ['a size basis it does not know', '{"sizeBasis":"shown"}', 'sizeBasis: "shown" is not one of stored, display'],
     ['a severity it does not know', '{"severity":"warning"}', 'severity: "warning" is not one of fail, warn'],
     ['a frame rate source it does not know', '{"fps":{"min":24,"source":"mean"}}', 'fps.source: "mean" is not one of avg, ffprobe, nominal, dominant'],
     ['a rule group that is not an object', '{"fps":24}', 'fps: 24 is not an object'],
@@ -173,7 +180,7 @@ describe('check: rule validation', () => {
     ['a frame size key it does not know', '{"frameSize":{"maxwidth":1080}}', 'frameSize.maxwidth: not a rule; expected one of minWidth, maxWidth, minHeight, maxHeight, minShortSide, maxShortSide, minLongSide, maxLongSide'],
     ['an exact bound in a range group', '{"duration":{"exact":3}}', 'duration.exact: not a rule; expected one of min, max'],
     ['a oneOf in a range group', '{"pixels":{"oneOf":[921600]}}', 'pixels.oneOf: not a rule; expected one of min, max'],
-    ['a typo in a rule name', '{"fsp":{"max":60}}', 'fsp: not a rule; expected one of fps, duration, frameSize, aspectRatio, pixels, fileSize, containers, codecs, audio, vfr, uneven, severity'],
+    ['a typo in a rule name', '{"fsp":{"max":60}}', 'fsp: not a rule; expected one of fps, duration, frameSize, aspectRatio, pixels, fileSize, containers, codecs, audio, vfr, uneven, hdr, sizeBasis, severity'],
     ['a bound given as a list', '{"fps":{"min":[24]}}', 'fps.min: [24] is not a non-negative number or \'num/den\''],
     ['an exact rate given as a list', '{"fps":{"exact":[24,25]}}', 'fps.exact: [24,25] is not a non-negative number or \'num/den\''],
     ['a bound of the wrong type', '{"duration":{"max":true}}', 'duration.max: true is not a non-negative number'],
@@ -994,5 +1001,141 @@ describe('check: committed fixtures', () => {
     expect(check(audioOnly, { audio: 'required', fps: { min: 24 } }).violations.map((v) => v.message)).toEqual(['fps: unknown, no video track']);
     expect(check({ ...audioOnly, engine: 'rvfc' }, { audio: 'required' }).violations.map((v) => v.message)).toEqual(['audio: unknown, no audio track count (the rvfc engine reports none)']);
     expect(check({ ...audioOnly, error: 'moov box not found' }, { audio: 'required' }).violations.map((v) => v.message)).toEqual(['audio: unknown, no audio track count; the analysis failed: moov box not found']);
+  });
+});
+
+describe('check: sizeBasis', () => {
+  const display = { displayWidth: 1920, displayHeight: 1080 };
+  const hint = 'no display size (needs codecConfig: true and withAspect)';
+
+  it('judges the stored size by default and with stored, and the display size with display', () => {
+    const anamorphic = result({ width: 1440, height: 1080, ...display });
+    const frameSize = { minWidth: 1920 };
+    const aspectRatio = { oneOf: ['16:9'] as const };
+    expect(failed(anamorphic, { frameSize, aspectRatio })).toEqual(['frameSize.minWidth', 'aspectRatio.oneOf']);
+    expect(failed(anamorphic, { frameSize, aspectRatio, sizeBasis: 'stored' })).toEqual(['frameSize.minWidth', 'aspectRatio.oneOf']);
+    expect(check(anamorphic, { frameSize, aspectRatio, pixels: { min: 2073600 }, sizeBasis: 'display' })).toEqual({ verdict: 'pass', violations: [] });
+    expect(check(anamorphic, { frameSize: { maxWidth: 1440 }, sizeBasis: 'display' }).violations.map((v) => v.message)).toEqual(['frameSize.maxWidth: 1920 px is above the maximum 1440 px']);
+  });
+
+  it('takes the display size as withAspect gives it, with the rotation already applied', () => {
+    const rotated = result({ width: 1440, height: 1080, rotation: 90, displayWidth: 1080, displayHeight: 1920 });
+    expect(check(rotated, { aspectRatio: { oneOf: ['9:16'] }, frameSize: { maxWidth: 1080, minHeight: 1920 }, sizeBasis: 'display' })).toEqual({ verdict: 'pass', violations: [] });
+    expect(failed(rotated, { aspectRatio: { oneOf: ['3:4'] }, sizeBasis: 'display' })).toEqual(['aspectRatio.oneOf']);
+    expect(check(rotated, { aspectRatio: { oneOf: ['3:4'] } })).toEqual({ verdict: 'pass', violations: [] });
+  });
+
+  it('is unknown for each size rule without a display size, with the withAspect hint when the fields are missing', () => {
+    const rules: CheckRules = { frameSize: { minShortSide: 720 }, aspectRatio: { min: 1 }, pixels: { max: 1e7 }, sizeBasis: 'display' };
+    const messages = (track: Partial<VideoTrackResult>) => check(result(track), rules).violations.map((v) => [v.severity, v.message]);
+    expect(messages({})).toEqual(['frameSize', 'aspectRatio', 'pixels'].map((g) => ['unknown', `${g}: unknown, ${hint}`]));
+    expect(messages({ displayWidth: null, displayHeight: null })).toEqual(['frameSize', 'aspectRatio', 'pixels'].map((g) => ['unknown', `${g}: unknown, no display size`]));
+    expect(messages({ displayWidth: 0, displayHeight: 1080 })).toEqual(['frameSize', 'aspectRatio', 'pixels'].map((g) => ['unknown', `${g}: unknown, no display size`]));
+    expect(check(result({}), { sizeBasis: 'display' })).toEqual({ verdict: 'pass', violations: [] });
+    expect(check(result({}, { error: 'moov box not found' }), rules).violations.map((v) => v.message)[0]).toBe('frameSize: unknown, the analysis failed: moov box not found');
+  });
+
+  it('judges sar_h264_4x3.mp4 as 1920x1080 and 16:9 after withAspect, and as 1440x1080 and 4:3 by default', async () => {
+    const raw = await withConfig('sar_h264_4x3.mp4');
+    const shown = withAspect(raw);
+    const rules: CheckRules = { frameSize: { minWidth: 1920, maxWidth: 1920, minHeight: 1080, maxHeight: 1080 }, aspectRatio: { oneOf: ['16:9'] }, pixels: { min: 2073600, max: 2073600 } };
+    expect([shown.videoTracks[0]!.displayWidth, shown.videoTracks[0]!.displayHeight]).toEqual([1920, 1080]);
+    expect(check(shown, { ...rules, sizeBasis: 'display' })).toEqual({ verdict: 'pass', violations: [] });
+    expect(check(shown, rules).violations.map((v) => [v.rule, v.actual])).toEqual([
+      ['frameSize.minWidth', 1440],
+      ['aspectRatio.oneOf', '4/3'],
+      ['pixels.min', 1555200],
+    ]);
+    expect(check(raw, { ...rules, sizeBasis: 'display' }).violations.map((v) => v.message)).toEqual(['frameSize', 'aspectRatio', 'pixels'].map((g) => `${g}: unknown, ${hint}`));
+    expect(check(await run('sar_h264_4x3.mp4'), { aspectRatio: { oneOf: ['4:3'] } })).toEqual({ verdict: 'pass', violations: [] });
+  });
+
+  it('is unknown with display for a persisted 0.3.0 result, which has no display size', () => {
+    const old = persisted('cfr_h264_30.mp4');
+    expect(old.videoTracks[0]).not.toHaveProperty('displayWidth');
+    expect(check(old, { frameSize: { maxLongSide: 3840 }, sizeBasis: 'display' })).toEqual({
+      verdict: 'unknown',
+      violations: [{ rule: 'frameSize', severity: 'unknown', expected: null, actual: null, message: `frameSize: unknown, ${hint}` }],
+    });
+    expect(check(old, { frameSize: { maxLongSide: 3840 } })).toEqual({ verdict: 'pass', violations: [] });
+  });
+});
+
+describe('check: hdr', () => {
+  const color = (c: Partial<ColorInfo>): ColorInfo => ({ range: 'tv', primaries: 'bt709', transfer: 'bt709', space: 'bt709', source: 'colr', bitDepth: 8, profile: 100, codecString: null, hdr: null, dolbyVision: null, ...c });
+  const dv = { versionMajor: 1, versionMinor: 0, profile: 8, level: 1, rpu: true, el: false, bl: true, compatibilityId: 1, mdCompression: 1 };
+  const reject = { hdr: 'reject' } as const;
+  const asked = 'hdr: unknown, no color (needs codecConfig: true and withColor)';
+  const silent = 'hdr: unknown, no transfer in codecConfig';
+  const empty = 'hdr: unknown, no color in codecConfig';
+  const messages = (r: FileResult, rules: CheckRules = reject) => check(r, rules).violations.map((v) => v.message);
+
+  it.each(['hdr10_hevc10.mp4', 'hdr10_hevc10.mkv', 'colr_only_h264.mp4', 'vp9_p2_10bit.webm', 'vp9_p2_10bit.mp4', 'hlg_hevc10.mp4', 'hlg_h264_8bit.mp4', 'hlg_vui_only.mp4', 'hlg_h264_vui_only.mp4', 'dv_p81_dvvc.mp4', 'dv_p5_dvcc_dvh1.mp4', 'dv_p81.mkv'])(
+    'rejects %s',
+    async (name) => {
+      const r = withColor(await withConfig(name));
+      expect(check(r, reject)).toEqual({ verdict: 'fail', violations: [{ rule: 'hdr', severity: 'fail', expected: 'reject', actual: true, message: 'hdr: the video is HDR' }] });
+      expect(check(r, { hdr: 'warn' }).verdict).toBe('warn');
+      expect(check(r, { hdr: 'allow' })).toEqual({ verdict: 'pass', violations: [] });
+    },
+  );
+
+  it.each(['rec_chromium_h264.mp4', 'rec_chromium_vp9.webm', 'colr_nclc.mov', 'colr_vui_conflict_hevc.mp4'])('passes %s, whose transfer is known and not PQ or HLG', async (name) => {
+    const r = withColor(await withConfig(name));
+    expect(r.videoTracks[0]!.color?.transfer).toMatch(/^(bt709|iec61966-2-1)$/);
+    expect(check(r, reject)).toEqual({ verdict: 'pass', violations: [] });
+  });
+
+  it.each(['av1.mp4', 'av1_10bit.mp4', 'av1.webm', 'vp9.mp4', 'vp9.webm', 'cfr_h264_30.mp4'])('is unknown for %s, whose container and SPS give no transfer', async (name) => {
+    const r = withColor(await withConfig(name));
+    expect(r.videoTracks[0]!.color).toMatchObject({ transfer: null, hdr: null, dolbyVision: null });
+    expect(check(r, reject)).toEqual({ verdict: 'unknown', violations: [{ rule: 'hdr', severity: 'unknown', expected: null, actual: null, message: silent }] });
+  });
+
+  it('is unknown for ProRes, whose codec configuration holds no color source', async () => {
+    const r = withColor(await withConfig('mov_prores.mov'));
+    expect(r.videoTracks[0]!.color).toBeNull();
+    expect(messages(r)).toEqual([empty]);
+  });
+
+  it('is unknown without withColor, and for a persisted 0.3.0 result, with the codecConfig and withColor hint', async () => {
+    expect(messages(await run('hdr10_hevc10.mp4'))).toEqual([asked]);
+    expect(messages(await withConfig('hdr10_hevc10.mp4'))).toEqual([asked]);
+    expect(messages(persisted('hdr10_hevc10.mp4'))).toEqual([asked]);
+    expect(messages(persisted('cfr_h264_30.mp4'), { hdr: 'warn' })).toEqual([asked]);
+  });
+
+  it('counts PQ, HLG and Dolby Vision, and neither BT.2020 primaries nor 10 bits alone', () => {
+    const judged = (c: ColorInfo | null | undefined) => check(result({ color: c }), reject).verdict;
+    expect(judged(color({ transfer: 'smpte2084', hdr: 'pq' }))).toBe('fail');
+    expect(judged(color({ transfer: 'arib-std-b67', hdr: 'hlg', bitDepth: 8 }))).toBe('fail');
+    expect(judged(color({ transfer: null, dolbyVision: dv }))).toBe('fail');
+    expect(judged(color({ transfer: 'bt709', dolbyVision: dv }))).toBe('fail');
+    expect(judged(color({ primaries: 'bt2020', transfer: 'bt2020-10', space: 'bt2020nc', bitDepth: 10 }))).toBe('pass');
+    expect(judged(color({ primaries: 'bt2020', transfer: null, bitDepth: 10 }))).toBe('unknown');
+    expect(judged(null)).toBe('unknown');
+    expect(judged(undefined)).toBe('unknown');
+  });
+
+  it('gives each missing color its own hint, never suggests a frame rate and keeps the severity rule', () => {
+    expect(check(result({ color: color({ transfer: null }) }), reject).violations[0]!.message).toBe(silent);
+    expect(check(result({ color: null }), reject).violations[0]!.message).toBe(empty);
+    expect(check(result({}), reject).violations[0]!.message).toBe(asked);
+    expect(new Set([silent, empty, asked]).size).toBe(3);
+    const pq = result({ color: color({ transfer: 'smpte2084', hdr: 'pq' }) });
+    expect(check(pq, { ...reject, fps: { min: 24 } })).not.toHaveProperty('suggestedFps');
+    expect(check(pq, { ...reject, severity: 'warn' }).violations[0]!.severity).toBe('warn');
+    expect(check(result({}, { error: 'moov box not found' }), reject).violations.map((v) => v.message)).toEqual(['hdr: unknown, the analysis failed: moov box not found']);
+  });
+
+  it('reads color fields of the wrong type as unknown', () => {
+    const judged = (c: unknown) => check(result({ color: c as ColorInfo }), reject).verdict;
+    expect(judged('pq')).toBe('unknown');
+    expect(judged([])).toBe('unknown');
+    expect(judged({ transfer: 5 })).toBe('unknown');
+    expect(judged({ transfer: '' })).toBe('unknown');
+    expect(judged({ transfer: 'bt709', hdr: 'PQ' })).toBe('pass');
+    expect(judged({ transfer: 'bt709', dolbyVision: 1 })).toBe('pass');
+    expect(judged({ hdr: 'hlg' })).toBe('fail');
   });
 });
