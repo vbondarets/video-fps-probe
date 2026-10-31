@@ -375,7 +375,7 @@ A warning that repeats, such as `fragment for unknown track 77` for every traf o
 
 `check()` judges any result with an `error` as unknown, as in 0.3.0.
 
-**Stable from 0.4.0-beta.1.** The `analyzeHeader` signature, the members of `HeaderOptions` and `HeaderLimits` listed above, `readAhead` with `head` and `tail` only, the refusal of unknown keys in the options, `limits` and `readAhead`, the error codes and the warning codes with the prefixes they classify, and the exports `isAbortError` and `isTimeoutError` of `video-fps-probe/header` are frozen from 0.4.0-beta.1: beta.2, 0.4.0 and later releases only add to them.
+**Stable from 0.4.0-beta.1.** The `analyzeHeader` signature, the members of `HeaderOptions` and `HeaderLimits` listed above, `readAhead` with `head` and `tail` only, the error codes and the warning codes with the prefixes they classify, and the exports `isAbortError` and `isTimeoutError` of `video-fps-probe/header` are frozen from 0.4.0-beta.1: beta.2, 0.4.0 and later releases only add to them.
 
 **A tight server configuration.** The defaults are generous, so that a header of any size within reason is read. A server that reads uploads from object storage can bound each call much tighter:
 
