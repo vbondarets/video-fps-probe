@@ -4,7 +4,7 @@ import { RangeSourceError, httpRange, openRangeSource, rangeSource, readCapped }
 declare global {
   interface Window {
     __header?: { analyzeHeader: typeof analyzeHeader };
-    __url?: { RangeSourceError: typeof RangeSourceError; httpRange: typeof httpRange; openRangeSource: typeof openRangeSource; rangeSource: typeof rangeSource; readCapped: typeof readCapped };
+    __url?: { analyzeHeader: typeof analyzeHeader; RangeSourceError: typeof RangeSourceError; httpRange: typeof httpRange; openRangeSource: typeof openRangeSource; rangeSource: typeof rangeSource; readCapped: typeof readCapped };
   }
 }
 
@@ -23,4 +23,4 @@ const overRange: typeof analyzeHeader = (input, options) => {
 };
 
 window.__header = { analyzeHeader: overRange };
-window.__url = { RangeSourceError, httpRange, openRangeSource, rangeSource, readCapped };
+window.__url = { analyzeHeader, RangeSourceError, httpRange, openRangeSource, rangeSource, readCapped };

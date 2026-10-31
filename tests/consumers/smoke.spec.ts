@@ -167,6 +167,39 @@ for (const fixture of FIXTURES.filter((f) => f.pageOnly)) {
   }
 }
 
+for (const mode of ['build', 'dev'] as const) {
+  test(`url-entry under vite ${mode} reads a ranged URL through httpRange and openRangeSource as Node reads the file`, async ({ page }) => {
+    const pageErrors: string[] = [];
+    page.on('pageerror', (e) => pageErrors.push(`${e.name}: ${e.message}`));
+    const ranges: string[] = [];
+    await page.route('**/__object/*', async (route) => {
+      const request = route.request();
+      const bytes = readFileSync(join(FILES_DIR, decodeURIComponent(new URL(request.url()).pathname.split('/').pop()!)));
+      const range = (await request.allHeaders()).range ?? '';
+      ranges.push(range);
+      const m = /^bytes=(\d+)-(\d+)$/.exec(range);
+      if (!m) return route.fulfill({ status: 200, body: bytes });
+      const first = Number(m[1]);
+      const last = Math.min(Number(m[2]), bytes.byteLength - 1);
+      return route.fulfill({ status: 206, headers: { 'content-range': `bytes ${first}-${last}/${bytes.byteLength}`, 'content-length': String(last - first + 1) }, body: bytes.subarray(first, last + 1) });
+    });
+    await page.goto(mode === 'build' ? buildUrl(CONSUMERS_PORT, 'url-entry') : devUrl(CONSUMERS_PORT, 'url-entry'));
+    await page.waitForFunction(() => window.__url !== undefined);
+    for (const name of HEADER_FILES) {
+      ranges.length = 0;
+      const actual = await page.evaluate(async (fileName) => {
+        const { analyzeHeader, httpRange, openRangeSource } = window.__url!;
+        const source = await openRangeSource(httpRange(new URL(`__object/${encodeURIComponent(fileName)}`, location.href)));
+        return analyzeHeader(source, { name: fileName });
+      }, name);
+      expect(withoutMs(actual), name).toEqual(withoutMs(await nodeHeader(name)));
+      expect(ranges, name).toHaveLength(actual.io.reads);
+      expect(ranges.every((r) => /^bytes=\d+-\d+$/.test(r)), name).toBe(true);
+    }
+    expect(pageErrors).toEqual([]);
+  });
+}
+
 for (const fixture of FIXTURES.filter((f) => !f.pageOnly)) {
   for (const mode of ['build', 'dev'] as const) {
     test(`${fixture.name} under vite ${mode} equals Node analyze from the same tarball`, async ({ page, browserName }) => {
