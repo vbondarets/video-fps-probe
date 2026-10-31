@@ -2,7 +2,7 @@ import { openAsBlob, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { isoBmffFixtureSet } from '../../scripts/compare/layout.ts';
-import { aspectOf } from '../../src/aspect/index.ts';
+import { aspectOf, withAspect } from '../../src/aspect/index.ts';
 import { isoConfig } from '../../src/color/config.ts';
 import { colorOf, withColor, type ColorInfo } from '../../src/color/index.ts';
 import { analyze } from '../../src/core/analyze.ts';
@@ -233,6 +233,20 @@ describe('colorOf and aspectOf on a view of the moov, as the probes capture it',
     expect(moovOf(boxes)).toBeNull();
     expect(moovOf(view)).toBe(view.moov);
     expect(stsdOf(view)).toBeNull();
+  });
+
+  test('a view whose buffer was transferred away gives undefined, as missing bytes do', async () => {
+    const name = 'hdr10_hevc10.mp4';
+    const r = await analyze(await openAsBlob(join(FILES_DIR, name)), name, { codecConfig: true });
+    const config = r.videoTracks[0].codecConfig;
+    if (config?.family !== 'isobmff-moov') throw new Error('no view of the moov');
+    expect(colorOf(r.videoTracks[0])?.hdr).toBe('pq');
+    structuredClone(config.moov.buffer, { transfer: [config.moov.buffer] });
+    expect(config.moov.buffer.byteLength).toBe(0);
+    expect(colorOf(r.videoTracks[0])).toBeUndefined();
+    expect(aspectOf(r.videoTracks[0])).toBeUndefined();
+    expect(withColor(r).videoTracks[0].color).toBeUndefined();
+    expect(withAspect(r).videoTracks[0].sampleAspectRatio).toBeUndefined();
   });
 
   test('a view that does not survive a JSON round trip gives undefined', async () => {
