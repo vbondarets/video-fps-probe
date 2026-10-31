@@ -128,7 +128,7 @@ describe('discovery replies', () => {
     ['a 200 without a Content-Length', { status: 200, contentRange: null, contentLength: null }, 'unexpected-status'],
     ['a 200 larger than headBytes', { status: 200, contentRange: null, contentLength: 70000 }, 'unexpected-status'],
     ['a 200 with a Content-Range of another size', { status: 200, contentRange: 'bytes 0-2999/4000', contentLength: 3000 }, 'range-mismatch'],
-    ['a 206 without a Content-Range', { contentRange: null }, 'range-mismatch'],
+    ['a 206 without a Content-Range', { contentRange: null }, 'unverifiable-reply'],
     ['a 206 with a * total', { contentRange: 'bytes 0-2999/*' }, 'range-mismatch'],
     ['a 206 that does not start at 0', { contentRange: 'bytes 1-2999/3000' }, 'range-mismatch'],
     ['a 206 that is not clamped to the object', { contentRange: 'bytes 0-65535/3000' }, 'range-mismatch'],
