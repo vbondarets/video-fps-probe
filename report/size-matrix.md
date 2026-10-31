@@ -8,32 +8,32 @@ The critical path is the package code inside the host entry chunk, cut out of th
 
 | Configuration | Imports | Vite worker option | Critical path | Entry chunk with the preload helper | First MP4, lazy | First MKV, lazy | All own paths, lazy | Engine chunk | Worker files | Budgets |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|---|
-| default | video-fps-probe/lazy | format: 'es' | **0.66 KB** | 1.39 KB | 23.10 KB | 25.77 KB | 49.20 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
-| zero-config | video-fps-probe/lazy | none, so Vite's default format: 'iife' | **0.66 KB** | 1.39 KB | 24.88 KB | 27.22 KB | 48.82 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
-| custom | video-fps-probe/client/lazy + video-fps-probe/worker-runtime (host worker serving own) | format: 'es' | **0.67 KB** | 1.47 KB | 23.97 KB | 26.91 KB | 41.30 KB | - | 1 (fps.worker) | ok |
-| custom-eager | video-fps-probe/client + video-fps-probe/worker-runtime (host worker serving own, createProbeClient in the entry chunk) | format: 'es' | **2.97 KB** | 3.81 KB | 21.04 KB | 23.98 KB | 38.37 KB | - | 1 (fps.worker) | ok |
-| mp4box | video-fps-probe/lazy + video-fps-probe/mp4box | format: 'es' | **0.89 KB** | 1.74 KB | 23.13 KB | 25.80 KB | 49.24 KB | mp4box 44.95 KB | 3 (mp4box.worker, own-isobmff.worker, own-matroska.worker) | ok |
-| mediabunny | video-fps-probe/lazy + video-fps-probe/mediabunny | format: 'es' | **0.89 KB** | 1.74 KB | 23.13 KB | 25.80 KB | 49.24 KB | mediabunny 54.16 KB | 3 (mediabunny.worker, own-isobmff.worker, own-matroska.worker) | ok |
-| rvfc | video-fps-probe/lazy + video-fps-probe/rvfc | format: 'es' | **0.76 KB** | 1.58 KB | 23.12 KB | 25.79 KB | 49.22 KB | rVFC 2.19 KB | 2 (own-isobmff.worker, own-matroska.worker) | ok |
-| all | video-fps-probe/lazy + video-fps-probe/mp4box + video-fps-probe/mediabunny + video-fps-probe/rvfc | format: 'es' | **1.01 KB** | 1.91 KB | 23.14 KB | 25.81 KB | 49.25 KB | mp4box 44.95 KB, mediabunny 54.16 KB, rVFC 2.19 KB | 4 (mediabunny.worker, mp4box.worker, own-isobmff.worker, own-matroska.worker) | ok |
-| standalone-url | video-fps-probe/client/lazy + video-fps-probe/standalone/own.worker.js?url (classic worker from the standalone file) | none needed: the file is copied as an asset | **0.71 KB** | 1.45 KB | 39.39 KB | 39.39 KB | 39.39 KB | - | 1 (own.worker) | ok |
-| standalone-split-url | video-fps-probe/client/lazy + video-fps-probe/standalone/own-isobmff.worker.js?url + video-fps-probe/standalone/own-matroska.worker.js?url (classic workers from the split standalone files, with byContainer) | none needed: the files are copied as assets | **0.73 KB** | 1.50 KB | 24.90 KB | 27.24 KB | 48.80 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
-| iife-nosplit | video-fps-probe/lazy | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.66 KB** | 1.39 KB | 24.88 KB | 27.22 KB | 48.82 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
-| react | video-fps-probe/lazy + video-fps-probe/react (React 19.3.1) | format: 'es' | **1.64 KB** | 69.86 KB | 23.10 KB | 25.77 KB | 49.20 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
-| react18 | video-fps-probe/lazy + video-fps-probe/react (React 18.3.1) | format: 'es' | **1.63 KB** | 47.26 KB | 23.10 KB | 25.77 KB | 49.21 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
-| check | video-fps-probe/lazy + video-fps-probe/check | format: 'es' | **4.55 KB** | 5.27 KB | 23.10 KB | 25.77 KB | 49.21 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
-| preset | video-fps-probe/lazy + video-fps-probe/check + video-fps-probe/presets (klingO1ReferenceVideo) | format: 'es' | **4.90 KB** | 5.62 KB | 23.10 KB | 25.77 KB | 49.20 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
-| header | video-fps-probe/header (analyzeHeader in the page) | none needed: the header entry runs in the calling thread | **19.69 KB** | 20.43 KB | - | - | - | - | 0 | ok |
-| url-entry | video-fps-probe/header + video-fps-probe/url (analyzeHeader over a rangeSource in the page) | none needed: both entries run in the calling thread | **22.41 KB** | 23.26 KB | - | - | - | - | 0 | ok |
-| color | video-fps-probe/header + video-fps-probe/color (withColor over analyzeHeader with codecConfig in the page) | none needed: both entries run in the calling thread | **24.06 KB** | 24.87 KB | - | - | - | - | 0 | ok |
-| aspect | video-fps-probe/header + video-fps-probe/aspect (withAspect over analyzeHeader with codecConfig in the page) | none needed: both entries run in the calling thread | **23.65 KB** | 24.48 KB | - | - | - | - | 0 | ok |
-| standalone worker file | video-fps-probe/standalone/own.worker.js | - | - | - | 36.46 KB | 36.46 KB | 36.46 KB | - | 1 file, no imports | ok |
+| default | video-fps-probe/lazy | format: 'es' | **0.67 KB** | 1.40 KB | 23.11 KB | 25.77 KB | 49.21 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
+| zero-config | video-fps-probe/lazy | none, so Vite's default format: 'iife' | **0.66 KB** | 1.40 KB | 24.88 KB | 27.22 KB | 48.82 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
+| custom | video-fps-probe/client/lazy + video-fps-probe/worker-runtime (host worker serving own) | format: 'es' | **0.67 KB** | 1.47 KB | 23.98 KB | 26.92 KB | 41.31 KB | - | 1 (fps.worker) | ok |
+| custom-eager | video-fps-probe/client + video-fps-probe/worker-runtime (host worker serving own, createProbeClient in the entry chunk) | format: 'es' | **2.97 KB** | 3.81 KB | 21.05 KB | 23.99 KB | 38.38 KB | - | 1 (fps.worker) | ok |
+| mp4box | video-fps-probe/lazy + video-fps-probe/mp4box | format: 'es' | **0.89 KB** | 1.74 KB | 23.14 KB | 25.81 KB | 49.24 KB | mp4box 44.95 KB | 3 (mp4box.worker, own-isobmff.worker, own-matroska.worker) | ok |
+| mediabunny | video-fps-probe/lazy + video-fps-probe/mediabunny | format: 'es' | **0.89 KB** | 1.74 KB | 23.14 KB | 25.80 KB | 49.24 KB | mediabunny 54.16 KB | 3 (mediabunny.worker, own-isobmff.worker, own-matroska.worker) | ok |
+| rvfc | video-fps-probe/lazy + video-fps-probe/rvfc | format: 'es' | **0.77 KB** | 1.58 KB | 23.12 KB | 25.79 KB | 49.23 KB | rVFC 2.19 KB | 2 (own-isobmff.worker, own-matroska.worker) | ok |
+| all | video-fps-probe/lazy + video-fps-probe/mp4box + video-fps-probe/mediabunny + video-fps-probe/rvfc | format: 'es' | **1.01 KB** | 1.91 KB | 23.15 KB | 25.82 KB | 49.26 KB | mp4box 44.95 KB, mediabunny 54.16 KB, rVFC 2.19 KB | 4 (mediabunny.worker, mp4box.worker, own-isobmff.worker, own-matroska.worker) | ok |
+| standalone-url | video-fps-probe/client/lazy + video-fps-probe/standalone/own.worker.js?url (classic worker from the standalone file) | none needed: the file is copied as an asset | **0.70 KB** | 1.45 KB | 39.39 KB | 39.39 KB | 39.39 KB | - | 1 (own.worker) | ok |
+| standalone-split-url | video-fps-probe/client/lazy + video-fps-probe/standalone/own-isobmff.worker.js?url + video-fps-probe/standalone/own-matroska.worker.js?url (classic workers from the split standalone files, with byContainer) | none needed: the files are copied as assets | **0.73 KB** | 1.50 KB | 24.91 KB | 27.25 KB | 48.80 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
+| iife-nosplit | video-fps-probe/lazy | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.66 KB** | 1.40 KB | 24.88 KB | 27.22 KB | 48.82 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
+| react | video-fps-probe/lazy + video-fps-probe/react (React 19.3.1) | format: 'es' | **1.64 KB** | 69.86 KB | 23.10 KB | 25.77 KB | 49.21 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
+| react18 | video-fps-probe/lazy + video-fps-probe/react (React 18.3.1) | format: 'es' | **1.64 KB** | 47.26 KB | 23.10 KB | 25.77 KB | 49.21 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
+| check | video-fps-probe/lazy + video-fps-probe/check | format: 'es' | **4.55 KB** | 5.27 KB | 23.11 KB | 25.77 KB | 49.21 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
+| preset | video-fps-probe/lazy + video-fps-probe/check + video-fps-probe/presets (klingO1ReferenceVideo) | format: 'es' | **4.90 KB** | 5.62 KB | 23.10 KB | 25.77 KB | 49.21 KB | - | 2 (own-isobmff.worker, own-matroska.worker) | ok |
+| header | video-fps-probe/header (analyzeHeader in the page) | none needed: the header entry runs in the calling thread | **19.78 KB** | 20.52 KB | - | - | - | - | 0 | ok |
+| url-entry | video-fps-probe/header + video-fps-probe/url (analyzeHeader over a rangeSource in the page) | none needed: both entries run in the calling thread | **22.50 KB** | 23.35 KB | - | - | - | - | 0 | ok |
+| color | video-fps-probe/header + video-fps-probe/color (withColor over analyzeHeader with codecConfig in the page) | none needed: both entries run in the calling thread | **24.36 KB** | 25.18 KB | - | - | - | - | 0 | ok |
+| aspect | video-fps-probe/header + video-fps-probe/aspect (withAspect over analyzeHeader with codecConfig in the page) | none needed: both entries run in the calling thread | **23.98 KB** | 24.81 KB | - | - | - | - | 0 | ok |
+| standalone worker file | video-fps-probe/standalone/own.worker.js | - | - | - | 36.47 KB | 36.47 KB | 36.47 KB | - | 1 file, no imports | ok |
 | standalone worker file | video-fps-probe/standalone/own-isobmff.worker.js | - | - | - | 21.55 KB | - | 21.55 KB | - | 1 file, no imports | ok |
 | standalone worker file | video-fps-probe/standalone/own-matroska.worker.js | - | - | - | - | 23.89 KB | 23.89 KB | - | 1 file, no imports | ok |
 
 First MP4: the probe client and the worker that serves own for an ISO BMFF file. The default flavor runs own on one worker per container family, picked by the first four bytes of the file, and the ISO BMFF worker holds its parser and the statistics. A custom worker that serves own (custom) loads the statistics chunk and the ISO BMFF parser chunk after its entry, the statistics in parallel with the parser. First MKV is the same for a Matroska or WebM file without DefaultDuration, the worst case, which also loads the ffprobe frame rate estimate. All own paths is every own path of both families with the rate profile core; in the default flavor it counts both workers, each with its own copy of the runtime and the statistics. A worker built as iife cannot split, so in zero-config and iife-nosplit each own worker is one file, and in standalone-url the standalone file holds both parsers. The routing by container family is in the probe client of the default flavor; a custom worker client imports it as a chunk of its own only with byContainer (standalone-split-url), whose client columns count it, and never fetches it without (custom, standalone-url). createProbeClient (custom-eager) puts the probe client in the entry chunk, so its critical path counts the client and its lazy columns do not; it imports the routing chunk on the first own analysis with byContainer, and its entry chunk holds none of it.
 
-The host's worker option decides the first MP4: 23.10 KB with `worker: { format: 'es' }` (default), 24.88 KB with no worker option (zero-config), because Vite's default worker format is 'iife'. In Vite 8.3.5 zero-config and iife-nosplit build byte-identical own worker files: with format 'iife' Vite already inlines the worker's dynamic imports, so `codeSplitting: false` changes nothing.
+The host's worker option decides the first MP4: 23.11 KB with `worker: { format: 'es' }` (default), 24.88 KB with no worker option (zero-config), because Vite's default worker format is 'iife'. In Vite 8.3.5 zero-config and iife-nosplit build byte-identical own worker files: with format 'iife' Vite already inlines the worker's dynamic imports, so `codeSplitting: false` changes nothing.
 
 In react (React 19.3.1) and react18 (React 18.3.1) the entry chunk also holds React and ReactDOM, which a React host ships anyway, so its column is not a package cost. The critical path counts the package code only, and the React entry is 1.20 KB of it in each. The first analysis also fetches the 0.43 KB summary module of the store, in parallel with the probe client.
 
@@ -47,11 +47,11 @@ What `require()` of each server entry loads from the CommonJS copy in `dist/cjs`
 
 | Entry | File | Files at require | Raw | gzip -9 | Files with lazy chunks | Raw | gzip -9 |
 |---|---|---:|---:|---:|---:|---:|---:|
-| video-fps-probe | dist/cjs/index.cjs | 4 | 16.02 KB | 6.60 KB | 20 | 124.58 KB | 50.08 KB |
-| video-fps-probe/header | dist/cjs/header.cjs | 7 | 69.42 KB | 25.93 KB | 10 | 87.98 KB | 33.25 KB |
+| video-fps-probe | dist/cjs/index.cjs | 4 | 15.93 KB | 6.53 KB | 20 | 122.96 KB | 49.55 KB |
+| video-fps-probe/header | dist/cjs/header.cjs | 8 | 69.72 KB | 26.41 KB | 11 | 88.98 KB | 33.98 KB |
 | video-fps-probe/url | dist/cjs/url.cjs | 1 | 9.97 KB | 3.42 KB | 1 | 9.97 KB | 3.42 KB |
-| video-fps-probe/color | dist/cjs/color.cjs | 2 | 17.87 KB | 6.92 KB | 2 | 17.87 KB | 6.92 KB |
-| video-fps-probe/aspect | dist/cjs/aspect.cjs | 2 | 17.87 KB | 6.93 KB | 2 | 17.87 KB | 6.93 KB |
+| video-fps-probe/color | dist/cjs/color.cjs | 2 | 18.54 KB | 7.19 KB | 2 | 18.54 KB | 7.19 KB |
+| video-fps-probe/aspect | dist/cjs/aspect.cjs | 2 | 18.54 KB | 7.19 KB | 2 | 18.54 KB | 7.19 KB |
 | video-fps-probe/check | dist/cjs/check.cjs | 1 | 9.40 KB | 4.21 KB | 1 | 9.40 KB | 4.21 KB |
 | video-fps-probe/presets | dist/cjs/presets.cjs | 1 | 4.17 KB | 1.58 KB | 1 | 4.17 KB | 1.58 KB |
 
@@ -59,54 +59,54 @@ What `require()` of each server entry loads from the CommonJS copy in `dist/cjs`
 
 | Configuration | Budget | Limit | Actual | Headroom | Status |
 |---|---|---:|---:|---:|---|
-| default | critical path (package code in the entry chunk) | 1.00 KB | 0.66 KB | 0.34 KB | ok |
-| default | entry chunk with the preload helper | 1.50 KB | 1.39 KB | 0.11 KB | ok |
-| default | probe client (lazy) | 3.50 KB | 3.28 KB | 0.22 KB | ok |
+| default | critical path (package code in the entry chunk) | 1.00 KB | 0.67 KB | 0.34 KB | ok |
+| default | entry chunk with the preload helper | 1.50 KB | 1.40 KB | 0.10 KB | ok |
+| default | probe client (lazy) | 3.50 KB | 3.29 KB | 0.21 KB | ok |
 | default | own-isobmff.worker entry | 20.50 KB | 19.82 KB | 0.68 KB | ok |
 | default | own-matroska.worker entry | 19.50 KB | 18.87 KB | 0.63 KB | ok |
-| default | ISO BMFF parser (in the own worker) | 13.00 KB | 12.37 KB | 0.63 KB | ok |
+| default | ISO BMFF parser (in the own worker) | 13.00 KB | 12.38 KB | 0.62 KB | ok |
 | default | Matroska parser (in the own worker) | 12.50 KB | 11.52 KB | 0.98 KB | ok |
 | default | rate profile core (in the own worker) | 2.00 KB | 1.81 KB | 0.19 KB | ok |
 | default | ffprobe frame rate estimate (in the own worker) | 4.00 KB | 3.62 KB | 0.39 KB | ok |
-| default | first MP4 analysis, lazy total | 24.00 KB | 23.10 KB | 0.90 KB | ok |
+| default | first MP4 analysis, lazy total | 24.00 KB | 23.11 KB | 0.90 KB | ok |
 | default | first MKV or WebM analysis without DefaultDuration, lazy total | 26.50 KB | 25.77 KB | 0.73 KB | ok |
-| default | all own paths, lazy total | 50.50 KB | 49.20 KB | 1.30 KB | ok |
-| default | emitted lazy total (every file outside the entry chunk) | 92.00 KB | 90.28 KB | 1.72 KB | ok |
+| default | all own paths, lazy total | 50.50 KB | 49.21 KB | 1.29 KB | ok |
+| default | emitted lazy total (every file outside the entry chunk) | 92.00 KB | 90.30 KB | 1.70 KB | ok |
 | zero-config | critical path (package code in the entry chunk) | 1.00 KB | 0.66 KB | 0.34 KB | ok |
-| zero-config | entry chunk with the preload helper | 1.50 KB | 1.39 KB | 0.11 KB | ok |
+| zero-config | entry chunk with the preload helper | 1.50 KB | 1.40 KB | 0.10 KB | ok |
 | zero-config | own-isobmff.worker entry | 22.00 KB | 21.60 KB | 0.40 KB | ok |
 | zero-config | own-matroska.worker entry | 25.00 KB | 23.94 KB | 1.06 KB | ok |
 | zero-config | first MP4 analysis, lazy total | 25.00 KB | 24.88 KB | 0.12 KB | ok |
 | zero-config | first MKV or WebM analysis without DefaultDuration, lazy total | 28.00 KB | 27.22 KB | 0.78 KB | ok |
 | zero-config | all own paths, lazy total | 50.00 KB | 48.82 KB | 1.18 KB | ok |
-| zero-config | emitted lazy total (every file outside the entry chunk) | 92.00 KB | 89.89 KB | 2.11 KB | ok |
+| zero-config | emitted lazy total (every file outside the entry chunk) | 92.00 KB | 89.91 KB | 2.09 KB | ok |
 | custom | critical path (package code in the entry chunk) | 1.00 KB | 0.67 KB | 0.33 KB | ok |
 | custom | entry chunk with the preload helper | 2.00 KB | 1.47 KB | 0.53 KB | ok |
 | custom | probe client (lazy) | 3.00 KB | 2.93 KB | 0.07 KB | ok |
 | custom | fps.worker entry | 4.50 KB | 4.15 KB | 0.35 KB | ok |
-| custom | first MP4 analysis, lazy total | 24.50 KB | 23.97 KB | 0.53 KB | ok |
-| custom | emitted lazy total (every file outside the entry chunk) | 84.00 KB | 82.81 KB | 1.19 KB | ok |
+| custom | first MP4 analysis, lazy total | 24.50 KB | 23.98 KB | 0.52 KB | ok |
+| custom | emitted lazy total (every file outside the entry chunk) | 84.00 KB | 82.84 KB | 1.16 KB | ok |
 | custom-eager | critical path (package code in the entry chunk) | 3.50 KB | 2.97 KB | 0.53 KB | ok |
 | custom-eager | entry chunk with the preload helper | 4.00 KB | 3.81 KB | 0.19 KB | ok |
 | custom-eager | fps.worker entry | 4.50 KB | 4.15 KB | 0.35 KB | ok |
-| custom-eager | first MP4 analysis, lazy total | 21.50 KB | 21.04 KB | 0.46 KB | ok |
-| custom-eager | emitted lazy total (every file outside the entry chunk) | 81.50 KB | 79.82 KB | 1.68 KB | ok |
+| custom-eager | first MP4 analysis, lazy total | 21.50 KB | 21.05 KB | 0.45 KB | ok |
+| custom-eager | emitted lazy total (every file outside the entry chunk) | 81.50 KB | 79.84 KB | 1.66 KB | ok |
 | mp4box | critical path (package code in the entry chunk) | 1.00 KB | 0.89 KB | 0.11 KB | ok |
 | mp4box | entry chunk with the preload helper | 2.00 KB | 1.74 KB | 0.26 KB | ok |
 | mp4box | mp4box.worker entry | 4.50 KB | 4.28 KB | 0.22 KB | ok |
 | mp4box | mp4box engine chunk | 46.50 KB | 44.95 KB | 1.55 KB | ok |
 | mp4box | shared engine chunk | 2.00 KB | - | - | not built |
-| mp4box | emitted lazy total (every file outside the entry chunk) | 224.00 KB | 219.20 KB | 4.80 KB | ok |
+| mp4box | emitted lazy total (every file outside the entry chunk) | 224.00 KB | 219.24 KB | 4.76 KB | ok |
 | mediabunny | critical path (package code in the entry chunk) | 1.00 KB | 0.89 KB | 0.11 KB | ok |
 | mediabunny | entry chunk with the preload helper | 2.00 KB | 1.74 KB | 0.26 KB | ok |
 | mediabunny | mediabunny.worker entry | 4.50 KB | 4.18 KB | 0.32 KB | ok |
-| mediabunny | mediabunny engine chunk | 56.00 KB | 54.16 KB | 1.84 KB | ok |
+| mediabunny | mediabunny engine chunk | 56.00 KB | 54.16 KB | 1.83 KB | ok |
 | mediabunny | shared engine chunk | 2.00 KB | - | - | not built |
-| mediabunny | emitted lazy total (every file outside the entry chunk) | 241.50 KB | 236.36 KB | 5.14 KB | ok |
-| rvfc | critical path (package code in the entry chunk) | 1.00 KB | 0.76 KB | 0.24 KB | ok |
-| rvfc | entry chunk with the preload helper | 2.00 KB | 1.58 KB | 0.42 KB | ok |
+| mediabunny | emitted lazy total (every file outside the entry chunk) | 241.50 KB | 236.38 KB | 5.12 KB | ok |
+| rvfc | critical path (package code in the entry chunk) | 1.00 KB | 0.77 KB | 0.23 KB | ok |
+| rvfc | entry chunk with the preload helper | 2.00 KB | 1.58 KB | 0.41 KB | ok |
 | rvfc | rVFC engine (main thread) | 2.50 KB | 2.19 KB | 0.31 KB | ok |
-| rvfc | emitted lazy total (every file outside the entry chunk) | 94.50 KB | 92.60 KB | 1.90 KB | ok |
+| rvfc | emitted lazy total (every file outside the entry chunk) | 94.50 KB | 92.61 KB | 1.89 KB | ok |
 | all | critical path (package code in the entry chunk) | 1.50 KB | 1.01 KB | 0.49 KB | ok |
 | all | entry chunk with the preload helper | 2.00 KB | 1.91 KB | 0.09 KB | ok |
 | all | probe client (lazy) | 3.50 KB | 3.33 KB | 0.17 KB | ok |
@@ -115,21 +115,21 @@ What `require()` of each server entry loads from the CommonJS copy in `dist/cjs`
 | all | mp4box.worker entry | 4.50 KB | 4.28 KB | 0.22 KB | ok |
 | all | mediabunny.worker entry | 4.50 KB | 4.18 KB | 0.32 KB | ok |
 | all | mp4box engine chunk | 46.50 KB | 44.95 KB | 1.55 KB | ok |
-| all | mediabunny engine chunk | 56.00 KB | 54.16 KB | 1.84 KB | ok |
+| all | mediabunny engine chunk | 56.00 KB | 54.16 KB | 1.83 KB | ok |
 | all | rVFC engine (main thread) | 2.50 KB | 2.19 KB | 0.31 KB | ok |
-| all | ISO BMFF parser (in the own worker) | 13.00 KB | 12.37 KB | 0.63 KB | ok |
+| all | ISO BMFF parser (in the own worker) | 13.00 KB | 12.38 KB | 0.62 KB | ok |
 | all | Matroska parser (in the own worker) | 12.50 KB | 11.52 KB | 0.98 KB | ok |
 | all | rate profile core (in the own worker) | 2.00 KB | 1.81 KB | 0.19 KB | ok |
 | all | ffprobe frame rate estimate (in the own worker) | 4.00 KB | 3.62 KB | 0.39 KB | ok |
-| all | first MP4 analysis, lazy total | 24.50 KB | 23.14 KB | 1.36 KB | ok |
-| all | all own paths, lazy total | 50.50 KB | 49.25 KB | 1.25 KB | ok |
+| all | first MP4 analysis, lazy total | 24.50 KB | 23.15 KB | 1.35 KB | ok |
+| all | all own paths, lazy total | 50.50 KB | 49.26 KB | 1.24 KB | ok |
 | all | shared engine chunk | 2.00 KB | - | - | not built |
-| all | shared engine chunk (main thread, inline mode) | 2.00 KB | 1.61 KB | 0.39 KB | ok |
-| all | emitted lazy total (every file outside the entry chunk) | 367.00 KB | 366.75 KB | 0.25 KB | ok |
-| standalone-url | critical path (package code in the entry chunk) | 1.00 KB | 0.71 KB | 0.29 KB | ok |
+| all | shared engine chunk (main thread, inline mode) | 2.00 KB | 1.60 KB | 0.40 KB | ok |
+| all | emitted lazy total (every file outside the entry chunk) | 367.00 KB | 366.80 KB | 0.20 KB | ok |
+| standalone-url | critical path (package code in the entry chunk) | 1.00 KB | 0.70 KB | 0.30 KB | ok |
 | standalone-url | entry chunk with the preload helper | 1.50 KB | 1.45 KB | 0.05 KB | ok |
-| standalone-url | probe client (lazy) | 3.00 KB | 2.93 KB | 0.07 KB | ok |
-| standalone-url | own.worker entry | 37.50 KB | 36.46 KB | 1.04 KB | ok |
+| standalone-url | probe client (lazy) | 3.00 KB | 2.92 KB | 0.08 KB | ok |
+| standalone-url | own.worker entry | 37.50 KB | 36.47 KB | 1.03 KB | ok |
 | standalone-url | first MP4 analysis, lazy total | 40.00 KB | 39.39 KB | 0.61 KB | ok |
 | standalone-url | emitted lazy total (every file outside the entry chunk) | 82.00 KB | 80.90 KB | 1.10 KB | ok |
 | standalone-split-url | critical path (package code in the entry chunk) | 1.00 KB | 0.73 KB | 0.27 KB | ok |
@@ -137,18 +137,18 @@ What `require()` of each server entry loads from the CommonJS copy in `dist/cjs`
 | standalone-split-url | probe client (lazy) | 3.50 KB | 3.35 KB | 0.15 KB | ok |
 | standalone-split-url | own-isobmff.worker entry | 22.00 KB | 21.55 KB | 0.45 KB | ok |
 | standalone-split-url | own-matroska.worker entry | 25.00 KB | 23.89 KB | 1.11 KB | ok |
-| standalone-split-url | first MP4 analysis, lazy total | 25.00 KB | 24.90 KB | 0.10 KB | ok |
-| standalone-split-url | first MKV or WebM analysis without DefaultDuration, lazy total | 28.00 KB | 27.24 KB | 0.76 KB | ok |
+| standalone-split-url | first MP4 analysis, lazy total | 25.00 KB | 24.91 KB | 0.09 KB | ok |
+| standalone-split-url | first MKV or WebM analysis without DefaultDuration, lazy total | 28.00 KB | 27.25 KB | 0.75 KB | ok |
 | standalone-split-url | all own paths, lazy total | 50.00 KB | 48.80 KB | 1.20 KB | ok |
-| standalone-split-url | emitted lazy total (every file outside the entry chunk) | 91.50 KB | 89.88 KB | 1.62 KB | ok |
+| standalone-split-url | emitted lazy total (every file outside the entry chunk) | 91.50 KB | 89.90 KB | 1.60 KB | ok |
 | iife-nosplit | critical path (package code in the entry chunk) | 1.00 KB | 0.66 KB | 0.34 KB | ok |
-| iife-nosplit | entry chunk with the preload helper | 1.50 KB | 1.39 KB | 0.11 KB | ok |
+| iife-nosplit | entry chunk with the preload helper | 1.50 KB | 1.40 KB | 0.10 KB | ok |
 | iife-nosplit | own-isobmff.worker entry | 22.00 KB | 21.60 KB | 0.40 KB | ok |
 | iife-nosplit | own-matroska.worker entry | 25.00 KB | 23.94 KB | 1.06 KB | ok |
 | iife-nosplit | first MP4 analysis, lazy total | 25.00 KB | 24.88 KB | 0.12 KB | ok |
 | iife-nosplit | first MKV or WebM analysis without DefaultDuration, lazy total | 28.00 KB | 27.22 KB | 0.78 KB | ok |
 | iife-nosplit | all own paths, lazy total | 50.00 KB | 48.82 KB | 1.18 KB | ok |
-| iife-nosplit | emitted lazy total (every file outside the entry chunk) | 92.00 KB | 89.89 KB | 2.11 KB | ok |
+| iife-nosplit | emitted lazy total (every file outside the entry chunk) | 92.00 KB | 89.91 KB | 2.09 KB | ok |
 | react | critical path (package code in the entry chunk) | 2.00 KB | 1.64 KB | 0.36 KB | ok |
 | react | React entry (the provider and hooks in the entry chunk, React not counted) | 1.50 KB | 1.20 KB | 0.30 KB | ok |
 | react | probe client (lazy) | 3.50 KB | 3.28 KB | 0.22 KB | ok |
@@ -157,40 +157,40 @@ What `require()` of each server entry loads from the CommonJS copy in `dist/cjs`
 | react | summary module of the React store (lazy, main thread) | 0.50 KB | 0.43 KB | 0.07 KB | ok |
 | react | first MP4 analysis, lazy total | 24.50 KB | 23.10 KB | 1.40 KB | ok |
 | react | first MP4 analysis with the React summary, lazy total | 25.00 KB | 23.53 KB | 1.47 KB | ok |
-| react | all own paths, lazy total | 50.50 KB | 49.20 KB | 1.29 KB | ok |
-| react | emitted lazy total (every file outside the entry chunk) | 92.50 KB | 90.71 KB | 1.79 KB | ok |
-| react18 | critical path (package code in the entry chunk) | 2.00 KB | 1.63 KB | 0.37 KB | ok |
+| react | all own paths, lazy total | 50.50 KB | 49.21 KB | 1.29 KB | ok |
+| react | emitted lazy total (every file outside the entry chunk) | 92.50 KB | 90.72 KB | 1.77 KB | ok |
+| react18 | critical path (package code in the entry chunk) | 2.00 KB | 1.64 KB | 0.36 KB | ok |
 | react18 | React entry (the provider and hooks in the entry chunk, React not counted) | 1.50 KB | 1.20 KB | 0.30 KB | ok |
 | react18 | first MP4 analysis with the React summary, lazy total | 25.00 KB | 23.53 KB | 1.47 KB | ok |
-| react18 | emitted lazy total (every file outside the entry chunk) | 92.50 KB | 90.71 KB | 1.79 KB | ok |
+| react18 | emitted lazy total (every file outside the entry chunk) | 92.50 KB | 90.72 KB | 1.78 KB | ok |
 | check | critical path (package code in the entry chunk) | 5.00 KB | 4.55 KB | 0.45 KB | ok |
 | check | check entry (in the entry chunk) | 4.50 KB | 3.99 KB | 0.51 KB | ok |
 | check | entry chunk with the preload helper | 5.50 KB | 5.27 KB | 0.23 KB | ok |
-| check | first MP4 analysis, lazy total | 24.50 KB | 23.10 KB | 1.40 KB | ok |
-| check | emitted lazy total (every file outside the entry chunk) | 92.00 KB | 90.29 KB | 1.71 KB | ok |
+| check | first MP4 analysis, lazy total | 24.50 KB | 23.11 KB | 1.39 KB | ok |
+| check | emitted lazy total (every file outside the entry chunk) | 92.00 KB | 90.30 KB | 1.70 KB | ok |
 | preset | critical path (package code in the entry chunk) | 5.00 KB | 4.90 KB | 0.10 KB | ok |
 | preset | check entry (in the entry chunk) | 4.50 KB | 3.99 KB | 0.51 KB | ok |
 | preset | presets entry (the imported presets, in the entry chunk) | 0.50 KB | 0.46 KB | 0.04 KB | ok |
 | preset | entry chunk with the preload helper | 6.00 KB | 5.62 KB | 0.38 KB | ok |
 | preset | first MP4 analysis, lazy total | 24.50 KB | 23.10 KB | 1.40 KB | ok |
 | preset | emitted lazy total (every file outside the entry chunk) | 92.00 KB | 90.29 KB | 1.71 KB | ok |
-| header | critical path (package code in the entry chunk) | 20.00 KB | 19.69 KB | 0.31 KB | ok |
-| header | header entry (analyzeHeader, its option checks and the limited source, in the entry chunk) | 3.00 KB | 2.81 KB | 0.19 KB | ok |
-| header | entry chunk with the preload helper | 21.00 KB | 20.43 KB | 0.56 KB | ok |
-| header | emitted lazy total (every file outside the entry chunk) | 8.00 KB | 6.94 KB | 1.06 KB | ok |
-| url-entry | critical path (package code in the entry chunk) | 24.50 KB | 22.41 KB | 2.09 KB | ok |
+| header | critical path (package code in the entry chunk) | 20.00 KB | 19.78 KB | 0.22 KB | ok |
+| header | header entry (analyzeHeader, its option checks and the limited source, in the entry chunk) | 3.00 KB | 2.84 KB | 0.16 KB | ok |
+| header | entry chunk with the preload helper | 21.00 KB | 20.52 KB | 0.48 KB | ok |
+| header | emitted lazy total (every file outside the entry chunk) | 8.00 KB | 7.18 KB | 0.82 KB | ok |
+| url-entry | critical path (package code in the entry chunk) | 24.50 KB | 22.50 KB | 2.00 KB | ok |
 | url-entry | Range entry (rangeSource, openRangeSource, httpRange, readCapped and RangeSourceError, in the entry chunk) | 3.50 KB | 3.21 KB | 0.29 KB | ok |
-| url-entry | entry chunk with the preload helper | 24.50 KB | 23.26 KB | 1.24 KB | ok |
-| url-entry | emitted lazy total (every file outside the entry chunk) | 8.00 KB | 6.94 KB | 1.06 KB | ok |
-| color | critical path (package code in the entry chunk) | 26.50 KB | 24.06 KB | 2.44 KB | ok |
-| color | color entry (colorOf and withColor with the codec configuration readers, in the entry chunk) | 5.00 KB | 4.67 KB | 0.33 KB | ok |
-| color | entry chunk with the preload helper | 27.50 KB | 24.87 KB | 2.63 KB | ok |
-| color | emitted lazy total (every file outside the entry chunk) | 3.00 KB | 2.61 KB | 0.39 KB | ok |
-| aspect | critical path (package code in the entry chunk) | 27.00 KB | 23.65 KB | 3.35 KB | ok |
-| aspect | aspect entry (aspectOf and withAspect with the codec configuration readers, in the entry chunk) | 5.00 KB | 4.37 KB | 0.63 KB | ok |
-| aspect | entry chunk with the preload helper | 28.00 KB | 24.48 KB | 3.52 KB | ok |
-| aspect | emitted lazy total (every file outside the entry chunk) | 3.50 KB | 2.95 KB | 0.55 KB | ok |
-| standalone | own.worker.js | 37.50 KB | 36.46 KB | 1.04 KB | ok |
+| url-entry | entry chunk with the preload helper | 24.50 KB | 23.35 KB | 1.15 KB | ok |
+| url-entry | emitted lazy total (every file outside the entry chunk) | 8.00 KB | 7.17 KB | 0.82 KB | ok |
+| color | critical path (package code in the entry chunk) | 26.50 KB | 24.36 KB | 2.14 KB | ok |
+| color | color entry (colorOf and withColor with the codec configuration readers, in the entry chunk) | 5.00 KB | 4.92 KB | 0.08 KB | ok |
+| color | entry chunk with the preload helper | 27.50 KB | 25.18 KB | 2.32 KB | ok |
+| color | emitted lazy total (every file outside the entry chunk) | 3.00 KB | 2.60 KB | 0.40 KB | ok |
+| aspect | critical path (package code in the entry chunk) | 27.00 KB | 23.98 KB | 3.02 KB | ok |
+| aspect | aspect entry (aspectOf and withAspect with the codec configuration readers, in the entry chunk) | 5.00 KB | 4.61 KB | 0.39 KB | ok |
+| aspect | entry chunk with the preload helper | 28.00 KB | 24.81 KB | 3.19 KB | ok |
+| aspect | emitted lazy total (every file outside the entry chunk) | 3.50 KB | 2.94 KB | 0.56 KB | ok |
+| standalone | own.worker.js | 37.50 KB | 36.47 KB | 1.03 KB | ok |
 | standalone | own-isobmff.worker.js | 22.00 KB | 21.55 KB | 0.45 KB | ok |
 | standalone | own-matroska.worker.js | 25.00 KB | 23.89 KB | 1.11 KB | ok |
 
@@ -335,21 +335,21 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 - **preset, entry chunk with the preload helper** (6.00 KB): The trigger of this configuration plus Vite's preload helper. Measured 3.96 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 4.5 KB to 5 KB in 0.2.0, measured 4.33 KB, with the larger check and the size note of the preset. Raised to 6 KB, measured 4.85 KB, with the larger check of the check configuration. Measured 5.06 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass. Raised from 5.5 KB to 6 KB by the same rule, measured 5.43 KB, after check began to judge malformed results, missing policy flags and ratio strings in the number groups, and to prefer standard rates in suggestedFps. Measured 5.62 KB in 0.3.0.
 - **preset, first MP4 analysis, lazy total** (24.50 KB): As in the check configuration. Measured 23.60 KB. Measured 23.60 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass.
 - **preset, emitted lazy total (every file outside the entry chunk)** (92.00 KB): As in the check configuration. Measured 80.96 KB. Measured 81.29 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass. Raised from 84 KB to 92 KB in 0.3.0, measured 89.16 KB, as in the check configuration. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB.
-- **header, critical path (package code in the entry chunk)** (20.00 KB): The package code in the entry chunk of a host that imports video-fps-probe/header statically: analyzeHeader with its option checks, the limited source, the reader, the sniffer, the ISO BMFF box parsers, the header walk, the fragmented duration and the track builder it shares with the full parser. It starts no worker and loads nothing lazily, and it reaches neither the full ISO BMFF parser nor the statistics. Design estimate 11 to 13 KB, measured 17.92 KB, of which 2.37 KB is the per-sample part of the shared track builder, which header mode never runs: moving it out of the shared builder would cost the first MP4 more than the 0.01 KB share of stage 3. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 18.49 KB once the walk followed full mode on hybrid files, single moofs, sidx ends, start offsets and limits after the moov, 18.83 KB once the fragmented duration counted text tracks and searched the sidx before the moof its walk starts at, 18.97 KB once an auxiliary track stopped shortening the span of the video and sound tracks, a covering sidx took the end of the first moof, the sidx search ran before every walk and a moof after a moov without an mvex got a warning, 19.05 KB once a covering sidx counted only when every track had one, every limit that left a track open was noted, the walk read the box header after the moov and after the mdat, and the options and the limits refused unknown keys, and 19.29 KB once a file of one fragment resolved from it, each track with its own covering sidx kept its duration beside a track without one, and a failed peek after the mdat kept the moov, and 19.32 KB once that peek began to carry a warning, and 19.28 KB once the options and the limits ignored unknown keys. Measured 19.69 KB in 0.4.0 with the codecConfig, color and aspect options, the lazy loading of their two chunks and the coded warnings of a chunk that is late or fails to load.
-- **header, header entry (analyzeHeader, its option checks and the limited source, in the entry chunk)** (3.00 KB): The part of the critical path under dist/header/: analyzeHeader, its option checks, the Matroska DocType check and the limited source with its deadline. Measured 2.34 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 2.50 KB once the limited source coded an abort of the source itself and a read without bytes as read failures and kept its deadline past the timer range, and 2.48 KB once it lost the two-read reservation before the mfra tail, and 2.50 KB once readAhead took head and tail only, and 2.54 KB once the options and the limits refused unknown keys, and 2.49 KB once they ignored them, with readAhead still refusing them. Measured 2.81 KB in 0.4.0 with the codecConfig, color and aspect options and the color and aspect chunk.
-- **header, entry chunk with the preload helper** (21.00 KB): The trigger of this configuration plus the Vite runtime of the entry chunk. Measured 17.94 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 18.51 KB, then 18.86 KB, 19.00 KB, 19.07 KB, 19.31 KB, 19.34 KB and 19.30 KB, 0.02 to 0.03 KB over the trigger above each time. Raised from 20 KB to 21 KB in 0.4.0, measured 20.35 KB, the measurement plus 3 percent rounded up to 0.5 KB, once analyzeHeader began to load the codec configuration capture and the color and aspect code with import(): Vite adds its preload helper, 0.75 KB, to the entry chunk of any app with a dynamic import, and the trigger grew by 0.30 KB for the codecConfig, color and aspect options. An app with another dynamic import already has the helper. Measured 20.43 KB at the end of stage 5, with the trigger 0.41 KB over 0.4.0-beta.1.
-- **header, emitted lazy total (every file outside the entry chunk)** (8.00 KB): Every JavaScript file the build emits outside the entry chunk: the codec configuration capture, which analyzeHeader loads with import() only with codecConfig, color or aspect, and the color and aspect code, which it loads with import() only with color or aspect. Measured 6.96 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 6.94 KB at the end of stage 5.
-- **url-entry, critical path (package code in the entry chunk)** (24.50 KB): The package code in the entry chunk of a host that reads object storage from the page: analyzeHeader as in the header configuration, and rangeSource, openRangeSource, httpRange, readCapped and RangeSourceError from video-fps-probe/url. It starts no worker and loads nothing lazily. Measured 21.86 KB, the 19.32 KB of the header configuration plus the Range entry, and 21.94 KB with the smaller header entry and the larger Range entry. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 22.41 KB with the header entry of stage 5.
+- **header, critical path (package code in the entry chunk)** (20.00 KB): The package code in the entry chunk of a host that imports video-fps-probe/header statically: analyzeHeader with its option checks, the limited source, the reader, the sniffer, the ISO BMFF box parsers, the header walk, the fragmented duration and the track builder it shares with the full parser. It starts no worker, loads the codec configuration capture and the color and aspect chunk with import() only with codecConfig, color or aspect, and reaches neither the full ISO BMFF parser nor the statistics. Design estimate 11 to 13 KB, measured 17.92 KB, of which 2.37 KB is the per-sample part of the shared track builder, which header mode never runs: moving it out of the shared builder would cost the first MP4 more than the 0.01 KB share of stage 3. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 18.49 KB once the walk followed full mode on hybrid files, single moofs, sidx ends, start offsets and limits after the moov, 18.83 KB once the fragmented duration counted text tracks and searched the sidx before the moof its walk starts at, 18.97 KB once an auxiliary track stopped shortening the span of the video and sound tracks, a covering sidx took the end of the first moof, the sidx search ran before every walk and a moof after a moov without an mvex got a warning, 19.05 KB once a covering sidx counted only when every track had one, every limit that left a track open was noted, the walk read the box header after the moov and after the mdat, and the options and the limits refused unknown keys, and 19.29 KB once a file of one fragment resolved from it, each track with its own covering sidx kept its duration beside a track without one, and a failed peek after the mdat kept the moov, and 19.32 KB once that peek began to carry a warning, and 19.28 KB once the options and the limits ignored unknown keys. Measured 19.69 KB in 0.4.0 with the codecConfig, color and aspect options, the lazy loading of their two chunks and the coded warnings of a chunk that is late or fails to load. Measured 19.78 KB at the end of stage 5, once a chunk that loads after its call lost the deadline race was kept and the shared track builder attached the view of the moov that a probe gives.
+- **header, header entry (analyzeHeader, its option checks and the limited source, in the entry chunk)** (3.00 KB): The part of the critical path under dist/header/: analyzeHeader, its option checks, the Matroska DocType check and the limited source with its deadline. Measured 2.34 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 2.50 KB once the limited source coded an abort of the source itself and a read without bytes as read failures and kept its deadline past the timer range, and 2.48 KB once it lost the two-read reservation before the mfra tail, and 2.50 KB once readAhead took head and tail only, and 2.54 KB once the options and the limits refused unknown keys, and 2.49 KB once they ignored them, with readAhead still refusing them. Measured 2.81 KB in 0.4.0 with the codecConfig, color and aspect options and the color and aspect chunk, and 2.84 KB at the end of stage 5, once a chunk that loads after its call lost the deadline race was kept.
+- **header, entry chunk with the preload helper** (21.00 KB): The trigger of this configuration plus the Vite runtime of the entry chunk. Measured 17.94 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 18.51 KB, then 18.86 KB, 19.00 KB, 19.07 KB, 19.31 KB, 19.34 KB and 19.30 KB, 0.02 to 0.03 KB over the trigger above each time. Raised from 20 KB to 21 KB in 0.4.0, measured 20.35 KB, the measurement plus 3 percent rounded up to 0.5 KB, once analyzeHeader began to load the codec configuration capture and the color and aspect code with import(): Vite adds its preload helper, 0.75 KB, to the entry chunk of any app with a dynamic import, and the trigger grew by 0.30 KB for the codecConfig, color and aspect options. An app with another dynamic import already has the helper. Measured 20.52 KB at the end of stage 5, with the trigger 0.49 KB over 0.4.0-beta.1.
+- **header, emitted lazy total (every file outside the entry chunk)** (8.00 KB): Every JavaScript file the build emits outside the entry chunk: the codec configuration capture, which analyzeHeader loads with import() only with codecConfig, color or aspect, and the color and aspect code, which it loads with import() only with color or aspect. Measured 6.96 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 7.18 KB at the end of stage 5, once the color and aspect code also read the view of the moov that a probe gives.
+- **url-entry, critical path (package code in the entry chunk)** (24.50 KB): The package code in the entry chunk of a host that reads object storage from the page: analyzeHeader as in the header configuration, and rangeSource, openRangeSource, httpRange, readCapped and RangeSourceError from video-fps-probe/url. It starts no worker and loads the codec configuration capture and the color and aspect chunk of the header entry with import() only with codecConfig, color or aspect. Measured 21.86 KB, the 19.32 KB of the header configuration plus the Range entry, and 21.94 KB with the smaller header entry and the larger Range entry. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 22.50 KB with the header entry at the end of stage 5.
 - **url-entry, Range entry (rangeSource, openRangeSource, httpRange, readCapped and RangeSourceError, in the entry chunk)** (3.50 KB): The part of the critical path under dist/url/: the Range source with the checks of every reply before its body is read, the discovery request, the fetch fetcher and the streaming body cap. It imports nothing at run time. Design estimate 1.2 KB, measured 3.07 KB: every error names the check that failed and the range it failed on, and every argument is checked before the first request. Measured 3.20 KB once a failed body was discarded, a Node stream body was destroyed on an abort, a changed size was reported before a range mismatch and a failed fetch named the code of its network error. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 3.21 KB in stage 5 with dist/url and dist/cjs/url.cjs byte-identical: only the minified names of the chunk the Range entry shares with the header entry changed.
-- **url-entry, entry chunk with the preload helper** (24.50 KB): The trigger of this configuration plus the Vite runtime of the entry chunk. Measured 22.00 KB, then 22.09 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 23.26 KB with the header entry of stage 5.
-- **url-entry, emitted lazy total (every file outside the entry chunk)** (8.00 KB): As in the header configuration: the Range entry adds no lazy file. Measured 6.95 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 6.94 KB at the end of stage 5.
-- **color, critical path (package code in the entry chunk)** (26.50 KB): The package code in the entry chunk of a host that reads color in the page: analyzeHeader as in the header configuration, and colorOf and withColor from video-fps-probe/color. Measured 23.78 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 24.06 KB at the end of stage 5, with the FFmpeg rules of the color entry below.
-- **color, color entry (colorOf and withColor with the codec configuration readers, in the entry chunk)** (5.00 KB): The part of the critical path under dist/color/: colorOf and withColor, the readers of the sample description, the Matroska TrackEntry and the H.264 and HEVC SPS, the FFmpeg name tables, the codec strings and the Dolby Vision record. It imports nothing outside dist/color/ at run time. Design estimate 3.0 to 3.6 KB, measured 4.54 KB: the two SPS walkers read every syntax element up to the VUI colour fields, and the name tables follow FFmpeg 8.1 with its extended codes. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 4.67 KB once the Matroska Colour codes, repeated and empty EBML elements, the CodecID, the range of a later nclc, the sample entries the mov demuxer skips and the HEVC profile and depth followed FFmpeg. The limit stays 5 KB, above the 4.00 KB of the 0.4.0 stage plan: the two SPS walkers and the FFmpeg name tables are what make the color result equal to ffprobe, so the entry keeps them.
-- **color, entry chunk with the preload helper** (27.50 KB): The trigger of this configuration plus the Vite runtime of the entry chunk, with the preload helper of the lazy imports of analyzeHeader. Measured 24.63 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 24.87 KB at the end of stage 5.
+- **url-entry, entry chunk with the preload helper** (24.50 KB): The trigger of this configuration plus the Vite runtime of the entry chunk. Measured 22.00 KB, then 22.09 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 23.35 KB with the header entry at the end of stage 5.
+- **url-entry, emitted lazy total (every file outside the entry chunk)** (8.00 KB): As in the header configuration: the Range entry adds no lazy file. Measured 6.95 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 7.17 KB at the end of stage 5, as in the header configuration.
+- **color, critical path (package code in the entry chunk)** (26.50 KB): The package code in the entry chunk of a host that reads color in the page: analyzeHeader as in the header configuration, and colorOf and withColor from video-fps-probe/color. Measured 23.78 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 24.36 KB at the end of stage 5, with the FFmpeg rules of the color entry below and the reading of the view of the moov that a probe gives.
+- **color, color entry (colorOf and withColor with the codec configuration readers, in the entry chunk)** (5.00 KB): The part of the critical path under dist/color/: colorOf and withColor, the readers of the sample description, the Matroska TrackEntry and the H.264 and HEVC SPS, the FFmpeg name tables, the codec strings and the Dolby Vision record. It imports nothing outside dist/color/ at run time. Design estimate 3.0 to 3.6 KB, measured 4.54 KB: the two SPS walkers read every syntax element up to the VUI colour fields, and the name tables follow FFmpeg 8.1 with its extended codes. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 4.67 KB once the Matroska Colour codes, repeated and empty EBML elements, the CodecID, the range of a later nclc, the sample entries the mov demuxer skips and the HEVC profile and depth followed FFmpeg, and 4.92 KB once it also cut the stsd, tkhd and mvhd out of the view of the moov that a probe gives. The limit stays 5 KB, above the 4.00 KB of the 0.4.0 stage plan: the two SPS walkers and the FFmpeg name tables are what make the color result equal to ffprobe, so the entry keeps them.
+- **color, entry chunk with the preload helper** (27.50 KB): The trigger of this configuration plus the Vite runtime of the entry chunk, with the preload helper of the lazy imports of analyzeHeader. Measured 24.63 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 25.18 KB at the end of stage 5, with the reading of the view of the moov that a probe gives.
 - **color, emitted lazy total (every file outside the entry chunk)** (3.00 KB): As in the header configuration, without the color code, which this host already has in its entry chunk: the codec configuration capture and the aspect code. Measured 2.61 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
-- **aspect, critical path (package code in the entry chunk)** (27.00 KB): The package code in the entry chunk of a host that reads the aspect ratio and the display size in the page: analyzeHeader as in the header configuration, and aspectOf and withAspect from video-fps-probe/aspect with the codec configuration readers they share with video-fps-probe/color. Measured 24.20 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 23.65 KB once the entry stopped reaching the name tables and the codec strings.
-- **aspect, aspect entry (aspectOf and withAspect with the codec configuration readers, in the entry chunk)** (5.00 KB): The part of the critical path under dist/aspect/ and the modules of dist/color/ it reaches: aspectOf and withAspect with the FFmpeg ports of av_reduce and av_d2q, the pasp, tkhd matrix, tkhd size, Matroska display, PixelCrop, ProjectionPoseRoll and VUI rules, the readers of the sample description and the TrackEntry and the two SPS walkers for the VUI ratio. It reaches no name table and no codec string. Measured 1.63 KB when the row counted dist/aspect/ alone. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 2 KB to 5 KB in 0.4.0, measured 4.37 KB, once the row also counted the color modules the entry reaches, which an app that imports only video-fps-probe/aspect loads too, and the entry stopped reaching the name tables and the codec strings.
-- **aspect, entry chunk with the preload helper** (28.00 KB): The trigger of this configuration plus the Vite runtime of the entry chunk, with the preload helper of the lazy imports of analyzeHeader. Measured 25.06 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 24.48 KB once the entry stopped reaching the name tables and the codec strings.
+- **aspect, critical path (package code in the entry chunk)** (27.00 KB): The package code in the entry chunk of a host that reads the aspect ratio and the display size in the page: analyzeHeader as in the header configuration, and aspectOf and withAspect from video-fps-probe/aspect with the codec configuration readers they share with video-fps-probe/color. Measured 24.20 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 23.65 KB once the entry stopped reaching the name tables and the codec strings, and 23.98 KB at the end of stage 5, once the readers it shares also read the view of the moov that a probe gives.
+- **aspect, aspect entry (aspectOf and withAspect with the codec configuration readers, in the entry chunk)** (5.00 KB): The part of the critical path under dist/aspect/ and the modules of dist/color/ it reaches: aspectOf and withAspect with the FFmpeg ports of av_reduce and av_d2q, the pasp, tkhd matrix, tkhd size, Matroska display, PixelCrop, ProjectionPoseRoll and VUI rules, the readers of the sample description and the TrackEntry and the two SPS walkers for the VUI ratio. It reaches no name table and no codec string. Measured 1.63 KB when the row counted dist/aspect/ alone. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 2 KB to 5 KB in 0.4.0, measured 4.37 KB, once the row also counted the color modules the entry reaches, which an app that imports only video-fps-probe/aspect loads too, and the entry stopped reaching the name tables and the codec strings. Measured 4.61 KB once those readers also cut the boxes out of the view of the moov that a probe gives.
+- **aspect, entry chunk with the preload helper** (28.00 KB): The trigger of this configuration plus the Vite runtime of the entry chunk, with the preload helper of the lazy imports of analyzeHeader. Measured 25.06 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Measured 24.48 KB once the entry stopped reaching the name tables and the codec strings, and 24.81 KB at the end of stage 5, with the reading of the view of the moov that a probe gives.
 - **aspect, emitted lazy total (every file outside the entry chunk)** (3.50 KB): As in the header configuration, without the color modules this host already has in its entry chunk: the codec configuration capture and the rest of the color code. Measured 2.95 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB.
 - **standalone, own.worker.js** (37.50 KB): dist/standalone/own.worker.js: the own worker as one minified IIFE file with no imports, built by rolldown. Design estimate 35.0 KB; measured 32.04 KB. The limit is the first measurement from the packed tarball plus 10 percent, rounded up to 0.5 KB. Raised from 35.5 KB to 36 KB in 0.2.0, measured 35.58 KB, when the ffprobe frame rate estimate, which the file inlines, began to read the H.264 slice headers that decide the decoder delay (0.63 KB gzip). Measured 35.95 KB when re-set. Re-set in 0.2.0 to the measurement plus 3 percent, rounded up to 0.5 KB, like every budget of this matrix except the two promises of the default configuration: several limits had kept about 30 bytes of headroom (the default emitted lazy total measured 80,966 bytes of 81,000, the standalone-url one 78,968 of 79,000), so a build whose hashed chunk names merely compress differently could fail them, while limits far above their measurement let a regression of that size pass.
 - **standalone, own-isobmff.worker.js** (22.00 KB): dist/standalone/own-isobmff.worker.js: the ISO BMFF worker of own as one minified IIFE file with no imports, built by rolldown, for a host that starts classic workers and registers it with byContainer. Design estimate 21.2 to 21.6 KB; measured 21.15 KB. Set in 0.3.0, when the own engine of the default flavor moved to one worker per container family, to the measurement plus 3 percent, rounded up to 0.5 KB.
@@ -361,27 +361,27 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 |---|---|---|---|---:|
 | default | assets/compare.js | page | shared | 1.32 KB |
 | default | assets/fallback.js | page | shared | 0.75 KB |
-| default | assets/index.js | page | shared | 1.39 KB |
+| default | assets/index.js | page | shared | 1.40 KB |
 | default | assets/inline.js | page | shared | 0.66 KB |
-| default | assets/isobmff.js | page | isobmff | 12.59 KB |
+| default | assets/isobmff.js | page | isobmff | 12.60 KB |
 | default | assets/matroska.js | page | matroska | 12.08 KB |
 | default | assets/own-isobmff.worker.js | own-isobmff.worker | isobmff | 19.82 KB |
 | default | assets/own-matroska.worker.js | own-matroska.worker | matroska | 18.87 KB |
-| default | assets/probe.js | page | shared | 3.28 KB |
+| default | assets/probe.js | page | shared | 3.29 KB |
 | default | assets/result.js | page | shared | 0.39 KB |
-| default | assets/rfps.js | page | rfps | 3.60 KB |
 | default | assets/rfps.js | own-matroska.worker | rfps | 3.62 KB |
+| default | assets/rfps.js | page | rfps | 3.60 KB |
 | default | assets/runtime.js | page | shared | 2.48 KB |
-| default | assets/segments.js | page | segments | 1.84 KB |
 | default | assets/segments.js | own-matroska.worker | segments | 1.81 KB |
 | default | assets/segments.js | own-isobmff.worker | segments | 1.81 KB |
+| default | assets/segments.js | page | segments | 1.84 KB |
 | default | assets/sniff.js | page | shared | 0.99 KB |
 | default | assets/stats.js | page | stats | 4.37 KB |
 | zero-config | assets/compare.js | page | shared | 1.32 KB |
 | zero-config | assets/fallback.js | page | shared | 0.75 KB |
-| zero-config | assets/index.js | page | shared | 1.39 KB |
-| zero-config | assets/inline.js | page | shared | 0.65 KB |
-| zero-config | assets/isobmff.js | page | isobmff | 12.59 KB |
+| zero-config | assets/index.js | page | shared | 1.40 KB |
+| zero-config | assets/inline.js | page | shared | 0.66 KB |
+| zero-config | assets/isobmff.js | page | isobmff | 12.60 KB |
 | zero-config | assets/matroska.js | page | matroska | 12.08 KB |
 | zero-config | assets/own-isobmff.worker.js | own-isobmff.worker | isobmff | 21.60 KB |
 | zero-config | assets/own-matroska.worker.js | own-matroska.worker | matroska | 23.94 KB |
@@ -397,50 +397,50 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | custom | assets/fps.worker.js | fps.worker | shared | 4.15 KB |
 | custom | assets/index.js | page | shared | 1.47 KB |
 | custom | assets/inline.js | page | shared | 0.66 KB |
-| custom | assets/isobmff.js | page | isobmff | 12.59 KB |
-| custom | assets/isobmff.js | fps.worker | isobmff | 12.54 KB |
-| custom | assets/matroska.js | fps.worker | matroska | 11.89 KB |
+| custom | assets/isobmff.js | page | isobmff | 12.60 KB |
+| custom | assets/isobmff.js | fps.worker | isobmff | 12.55 KB |
 | custom | assets/matroska.js | page | matroska | 12.08 KB |
+| custom | assets/matroska.js | fps.worker | matroska | 11.89 KB |
 | custom | assets/probe-client.js | page | shared | 2.93 KB |
 | custom | assets/result.js | page | shared | 0.39 KB |
 | custom | assets/rfps.js | fps.worker | rfps | 3.60 KB |
 | custom | assets/rfps.js | page | rfps | 3.60 KB |
 | custom | assets/route.js | page | shared | 0.42 KB |
 | custom | assets/runtime.js | page | shared | 2.48 KB |
-| custom | assets/segments.js | page | segments | 1.84 KB |
 | custom | assets/segments.js | fps.worker | segments | 1.84 KB |
+| custom | assets/segments.js | page | segments | 1.84 KB |
 | custom | assets/sniff.js | page | shared | 0.99 KB |
-| custom | assets/stats.js | page | stats | 4.37 KB |
 | custom | assets/stats.js | fps.worker | stats | 4.34 KB |
+| custom | assets/stats.js | page | stats | 4.37 KB |
 | custom-eager | assets/compare.js | page | shared | 1.31 KB |
 | custom-eager | assets/fallback.js | page | shared | 0.74 KB |
 | custom-eager | assets/fps.worker.js | fps.worker | shared | 4.15 KB |
 | custom-eager | assets/index.js | page | shared | 3.81 KB |
 | custom-eager | assets/inline.js | page | shared | 0.66 KB |
-| custom-eager | assets/isobmff.js | page | isobmff | 12.59 KB |
-| custom-eager | assets/isobmff.js | fps.worker | isobmff | 12.54 KB |
-| custom-eager | assets/matroska.js | fps.worker | matroska | 11.89 KB |
+| custom-eager | assets/isobmff.js | fps.worker | isobmff | 12.55 KB |
+| custom-eager | assets/isobmff.js | page | isobmff | 12.60 KB |
 | custom-eager | assets/matroska.js | page | matroska | 12.09 KB |
+| custom-eager | assets/matroska.js | fps.worker | matroska | 11.89 KB |
 | custom-eager | assets/result.js | page | shared | 0.39 KB |
-| custom-eager | assets/rfps.js | fps.worker | rfps | 3.60 KB |
 | custom-eager | assets/rfps.js | page | rfps | 3.60 KB |
+| custom-eager | assets/rfps.js | fps.worker | rfps | 3.60 KB |
 | custom-eager | assets/route.js | page | shared | 0.38 KB |
 | custom-eager | assets/runtime.js | page | shared | 2.49 KB |
-| custom-eager | assets/segments.js | page | segments | 1.84 KB |
 | custom-eager | assets/segments.js | fps.worker | segments | 1.84 KB |
+| custom-eager | assets/segments.js | page | segments | 1.84 KB |
 | custom-eager | assets/sniff.js | page | shared | 0.99 KB |
-| custom-eager | assets/stats.js | page | stats | 4.37 KB |
 | custom-eager | assets/stats.js | fps.worker | stats | 4.34 KB |
+| custom-eager | assets/stats.js | page | stats | 4.37 KB |
 | mp4box | assets/compare.js | page | shared | 1.32 KB |
 | mp4box | assets/fallback.js | page | shared | 0.75 KB |
 | mp4box | assets/index.js | page | shared | 1.74 KB |
-| mp4box | assets/inline.js | page | shared | 0.65 KB |
-| mp4box | assets/isobmff.js | mp4box.worker | isobmff | 12.61 KB |
-| mp4box | assets/isobmff.js | page | isobmff | 12.59 KB |
-| mp4box | assets/matroska.js | page | matroska | 12.06 KB |
+| mp4box | assets/inline.js | page | shared | 0.66 KB |
+| mp4box | assets/isobmff.js | page | isobmff | 12.60 KB |
+| mp4box | assets/isobmff.js | mp4box.worker | isobmff | 12.62 KB |
 | mp4box | assets/matroska.js | mp4box.worker | matroska | 11.88 KB |
-| mp4box | assets/mp4box.js | page | mp4box | 44.95 KB |
+| mp4box | assets/matroska.js | page | matroska | 12.06 KB |
 | mp4box | assets/mp4box.js | mp4box.worker | mp4box | 44.95 KB |
+| mp4box | assets/mp4box.js | page | mp4box | 44.95 KB |
 | mp4box | assets/mp4box.worker.js | mp4box.worker | shared | 4.28 KB |
 | mp4box | assets/options.js | page | shared | 0.37 KB |
 | mp4box | assets/own-isobmff.worker.js | own-isobmff.worker | isobmff | 19.82 KB |
@@ -452,10 +452,10 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | mp4box | assets/rfps.js | mp4box.worker | rfps | 3.60 KB |
 | mp4box | assets/rfps.js | page | rfps | 3.60 KB |
 | mp4box | assets/runtime.js | page | shared | 1.08 KB |
-| mp4box | assets/segments.js | mp4box.worker | segments | 1.85 KB |
-| mp4box | assets/segments.js | own-matroska.worker | segments | 1.81 KB |
-| mp4box | assets/segments.js | own-isobmff.worker | segments | 1.81 KB |
 | mp4box | assets/segments.js | page | segments | 1.84 KB |
+| mp4box | assets/segments.js | own-matroska.worker | segments | 1.81 KB |
+| mp4box | assets/segments.js | mp4box.worker | segments | 1.84 KB |
+| mp4box | assets/segments.js | own-isobmff.worker | segments | 1.81 KB |
 | mp4box | assets/sniff.js | page | shared | 0.99 KB |
 | mp4box | assets/stats.js | mp4box.worker | stats | 4.35 KB |
 | mp4box | assets/stats.js | page | stats | 4.37 KB |
@@ -464,12 +464,12 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | mediabunny | assets/fallback.js | page | shared | 0.75 KB |
 | mediabunny | assets/index.js | page | shared | 1.74 KB |
 | mediabunny | assets/inline.js | page | shared | 0.66 KB |
-| mediabunny | assets/isobmff.js | mediabunny.worker | isobmff | 12.54 KB |
-| mediabunny | assets/isobmff.js | page | isobmff | 12.59 KB |
+| mediabunny | assets/isobmff.js | page | isobmff | 12.60 KB |
+| mediabunny | assets/isobmff.js | mediabunny.worker | isobmff | 12.55 KB |
 | mediabunny | assets/matroska.js | mediabunny.worker | matroska | 11.89 KB |
 | mediabunny | assets/matroska.js | page | matroska | 12.07 KB |
-| mediabunny | assets/mediabunny.js | mediabunny.worker | mediabunny | 54.16 KB |
 | mediabunny | assets/mediabunny.js | page | mediabunny | 53.23 KB |
+| mediabunny | assets/mediabunny.js | mediabunny.worker | mediabunny | 54.16 KB |
 | mediabunny | assets/mediabunny.worker.js | mediabunny.worker | shared | 4.18 KB |
 | mediabunny | assets/options.js | page | shared | 0.37 KB |
 | mediabunny | assets/own-isobmff.worker.js | own-isobmff.worker | isobmff | 19.82 KB |
@@ -481,49 +481,49 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | mediabunny | assets/rfps.js | page | rfps | 3.60 KB |
 | mediabunny | assets/runtime.js | page | shared | 2.24 KB |
 | mediabunny | assets/segments.js | own-matroska.worker | segments | 1.81 KB |
-| mediabunny | assets/segments.js | own-isobmff.worker | segments | 1.81 KB |
 | mediabunny | assets/segments.js | page | segments | 1.84 KB |
-| mediabunny | assets/segments.js | mediabunny.worker | segments | 1.84 KB |
+| mediabunny | assets/segments.js | own-isobmff.worker | segments | 1.81 KB |
+| mediabunny | assets/segments.js | mediabunny.worker | segments | 1.85 KB |
 | mediabunny | assets/sniff.js | page | shared | 0.99 KB |
-| mediabunny | assets/stats.js | page | stats | 4.37 KB |
 | mediabunny | assets/stats.js | mediabunny.worker | stats | 4.35 KB |
+| mediabunny | assets/stats.js | page | stats | 4.37 KB |
 | rvfc | assets/abort.js | page | shared | 0.11 KB |
 | rvfc | assets/compare.js | page | shared | 1.32 KB |
 | rvfc | assets/fallback.js | page | shared | 0.75 KB |
 | rvfc | assets/index.js | page | shared | 1.58 KB |
 | rvfc | assets/inline.js | page | shared | 0.66 KB |
-| rvfc | assets/isobmff.js | page | isobmff | 12.59 KB |
+| rvfc | assets/isobmff.js | page | isobmff | 12.60 KB |
 | rvfc | assets/matroska.js | page | matroska | 12.10 KB |
 | rvfc | assets/own-isobmff.worker.js | own-isobmff.worker | isobmff | 19.82 KB |
 | rvfc | assets/own-matroska.worker.js | own-matroska.worker | matroska | 18.87 KB |
 | rvfc | assets/probe.js | page | shared | 3.30 KB |
 | rvfc | assets/result.js | page | shared | 0.39 KB |
-| rvfc | assets/rfps.js | own-matroska.worker | rfps | 3.62 KB |
 | rvfc | assets/rfps.js | page | rfps | 3.60 KB |
+| rvfc | assets/rfps.js | own-matroska.worker | rfps | 3.62 KB |
 | rvfc | assets/runtime.js | page | shared | 2.46 KB |
 | rvfc | assets/rvfc.js | page | rvfc | 2.19 KB |
 | rvfc | assets/segments.js | own-matroska.worker | segments | 1.81 KB |
-| rvfc | assets/segments.js | own-isobmff.worker | segments | 1.81 KB |
 | rvfc | assets/segments.js | page | segments | 1.84 KB |
+| rvfc | assets/segments.js | own-isobmff.worker | segments | 1.81 KB |
 | rvfc | assets/sniff.js | page | shared | 0.99 KB |
 | rvfc | assets/stats.js | page | stats | 4.37 KB |
 | all | assets/abort.js | page | shared | 0.11 KB |
 | all | assets/compare.js | page | shared | 1.32 KB |
-| all | assets/counting.js | page | engineShared | 1.61 KB |
+| all | assets/counting.js | page | engineShared | 1.60 KB |
 | all | assets/fallback.js | page | shared | 0.75 KB |
 | all | assets/index.js | page | shared | 1.91 KB |
-| all | assets/inline.js | page | shared | 0.66 KB |
-| all | assets/isobmff.js | mp4box.worker | isobmff | 12.61 KB |
-| all | assets/isobmff.js | mediabunny.worker | isobmff | 12.54 KB |
-| all | assets/isobmff.js | page | isobmff | 12.58 KB |
+| all | assets/inline.js | page | shared | 0.65 KB |
+| all | assets/isobmff.js | mediabunny.worker | isobmff | 12.55 KB |
+| all | assets/isobmff.js | page | isobmff | 12.59 KB |
+| all | assets/isobmff.js | mp4box.worker | isobmff | 12.62 KB |
 | all | assets/matroska.js | mediabunny.worker | matroska | 11.89 KB |
-| all | assets/matroska.js | page | matroska | 12.06 KB |
 | all | assets/matroska.js | mp4box.worker | matroska | 11.88 KB |
-| all | assets/mediabunny.js | mediabunny.worker | mediabunny | 54.16 KB |
+| all | assets/matroska.js | page | matroska | 12.06 KB |
 | all | assets/mediabunny.js | page | mediabunny | 52.16 KB |
+| all | assets/mediabunny.js | mediabunny.worker | mediabunny | 54.16 KB |
 | all | assets/mediabunny.worker.js | mediabunny.worker | shared | 4.18 KB |
-| all | assets/mp4box.js | page | mp4box | 43.84 KB |
 | all | assets/mp4box.js | mp4box.worker | mp4box | 44.95 KB |
+| all | assets/mp4box.js | page | mp4box | 43.84 KB |
 | all | assets/mp4box.worker.js | mp4box.worker | shared | 4.28 KB |
 | all | assets/options.js | page | shared | 0.37 KB |
 | all | assets/own-isobmff.worker.js | own-isobmff.worker | isobmff | 19.82 KB |
@@ -532,40 +532,40 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | all | assets/reader.js | page | shared | 1.48 KB |
 | all | assets/result.js | page | shared | 0.39 KB |
 | all | assets/rfps.js | own-matroska.worker | rfps | 3.62 KB |
-| all | assets/rfps.js | mediabunny.worker | rfps | 3.60 KB |
 | all | assets/rfps.js | mp4box.worker | rfps | 3.60 KB |
+| all | assets/rfps.js | mediabunny.worker | rfps | 3.60 KB |
 | all | assets/rfps.js | page | rfps | 3.60 KB |
 | all | assets/runtime.js | page | shared | 1.10 KB |
 | all | assets/rvfc.js | page | rvfc | 2.19 KB |
-| all | assets/segments.js | mp4box.worker | segments | 1.85 KB |
 | all | assets/segments.js | own-matroska.worker | segments | 1.81 KB |
+| all | assets/segments.js | mp4box.worker | segments | 1.84 KB |
 | all | assets/segments.js | own-isobmff.worker | segments | 1.81 KB |
+| all | assets/segments.js | mediabunny.worker | segments | 1.85 KB |
 | all | assets/segments.js | page | segments | 1.84 KB |
-| all | assets/segments.js | mediabunny.worker | segments | 1.84 KB |
 | all | assets/sniff.js | page | shared | 0.99 KB |
+| all | assets/stats.js | mediabunny.worker | stats | 4.35 KB |
 | all | assets/stats.js | mp4box.worker | stats | 4.35 KB |
 | all | assets/stats.js | page | stats | 4.37 KB |
-| all | assets/stats.js | mediabunny.worker | stats | 4.35 KB |
 | standalone-url | assets/compare.js | page | shared | 1.33 KB |
 | standalone-url | assets/fallback.js | page | shared | 0.75 KB |
 | standalone-url | assets/index.js | page | shared | 1.45 KB |
 | standalone-url | assets/inline.js | page | shared | 0.65 KB |
 | standalone-url | assets/isobmff.js | page | isobmff | 12.60 KB |
 | standalone-url | assets/matroska.js | page | matroska | 12.08 KB |
-| standalone-url | assets/own.worker.js | own.worker | shared | 36.46 KB |
-| standalone-url | assets/probe-client.js | page | shared | 2.93 KB |
+| standalone-url | assets/own.worker.js | own.worker | shared | 36.47 KB |
+| standalone-url | assets/probe-client.js | page | shared | 2.92 KB |
 | standalone-url | assets/result.js | page | shared | 0.39 KB |
 | standalone-url | assets/rfps.js | page | rfps | 3.60 KB |
 | standalone-url | assets/route.js | page | shared | 0.42 KB |
 | standalone-url | assets/runtime.js | page | shared | 2.48 KB |
-| standalone-url | assets/segments.js | page | segments | 1.85 KB |
+| standalone-url | assets/segments.js | page | segments | 1.84 KB |
 | standalone-url | assets/sniff.js | page | shared | 0.99 KB |
 | standalone-url | assets/stats.js | page | stats | 4.37 KB |
 | standalone-split-url | assets/compare.js | page | shared | 1.33 KB |
 | standalone-split-url | assets/fallback.js | page | shared | 0.75 KB |
 | standalone-split-url | assets/index.js | page | shared | 1.50 KB |
 | standalone-split-url | assets/inline.js | page | shared | 0.66 KB |
-| standalone-split-url | assets/isobmff.js | page | isobmff | 12.59 KB |
+| standalone-split-url | assets/isobmff.js | page | isobmff | 12.60 KB |
 | standalone-split-url | assets/matroska.js | page | matroska | 12.08 KB |
 | standalone-split-url | assets/own-isobmff.worker.js | own-isobmff.worker | shared | 21.55 KB |
 | standalone-split-url | assets/own-matroska.worker.js | own-matroska.worker | shared | 23.89 KB |
@@ -579,9 +579,9 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | standalone-split-url | assets/stats.js | page | stats | 4.37 KB |
 | iife-nosplit | assets/compare.js | page | shared | 1.32 KB |
 | iife-nosplit | assets/fallback.js | page | shared | 0.75 KB |
-| iife-nosplit | assets/index.js | page | shared | 1.39 KB |
-| iife-nosplit | assets/inline.js | page | shared | 0.65 KB |
-| iife-nosplit | assets/isobmff.js | page | isobmff | 12.59 KB |
+| iife-nosplit | assets/index.js | page | shared | 1.40 KB |
+| iife-nosplit | assets/inline.js | page | shared | 0.66 KB |
+| iife-nosplit | assets/isobmff.js | page | isobmff | 12.60 KB |
 | iife-nosplit | assets/matroska.js | page | matroska | 12.08 KB |
 | iife-nosplit | assets/own-isobmff.worker.js | own-isobmff.worker | isobmff | 21.60 KB |
 | iife-nosplit | assets/own-matroska.worker.js | own-matroska.worker | matroska | 23.94 KB |
@@ -595,8 +595,8 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | react | assets/compare.js | page | shared | 1.32 KB |
 | react | assets/fallback.js | page | shared | 0.75 KB |
 | react | assets/index.js | page | shared | 69.86 KB |
-| react | assets/inline.js | page | shared | 0.66 KB |
-| react | assets/isobmff.js | page | isobmff | 12.59 KB |
+| react | assets/inline.js | page | shared | 0.65 KB |
+| react | assets/isobmff.js | page | isobmff | 12.60 KB |
 | react | assets/matroska.js | page | matroska | 12.08 KB |
 | react | assets/own-isobmff.worker.js | own-isobmff.worker | isobmff | 19.82 KB |
 | react | assets/own-matroska.worker.js | own-matroska.worker | matroska | 18.87 KB |
@@ -606,8 +606,8 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | react | assets/rfps.js | page | rfps | 3.60 KB |
 | react | assets/runtime.js | page | shared | 2.48 KB |
 | react | assets/segments.js | own-matroska.worker | segments | 1.81 KB |
-| react | assets/segments.js | own-isobmff.worker | segments | 1.81 KB |
 | react | assets/segments.js | page | segments | 1.84 KB |
+| react | assets/segments.js | own-isobmff.worker | segments | 1.81 KB |
 | react | assets/sniff.js | page | shared | 0.99 KB |
 | react | assets/stats.js | page | stats | 4.37 KB |
 | react | assets/summary.js | page | summary | 0.43 KB |
@@ -615,18 +615,18 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | react18 | assets/fallback.js | page | shared | 0.75 KB |
 | react18 | assets/index.js | page | shared | 47.26 KB |
 | react18 | assets/inline.js | page | shared | 0.66 KB |
-| react18 | assets/isobmff.js | page | isobmff | 12.59 KB |
+| react18 | assets/isobmff.js | page | isobmff | 12.60 KB |
 | react18 | assets/matroska.js | page | matroska | 12.08 KB |
 | react18 | assets/own-isobmff.worker.js | own-isobmff.worker | isobmff | 19.82 KB |
 | react18 | assets/own-matroska.worker.js | own-matroska.worker | matroska | 18.87 KB |
-| react18 | assets/probe.js | page | shared | 3.29 KB |
+| react18 | assets/probe.js | page | shared | 3.28 KB |
 | react18 | assets/result.js | page | shared | 0.39 KB |
 | react18 | assets/rfps.js | own-matroska.worker | rfps | 3.62 KB |
 | react18 | assets/rfps.js | page | rfps | 3.60 KB |
 | react18 | assets/runtime.js | page | shared | 2.48 KB |
+| react18 | assets/segments.js | page | segments | 1.84 KB |
 | react18 | assets/segments.js | own-matroska.worker | segments | 1.81 KB |
 | react18 | assets/segments.js | own-isobmff.worker | segments | 1.81 KB |
-| react18 | assets/segments.js | page | segments | 1.84 KB |
 | react18 | assets/sniff.js | page | shared | 0.99 KB |
 | react18 | assets/stats.js | page | stats | 4.37 KB |
 | react18 | assets/summary.js | page | summary | 0.43 KB |
@@ -634,7 +634,7 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | check | assets/fallback.js | page | shared | 0.75 KB |
 | check | assets/index.js | page | shared | 5.27 KB |
 | check | assets/inline.js | page | shared | 0.66 KB |
-| check | assets/isobmff.js | page | isobmff | 12.59 KB |
+| check | assets/isobmff.js | page | isobmff | 12.60 KB |
 | check | assets/matroska.js | page | matroska | 12.08 KB |
 | check | assets/own-isobmff.worker.js | own-isobmff.worker | isobmff | 19.82 KB |
 | check | assets/own-matroska.worker.js | own-matroska.worker | matroska | 18.87 KB |
@@ -643,15 +643,15 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | check | assets/rfps.js | own-matroska.worker | rfps | 3.62 KB |
 | check | assets/rfps.js | page | rfps | 3.60 KB |
 | check | assets/runtime.js | page | shared | 2.48 KB |
+| check | assets/segments.js | page | segments | 1.84 KB |
 | check | assets/segments.js | own-matroska.worker | segments | 1.81 KB |
 | check | assets/segments.js | own-isobmff.worker | segments | 1.81 KB |
-| check | assets/segments.js | page | segments | 1.84 KB |
 | check | assets/sniff.js | page | shared | 0.99 KB |
 | check | assets/stats.js | page | stats | 4.37 KB |
 | preset | assets/compare.js | page | shared | 1.32 KB |
 | preset | assets/fallback.js | page | shared | 0.75 KB |
 | preset | assets/index.js | page | shared | 5.62 KB |
-| preset | assets/inline.js | page | shared | 0.65 KB |
+| preset | assets/inline.js | page | shared | 0.66 KB |
 | preset | assets/isobmff.js | page | isobmff | 12.60 KB |
 | preset | assets/matroska.js | page | matroska | 12.08 KB |
 | preset | assets/own-isobmff.worker.js | own-isobmff.worker | isobmff | 19.82 KB |
@@ -663,19 +663,19 @@ Must-not-exist reads the `sources` of every hidden sourcemap, because minified i
 | preset | assets/runtime.js | page | shared | 2.48 KB |
 | preset | assets/segments.js | own-matroska.worker | segments | 1.81 KB |
 | preset | assets/segments.js | own-isobmff.worker | segments | 1.81 KB |
-| preset | assets/segments.js | page | segments | 1.84 KB |
+| preset | assets/segments.js | page | segments | 1.85 KB |
 | preset | assets/sniff.js | page | shared | 0.99 KB |
 | preset | assets/stats.js | page | stats | 4.37 KB |
-| header | assets/config.js | page | isobmff | 0.45 KB |
-| header | assets/index.js | page | isobmff | 20.43 KB |
-| header | assets/metadata.js | page | shared | 6.50 KB |
-| url-entry | assets/config.js | page | isobmff | 0.44 KB |
-| url-entry | assets/index.js | page | isobmff | 23.26 KB |
-| url-entry | assets/metadata.js | page | shared | 6.50 KB |
-| color | assets/config.js | page | isobmff | 0.45 KB |
-| color | assets/index.js | page | isobmff | 24.87 KB |
+| header | assets/config.js | page | isobmff | 0.44 KB |
+| header | assets/index.js | page | isobmff | 20.52 KB |
+| header | assets/metadata.js | page | shared | 6.74 KB |
+| url-entry | assets/config.js | page | isobmff | 0.43 KB |
+| url-entry | assets/index.js | page | isobmff | 23.35 KB |
+| url-entry | assets/metadata.js | page | shared | 6.74 KB |
+| color | assets/config.js | page | isobmff | 0.43 KB |
+| color | assets/index.js | page | isobmff | 25.18 KB |
 | color | assets/metadata.js | page | shared | 2.17 KB |
-| aspect | assets/config.js | page | isobmff | 0.44 KB |
-| aspect | assets/index.js | page | isobmff | 24.48 KB |
+| aspect | assets/config.js | page | isobmff | 0.43 KB |
+| aspect | assets/index.js | page | isobmff | 24.81 KB |
 | aspect | assets/metadata.js | page | shared | 2.51 KB |
 
