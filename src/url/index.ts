@@ -163,14 +163,14 @@ function refusal(reply: RangeReply, start: number, end: number, size: number, ra
   const contentRange = contentRangeOf(reply);
   if (status === null && contentRange === null) return new RangeSourceError('unverifiable-reply', `the reply to ${range} has neither a status nor a Content-Range, so it cannot be checked`);
   if (status !== null && status !== 206 && !(status === 200 && start === 0 && end === size)) {
-    return new RangeSourceError('unexpected-status', `status ${status} to ${range} of an object of ${size} bytes, expected 206${start === 0 && end === size ? ' or 200' : ''}`, { status });
+    return new RangeSourceError('unexpected-status', `status ${shown(status)} to ${range} of an object of ${size} bytes, expected 206${start === 0 && end === size ? ' or 200' : ''}`, { status });
   }
   if (contentRange !== null) {
     const r = parseRange(contentRange);
     if (r && r.total !== null && r.total !== size) return new RangeSourceError('size-changed', `Content-Range ${shown(contentRange)} gives an object of ${r.total} bytes, the source was opened at ${size} bytes`, { status });
     if (!r || r.first !== start || r.last !== end - 1) return new RangeSourceError('range-mismatch', `Content-Range ${shown(contentRange)} does not match ${range}`, { status });
   }
-  if (present(reply.contentLength) && reply.contentLength !== end - start) return new RangeSourceError('length-mismatch', `Content-Length ${reply.contentLength} does not match ${range} (${end - start} bytes)`, { status });
+  if (present(reply.contentLength) && reply.contentLength !== end - start) return new RangeSourceError('length-mismatch', `Content-Length ${shown(reply.contentLength)} does not match ${range} (${end - start} bytes)`, { status });
   return null;
 }
 
@@ -269,18 +269,18 @@ export async function openRangeSource(fetcher: RangeFetcher, init: OpenRangeSour
   }
   let size: number;
   if (status === 200) {
-    if (length === null || !Number.isSafeInteger(length) || length < 0 || length > headBytes) refuse('unexpected-status', `status 200 to ${range} with ${length === null ? 'no Content-Length' : `Content-Length ${length}`}: the server sent the whole object instead of the range, and only an object of at most ${headBytes} bytes is accepted that way`);
+    if (length === null || !Number.isSafeInteger(length) || length < 0 || length > headBytes) refuse('unexpected-status', `status 200 to ${range} with ${length === null ? 'no Content-Length' : `Content-Length ${shown(length)}`}: the server sent the whole object instead of the range, and only an object of at most ${headBytes} bytes is accepted that way`);
     if (contentRange !== null && (!r || r.first !== 0 || r.last !== length! - 1 || r.total !== length)) refuse('range-mismatch', `Content-Range ${shown(contentRange)} does not match the whole object of ${length} bytes`);
     size = length!;
   } else if (status === 206 || (status === null && contentRange !== null)) {
     if (contentRange === null) refuse('unverifiable-reply', `the 206 reply to ${range} has no Content-Range, or does not expose it to a cross-origin page, so the object size is unknown: pass init.size`);
     if (!r || r.total === null || r.first !== 0 || r.last !== Math.min(headBytes, r.total) - 1) refuse('range-mismatch', `Content-Range ${shown(contentRange)} does not match ${range} of an object of known size`);
-    if (length !== null && length !== r!.last + 1) refuse('length-mismatch', `Content-Length ${length} does not match Content-Range ${shown(contentRange)}`);
+    if (length !== null && length !== r!.last + 1) refuse('length-mismatch', `Content-Length ${shown(length)} does not match Content-Range ${shown(contentRange)}`);
     size = r!.total!;
   } else if (status === null) {
     return refuse('unverifiable-reply', `the reply to ${range} has neither a status nor a Content-Range, so it cannot be checked`);
   } else {
-    return refuse('unexpected-status', `status ${status} to ${range}, expected 206`);
+    return refuse('unexpected-status', `status ${shown(status)} to ${range}, expected 206`);
   }
   return sourceOf(f, size, signal, await bodyOf(reply, Math.min(size, headBytes), range, signal));
 }
