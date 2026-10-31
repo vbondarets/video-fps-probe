@@ -95,7 +95,7 @@ describe('the types and values docs/api.md names', () => {
 
   it('are read from the entries table and the code blocks', () => {
     expect(PROSE_TYPES.filter((name) => !new RegExp(`\\b${name}\\b`).test(DOC))).toEqual([]);
-    expect([...expected.keys()].sort()).toEqual([PACKAGE, ...['check', 'client', 'client/lazy', 'engines/mediabunny', 'engines/mp4box', 'header', 'lazy', 'mediabunny', 'mp4box', 'presets', 'react', 'rvfc', 'url', 'worker-runtime'].map((e) => `${PACKAGE}/${e}`)]);
+    expect([...expected.keys()].sort()).toEqual([PACKAGE, ...['aspect', 'check', 'client', 'client/lazy', 'color', 'engines/mediabunny', 'engines/mp4box', 'header', 'lazy', 'mediabunny', 'mp4box', 'presets', 'react', 'rvfc', 'url', 'worker-runtime'].map((e) => `${PACKAGE}/${e}`)]);
     expect([...expected.get(`${PACKAGE}/presets`)!].sort()).toEqual(['PresetSourceKind', 'ProviderPreset', 'klingMotionControl', 'klingO1ReferenceVideo', 'runwayAleph2', 'seedance2ReferenceVideo', 'veoExtend', 'wan26ReferenceToVideoFal']);
     expect([...expected.get(`${PACKAGE}/check`)!].sort()).toEqual(['AspectRatioRule', 'CheckExpected', 'CheckReport', 'CheckRules', 'CheckSeverity', 'CheckVerdict', 'CheckViolation', 'FpsRule', 'FpsSource', 'FrameSizeRule', 'RangeRule', 'RatePolicy', 'RatioValue', 'SuggestedFps', 'check']);
     expect(['check', 'CheckRules', 'CheckReport', 'RatioValue', 'ProviderPreset', 'PresetSourceKind'].filter((name) => expected.get(PACKAGE)!.has(name) || expected.get(`${PACKAGE}/client`)!.has(name))).toEqual([]);

@@ -2,18 +2,20 @@
 
 Everything the package exports, by entry, with options, defaults, errors and the result schema. The [README](../README.md) has the short version; [bundlers.md](bundlers.md) covers worker setup per bundler, and [architecture.md](architecture.md) how the pieces fit together.
 
-The package is ESM, targets ES2022 and ships its own types. The five server entries, `video-fps-probe`, `video-fps-probe/header`, `video-fps-probe/url`, `video-fps-probe/check` and `video-fps-probe/presets`, also ship a minified CommonJS copy for `require()` where `require(esm)` is off, such as in Jest. Every entry except the standalone worker files can be imported in Node and during SSR: nothing touches `Worker`, `window` or `document` at import time. CommonJS code can `require()` every entry on Node 22.12 and newer, the lowest supported version ([CommonJS](#commonjs)).
+The package is ESM, targets ES2022 and ships its own types. The seven server entries, `video-fps-probe`, `video-fps-probe/header`, `video-fps-probe/url`, `video-fps-probe/color`, `video-fps-probe/aspect`, `video-fps-probe/check` and `video-fps-probe/presets`, also ship a minified CommonJS copy for `require()` where `require(esm)` is off, such as in Jest. Every entry except the standalone worker files can be imported in Node and during SSR: nothing touches `Worker`, `window` or `document` at import time. CommonJS code can `require()` every entry on Node 22.12 and newer, the lowest supported version ([CommonJS](#commonjs)).
 
 ## Entries
 
 | Entry | Exports | Worker literal in the build |
 |---|---|---|
-| `video-fps-probe` | `createProbe`, `analyze`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, `errorCodeOf`, `errorClass`, `warningCodeOf`, `warningCodesOf`, every type on this page except `HeaderOptions`, `HeaderLimits`, `HeaderResult`, the Range types (`RangeSourceError`, `RangeSourceErrorCode`, `RangeSourceErrorOptions`, `RangeRequest`, `RangeReply`, `RangeFetcher`, `RangeSource`, `RangeSourceInit`, `OpenRangeSourceInit`, `HttpRangeInit`), `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions`, `VideoFpsState` and the check types (`CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `FrameSizeRule`, `RangeRule`, `RatioValue`, `RatePolicy`) and the preset types (`ProviderPreset`, `PresetSourceKind`) | the two own workers |
+| `video-fps-probe` | `createProbe`, `analyze`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, `errorCodeOf`, `errorClass`, `warningCodeOf`, `warningCodesOf`, every type on this page except `HeaderOptions`, `ColorTrack`, `AspectTrack`, `AspectInfo`, `HeaderLimits`, `HeaderResult`, the Range types (`RangeSourceError`, `RangeSourceErrorCode`, `RangeSourceErrorOptions`, `RangeRequest`, `RangeReply`, `RangeFetcher`, `RangeSource`, `RangeSourceInit`, `OpenRangeSourceInit`, `HttpRangeInit`), `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions`, `VideoFpsState` and the check types (`CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `FrameSizeRule`, `RangeRule`, `RatioValue`, `RatePolicy`) and the preset types (`ProviderPreset`, `PresetSourceKind`) | the two own workers |
 | `video-fps-probe/lazy` | `lazyProbe`, `lazyProbeFrom`, `LazyProbe`, `ProbeOptions` | the two own workers |
-| `video-fps-probe/client` | `createProbeClient`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, every type on this page except `InThreadOptions`, `ErrorClass`, `HeaderOptions`, `HeaderLimits`, `HeaderResult`, the Range types (`RangeSourceError`, `RangeSourceErrorCode`, `RangeSourceErrorOptions`, `RangeRequest`, `RangeReply`, `RangeFetcher`, `RangeSource`, `RangeSourceInit`, `OpenRangeSourceInit`, `HttpRangeInit`), `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions`, `VideoFpsState` and the check types (`CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `FrameSizeRule`, `RangeRule`, `RatioValue`, `RatePolicy`) and the preset types (`ProviderPreset`, `PresetSourceKind`) | none |
+| `video-fps-probe/client` | `createProbeClient`, `summarize`, `compareResults`, `ProbeError`, `isAbortError`, `isTimeoutError`, every type on this page except `InThreadOptions`, `ErrorClass`, `HeaderOptions`, `ColorTrack`, `AspectTrack`, `AspectInfo`, `HeaderLimits`, `HeaderResult`, the Range types (`RangeSourceError`, `RangeSourceErrorCode`, `RangeSourceErrorOptions`, `RangeRequest`, `RangeReply`, `RangeFetcher`, `RangeSource`, `RangeSourceInit`, `OpenRangeSourceInit`, `HttpRangeInit`), `EngineSource`, `RvfcPluginOptions`, `VideoFpsProviderProps`, `UseVideoFpsOptions`, `VideoFpsState` and the check types (`CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `FrameSizeRule`, `RangeRule`, `RatioValue`, `RatePolicy`) and the preset types (`ProviderPreset`, `PresetSourceKind`) | none |
 | `video-fps-probe/client/lazy` | `lazyProbeClient`, `lazyProbeFrom`, `ClientOptions`, `LazyProbe`, `Probe` | none |
 | `video-fps-probe/header` | `analyzeHeader`, `HEADER_DEFAULT_LIMITS`, `errorCodeOf`, `errorClass`, `warningCodeOf`, `warningCodesOf`, `isAbortError`, `isTimeoutError`, `HeaderOptions`, `HeaderLimits`, `HeaderResult`, `FragmentedDuration`, `ErrorClass`, `BlobLike`, `BlobSlice` and the result types of `video-fps-probe/client` such as `FileResult`, `VideoTrackResult`, `FileErrorCode` and `ContainerLayout` ([header-only analysis](#header-only-analysis)) | none |
 | `video-fps-probe/url` | `rangeSource`, `openRangeSource`, `httpRange`, `readCapped`, `RangeSourceError`, `RangeSourceErrorCode`, `RangeSourceErrorOptions`, `RangeRequest`, `RangeReply`, `RangeFetcher`, `RangeSource`, `RangeSourceInit`, `OpenRangeSourceInit`, `HttpRangeInit`, `BlobLike`, `BlobSlice` ([Range source](#range-source)) | none |
+| `video-fps-probe/color` | `colorOf`, `withColor`, `ColorTrack`, `ColorInfo`, `ColorSource`, `DolbyVisionConfig`, `CodecConfig` ([Color](#color)) | none |
+| `video-fps-probe/aspect` | `aspectOf`, `withAspect`, `AspectTrack`, `AspectInfo`, `CodecConfig`, `Rational` ([Aspect ratio and display size](#aspect-ratio-and-display-size)) | none |
 | `video-fps-probe/check` | `check`, `CheckRules`, `CheckReport`, `CheckViolation`, `CheckVerdict`, `CheckSeverity`, `CheckExpected`, `SuggestedFps`, `FpsRule`, `FpsSource`, `AspectRatioRule`, `FrameSizeRule`, `RangeRule`, `RatioValue`, `RatePolicy` | none |
 | `video-fps-probe/presets` | `klingO1ReferenceVideo`, `klingMotionControl`, `runwayAleph2`, `veoExtend`, `wan26ReferenceToVideoFal`, `seedance2ReferenceVideo`, `ProviderPreset`, `PresetSourceKind` | none |
 | `video-fps-probe/presets/sources.json` | a JSON file, not a module: the source page of every preset, keyed by the name of its export, which replaces the deprecated sourceUrl of a preset | none |
@@ -32,7 +34,7 @@ There are two flavors because bundlers emit a worker file for every `new Worker(
 - **Default flavor** (`video-fps-probe`, `video-fps-probe/lazy`): the own engine and its two prebuilt workers, one per container family, are built in. Use it unless you build your own worker.
 - **Client flavor** (`video-fps-probe/client`, `video-fps-probe/client/lazy`): no worker is built in. You pass a worker, `'inline'`, or prebuilt descriptors. A host with its own worker uses this flavor so the unused own worker is never emitted.
 
-The `mp4box` and `mediabunny` descriptors each carry their own prebuilt worker, which serves that engine and own. `rvfc`, `worker-runtime`, `header`, `url` and `engines/*` never reach a worker literal, `header` reaches neither the full ISO BMFF parser nor the statistics, and `url`, `check` and `presets` import no other module, in the ESM build and in the CommonJS copy. `check-dist` enforces all of this on every build.
+The `mp4box` and `mediabunny` descriptors each carry their own prebuilt worker, which serves that engine and own. `rvfc`, `worker-runtime`, `header`, `url` and `engines/*` never reach a worker literal, `header` reaches neither the full ISO BMFF parser nor the statistics, and `url`, `check` and `presets` import no other module, in the ESM build and in the CommonJS copy. `color` and `aspect` import nothing outside `dist/color/` and `dist/aspect/`, and their CommonJS copies require only the chunk they share, which requires nothing. `check-dist` enforces all of this on every build.
 
 ## Probes
 
@@ -176,6 +178,7 @@ Accepted by `CallOptions`, `defaults` and the root `analyze`. They cross the wor
 | `readAhead` | `{ head: 65536, fragment: 1048576, matroskaScan: 1048576, tail: 262144 }` | read window sizes in bytes: the first read, ISO BMFF fragment read-ahead, Matroska scan windows, Matroska tail scan. A file smaller than `head + perReadMs x bytesPerMs` (465,536 bytes by default), at most 1 MiB or `head` when that is larger, is read whole in the first read |
 | `costModel` | `{ perReadMs: 0.8, bytesPerMs: 500000, perBlockMs: 0.0002 }` | the exact-scan cost prediction: `reads x perReadMs + bytes / bytesPerMs + blocks x perBlockMs`; `perReadMs x bytesPerMs` also sizes the single first read, up to the 1 MiB cap (`perReadMs: 0`, or a negative or NaN product, keeps the first read at `readAhead.head`) |
 | `maxExpandedSamples` | `5_000_000` | most samples or blocks expanded into per-frame statistics; above it the statistics are skipped with a warning |
+| `codecConfig` | `false` | copy the raw codec configuration of each Matroska and WebM video track, its TrackEntry, into `codecConfig` for `withColor` and `withAspect` ([Color](#color)). An MP4 or MOV track gets it from `analyzeHeader` with `codecConfig: true` in this release |
 
 Progress phases: `fragments` (ISO BMFF, every 64 fragments), `matroska-exact` (bytes after the first Cluster), `read` and `analyze` (mp4box), `packets` (mediabunny), `play xN` (rvfc).
 
@@ -270,7 +273,7 @@ Runs in the calling thread, without a worker: for Node, scripts and tests. `anal
 
 Node 22.12 and newer load an ES module from `require()` (`require(esm)`), so CommonJS code takes the package as it is, every entry included, and no entry has a top-level `await`. Node 22.12 prints an `ExperimentalWarning` for it, Node 24 prints nothing. Node 22.12 is the lowest supported version, since Node 20 is past its end of life.
 
-The five server entries, `video-fps-probe`, `video-fps-probe/header`, `video-fps-probe/url`, `video-fps-probe/check` and `video-fps-probe/presets`, also ship a CommonJS copy in `dist/cjs`, minified like the standalone worker files but with the names of its classes and functions kept, so `error.name`, `error.constructor.name` and the `name` of every export equal the ESM build, with `.d.cts` declarations, for the loaders that do not run `require(esm)`. Each of them takes these conditions, with its own files:
+The seven server entries, `video-fps-probe`, `video-fps-probe/header`, `video-fps-probe/url`, `video-fps-probe/color`, `video-fps-probe/aspect`, `video-fps-probe/check` and `video-fps-probe/presets`, also ship a CommonJS copy in `dist/cjs`, minified like the standalone worker files but with the names of its classes and functions kept, so `error.name`, `error.constructor.name` and the `name` of every export equal the ESM build, with `.d.cts` declarations, for the loaders that do not run `require(esm)`. Each of them takes these conditions, with its own files:
 
 ```json
 ".": {
@@ -348,6 +351,9 @@ interface HeaderOptions {
   limits?: HeaderLimits;
   readAhead?: { head?: number; tail?: number }; // head (default 65536, at least 1024) and tail (default 262144, at least 16)
   fragmentedDuration?: 'header' | 'index'; // default 'index'
+  codecConfig?: boolean; // default false: keep the raw stsd, tkhd and mvhd boxes of each video track
+  color?: boolean; // default false: fill color through video-fps-probe/color, loaded with import()
+  aspect?: boolean; // default false: fill the aspect fields through video-fps-probe/aspect, loaded with import()
 }
 
 interface HeaderLimits {
@@ -409,6 +415,8 @@ const HEADER_DEFAULT_LIMITS: Readonly<Required<HeaderLimits>>;
 A warning that repeats, such as `fragment for unknown track 77` for every traf of a large moof, is reported once with its count, for example `fragment for unknown track 77 (1000 times)`, so a hostile file cannot grow the stored result past the bytes read. Full mode keeps every copy.
 
 `check()` judges any result with an `error` as unknown, as in 0.3.0.
+
+`color: true` and `aspect: true` capture the codec configuration, apply `withColor` and `withAspect` from a chunk loaded with `import()` after the header is read, and drop `codecConfig` unless `codecConfig: true` is passed too. So `analyzeHeader(source, { color: true })` equals `withColor(await analyzeHeader(source, { codecConfig: true }))`, which `tests/color/iso.test.ts` checks on every ISO BMFF fixture. They read no extra byte: the boxes are inside the moov the call reads anyway. The three options must be booleans, else `TypeError`. If the chunk fails to load, the result keeps its tracks and carries `load-failed`.
 
 **Stable from 0.4.0-beta.1.** The `analyzeHeader` signature, the members of `HeaderOptions` and `HeaderLimits` listed above, `readAhead` with `head` and `tail` only and a `TypeError` for any other key with a value, unknown keys of the options and of `limits` ignored, the keys of `HEADER_DEFAULT_LIMITS`, the error codes and the warning codes with the prefixes they classify, and the exports `isAbortError` and `isTimeoutError` of `video-fps-probe/header` are frozen from 0.4.0-beta.1: beta.2, 0.4.0 and later releases only add to them.
 
@@ -575,6 +583,85 @@ async function probeObject(bucket, key, signal) {
 
 `createStorageClient` stands for the constructor of the SDK client in use, and its option names follow a common SDK shape: map them to the SDK. `tests/url` runs every committed fixture through a fetcher and through `httpRange` against a `node:http` server, both against the `Blob` results, with one request per read, and covers each failed check, the body cap, a caller abort and a stalled server under `maxMs`, which closes the socket.
 
+## Color
+
+```ts
+import { colorOf, withColor } from 'video-fps-probe/color';
+
+function colorOf(track: ColorTrack): ColorInfo | null | undefined;
+function withColor<R extends Pick<FileResult, 'videoTracks'>>(result: R, options?: { keepCodecConfig?: boolean }): R;
+
+type ColorTrack = Pick<VideoTrackResult, 'codecName' | 'codecConfig'>;
+
+interface ColorInfo {
+  range: 'tv' | 'pc' | null; // ffprobe color_range
+  primaries: string | null; // ffprobe color_primaries, such as 'bt709' or 'bt2020'
+  transfer: string | null; // ffprobe color_transfer, such as 'smpte2084' or 'arib-std-b67'
+  space: string | null; // ffprobe color_space, such as 'bt709' or 'bt2020nc'
+  source: ColorSource | null; // where primaries, transfer and space came from
+  bitDepth: number | null; // the component depth of ffprobe pix_fmt
+  profile: number | null; // the numeric profile of the codec configuration
+  codecString: string | null; // RFC 6381, such as 'avc1.64001f', 'hvc1.2.4.L120.90', 'av01.0.08M.10' or 'vp09.02.31.10'
+  hdr: 'pq' | 'hlg' | null; // from transfer: 'smpte2084' is PQ, 'arib-std-b67' is HLG
+  dolbyVision: DolbyVisionConfig | null; // ffprobe side data 'DOVI configuration record'
+}
+
+type ColorSource = 'sps' | 'colr' | 'vpcC' | 'Colour';
+
+interface DolbyVisionConfig {
+  versionMajor: number;
+  versionMinor: number;
+  profile: number;
+  level: number;
+  rpu: boolean;
+  el: boolean;
+  bl: boolean;
+  compatibilityId: number; // dv_bl_signal_compatibility_id
+  mdCompression: number; // dv_md_compression: 0 none, 1 limited, 2 reserved, 3 extended
+}
+
+type CodecConfig =
+  | { family: 'isobmff'; stsd: Uint8Array | null; tkhd: Uint8Array | null; mvhd: Uint8Array | null } // raw boxes, headers included, at most 64 KiB each
+  | { family: 'matroska'; trackEntry: Uint8Array | null }; // the TrackEntry payload
+```
+
+`colorOf` reads the raw bytes a result carries in `codecConfig` and returns what ffprobe 8.1.1 prints for the stream, or null where ffprobe takes a value from a bitstream the entry does not read. It never guesses: on every committed fixture a value that is not null equals ffprobe. The entry imports nothing at run time and has a CommonJS copy.
+
+- **Getting the bytes.** `analyzeHeader(source, { color: true })` for MP4 and MOV, or `withColor(await analyzeHeader(source, { codecConfig: true }))`. For Matroska and WebM, `withColor(await analyze(file, { codecConfig: true }))` with the root `analyze` or a probe. In this release the full MP4 parser does not capture the configuration, because the capture would add about 0.1 KB to the first MP4 path of the browser workers, more than this release allows there. MP4 and MOV get it from the header entry, which reads only the boxes it needs.
+- **Container first.** As in FFmpeg 8.1.1, a `colr` box (`nclx` or `nclc`), a `vpcC` box or a Matroska `Colour` element wins over the bitstream. Primaries, transfer and matrix act as one group: when the container gives any of them as a code other than 2 (unspecified), all three come from it and an unspecified one is null. A code without an FFmpeg name counts as unspecified, and the reserved codes 0 and 3 print as `reserved` as ffprobe prints them. When the container is silent, the colour description of the H.264 or HEVC SPS in `avcC`, `hvcC` or the CodecPrivate applies (`source: 'sps'`). The range is the `nclx` full range flag, the `vpcC` flag or the `Colour` Range, else the SPS `video_full_range_flag`, and `tv` for an HEVC SPS without a video signal type, as the HEVC decoder sets it. The last `colr` or `vpcC` of the sample entries wins, as the mov demuxer reads them in order.
+- **Not read.** The AV1 sequence header, the VP9 frame header and ProRes: ffprobe takes their color from the decoder, so a null there means the container is silent, not SDR. HDR10 static metadata (`mdcv`, `clli`, MasteringMetadata) is not read in 0.4.0.
+- **Bit depth and profile** come from `avcC` and its SPS, `hvcC`, `av1C`, `vpcC`, the VP9 CodecPrivate or the Matroska BitsPerChannel. The profile is the number, `profile_idc` for H.264 and HEVC, `seq_profile` for AV1 and the VP9 profile. A name such as `High` or `Main 10` is left to the caller, with the constraint flags in the codec string for H.264.
+- **Codec strings** follow the sample entry: `avc1` or `avc3` with the three `avcC` bytes, `hvc1` or `hev1` with the profile space, profile, reversed compatibility flags, tier, level and the trimmed constraint bytes, `av01` and `vp09` with two-digit fields, all equal to mp4box.js 2.4.1 on the corpus. A `dvh1` or `dvhe` sample entry with a Dolby Vision record gives `dvh1.PP.LL`, where mp4box.js gives only the fourcc. Matroska uses the same rules with `avc1`, `hvc1`, `av01` and `vp09`.
+- **Dolby Vision** comes from a `dvcC`, `dvvC` or `dvwC` box, or a Matroska BlockAdditionMapping of type `dvcC` or `dvvC`, field by field as ffprobe prints the record.
+- **undefined against null.** `colorOf` returns undefined for a track without `codecConfig`, which is what a result from an engine or a worker that does not capture it looks like, and null when the configuration holds no box or element it reads. `withColor` leaves `color` undefined on such a track, so `check()` can tell "not asked" from "nothing declared".
+- **The bytes.** `withColor` returns a new result with `color` set on every track that has `codecConfig`, and removes `codecConfig` unless `keepCodecConfig` is true. To apply both entries, keep the bytes for the second: `withAspect(withColor(result, { keepCodecConfig: true }))`.
+
+## Aspect ratio and display size
+
+```ts
+import { aspectOf, withAspect } from 'video-fps-probe/aspect';
+
+function aspectOf(track: AspectTrack): AspectInfo | undefined;
+function withAspect<R extends Pick<FileResult, 'videoTracks'>>(result: R, options?: { keepCodecConfig?: boolean }): R;
+
+type AspectTrack = Pick<VideoTrackResult, 'codecName' | 'width' | 'height' | 'rotation' | 'codecConfig'>;
+
+interface AspectInfo {
+  sampleAspectRatio: Rational | null; // ffprobe sample_aspect_ratio
+  displayAspectRatio: Rational | null; // ffprobe display_aspect_ratio, of the stored frame
+  displayWidth: number | null; // round(width x sampleAspectRatio), with the rotation applied
+  displayHeight: number | null; // height, with the rotation applied
+}
+```
+
+`aspectOf` computes the ratio ffprobe 8.1.1 prints from the same `codecConfig` bytes as the color entry, with whose readers it shares a chunk. `withAspect` sets the four fields on every track that has `codecConfig` and removes the bytes unless `keepCodecConfig` is true. `analyzeHeader(source, { aspect: true })` does both in one call.
+
+- **MP4 and MOV**, in the order FFmpeg 8.1.1 applies them: the `pasp` of the last sample entry that has one with a non-zero vertical spacing, then the tkhd matrix times the mvhd matrix when its column scales differ by more than 1 percent and the tkhd size is not zero, then the tkhd size (the integer parts of its 16.16 width and height) against the stored size, then the SPS VUI. A `pasp` of 0 or with a negative value gives no container ratio, so the VUI then speaks.
+- **Matroska and WebM:** DisplayWidth and DisplayHeight with a DisplayUnit below 4, a missing element taking the pixel size only with unit 0, and a side by side or top and bottom StereoMode doubling the display width or height as FFmpeg does. Without a container ratio, the SPS VUI of the CodecPrivate. PixelCrop is not applied.
+- **Ratios** are reduced with ports of FFmpeg's `av_reduce` and `av_d2q`, the display aspect ratio within 1024 x 1024 as ffprobe prints it. A track without a ratio has `sampleAspectRatio` and `displayAspectRatio` null, where ffprobe prints N/A, and a display size equal to the stored size.
+- **Display size.** `displayWidth` is `round(width x num / den)` and `displayHeight` the height, swapped for a rotation of 90 or 270 degrees, so they give the frame as a player shows it. `displayAspectRatio` stays the ratio of the stored frame, as ffprobe prints it. Both are null when the stored width or height is 0.
+- **undefined** without `codecConfig`, as for color.
+
 ## Engines
 
 ### Descriptors
@@ -705,6 +792,9 @@ type ProbeResult = FileResult & {
 | `timestampsQuantized` | CFR content on 1 ms ticks (Matroska, MP4 remuxed from Matroska) |
 | `isStill` | a single frame or a still image track |
 | `medianFrameInterval` | `Rational` in seconds: the lower-median presented frame interval, with the tail of the reorder depth left out as for `minFps` and `maxFps`, reduced. ISO BMFF, Matroska after a probe (`sampled`) or exact scan, mp4box and mediabunny. Null for one frame, in a Matroska header scan and when the per-sample analysis was skipped over `maxExpandedSamples` |
+| `codecConfig` | the raw codec configuration ([Color](#color)), only with the `codecConfig` option |
+| `color` | `ColorInfo` or null, set by `withColor` or `analyzeHeader` with `color: true` ([Color](#color)) |
+| `sampleAspectRatio`, `displayAspectRatio`, `displayWidth`, `displayHeight` | set by `withAspect` or `analyzeHeader` with `aspect: true` ([Aspect ratio and display size](#aspect-ratio-and-display-size)) |
 | `enabled` | the tkhd enabled bit (MP4 and MOV) or FlagEnabled (Matroska and WebM, true when absent). Set by own. A disabled primary track is not meant to be played: ffprobe prints `disposition.default` 0 for it in MP4 |
 | `rateProfile` | `RateProfile` or null; only for tracks whose intervals differ by more than 7.5% and not only by timestamp rounding (Matroska only after an exact scan) |
 | `provenance` | `Partial<Record<TrackField, Provenance>>`: where each value came from |
@@ -1058,7 +1148,7 @@ The package follows semantic versioning, with these rules:
   - the members of `HeaderLimits` (`maxBytes`, `maxReads`, `maxMs`, `maxTracks`, `maxTopLevelBoxes`) and of `HeaderOptions` (`name`, `signal`, `limits`, `readAhead` with `head` and `tail` only, `fragmentedDuration`), the `analyzeHeader` signature, the export `HEADER_DEFAULT_LIMITS` and its keys, and the exports `isAbortError` and `isTimeoutError` of `video-fps-probe/header`. A default value of `HEADER_DEFAULT_LIMITS` may change in a later release, as a behaviour change that the changelog names.
   - how `analyzeHeader` treats keys: `readAhead` refuses any key but `head` and `tail` with a `TypeError`, and the options and `limits` ignore keys they do not know.
   - the whole `video-fps-probe/url` API: `rangeSource`, `openRangeSource`, `httpRange`, `readCapped`, `RangeSourceError` with its `code` and `status`, the `RangeSourceErrorCode` values, and the types `RangeRequest`, `RangeReply`, `RangeFetcher`, `RangeSource`, `RangeSourceInit`, `OpenRangeSourceInit`, `HttpRangeInit` and `RangeSourceErrorOptions`, with `BlobLike` and `BlobSlice`, the types of the root entry that it re-exports unchanged.
-  - `ColorInfo` and `DolbyVisionConfig` join the list at 0.4.0-beta.2.
+  - from 0.4.0-beta.2: the members of `ColorInfo` and `DolbyVisionConfig`, the `ColorSource` values, the `codecConfig`, `color` and `aspect` options of `analyzeHeader`, and the signatures of `colorOf`, `withColor`, `aspectOf` and `withAspect`. `CodecConfig` is raw bytes for these entries and may gain members.
 - A minor release may add error codes, error classes and warning codes. Treat an error code or an error class you do not know like `internal` and a warning code you do not know like null. Moving a failure to another code is a behaviour change and the changelog says so. The code `errorCodeOf` reads from the text of another engine (mp4box, mediabunny or rvfc) is best effort and may change in a minor release, because those texts come from the libraries and the browser. The text of an `error` or a warning outside the coded prefixes is not part of the API.
 - The rules of a preset follow its source: when a provider changes its published limits, the preset changes with them in the next minor release, with the new `verifiedAt` and a changelog entry. Pin your own rules if they must not move.
 
