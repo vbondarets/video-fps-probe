@@ -23,7 +23,7 @@ interface LibraryRun {
 
 interface ConsumerProbe {
   readonly engines: readonly string[];
-  analyze(file: Blob, options?: { engine?: string; host?: HTMLElement }): Promise<ProbeResult>;
+  analyze(file: Blob, options?: { engine?: string; host?: HTMLElement; codecConfig?: boolean }): Promise<ProbeResult>;
 }
 
 interface PackageRoot {
@@ -50,6 +50,7 @@ const RVFC_FILES = ['cfr_h264_29.97.mp4', 'cfr_vp9_29.97.webm'] as const;
 const HEADER_FILES = ['cfr_h264_29.97.mp4', 'cfr_vp9_29.97.webm', 'vfr_two_phase_5_200.mp4', 'fmp4_global_sidx.mp4', 'rec_chromium_h264.mp4', 'corrupt_trunc_no_moov.mp4'] as const;
 const METADATA_FILES = [...HEADER_FILES, 'hdr10_hevc10.mp4', 'dv_p81_dvvc.mp4', 'sar_h264_4x3.mp4', 'sar_matrix_scale.mp4'] as const;
 const RVFC_UNSUPPORTED = 'requestVideoFrameCallback unsupported';
+const CAPTURE_FILES = ['hdr10_hevc10.mp4', 'colr_nclc.mov'] as const;
 
 const DIST = pathToFileURL(join(installedPackage(consumersDir()), 'dist')).href;
 const LIBRARY_REPORT = process.env.CONSUMERS_LIBRARY_REPORT ? resolve(process.env.CONSUMERS_LIBRARY_REPORT) : null;
@@ -112,6 +113,21 @@ async function browserRvfc(page: Page, name: string): Promise<{ supported: boole
     const supported = 'requestVideoFrameCallback' in HTMLVideoElement.prototype;
     const { engine, error } = await (window.__probe as ConsumerProbe).analyze(file, { engine: 'rvfc', host: document.body });
     return { supported, engine, error };
+  });
+}
+
+async function browserCapture(page: Page, name: string) {
+  await page.locator('#file').setInputFiles(join(FILES_DIR, name));
+  return page.evaluate(async () => {
+    const file = document.querySelector<HTMLInputElement>('#file')?.files?.[0];
+    if (!file) throw new Error('no file picked');
+    const r = await (window.__probe as ConsumerProbe).analyze(file, { engine: 'own', codecConfig: true });
+    const c = r.videoTracks[0]?.codecConfig as { family?: unknown; moov?: unknown; trak?: unknown } | undefined;
+    const moov = c?.moov instanceof DataView ? c.moov : null;
+    const at = r.layout?.moovOffset ?? 0;
+    const expected = new Uint8Array(await file.slice(at, at + (r.layout?.moovSize ?? 0)).arrayBuffer());
+    const same = moov !== null && moov.byteLength === expected.length && expected.every((b, i) => moov.getUint8(i) === b);
+    return { error: r.error, warnings: r.warnings, family: c?.family, trak: c?.trak, view: moov !== null, same };
   });
 }
 
@@ -277,6 +293,12 @@ for (const fixture of FIXTURES.filter((f) => !f.pageOnly)) {
           expect(actual.error, `${file.name} with ${engine}`).toBeNull();
           expect(withoutTiming(actual), `${file.name} with ${engine}`).toEqual(withoutTiming(expected));
           runs++;
+        }
+      }
+      if (engines.includes('own') && !LIBRARY_REPORT) {
+        for (const name of CAPTURE_FILES) {
+          const captured = await browserCapture(page, name);
+          expect(captured, `${name} with codecConfig`).toEqual({ error: null, warnings: (await nodeAnalyze(name, 'own')).warnings, family: 'isobmff', trak: 0, view: true, same: true });
         }
       }
       if (LIBRARY_REPORT && library.length > 0) {
