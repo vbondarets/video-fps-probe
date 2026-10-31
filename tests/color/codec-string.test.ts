@@ -33,6 +33,15 @@ describe('RFC 6381 codec strings, profiles and bit depths', () => {
     expect(isoConfigFacts('hevc', b, entry)?.sps).toEqual({ bitDepth: 10, vui: null });
   });
 
+  test('hvcC: the SPS gives the depth, and a general_profile_idc of 0 takes the first compatibility flag', () => {
+    const sps = hevcSps({ bitDepth: 10, vui: null });
+    const hvcC = [1, 0x00, 0x20, 0, 0, 0, 0x90, 0, 0, 0, 0, 0, 93, 0xf0, 0, 0xfc, 0xfd, 0xf8, 0xf8, 0, 0, 0x0f, 1, 0xa1, 0, 1, sps.length >> 8, sps.length & 255, ...sps];
+    const { b, entry } = entryOf('hvc1', 'hvcC', hvcC);
+    expect(isoConfigFacts('hevc', b, entry)).toMatchObject({ profile: 2, bitDepth: 10, codecString: 'hvc1.0.4.L93.90' });
+    const bare = entryOf('hvc1', 'hvcC', hvcC.slice(0, 23));
+    expect(isoConfigFacts('hevc', bare.b, bare.entry)).toMatchObject({ profile: 2, bitDepth: 8, sps: null });
+  });
+
   test('av1C and vpcC', () => {
     const av1 = entryOf('av01', 'av1C', [0x81, (2 << 5) | 13, 0x80 | 0x40 | 0x20, 0]);
     expect(isoConfigFacts('av1', av1.b, av1.entry)).toMatchObject({ profile: 2, bitDepth: 12, codecString: 'av01.2.13H.12' });

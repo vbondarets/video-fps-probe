@@ -42,7 +42,10 @@ function hevcFacts(b: Uint8Array, s: Span, fourcc: string): ConfigFacts | null {
   if (s.end - s.start < 23) return null;
   const p = s.start;
   const space = b[p + 1] >> 6;
-  const profile = b[p + 1] & 31;
+  const coded = b[p + 1] & 31;
+  const compatibility = u32(b, p + 2);
+  let profile = coded;
+  for (let i = 1; !profile && i < 32; i++) if ((compatibility >>> (31 - i)) & 1) profile = i;
   let constraints = '';
   for (let i = 5, any = false; i >= 0; i--) {
     const c = b[p + 6 + i];
@@ -51,9 +54,9 @@ function hevcFacts(b: Uint8Array, s: Span, fourcc: string): ConfigFacts | null {
       any = true;
     }
   }
-  const codecString = `${fourcc}.${['', 'A', 'B', 'C'][space]}${profile}.${reverseBits32(u32(b, p + 2)).toString(16)}.${b[p + 1] & 0x20 ? 'H' : 'L'}${b[p + 12]}${constraints}`;
+  const codecString = `${fourcc}.${['', 'A', 'B', 'C'][space]}${coded}.${reverseBits32(compatibility).toString(16)}.${b[p + 1] & 0x20 ? 'H' : 'L'}${b[p + 12]}${constraints}`;
   const sps = hevcConfigSps(b, s);
-  return { profile, bitDepth: (b[p + 17] & 7) + 8, codecString, sps };
+  return { profile, bitDepth: sps?.bitDepth ?? (b[p + 17] & 7) + 8, codecString, sps };
 }
 
 function av1Facts(b: Uint8Array, s: Span): ConfigFacts | null {
