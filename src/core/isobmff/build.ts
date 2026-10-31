@@ -212,7 +212,7 @@ export interface BuildContext {
   ffprobeFails: boolean;
 }
 
-export function buildVideoTrack(tr: IsoTrack, movie: IsoMovie, opts: Pick<ResolvedAnalyzeOptions, 'maxExpandedSamples'>, ctx: BuildContext, timeline?: typeof analyzeTimeline): Built {
+export function buildVideoTrack(tr: IsoTrack, movie: IsoMovie, opts: Pick<ResolvedAnalyzeOptions, 'maxExpandedSamples' | 'codecConfig'>, ctx: BuildContext, timeline?: typeof analyzeTimeline): Built {
   const t = emptyTrack(ctx.reportedId);
   const w = t.warnings;
   if (ctx.reportedId !== tr.id) w.push(`duplicate track_ID ${tr.id}: reported as ${ctx.reportedId}`);
@@ -235,6 +235,7 @@ export function buildVideoTrack(tr: IsoTrack, movie: IsoMovie, opts: Pick<Resolv
   t.rotation = displayRotation(tr.matrix, movie.matrix);
   t.enabled = tr.enabled;
   t.timescale = ts;
+  if (opts.codecConfig) t.codecConfig = { family: 'isobmff', moov: tr.dv as DataView, trak: movie.tracks.indexOf(tr) };
 
   const totals = sampleTotals(tr);
   const truncated = movie.truncated;

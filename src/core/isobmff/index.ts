@@ -39,7 +39,6 @@ export async function analyzeIsoBmffDetailed(reader: BlobReader, opts: ResolvedA
     const ids = reportedIds(movie.tracks);
     if ([...ids].some(([t, id]) => t.id !== id)) movie.warnings.push('duplicate track_ID values');
     const videos = movie.tracks.filter((t) => isVideoTrack(t, movie));
-    if (opts.codecConfig && videos.length) movie.warnings.push('codec configuration unavailable');
     const built = videos.map((t) => buildVideoTrack(t, movie, opts, { reportedId: ids.get(t) ?? t.id, ffprobeFails }, analyzeTimeline));
     for (const b of built) b.result.rateProfile = await rateProfileOf(b.profile ?? null);
     analysis.videoTracks = built.map((b) => b.result);
