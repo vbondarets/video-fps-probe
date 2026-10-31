@@ -1,5 +1,6 @@
 import { execFileSync, execSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -9,9 +10,11 @@ import ts from 'typescript';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const KB = 1000;
 
-export const UNPACKED_CAP = 661 * KB;
+export const UNPACKED_CAP = 847 * KB;
 
-const ALLOWED = [/^(?:index|lazy|analyze|probe)\.(?:js|d\.ts)$/, /^(?:core|engines|worker|client|api|plugins|react|check|presets|header|url|standalone)\/[\w./-]+\.(?:js|d\.ts)$/, /^presets\/sources\.json$/];
+const ALLOWED = [/^(?:index|lazy|analyze|probe)\.(?:js|d\.ts)$/, /^(?:core|engines|worker|client|api|plugins|react|check|presets|header|url|standalone)\/[\w./-]+\.(?:js|d\.ts)$/, /^presets\/sources\.json$/, /^cjs\/[\w./-]+\.(?:cjs|d\.cts)$/];
+const CJS_BUILTINS = ['url'];
+const PURE_CJS_ENTRIES = ['cjs/url.cjs', 'cjs/check.cjs', 'cjs/presets.cjs'];
 const PACK_EXTRAS = new Set(['package.json', 'README.md', 'LICENSE', 'CHANGELOG.md']);
 const LITERAL_HOSTS = ['plugins/own.js', 'plugins/mp4box.js', 'plugins/mediabunny.js'];
 const PEER_ENGINES = ['engines/mp4box.js', 'engines/mediabunny.js'];
@@ -94,6 +97,61 @@ export function scanCode(text, fileName) {
   return found;
 }
 
+export function scanCommonJs(text, fileName) {
+  const source = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, false, ts.ScriptKind.JS);
+  const found = { importMeta: 0, dynamicImports: 0, requires: [] };
+  const visit = (node) => {
+    if (ts.isMetaProperty(node) && node.keywordToken === ts.SyntaxKind.ImportKeyword) found.importMeta++;
+    else if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) found.dynamicImports++;
+    else if (ts.isCallExpression(node) && calleeName(node) === 'require') {
+      const [arg] = node.arguments;
+      found.requires.push(arg && ts.isStringLiteralLike(arg) ? arg.text : null);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return found;
+}
+
+function checkCommonJs(dist, files, fail) {
+  const cjs = files.filter((f) => f.startsWith('cjs/'));
+  for (const file of cjs.filter((f) => f.endsWith('.cjs'))) {
+    const scan = scanCommonJs(readFileSync(join(dist, file), 'utf8'), file);
+    if (scan.importMeta > 0) fail(`${file}: import.meta in the CommonJS copy`);
+    if (scan.dynamicImports > 0) fail(`${file}: import() in the CommonJS copy`);
+    if (PURE_CJS_ENTRIES.includes(file) && scan.requires.length > 0) fail(`${file}: requires ${scan.requires.map((s) => s ?? '<non-literal>').join(', ')}, a CommonJS rule or Range entry requires nothing`);
+    for (const specifier of scan.requires) {
+      if (specifier === null) fail(`${file}: require() with a non-literal specifier`);
+      else if (peerOf(specifier) || isReact(specifier)) fail(`${file}: requires the peer ${specifier}`);
+      else if (bare(specifier)) {
+        if (!CJS_BUILTINS.includes(specifier)) fail(`${file}: requires ${specifier}, only ${CJS_BUILTINS.map((b) => `require("${b}")`).join(', ')} may name a builtin`);
+      } else if (!existsSync(join(dist, dirname(file), specifier))) fail(`${file}: require ${specifier} does not resolve inside dist`);
+      else if (!posix(join(dirname(file), specifier)).startsWith('cjs/')) fail(`${file}: require ${specifier} leaves dist/cjs`);
+    }
+  }
+  for (const file of cjs.filter((f) => f.endsWith('.d.cts'))) {
+    for (const { specifier } of moduleSpecifiers(readFileSync(join(dist, file), 'utf8'), file.replace(/\.d\.cts$/, '.d.ts'))) {
+      if (specifier === null || bare(specifier)) continue;
+      const target = posix(join(dirname(file), specifier)).replace(/\.cjs$/, '.d.cts');
+      if (!specifier.endsWith('.cjs')) fail(`${file}: specifier ${specifier} does not name a .cjs file`);
+      else if (!existsSync(join(dist, target))) fail(`${file}: import ${specifier} does not resolve inside dist (no ${target})`);
+    }
+  }
+}
+
+function requireSmoke(root, files) {
+  const load = createRequire(import.meta.url);
+  const problems = [];
+  for (const file of files) {
+    try {
+      load(join(root, file));
+    } catch (e) {
+      problems.push(`${file}: ${e?.message}`);
+    }
+  }
+  return problems;
+}
+
 function graph(files, texts) {
   const edges = new Map();
   for (const file of files.filter((f) => f.endsWith('.js'))) {
@@ -147,8 +205,37 @@ function typedEntries(manifest) {
   return [...new Set(targets.filter((t) => typeof t === 'string' && t.endsWith('.d.ts')).map((t) => t.replace(/^(?:\.\/)?dist\//, '')))];
 }
 
+function conditionalEntries(manifest) {
+  const out = [];
+  for (const [key, entry] of Object.entries(manifest.exports ?? {})) {
+    if (typeof entry !== 'object' || entry === null) continue;
+    const conditions = Object.fromEntries(Object.entries(entry).filter(([, v]) => typeof v === 'object' && v !== null));
+    if (Object.keys(conditions).length > 0) out.push({ key, conditions });
+  }
+  return out;
+}
+
+function cjsDeclarationClosure(dist, roots) {
+  const seen = new Set(roots.filter((f) => existsSync(join(dist, f))));
+  for (const stack = [...seen]; stack.length > 0; ) {
+    const file = stack.pop();
+    for (const { specifier } of moduleSpecifiers(readFileSync(join(dist, file), 'utf8'), file.replace(/\.d\.cts$/, '.d.ts'))) {
+      if (specifier === null || bare(specifier)) continue;
+      const target = posix(join(dirname(file), specifier)).replace(/\.cjs$/, '.d.cts');
+      if (seen.has(target) || !existsSync(join(dist, target))) continue;
+      seen.add(target);
+      stack.push(target);
+    }
+  }
+  return seen;
+}
+
 export function declarationClosure(dist, manifest) {
-  const seen = new Set(typedEntries(manifest).filter((f) => existsSync(join(dist, f))));
+  return declarationClosureOf(dist, typedEntries(manifest));
+}
+
+export function declarationClosureOf(dist, roots) {
+  const seen = new Set(roots.filter((f) => existsSync(join(dist, f))));
   for (const stack = [...seen]; stack.length > 0; ) {
     const file = stack.pop();
     for (const { specifier } of moduleSpecifiers(readFileSync(join(dist, file), 'utf8'), file)) {
@@ -196,10 +283,24 @@ export function checkDist({ pack = true, ssr = true, repo = REPO_ROOT } = {}) {
   for (const [key, entry] of Object.entries(manifest.exports ?? {})) {
     if (typeof entry === 'string' && entry !== './package.json' && !existsSync(join(repo, entry))) fail(`export ${key} points at a missing file ${entry}`);
   }
+  const requireTargets = [];
+  for (const { key, conditions } of conditionalEntries(manifest)) {
+    for (const [condition, target] of Object.entries(conditions)) {
+      for (const [kind, path] of Object.entries(target)) if (!existsSync(join(repo, path))) fail(`export ${key} ${condition} ${kind} points at a missing file ${path}`);
+      if (condition === 'require') {
+        if (!/^\.\/dist\/cjs\/.+\.cjs$/.test(target.default ?? '') || !/^\.\/dist\/cjs\/.+\.d\.cts$/.test(target.types ?? '')) fail(`export ${key} require must point at a .cjs file and a .d.cts file in dist/cjs`);
+        else requireTargets.push(target);
+      } else if (target.default !== manifest.exports[key].default || target.types !== manifest.exports[key].types) fail(`export ${key} ${condition} must point at the flat types and default`);
+    }
+  }
+  if (manifest.main !== undefined && !requireTargets.some((t) => t.default === manifest.main)) fail(`main ${manifest.main} is not the require target of an export`);
   if (typedEntries(manifest).length > 0) {
     const reached = declarationClosure(dist, manifest);
     for (const f of files) if (f.endsWith('.d.ts') && !reached.has(f)) fail(`${f}: no exported entry's types reach it, so build-lib leaves it out`);
   }
+  const cjsReached = cjsDeclarationClosure(dist, requireTargets.map((t) => t.types.replace(/^\.\/dist\//, '')));
+  for (const f of files) if (f.endsWith('.d.cts') && !cjsReached.has(f)) fail(`${f}: no require types reach it`);
+  checkCommonJs(dist, files, fail);
 
   for (const [file, text] of texts) {
     for (const { specifier, dynamic } of moduleSpecifiers(text, file)) {
@@ -211,6 +312,7 @@ export function checkDist({ pack = true, ssr = true, repo = REPO_ROOT } = {}) {
       if (!bare(specifier)) {
         const target = posix(join(dirname(file), specifier));
         const resolved = file.endsWith('.d.ts') ? target.replace(/\.js$/, '.d.ts') : target;
+        if (target.startsWith('cjs/')) fail(`${file}: ${specifier} reaches the CommonJS copy in dist/cjs`);
         if (!existsSync(join(dist, resolved))) fail(`${file}: ${dynamic ? 'import()' : 'import'} ${specifier} does not resolve inside dist${resolved === target ? '' : ` (no ${resolved})`}`);
       }
       const peer = peerOf(specifier);
@@ -231,6 +333,7 @@ export function checkDist({ pack = true, ssr = true, repo = REPO_ROOT } = {}) {
       if (url === null) fail(`${file}: new URL() with a non-literal specifier and import.meta.url`);
       else if (TS_EXTENSION.test(url)) fail(`${file}: new URL() of the .ts file ${url}`);
       else if (!existsSync(join(dist, dirname(file), url))) fail(`${file}: new URL() of ${url}, which does not exist in dist`);
+      else if (posix(join(dirname(file), url)).startsWith('cjs/')) fail(`${file}: new URL() of ${url} reaches the CommonJS copy in dist/cjs`);
     }
     for (const hazard of new Set(scan.hazards)) fail(`${file}: calls ${hazard}, which ESM output and peer isolation do not allow`);
   }
@@ -302,6 +405,7 @@ export function checkDist({ pack = true, ssr = true, repo = REPO_ROOT } = {}) {
   if (ssr) {
     const entries = exportedEntries(manifest).map((e) => e.file).filter((f) => existsSync(join(dist, f)) && !/\.worker\.js$|\.json$/.test(f));
     for (const line of ssrImport(dist, entries)) fail(`SSR import: ${line}`);
+    for (const line of requireSmoke(repo, requireTargets.map((t) => t.default))) fail(`CommonJS require: ${line}`);
   }
 
   let listing = null;
@@ -396,11 +500,47 @@ export function runSelfTest() {
     expectProblem('check/index.js with an import() fails', problemsOf({ ...x, 'check/index.js': "export const check = () => import('../core/x.js');\n" }), 'check/index.js: imports ../core/x.js at run time', true);
     expectProblem('a .d.ts outside react/ importing react fails', problemsOf({ ...react, 'api/x.d.ts': "export type X = import('react').ReactNode;\n" }), 'api/x.d.ts: imports react outside react/', true);
 
+    const chunk = { 'cjs/chunks/x.cjs': 'exports.x = 1;\n' };
+    expectProblem('a CommonJS chunk with import.meta fails', problemsOf({ 'cjs/a.cjs': 'exports.u = import.meta.url;\n' }), 'cjs/a.cjs: import.meta in the CommonJS copy', true);
+    expectProblem('a CommonJS chunk with import() fails', problemsOf({ ...chunk, 'cjs/a.cjs': "exports.l = () => import('./chunks/x.cjs');\n" }), 'cjs/a.cjs: import() in the CommonJS copy', true);
+    expectProblem('a CommonJS chunk that requires a peer fails', problemsOf({ 'cjs/a.cjs': 'exports.m = require("mp4box");\n' }), 'cjs/a.cjs: requires the peer mp4box', true);
+    expectProblem('a CommonJS chunk that requires react fails', problemsOf({ 'cjs/a.cjs': 'exports.m = require("react");\n' }), 'cjs/a.cjs: requires the peer react', true);
+    expectProblem('a CommonJS chunk that requires a builtin other than url fails', problemsOf({ 'cjs/a.cjs': 'exports.f = require("node:fs");\n' }), 'cjs/a.cjs: requires node:fs, only require("url") may name a builtin', true);
+    expectProblem('a CommonJS chunk with a non-literal require fails', problemsOf({ 'cjs/a.cjs': 'exports.f = (n) => require(n);\n' }), 'cjs/a.cjs: require() with a non-literal specifier', true);
+    expectProblem('a CommonJS chunk that requires a missing chunk fails', problemsOf({ 'cjs/a.cjs': 'exports.f = require("./chunks/missing.cjs");\n' }), 'cjs/a.cjs: require ./chunks/missing.cjs does not resolve inside dist', true);
+    expectProblem('a CommonJS chunk that requires a file outside dist/cjs fails', problemsOf({ ...x, 'cjs/a.cjs': 'exports.f = require("../core/x.js");\n' }), 'cjs/a.cjs: require ../core/x.js leaves dist/cjs', true);
+    expectProblem('require("url") and a relative chunk pass', problemsOf({ ...chunk, 'cjs/index.cjs': 'exports.u = require("url").pathToFileURL(__filename).href;\nexports.x = () => Promise.resolve().then(() => require("./chunks/x.cjs"));\n' }), 'cjs/index.cjs', false);
+    expectProblem('the CommonJS url entry that requires a chunk fails', problemsOf({ ...chunk, 'cjs/url.cjs': 'exports.x = require("./chunks/x.cjs");\n' }), 'cjs/url.cjs: requires ./chunks/x.cjs, a CommonJS rule or Range entry requires nothing', true);
+    expectProblem('the CommonJS check entry that requires url fails', problemsOf({ 'cjs/check.cjs': 'exports.u = require("url");\n' }), 'cjs/check.cjs: requires url', true);
+    expectProblem('an ESM file that imports the CommonJS copy fails', problemsOf({ ...chunk, 'core/a.js': "export { x } from '../cjs/chunks/x.cjs';\n" }), 'core/a.js: ../cjs/chunks/x.cjs reaches the CommonJS copy in dist/cjs', true);
+    expectProblem('a .d.cts with a .js specifier fails', problemsOf({ 'cjs/a.d.cts': "export type { X } from './x.js';\n", 'cjs/x.d.cts': 'export type X = 1;\n' }), 'cjs/a.d.cts: specifier ./x.js does not name a .cjs file', true);
+    expectProblem('a .d.cts with a missing target fails', problemsOf({ 'cjs/a.d.cts': "export type { X } from './y.cjs';\n" }), 'cjs/a.d.cts: import ./y.cjs does not resolve inside dist (no cjs/y.d.cts)', true);
+    expectProblem('a .d.cts no require types reach fails', problemsOf({ 'cjs/a.d.cts': 'export type X = 1;\n' }), "cjs/a.d.cts: no require types reach it", true);
+
     writeFileSync(join(repo, 'package.json'), `${JSON.stringify({ name: 'check-dist-self-test', exports: { '.': { types: './dist/index.d.ts', default: './dist/index.js' } } })}\n`);
     const typed = { 'index.js': "export { x } from './core/x.js';\n", 'index.d.ts': "export type { X } from './core/types.js';\n", 'core/x.js': 'export const x = 1;\n', 'core/types.d.ts': "export type X = import('./rational.js').R;\n", 'core/rational.d.ts': 'export type R = number;\n' };
     expectProblem('declaration files reached through export and import() types pass', problemsOf(typed), "no exported entry's types reach", false);
     expectProblem('a declaration file no exported types reach fails', problemsOf({ ...typed, 'core/stats.d.ts': 'export declare const s: number;\n' }), "core/stats.d.ts: no exported entry's types reach it", true);
     expectProblem('the closure keeps what the entry types reach', [...declarationClosure(join(repo, 'dist'), JSON.parse(readFileSync(join(repo, 'package.json'), 'utf8')))].sort(), 'core/rational.d.ts', true);
+
+    const conditional = (root, main = './dist/cjs/index.cjs') => {
+      const flat = { types: './dist/index.d.ts', default: './dist/index.js' };
+      writeFileSync(join(repo, 'package.json'), `${JSON.stringify({ name: 'check-dist-self-test', main, exports: { '.': { 'module-sync': flat, module: flat, require: { types: './dist/cjs/index.d.cts', default: './dist/cjs/index.cjs' }, ...flat, ...root } } })}\n`);
+    };
+    const dual = { 'index.js': 'export const x = 1;\n', 'index.d.ts': "export type { X } from './core/types.js';\n", 'core/types.d.ts': 'export type X = number;\n', 'other.js': 'export const x = 2;\n', 'cjs/index.cjs': 'exports.x = 1;\n', 'cjs/index.d.cts': "export type { X } from './core/types.cjs';\n", 'cjs/core/types.d.cts': 'export type X = number;\n' };
+    conditional({});
+    const dualProblems = problemsOf(dual);
+    expectProblem('a dual entry with module-sync, module and require passes', dualProblems, 'export .', false);
+    expectProblem('a dual entry reaches its .d.cts closure', dualProblems, 'no require types reach', false);
+    expectProblem('a dual entry with main on its require target passes', dualProblems, 'main ', false);
+    conditional({ require: { types: './dist/index.d.ts', default: './dist/index.js' } });
+    expectProblem('a require condition on the ESM files fails', problemsOf(dual), 'export . require must point at a .cjs file and a .d.cts file in dist/cjs', true);
+    conditional({ 'module-sync': { types: './dist/index.d.ts', default: './dist/other.js' } });
+    expectProblem('a module-sync condition on another file fails', problemsOf(dual), 'export . module-sync must point at the flat types and default', true);
+    conditional({ require: { types: './dist/cjs/index.d.cts', default: './dist/cjs/missing.cjs' } });
+    expectProblem('a require condition on a missing file fails', problemsOf(dual), 'export . require default points at a missing file ./dist/cjs/missing.cjs', true);
+    conditional({}, './dist/cjs/other.cjs');
+    expectProblem('a main that no export requires fails', problemsOf(dual), 'main ./dist/cjs/other.cjs is not the require target of an export', true);
   } finally {
     rmSync(repo, { recursive: true, force: true });
   }

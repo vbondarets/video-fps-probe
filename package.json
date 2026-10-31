@@ -32,6 +32,7 @@
     "dist",
     "CHANGELOG.md"
   ],
+  "main": "./dist/cjs/index.cjs",
   "types": "./dist/index.d.ts",
   "module": "./dist/index.js",
   "typesVersions": {
@@ -85,6 +86,18 @@
   },
   "exports": {
     ".": {
+      "module-sync": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "module": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.cts",
+        "default": "./dist/cjs/index.cjs"
+      },
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
@@ -105,18 +118,66 @@
       "default": "./dist/react/index.js"
     },
     "./check": {
+      "module-sync": {
+        "types": "./dist/check/index.d.ts",
+        "default": "./dist/check/index.js"
+      },
+      "module": {
+        "types": "./dist/check/index.d.ts",
+        "default": "./dist/check/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/check/index.d.cts",
+        "default": "./dist/cjs/check.cjs"
+      },
       "types": "./dist/check/index.d.ts",
       "default": "./dist/check/index.js"
     },
     "./header": {
+      "module-sync": {
+        "types": "./dist/header/index.d.ts",
+        "default": "./dist/header/index.js"
+      },
+      "module": {
+        "types": "./dist/header/index.d.ts",
+        "default": "./dist/header/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/header/index.d.cts",
+        "default": "./dist/cjs/header.cjs"
+      },
       "types": "./dist/header/index.d.ts",
       "default": "./dist/header/index.js"
     },
     "./url": {
+      "module-sync": {
+        "types": "./dist/url/index.d.ts",
+        "default": "./dist/url/index.js"
+      },
+      "module": {
+        "types": "./dist/url/index.d.ts",
+        "default": "./dist/url/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/url/index.d.cts",
+        "default": "./dist/cjs/url.cjs"
+      },
       "types": "./dist/url/index.d.ts",
       "default": "./dist/url/index.js"
     },
     "./presets": {
+      "module-sync": {
+        "types": "./dist/presets/index.d.ts",
+        "default": "./dist/presets/index.js"
+      },
+      "module": {
+        "types": "./dist/presets/index.d.ts",
+        "default": "./dist/presets/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/presets/index.d.cts",
+        "default": "./dist/cjs/presets.cjs"
+      },
       "types": "./dist/presets/index.d.ts",
       "default": "./dist/presets/index.js"
     },
@@ -180,7 +241,9 @@
     "build:demo": "tsc -b && vite build --config demo/vite.config.ts",
     "preview": "vite preview --config demo/vite.config.ts",
     "check:package": "publint --strict && node scripts/check-dist.mjs",
-    "check:types": "npx --yes @arethetypeswrong/cli@0.18.5 --pack . --ignore-rules cjs-resolves-to-esm --exclude-entrypoints ./standalone/own.worker.js ./standalone/own-isobmff.worker.js ./standalone/own-matroska.worker.js",
+    "check:types": "npm run check:types:server && npm run check:types:browser",
+    "check:types:server": "npx --yes @arethetypeswrong/cli@0.18.5 --pack . --entrypoints . ./header ./url ./check ./presets",
+    "check:types:browser": "npx --yes @arethetypeswrong/cli@0.18.5 --pack . --ignore-rules cjs-resolves-to-esm --exclude-entrypoints . ./header ./url ./check ./presets ./standalone/own.worker.js ./standalone/own-isobmff.worker.js ./standalone/own-matroska.worker.js",
     "prepack": "npm run build:lib && node scripts/check-dist.mjs",
     "check:aliases": "node scripts/src-aliases.mjs --check",
     "check:stable-chunks": "node scripts/check-stable-chunks.mjs",
