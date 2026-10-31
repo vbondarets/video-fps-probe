@@ -4,7 +4,7 @@ import { describe, expect, test } from 'vitest';
 import { isoBmffFixtureSet } from '../../scripts/compare/layout.ts';
 import { analyzeHeader, warningCodesOf, type BlobLike, type HeaderLimits, type HeaderResult } from '../../src/header/index.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
-import { auxiliary, box, bytes, ftyp, mdatHeader, moof, moov, moovOfSize, mvex, recording, sidx, virtualSource, withText, zeros, type Segment, type VirtualSource } from '../helpers/iso-builder.ts';
+import { auxiliary, box, bytes, ftyp, mdatHeader, moof, moov, moovOfSize, mvex, recording, sidx, videoSidxOnly, virtualSource, withText, zeros, type Segment, type VirtualSource } from '../helpers/iso-builder.ts';
 
 const MIB = 1024 * 1024;
 const LIMIT_CODES = new Set(['byte-limit', 'read-limit', 'time-limit', 'structure-limit']);
@@ -57,6 +57,8 @@ function virtualSources(): Array<[string, () => BlobLike]> {
     ['a video sidx with shorter sound found through the mfra', () => recording({ fragments: 4, mdatBytes: 100_000, audio: true, audioShorter: 10, sidx: true }).source],
     ['a text track in the first of three moofs that ends 0.5 s after the video', () => withText(3, 3500)],
     ['a text track indexed in the mfra beside B-frame video, sound and mehd', () => auxiliary(6000, true)],
+    ['a sidx for the video only beside sound, without an mfra', () => videoSidxOnly(3)],
+    ['a sidx for the video only beside sound, with an mfra', () => videoSidxOnly(3, true)],
   ];
 }
 

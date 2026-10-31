@@ -6,7 +6,7 @@ import { analyze } from '../../src/core/analyze.ts';
 import type { FileResult, VideoTrackResult } from '../../src/core/types.ts';
 import { analyzeHeader, warningCodesOf, type HeaderResult } from '../../src/header/index.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
-import { auxiliary, bytes, ftyp, fullBox, mdatHeader, mfra, moof, moov, mvex, recording, sidx, tag, u32, virtualSource, withText, zeros, type FragmentSpec, type Segment, type VirtualSource } from '../helpers/iso-builder.ts';
+import { auxiliary, bytes, ftyp, fullBox, mdatHeader, mfra, moof, moov, mvex, recording, sidx, tag, u32, videoSidxOnly, virtualSource, withText, zeros, type FragmentSpec, type Segment, type VirtualSource } from '../helpers/iso-builder.ts';
 
 const TRACK_FIELDS = ['codecName', 'fourccOrCodecId', 'width', 'height', 'rotation', 'frames', 'isStill', 'enabled', 'durationSec', 'startSec', 'avgFpsFfprobe', 'sampleAspectRatio', 'displayWidth', 'displayHeight'] as const;
 const FILE_FIELDS = ['container', 'brand', 'formatDurationSec', 'layout', 'error', 'errorCode', 'audioTrackCount', 'primaryTrackId'] as const;
@@ -235,6 +235,8 @@ const VIRTUAL: Array<[string, () => VirtualSource]> = [
   ['a text track that ends 1.5 s after the video', () => withText(1, 2500)],
   ['a text track in the first of three moofs that ends 0.5 s after the video', () => withText(3, 3500)],
   ['a text track of one empty sample in the first of three moofs', () => withText(3, 0)],
+  ['a single fragment with a sidx for the video only and no mfra', () => videoSidxOnly(1)],
+  ['three fragments with a sidx for the video only and an mfra', () => videoSidxOnly(3, true)],
 ];
 
 describe('header mode against full mode on virtual sources', () => {
@@ -300,6 +302,42 @@ describe('header mode against full mode on virtual sources', () => {
         expect(header.videoTracks[0].durationSec, label).toBe(1);
         expect(header.io.reads, label).toBe(1);
       }
+    }
+  });
+
+  test('a sidx for the video only keeps the video duration and leaves the format duration unresolved without an index', async () => {
+    const full = await analyze(videoSidxOnly(3), 'cmaf.mp4', {});
+    expect(full.formatDurationSec).toBe(4.501333);
+    for (const fragmentedDuration of ['header', 'index'] as const) {
+      const header = await analyzeHeader(videoSidxOnly(3), { fragmentedDuration });
+      expect(header, fragmentedDuration).toMatchObject({ error: null, errorCode: null, formatDurationSec: null, warnings: ['format duration unresolved: track 2'] });
+      expect(warningCodesOf(header), fragmentedDuration).toEqual(['duration-unresolved']);
+      expect(header.videoTracks[0].durationSec, fragmentedDuration).toBe(4.5);
+      expect(header.videoTracks[0].provenance.durationSec, fragmentedDuration).toBe('header');
+    }
+    const indexed = await analyzeHeader(videoSidxOnly(3, true));
+    expect(indexed).toMatchObject({ error: null, formatDurationSec: 4.501333, warnings: [] });
+    expect(indexed.videoTracks[0].durationSec).toBe(4.5);
+  });
+
+  test('a text track without a sidx beside a covering one in several fragments keeps the video duration, never a short span', async () => {
+    const head = bytes(ftyp('iso5'), moov([{ id: 1, timescale: 15360 }, { id: 2, handler: 'text', timescale: 1000 }], [mvex({ trex: [{ id: 1, duration: 512 }, { id: 2, duration: 1000 }] })]));
+    const pieces: Segment[] = [];
+    const references: Array<[number, number]> = [];
+    for (let i = 0; i < 3; i++) {
+      const trafs: FragmentSpec[] = [{ id: 1, baseDts: i * 30 * 512, count: 30, duration: 512 }];
+      if (i === 2) trafs.push({ id: 2, baseDts: 2000, count: 1, duration: 1500 });
+      const m = moof(i + 1, trafs, 3000);
+      pieces.push(m, mdatHeader(3000), { zeros: 3000 });
+      references.push([m.length + 8 + 3000, 30 * 512]);
+    }
+    const open = (): VirtualSource => virtualSource([head, sidx(1, 15360, 0, references), ...pieces]);
+    const full = await analyze(open(), 'text.mp4', {});
+    expect(full.formatDurationSec).toBe(3.5);
+    for (const fragmentedDuration of ['header', 'index'] as const) {
+      const header = await analyzeHeader(open(), { fragmentedDuration });
+      expect(header, fragmentedDuration).toMatchObject({ error: null, formatDurationSec: null, warnings: ['format duration unresolved: track 2'] });
+      expect(header.videoTracks[0].durationSec, fragmentedDuration).toBe(3);
     }
   });
 

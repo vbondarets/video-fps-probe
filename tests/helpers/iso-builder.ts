@@ -296,3 +296,22 @@ export function auxiliary(mehd: number | null, textInIndex: boolean): VirtualSou
   segments.push(mfra(entries));
   return virtualSource(segments);
 }
+
+export function videoSidxOnly(fragments: number, index = false): VirtualSource {
+  const head = bytes(ftyp('cmfc'), moov([{ id: 1, timescale: 15360 }, { id: 2, handler: 'soun', timescale: 48000 }], [mvex({ trex: [{ id: 1, duration: 512 }, { id: 2, duration: 1024 }] })]));
+  const pieces: Segment[] = [];
+  const video: Array<[number, number]> = [];
+  for (let i = 0; i < fragments; i++) {
+    const m = moof(i + 1, [{ id: 1, baseDts: i * 45 * 512, count: 45, duration: 512 }, { id: 2, baseDts: i * 70 * 1024, count: i === fragments - 1 ? 71 : 70, duration: 1024 }], 20_000);
+    pieces.push(m, mdatHeader(20_000), { zeros: 20_000 });
+    video.push([m.length + 8 + 20_000, 45 * 512]);
+  }
+  const s = sidx(1, 15360, 0, video);
+  const offsets: number[] = [];
+  let at = head.length + s.length;
+  for (const [n] of video) {
+    offsets.push(at);
+    at += n;
+  }
+  return virtualSource([head, s, ...pieces, ...(index ? [mfra([{ id: 1, offsets }, { id: 2, offsets }])] : [])]);
+}
