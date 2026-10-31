@@ -195,17 +195,17 @@ describe('header mode against full mode on virtual sources', () => {
     }
   });
 
-  test('a text track whose last fragment comes before the walk of the video gets no format duration under a read limit rather than a short one', async () => {
+  test('a text track whose last fragment comes before the walk of the video keeps the video span under a read limit, with the warning', async () => {
     const full = await analyze(withText(3, 3500), 'text.mp4', {});
     const header = await analyzeHeader(withText(3, 3500), { limits: { maxReads: 3 } });
     expect(header.error).toBeNull();
     expect(header.io.reads).toBe(3);
     expect(header.videoTracks[0].durationSec).toBe(full.videoTracks[0].durationSec);
-    expect(header.formatDurationSec).toBeNull();
+    expect(header.formatDurationSec).toBe(full.videoTracks[0].durationSec);
     expect(header.warnings).toContain('format duration unresolved: track 2');
   });
 
-  test('a text track next to a covering sidx in header mode leaves the format duration null with the warning', async () => {
+  test('a text track next to a covering sidx in header mode keeps the video span, with the warning', async () => {
     const head = bytes(ftyp('iso5'), moov([{ id: 1, timescale: 15360 }, { id: 2, handler: 'text', timescale: 1000 }], [mvex({ trex: [{ id: 1, duration: 512 }, { id: 2, duration: 1000 }] })]));
     const m = moof(1, [{ id: 1, baseDts: 0, count: 30, duration: 512 }, { id: 2, baseDts: 0, count: 1, duration: 1500 }], 3000);
     const open = (): VirtualSource => virtualSource([head, sidx(1, 15360, 0, [[m.length + 8 + 3000, 30 * 512]]), m, mdatHeader(3000), { zeros: 3000 }]);
@@ -214,7 +214,7 @@ describe('header mode against full mode on virtual sources', () => {
     expect(full.formatDurationSec).toBe(1.5);
     expect(header.error).toBeNull();
     expect(header.videoTracks[0].durationSec).toBe(1);
-    expect(header.formatDurationSec).toBeNull();
+    expect(header.formatDurationSec).toBe(1);
     expect(header.warnings).toContain('format duration unresolved: track 2');
   });
 
