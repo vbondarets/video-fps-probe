@@ -22,7 +22,7 @@ function withoutConfig(r: FileResult) {
     delete copy.codecConfig;
     return copy;
   });
-  return { ...r, io: { reads: r.io.reads, bytesRead: r.io.bytesRead }, videoTracks };
+  return { ...r, io: null, videoTracks };
 }
 
 afterEach(() => {
@@ -34,7 +34,7 @@ const names = readdirSync(FILES_DIR).sort();
 const iso = await isoBmffFixtureSet(names, (n) => join(FILES_DIR, n));
 
 describe('analyze with codecConfig on MP4 and MOV', () => {
-  test(`captures the boxes analyzeHeader captures, with no extra read, on every fixture of the computed ISO BMFF set (${iso.length} files)`, async () => {
+  test(`captures the boxes analyzeHeader captures, with one read of the moov, on every fixture of the computed ISO BMFF set (${iso.length} files)`, async () => {
     expect(iso.length).toBeGreaterThan(100);
     let captured = 0;
     for (const name of iso) {
@@ -43,6 +43,11 @@ describe('analyze with codecConfig on MP4 and MOV', () => {
       const r = await analyze(blob, { name, codecConfig: true });
       expect(withoutConfig(r), name).toEqual(withoutConfig(plain));
       expect(warningCodesOf(r), name).not.toContain('codec-config-unavailable');
+      if (r.videoTracks.length > 0) {
+        const { moovOffset, moovSize } = r.layout ?? {};
+        expect(r.io.reads, name).toBe(plain.io.reads + 1);
+        expect(r.io.bytesRead, name).toBe(plain.io.bytesRead + Math.min(moovSize ?? NaN, blob.size - (moovOffset ?? NaN)));
+      } else expect(r.io, name).toMatchObject({ reads: plain.io.reads, bytesRead: plain.io.bytesRead });
       const header = await analyzeHeader(blob, { name, codecConfig: true, limits: UNBOUNDED });
       const fromHeader = new Map(header.videoTracks.map((t) => [t.trackId, t.codecConfig]));
       for (const t of r.videoTracks) {
@@ -68,6 +73,35 @@ describe('analyze with codecConfig on MP4 and MOV', () => {
     expect(r.videoTracks[0]).not.toHaveProperty('codecConfig');
     expect(r.warnings).toEqual([...plain.warnings, expect.stringMatching(/^codec configuration unavailable: ./)]);
     expect(warningCodesOf(r)).toEqual(['codec-config-unavailable']);
+  });
+
+  test('a moov read that fails keeps the result and names the failure in codec-config-unavailable', async () => {
+    const blob = await fixture('hdr10_hevc10.mp4');
+    let reads = 0;
+    const failing = { size: blob.size, slice: (start: number, end: number) => ({ arrayBuffer: () => (++reads > 1 ? Promise.reject(new Error('gone')) : blob.slice(start, end).arrayBuffer()) }) };
+    const plain = await analyze(blob);
+    const r = await analyze(failing, { codecConfig: true });
+    expect(r.errorCode).toBeNull();
+    expect(r.videoTracks[0]).not.toHaveProperty('codecConfig');
+    expect(r.warnings).toEqual([...plain.warnings, 'codec configuration unavailable: gone']);
+    expect(r.io).toMatchObject({ reads: plain.io.reads, bytesRead: plain.io.bytesRead });
+  });
+
+  test("an abort during the moov read rejects with the caller's reason", async () => {
+    const blob = await fixture('hdr10_hevc10.mp4');
+    const controller = new AbortController();
+    const reason = new Error('stop');
+    let reads = 0;
+    const source = {
+      size: blob.size,
+      slice: (start: number, end: number) => ({
+        arrayBuffer: () => {
+          if (++reads > 1) controller.abort(reason);
+          return blob.slice(start, end).arrayBuffer();
+        },
+      }),
+    };
+    await expect(analyze(source, { codecConfig: true, signal: controller.signal })).rejects.toBe(reason);
   });
 
   test('a file without a video track gets no capture and no warning', async () => {
