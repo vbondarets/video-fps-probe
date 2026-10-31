@@ -39,6 +39,15 @@ describe('the CommonJS copy against the ESM build', () => {
     expect(Object.keys(c).map((k) => typeof c[k])).toEqual(Object.keys(c).map((k) => typeof e[k]));
   });
 
+  it.each(Object.keys(CJS_ENTRIES))('%s keeps the name of every exported class and function', (name) => {
+    const { esm: e, cjs: c } = pairs[name]!;
+    const named = (m: Record<string, unknown>) => Object.keys(m).sort().filter((k) => typeof m[k] === 'function').map((k) => [k, (m[k] as { name: string }).name]);
+    expect(named(c)).toEqual(named(e));
+    expect(named(c).every(([k, n]) => k === n)).toBe(true);
+    expect(String(new cjs.url.RangeSourceError('size-changed', 'boom'))).toBe('RangeSourceError: boom');
+    expect(new cjs.root.ProbeError('timeout', 'x').constructor.name).toBe('ProbeError');
+  });
+
   it('keeps the constant data equal', () => {
     expect(cjs.header.HEADER_DEFAULT_LIMITS).toEqual(esm.header.HEADER_DEFAULT_LIMITS);
     expect(Object.isFrozen(cjs.header.HEADER_DEFAULT_LIMITS)).toBe(true);
