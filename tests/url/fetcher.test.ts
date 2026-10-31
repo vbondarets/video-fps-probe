@@ -100,6 +100,13 @@ describe('reply validation before the body is read', () => {
     expect(result.error).toMatch(/^file read failed: RangeSourceError: /);
   });
 
+  test('a status or a Content-Length that is a string is refused, with its type in the text', async () => {
+    const status = await rangeSource(async () => ({ status: '206' as unknown as number, bytes: OBJECT.subarray(0, 10) }), { size }).read(0, 10).catch((e: unknown) => e);
+    expect(status).toMatchObject({ code: 'unexpected-status', status: null, message: 'status "206" to bytes=0-9 of an object of 4096 bytes, expected 206' });
+    const length = await rangeSource(async () => ({ status: 206, contentLength: '10' as unknown as number, bytes: OBJECT.subarray(0, 10) }), { size }).read(0, 10).catch((e: unknown) => e);
+    expect(length).toMatchObject({ code: 'length-mismatch', message: 'Content-Length "10" does not match bytes=0-9 (10 bytes)' });
+  });
+
   test('a reply that is not an object fails without a request for its body', async () => {
     expect(await fileCode(rangeSource(async () => null as unknown as RangeReply, { size }).read(0, 10))).toBe('invalid-reply');
     expect(await fileCode(rangeSource((() => 'x') as unknown as RangeFetcher, { size }).read(0, 10))).toBe('invalid-reply');
