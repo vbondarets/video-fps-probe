@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { analyze as analyzeOwn } from '../../src/core/index.ts';
+import { analyze as analyzeInThread } from '../../src/analyze.ts';
 import type { BlobLike } from '../../src/core/reader.ts';
 import type { AnalyzeOptions, FileResult } from '../../src/core/types.ts';
 import type { CheckResult, ContainerFamily, FieldName } from './types.ts';
@@ -14,6 +14,8 @@ export type EngineName = (typeof ENGINE_NAMES)[number];
 export const ENGINE_ALIASES: Readonly<Record<string, EngineName>> = { mp4box: 'mp4box-tuned', mediabunny: 'mediabunny-tuned' };
 
 export type AnalyzeFn = (blob: BlobLike, name: string, opts: AnalyzeOptions) => Promise<FileResult>;
+
+const analyzeOwn: AnalyzeFn = (blob, name, opts) => analyzeInThread(blob, { ...opts, name });
 
 export type ArmLibrary = 'own' | 'mp4box' | 'mediabunny';
 export type ArmStyle = 'own' | 'idiomatic' | 'full' | 'tuned';
@@ -64,7 +66,7 @@ const OWN_REQUIRED_FIELDS: readonly FieldName[] = [
 ];
 
 export const ARMS: Readonly<Record<EngineName, ArmSpec>> = {
-  own: { library: 'own', style: 'own', families: BOTH, provides: null, requires: { isobmff: OWN_REQUIRED_FIELDS, matroska: OWN_REQUIRED_FIELDS }, picksPrimary: true, primaryOnly: false, recipe: 'analyze() of src/core, the engine this package ships' },
+  own: { library: 'own', style: 'own', families: BOTH, provides: null, requires: { isobmff: OWN_REQUIRED_FIELDS, matroska: OWN_REQUIRED_FIELDS }, picksPrimary: true, primaryOnly: false, recipe: 'analyze() of the root entry, the engine this package ships' },
   'mp4box-idiomatic': {
     library: 'mp4box',
     style: 'idiomatic',
@@ -203,7 +205,7 @@ async function loadTuned(library: ArmLibrary): Promise<AnalyzeFn | string> {
 export async function loadEngine(name: EngineName): Promise<EngineLoad> {
   const spec = ARMS[name];
   const arm: ArmInfo = { library: spec.library, style: spec.style, version: libraryVersion(spec.library), recipe: spec.recipe };
-  if (name === 'own') return { engine: { name, informational: false, arm, analyze: analyzeOwn as AnalyzeFn }, skipped: null };
+  if (name === 'own') return { engine: { name, informational: false, arm, analyze: analyzeOwn }, skipped: null };
   if (spec.style === 'tuned') {
     const fn = await loadTuned(spec.library);
     return typeof fn === 'string' ? { engine: null, skipped: fn } : { engine: { name, informational: true, arm, analyze: fn }, skipped: null };
