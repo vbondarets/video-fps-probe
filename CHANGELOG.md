@@ -20,7 +20,7 @@ The members of `ColorInfo` and `DolbyVisionConfig`, the `ColorSource` values, th
 
 ### Changed
 
-- The installed package may take up to 936 KB unpacked (867 KB in 0.4.0-beta.1), measured at 918 KB, for the two entries, their CommonJS copies and the longer docs.
+- The installed package may take up to 936 KB unpacked (867 KB in 0.4.0-beta.1), measured at 921 KB, for the two entries, their CommonJS copies and the longer docs.
 - The first MKV or WebM loads 25.77 KB gzip (25.73 KB in 0.4.0-beta.1) for the TrackEntry copy: the Matroska header walk copies every TrackEntry, and the analyzer attaches the copy to the video tracks only with the option. The first MP4 loads 23.10 KB (23.07 KB in 0.4.0-beta.1), 24.88 KB with Vite's default worker format, for the coded warning of a `codecConfig` request that the worker does not capture.
 - `video-fps-probe/color` puts 4.67 KB gzip in the entry chunk of an app that imports it, under a budget of 5.0 KB rather than the 4.00 KB the 0.4.0 plan set: the two SPS walkers and the FFmpeg name tables are what make the color result equal to ffprobe.
 - `video-fps-probe/header` puts 19.69 KB gzip of package code in the entry chunk (19.28 KB in 0.4.0-beta.1). It loads the codec configuration capture and the two entries with `import()`, so an app whose only dynamic import is this one gets Vite's preload helper, 0.75 KB, in its entry chunk too.
