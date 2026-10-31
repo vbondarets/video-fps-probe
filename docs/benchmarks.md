@@ -462,8 +462,8 @@ export default defineConfig({ worker: { format: 'es' } });
 | iife-nosplit | `video-fps-probe/lazy` | format: 'iife', rolldownOptions.output.codeSplitting: false | **0.66 KB** | 24.91 KB | 27.21 KB | 48.85 KB | - | 2 | ok (8 budgets) |
 | react | `video-fps-probe/lazy` + `video-fps-probe/react` (React 19.3.1) | format: 'es' | **1.64 KB** | 23.13 KB | 25.77 KB | 49.24 KB | - | 2 | ok (10 budgets) |
 | react18 | `video-fps-probe/lazy` + `video-fps-probe/react` (React 18.3.1) | format: 'es' | **1.64 KB** | 23.13 KB | 25.77 KB | 49.24 KB | - | 2 | ok (4 budgets) |
-| check | `video-fps-probe/lazy` + `video-fps-probe/check` | format: 'es' | **4.77 KB** | 23.13 KB | 25.77 KB | 49.24 KB | - | 2 | ok (5 budgets) |
-| preset | `video-fps-probe/lazy` + `video-fps-probe/check` + `video-fps-probe/presets` (klingO1ReferenceVideo) | format: 'es' | **5.12 KB** | 23.13 KB | 25.77 KB | 49.24 KB | - | 2 | ok (6 budgets) |
+| check | `video-fps-probe/lazy` + `video-fps-probe/check` | format: 'es' | **4.78 KB** | 23.13 KB | 25.77 KB | 49.24 KB | - | 2 | ok (5 budgets) |
+| preset | `video-fps-probe/lazy` + `video-fps-probe/check` + `video-fps-probe/presets` (klingO1ReferenceVideo) | format: 'es' | **5.13 KB** | 23.13 KB | 25.77 KB | 49.23 KB | - | 2 | ok (6 budgets) |
 | header | `video-fps-probe/header` (analyzeHeader in the page) | none needed: the header entry runs in the calling thread | **19.81 KB** | - | - | - | - | 0 | ok (4 budgets) |
 | url-entry | `video-fps-probe/header` + `video-fps-probe/url` (analyzeHeader over a rangeSource in the page) | none needed: both entries run in the calling thread | **22.53 KB** | - | - | - | - | 0 | ok (4 budgets) |
 | color | `video-fps-probe/header` + `video-fps-probe/color` (withColor over analyzeHeader with codecConfig in the page) | none needed: both entries run in the calling thread | **24.40 KB** | - | - | - | - | 0 | ok (4 budgets) |
