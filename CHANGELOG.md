@@ -21,7 +21,7 @@ The members of `ColorInfo` and `DolbyVisionConfig`, the `ColorSource` values, th
 
 - The installed package may take up to 936 KB unpacked (867 KB in 0.4.0-beta.1), measured at 913 KB, for the two entries, their CommonJS copies and the longer docs.
 - The first MKV or WebM loads 25.77 KB gzip (25.73 KB in 0.4.0-beta.1) for the TrackEntry copy: the Matroska header walk copies every TrackEntry, and the analyzer attaches the copy to the video tracks only with the option. The first MP4 is unchanged at 23.07 KB, 24.85 KB with Vite's default worker format.
-- `video-fps-probe/header` puts 19.70 KB gzip of package code in the entry chunk (19.28 KB in 0.4.0-beta.1). It loads the codec configuration capture and the two entries with `import()`, so an app whose only dynamic import is this one gets Vite's preload helper, 0.75 KB, in its entry chunk too.
+- `video-fps-probe/header` puts 19.72 KB gzip of package code in the entry chunk (19.28 KB in 0.4.0-beta.1). It loads the codec configuration capture and the two entries with `import()`, so an app whose only dynamic import is this one gets Vite's preload helper, 0.75 KB, in its entry chunk too.
 - Still 0 mismatches against ffprobe 8.1.1 on the 168 committed fixtures, now with checks of the color names, bit depth, profile, codec string, Dolby Vision record and both aspect ratios: 4878 checks, with 5 new known deviations where ffprobe takes the color range or matrix from a bitstream the color entry does not read (the AV1 sequence header, ProRes, MPEG-4 Part 2).
 
 ### Known limitations
