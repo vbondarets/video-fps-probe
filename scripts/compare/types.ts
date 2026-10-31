@@ -136,6 +136,10 @@ export interface MatroskaLayoutTrack {
   displayWidth?: number | null;
   displayHeight?: number | null;
   displayUnit?: number | null;
+  cropTop?: number | null;
+  cropBottom?: number | null;
+  cropLeft?: number | null;
+  cropRight?: number | null;
   colour?: ContainerColor | null;
   config?: CodecConfigFacts | null;
   blockAdditionTypes?: string[];

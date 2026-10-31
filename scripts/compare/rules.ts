@@ -673,8 +673,11 @@ export function containerDeclaresSar(facts: TrackFacts): boolean | null {
   if (mkv) {
     const unit = mkv.displayUnit ?? 0;
     if (unit >= 4) return false;
-    const width = mkv.displayWidth ?? (unit === 0 ? (mkv.pixelWidth ?? null) : null);
-    const height = mkv.displayHeight ?? (unit === 0 ? (mkv.pixelHeight ?? null) : null);
+    const croppedWidth = mkv.pixelWidth == null ? null : mkv.pixelWidth - (mkv.cropLeft ?? 0) - (mkv.cropRight ?? 0);
+    const croppedHeight = mkv.pixelHeight == null ? null : mkv.pixelHeight - (mkv.cropTop ?? 0) - (mkv.cropBottom ?? 0);
+    if ((croppedWidth !== null && croppedWidth <= 0) || (croppedHeight !== null && croppedHeight <= 0)) return false;
+    const width = mkv.displayWidth ?? (unit === 0 ? croppedWidth : null);
+    const height = mkv.displayHeight ?? (unit === 0 ? croppedHeight : null);
     return width !== null && height !== null && width > 0 && height > 0;
   }
   return null;
@@ -697,7 +700,7 @@ function sarDrafts(t: Track040, s: RefStream, facts: TrackFacts): Draft[] {
     const ratio = sar ?? null;
     const ff = s.displayAspectRatio;
     const stored = t.width > 0 && t.height > 0 ? [Math.round((t.width * (ratio?.num ?? 1)) / (ratio?.den ?? 1)), t.height] : null;
-    const [width, height] = stored ? (Math.abs(t.rotation) % 180 === 90 ? [stored[1], stored[0]] : stored) : [null, null];
+    const [width, height] = stored ? (Math.abs(s.rotation ?? t.rotation) % 180 === 90 ? [stored[1], stored[0]] : stored) : [null, null];
     const appDar = t.displayAspectRatio ?? null;
     const app = `${fmtColon(appDar) ?? '-'} (${t.displayWidth ?? '-'}x${t.displayHeight ?? '-'})`;
     if ((t.displayWidth ?? null) !== width || (t.displayHeight ?? null) !== height) {

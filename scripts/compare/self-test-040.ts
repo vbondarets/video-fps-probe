@@ -120,6 +120,8 @@ export function selfTest040(expectEq: ExpectEq, kit: SelfTestKit): void {
   expectEq('sar: Matroska unit 0 without Display elements takes the pixel size', verdict(mkvSar({ sampleAspectRatio: null }, '4:3', mkvLayout({ pixelWidth: 160, pixelHeight: 120 })), 'sampleAspectRatio'), 'mismatch');
   expectEq('sar: Matroska unit 3 with one Display element declares nothing', verdict(mkvSar({ sampleAspectRatio: null }, '4:3', mkvLayout({ pixelWidth: 160, pixelHeight: 120, displayWidth: 16, displayUnit: 3 })), 'sampleAspectRatio'), 'known-deviation');
   expectEq('sar: Matroska unit 4 declares nothing', verdict(mkvSar({ sampleAspectRatio: null }, '4:3', mkvLayout({ pixelWidth: 160, pixelHeight: 120, displayWidth: 16, displayHeight: 9, displayUnit: 4 })), 'sampleAspectRatio'), 'known-deviation');
+  expectEq('sar: Matroska crops that reach the pixel size declare nothing', verdict(mkvSar({ sampleAspectRatio: null }, '4:3', mkvLayout({ pixelWidth: 160, pixelHeight: 120, displayWidth: 16, displayHeight: 9, cropLeft: 80, cropRight: 80 })), 'sampleAspectRatio'), 'known-deviation');
+  expectEq('sar: Matroska crops inside the pixel size keep the Display ratio', verdict(mkvSar({ sampleAspectRatio: null }, '4:3', mkvLayout({ pixelWidth: 160, pixelHeight: 120, cropLeft: 16 })), 'sampleAspectRatio'), 'mismatch');
   expectEq('sar: Matroska Display elements of 0 declare nothing', verdict(mkvSar({ sampleAspectRatio: null }, '4:3', mkvLayout({ pixelWidth: 160, pixelHeight: 120, displayWidth: 0, displayHeight: 9 })), 'sampleAspectRatio'), 'known-deviation');
   const half = [32768, 0, 0, 0, 65536, 0, 0, 0, 1 << 30];
   const double = [131072, 0, 0, 0, 65536, 0, 0, 0, 1 << 30];

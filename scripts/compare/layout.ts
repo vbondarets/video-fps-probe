@@ -203,8 +203,8 @@ function trackOf(buf: Buffer, trak: Child, movieMatrix: number[] | null): Layout
     hasEditList: !!elst && elst.start + 8 <= elst.end && buf.readUInt32BE(elst.start + 4) > 0,
     lastSampleTicks: lastSttsDelta(buf, stbl),
     enabled: (buf.readUIntBE(tkhd.start + 1, 3) & 1) === 1,
-    tkhdWidth: sized ? buf.readUInt32BE(matrixAt + 36) >>> 16 : 0,
-    tkhdHeight: sized ? buf.readUInt32BE(matrixAt + 40) >>> 16 : 0,
+    tkhdWidth: sized ? buf.readInt32BE(matrixAt + 36) >> 16 : 0,
+    tkhdHeight: sized ? buf.readInt32BE(matrixAt + 40) >> 16 : 0,
     matrix,
     displayMatrix: displayMatrixOf(matrix, movieMatrix),
     entry: handler === 'vide' ? sampleEntryOf(buf, stbl) : null,
@@ -435,7 +435,7 @@ const MKV_VIDEO = 0xe0;
 const MKV_COLOUR = 0x55b0;
 const MKV_BLOCK_ADDITION_MAPPING = 0x41e4;
 const MKV_BLOCK_ADD_ID_TYPE = 0x41e7;
-const MKV_VIDEO_FIELDS: Readonly<Record<number, 'pixelWidth' | 'pixelHeight' | 'displayWidth' | 'displayHeight' | 'displayUnit'>> = { 0xb0: 'pixelWidth', 0xba: 'pixelHeight', 0x54b0: 'displayWidth', 0x54ba: 'displayHeight', 0x54b2: 'displayUnit' };
+const MKV_VIDEO_FIELDS: Readonly<Record<number, 'pixelWidth' | 'pixelHeight' | 'displayWidth' | 'displayHeight' | 'displayUnit' | 'cropTop' | 'cropBottom' | 'cropLeft' | 'cropRight'>> = { 0xb0: 'pixelWidth', 0xba: 'pixelHeight', 0x54b0: 'displayWidth', 0x54ba: 'displayHeight', 0x54b2: 'displayUnit', 0x54bb: 'cropTop', 0x54aa: 'cropBottom', 0x54cc: 'cropLeft', 0x54dd: 'cropRight' };
 const MKV_CONFIG: Readonly<Record<string, (b: Uint8Array) => CodecConfigFacts | null>> = { 'V_MPEG4/ISO/AVC': avcConfig, 'V_MPEGH/ISO/HEVC': hevcConfig, V_AV1: av1Config, V_VP9: vp9PrivateConfig };
 
 function matroskaColour(b: Buffer, colour: EbmlElement): ContainerColor {

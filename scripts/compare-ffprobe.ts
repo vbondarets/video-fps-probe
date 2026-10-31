@@ -112,6 +112,8 @@ async function runTimedInner(engine: EngineHandle, blob: BlobLike, name: string,
   return { result, threw, ms: times.length > 0 ? median(times) : 0, msFirst: times[0] ?? 0 };
 }
 
+const ISO_CONFIG_SUBSTITUTE = 'the codec configuration of MP4 and MOV tracks comes from analyzeHeader, since analyze does not capture it in this release';
+
 async function withOwnMetadata(blob: BlobLike, name: string, result: FileResult, iso: boolean): Promise<FileResult> {
   let r = result;
   if (iso && r.videoTracks.some((t) => !t.codecConfig)) {
@@ -136,6 +138,7 @@ function printSummary(report: AccuracyReport): void {
     console.log(
       `${e.engine.padEnd(20)} fixtures ${String(e.fixtures.length).padStart(3)}  exact ${c.exact}  within-tol ${c['within-tol']}  known-deviation ${c['known-deviation']}  mismatch ${c.mismatch}  n/a ${c['n/a']}${e.informational ? '  (informational)' : ''}`,
     );
+    if (e.engine === 'own') console.log(`${''.padEnd(20)} color and aspect: ${ISO_CONFIG_SUBSTITUTE}`);
     if (c.mismatch > 0) console.log(`${''.padEnd(20)} mismatches by outcome: ${OUTCOME_CLASSES.map((k) => `${k} ${e.outcomes[k]}`).join(', ')}`);
     if (e.mismatchFixtures.length > 0) {
       const shown = e.mismatchFixtures.slice(0, 12).join(', ');
