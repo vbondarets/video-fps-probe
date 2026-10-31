@@ -22,7 +22,6 @@ type Limit = Error & { errorCode: string };
 export interface HeaderBudget {
   readonly bytesLeft: number;
   checkTime(): void;
-  reserve(reads: number, bytes: number, offset: number): void;
   take(): Limit | null;
 }
 
@@ -217,11 +216,7 @@ async function readTailIndex(w: Walk): Promise<TailIndex | null> {
   const size = reader.size;
   const tailLen = Math.min(size, MFRA_TAIL);
   if (tailLen < 16) return null;
-  let tail = reader.peek(size - tailLen, tailLen);
-  if (!tail) {
-    w.budget.reserve(2, tailLen, size - tailLen);
-    tail = await reader.view(size - tailLen, tailLen, 0);
-  }
+  const tail = reader.peek(size - tailLen, tailLen) ?? (await reader.view(size - tailLen, tailLen, 0));
   if (fourcc(tail, tailLen - 12) !== 'mfro') return null;
   const mfraSize = tail.getUint32(tailLen - 4);
   if (mfraSize < 24 || mfraSize > Math.min(size, MFRA_CAP)) return null;

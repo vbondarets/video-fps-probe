@@ -106,11 +106,6 @@ export class LimitedSource implements BlobLike {
     if (this.#timedOut || performance.now() >= this.#deadline) throw this.#trip('time-limit', `limit reached: maxMs ${this.#maxMs}`);
   }
 
-  reserve(reads: number, bytes: number, offset: number): void {
-    const trip = this.#admission(reads, bytes, offset);
-    if (trip) throw trip;
-  }
-
   take(): LimitError | null {
     const t = this.#tripped;
     this.#tripped = null;
@@ -132,8 +127,8 @@ export class LimitedSource implements BlobLike {
     return this.#tripped;
   }
 
-  #admission(reads: number, bytes: number, offset: number): LimitError | null {
-    if (this.#reads + reads > this.#maxReads) return this.#trip('read-limit', `limit reached: maxReads ${this.#maxReads}`);
+  #admission(bytes: number, offset: number): LimitError | null {
+    if (this.#reads + 1 > this.#maxReads) return this.#trip('read-limit', `limit reached: maxReads ${this.#maxReads}`);
     if (this.#bytes + bytes > this.#maxBytes) return this.#trip('byte-limit', `limit reached: maxBytes ${this.#maxBytes} (${this.#bytes + bytes - this.#maxBytes} more bytes needed at offset ${offset})`);
     try {
       this.checkTime();
@@ -145,7 +140,7 @@ export class LimitedSource implements BlobLike {
 
   #fetch(start: number, end: number): Promise<ArrayBuffer> {
     const length = Math.max(0, end - start);
-    const trip = this.#admission(1, length, start);
+    const trip = this.#admission(length, start);
     if (trip) return Promise.reject(trip);
     this.#reads++;
     this.#bytes += length;
