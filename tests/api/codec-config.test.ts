@@ -17,7 +17,12 @@ const UNBOUNDED = { maxBytes: Infinity, maxReads: Infinity, maxMs: Infinity, max
 const fixture = (name: string) => openAsBlob(join(FILES_DIR, name));
 
 function withoutConfig(r: FileResult) {
-  return { ...r, io: { reads: r.io.reads, bytesRead: r.io.bytesRead }, videoTracks: r.videoTracks.map(({ codecConfig: _, ...t }) => t) };
+  const videoTracks = r.videoTracks.map((t) => {
+    const copy = { ...t };
+    delete copy.codecConfig;
+    return copy;
+  });
+  return { ...r, io: { reads: r.io.reads, bytesRead: r.io.bytesRead }, videoTracks };
 }
 
 afterEach(() => {
