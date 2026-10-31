@@ -133,7 +133,7 @@ if (report.verdict === 'fail') showErrors(report.violations, report.suggestedFps
 else upload(file); // 'pass', 'warn', or 'unknown': no result, an error or a missing field fails open
 ```
 
-Rules are JSON, such as `{ fps: { min: 24, max: 60 }, duration: { max: 10 }, vfr: 'warn' }`, and frame rates compare as exact rationals: 23.976 fps (`24000/1001`) is below a minimum of 24, 59.94 meets a maximum of 60. The presets hold the published input limits of Kling O1 and Motion Control, Runway Aleph 2.0, Veo 3.1, and Wan 2.6 on fal and Seedance 2.0 on EvoLink (gateways, so they only warn), each with its source and the day it was verified; the source pages are also in `video-fps-probe/presets/sources.json`, where `sources[name]` replaces the deprecated `sourceUrl` ([check](docs/api.md#check), [presets](docs/api.md#presets)).
+Rules are JSON, such as `{ fps: { min: 24, max: 60 }, duration: { max: 10 }, vfr: 'warn' }`, and frame rates compare as exact rationals: 23.976 fps (`24000/1001`) is below a minimum of 24, 59.94 meets a maximum of 60. The presets hold the published input limits of Kling O1 and Motion Control, Runway Aleph 2.0, Veo 3.1, and Wan 2.6 on fal and Seedance 2.0 on EvoLink (gateways, so they only warn), each with its source and the day it was verified. The source pages are also in `video-fps-probe/presets/sources.json`, where `sources[name]` replaces the deprecated `sourceUrl`. On a result analyzed with `codecConfig: true`, `sizeBasis: 'display'` judges the display size that `withAspect` sets, and `hdr: 'reject'` fails PQ, HLG and Dolby Vision from the color that `withColor` sets, while a file whose color is not known stays unknown ([check](docs/api.md#check), [presets](docs/api.md#presets)).
 
 ## Size
 
@@ -178,8 +178,8 @@ Known limitations: [changelog](CHANGELOG.md#known-limitations), [benchmarks](doc
 
 ## Roadmap
 
-- **0.4.0**: a header-only ISO BMFF mode with byte, read and time limits, machine-readable error codes and a container layout field, a Range source for S3 and R2 style object storage (a fetcher function, no SDK dependency), minimal color, HDR and Dolby Vision metadata, the pixel aspect ratio and display size, a median frame interval that `check` uses, and a CommonJS build of the server entries only, while the browser entries stay ESM.
 - **0.4.1**: a bundler matrix in CI: webpack 5, Rspack, Next.js, Angular CLI, SvelteKit, Nuxt, Parcel, Bun and Deno, with pnpm, Yarn PnP and bun installs.
+- **Later in 0.4.x**: HDR10 static metadata (`mdcv`, `clli`, MasteringMetadata) and the color of the AV1 sequence header, which the color entry of 0.4.0 does not read yet.
 - **0.5.0**: a Node entry (`fromPath`, DOM-free types, a `worker_threads` pool), NestJS validators, a CLI, bitrate, GOP and audio details, cadence detection, framework adapters for Vue, Svelte and Angular, and later MPEG-TS and HLS.
 
 ## Feedback
