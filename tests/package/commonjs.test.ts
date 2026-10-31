@@ -104,8 +104,23 @@ const nestLike = (compiler: typeof ts): ts.CompilerOptions => ({
   emitDecoratorMetadata: true,
 });
 
-const runNode = (dir: string, file: string): unknown =>
-  JSON.parse(execFileSync(process.execPath, [file, FIXTURE], { cwd: dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
+const runNode = (dir: string, file: string, flags: string[] = []): unknown =>
+  JSON.parse(execFileSync(process.execPath, [...flags, file, FIXTURE], { cwd: dir, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
+
+const SERVER_ENTRIES = ['', '/header', '/url', '/check', '/presets'].map((e) => `${PACKAGE}${e}`);
+const ESM_FILES = ['dist/index.js', 'dist/header/index.js', 'dist/url/index.js', 'dist/check/index.js', 'dist/presets/index.js'];
+const CJS_FILES = ['dist/cjs/index.cjs', 'dist/cjs/header.cjs', 'dist/cjs/url.cjs', 'dist/cjs/check.cjs', 'dist/cjs/presets.cjs'];
+
+const RESOLVE_MJS = `import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+const entries = ${JSON.stringify(SERVER_ENTRIES)};
+const tail = (p) => p.split('\\\\').join('/').replace(/^.*\\/node_modules\\/${PACKAGE}\\//, '');
+const out = [];
+for (const e of entries) out.push({ required: tail(require.resolve(e)), imported: tail(decodeURIComponent(new URL(import.meta.resolve(e)).pathname)), one: require(e) === (await import(e)) });
+process.stdout.write(JSON.stringify(out));
+`;
+
+const CONSUMER_ABSOLUTE = CONSUMER_CJS.replace(/require\('video-fps-probe(\/[a-z]+)?'\)/g, (_, sub: string | undefined) => `require(require('node:path').join(__dirname, 'node_modules', '${PACKAGE}', 'dist', 'cjs', '${sub ? sub.slice(1) : 'index'}.cjs'))`);
 
 describe('the packed tarball from CommonJS', () => {
   let dir: string;
@@ -160,6 +175,23 @@ describe('the packed tarball from CommonJS', () => {
     expect(tags).toEqual(Array(2).fill('@deprecated Use video-fps-probe/presets/sources.json; sourceUrl will be removed in the next major.'));
     expect(program.emit().emitSkipped).toBe(false);
     expect(runNode(dir, join(`out-020-${version}`, 'consumer-020.js'))).toEqual({ url: sources.klingO1ReferenceVideo, again: sources.klingO1ReferenceVideo });
+  });
+
+  it(`require.resolve of every server entry lands on its ESM file on Node ${process.versions.node}, as one instance with import`, () => {
+    writeFileSync(join(dir, 'resolve.mjs'), RESOLVE_MJS);
+    expect(runNode(dir, 'resolve.mjs')).toEqual(ESM_FILES.map((f) => ({ required: f, imported: f, one: true })));
+  });
+
+  it('with --no-experimental-require-module require resolves every server entry to its .cjs file and gives the results of the source', () => {
+    expect(runNode(dir, 'resolve.mjs', ['--no-experimental-require-module'])).toEqual(ESM_FILES.map((f, i) => ({ required: CJS_FILES[i], imported: f, one: false })));
+    writeFileSync(join(dir, 'consumer.cjs'), CONSUMER_CJS);
+    expect(runNode(dir, 'consumer.cjs', ['--no-experimental-require-module'])).toEqual(expected);
+  });
+
+  it('the .cjs files required by their absolute path give the results of the source', () => {
+    writeFileSync(join(dir, 'consumer-absolute.cjs'), CONSUMER_ABSOLUTE);
+    expect(CONSUMER_ABSOLUTE).toContain(`'dist', 'cjs', 'index.cjs'`);
+    expect(runNode(dir, 'consumer-absolute.cjs')).toEqual(expected);
   });
 
   it.skipIf(SKIPPED_TS59 !== null)(`covers TypeScript 6.0.3, the one of the repo, and ${TS59} from tests/package/ts59`, () => {
