@@ -110,6 +110,8 @@ function decimal(s: string): Q | null {
   return e >= 0 ? [n * 10n ** BigInt(e), 1n] : [n, 10n ** BigInt(-e)];
 }
 
+const quantity = (x: unknown): Q | null => (typeof x === 'number' ? decimal(String(x)) : null);
+
 function ratio(v: unknown, rule: string, amount = false): Q {
   const parts = typeof v === 'number' || typeof v === 'string' ? String(v).split(/[/:]/) : [];
   const [a, b] = parts.map(decimal);
@@ -128,8 +130,7 @@ const readings = (v: unknown, rule: string): Q[] => {
 };
 
 function close(n: bigint, a: Q, b: Q, slack: bigint, perSecond: bigint): boolean {
-  const gap = n * (a[1] * b[0] - b[1] * a[0]);
-  return (gap < 0n ? -gap : gap) * perSecond <= slack * a[0] * b[0];
+  return abs(n * cmp(a, b)) * perSecond <= slack * a[0] * b[0];
 }
 
 const whole = (x: unknown): x is number => Number.isSafeInteger(x) && (x as number) > 0;
@@ -172,20 +173,22 @@ function fraction(q: Q): string {
 
 const fpsText = (q: Q, against: readonly Q[] = []): string => (q[0] % q[1] === 0n ? `${q[0] / q[1]}` : `${digits(q, against)} (${fraction(q)})`);
 
-function steady(t: VideoTrackResult): readonly [Q, Q] | null {
+function onTicks(t: VideoTrackResult): readonly [Q, bigint] | null {
   const avg = fromRational(t.avgFps);
-  const nominal = fromRational(t.nominalFps);
   const frames = t.presentedFrames ?? t.frames;
-  if (!avg || !nominal || !t.timestampsQuantized || t.isVfr !== false || !whole(frames)) return null;
-  const n = BigInt(frames);
-  return close(n, avg, nominal, SPAN_SLACK_MS, 1000n) ? [nominal, [n * nominal[1], nominal[0]]] : null;
+  return avg && t.timestampsQuantized && t.isVfr === false && whole(frames) ? [avg, BigInt(frames)] : null;
+}
+
+function steady(t: VideoTrackResult): readonly [Q, Q] | null {
+  const q = onTicks(t);
+  const nominal = fromRational(t.nominalFps);
+  return q && nominal && close(q[1], q[0], nominal, SPAN_SLACK_MS, 1000n) ? [nominal, [q[1] * nominal[1], nominal[0]]] : null;
 }
 
 function resolution(t: VideoTrackResult, cfr: readonly [Q, Q] | null): ((x: Q) => boolean) | undefined {
-  const avg = fromRational(t.avgFps);
-  const frames = t.presentedFrames ?? t.frames;
-  if (!avg || !t.timestampsQuantized || t.isVfr !== false || !whole(frames)) return undefined;
-  return cfr ? (x) => close(1n, cfr[0], x, 1n, NOMINAL_SLACK_PER_S) : (x) => close(BigInt(frames), avg, x, SPAN_SLACK_MS, 1000n);
+  const q = onTicks(t);
+  if (!q) return undefined;
+  return cfr ? (x) => close(1n, cfr[0], x, 1n, NOMINAL_SLACK_PER_S) : (x) => close(q[1], q[0], x, SPAN_SLACK_MS, 1000n);
 }
 
 function printedDuration(t: VideoTrackResult, result: FileResult): number | null | undefined {
@@ -195,12 +198,12 @@ function printedDuration(t: VideoTrackResult, result: FileResult): number | null
   const median = rate ? null : t.medianFrameInterval;
   const typical = fromRational(median ? { num: median.den, den: median.num } : (rate ?? t.avgFps));
   const matroska = result.container === 'webm' || result.container === 'matroska';
-  const [a, b] = [span, format].map((x) => (typeof x === 'number' ? decimal(String(x)) : null));
+  const [a, b] = [span, format].map(quantity);
   const gap = a && b && abs(micros(a) - micros(b));
   return matroska && typical && gap != null && gap * typical[0] <= 1_000_000n * typical[1] ? format : (span ?? format);
 }
 
-function judgedFps(t: VideoTrackResult, source: FpsSource | undefined, cfr: readonly [Q, Q] | null): Q | null {
+function judgedFps(t: VideoTrackResult, source: FpsSource, cfr: readonly [Q, Q] | null): Q | null {
   const m = /^(\d+)\/(\d+)$/.exec(t.avgFpsFfprobe ?? '');
   if (source === 'ffprobe') return m && fromRational({ num: +m[1]!, den: +m[2]! });
   if (source === 'nominal') return fromRational(t.nominalFps);
@@ -242,12 +245,13 @@ function fit(target: Q, rule: FpsRule = {}): readonly [Q, number] | null {
   return (decimates && divided(allowed)) || [closest, 0];
 }
 
+function known(path: string, v: unknown, keys: readonly string[]): void {
+  if (!record(v)) invalid(path, v, 'an object');
+  const prefix = path === 'rules' ? '' : `${path}.`;
+  for (const k of Object.keys(v as object)) if (!keys.includes(k)) throw new TypeError(`${prefix}${k}: not a rule; expected one of ${keys.join(', ')}`);
+}
+
 export function check(result: FileResult | null | undefined, rules: CheckRules): CheckReport {
-  const known = (path: string, v: unknown, keys: readonly string[]): void => {
-    if (!v || typeof v !== 'object' || Array.isArray(v)) invalid(path, v, 'an object');
-    const prefix = path === 'rules' ? '' : `${path}.`;
-    for (const k of Object.keys(v as object)) if (!keys.includes(k)) throw new TypeError(`${prefix}${k}: not a rule; expected one of ${keys.join(', ')}`);
-  };
   known('rules', rules, RULE_KEYS);
   for (const g of GROUPS) if (rules[g] != null) known(g, rules[g], GROUP_KEYS[g]);
   const choices: Array<[string, unknown, readonly string[]]> = [
@@ -295,7 +299,6 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
       if (!values.flat().some(meets)) add(`${group}.${b}${side}`, severity, expected, shown, `${actualText}${unit} is ${RELATION[b]} ${named}`);
     }
   };
-  const quantity = (x: number | null | undefined): Q | null => (typeof x === 'number' ? decimal(String(x)) : null);
   const allow = (rule: 'containers' | 'codecs', list: readonly string[] | undefined, actual: unknown, missing: string): void => {
     if (list == null) return;
     if (!Array.isArray(list) || list.some((x) => typeof x !== 'string')) invalid(rule, list, 'a list of strings');
@@ -312,9 +315,10 @@ export function check(result: FileResult | null | undefined, rules: CheckRules):
   };
 
   const cfr = t && steady(t);
-  const fps = t && judgedFps(t, rules.fps?.source, cfr);
-  const near = t && (rules.fps?.source ?? 'avg') === 'avg' ? resolution(t, cfr) : undefined;
-  limits('fps', rules.fps, fps, fps ? fraction(fps) : '', (against) => fpsText(fps!, against), ' fps', `${rules.fps?.source ?? 'avg'} frame rate`, '', near);
+  const source = rules.fps?.source ?? 'avg';
+  const fps = t && judgedFps(t, source, cfr);
+  const near = t && source === 'avg' ? resolution(t, cfr) : undefined;
+  limits('fps', rules.fps, fps, fps ? fraction(fps) : '', (against) => fpsText(fps!, against), ' fps', `${source} frame rate`, '', near);
   const exact = cfr?.[1] ?? quantity(t && printedDuration(t, result!));
   const span: Q | null = exact && [micros(exact), 1_000_000n];
   const seconds = span ? value(span) : 0;
