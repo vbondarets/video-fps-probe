@@ -80,6 +80,7 @@ describe('reply validation before the body is read', () => {
     ['an unparsable Content-Range', { contentRange: 'bytes=0-100/4096' }, 'range-mismatch'],
     ['an unsatisfied range', { contentRange: 'bytes */4096' }, 'range-mismatch'],
     ['a wrong total', { contentRange: 'bytes 0-100/5000' }, 'size-changed'],
+    ['a wrong total with another window', { contentRange: 'bytes 0-49/50' }, 'size-changed'],
     ['a Content-Length that differs', { contentLength: 100 }, 'length-mismatch'],
     ['a Content-Length that is not a number', { contentLength: Number.NaN }, 'length-mismatch'],
     ['neither a status nor a Content-Range', { status: null, contentRange: null }, 'unverifiable-reply'],

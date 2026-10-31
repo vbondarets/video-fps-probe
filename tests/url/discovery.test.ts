@@ -98,7 +98,7 @@ describe('discovery over HTTP', () => {
     const source = await openRangeSource(httpRange(server.url('/known')), { size: 1000 });
     expect(server.requests('/known')).toEqual([]);
     expect(await source.read(0, 1000)).toEqual(object);
-    expect(await codeOf((await openRangeSource(httpRange(server.url('/known')), { size: 2000 })).read(0, 2000))).toBe('range-mismatch');
+    expect(await codeOf((await openRangeSource(httpRange(server.url('/known')), { size: 2000 })).read(0, 2000))).toBe('size-changed');
     expect(await codeOf((await openRangeSource(httpRange(server.url('/known')), { size: 2000 })).read(0, 100))).toBe('size-changed');
   });
 
