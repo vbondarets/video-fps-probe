@@ -11,19 +11,77 @@ How the package ships its workers, what each bundler needs, and what is verified
 
 ## Status
 
-| Bundler | Status | What to set |
+A row marked verified is built on every push in CI from the packed tarball, installed with the named package manager from a committed lockfile, and its smoke test passes in Chromium, Firefox and WebKit. The weekly canary installs the latest version of every tool without lockfiles and the published package from the registry, and runs the dev servers.
+
+| Tool | Status | What to set |
 |---|---|---|
-| Vite 8 | **verified in CI**: `vite build` and `vite dev`, Chromium, Firefox and WebKit, installed from the packed tarball | `worker: { format: 'es' }` (recommended); `optimizeDeps.include` for registered peers in dev |
+| Vite 8 | **verified in CI**: Vite 8.3.5, `vite build` and `vite dev` with npm, and `vite build` with pnpm 12.16.1 (isolated and hoisted), Yarn 4.18.1 Plug'n'Play and Bun 1.4.4 installs | `worker: { format: 'es' }` (recommended), `optimizeDeps.include` for registered peers in dev |
 | Vite 5 to 7 | not verified | also `optimizeDeps: { exclude: ['video-fps-probe'] }` |
-| webpack 5, Rspack | expected to work without configuration (they build `new Worker(new URL(...))` natively), not verified until the 0.4.1 bundler matrix | nothing |
-| Parcel 2 | expected to work without configuration (same form), not verified until the 0.4.1 bundler matrix | nothing |
-| Next.js | webpack builds expected to work, Turbopack unverified until the 0.4.1 bundler matrix | use the probe from `'use client'` modules |
+| webpack 5 | **verified in CI**: webpack 5.112.2 with npm, `webpack serve` in the weekly canary | nothing |
+| Rspack | **verified in CI**: Rspack 2.3.0 with npm, `rspack serve` in the weekly canary | nothing |
+| Next.js | **verified in CI**: Next.js 16.4.3, `next build --webpack` and `next build` (Turbopack) served by `next start`, the server entries in a route handler, `next dev` in the weekly canary | create the probe in a `'use client'` module |
+| Angular CLI | **verified with configuration**: Angular 22.2.5, application builder, `ng serve` in the weekly canary. Without it the prebuilt workers are missing from the output of `ng build` | the standalone workers as assets ([Angular](#angular)) |
+| SvelteKit | **verified in CI**: SvelteKit 3.1.1 with adapter-node, the server entries in a `+server.js` route, `vite dev` in the weekly canary | nothing |
+| Nuxt | **verified in CI**: Nuxt 4.6.3, `nuxt build` served by the Nitro node server, the server entries in `server/api`, `nuxt dev` in the weekly canary | nothing |
+| Parcel 2 | **verified with configuration**: Parcel 2.16.4, `parcel serve` in the weekly canary. Without it the build does not resolve the subpath exports | two Parcel options in `package.json` ([Parcel](#parcel)) |
+| Bun bundler | **verified with configuration**: Bun 1.4.4, `bun build ./index.html --splitting`. Without it the prebuilt workers are missing from the output | the standalone workers as file imports ([Bun](#esbuild-and-bun)) |
+| Bun runtime | **verified in CI**: Bun 1.4.4, the server entries by `import` and `require()` | nothing |
+| Deno | **verified in CI**: Deno 2.9.6, the server entries by `import` and `require()` from npm specifiers, with read and loopback network permissions only | nothing ([Deno](#deno)) |
 | esbuild | leaves the worker reference as is, so the prebuilt worker is missing from the output | the standalone worker or a custom worker |
-| Bun | not verified until the 0.4.1 bundler matrix, so treat it like esbuild | the standalone worker or a custom worker |
 
-Verified means the consumer smoke test (`npm run test:consumers`): every fixture of `tests/consumers/fixtures/` gives the same results in the browser as Node `analyze` from the same tarball, under `vite build` and `vite dev`, and the dev page must not reload when an engine first runs.
+The Vite rows also run the consumer smoke test (`npm run test:consumers`): every fixture of `tests/consumers/fixtures/` gives the same results in the browser as Node `analyze` from the same tarball, under `vite build` and `vite dev`, and the dev page must not reload when an engine first runs.
 
-The seven server entries, `video-fps-probe`, `video-fps-probe/header`, `video-fps-probe/url`, `video-fps-probe/color`, `video-fps-probe/aspect`, `video-fps-probe/check` and `video-fps-probe/presets`, also carry a CommonJS copy in `dist/cjs` under a `require` condition. Their `module-sync` and `module` conditions come before `require`, so a bundler that matches the `module` condition, as Vite, webpack, Rspack and esbuild do by default, resolves the ESM build for `import` and for `require()` alike. Only Vite is built in the tests, and the size matrix fails a build of any consumer fixture that holds a file of `dist/cjs`. The CommonJS copy is meant for Node and Jest: a configuration that matches `require` but neither `module` nor `module-sync`, such as custom condition names, gets it, and a browser build cannot run it, because it requires `url` and its root entry has no worker reference a bundler can follow. The `url-entry` fixture runs `analyzeHeader` over a `rangeSource`, and over `httpRange` with `openRangeSource` against a ranged URL, in the page, and gives the Node results under `vite build` and `vite dev`.
+The seven server entries, `video-fps-probe`, `video-fps-probe/header`, `video-fps-probe/url`, `video-fps-probe/color`, `video-fps-probe/aspect`, `video-fps-probe/check` and `video-fps-probe/presets`, also carry a CommonJS copy in `dist/cjs` under a `require` condition. Their `module-sync` and `module` conditions come before `require`, so a bundler that matches the `module` condition, as Vite, webpack, Rspack and esbuild do by default, resolves the ESM build for `import` and for `require()` alike. The size matrix fails a Vite build of any consumer fixture that holds a file of `dist/cjs`. The CommonJS copy is meant for Node and Jest: a configuration that matches `require` but neither `module` nor `module-sync`, such as custom condition names, gets it, and a browser build cannot run it, because it requires `url` and its root entry has no worker reference a bundler can follow. The `url-entry` fixture runs `analyzeHeader` over a `rangeSource`, and over `httpRange` with `openRangeSource` against a ranged URL, in the page, and gives the Node results under `vite build` and `vite dev`.
+
+## Bundler matrix
+
+`tests/bundlers` builds one small app per tool from `tests/bundlers/fixtures/`, with exact versions in `tests/bundlers/versions.json` and a lockfile per fixture (`node scripts/bundlers.mjs setup`, `build`, then `npx playwright test -c playwright.bundlers.config.ts`). In each browser the smoke test checks the engines of the probe, that no worker starts before the first analyze and that the first analyze loads a lazy chunk, that four files give the own results of Node `analyze` from the same tarball, that an MP4 starts one own worker with the ISO BMFF parser only and a WebM one with the Matroska parser only, and that the page has no page error, no console warning or error and no failed same-origin request. The `all` page of the package manager rows also runs mp4box and mediabunny. A target that fails without configuration keeps a zero-config fixture that asserts its exact failure, so a tool release that fixes it fails CI and changes this page, and a configured fixture with the snippet below that passes every check.
+
+<!-- tables:bundlers:start -->
+
+Measured on production builds of the fixtures in `tests/bundlers/fixtures/`, installed from the packed tarball (gzip -9 of the JavaScript the server sent, KB = 1000 bytes, measured in Chromium, with the same checks in Firefox and WebKit). Framework runtimes dominate the totals, so the sizes are informational. A first MP4 above 48.00 KB fails CI, as does any change of a status, a worker count or the split.
+
+| Target | Tool | Package manager | Configuration | Status | JS before the first analyze | First MP4, lazy | First WebM, lazy | Emitted JS | Workers | Split |
+|---|---|---|---|---|---:|---:|---:|---:|---:|---|
+| webpack | webpack 5.112.2 | npm | none | verified | 2.05 KB | 25.32 KB | 25.01 KB | 73.57 KB in 15 files | 2 | yes |
+| rspack | Rspack 2.3.0 | npm | none | verified | 2.00 KB | 24.99 KB | 24.63 KB | 72.37 KB in 15 files | 2 | yes |
+| next-webpack | Next.js 16.4.3, webpack | npm | none | verified | 134.21 KB | 25.08 KB | 25.17 KB | 357.88 KB in 35 files | 2 | yes |
+| next-turbopack | Next.js 16.4.3, Turbopack | npm | none | verified | 135.69 KB | 29.13 KB | 28.22 KB | 276.96 KB in 33 files | 2 | yes |
+| angular | Angular 22.2.5 | npm | none | fails without configuration: the prebuilt worker is not emitted (404) | n/a | n/a | n/a | 77.57 KB in 17 files | n/a | n/a |
+| angular-configured | Angular 22.2.5 | npm | `angular.json`, `src/main.ts` | verified with configuration | 31.35 KB | 24.98 KB | 27.29 KB | 122.84 KB in 18 files | 2 | yes |
+| sveltekit | SvelteKit 3.1.1 | npm | none | verified | 32.32 KB | 24.92 KB | 27.22 KB | 122.86 KB in 26 files | 2 | yes |
+| nuxt | Nuxt 4.6.3 | npm | none | verified | 158.32 KB | 24.88 KB | 27.18 KB | 145.21 KB in 18 files | 2 | yes |
+| parcel | Parcel 2.16.4 | npm | none | fails without configuration: the build does not resolve the package exports | n/a | n/a | n/a | n/a | n/a | n/a |
+| parcel-configured | Parcel 2.16.4 | npm | `package.json` | verified with configuration | 0.98 KB | 25.69 KB | 25.58 KB | 93.72 KB in 17 files | 2 | yes |
+| bun-build | Bun 1.4.4 | bun | none | fails without configuration: the prebuilt worker is not emitted (404) | n/a | n/a | n/a | 47.77 KB in 19 files | n/a | n/a |
+| bun-build-configured | Bun 1.4.4 | bun | `main.js` | verified with configuration | 1.45 KB | 25.07 KB | 27.38 KB | 93.10 KB in 20 files | 2 | yes |
+| deno | Deno 2.9.6 | deno | none | verified | n/a | n/a | n/a | n/a | n/a | n/a |
+| pnpm-strict (default) | pnpm 12.16.1, Vite 8.3.5 | pnpm | none | verified | 1.39 KB | 23.13 KB | 22.16 KB | 91.77 KB in 18 files | 2 | yes |
+| pnpm-strict (all) | pnpm 12.16.1, Vite 8.3.5 | pnpm | none | verified | 1.91 KB | 23.18 KB | 22.20 KB | 368.83 KB in 39 files | 2 | yes |
+| pnpm-hoisted (default) | pnpm 12.16.1, Vite 8.3.5 | pnpm | none | verified | 1.39 KB | 23.13 KB | 22.16 KB | 91.77 KB in 18 files | 2 | yes |
+| pnpm-hoisted (all) | pnpm 12.16.1, Vite 8.3.5 | pnpm | none | verified | 1.91 KB | 23.18 KB | 22.20 KB | 368.83 KB in 39 files | 2 | yes |
+| yarn-pnp (default) | Yarn 4.18.1, Vite 8.3.5 | yarn | none | verified | 1.39 KB | 23.13 KB | 22.16 KB | 91.77 KB in 18 files | 2 | yes |
+| yarn-pnp (all) | Yarn 4.18.1, Vite 8.3.5 | yarn | none | verified | 1.91 KB | 23.18 KB | 22.20 KB | 368.83 KB in 39 files | 2 | yes |
+| bun-install (default) | Bun 1.4.4, Vite 8.3.5 | bun | none | verified | 1.39 KB | 23.13 KB | 22.16 KB | 91.77 KB in 18 files | 2 | yes |
+| bun-install (all) | Bun 1.4.4, Vite 8.3.5 | bun | none | verified | 1.91 KB | 23.18 KB | 22.20 KB | 368.83 KB in 39 files | 2 | yes |
+
+The seven server entries on one MP4, in the framework route or the runtime, against Node `import` from the same tarball:
+
+| Target | Runs in | Resolves to | Result |
+|---|---|---|---|
+| next-webpack | the framework route on the production server | bundled into the server build | equal to Node |
+| next-turbopack | the framework route on the production server | bundled into the server build | equal to Node |
+| sveltekit | the framework route on the production server | imported from node_modules by the server build at run time | equal to Node |
+| nuxt | the framework route on the production server | imported from node_modules by the server build at run time | equal to Node |
+| bun-build | Bun, `bun run` | `import`: the ESM build, `require`: the CommonJS copy, a second instance | equal to Node |
+| bun-build-configured | Bun, `bun run` | `import`: the ESM build, `require`: the CommonJS copy, a second instance | equal to Node |
+| deno | Deno, npm specifiers | `import`: the ESM build, `require`: the ESM build, one instance | equal to Node |
+| pnpm-strict | Node, `pnpm exec node` | `import`: the ESM build, `require`: the ESM build, one instance | equal to Node |
+| pnpm-hoisted | Node, `pnpm exec node` | `import`: the ESM build, `require`: the ESM build, one instance | equal to Node |
+| yarn-pnp | Node, `yarn node` (PnP) | `import`: the ESM build, `require`: the CommonJS copy, a second instance | equal to Node |
+| bun-install | Node, on the bun install | `import`: the ESM build, `require`: the ESM build, one instance | equal to Node |
+
+<!-- tables:bundlers:end -->
 
 ## Vite 8
 
@@ -79,19 +137,90 @@ export default defineConfig({
 });
 ```
 
-## webpack 5, Rspack and Parcel
+## webpack 5 and Rspack
 
-They build `new Worker(new URL('./worker.js', import.meta.url), { type: 'module' })` without configuration, including the worker's own `import()` chunks, so the default flavor and the engine descriptors should work as they are. None of them is verified yet. The 0.4.1 bundler matrix adds webpack 5, Rspack and Parcel to CI, with Next.js, Angular CLI, SvelteKit, Nuxt, Bun and Deno, and pnpm, Yarn PnP and bun installs. If a worker does not load, use the [custom worker](#custom-combined-worker) or the [standalone worker](#esbuild-and-bun).
+Both build `new Worker(new URL('./worker.js', import.meta.url), { type: 'module' })` without configuration, including the worker's own `import()` chunks, so the default flavor and the engine descriptors work as they are. They emit each own worker as a classic worker that loads its chunks with `importScripts`, whatever `type` the reference names, which runs on every browser the package supports. The bundler matrix builds webpack 5.112.2 with html-webpack-plugin and Rspack 2.3.0 with its HTML plugin, with no option that names the package or a worker.
+
+## Parcel
+
+Parcel 2.16.4 fails without configuration. It reads the `exports` map of a package only with `packageExports` on, so `import { lazyProbe } from 'video-fps-probe/lazy'` stops the build with `Failed to resolve 'video-fps-probe/lazy'` and `Cannot load file './lazy' from module 'video-fps-probe'`. With `packageExports` alone the build succeeds, but Parcel moves the code the two own workers share into a bundle that each classic worker loads with `importScripts`, and that bundle runs a module before the bundle that registers it is loaded, so the first analyze rejects with `ProbeError('worker-failed')` and `Cannot find module`. `maxParallelRequests: 1` turns those shared bundles off. Both options go in the `package.json` of the app (the `parcel-configured` fixture):
+
+<!-- snippet: parcel-configured/package.json#@parcel/resolver-default,@parcel/bundler-default -->
+
+```json
+{
+  "@parcel/resolver-default": {
+    "packageExports": true
+  },
+  "@parcel/bundler-default": {
+    "maxParallelRequests": 1
+  }
+}
+```
+
+`maxParallelRequests` applies to every bundle of the app: Parcel then repeats shared code in each bundle that needs it instead of splitting it out.
 
 ## Next.js
 
-- Create and call the probe in a `'use client'` module. Importing the package on the server is safe, but a probe used during server rendering has no `Worker` and runs inline in Node.
-- With webpack (`next build --webpack`) the webpack 5 notes above apply.
-- Turbopack, the default bundler of current Next.js, is not verified until the 0.4.1 bundler matrix. If the worker does not load there, build with `--webpack`, or use the standalone worker through the client flavor.
+- Create and call the probe in a `'use client'` module, in an effect: there is no `window` while a page renders on the server. Importing the package there is safe.
+- Next.js 16.4.3 builds the prebuilt workers without configuration with both bundlers, `next build --webpack` and `next build`, which uses Turbopack.
+- The server entries work in a route handler on the Node runtime, where Next.js bundles them into the server build. The `next-webpack` and `next-turbopack` fixtures run all seven in `app/api/server-run/route.js` and get the results of Node.
+
+## Angular
+
+The application builder of Angular 22.2.5 leaves `new URL('../worker/own-isobmff.worker.js', import.meta.url)` inside node_modules as it is, so the worker file is missing from the output: the first analyze asks for `/worker/own-isobmff.worker.js`, gets a 404 and rejects with `ProbeError('worker-failed')`, `reason: 'load'`. `ng serve` serves the workers without configuration, so only the build needs it. Copy the two [standalone workers](#esbuild-and-bun) into the output as assets, under `projects.<name>.architect.build.options` in `angular.json`:
+
+<!-- snippet: angular-configured/angular.json#projects.app.architect.build.options.assets -->
+
+```json
+{
+  "assets": [
+    {
+      "glob": "own-*.worker.js",
+      "input": "node_modules/video-fps-probe/dist/standalone",
+      "output": "/"
+    }
+  ]
+}
+```
+
+and start them through the client flavor (the `angular-configured` fixture):
+
+<!-- snippet: angular-configured/src/main.ts -->
+
+```ts
+import { bootstrapApplication } from '@angular/platform-browser';
+import { lazyProbeClient } from 'video-fps-probe/client/lazy';
+import { App } from './app';
+
+declare global {
+  interface Window {
+    __probe?: unknown;
+  }
+}
+
+bootstrapApplication(App).then(() => {
+  window.__probe = lazyProbeClient({
+    worker: {
+      create: () => new Worker('/own-isobmff.worker.js'),
+      engines: ['own'],
+      byContainer: { matroska: () => new Worker('/own-matroska.worker.js') },
+    },
+  });
+});
+```
+
+## SvelteKit
+
+SvelteKit 3.1.1 with adapter-node builds the prebuilt workers without configuration. Create the probe in `onMount`. The server entries work in a `+server.js` route: the server build leaves the package to Node, which imports it from node_modules at run time. `vite dev` is Vite 8, so the [Vite 8](#vite-8) notes apply to it.
+
+## Nuxt
+
+Nuxt 4.6.3 builds the prebuilt workers without configuration. Create the probe in `onMounted`. The server entries work in `server/api`: Nitro copies the files of the package that the server imports into `.output/server/node_modules` and imports them at run time.
 
 ## esbuild and Bun
 
-esbuild does not bundle a worker from `new URL(..., import.meta.url)`, so the prebuilt worker would be missing from the output. Bun's bundler is not verified; the same setup avoids the question. Use the client flavor with a worker you provide.
+esbuild does not bundle a worker from `new URL(..., import.meta.url)`, and neither does `bun build` of Bun 1.4.4: both leave the reference as it is, so the prebuilt worker is missing from the output and the first analyze rejects with `ProbeError('worker-failed')`, `reason: 'load'`. Use the client flavor with a worker you provide.
 
 **Standalone worker.** Copy `node_modules/video-fps-probe/dist/standalone/own.worker.js` into your output (a copy step or a static folder) and start it as a classic worker:
 
@@ -115,7 +244,41 @@ export const probe = lazyProbeClient({
 });
 ```
 
+**With `bun build`**, a file import copies the two standalone files into the output and gives their URLs, so no copy step is needed (the `bun-build-configured` fixture):
+
+<!-- snippet: bun-build-configured/main.js -->
+
+```js
+import { lazyProbeClient } from 'video-fps-probe/client/lazy';
+import isobmffWorkerUrl from 'video-fps-probe/standalone/own-isobmff.worker.js' with { type: 'file' };
+import matroskaWorkerUrl from 'video-fps-probe/standalone/own-matroska.worker.js' with { type: 'file' };
+
+window.__probe = lazyProbeClient({
+  worker: {
+    create: () => new Worker(isobmffWorkerUrl),
+    engines: ['own'],
+    byContainer: { matroska: () => new Worker(matroskaWorkerUrl) },
+  },
+});
+```
+
 **Custom worker.** Or bundle a [custom worker](#custom-combined-worker) as a separate entry point (format `esm`, code splitting on) and point `create` at the emitted file with `{ type: 'module' }`. This is the way to add mp4box or mediabunny without the bundler's worker support.
+
+**Bun runtime.** The server entries run in Bun 1.4.4 without configuration. `import` takes the ESM build. `require()` takes the CommonJS copy, because it skips `module-sync` and `module`, so a process that does both holds two instances ([CommonJS](api.md#commonjs)).
+
+## Deno
+
+Deno 2.9.6 runs the server entries from npm specifiers without configuration. The `deno` fixture maps them in `deno.json`, `"video-fps-probe": "npm:video-fps-probe"` and `"video-fps-probe/": "npm:/video-fps-probe/"`, sets `"nodeModulesDir": "auto"` so that `require()` finds the package, and runs with `--allow-read` for its folder and the media files and `--allow-net=127.0.0.1` only, so the package needs no environment, system or wider network permission. `import` and `require()` both take the ESM build, one instance. CI serves the packed tarball from a local registry through `NPM_CONFIG_REGISTRY`, with a fresh `DENO_DIR` per run, because Deno caches npm packages by version.
+
+## Package managers
+
+The package has no dependencies and its peers are optional, so every package manager installs it as it is. CI builds the `default` and `all` consumer fixtures with Vite 8.3.5 under:
+
+- pnpm 12.16.1 with its default isolated node_modules, where the workers of `all` reach mp4box and mediabunny through the peers the app installs, and with `nodeLinker: hoisted`,
+- Yarn 4.18.1 with Plug'n'Play: Vite reads the worker files from the zip cache, and no package needs `unplugged`,
+- Bun 1.4.4, `bun install`.
+
+Each install adds the tarball with the package manager's own add command, and CI fails when that changes a lockfile entry of another package or prints a peer warning for this one. Node runs the server entries through `pnpm exec node`, through `yarn node` and on the bun install. Under Yarn Plug'n'Play, `require()` takes the CommonJS copy, because its resolver skips `module-sync` and `module`.
 
 ## Custom combined worker
 
