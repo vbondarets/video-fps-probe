@@ -354,6 +354,20 @@ test.describe('every 0.4.0 capability in the demo', () => {
     await expect(p.locator('form .err')).toHaveText(/^Not valid JSON: /);
   });
 
+  test('the address hash switches the tab while the page is open', async ({ page }) => {
+    for (const [hash, id, name] of [
+      ['check', 'check', 'Check rules'],
+      ['header', 'header', 'Header only'],
+      ['', 'files', 'Files'],
+    ] as const) {
+      await page.evaluate((h) => {
+        location.hash = h;
+      }, hash);
+      await expect(panel(page, id)).toBeVisible();
+      await expect(page.getByRole('tab', { name })).toHaveAttribute('aria-selected', 'true');
+    }
+  });
+
   test('error codes: every code with its errorClass and meaning, and the warning codes', async ({ page }) => {
     const p = await openTab(page, 'Error codes', 'errors');
     const rows = p.locator('table[aria-label="Error codes"] tbody tr');
