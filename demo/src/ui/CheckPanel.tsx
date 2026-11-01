@@ -202,6 +202,7 @@ export default function CheckPanel() {
             <span className="mono">codecConfig: true</span>, withColor, withAspect)
           </label>
         </div>
+        <p className="mut small">The code always reads color and aspect. Clear the box to see the unknown hints of a result without them.</p>
         <label className="block">
           <span>Rules (JSON)</span>
           <textarea rows={10} value={text} spellCheck={false} onChange={(e) => edit(e.target.value)} />
