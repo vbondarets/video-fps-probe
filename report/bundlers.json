@@ -1,0 +1,1095 @@
+{
+  "unit": "gzip -9 bytes of the JavaScript the static server or the proxy in front of the framework server sent, KB = 1000 bytes, measured in Chromium. Framework runtimes dominate the totals, so the sizes are informational, except that a first MP4 above the limit fails",
+  "limits": {
+    "firstMp4Lazy": 48000
+  },
+  "runtimes": {
+    "pnpm": "12.16.1",
+    "yarn": "4.18.1",
+    "bun": "1.4.4",
+    "deno": "2.9.6"
+  },
+  "targets": [
+    {
+      "name": "webpack",
+      "group": "webpack",
+      "tool": "webpack",
+      "pm": "npm",
+      "config": [],
+      "build": {
+        "status": "built",
+        "emitted": [
+          {
+            "app": "app",
+            "files": 15,
+            "gzip": 73572
+          }
+        ]
+      },
+      "apps": [
+        {
+          "app": "app",
+          "status": "pass",
+          "workers": 2,
+          "split": true,
+          "beforeAnalyze": {
+            "files": 1,
+            "gzip": 2048
+          },
+          "firstMp4": {
+            "files": 3,
+            "gzip": 25325
+          },
+          "firstWebm": {
+            "files": 4,
+            "gzip": 25014
+          },
+          "failure": null
+        }
+      ],
+      "server": null,
+      "status": "verified",
+      "toolVersion": "5.112.2"
+    },
+    {
+      "name": "rspack",
+      "group": "rspack",
+      "tool": "@rspack/core",
+      "pm": "npm",
+      "config": [],
+      "build": {
+        "status": "built",
+        "emitted": [
+          {
+            "app": "app",
+            "files": 15,
+            "gzip": 72369
+          }
+        ]
+      },
+      "apps": [
+        {
+          "app": "app",
+          "status": "pass",
+          "workers": 2,
+          "split": true,
+          "beforeAnalyze": {
+            "files": 1,
+            "gzip": 1995
+          },
+          "firstMp4": {
+            "files": 3,
+            "gzip": 24992
+          },
+          "firstWebm": {
+            "files": 4,
+            "gzip": 24633
+          },
+          "failure": null
+        }
+      ],
+      "server": null,
+      "status": "verified",
+      "toolVersion": "2.3.0"
+    },
+    {
+      "name": "next-webpack",
+      "group": "next-webpack",
+      "tool": "next",
+      "pm": "npm",
+      "config": [],
+      "build": {
+        "status": "built",
+        "emitted": [
+          {
+            "app": "app",
+            "files": 35,
+            "gzip": 357877
+          }
+        ]
+      },
+      "apps": [
+        {
+          "app": "app",
+          "status": "pass",
+          "workers": 2,
+          "split": true,
+          "beforeAnalyze": {
+            "files": 5,
+            "gzip": 134211
+          },
+          "firstMp4": {
+            "files": 3,
+            "gzip": 25076
+          },
+          "firstWebm": {
+            "files": 4,
+            "gzip": 25168
+          },
+          "failure": null
+        }
+      ],
+      "server": {
+        "target": "next-webpack",
+        "runner": "the framework route on the production server",
+        "file": "hdr10_hevc10.mp4",
+        "runs": [
+          {
+            "loader": "bundled",
+            "resolved": null,
+            "sharedWithImport": null
+          }
+        ]
+      },
+      "status": "verified",
+      "toolVersion": "16.4.3"
+    },
+    {
+      "name": "next-turbopack",
+      "group": "next-turbopack",
+      "tool": "next",
+      "pm": "npm",
+      "config": [],
+      "build": {
+        "status": "built",
+        "emitted": [
+          {
+            "app": "app",
+            "files": 33,
+            "gzip": 276962
+          }
+        ]
+      },
+      "apps": [
+        {
+          "app": "app",
+          "status": "pass",
+          "workers": 2,
+          "split": true,
+          "beforeAnalyze": {
+            "files": 6,
+            "gzip": 135692
+          },
+          "firstMp4": {
+            "files": 6,
+            "gzip": 29130
+          },
+          "firstWebm": {
+            "files": 6,
+            "gzip": 28217
+          },
+          "failure": null
+        }
+      ],
+      "server": {
+        "target": "next-turbopack",
+        "runner": "the framework route on the production server",
+        "file": "hdr10_hevc10.mp4",
+        "runs": [
+          {
+            "loader": "bundled",
+            "resolved": null,
+            "sharedWithImport": null
+          }
+        ]
+      },
+      "status": "verified",
+      "toolVersion": "16.4.3"
+    },
+    {
+      "name": "angular",
+      "group": "angular",
+      "tool": "@angular/build",
+      "pm": "npm",
+      "config": [],
+      "build": {
+        "status": "built",
+        "emitted": [
+          {
+            "app": "app",
+            "files": 17,
+            "gzip": 77570
+          }
+        ]
+      },
+      "apps": [
+        {
+          "app": "app",
+          "status": "expected-failure",
+          "workers": null,
+          "split": null,
+          "beforeAnalyze": null,
+          "firstMp4": null,
+          "firstWebm": null,
+          "failure": {
+            "code": "worker-failed",
+            "reason": "load",
+            "missing": [
+              "/worker/own-isobmff.worker.js",
+              "/worker/own-matroska.worker.js"
+            ]
+          }
+        }
+      ],
+      "server": null,
+      "status": "fails without configuration: the prebuilt worker is not emitted (404)",
+      "toolVersion": "22.2.5"
+    },
+    {
+      "name": "angular-configured",
+      "group": "angular",
+      "tool": "@angular/build",
+      "pm": "npm",
+      "config": [
+        "angular.json",
+        "src/main.ts"
+      ],
+      "build": {
+        "status": "built",
+        "emitted": [
+          {
+            "app": "app",
+            "files": 18,
+            "gzip": 122844
+          }
+        ]
+      },
+      "apps": [
+        {
+          "app": "app",
+          "status": "pass",
+          "workers": 2,
+          "split": true,
+          "beforeAnalyze": {
+            "files": 1,
+            "gzip": 31349
+          },
+          "firstMp4": {
+            "files": 3,
+            "gzip": 24983
+          },
+          "firstWebm": {
+            "files": 3,
+            "gzip": 27293
+          },
+          "failure": null
+        }
+      ],
+      "server": null,
+      "status": "verified with configuration",
+      "toolVersion": "22.2.5"
+    },
+    {
+      "name": "sveltekit",
+      "group": "sveltekit",
+      "tool": "@sveltejs/kit",
+      "pm": "npm",
+      "config": [],
+      "build": {
+        "status": "built",
+        "emitted": [
+          {
+            "app": "app",
+            "files": 26,
+            "gzip": 122856
+          }
+        ]
+      },
+      "apps": [
+        {
+          "app": "app",
+          "status": "pass",
+          "workers": 2,
+          "split": true,
+          "beforeAnalyze": {
+            "files": 11,
+            "gzip": 32320
+          },
+          "firstMp4": {
+            "files": 2,
+            "gzip": 24918
+          },
+          "firstWebm": {
+            "files": 2,
+            "gzip": 27223
+          },
+          "failure": null
+        }
+      ],
+      "server": {
+        "target": "sveltekit",
+        "runner": "the framework route on the production server",
+        "file": "hdr10_hevc10.mp4",
+        "runs": [
+          {
+            "loader": "external",
+            "resolved": null,
+            "sharedWithImport": null
+          }
+        ]
+      },
+      "status": "verified",
+      "toolVersion": "3.1.1"
+    },
+    {
+      "name": "nuxt",
+      "group": "nuxt",
+      "tool": "nuxt",
+      "pm": "npm",
+      "config": [],
+      "build": {
+        "status": "built",
+        "emitted": [
+          {
+            "app": "app",
+            "files": 18,
+            "gzip": 145214
+          }
+        ]
+      },
+      "apps": [
+        {
+          "app": "app",
+          "status": "pass",
+          "workers": 2,
+          "split": true,
+          "beforeAnalyze": {
+            "files": 13,
+            "gzip": 158320
+          },
+          "firstMp4": {
+            "files": 2,
+            "gzip": 24875
+          },
+          "firstWebm": {
+            "files": 2,
+            "gzip": 27180
+          },
+          "failure": null
+        }
+      ],
+      "server": {
+        "target": "nuxt",
+        "runner": "the framework route on the production server",
+        "file": "hdr10_hevc10.mp4",
+        "runs": [
+          {
+            "loader": "external",
+            "resolved": null,
+            "sharedWithImport": null
+          }
+        ]
+      },
+      "status": "verified",
+      "toolVersion": "4.6.3"
+    },
+    {
+      "name": "parcel",
+      "group": "parcel",
+      "tool": "parcel",
+      "pm": "npm",
+      "config": [],
+      "build": {
+        "status": "failed",
+        "emitted": []
+      },
+      "apps": [
+        {
+          "app": "app",
+          "status": "expected-failure",
+          "workers": null,
+          "split": null,
+          "beforeAnalyze": null,
+          "firstMp4": null,
+          "firstWebm": null,
+          "failure": {
+            "build": [
+              "Failed to resolve 'video-fps-probe/lazy' from './main.js'",
+              "Cannot load file './lazy' from module 'video-fps-probe'"
+            ]
+          }
+        }
+      ],
+      "server": null,
+      "status": "fails without configuration: the build does not resolve the package exports",
+      "toolVersion": "2.16.4"
+    },
+    {
+      "name": "parcel-configured",
+      "group": "parcel",
+      "tool": "parcel",
+      "pm": "npm",
+      "config": [
+        "package.json"
+      ],
+      "build": {
+        "status": "built",
+        "emitted": [
+          {
+            "app": "app",
+            "files": 17,
+            "gzip": 93717
+          }
+        ]
+      },
+      "apps": [
+        {
+          "app": "app",
+          "status": "pass",
+          "workers": 2,
+          "split": true,
+          "beforeAnalyze": {
+            "files": 1,
+            "gzip": 979
+          },
+          "firstMp4": {
+            "files": 2,
+            "gzip": 25694
+          },
+          "firstWebm": {
+            "files": 2,
+            "gzip": 25576
+          },
+          "failure": null
+        }
+      ],
+      "server": null,
+      "status": "verified with configuration",
+      "toolVersion": "2.16.4"
+    },
+    {
+      "name": "bun-build",
+      "group": "bun-build",
+      "tool": "bun",
+      "pm": "bun",
+      "config": [],
+      "build": {
+        "status": "built",
+        "emitted": [
+          {
+            "app": "app",
+            "files": 19,
+            "gzip": 47766
+          }
+        ]
+      },
+      "apps": [
+        {
+          "app": "app",
+          "status": "expected-failure",
+          "workers": null,
+          "split": null,
+          "beforeAnalyze": null,
+          "firstMp4": null,
+          "firstWebm": null,
+          "failure": {
+            "code": "worker-failed",
+            "reason": "load",
+            "missing": [
+              "/worker/own-isobmff.worker.js",
+              "/worker/own-matroska.worker.js"
+            ]
+          }
+        }
+      ],
+      "server": {
+        "target": "bun-build",
+        "runner": "Bun, `bun run`",
+        "file": "hdr10_hevc10.mp4",
+        "runs": [
+          {
+            "loader": "import",
+            "resolved": [
+              "dist/index.js",
+              "dist/header/index.js",
+              "dist/url/index.js",
+              "dist/color/index.js",
+              "dist/aspect/index.js",
+              "dist/check/index.js",
+              "dist/presets/index.js"
+            ],
+            "sharedWithImport": null
+          },
+          {
+            "loader": "require",
+            "resolved": [
+              "dist/cjs/index.cjs",
+              "dist/cjs/header.cjs",
+              "dist/cjs/url.cjs",
+              "dist/cjs/color.cjs",
+              "dist/cjs/aspect.cjs",
+              "dist/cjs/check.cjs",
+              "dist/cjs/presets.cjs"
+            ],
+            "sharedWithImport": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ]
+          }
+        ]
+      },
+      "status": "fails without configuration: the prebuilt worker is not emitted (404)",
+      "toolVersion": "1.4.4"
+    },
+    {
+      "name": "bun-build-configured",
+      "group": "bun-build",
+      "tool": "bun",
+      "pm": "bun",
+      "config": [
+        "main.js"
+      ],
+      "build": {
+        "status": "built",
+        "emitted": [
+          {
+            "app": "app",
+            "files": 20,
+            "gzip": 93104
+          }
+        ]
+      },
+      "apps": [
+        {
+          "app": "app",
+          "status": "pass",
+          "workers": 2,
+          "split": true,
+          "beforeAnalyze": {
+            "files": 1,
+            "gzip": 1453
+          },
+          "firstMp4": {
+            "files": 4,
+            "gzip": 25069
+          },
+          "firstWebm": {
+            "files": 4,
+            "gzip": 27379
+          },
+          "failure": null
+        }
+      ],
+      "server": {
+        "target": "bun-build-configured",
+        "runner": "Bun, `bun run`",
+        "file": "hdr10_hevc10.mp4",
+        "runs": [
+          {
+            "loader": "import",
+            "resolved": [
+              "dist/index.js",
+              "dist/header/index.js",
+              "dist/url/index.js",
+              "dist/color/index.js",
+              "dist/aspect/index.js",
+              "dist/check/index.js",
+              "dist/presets/index.js"
+            ],
+            "sharedWithImport": null
+          },
+          {
+            "loader": "require",
+            "resolved": [
+              "dist/cjs/index.cjs",
+              "dist/cjs/header.cjs",
+              "dist/cjs/url.cjs",
+              "dist/cjs/color.cjs",
+              "dist/cjs/aspect.cjs",
+              "dist/cjs/check.cjs",
+              "dist/cjs/presets.cjs"
+            ],
+            "sharedWithImport": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ]
+          }
+        ]
+      },
+      "status": "verified with configuration",
+      "toolVersion": "1.4.4"
+    },
+    {
+      "name": "deno",
+      "group": "deno",
+      "tool": "deno",
+      "pm": "deno",
+      "config": [],
+      "build": null,
+      "apps": [],
+      "server": {
+        "target": "deno",
+        "runner": "Deno, npm specifiers",
+        "file": "hdr10_hevc10.mp4",
+        "runs": [
+          {
+            "loader": "import",
+            "resolved": [
+              "dist/index.js",
+              "dist/header/index.js",
+              "dist/url/index.js",
+              "dist/color/index.js",
+              "dist/aspect/index.js",
+              "dist/check/index.js",
+              "dist/presets/index.js"
+            ],
+            "sharedWithImport": null
+          },
+          {
+            "loader": "require",
+            "resolved": [
+              "dist/index.js",
+              "dist/header/index.js",
+              "dist/url/index.js",
+              "dist/color/index.js",
+              "dist/aspect/index.js",
+              "dist/check/index.js",
+              "dist/presets/index.js"
+            ],
+            "sharedWithImport": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          }
+        ]
+      },
+      "status": "verified",
+      "toolVersion": "2.9.6"
+    },
+    {
+      "name": "pnpm-strict",
+      "group": "pnpm-strict",
+      "tool": "pnpm",
+      "pm": "pnpm",
+      "config": [],
+      "build": {
+        "status": "built",
+        "emitted": [
+          {
+            "app": "default",
+            "files": 18,
+            "gzip": 91769
+          },
+          {
+            "app": "all",
+            "files": 39,
+            "gzip": 368834
+          }
+        ]
+      },
+      "apps": [
+        {
+          "app": "default",
+          "status": "pass",
+          "workers": 2,
+          "split": true,
+          "beforeAnalyze": {
+            "files": 1,
+            "gzip": 1391
+          },
+          "firstMp4": {
+            "files": 2,
+            "gzip": 23133
+          },
+          "firstWebm": {
+            "files": 2,
+            "gzip": 22156
+          },
+          "failure": null
+        },
+        {
+          "app": "all",
+          "status": "pass",
+          "workers": 2,
+          "split": true,
+          "beforeAnalyze": {
+            "files": 1,
+            "gzip": 1908
+          },
+          "firstMp4": {
+            "files": 2,
+            "gzip": 23180
+          },
+          "firstWebm": {
+            "files": 2,
+            "gzip": 22203
+          },
+          "failure": null
+        }
+      ],
+      "server": {
+        "target": "pnpm-strict",
+        "runner": "Node, `pnpm exec node`",
+        "file": "hdr10_hevc10.mp4",
+        "runs": [
+          {
+            "loader": "import",
+            "resolved": [
+              "dist/index.js",
+              "dist/header/index.js",
+              "dist/url/index.js",
+              "dist/color/index.js",
+              "dist/aspect/index.js",
+              "dist/check/index.js",
+              "dist/presets/index.js"
+            ],
+            "sharedWithImport": null
+          },
+          {
+            "loader": "require",
+            "resolved": [
+              "dist/index.js",
+              "dist/header/index.js",
+              "dist/url/index.js",
+              "dist/color/index.js",
+              "dist/aspect/index.js",
+              "dist/check/index.js",
+              "dist/presets/index.js"
+            ],
+            "sharedWithImport": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          }
+        ]
+      },
+      "status": "verified",
+      "toolVersion": "12.16.1"
+    },
+    {
+      "name": "pnpm-hoisted",
+      "group": "pnpm-hoisted",
+      "tool": "pnpm",
+      "pm": "pnpm",
+      "config": [],
+      "build": {
+        "status": "built",
+        "emitted": [
+          {
+            "app": "default",
+            "files": 18,
+            "gzip": 91769
+          },
+          {
+            "app": "all",
+            "files": 39,
+            "gzip": 368834
+          }
+        ]
+      },
+      "apps": [
+        {
+          "app": "default",
+          "status": "pass",
+          "workers": 2,
+          "split": true,
+          "beforeAnalyze": {
+            "files": 1,
+            "gzip": 1391
+          },
+          "firstMp4": {
+            "files": 2,
+            "gzip": 23133
+          },
+          "firstWebm": {
+            "files": 2,
+            "gzip": 22156
+          },
+          "failure": null
+        },
+        {
+          "app": "all",
+          "status": "pass",
+          "workers": 2,
+          "split": true,
+          "beforeAnalyze": {
+            "files": 1,
+            "gzip": 1908
+          },
+          "firstMp4": {
+            "files": 2,
+            "gzip": 23180
+          },
+          "firstWebm": {
+            "files": 2,
+            "gzip": 22203
+          },
+          "failure": null
+        }
+      ],
+      "server": {
+        "target": "pnpm-hoisted",
+        "runner": "Node, `pnpm exec node`",
+        "file": "hdr10_hevc10.mp4",
+        "runs": [
+          {
+            "loader": "import",
+            "resolved": [
+              "dist/index.js",
+              "dist/header/index.js",
+              "dist/url/index.js",
+              "dist/color/index.js",
+              "dist/aspect/index.js",
+              "dist/check/index.js",
+              "dist/presets/index.js"
+            ],
+            "sharedWithImport": null
+          },
+          {
+            "loader": "require",
+            "resolved": [
+              "dist/index.js",
+              "dist/header/index.js",
+              "dist/url/index.js",
+              "dist/color/index.js",
+              "dist/aspect/index.js",
+              "dist/check/index.js",
+              "dist/presets/index.js"
+            ],
+            "sharedWithImport": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          }
+        ]
+      },
+      "status": "verified",
+      "toolVersion": "12.16.1"
+    },
+    {
+      "name": "yarn-pnp",
+      "group": "yarn-pnp",
+      "tool": "yarn",
+      "pm": "yarn",
+      "config": [],
+      "build": {
+        "status": "built",
+        "emitted": [
+          {
+            "app": "default",
+            "files": 18,
+            "gzip": 91769
+          },
+          {
+            "app": "all",
+            "files": 39,
+            "gzip": 368834
+          }
+        ]
+      },
+      "apps": [
+        {
+          "app": "default",
+          "status": "pass",
+          "workers": 2,
+          "split": true,
+          "beforeAnalyze": {
+            "files": 1,
+            "gzip": 1391
+          },
+          "firstMp4": {
+            "files": 2,
+            "gzip": 23133
+          },
+          "firstWebm": {
+            "files": 2,
+            "gzip": 22156
+          },
+          "failure": null
+        },
+        {
+          "app": "all",
+          "status": "pass",
+          "workers": 2,
+          "split": true,
+          "beforeAnalyze": {
+            "files": 1,
+            "gzip": 1908
+          },
+          "firstMp4": {
+            "files": 2,
+            "gzip": 23180
+          },
+          "firstWebm": {
+            "files": 2,
+            "gzip": 22203
+          },
+          "failure": null
+        }
+      ],
+      "server": {
+        "target": "yarn-pnp",
+        "runner": "Node, `yarn node` (PnP)",
+        "file": "hdr10_hevc10.mp4",
+        "runs": [
+          {
+            "loader": "import",
+            "resolved": [
+              "dist/index.js",
+              "dist/header/index.js",
+              "dist/url/index.js",
+              "dist/color/index.js",
+              "dist/aspect/index.js",
+              "dist/check/index.js",
+              "dist/presets/index.js"
+            ],
+            "sharedWithImport": null
+          },
+          {
+            "loader": "require",
+            "resolved": [
+              "dist/cjs/index.cjs",
+              "dist/cjs/header.cjs",
+              "dist/cjs/url.cjs",
+              "dist/cjs/color.cjs",
+              "dist/cjs/aspect.cjs",
+              "dist/cjs/check.cjs",
+              "dist/cjs/presets.cjs"
+            ],
+            "sharedWithImport": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ]
+          }
+        ]
+      },
+      "status": "verified",
+      "toolVersion": "4.18.1"
+    },
+    {
+      "name": "bun-install",
+      "group": "bun-install",
+      "tool": "bun",
+      "pm": "bun",
+      "config": [],
+      "build": {
+        "status": "built",
+        "emitted": [
+          {
+            "app": "default",
+            "files": 18,
+            "gzip": 91769
+          },
+          {
+            "app": "all",
+            "files": 39,
+            "gzip": 368834
+          }
+        ]
+      },
+      "apps": [
+        {
+          "app": "default",
+          "status": "pass",
+          "workers": 2,
+          "split": true,
+          "beforeAnalyze": {
+            "files": 1,
+            "gzip": 1391
+          },
+          "firstMp4": {
+            "files": 2,
+            "gzip": 23133
+          },
+          "firstWebm": {
+            "files": 2,
+            "gzip": 22156
+          },
+          "failure": null
+        },
+        {
+          "app": "all",
+          "status": "pass",
+          "workers": 2,
+          "split": true,
+          "beforeAnalyze": {
+            "files": 1,
+            "gzip": 1908
+          },
+          "firstMp4": {
+            "files": 2,
+            "gzip": 23180
+          },
+          "firstWebm": {
+            "files": 2,
+            "gzip": 22203
+          },
+          "failure": null
+        }
+      ],
+      "server": {
+        "target": "bun-install",
+        "runner": "Node, on the bun install",
+        "file": "hdr10_hevc10.mp4",
+        "runs": [
+          {
+            "loader": "import",
+            "resolved": [
+              "dist/index.js",
+              "dist/header/index.js",
+              "dist/url/index.js",
+              "dist/color/index.js",
+              "dist/aspect/index.js",
+              "dist/check/index.js",
+              "dist/presets/index.js"
+            ],
+            "sharedWithImport": null
+          },
+          {
+            "loader": "require",
+            "resolved": [
+              "dist/index.js",
+              "dist/header/index.js",
+              "dist/url/index.js",
+              "dist/color/index.js",
+              "dist/aspect/index.js",
+              "dist/check/index.js",
+              "dist/presets/index.js"
+            ],
+            "sharedWithImport": [
+              true,
+              true,
+              true,
+              true,
+              true,
+              true,
+              true
+            ]
+          }
+        ]
+      },
+      "status": "verified",
+      "toolVersion": "1.4.4"
+    }
+  ]
+}
