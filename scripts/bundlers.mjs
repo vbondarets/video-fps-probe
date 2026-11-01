@@ -337,32 +337,44 @@ export function setup(dir, targets, { tarball, latest = false, registry = false 
   } else prepareTarball(dir, tarball);
   installBaseline(dir, env, registry ? spec : join(dir, TARBALL));
   for (const runtime of new Set(targets.map((t) => t.pm).filter((p) => p === 'bun' || p === 'deno'))) checkRuntime(runtime, latest);
+  const failures = [];
   for (const target of targets) {
-    const started = Date.now();
-    rmSync(measureDir(dir, target), { recursive: true, force: true });
-    const { root } = copyFixture(dir, target);
-    const log = join(dir, 'logs', `${target.name}-setup.log`);
-    rmSync(log, { force: true });
-    if (!registry) cpSync(join(dir, TARBALL), join(root, TARBALL));
-    const resolvedLatest = latest ? writeLatestManifest(root, target, env) : null;
-    if (target.pm === 'deno') {
-      writeJson(join(measureDir(dir, target), 'setup.json'), { target: target.name, latest: resolvedLatest, peerWarnings: [], lockfileChanges: [] });
-      console.log(`set up ${target.name}: Deno fetches the package from the mini registry when it runs`);
-      continue;
+    try {
+      setupTarget(dir, target, { env, spec, latest, registry });
+    } catch (e) {
+      const message = e.message.startsWith(`${target.name}: `) ? e.message : `${target.name}: ${e.message}`;
+      failures.push(message);
+      writeJson(join(measureDir(dir, target), 'setup.json'), { target: target.name, error: message });
     }
-    if (target.pm === 'npm' || target.pm === 'bun') rmSync(join(root, 'node_modules'), { recursive: true, force: true });
-    frozenInstall(target, root, env, log, latest);
-    const lockfile = LOCKFILES[target.pm];
-    const before = !latest && existsSync(join(root, lockfile)) ? readFileSync(join(root, lockfile), 'utf8') : null;
-    const added = addPackage(target, root, env, log, spec, latest);
-    const after = existsSync(join(root, lockfile)) ? readFileSync(join(root, lockfile), 'utf8') : null;
-    const changes = before === null || after === null ? [] : lockfileChanges(target.pm, before, after);
-    if (changes.length > 0) throw new Error(`${target.name}: adding ${spec} changed lockfile entries other than ${PACKAGE}: ${changes.slice(0, 20).join(', ')}`);
-    const warnings = target.peerWarnings ? peerWarnings(target.pm, added.output) : [];
-    writeJson(join(measureDir(dir, target), 'setup.json'), { target: target.name, latest: resolvedLatest, peerWarnings: warnings, lockfileChanges: changes });
-    if (warnings.length > 0) throw new Error(`${target.name}: adding ${spec} printed peer warnings:\n${warnings.join('\n')}`);
-    console.log(`set up ${target.name} with ${target.pm} in ${((Date.now() - started) / 1000).toFixed(1)} s`);
   }
+  if (failures.length) throw new Error(`setup failed for ${failures.length} of ${targets.length} targets:\n${failures.join('\n')}`);
+}
+
+function setupTarget(dir, target, { env, spec, latest, registry }) {
+  const started = Date.now();
+  rmSync(measureDir(dir, target), { recursive: true, force: true });
+  const { root } = copyFixture(dir, target);
+  const log = join(dir, 'logs', `${target.name}-setup.log`);
+  rmSync(log, { force: true });
+  if (!registry) cpSync(join(dir, TARBALL), join(root, TARBALL));
+  const resolvedLatest = latest ? writeLatestManifest(root, target, env) : null;
+  if (target.pm === 'deno') {
+    writeJson(join(measureDir(dir, target), 'setup.json'), { target: target.name, latest: resolvedLatest, peerWarnings: [], lockfileChanges: [] });
+    console.log(`set up ${target.name}: Deno fetches the package from the mini registry when it runs`);
+    return;
+  }
+  if (target.pm === 'npm' || target.pm === 'bun') rmSync(join(root, 'node_modules'), { recursive: true, force: true });
+  frozenInstall(target, root, env, log, latest);
+  const lockfile = LOCKFILES[target.pm];
+  const before = !latest && existsSync(join(root, lockfile)) ? readFileSync(join(root, lockfile), 'utf8') : null;
+  const added = addPackage(target, root, env, log, spec, latest);
+  const after = existsSync(join(root, lockfile)) ? readFileSync(join(root, lockfile), 'utf8') : null;
+  const changes = before === null || after === null ? [] : lockfileChanges(target.pm, before, after);
+  if (changes.length > 0) throw new Error(`${target.name}: adding ${spec} changed lockfile entries other than ${PACKAGE}: ${changes.slice(0, 20).join(', ')}`);
+  const warnings = target.peerWarnings ? peerWarnings(target.pm, added.output) : [];
+  writeJson(join(measureDir(dir, target), 'setup.json'), { target: target.name, latest: resolvedLatest, peerWarnings: warnings, lockfileChanges: changes });
+  if (warnings.length > 0) throw new Error(`${target.name}: adding ${spec} printed peer warnings:\n${warnings.join('\n')}`);
+  console.log(`set up ${target.name} with ${target.pm} in ${((Date.now() - started) / 1000).toFixed(1)} s`);
 }
 
 const JS = /\.(m?js|cjs)$/;
@@ -395,18 +407,25 @@ function serverBuild(root) {
 
 const outDirs = (target, root) => (target.out ? target.apps.map((app) => ({ app: app.name, path: join(root, target.out.replaceAll('{app}', app.name)) })) : []);
 
+function setupError(dir, target) {
+  if (!existsSync(targetDir(dir, target))) return `${target.name} is not set up: run node scripts/bundlers.mjs setup --only ${target.group}`;
+  const path = join(measureDir(dir, target), 'setup.json');
+  return existsSync(path) ? (readJson(path).error ?? null) : null;
+}
+
 export function build(dir, targets) {
+  const failures = [];
   for (const target of targets) {
     const root = targetDir(dir, target);
-    if (!existsSync(root)) throw new Error(`${target.name} is not set up: run node scripts/bundlers.mjs setup --only ${target.group}`);
     const env = toolEnv(dir, { NODE_ENV: 'production' });
     const log = join(dir, 'logs', `${target.name}-build.log`);
     rmSync(log, { force: true });
     const started = Date.now();
-    let failed = null;
-    for (const step of target.build) {
+    const unset = setupError(dir, target);
+    let failed = unset;
+    for (const step of unset === null ? target.build : []) {
       const { command: c, args } = command(target, root, step);
-      const r = run(c, args, { cwd: join(root, step.cwd ?? ''), env, log, allowFailure: !!target.fails?.build });
+      const r = run(c, args, { cwd: join(root, step.cwd ?? ''), env, log, allowFailure: true });
       if (r.status !== 0) {
         failed = r.output;
         break;
@@ -416,8 +435,11 @@ export function build(dir, targets) {
     const outputs = failed === null ? outDirs(target, root).map(({ app, path }) => ({ app, ...emitted(path) })) : [];
     const server = failed === null && target.serverOut ? serverBuild(join(root, target.serverOut)) : null;
     writeJson(join(measureDir(dir, target), 'build.json'), { target: target.name, status: failed === null ? 'built' : 'failed', output: failed, ms, emitted: outputs, server });
-    console.log(`${failed === null ? 'built' : 'build failed (expected by the target table)'}: ${target.name} in ${(ms / 1000).toFixed(1)} s`);
+    const expected = unset === null && failed !== null && !!target.fails?.build;
+    if (failed !== null && !expected) failures.push(`${target.name}: ${failed.split('\n').filter(Boolean).slice(-5).join('\n')}`);
+    console.log(`${failed === null ? 'built' : expected ? 'build failed (expected by the target table)' : 'BUILD FAILED'}: ${target.name} in ${(ms / 1000).toFixed(1)} s`);
   }
+  if (failures.length) throw new Error(`the build failed for ${failures.length} of ${targets.length} targets, the others were built:\n${failures.join('\n')}`);
 }
 
 function holds(body) {
@@ -554,14 +576,15 @@ function startUpstream(dir, target, step, port, extraEnv = {}) {
 export async function serve(dir, targets, { dev = false } = {}) {
   const served = [];
   const pending = [];
+  const started = (target, url, ms, child) => pending.push(waitFor(url, ms, child).catch((e) => console.error(`bundlers: ${target.name} did not start, so its tests fail: ${e.message}`)));
   for (const target of targets.filter(hasPage)) {
     const root = targetDir(dir, target);
     const port = target.port + (dev ? DEV_OFFSET : 0);
     const upstream = port + UPSTREAM_OFFSET;
     if (dev) {
-      if (!target.dev || !existsSync(root)) continue;
+      if (!target.dev || setupError(dir, target) !== null) continue;
       const child = startUpstream(dir, target, target.dev, upstream, { NODE_ENV: 'development' });
-      pending.push(waitFor(`http://127.0.0.1:${upstream}/`, 240_000, child));
+      started(target, `http://127.0.0.1:${upstream}/`, 240_000, child);
       await front(port, proxyHandler(upstream), upstream);
       served.push({ target: target.name, port, mode: 'dev' });
       continue;
@@ -570,7 +593,7 @@ export async function serve(dir, targets, { dev = false } = {}) {
     if (!existsSync(built) || readJson(built).status !== 'built') continue;
     if (target.start) {
       const child = startUpstream(dir, target, target.start, upstream, { NODE_ENV: 'production' });
-      pending.push(waitFor(`http://127.0.0.1:${upstream}/`, 120_000, child));
+      started(target, `http://127.0.0.1:${upstream}/`, 120_000, child);
       await front(port, proxyHandler(upstream), null);
     } else {
       const roots = target.apps.map((app) => ({ prefix: app.path, dir: join(root, target.out.replaceAll('{app}', app.name)) }));
@@ -929,8 +952,10 @@ Commands:
   setup        copies each fixture of tests/bundlers/fixtures to the bundlers directory, runs a frozen
                install of its toolchain (npm ci, pnpm install --frozen-lockfile, yarn install --immutable,
                bun install --frozen-lockfile), adds the package with the package manager's own add command
-               and fails when that changed a lockfile entry other than ${PACKAGE}
-  build        builds each target and records the build outcome and the emitted JavaScript
+               and fails a target when that changed a lockfile entry other than ${PACKAGE}
+               or printed a peer warning for it
+  build        builds each target and records the build outcome and the emitted JavaScript. setup and
+               build go on past a target that fails and exit non-zero at the end, naming each one
   serve        serves every built target on its own port from ${BUNDLERS_PORT + 1}, static files or a proxy in
                front of the framework server that logs what it sends, and a hub on ${BUNDLERS_PORT}
   report       --write writes report/bundlers.{json,md} and the table in docs/bundlers.md from the
