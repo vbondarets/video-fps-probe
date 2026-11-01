@@ -332,7 +332,7 @@ test.describe('every 0.4.0 capability in the demo', () => {
 
     await page.getByRole('button', { name: 'Copy JSON' }).click();
     const note = page.locator('.export-note');
-    await expect(note).toContainText(/Copied 10 file results, the header-only results, the URL results and the check reports to the clipboard\.|The browser blocked copying\./);
+    await expect(note).toContainText(new RegExp(`Copied ${SAMPLES.length} file results, the header-only results, the URL results and the check reports to the clipboard\\.|The browser blocked copying\\.`));
     const area = note.locator('textarea');
     if ((await area.count()) > 0) {
       const copied = JSON.parse(await area.inputValue()) as ExportedJson;

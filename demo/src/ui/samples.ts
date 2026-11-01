@@ -9,6 +9,7 @@ export const SAMPLES = [
   'dv_p81_dvvc.mp4',
   'sar_h264_4x3.mp4',
   'track_disabled.mp4',
+  'mov_trailing_junk.mov',
 ] as const;
 
 export const sampleUrl = (name: string): string => new URL(`${import.meta.env.BASE_URL}samples/${name}`, location.href).href;

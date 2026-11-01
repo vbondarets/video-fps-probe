@@ -6,9 +6,10 @@ import type { FileResult } from '../../src/core/types.ts';
 import { analyzeWithMediabunny } from '../../src/engines/mediabunny.ts';
 import { analyzeWithMp4box } from '../../src/engines/mp4box.ts';
 import { bytes, count, fps } from '../../demo/src/ui/format.ts';
+import { SAMPLES } from '../../demo/src/ui/samples.ts';
 import { addFixtures, fixtureFile, nodeAnalyze, openApp, probeResults, waitSettled, withoutTiming, type ProbeWindow } from './support.ts';
 
-const SAMPLE_COUNT = 10;
+const SAMPLE_COUNT = SAMPLES.length;
 const MODULE_LOAD_FAILURE = /dynamically imported module|Importing a module script failed|error loading dynamically imported module/i;
 
 function watchErrors(page: Page): string[] {
@@ -38,7 +39,7 @@ test('page loads without console errors', async ({ page }) => {
   expect(errors).toEqual([]);
 });
 
-test('Try sample files loads 10 results', async ({ page }) => {
+test('Try sample files loads a result for every sample', async ({ page }) => {
   const errors = watchErrors(page);
   await openApp(page);
   await loadSamples(page);
