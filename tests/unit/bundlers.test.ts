@@ -1,7 +1,8 @@
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
-import { checkDocs, compareReports, docVersionProblems, fixtureFileProblems, latestManifest, lockfileChanges, peerCheckIssues, peerWarnings, versions, zeroConfigManifestProblems, zeroConfigSourceProblems } from '../../scripts/bundlers.mjs';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { checkDocs, compareReports, docVersionProblems, fixtureFileProblems, latestManifest, lockfileChanges, peerCheckIssues, peerWarnings, toolEnv, versions, zeroConfigManifestProblems, zeroConfigSourceProblems } from '../../scripts/bundlers.mjs';
 import { CONFIG_NAME, FORBIDDEN_IN_ZERO_CONFIG, GROUPS, TARGETS, targetsOf } from '../bundlers/targets.mjs';
 
 const FIXTURES = join(import.meta.dirname, '..', 'bundlers', 'fixtures');
@@ -98,6 +99,19 @@ const YARN_EXPLAIN = [
   'p9a1b2c → ✘ peer-yarn@workspace:. doesn\'t provide react to @vitejs/plugin-react@npm:5.0.0 [1a2b3]',
 ].join('\n');
 
+const paint = (code: string, text: string) => `\u001b[${code}m${text}\u001b[39m`;
+const yarnName = (name: string) => paint('38;5;173', name);
+const yarnLocator = (at: string, version: string) => `${paint('38;5;111', at)}${paint('38;5;111', version)}`;
+const COLORED_PACKAGE = `${yarnName('video-fps-probe')}${yarnLocator('@', 'file:./video-fps-probe.tgz#./video-fps-probe.tgz::hash=4c4ca4&locator=peer-yarn%40workspace%3A. [50740]')}`;
+const COLORED_WORKSPACE = `${yarnName('peer-yarn')}${yarnLocator('@', 'workspace:.')}`;
+const COLORED_EXPLAIN = [
+  `${paint('38;5;111', 'p0bc138')} → ${paint('32', '✓')} ${COLORED_WORKSPACE} doesn't provide ${paint('38;5;166', '@types/')}${yarnName('mediabunny')} to ${COLORED_PACKAGE}`,
+  `${paint('38;5;111', 'pc23d70')} → ${paint('31', '✘')} ${COLORED_WORKSPACE} provides ${yarnName('mp4box')}${yarnLocator('@', 'npm:2.3.0')} to ${COLORED_PACKAGE}`,
+].join('\n');
+const COLORED_YN0060 = `${paint('93', '➤')} YN0060: │ ${yarnName('mp4box')} is listed by your project with version ${paint('38;5;111', '2.3.0')} (${paint('38;5;111', 'pc23d70')}), which doesn't satisfy what ${yarnName('video-fps-probe')} requests (${paint('38;5;37', '^2.4.1')}).`;
+const PLAIN_YN0060 = "➤ YN0060: │ mp4box is listed by your project with version 2.3.0 (pc23d70), which doesn't satisfy what video-fps-probe requests (^2.4.1).";
+const PLAIN_FAILED_REQUIREMENT = 'pc23d70 → ✘ peer-yarn@workspace:. provides mp4box@npm:2.3.0 to video-fps-probe@file:./video-fps-probe.tgz#./video-fps-probe.tgz::hash=4c4ca4&locator=peer-yarn%40workspace%3A. [50740]';
+
 describe('the peer warning scan', () => {
   it('keeps the Yarn peer codes that name the package, not the PnP notice, the YN0086 summary or the fixture workspace', () => {
     const output = [
@@ -107,6 +121,17 @@ describe('the peer warning scan', () => {
       '➤ YN0002: │ video-fps-probe-bundlers-yarn-pnp@workspace:. doesn\'t provide react (p4f4d37), requested by @vitejs/plugin-react.',
     ].join('\n');
     expect(peerWarnings('yarn', output)).toEqual(['➤ YN0060: │ mp4box is listed by your project with version 2.3.0 (pc23d70), which doesn\'t satisfy what video-fps-probe requests (^2.4.1).']);
+  });
+
+  it('reads the colored lines Yarn prints under GITHUB_ACTIONS, where the package name follows an escape code', () => {
+    const output = [
+      `${paint('93', '➤')} YN0092: │ ESM support for PnP uses the experimental loader API and is therefore experimental`,
+      COLORED_YN0060,
+      `${paint('93', '➤')} YN0002: │ video-fps-probe-bundlers-yarn-pnp@workspace:. doesn't provide react (p4f4d37), requested by @vitejs/plugin-react.`,
+    ].join('\n');
+    expect(peerWarnings('yarn', output)).toEqual([PLAIN_YN0060]);
+    expect(peerWarnings('yarn', COLORED_YN0060)).toEqual([PLAIN_YN0060]);
+    expect(peerWarnings('bun', `${paint('33', 'warn')}: incorrect peer dependency "mp4box@2.4.1"`)).toEqual(['warn: incorrect peer dependency "mp4box@2.4.1"']);
   });
 
   it('leaves pnpm 12 to pnpm peers check, since its add prints only a summary line', () => {
@@ -126,8 +151,33 @@ describe('the peer warning scan', () => {
     expect(() => peerCheckIssues('yarn', YARN_EXPLAIN.split('\n')[2]!, 0)).toThrow('yarn explain peer-requirements exited with 0 and listed no peer requirement of video-fps-probe');
   });
 
+  it('reads a colored yarn explain peer-requirements, where the package name is split by escape codes', () => {
+    expect(peerCheckIssues('yarn', COLORED_EXPLAIN, 0)).toEqual([PLAIN_FAILED_REQUIREMENT]);
+    expect(peerCheckIssues('yarn', COLORED_EXPLAIN.split('\n')[0]!, 0)).toEqual([]);
+    const unrelated = `${paint('38;5;111', 'p9a1b2c')} → ${paint('31', '✘')} ${COLORED_WORKSPACE} doesn't provide ${yarnName('react')} to ${yarnName('@vitejs/plugin-react')}`;
+    expect(() => peerCheckIssues('yarn', unrelated, 0)).toThrow('yarn explain peer-requirements exited with 0 and listed no peer requirement of video-fps-probe');
+  });
+
   it('keeps the Bun peer warnings that name the package or one of its peers', () => {
     expect(peerWarnings('bun', 'warn: incorrect peer dependency "mp4box@2.4.1"\nwarn: incorrect peer dependency "typescript@6.0.3"\n')).toEqual(['warn: incorrect peer dependency "mp4box@2.4.1"']);
+  });
+});
+
+describe('the environment of the tools bundlers runs', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('turns colors off for Yarn and Node tools even where CI forces them on', () => {
+    vi.stubEnv('GITHUB_ACTIONS', 'true');
+    vi.stubEnv('FORCE_COLOR', '3');
+    const dir = mkdtempSync(join(tmpdir(), 'vfp-tool-env-'));
+    try {
+      expect(toolEnv(dir)).toMatchObject({ GITHUB_ACTIONS: 'true', YARN_ENABLE_COLORS: '0', FORCE_COLOR: '0', NO_COLOR: '1' });
+      expect(toolEnv(dir, { FORCE_COLOR: '1' }).FORCE_COLOR).toBe('1');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
 

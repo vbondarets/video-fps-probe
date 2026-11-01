@@ -5,7 +5,7 @@ import { connect } from 'node:net';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isDeepStrictEqual, parseArgs } from 'node:util';
+import { isDeepStrictEqual, parseArgs, stripVTControlCharacters } from 'node:util';
 import { gzipSync } from 'node:zlib';
 import { BUNDLERS_PORT, CLIENT_MARKER, CONFIG_NAME, DEV_OFFSET, FIRST_MP4_LIMIT, FORBIDDEN_IN_ZERO_CONFIG, GROUPS, PARSER_MARKERS, TARGETS, UPSTREAM_OFFSET, hasPage, targetsOf } from '../tests/bundlers/targets.mjs';
 import { SERVER_ENTRIES } from '../tests/bundlers/shared/server-run-core.mjs';
@@ -67,6 +67,9 @@ export function toolEnv(dir, extra = {}) {
     NUXT_TELEMETRY_DISABLED: '1',
     NG_CLI_ANALYTICS: 'false',
     YARN_ENABLE_TELEMETRY: '0',
+    YARN_ENABLE_COLORS: '0',
+    FORCE_COLOR: '0',
+    NO_COLOR: '1',
     ...extra,
   };
   const cache = process.env.BUNDLERS_CACHE;
@@ -252,7 +255,7 @@ const PEERS = Object.keys(readJson(join(REPO_ROOT, 'package.json')).peerDependen
 const PEER_CHECK = { pnpm: ['peers', 'check', '--json'], yarn: ['explain', 'peer-requirements'] };
 
 export function peerWarnings(pmName, output) {
-  const lines = output.split(/\r?\n/);
+  const lines = stripVTControlCharacters(output).split(/\r?\n/);
   if (pmName === 'bun') return lines.filter((line) => /peer dependency/i.test(line) && (NAMES_PACKAGE.test(line) || PEERS.some((peer) => line.includes(`"${peer}@`))));
   if (pmName === 'yarn') return lines.filter((line) => PEER_WARNING.yarn.test(line) && NAMES_PACKAGE.test(line));
   return lines.filter((line) => PEER_WARNING[pmName]?.test(line));
@@ -280,8 +283,9 @@ function pnpmPeerIssues(stdout, status) {
 }
 
 export function peerCheckIssues(pmName, stdout, status) {
-  if (pmName === 'pnpm') return pnpmPeerIssues(stdout, status);
-  const lines = stdout.split(/\r?\n/).filter((line) => line.includes(` to ${PACKAGE}@`));
+  const plain = stripVTControlCharacters(stdout);
+  if (pmName === 'pnpm') return pnpmPeerIssues(plain, status);
+  const lines = plain.split(/\r?\n/).filter((line) => line.includes(` to ${PACKAGE}@`));
   if (status !== 0 || lines.length === 0) throw new Error(`yarn ${PEER_CHECK.yarn.join(' ')} exited with ${status} and listed no peer requirement of ${PACKAGE}`);
   return lines.filter((line) => line.includes('✘'));
 }
