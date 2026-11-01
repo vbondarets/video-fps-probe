@@ -15,7 +15,7 @@ pnpm add video-fps-probe
 bun add video-fps-probe
 ```
 
-The first npm release is 0.2.0, and one publish serves every package manager ([publishing](docs/publishing.md)). npm is the tested package manager: CI installs the packed tarball with npm. Yarn, pnpm and bun are expected to work but are not tested in CI yet (pnpm, Yarn PnP and bun installs join the bundler matrix in 0.4.1). The package has no dependencies. Its peers are optional and no package manager installs them for you: install one yourself, only for the entry you import: `mp4box` for `video-fps-probe/mp4box`, `mediabunny` for `video-fps-probe/mediabunny`, React 18 or 19 for `video-fps-probe/react`.
+The first npm release is 0.2.0, and one publish serves every package manager ([publishing](docs/publishing.md)). CI installs the tarball with npm, pnpm, Yarn PnP and bun, and builds it with Vite, webpack, Rspack, Next.js, Angular, SvelteKit, Nuxt, Parcel and Bun ([bundlers](docs/bundlers.md#status)). The package has no dependencies. Its peers are optional and no package manager installs them for you: install one yourself, only for the entry you import: `mp4box` for `video-fps-probe/mp4box`, `mediabunny` for `video-fps-probe/mediabunny`, React 18 or 19 for `video-fps-probe/react`.
 
 For a commit that is not released yet, install a packed tarball. A git dependency gets no code with npm (Yarn, pnpm and bun are not tested): `prepack` builds `dist/`, and npm does not run it for a git install.
 
@@ -180,7 +180,6 @@ Known limitations: [changelog](CHANGELOG.md#known-limitations), [benchmarks](doc
 
 ## Roadmap
 
-- **0.4.1**: a bundler matrix in CI: webpack 5, Rspack, Next.js, Angular CLI, SvelteKit, Nuxt, Parcel, Bun and Deno, with pnpm, Yarn PnP and bun installs.
 - **0.4.2**: a CI guarantee of a clean console: the e2e and consumer smoke tests fail on any console warning or error, page error or unhandled rejection in Chromium, Firefox and WebKit, and a Node test checks that the library writes nothing to stdout or stderr.
 - **Later in 0.4.x**: HDR10 static metadata (`mdcv`, `clli`, MasteringMetadata) and the color of the AV1 sequence header, which the color entry of 0.4.0 does not read yet.
 - **0.5.0**: a Node entry (`fromPath`, DOM-free types, a `worker_threads` pool), NestJS validators, a CLI, bitrate, GOP and audio details, cadence detection, framework adapters for Vue, Svelte and Angular, and later MPEG-TS and HLS.
