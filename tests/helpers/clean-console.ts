@@ -215,7 +215,8 @@ export class NoiseGuard {
 
 let current: NoiseGuard | null = null;
 
-export async function watch(page: Page, collector: NoiseCollector = current?.collector ?? new NoiseCollector()): Promise<NoiseCollector> {
+export async function watch(page: Page, collector: NoiseCollector | undefined = current?.collector): Promise<NoiseCollector> {
+  if (!collector) throw new Error('watch(page) outside a guarded test needs a NoiseCollector, which the caller then has to finish and check');
   await collector.attachContext(page.context());
   return collector;
 }

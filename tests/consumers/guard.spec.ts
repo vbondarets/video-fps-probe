@@ -138,6 +138,15 @@ test('an allowance passes only the noise it names, in its browsers, and fails wh
   expect(() => new NoiseGuard(browser).allow({ browsers: [browser], console: /x/, reason: ' ' })).toThrow('allowNoise needs a reason');
 });
 
+test('watch refuses a page outside a guarded test without a collector', async ({ browser }) => {
+  const page = await browser.newPage();
+  try {
+    await expect(watch(page)).rejects.toThrow('watch(page) outside a guarded test needs a NoiseCollector');
+  } finally {
+    await page.context().close();
+  }
+});
+
 guarded('the guard fails a test whose page fixture runs a module worker that warns', async ({ page }) => {
   guarded.fail();
   await open(page, PLANTS['module worker console warning']!);
