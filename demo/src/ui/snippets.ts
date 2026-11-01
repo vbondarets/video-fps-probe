@@ -151,32 +151,54 @@ ${COLOR_SUMMARY}
 `,
 };
 
-export function urlSnippet(mode: UrlMode): SnippetPair {
-  if (mode === 'header') {
-    const body = (name: string) => `import { analyzeHeader } from 'video-fps-probe/header';
-import { httpRange, openRangeSource } from 'video-fps-probe/url';
-
-export async function readHeaderFromUrl(${name}: string) {
-  const signal = AbortSignal.timeout(10_000);
-  const source = await openRangeSource(httpRange(${name}), { signal });
-  return analyzeHeader(source, { name: ${name}, signal, color: true, aspect: true });
-}
-`;
-    return { browser: body('url'), node: body('presignedGetUrl') };
-  }
-  const body = (name: string) => `import { analyze } from 'video-fps-probe';
+const URL_IMPORTS: Record<UrlMode, string> = {
+  header: `import { analyzeHeader } from 'video-fps-probe/header';
+import { httpRange, openRangeSource } from 'video-fps-probe/url';`,
+  full: `import { analyze } from 'video-fps-probe';
 import { withAspect } from 'video-fps-probe/aspect';
 import { withColor } from 'video-fps-probe/color';
-import { httpRange, openRangeSource } from 'video-fps-probe/url';
+import { httpRange, openRangeSource } from 'video-fps-probe/url';`,
+};
 
-export async function analyzeUrl(${name}: string) {
-  const signal = AbortSignal.timeout(30_000);
-  const source = await openRangeSource(httpRange(${name}), { signal });
-  const result = await analyze(source, { name: ${name}, signal, codecConfig: true });
-  return withAspect(withColor(result, { keepCodecConfig: true }));
+const URL_TIMEOUT: Record<UrlMode, string> = { header: '10_000', full: '30_000' };
+
+function urlRead(mode: UrlMode, href: string, name: string, indent: string): string {
+  const body =
+    mode === 'header'
+      ? [`const source = await openRangeSource(httpRange(${href}), { signal });`, `return await analyzeHeader(source, { ${name}, signal, color: true, aspect: true });`]
+      : [
+          `const source = await openRangeSource(httpRange(${href}), { signal });`,
+          `const result = await analyze(source, { ${name}, signal, codecConfig: true });`,
+          `return withAspect(withColor(result, { keepCodecConfig: true }));`,
+        ];
+  return body.map((l) => `${indent}${l}`).join('\n');
 }
-`;
-  return { browser: body('url'), node: body('presignedGetUrl') };
+
+export function urlSnippet(mode: UrlMode): SnippetPair {
+  const fn = mode === 'header' ? 'readHeaderFromUrl' : 'analyzeUrl';
+  return {
+    browser: `${URL_IMPORTS[mode]}
+
+export async function ${fn}(url: string) {
+  const name = new URL(url).pathname.split('/').pop() || 'video';
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ${URL_TIMEOUT[mode]});
+  const signal = controller.signal;
+  try {
+${urlRead(mode, 'url', 'name', '    ')}
+  } finally {
+    clearTimeout(timer);
+  }
+}
+`,
+    node: `${URL_IMPORTS[mode]}
+
+export async function ${fn}(presignedGetUrl: string, key: string) {
+  const signal = AbortSignal.timeout(${URL_TIMEOUT[mode]});
+${urlRead(mode, 'presignedGetUrl', 'name: key', '  ')}
+}
+`,
+  };
 }
 
 export interface CheckOverrides {
