@@ -26,15 +26,20 @@ export const PACKAGE_FILE = /\/node_modules\/(?:\.vite\/deps\/)?(?:video-fps-pro
 export const PACKAGE_SOURCE = /\/node_modules\/(?:video-fps-probe|mp4box|mediabunny)\/|\/video-fps-probe\/dist\//;
 export const WATCHED_REQUEST_TYPES: readonly string[] = ['script', 'fetch', 'xhr'];
 
-const REJECTIONS = '__rejections';
 const SCRIPT_PATH = /\.m?js$/;
 const MAP_TIMEOUT_MS = 10_000;
 
-function recordRejections(key: string): void {
-  const store = ((window as unknown as Record<string, unknown>)[key] ??= []) as string[];
+function recordRejections(binding: string): void {
+  const describe = (reason: unknown): string => {
+    try {
+      return reason instanceof Error ? `${reason.name}: ${reason.message}` : String(reason);
+    } catch {
+      return `a reason without a string form (${Object.prototype.toString.call(reason)})`;
+    }
+  };
   window.addEventListener('unhandledrejection', (event) => {
-    const reason: unknown = event.reason;
-    store.push(reason instanceof Error ? `${reason.name}: ${reason.message}` : String(reason));
+    const report = (window as unknown as Record<string, ((text: string) => Promise<void>) | undefined>)[binding];
+    void report?.(describe(event.reason)).catch(() => undefined);
   });
 }
 
@@ -80,6 +85,8 @@ function sourceAt(map: SourceMap, line: number, column: number): string | null {
   return map.sources[source] ?? null;
 }
 
+let collectors = 0;
+
 export class NoiseCollector {
   readonly noise: Noise[] = [];
   readonly #origins = new Set<string>();
@@ -87,6 +94,7 @@ export class NoiseCollector {
   readonly #contexts = new WeakSet<BrowserContext>();
   readonly #maps = new Map<string, Promise<SourceMap | null>>();
   readonly #pending = new Set<Promise<void>>();
+  readonly #binding = `__noiseRejection${++collectors}`;
   #frozen = false;
 
   add(kind: NoiseKind, text: string): void {
@@ -96,7 +104,8 @@ export class NoiseCollector {
   async attachContext(context: BrowserContext): Promise<void> {
     if (this.#contexts.has(context)) return;
     this.#contexts.add(context);
-    await context.addInitScript(recordRejections, REJECTIONS);
+    await context.exposeBinding(this.#binding, ({ page }, text: unknown) => this.add('page', `unhandled rejection in ${page?.url() ?? 'a closed page'}: ${String(text)}`));
+    await context.addInitScript(recordRejections, this.#binding);
     context.on('page', (page) => this.attachPage(page));
     for (const page of context.pages()) this.attachPage(page);
     context.on('console', (m) => this.#onConsole(m));
@@ -124,16 +133,7 @@ export class NoiseCollector {
     page.on('crash', () => this.add('page', `page crashed: ${page.url()}`));
   }
 
-  async collectRejections(): Promise<void> {
-    for (const page of this.#pages) {
-      if (page.isClosed()) continue;
-      const reasons = await page.evaluate((key) => [...(((window as unknown as Record<string, unknown>)[key] as string[] | undefined) ?? [])], REJECTIONS).catch(() => [] as string[]);
-      for (const reason of reasons) this.add('page', `unhandled rejection in ${page.url()}: ${reason}`);
-    }
-  }
-
   async finish(): Promise<Noise[]> {
-    await this.collectRejections();
     while (this.#pending.size > 0) await Promise.all(this.#pending);
     this.#frozen = true;
     return this.noise;

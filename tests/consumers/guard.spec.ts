@@ -43,7 +43,8 @@ const PLANTS: Record<string, Plant> = {
   'console log of a package entry that Vite pre-bundles': { body: moduleScript('/node_modules/.vite/deps/video-fps-probe_header.js'), files: { '/node_modules/.vite/deps/video-fps-probe_header.js': PACKAGE_LOG }, kind: 'console', noise: /^console log in page .*: planted package log \(.*\/node_modules\/\.vite\/deps\/video-fps-probe_header\.js:/ },
   'console log that a chunk sourcemap maps to the package': { body: moduleScript('/__guard/assets/index-Ef56.js'), files: { '/__guard/assets/index-Ef56.js': `${APP_LOG}${PACKAGE_LOG}`, '/__guard/assets/index-Ef56.js.map': SOURCE_MAP }, kind: 'console', noise: /^console log in page .*: planted package log \(.*\/assets\/index-Ef56\.js:0 from http:\/\/127\.0\.0\.1:\d+\/node_modules\/video-fps-probe\/dist\/client\/index\.js\)$/ },
   'page throw': { body: "<script>setTimeout(() => { throw new Error('planted throw'); });</script>", kind: 'page', noise: /^page error Error: planted throw$/ },
-  'page rejection': { body: "<script>Promise.reject(new Error('planted rejection'));</script>", kind: 'page', noise: /planted rejection/ },
+  'page rejection': { body: "<script>Promise.reject(new Error('planted rejection'));</script>", kind: 'page', noise: /^unhandled rejection in http:\/\/127\.0\.0\.1:\d+\/__guard\/index\.html: Error: planted rejection$/ },
+  'page rejection without a string form': { body: '<script>Promise.reject(Object.create(null));</script>', kind: 'page', noise: /^unhandled rejection in http:\/\/127\.0\.0\.1:\d+\/__guard\/index\.html: a reason without a string form \(\[object Object\]\)$/ },
   '404 script': { body: '<script src="/__guard/missing.js"></script>', kind: 'request', noise: /^request 404 GET http:\/\/127\.0\.0\.1:\d+\/__guard\/missing\.js$/ },
 };
 
@@ -98,6 +99,21 @@ test('the clean console guard reports nothing for a quiet page, a quiet worker a
     expect(await plantIn(page, plant, new NoiseCollector())).toEqual([]);
   } finally {
     await page.context().close();
+  }
+});
+
+test('the clean console guard reports a rejection of a page that the test closes before the end', async ({ browser }) => {
+  const context = await browser.newContext();
+  try {
+    const collector = new NoiseCollector();
+    await collector.attachContext(context);
+    const page = await context.newPage();
+    await open(page, PLANTS['page rejection']!);
+    await expect.poll(() => collector.noise.map((n) => n.text)).toContainEqual(expect.stringMatching(PLANTS['page rejection']!.noise));
+    await page.close();
+    expect((await collector.finish()).filter((n) => PLANTS['page rejection']!.noise.test(n.text))).toHaveLength(1);
+  } finally {
+    await context.close();
   }
 });
 
