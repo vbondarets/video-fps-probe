@@ -5,19 +5,24 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { bytes, ms } from '../../demo/src/ui/format.ts';
 import { SAMPLES } from '../../demo/src/ui/samples.ts';
 import { headerSnippet, LIMIT_PRESETS } from '../../demo/src/ui/snippets.ts';
-import { errorClass } from '../../src/api/codes.ts';
+import { errorClass, warningCodesOf } from '../../src/api/codes.ts';
 import { check, type CheckRules } from '../../src/check/index.ts';
 import { primaryTrack } from '../../src/core/result.ts';
 import { analyzeHeader } from '../../src/header/index.ts';
 import type { FileErrorCode, FileResult, Rational } from '../../src/core/types.ts';
 import { parseRef, type RefFile } from '../../scripts/compare/ref.ts';
 import { FIXTURES_DIR } from '../helpers/fixtures.ts';
-import { fixtureFile, nodeAnalyze, openApp, probeResults, waitSettled, type ProbeWindow } from './support.ts';
+import { addFixtures, fixtureFile, nodeAnalyze, openApp, probeResults, waitSettled, type ProbeWindow } from './support.ts';
 
 const TINY = LIMIT_PRESETS.find((p) => p.id === 'tiny')!.limits;
 const DEFAULTS = LIMIT_PRESETS.find((p) => p.id === 'defaults')!.limits;
 const BITSTREAM_ONLY: Readonly<Record<string, readonly string[]>> = {
   'cfr_vp9_59.94.webm': ['bitDepth', 'profile', 'codecString'],
+};
+const CODED_WARNINGS: Readonly<Record<string, string>> = {
+  'corrupt_trunc_mdat_faststart.mp4': 'truncated-mdat',
+  'mov_trailing_junk.mov': 'trailing-data',
+  'corrupt_trunc_moov_partial.mp4': 'truncated-box',
 };
 const R_FPS_NOT_REPRODUCED = new Set(['vfr_concat_10_30_60.mp4', 'fmp4_frag_duration.mp4']);
 
@@ -54,9 +59,9 @@ async function extra<K extends 'header' | 'url' | 'check'>(page: Page, key: K, r
   return (await read()) as NonNullable<ExportedJson[K]>;
 }
 
-async function loadSamples(page: Page): Promise<void> {
+async function loadSamples(page: Page, cards: number = SAMPLES.length): Promise<void> {
   await page.getByRole('button', { name: 'Try sample files' }).click();
-  await waitSettled(page, SAMPLES.length);
+  await waitSettled(page, cards);
 }
 
 async function openTab(page: Page, name: string, id: string): Promise<Locator> {
@@ -226,6 +231,24 @@ test.describe('every 0.4.0 capability in the demo', () => {
     await p.getByRole('button', { name: 'Defaults' }).click();
     await expect(p.locator('form .err')).toHaveCount(0);
     await expect(sub(p, 'cfr_h264_29.97.mp4').locator('.code-line')).toHaveCount(0);
+  });
+
+  test('coded warnings: the warning codes of the Node result on the Files and the Header-only cards', async ({ page }) => {
+    const names = Object.keys(CODED_WARNINGS);
+    await addFixtures(page, names);
+    const header = await openTab(page, 'Header only', 'header');
+    await expect(header.locator('article.sub')).toHaveCount(names.length);
+    for (const name of names) {
+      const full = warningCodesOf(await nodeAnalyze(name, 'auto'));
+      const head = warningCodesOf(await analyzeHeader(await openAsBlob(fixtureFile(name)), { name, limits: DEFAULTS, fragmentedDuration: 'index', color: true, aspect: true }));
+      expect([full, head], name).toEqual([[CODED_WARNINGS[name]], [CODED_WARNINGS[name]]]);
+      await expect(cell(sub(header, name), 'Warning codes')).toHaveText(head.join(', '));
+    }
+    const files = await openTab(page, 'Files', 'files');
+    for (const name of names) await expect(cell(card(page, name), 'Warning codes')).toHaveText(CODED_WARNINGS[name]!);
+    await expect(files.locator('article.card .code-line')).toHaveText([/^truncated file /]);
+    await loadSamples(page, names.length + SAMPLES.length);
+    await expect(cell(card(page, 'mov_trailing_junk.mov').last(), 'Warning codes')).toHaveText('trailing-data');
   });
 
   test('from a URL: a same-origin sample in header-only and full mode', async ({ page }) => {
