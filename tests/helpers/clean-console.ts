@@ -1,4 +1,4 @@
-import { test as base, type BrowserContext, type ConsoleMessage, type Page, type Request, type Response, type TestInfo } from '@playwright/test';
+import { test as base, type BrowserContext, type ConsoleMessage, type Page, type Request, type Response } from '@playwright/test';
 import { decodeMappings } from '../../scripts/size-matrix.mjs';
 
 export { expect } from '@playwright/test';
@@ -221,21 +221,21 @@ export async function watch(page: Page, collector: NoiseCollector | undefined = 
   return collector;
 }
 
-async function guarded(browser: BrowserName, provide: (guard: NoiseGuard) => Promise<void>, info: TestInfo): Promise<void> {
+export async function runGuarded(browser: BrowserName, body: (guard: NoiseGuard) => Promise<void>, skipped: () => boolean = () => false): Promise<void> {
   const guard = new NoiseGuard(browser);
   current = guard;
   try {
-    await provide(guard);
+    await body(guard);
   } finally {
     current = null;
   }
-  if (info.status === 'skipped') return;
+  if (skipped()) return;
   const problems = await guard.verify();
   if (problems.length > 0) throw new Error(`the console, the page and the network were not clean:\n${problems.map((p) => `  ${p}`).join('\n')}`);
 }
 
 export const test = base.extend<{ noiseGuard: NoiseGuard; allowNoise: AllowNoise }>({
-  noiseGuard: [async ({ browserName }, provide, info) => guarded(browserName as BrowserName, provide, info), { auto: true }],
+  noiseGuard: [async ({ browserName }, provide, info) => runGuarded(browserName as BrowserName, provide, () => info.status === 'skipped'), { auto: true }],
   context: async ({ context, noiseGuard }, provide) => {
     await noiseGuard.collector.attachContext(context);
     await provide(context);
