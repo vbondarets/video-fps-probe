@@ -5,9 +5,11 @@ export interface LogEntry {
   path: string;
   status: number;
   js: boolean;
+  prefetch: boolean;
   bytes: number;
   gzip: number;
   holds: Array<'isobmff' | 'matroska'>;
+  client: boolean;
 }
 
 export function versions(): { runtimes: Record<string, string>; packages: Record<string, string> };

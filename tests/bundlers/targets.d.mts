@@ -57,6 +57,7 @@ export const DEV_OFFSET: number;
 export const FIRST_MP4_LIMIT: number;
 export const SERVER_FILE: string;
 export const PARSER_MARKERS: Record<Family, string>;
+export const CLIENT_MARKER: string;
 export const FORBIDDEN_IN_ZERO_CONFIG: RegExp;
 export const TARGETS: BundlerTarget[];
 export const GROUPS: string[];

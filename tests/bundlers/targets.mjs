@@ -4,6 +4,7 @@ export const DEV_OFFSET = 200;
 export const FIRST_MP4_LIMIT = 48_000;
 export const SERVER_FILE = 'hdr10_hevc10.mp4';
 export const PARSER_MARKERS = { isobmff: 'duplicate track_ID values', matroska: 'Segment has an unknown size' };
+export const CLIENT_MARKER = 'the app may have been redeployed';
 export const FORBIDDEN_IN_ZERO_CONFIG = /video-fps-probe|worker|mp4box|mediabunny|optimizeDeps|conditionNames|copy|standalone|packageExports/i;
 
 const OWN = ['own'];

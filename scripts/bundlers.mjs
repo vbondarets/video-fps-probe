@@ -7,7 +7,7 @@ import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isDeepStrictEqual, parseArgs } from 'node:util';
 import { gzipSync } from 'node:zlib';
-import { BUNDLERS_PORT, DEV_OFFSET, FIRST_MP4_LIMIT, FORBIDDEN_IN_ZERO_CONFIG, GROUPS, PARSER_MARKERS, TARGETS, UPSTREAM_OFFSET, hasPage, targetsOf } from '../tests/bundlers/targets.mjs';
+import { BUNDLERS_PORT, CLIENT_MARKER, DEV_OFFSET, FIRST_MP4_LIMIT, FORBIDDEN_IN_ZERO_CONFIG, GROUPS, PARSER_MARKERS, TARGETS, UPSTREAM_OFFSET, hasPage, targetsOf } from '../tests/bundlers/targets.mjs';
 import { MIME, packTarball, staticFile } from './consumers.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -421,6 +421,10 @@ function holds(body) {
     .map(([family]) => family);
 }
 
+function isPrefetch(req) {
+  return ['sec-purpose', 'purpose', 'x-moz'].some((h) => /prefetch/i.test(String(req.headers[h] ?? '')));
+}
+
 function tokenOf(req) {
   return /(?:^|;\s*)bundlers=([\w-]+)/.exec(req.headers.cookie ?? '')?.[1] ?? null;
 }
@@ -431,7 +435,7 @@ function front(port, handle, upgradeTo) {
   const record = (req, status, type, body) => {
     const path = new URL(req.url ?? '/', 'http://x').pathname;
     const js = /javascript|ecmascript/.test(type ?? '') || JS.test(path);
-    log.push({ seq: seq++, token: tokenOf(req), method: req.method, path, status, js, bytes: body?.length ?? 0, gzip: js && body ? gzipSync(body, { level: 9 }).length : 0, holds: js && body ? holds(body) : [] });
+    log.push({ seq: seq++, token: tokenOf(req), method: req.method, path, status, js, prefetch: isPrefetch(req), bytes: body?.length ?? 0, gzip: js && body ? gzipSync(body, { level: 9 }).length : 0, holds: js && body ? holds(body) : [], client: js && body ? body.toString('latin1').includes(CLIENT_MARKER) : false });
   };
   const server = createServer((req, res) => {
     const url = new URL(req.url ?? '/', 'http://x');
