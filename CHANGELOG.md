@@ -6,12 +6,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ### Added
 
-- A bundler matrix in CI ([bundlers](docs/bundlers.md#bundler-matrix)). Every push packs the package once and, in 14 parallel jobs, builds it with webpack 5.112.2, Rspack 2.3.0, Next.js 16.4.3 with webpack and with Turbopack, Angular 22.2.5, SvelteKit 3.1.1, Nuxt 4.6.3, Parcel 2.16.4 and `bun build` of Bun 1.4.4, installs the Vite 8.3.5 consumer fixtures with pnpm 12.16.1 (isolated and hoisted), Yarn 4.18.1 Plug'n'Play and Bun, and runs the seven server entries in the Next.js, SvelteKit and Nuxt routes, in Bun and in Deno 2.9.6. In Chromium, Firefox and WebKit each app must give the results of Node `analyze` from the same tarball, start no worker before the first analyze, start one own worker per container family with the parser of that family only, and show no page error, console warning or error or failed same-origin request. A first MP4 above 48 KB of lazy JavaScript fails CI. Every fixture pins exact versions with a lockfile. The weekly canary runs the latest version of every tool, the published package and the dev servers.
+- A bundler matrix in CI ([bundlers](docs/bundlers.md#bundler-matrix)): webpack, Rspack, Next.js with webpack and with Turbopack, Angular, SvelteKit, Nuxt, Parcel and `bun build`, the Vite consumer fixtures installed with pnpm, Yarn Plug'n'Play and Bun, and the seven server entries in the Next.js, SvelteKit and Nuxt routes, in Bun and in Deno. In Chromium, Firefox and WebKit each app must give the Node results, load the probe client lazily, start one own worker per container family and show no error, console warning or failed request. Versions are exact and every fixture with dependencies has a lockfile. A weekly canary runs the latest tools.
 
 ### Changed
 
-- The bundler docs state what CI verifies. webpack 5, Rspack, Next.js with webpack and with Turbopack, SvelteKit and Nuxt work without configuration. The Angular application builder and `bun build` leave the prebuilt workers out of the output, so their sections show the standalone workers they need. Parcel 2.16.4 needs `packageExports` to resolve the subpath exports, and `maxParallelRequests: 1`, because a bundle it shares between the classic own workers runs a module before the bundle that registers it is loaded ([bundlers](docs/bundlers.md#status)). The package code does not change.
+- The bundler docs state what CI verifies. webpack 5, Rspack, Next.js with webpack and with Turbopack, SvelteKit and Nuxt work without configuration, and the sections of the Angular application builder, `bun build` and Parcel show the configuration each needs ([bundlers](docs/bundlers.md#status)). Parcel 2.16.4 also needs `maxParallelRequests: 1`, because a bundle it shares between the classic own workers runs a module before the bundle that registers it is loaded. The package code does not change.
 - The loader table of the CommonJS docs gains Bun, where `require()` takes the CommonJS copy, Deno, where it takes the ESM build, and Node under Yarn Plug'n'Play, where it takes the CommonJS copy ([CommonJS](docs/api.md#commonjs)).
+
+### Known limitations
+
+- Without the configuration in [bundlers](docs/bundlers.md#status), `ng build` and `bun build` leave the prebuilt workers out of the output and Parcel 2 does not resolve the subpath exports.
+- `require()` in Bun and in Node under Yarn Plug'n'Play takes the CommonJS copy, a second instance next to `import` ([CommonJS](docs/api.md#commonjs)).
+- The other limitations of [0.4.0](CHANGELOG.md#040---2026-11-01) still hold.
 
 ## 0.4.0 - 2026-11-01
 
