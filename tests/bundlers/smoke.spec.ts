@@ -204,6 +204,7 @@ async function failsToLoad(browser: Browser, browserName: string, target: Bundle
   const missing = Object.values(fails.missing!).map(escaped).join('|');
   allowNoise({ browsers: ['chromium', 'firefox', 'webkit'], request: new RegExp(`(?:${missing})\\b`), reason: `${target.name} leaves the prebuilt workers out of its output, so they answer 404` });
   allowNoise({ browsers: ['webkit'], console: new RegExp(`Failed to load resource: the server responded with a status of 404 .*(?:${missing})`), reason: 'WebKit logs the 404 of each missing prebuilt worker' });
+  allowNoise({ browsers: ['firefox'], console: new RegExp(`Loading Worker from “[^”]*(?:${missing})” was blocked because of a disallowed MIME type`), reason: 'Firefox blocks each missing prebuilt worker, which the test server answers with a text/plain 404, for its MIME type' });
   const w = await open(browser, target, app, dev, false);
   try {
     expect(w.workers, 'no worker starts before the first analyze').toEqual([]);
