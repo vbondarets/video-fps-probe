@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, openAsBlob, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { expect, test, type Browser, type Page } from '@playwright/test';
+import { expect, test, watch, type AllowNoise, type Browser, type Page } from '../helpers/clean-console.ts';
 import { baselineDir, bundlersDir, measureDir, type LogEntry } from '../../scripts/bundlers.mjs';
 import type { EngineDescriptor, ProbeResult } from '../../src/index.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
@@ -97,6 +97,7 @@ async function open(browser: Browser, target: BundlerTarget, app: BundlerApp, de
   const origin = new URL(appUrl(target, app, dev)).origin;
   await context.addCookies([{ name: 'bundlers', value: token, url: origin }]);
   const page = await context.newPage();
+  await watch(page);
   const problems: string[] = [];
   const workers: string[] = [];
   page.on('pageerror', (e) => problems.push(`page error ${e.name}: ${e.message}`));
@@ -195,8 +196,13 @@ async function passes(browser: Browser, browserName: string, target: BundlerTarg
   }
 }
 
-async function failsToLoad(browser: Browser, browserName: string, target: BundlerTarget, app: BundlerApp, dev: boolean): Promise<void> {
+const escaped = (path: string) => path.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+
+async function failsToLoad(browser: Browser, browserName: string, target: BundlerTarget, app: BundlerApp, dev: boolean, allowNoise: AllowNoise): Promise<void> {
   const fails = target.fails!;
+  const missing = Object.values(fails.missing!).map(escaped).join('|');
+  allowNoise({ browsers: ['chromium', 'firefox', 'webkit'], request: new RegExp(`(?:${missing})\\b`), reason: `${target.name} leaves the prebuilt workers out of its output, so they answer 404` });
+  allowNoise({ browsers: ['webkit'], console: new RegExp(`Failed to load resource: the server responded with a status of 404 .*(?:${missing})`), reason: 'WebKit logs the 404 of each missing prebuilt worker' });
   const w = await open(browser, target, app, dev, false);
   try {
     expect(w.workers, 'no worker starts before the first analyze').toEqual([]);
@@ -234,8 +240,8 @@ for (const target of TARGETS.filter(hasPage)) {
       const mode = dev ? 'dev server' : 'build';
       const tags = dev ? `@${target.group} @dev` : `@${target.group}`;
       if (target.fails?.analyze && !dev) {
-        test(`${label} ${mode}: the prebuilt worker is missing and analyze rejects with worker-failed ${tags}`, async ({ browser, browserName }) => {
-          await failsToLoad(browser, browserName, target, app, dev);
+        test(`${label} ${mode}: the prebuilt worker is missing and analyze rejects with worker-failed ${tags}`, async ({ browser, browserName, allowNoise }) => {
+          await failsToLoad(browser, browserName, target, app, dev, allowNoise);
         });
       } else {
         test(`${label} ${mode} gives the Node results with one own worker per container family ${tags}`, async ({ browser, browserName }) => {
