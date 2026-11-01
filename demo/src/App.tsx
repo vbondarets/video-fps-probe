@@ -2,7 +2,8 @@ import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import type { MatroskaMode } from 'video-fps-probe';
 import { bytes, ms, PROVENANCE } from './ui/format.ts';
 import type { ExportAction, ExportOutcome } from './ui/deviceInfo.ts';
-import { Mark, ResultCard } from './ui/ResultCard.tsx';
+import { Mark } from './ui/cells.tsx';
+import { ResultCard } from './ui/ResultCard.tsx';
 import { addFiles, clearAll, exportJson, loadDevice, setMode, useStore } from './ui/store.ts';
 
 const MODES: MatroskaMode[] = ['auto', 'header', 'probe', 'exact'];

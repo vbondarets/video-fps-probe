@@ -56,3 +56,5 @@ export function clock(sec: number): string {
   const m = Math.floor(t / 60);
   return `${m < 60 ? m : `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`}:${s < 10 ? '0' : ''}${s}`;
 }
+
+export const colon = (r: Rational | null | undefined): string => (r ? `${r.num}:${r.den}` : 'N/A');

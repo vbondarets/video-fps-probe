@@ -46,6 +46,7 @@ let nextRow = 1;
 const listeners = new Set<() => void>();
 const hosts = new Map<number, HTMLElement>();
 const probe = lazyProbeFrom(() => import('./probe.ts').then((m) => m.probe));
+const meta = () => import('./meta.ts');
 
 const message = (e: unknown) => (e instanceof Error ? e.message || e.name : String(e));
 const unloaded = (e: unknown) => (e as ProbeError | null)?.reason === 'load';
@@ -82,11 +83,31 @@ function checkDeploy(): Promise<boolean> {
   }));
 }
 
+function withoutCodecConfig(result: FileResult): FileResult {
+  const strip = (t: FileResult['videoTracks'][number]) => {
+    const copy = { ...t };
+    delete copy.codecConfig;
+    return copy;
+  };
+  return { ...result, videoTracks: result.videoTracks.map(strip) };
+}
+
+export function analyzeWithMeta(file: File, mode: MatroskaMode, signal: AbortSignal, onProgress: (progress: AnalyzeProgress) => void): Promise<FileResult> {
+  const enrich: Promise<(result: FileResult) => FileResult> = meta().then(
+    (m) => m.enrich,
+    () => {
+      void checkDeploy();
+      return withoutCodecConfig;
+    },
+  );
+  return probe.analyze(file, { matroskaMode: mode, codecConfig: true, signal, onProgress }).then((result) => enrich.then((apply) => apply(result)));
+}
+
 function start(id: number, mode: MatroskaMode, followMode = true): void {
   const row = find(id);
   if (!row) return;
   const controller = new AbortController();
-  const job = probe.analyze(row.file, { matroskaMode: mode, signal: controller.signal, onProgress: (progress) => patch(id, { progress }) });
+  const job = analyzeWithMeta(row.file, mode, controller.signal, (progress) => patch(id, { progress }));
   patch(id, { busy: true, progress: null, cancel: () => controller.abort() });
   job.then(
     (result) => {

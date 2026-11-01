@@ -1,6 +1,7 @@
 import { openAsBlob } from 'node:fs';
 import { join } from 'node:path';
 import type { Page } from '@playwright/test';
+import { enrich } from '../../demo/src/ui/meta.ts';
 import { analyze } from '../../src/core/index.ts';
 import type { FileResult, MatroskaMode, VideoTrackResult } from '../../src/core/types.ts';
 import { FILES_DIR, loadManifest } from '../helpers/fixtures.ts';
@@ -10,6 +11,7 @@ export type CompareEngine = 'mp4box' | 'mediabunny' | 'rvfc';
 export interface ProbeHook {
   readonly results: FileResult[];
   readonly pending: number;
+  readonly extras: Readonly<Record<string, unknown>>;
   runEngine(index: number, engine: CompareEngine): Promise<FileResult>;
 }
 
@@ -24,7 +26,7 @@ export const fixtureFile = (name: string): string => join(FILES_DIR, name);
 
 export async function nodeAnalyze(name: string, matroskaMode: MatroskaMode): Promise<FileResult> {
   const blob = await openAsBlob(fixtureFile(name));
-  return analyze(blob, name, { matroskaMode });
+  return enrich(await analyze(blob, name, { matroskaMode, codecConfig: true }));
 }
 
 export async function openApp(page: Page, mode?: MatroskaMode): Promise<void> {
