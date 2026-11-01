@@ -249,6 +249,14 @@ function resolveLatest(userconfig) {
   return Object.fromEntries(LATEST.map((name) => [name, JSON.parse(execSync(`npm view ${name}@latest version ${flags}`, { cwd: REPO_ROOT, env: NPM_ENV, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] }))]));
 }
 
+export function packTarball(dir) {
+  execSync('npm run build:lib', { cwd: REPO_ROOT, env: NPM_ENV, stdio: 'inherit' });
+  execFileSync(process.execPath, [join(REPO_ROOT, 'scripts', 'check-dist.mjs')], { cwd: REPO_ROOT, stdio: 'inherit' });
+  const out = execSync(`npm pack --ignore-scripts --json --pack-destination "${dir}"`, { cwd: REPO_ROOT, env: NPM_ENV, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
+  const [{ filename }] = JSON.parse(out);
+  return filename;
+}
+
 export function setup(dir, { latest = false } = {}) {
   const manifest = JSON.parse(readFileSync(join(REPO_ROOT, 'package.json'), 'utf8'));
   const offline = process.env.CONSUMERS_OFFLINE === '1';
@@ -256,10 +264,7 @@ export function setup(dir, { latest = false } = {}) {
   mkdirSync(dir, { recursive: true });
   rmSync(join(dir, LATEST_FILE), { force: true });
   for (const f of readdirSync(dir)) if (f.endsWith('.tgz')) rmSync(join(dir, f));
-  execSync('npm run build:lib', { cwd: REPO_ROOT, env: NPM_ENV, stdio: 'inherit' });
-  execFileSync(process.execPath, [join(REPO_ROOT, 'scripts', 'check-dist.mjs')], { cwd: REPO_ROOT, stdio: 'inherit' });
-  const out = execSync(`npm pack --ignore-scripts --json --pack-destination "${dir}"`, { cwd: REPO_ROOT, env: NPM_ENV, encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] });
-  const [{ filename }] = JSON.parse(out);
+  const filename = packTarball(dir);
   const dependencies = { 'video-fps-probe': `file:./${filename}` };
   const userconfig = offline || latest ? emptyUserconfig() : null;
   try {
@@ -309,10 +314,25 @@ export function build(dir, names = FIXTURES.map((f) => f.name)) {
   }
 }
 
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.map': 'application/json', '.css': 'text/css' };
+export const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.map': 'application/json', '.css': 'text/css' };
 
 export const buildUrl = (port, name) => `http://127.0.0.1:${port}/${name}/`;
 export const devUrl = (port, name) => `http://127.0.0.1:${port + 1 + FIXTURES.findIndex((f) => f.name === name)}/`;
+
+export function staticFile(root, path) {
+  const file = resolve(root, path || 'index.html');
+  return file.startsWith(root) && existsSync(file) && statSync(file).isFile() ? file : null;
+}
+
+export function sendStatic(res, root, path) {
+  const file = staticFile(root, path);
+  if (!file) {
+    res.writeHead(404, { 'Content-Type': 'text/plain' }).end('not found');
+    return;
+  }
+  res.writeHead(200, { 'Content-Type': MIME[extname(file)] ?? 'application/octet-stream', 'Cache-Control': 'no-store' });
+  createReadStream(file).pipe(res);
+}
 
 function serveBuilds(dir, port) {
   const server = createServer((req, res) => {
@@ -323,14 +343,7 @@ function serveBuilds(dir, port) {
       res.writeHead(path === '/' ? 200 : 404, { 'Content-Type': 'text/plain' }).end(FIXTURES.map((f) => f.name).join('\n'));
       return;
     }
-    const root = fixtureDist(dir, fixture.name);
-    const file = resolve(root, rest.join('/') || 'index.html');
-    if (!file.startsWith(root) || !existsSync(file) || !statSync(file).isFile()) {
-      res.writeHead(404, { 'Content-Type': 'text/plain' }).end('not found');
-      return;
-    }
-    res.writeHead(200, { 'Content-Type': MIME[extname(file)] ?? 'application/octet-stream', 'Cache-Control': 'no-store' });
-    createReadStream(file).pipe(res);
+    sendStatic(res, fixtureDist(dir, fixture.name), rest.join('/'));
   });
   return new Promise((done, fail) => server.once('error', fail).listen(port, '127.0.0.1', () => done(server)));
 }
