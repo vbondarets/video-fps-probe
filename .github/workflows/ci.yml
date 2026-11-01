@@ -282,3 +282,187 @@ jobs:
 
       - name: Run the consumer smoke tests (Chromium, Firefox, WebKit)
         run: npm run test:consumers
+
+  bundlers-pack:
+    name: Bundlers (pins, docs and the packed tarball)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check the exact pins, the lockfiles and the zero-config rule of the bundler fixtures
+        run: node scripts/bundlers.mjs check-pins
+
+      - name: Check docs/bundlers.md against the pins, the committed report and the fixture snippets
+        run: node scripts/bundlers.mjs check-docs
+
+      - name: Self-test the bundler report check
+        run: node scripts/bundlers.mjs report --self-test
+
+      - name: Build the library, check dist and pack the tarball every leg installs
+        run: |
+          npm run build:lib
+          node scripts/check-dist.mjs
+          mkdir -p "$RUNNER_TEMP/pack"
+          npm pack --ignore-scripts --pack-destination "$RUNNER_TEMP/pack"
+          mv "$RUNNER_TEMP"/pack/video-fps-probe-*.tgz "$RUNNER_TEMP/pack/video-fps-probe.tgz"
+
+      - name: Upload the tarball
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: bundlers-tarball
+          path: ${{ runner.temp }}/pack/video-fps-probe.tgz
+          if-no-files-found: error
+          retention-days: 3
+
+  bundlers:
+    name: Bundlers (${{ matrix.target }})
+    needs: bundlers-pack
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+    env:
+      HOME: /root
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - webpack
+          - rspack
+          - next-webpack
+          - next-turbopack
+          - angular
+          - sveltekit
+          - nuxt
+          - parcel
+          - bun-build
+          - deno
+          - pnpm-strict
+          - pnpm-hoisted
+          - yarn-pnp
+          - bun-install
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Set up Bun
+        if: matrix.target == 'bun-build' || matrix.target == 'bun-install'
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.4
+
+      - name: Set up Deno
+        if: matrix.target == 'deno'
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: 2.9.6
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Place the bundlers directory and the package manager caches outside the workspace
+        run: |
+          echo "BUNDLERS_DIR=$RUNNER_TEMP/bundlers" >> "$GITHUB_ENV"
+          echo "BUNDLERS_CACHE=$RUNNER_TEMP/bundlers-cache" >> "$GITHUB_ENV"
+
+      - name: Restore the package manager caches of the target
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/bundlers-cache
+          key: bundlers-${{ matrix.target }}-${{ hashFiles(format('tests/bundlers/fixtures/{0}*/*lock*', matrix.target), 'tests/bundlers/versions.json') }}
+
+      - name: Download the tarball
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: bundlers-tarball
+          path: ${{ runner.temp }}/pack
+
+      - name: Install the fixtures from their lockfiles and add the tarball with the package manager
+        run: node scripts/bundlers.mjs setup --only "${{ matrix.target }}" --tarball "$RUNNER_TEMP/pack/video-fps-probe.tgz"
+
+      - name: Build the fixtures
+        run: node scripts/bundlers.mjs build --only "${{ matrix.target }}"
+
+      - name: Run the smoke tests (Chromium, Firefox, WebKit) and the server entries
+        env:
+          BUNDLERS_ONLY: ${{ matrix.target }}
+        run: npx playwright test -c playwright.bundlers.config.ts --grep "@${{ matrix.target }}( |$)" --grep-invert @dev
+
+      - name: Upload the measurements
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: bundlers-measure-${{ matrix.target }}
+          path: ${{ runner.temp }}/bundlers/measure
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Upload the traces and the server logs
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: bundlers-traces-${{ matrix.target }}
+          path: |
+            .playwright/bundlers-results
+            ${{ runner.temp }}/bundlers/logs
+          if-no-files-found: ignore
+          retention-days: 7
+
+  bundlers-report:
+    name: Bundlers (report)
+    needs: bundlers
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Download the measurements of every leg
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: bundlers-measure-*
+          path: ${{ runner.temp }}/measure
+          merge-multiple: true
+
+      - name: Check the measured matrix against report/bundlers.json
+        run: node scripts/bundlers.mjs report --check --measured "$RUNNER_TEMP/measure" --out "$RUNNER_TEMP/bundlers-report"
+
+      - name: Upload the measured report
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: bundlers-report
+          path: ${{ runner.temp }}/bundlers-report
+          if-no-files-found: ignore
