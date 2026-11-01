@@ -79,7 +79,8 @@ const after = (log: LogEntry[], mark: number) => log.filter((e) => e.seq > mark)
 const lastSeq = (log: LogEntry[]) => log.reduce((n, e) => Math.max(n, e.seq), -1);
 const scriptPaths = (urls: string[]) => new Set(urls.map((u) => new URL(u).pathname));
 const clientFiles = (entries: LogEntry[], workers: string[]) => entries.filter((e) => e.js && e.client && e.holds.length === 0 && !scriptPaths(workers).has(e.path)).map((e) => e.path);
-const sized = (entries: LogEntry[]): Sized => ({ files: entries.filter((e) => e.js).length, gzip: entries.filter((e) => e.js).reduce((n, e) => n + e.gzip, 0) });
+const firstFetches = (entries: LogEntry[]) => entries.filter((e, i) => e.js && entries.findIndex((x) => x.js && x.path === e.path) === i);
+const sized = (entries: LogEntry[]): Sized => ({ files: entries.length, gzip: entries.reduce((n, e) => n + e.gzip, 0) });
 
 interface Watched {
   page: Page;
@@ -183,9 +184,10 @@ async function passes(browser: Browser, browserName: string, target: BundlerTarg
       workers: ownWorkers,
       split,
       lazyClient,
-      beforeAnalyze: sized(initial),
-      firstMp4: sized(firstLoads.isobmff ?? []),
-      firstWebm: sized(webmLoads),
+      beforeAnalyze: sized(firstFetches(initial).filter((e) => !e.prefetch)),
+      prefetched: sized(firstFetches(initial).filter((e) => e.prefetch)),
+      firstMp4: sized(firstFetches(firstLoads.isobmff ?? [])),
+      firstWebm: sized(firstFetches(webmLoads)),
     });
   } finally {
     await w.close();
@@ -206,7 +208,7 @@ async function failsToLoad(browser: Browser, browserName: string, target: Bundle
       missing.push(path);
     }
     expect(w.problems.filter((p) => p.startsWith('page error'))).toEqual([]);
-    if (!dev) writeMeasurement(target, app, browserName, { status: 'expected-failure', failure: { ...fails.analyze, missing }, workers: null, split: null, beforeAnalyze: null, firstMp4: null, firstWebm: null });
+    if (!dev) writeMeasurement(target, app, browserName, { status: 'expected-failure', failure: { ...fails.analyze, missing }, workers: null, split: null, beforeAnalyze: null, prefetched: null, firstMp4: null, firstWebm: null });
   } finally {
     await w.close();
   }
@@ -222,7 +224,7 @@ for (const target of TARGETS.filter(hasPage)) {
         const built = JSON.parse(readFileSync(path, 'utf8')) as { status: string; output: string | null };
         expect(built.status, 'the build still fails, so a tool upgrade has not fixed it yet').toBe('failed');
         for (const line of target.fails!.build!) expect(built.output, line).toContain(line);
-        writeMeasurement(target, app, browserName, { status: 'expected-failure', failure: { build: target.fails!.build }, workers: null, split: null, beforeAnalyze: null, firstMp4: null, firstWebm: null });
+        writeMeasurement(target, app, browserName, { status: 'expected-failure', failure: { build: target.fails!.build }, workers: null, split: null, beforeAnalyze: null, prefetched: null, firstMp4: null, firstWebm: null });
       });
       continue;
     }

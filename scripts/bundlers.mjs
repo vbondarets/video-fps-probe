@@ -792,7 +792,7 @@ export function collect(measured) {
         for (const key of ['status', 'workers', 'split']) if (!isDeepStrictEqual(r[key], first[key])) problems.push(`${target.name} ${app.name}: ${key} is ${JSON.stringify(first[key])} in ${first.browser} and ${JSON.stringify(r[key])} in ${r.browser}`);
       }
       const sized = runs.find((r) => r.browser === 'chromium') ?? first;
-      apps.push({ app: app.name, status: first.status, workers: first.workers, split: first.split, beforeAnalyze: sized.beforeAnalyze, firstMp4: sized.firstMp4, firstWebm: sized.firstWebm, failure: first.failure ?? null });
+      apps.push({ app: app.name, status: first.status, workers: first.workers, split: first.split, beforeAnalyze: sized.beforeAnalyze, prefetched: sized.prefetched ?? null, firstMp4: sized.firstMp4, firstWebm: sized.firstWebm, failure: first.failure ?? null });
     }
     if (target.runners || target.route) {
       if (!server) problems.push(`${target.name}: no server measurement in ${dir}`);
@@ -849,7 +849,7 @@ function row(t, a) {
   if (!a) return `| ${name} | ${tool} | ${t.pm} | ${cfg} | ${status} | n/a | n/a | n/a | n/a | n/a | n/a |`;
   const emitted = t.build?.emitted?.find((e) => e.app === a.app);
   const ok = a.status === 'pass';
-  return `| ${name} | ${tool} | ${t.pm} | ${cfg} | ${status} | ${ok ? kb(a.beforeAnalyze?.gzip) : 'n/a'} | ${ok ? kb(a.firstMp4?.gzip) : 'n/a'} | ${ok ? kb(a.firstWebm?.gzip) : 'n/a'} | ${emitted ? `${kb(emitted.gzip)} in ${emitted.files} files` : 'n/a'} | ${ok ? a.workers : 'n/a'} | ${ok ? (a.split ? 'yes' : 'no') : 'n/a'} |`;
+  return `| ${name} | ${tool} | ${t.pm} | ${cfg} | ${status} | ${ok ? `${kb(a.beforeAnalyze?.gzip)}${a.prefetched?.gzip ? `, ${kb(a.prefetched.gzip)} prefetched` : ''}` : 'n/a'} | ${ok ? kb(a.firstMp4?.gzip) : 'n/a'} | ${ok ? kb(a.firstWebm?.gzip) : 'n/a'} | ${emitted ? `${kb(emitted.gzip)} in ${emitted.files} files` : 'n/a'} | ${ok ? a.workers : 'n/a'} | ${ok ? (a.split ? 'yes' : 'no') : 'n/a'} |`;
 }
 
 function serverRow(t) {
@@ -863,7 +863,7 @@ function serverRow(t) {
 
 export function renderTables(report) {
   const lines = [
-    `Measured on production builds of the fixtures in \`tests/bundlers/fixtures/\`, installed from the packed tarball (gzip -9 of the JavaScript the server sent, KB = 1000 bytes, measured in Chromium, with the same checks in Firefox and WebKit). Framework runtimes dominate the totals, so the sizes are informational. A first MP4 above ${kb(FIRST_MP4_LIMIT)} fails CI, as does any change of a status, a worker count or the split.`,
+    `Measured on production builds of the fixtures in \`tests/bundlers/fixtures/\`, installed from the packed tarball (gzip -9 of the JavaScript the server sent, KB = 1000 bytes, measured in Chromium, with the same checks in Firefox and WebKit). Each file counts once per column. The JavaScript before the first analyze names apart the files of \`<link rel=prefetch>\`, which Chromium fetches when idle and WebKit does not. Framework runtimes dominate the totals, so the sizes are informational. A first MP4 above ${kb(FIRST_MP4_LIMIT)} fails CI, as does any change of a status, a worker count or the split.`,
     '',
     '| Target | Tool | Package manager | Configuration | Status | JS before the first analyze | First MP4, lazy | First WebM, lazy | Emitted JS | Workers | Split |',
     '|---|---|---|---|---|---:|---:|---:|---:|---:|---|',
