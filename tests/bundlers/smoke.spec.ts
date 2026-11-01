@@ -78,7 +78,7 @@ async function serverLog(target: BundlerTarget, token: string, dev: boolean): Pr
 const after = (log: LogEntry[], mark: number) => log.filter((e) => e.seq > mark);
 const lastSeq = (log: LogEntry[]) => log.reduce((n, e) => Math.max(n, e.seq), -1);
 const scriptPaths = (urls: string[]) => new Set(urls.map((u) => new URL(u).pathname));
-const clientFiles = (entries: LogEntry[], workers: string[]) => entries.filter((e) => e.js && e.client && !e.prefetch && e.holds.length === 0 && !scriptPaths(workers).has(e.path)).map((e) => e.path);
+const clientFiles = (entries: LogEntry[], workers: string[]) => entries.filter((e) => e.js && e.client && e.holds.length === 0 && !scriptPaths(workers).has(e.path)).map((e) => e.path);
 const sized = (entries: LogEntry[]): Sized => ({ files: entries.filter((e) => e.js).length, gzip: entries.filter((e) => e.js).reduce((n, e) => n + e.gzip, 0) });
 
 interface Watched {
@@ -158,11 +158,11 @@ async function passes(browser: Browser, browserName: string, target: BundlerTarg
     }
     const prefetched = new Set(initial.filter((e) => e.prefetch).map((e) => e.path));
     const eagerClient = initial.filter((e) => e.js && e.client && !prefetched.has(e.path)).map((e) => e.path);
-    const lazyClient = clientFiles(firstLoads.isobmff ?? [], w.workers);
+    const lazyClient = [...new Set(clientFiles([...initial.filter((e) => e.prefetch), ...(firstLoads.isobmff ?? []).filter((e) => !e.prefetch)], w.workers))];
     const split = eagerClient.length === 0 && lazyClient.length > 0;
     if (target.split !== false) {
       expect(eagerClient, 'the JavaScript served before the first analyze holds no probe client, except a prefetched chunk').toEqual([]);
-      expect(lazyClient, 'the first analyze loads the probe client in a main-thread chunk that is no worker script and holds no parser').not.toEqual([]);
+      expect(lazyClient, 'the probe client is in a main-thread chunk, no worker script and holding no parser, that the first analyze loads or the page prefetched').not.toEqual([]);
     }
     const log = await serverLog(target, w.token, dev);
     expect(badRequests(log), 'no same-origin request fails').toEqual([]);
