@@ -97,7 +97,8 @@ async function open(browser: Browser, target: BundlerTarget, app: BundlerApp, de
   const origin = new URL(appUrl(target, app, dev)).origin;
   await context.addCookies([{ name: 'bundlers', value: token, url: origin }]);
   const page = await context.newPage();
-  await watch(page);
+  const collector = await watch(page);
+  if (!dev) collector.everyWorkerIsPackage();
   const problems: string[] = [];
   const workers: string[] = [];
   page.on('pageerror', (e) => problems.push(`page error ${e.name}: ${e.message}`));
