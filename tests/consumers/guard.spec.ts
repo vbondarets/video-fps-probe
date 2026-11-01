@@ -1,6 +1,7 @@
+import { EventEmitter } from 'node:events';
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type BrowserContext, type ConsoleMessage, type Page } from '@playwright/test';
 import { NoiseCollector, NoiseGuard, runGuarded, test as guarded, watch, type BrowserName, type Noise, type NoiseKind } from '../helpers/clean-console.ts';
 
 const PAGE = '/__guard/index.html';
@@ -133,6 +134,23 @@ test('the clean console guard reports a rejection of a page that the test closes
   } finally {
     await context.close();
   }
+});
+
+function consoleMessage(type: string, text: string, url: string): ConsoleMessage {
+  return { type: () => type, text: () => text, location: () => ({ url, lineNumber: 400, columnNumber: 0 }), worker: () => null, page: () => null } as unknown as ConsoleMessage;
+}
+
+test('the clean console guard skips only the console messages located in debugger eval code', async () => {
+  const events = new EventEmitter();
+  const context = Object.assign(events, { exposeBinding: async () => undefined, addInitScript: async () => undefined, pages: () => [] }) as unknown as BrowserContext;
+  const collector = new NoiseCollector();
+  await collector.attachContext(context);
+  const forced = 'Layout was forced before the page was fully loaded.';
+  events.emit('console', consoleMessage('warning', forced, 'debugger eval code'));
+  events.emit('console', consoleMessage('error', 'evaluated error', 'debugger eval code'));
+  events.emit('console', consoleMessage('warning', forced, 'http://127.0.0.1:1/assets/index-Ab12.js'));
+  events.emit('console', consoleMessage('warning', forced, ''));
+  expect((await collector.finish()).map((n) => n.text)).toEqual([`console warning in page : ${forced} (http://127.0.0.1:1/assets/index-Ab12.js:400)`, `console warning in page : ${forced}`]);
 });
 
 test('an allowance passes only the noise it names, in its browsers, and fails when it goes unused', async ({ browserName }) => {

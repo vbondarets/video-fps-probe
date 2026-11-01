@@ -28,6 +28,7 @@ export const WATCHED_REQUEST_TYPES: readonly string[] = ['script', 'fetch', 'xhr
 
 const SCRIPT_PATH = /\.m?js$/;
 const MAP_TIMEOUT_MS = 10_000;
+const EVALUATED_BY_PLAYWRIGHT = 'debugger eval code';
 
 function recordRejections(binding: string): void {
   const describe = (reason: unknown): string => {
@@ -147,6 +148,7 @@ export class NoiseCollector {
 
   #onConsole(m: ConsoleMessage): void {
     const { url, lineNumber, columnNumber } = m.location();
+    if (url === EVALUATED_BY_PLAYWRIGHT) return;
     const text = (from = '') => `console ${m.type()} in ${where(m)}: ${m.text()}${url ? ` (${url}:${lineNumber}${from})` : ''}`;
     if (LOUD_CONSOLE_TYPES.includes(m.type()) || PACKAGE_FILE.test(url) || this.#packageWorker(m)) {
       this.add('console', text());
