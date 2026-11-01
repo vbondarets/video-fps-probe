@@ -4,9 +4,9 @@
   "normalizedBaseline": "fixtures/snapshots/size-matrix-v0.3.0-normalized.json",
   "normalizedBaselineSha256": "594fef2ab36ae0c2d665bc6d3ddb36ff800e3cdabe90bded04e75945defd7617",
   "report": "report/size-matrix.json",
-  "stage": 6,
-  "stageBase": "fixtures/snapshots/size-matrix-s5.json",
-  "stageBaseSha256": "2512b6ad2cbe14b07976409a693fb5745ce550db314513bf31add7d1820ff622",
+  "stage": 7,
+  "stageBase": "fixtures/snapshots/size-matrix-s6.json",
+  "stageBaseSha256": "a13005bcb0b750ceb97ff466b15b518cc864a658702c85ab7e66abf12bd2d1cb",
   "unit": "gzip bytes, KB = 1000 bytes. Every growth, share and identity rule compares the hash-normalized sizes of the report, the key normalized, measured with the content hash of every emitted file name replaced by a fixed placeholder, and cap applies to the raw size as built. growth is the cumulative allowance over the 0.3.0 baseline after each 0.4.0 stage (null: no growth limit), the share of a stage is its growth minus the growth of the stage before and bounds the growth over the stage base, a row whose share in a stage is 0 must equal the stage base in that stage, cap is a fixed limit in bytes (null: a growth-only row), and exact keeps a row identical to the baseline while its growth is not null",
   "frozen": {
     "stages": {
@@ -15,16 +15,17 @@
       "3": ["zero-config:segments", "iife-nosplit:segments"],
       "4": ["header:entry", "header:trigger", "header:header"],
       "5": ["zero-config:segments", "iife-nosplit:segments", "zero-config:rfps", "iife-nosplit:rfps", "header:entry", "header:trigger", "header:header", "header:lazyTotal", "url-entry:entry", "url-entry:trigger", "url-entry:header", "url-entry:url", "url-entry:lazyTotal"],
-      "6": ["check:trigger", "check:entry", "check:check", "preset:trigger", "preset:entry", "preset:check"]
+      "6": ["check:trigger", "check:entry", "check:check", "preset:trigger", "preset:entry", "preset:check"],
+      "7": []
     },
-    "why": "Every stage keeps every row that no group gates identical to the report it starts from, except the rows it lists, and every stage keeps every gated row whose share in the stage is 0 identical to it. No stage plans a change in the entry chunk, the probe client, React or the summary module before stage 6, and the code that stages 2 to 5 change is gated by the groups and by files.kinds. The listed rows are the only other rows a stage may move. Stage 6 adds the check rules, so it may move the critical path, the entry chunk and the check chunk of the check and preset configurations. In zero-config and iife-nosplit each own worker is a single file, and the rate profile core and the ffprobe frame rate estimate rows are cut out of it by sourcemap. Any code change in that file renames the minified identifiers of the whole file, so these rows move by a few bytes whenever the parser or the core in the same file changes: in stages 2 and 5 for both workers, in stage 3 for the ISO BMFF worker that the rate profile core is cut from. A real build of a stage 2 change, a median frame interval in the statistics, both parsers and the engine helpers, moved them by +1 B and -3 B. Their code is gated whole in every other configuration, and the worker file they are cut from is gated under files.kinds. Stage 4 lists the three rows of the header configuration, which 0.3.0 does not have and stage 3 added: from stage 4 on the header options ignore unknown keys, so these rows may move in it, and the size-matrix budgets of the header configuration still gate them. Stage 5 lists the rows of the header and url-entry configurations that hold the header entry: analyzeHeader gains the codecConfig, color and aspect options, loads the codec configuration capture and the color and aspect code lazily, and so emits lazy chunks where it emitted none. The url-entry:url row, the Range entry code, measured +11 B over the stage base at the end of stage 5, while src/url did not change and dist/url and dist/cjs/url.cjs, which import nothing, were byte-identical to the stage base build: only the minified names of the chunk it shares with the header entry changed. No gate checks that bound or that identity in stage 5, where the size-matrix budgets of both configurations gate these rows, and stage 6 keeps them identical to its stage base again."
+    "why": "Every stage keeps every row that no group gates identical to the report it starts from, except the rows it lists, and every stage keeps every gated row whose share in the stage is 0 identical to it. No stage plans a change in the entry chunk, the probe client, React or the summary module before stage 6, and the code that stages 2 to 5 change is gated by the groups and by files.kinds. The listed rows are the only other rows a stage may move. Stage 6 adds the check rules, so it may move the critical path, the entry chunk and the check chunk of the check and preset configurations. In zero-config and iife-nosplit each own worker is a single file, and the rate profile core and the ffprobe frame rate estimate rows are cut out of it by sourcemap. Any code change in that file renames the minified identifiers of the whole file, so these rows move by a few bytes whenever the parser or the core in the same file changes: in stages 2 and 5 for both workers, in stage 3 for the ISO BMFF worker that the rate profile core is cut from. A real build of a stage 2 change, a median frame interval in the statistics, both parsers and the engine helpers, moved them by +1 B and -3 B. Their code is gated whole in every other configuration, and the worker file they are cut from is gated under files.kinds. Stage 4 lists the three rows of the header configuration, which 0.3.0 does not have and stage 3 added: from stage 4 on the header options ignore unknown keys, so these rows may move in it, and the size-matrix budgets of the header configuration still gate them. Stage 5 lists the rows of the header and url-entry configurations that hold the header entry: analyzeHeader gains the codecConfig, color and aspect options, loads the codec configuration capture and the color and aspect code lazily, and so emits lazy chunks where it emitted none. The url-entry:url row, the Range entry code, measured +11 B over the stage base at the end of stage 5, while src/url did not change and dist/url and dist/cjs/url.cjs, which import nothing, were byte-identical to the stage base build: only the minified names of the chunk it shares with the header entry changed. No gate checks that bound or that identity in stage 5, where the size-matrix budgets of both configurations gate these rows, and stage 6 keeps them identical to its stage base again. Stage 7 is the 0.4.2 clean console release. It starts from the 0.4.1 report and lists no row."
   },
   "files": {
     "kinds": {
-      "isobmff": { "sources": "^(core/isobmff/|standalone/own(-isobmff)?\\.worker\\.js$)", "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480 } },
-      "matroska": { "sources": "^(core/matroska/|standalone/own(-matroska)?\\.worker\\.js$)", "growth": { "1": 0, "2": 200, "3": 200, "4": 200, "5": 250, "6": 250 } },
-      "core": { "sources": "^(core/(dispatch|options|reader|result|stats)\\.js|standalone/own(-isobmff|-matroska)?\\.worker\\.js)$", "growth": { "1": 0, "2": 390, "3": 390, "4": 390, "5": 440, "6": 440 } },
-      "engine": { "sources": "^engines/common\\.js$", "growth": { "1": 0, "2": 30, "3": 30, "4": 30, "5": 30, "6": 30 } }
+      "isobmff": { "sources": "^(core/isobmff/|standalone/own(-isobmff)?\\.worker\\.js$)", "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480, "7": 480 } },
+      "matroska": { "sources": "^(core/matroska/|standalone/own(-matroska)?\\.worker\\.js$)", "growth": { "1": 0, "2": 200, "3": 200, "4": 200, "5": 250, "6": 250, "7": 250 } },
+      "core": { "sources": "^(core/(dispatch|options|reader|result|stats)\\.js|standalone/own(-isobmff|-matroska)?\\.worker\\.js)$", "growth": { "1": 0, "2": 390, "3": 390, "4": 390, "5": 440, "6": 440, "7": 440 } },
+      "engine": { "sources": "^engines/common\\.js$", "growth": { "1": 0, "2": 30, "3": 30, "4": 30, "5": 30, "6": 30, "7": 30 } }
     },
     "why": "A sum row such as firstMp4, allOwn or lazyTotal adds up whole files, so its share alone would let a file that no stage changes grow inside it. Every emitted file outside the entry chunk of a 0.3.0 configuration is therefore gated on its own: a file may grow by the allowance of each kind of code it holds, and every other file stays identical to the stage base. isobmff and matroska are the parsers, with the shares of their rows. core is the shared reader, dispatch, options, empty results and statistics, which every own worker, every engine worker and the main-thread runtime hold: stage 2 adds the errorCode tagging to the reader and the dispatch, the new fields to the empty results and the median frame interval to the statistics, and stage 5 adds the codecConfig option to the options, so core gets the first MP4 shares of those two stages, 0.39 KB and 0.05 KB, and nothing in stages 3, 4 and 6. engine is the result helpers that every engine chunk shares, engines/common.ts, where stage 2 copies the median frame interval, with the 0.03 KB share of the engine chunks. The engine adapters and the mp4box and mediabunny libraries do not change in 0.4.0. The kinds of a file add up, and the rows that hold the file bound the sum. What a file holds comes from the modules its sourcemap names, so a new kind needs no new measurement of the 0.3.0 baseline. A copy of a standalone worker file has no sourcemap and is named after the standalone file it copies. A file is gated as a whole, so a module that no kind names, such as a worker entry, worker/single.ts or the worker runtime, spends the allowance of the kinds it ships with: an own worker file is checked only against the shares of its parser and the core."
   },
@@ -32,154 +33,154 @@
     {
       "name": "first MP4 under the 25.00 KB promise",
       "rows": ["zero-config:firstMp4", "iife-nosplit:firstMp4", "standalone-split-url:firstMp4"],
-      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480 },
+      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480, "7": 480 },
       "cap": 24950,
       "why": "The 0.4.0 parser additions may spend 0.39 KB, then 0.01 KB, then 0.08 KB on the first MP4 path, and the three configurations that inline the worker stay at or below 24.95 KB, inside the 25.00 KB promise. Stage 5 planned 0.05 KB and spends 0.03 KB more on the copy that bounds what a probe posts to the bytes of the moov. At the end of stage 5 the first MP4 rows measured 65 to 80 B over the stage base, 42 to 45 B for the view of the moov and 23 to 35 B for the copy: custom and custom-eager 80 B, zero-config, iife-nosplit and standalone-split-url 70 B, at 24,910, 24,910 and 24,935 B as built, and the other rows 65 B. Every row that holds the ISO BMFF parser gets the same 0.08 KB share for each copy of the parser it holds."
     },
     {
       "name": "first MP4 of the default configuration",
       "rows": ["default:firstMp4"],
-      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480 },
+      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480, "7": 480 },
       "cap": 24000,
       "why": "The same shares, under the 24.00 KB promise of the default configuration."
     },
     {
       "name": "first MP4 of the custom worker configurations",
       "rows": ["custom:firstMp4", "custom-eager:firstMp4"],
-      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480 },
+      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480, "7": 480 },
       "cap": { "custom:firstMp4": 24500, "custom-eager:firstMp4": 21500 },
       "why": "The same shares, under the 0.3.0 budgets of the custom configurations."
     },
     {
       "name": "standalone ISO BMFF worker file",
       "rows": ["standalone:own-isobmff.worker.js"],
-      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480 },
+      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480, "7": 480 },
       "cap": 22000,
       "why": "The prebuilt ISO BMFF worker carries the same parser code as the first MP4 path."
     },
     {
       "name": "Matroska path",
       "rows": ["standalone:own-matroska.worker.js", "default:firstMkv", "zero-config:firstMkv", "iife-nosplit:firstMkv", "standalone-split-url:firstMkv"],
-      "growth": { "1": 0, "2": 200, "3": 200, "4": 200, "5": 250, "6": 250 },
+      "growth": { "1": 0, "2": 200, "3": 200, "4": 200, "5": 250, "6": 250, "7": 250 },
       "cap": { "standalone:own-matroska.worker.js": 25000, "default:firstMkv": 26500, "zero-config:firstMkv": 28000, "iife-nosplit:firstMkv": 28000, "standalone-split-url:firstMkv": 28000 },
       "why": "The 0.4.0 parser additions may spend 0.20 KB, then 0.05 KB on the first MKV path, under the 0.3.0 budgets of these rows."
     },
     {
       "name": "first MP4 of the other configurations",
       "rows": ["mp4box:firstMp4", "mediabunny:firstMp4", "rvfc:firstMp4", "react18:firstMp4"],
-      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480 },
+      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480, "7": 480 },
       "cap": null,
       "why": "The same shares as the first MP4 rows above. These rows have no budget in the size matrix, so only their growth is gated."
     },
     {
       "name": "first MP4 of the other configurations with a budget",
       "rows": ["all:firstMp4", "react:firstMp4", "check:firstMp4", "preset:firstMp4", "react:firstMp4Summary", "react18:firstMp4Summary"],
-      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480 },
+      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480, "7": 480 },
       "cap": { "all:firstMp4": 24500, "react:firstMp4": 24500, "check:firstMp4": 24500, "preset:firstMp4": 24500, "react:firstMp4Summary": 25000, "react18:firstMp4Summary": 25000 },
       "why": "The same shares as the first MP4 rows above, under the 0.3.0 budgets of these rows."
     },
     {
       "name": "first MKV of the other configurations",
       "rows": ["custom:firstMkv", "custom-eager:firstMkv", "mp4box:firstMkv", "mediabunny:firstMkv", "rvfc:firstMkv", "all:firstMkv", "react:firstMkv", "react18:firstMkv", "check:firstMkv", "preset:firstMkv"],
-      "growth": { "1": 0, "2": 200, "3": 200, "4": 200, "5": 250, "6": 250 },
+      "growth": { "1": 0, "2": 200, "3": 200, "4": 200, "5": 250, "6": 250, "7": 250 },
       "cap": null,
       "why": "The same shares as the Matroska path. These rows have no budget in the size matrix, so only their growth is gated."
     },
     {
       "name": "both parsers in one file",
       "rows": ["standalone:own.worker.js", "standalone-url:firstMp4", "standalone-url:firstMkv"],
-      "growth": { "1": 0, "2": 590, "3": 600, "4": 600, "5": 730, "6": 730 },
+      "growth": { "1": 0, "2": 590, "3": 600, "4": 600, "5": 730, "6": 730, "7": 730 },
       "cap": { "standalone:own.worker.js": 37500, "standalone-url:firstMp4": 40000, "standalone-url:firstMkv": 40000 },
       "why": "The single standalone worker holds both parsers, so it, and the first file of the configuration that loads it, may grow by the ISO BMFF and the Matroska shares together."
     },
     {
       "name": "ISO BMFF parser chunk",
       "rows": ["default:isobmff", "custom:isobmff"],
-      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480 },
+      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480, "7": 480 },
       "cap": 13000,
       "why": "The parser chunk carries most of the first MP4 growth and stays under 13.00 KB."
     },
     {
       "name": "ISO BMFF parser chunk of the other configurations",
       "rows": ["zero-config:isobmff", "iife-nosplit:isobmff", "custom-eager:isobmff", "mp4box:isobmff", "mediabunny:isobmff", "rvfc:isobmff", "all:isobmff", "react:isobmff", "react18:isobmff", "check:isobmff", "preset:isobmff"],
-      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480 },
+      "growth": { "1": 0, "2": 390, "3": 400, "4": 400, "5": 480, "6": 480, "7": 480 },
       "cap": 13000,
       "why": "These rows measure the same parser code as the parser chunk above, so they get the same shares under the same 13.00 KB cap."
     },
     {
       "name": "Matroska parser chunk",
       "rows": ["default:matroska", "zero-config:matroska", "custom:matroska", "custom-eager:matroska", "mp4box:matroska", "mediabunny:matroska", "rvfc:matroska", "all:matroska", "iife-nosplit:matroska", "react:matroska", "react18:matroska", "check:matroska", "preset:matroska"],
-      "growth": { "1": 0, "2": 200, "3": 200, "4": 200, "5": 250, "6": 250 },
+      "growth": { "1": 0, "2": 200, "3": 200, "4": 200, "5": 250, "6": 250, "7": 250 },
       "cap": 12500,
       "why": "The Matroska parser in the own worker gets the shares of the Matroska path, under the 12.50 KB budget of the default and all configurations, which the other configurations measure the same parser code against."
     },
     {
       "name": "rate profile core",
       "rows": ["default:segments", "custom:segments", "custom-eager:segments", "mp4box:segments", "mediabunny:segments", "rvfc:segments", "all:segments", "react:segments", "react18:segments", "check:segments", "preset:segments"],
-      "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0 },
+      "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0, "7": 0 },
       "cap": 2000,
       "why": "No 0.4.0 stage changes the rate profile core, so it stays identical to 0.3.0, under the 2.00 KB budget of the default and all configurations, which the other configurations measure the same code against. These rows measure the chunk of the rate profile core as a whole file. The rows of zero-config and iife-nosplit cut the same code out of the single ISO BMFF worker file instead, so frozen.stages gates them."
     },
     {
       "name": "ffprobe frame rate estimate",
       "rows": ["default:rfps", "custom:rfps", "custom-eager:rfps", "mp4box:rfps", "mediabunny:rfps", "rvfc:rfps", "all:rfps", "react:rfps", "react18:rfps", "check:rfps", "preset:rfps"],
-      "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0 },
+      "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0, "7": 0 },
       "cap": 4000,
       "why": "No 0.4.0 stage changes the ffprobe frame rate estimate, so it stays identical to 0.3.0, under the 4.00 KB budget of the default and all configurations, which the other configurations measure the same code against. These rows measure the chunk of the estimate as a whole file. The rows of zero-config and iife-nosplit cut the same code out of the single Matroska worker file instead, so frozen.stages gates them."
     },
     {
       "name": "all own paths",
       "rows": ["default:allOwn", "zero-config:allOwn", "all:allOwn", "standalone-split-url:allOwn", "iife-nosplit:allOwn", "react:allOwn"],
-      "growth": { "1": 0, "2": 590, "3": 600, "4": 600, "5": 730, "6": 730 },
+      "growth": { "1": 0, "2": 590, "3": 600, "4": 600, "5": 730, "6": 730, "7": 730 },
       "cap": { "default:allOwn": 50500, "zero-config:allOwn": 50000, "all:allOwn": 50500, "standalone-split-url:allOwn": 50000, "iife-nosplit:allOwn": 50000, "react:allOwn": 50500 },
       "why": "Every own path holds the ISO BMFF parser and the Matroska parser once, so it may grow by the ISO BMFF and the Matroska shares together, under the 0.3.0 budgets of these rows."
     },
     {
       "name": "all own paths of the other configurations",
       "rows": ["custom:allOwn", "custom-eager:allOwn", "mp4box:allOwn", "mediabunny:allOwn", "rvfc:allOwn", "standalone-url:allOwn", "react18:allOwn", "check:allOwn", "preset:allOwn"],
-      "growth": { "1": 0, "2": 590, "3": 600, "4": 600, "5": 730, "6": 730 },
+      "growth": { "1": 0, "2": 590, "3": 600, "4": 600, "5": 730, "6": 730, "7": 730 },
       "cap": null,
       "why": "The same shares as the all own paths above. These rows have no budget in the size matrix, so only their growth is gated."
     },
     {
       "name": "emitted lazy totals",
       "rows": ["default:lazyTotal", "zero-config:lazyTotal", "custom:lazyTotal", "custom-eager:lazyTotal", "rvfc:lazyTotal", "standalone-url:lazyTotal", "standalone-split-url:lazyTotal", "iife-nosplit:lazyTotal", "react:lazyTotal", "react18:lazyTotal", "check:lazyTotal", "preset:lazyTotal"],
-      "growth": { "1": 0, "2": 1180, "3": 1200, "4": 1200, "5": 1460, "6": 1460 },
+      "growth": { "1": 0, "2": 1180, "3": 1200, "4": 1200, "5": 1460, "6": 1460, "7": 1460 },
       "cap": { "default:lazyTotal": 92000, "zero-config:lazyTotal": 92000, "custom:lazyTotal": 84000, "custom-eager:lazyTotal": 81500, "rvfc:lazyTotal": 94500, "standalone-url:lazyTotal": 82000, "standalone-split-url:lazyTotal": 91500, "iife-nosplit:lazyTotal": 92000, "react:lazyTotal": 92500, "react18:lazyTotal": 92500, "check:lazyTotal": 92000, "preset:lazyTotal": 92000 },
       "why": "The emitted lazy total holds two copies of each parser, the one the worker loads and the main-thread copy, so it may grow by twice the ISO BMFF and the Matroska shares together, under the 0.3.0 budgets of these rows."
     },
     {
       "name": "emitted lazy totals with one engine worker",
       "rows": ["mp4box:lazyTotal", "mediabunny:lazyTotal"],
-      "growth": { "1": 0, "2": 1770, "3": 1800, "4": 1800, "5": 2190, "6": 2190 },
+      "growth": { "1": 0, "2": 1770, "3": 1800, "4": 1800, "5": 2190, "6": 2190, "7": 2190 },
       "cap": { "mp4box:lazyTotal": 224000, "mediabunny:lazyTotal": 241500 },
       "why": "The engine worker carries a third copy of each parser because it also serves own, so these rows may grow by three times the ISO BMFF and the Matroska shares together, under their 0.3.0 budgets."
     },
     {
       "name": "emitted lazy total with both engine workers",
       "rows": ["all:lazyTotal"],
-      "growth": { "1": 0, "2": 2360, "3": 2400, "4": 2400, "5": 2920, "6": 2920 },
+      "growth": { "1": 0, "2": 2360, "3": 2400, "4": 2400, "5": 2920, "6": 2920, "7": 2920 },
       "cap": 367000,
       "why": "Both engine workers carry a copy of each parser, so this row holds four copies and may grow by four times the ISO BMFF and the Matroska shares together, under its 0.3.0 budget. That budget of 367.00 KB is below the stage 5 allowance, 364,569 B as built in 0.3.0 plus 2,920 B, and leaves 71 B above the full stage 2 allowance of 2,360 B. At the end of stage 5 the row measured 366,933 B as built, 67 B under that budget. The cap applies to the raw size, and in a real build of a change in the shared core the raw size of this row moved 23 B more than the normalized one, because the content hashes compress differently. If the full design shares do not fit under it, stage 5 may re-set the lazy total budget of the all configuration, and this cap with it, to its measurement plus 1 percent, with a changelog note, and stage 2 may do the same under the same rule if its own share already crosses the cap."
     },
     {
       "name": "engine chunks",
       "rows": ["mp4box:mp4box", "mediabunny:mediabunny", "all:mp4box", "all:mediabunny", "all:pageEngineShared"],
-      "growth": { "1": 0, "2": 30, "3": 30, "4": 30, "5": 30, "6": 30 },
+      "growth": { "1": 0, "2": 30, "3": 30, "4": 30, "5": 30, "6": 30, "7": 30 },
       "cap": { "mp4box:mp4box": 46500, "mediabunny:mediabunny": 56000, "all:mp4box": 46500, "all:mediabunny": 56000, "all:pageEngineShared": 2000 },
       "why": "The library engine chunks and the shared engine chunk on the main thread hold the result helpers of the engines, engines/common.ts, which copy the median frame interval in stage 2, and may grow by 0.03 KB at most, under their 0.3.0 budgets."
     },
     {
       "name": "rVFC engine chunks",
       "rows": ["rvfc:rvfc", "all:rvfc"],
-      "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0 },
+      "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0, "7": 0 },
       "cap": { "rvfc:rvfc": 2500, "all:rvfc": 2500 },
       "why": "No 0.4.0 stage changes the rVFC engine on the main thread, so it stays identical to 0.3.0, under its 0.3.0 budget."
     },
     {
       "name": "critical path",
       "rows": ["default:trigger", "zero-config:trigger", "custom:trigger", "custom-eager:trigger", "mp4box:trigger", "mediabunny:trigger", "rvfc:trigger", "all:trigger", "standalone-url:trigger", "standalone-split-url:trigger", "iife-nosplit:trigger", "react:trigger", "react18:trigger"],
-      "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0 },
+      "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0, "7": 0 },
       "exact": true,
       "cap": { "default:trigger": 1000, "zero-config:trigger": 1000, "custom:trigger": 1000, "custom-eager:trigger": 3500, "mp4box:trigger": 1000, "mediabunny:trigger": 1000, "rvfc:trigger": 1000, "all:trigger": 1500, "standalone-url:trigger": 1000, "standalone-split-url:trigger": 1000, "iife-nosplit:trigger": 1000, "react:trigger": 2000, "react18:trigger": 2000 },
       "why": "The package code in the entry chunk stays identical to 0.3.0 for the whole release, up to the content hashes of the chunk names it imports."
@@ -187,7 +188,7 @@
     {
       "name": "critical path of the rule entries",
       "rows": ["check:trigger", "preset:trigger"],
-      "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": null },
+      "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": null, "7": null },
       "exact": true,
       "cap": { "check:trigger": 5000, "preset:trigger": 5500 },
       "why": "Byte-identical to 0.3.0 until the last 0.4.0 step, which adds the check rules and re-sets the preset budget. Stage 6 adds the median frame interval in the duration window, the sizeBasis rule and the hdr policy, and a trim of the shared helpers of check that kept every message: at the end of stage 6 the check row measured 4,776 B and the preset row 5,125 B as built, so the preset budget of the size matrix, and this cap with it, moved from 5.00 KB to its measurement plus 3 percent rounded up to 0.5 KB, 5.50 KB."
@@ -195,7 +196,7 @@
     {
       "name": "check chunk of the rule entries",
       "rows": ["check:check", "preset:check"],
-      "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": null },
+      "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": null, "7": null },
       "exact": true,
       "cap": { "check:check": 4500, "preset:check": 4500 },
       "why": "The check rules stay identical to 0.3.0 until the last 0.4.0 step, which adds the new rules, and then stay at or below 4.50 KB. At the end of stage 6 the check row measured 4,216 B and the preset row 4,213 B as built."
@@ -203,7 +204,7 @@
     {
       "name": "preset data chunk",
       "rows": ["preset:presets"],
-      "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0 },
+      "growth": { "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0, "7": 0 },
       "exact": true,
       "cap": 500,
       "why": "No preset value changes in 0.4.0, so the preset data stays identical to 0.3.0 for the whole release."
