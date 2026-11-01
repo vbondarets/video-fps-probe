@@ -420,7 +420,7 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: bundlers-measure-${{ matrix.target }}
-          path: ${{ runner.temp }}/bundlers/measure
+          path: ${{ env.BUNDLERS_DIR }}/measure
           if-no-files-found: warn
           retention-days: 7
 
@@ -431,7 +431,7 @@ jobs:
           name: bundlers-traces-${{ matrix.target }}
           path: |
             .playwright/bundlers-results
-            ${{ runner.temp }}/bundlers/logs
+            ${{ env.BUNDLERS_DIR }}/logs
           if-no-files-found: ignore
           retention-days: 7
 

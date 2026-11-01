@@ -160,6 +160,6 @@ jobs:
             .canary/bundlers
             .playwright/bundlers-results
             .playwright/bundlers-dev-results
-            ${{ runner.temp }}/bundlers/logs
-            ${{ runner.temp }}/bundlers/measure
+            ${{ env.BUNDLERS_DIR }}/logs
+            ${{ env.BUNDLERS_DIR }}/measure
           if-no-files-found: warn
