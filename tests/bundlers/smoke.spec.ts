@@ -77,7 +77,8 @@ async function serverLog(target: BundlerTarget, token: string, dev: boolean): Pr
 
 const after = (log: LogEntry[], mark: number) => log.filter((e) => e.seq > mark);
 const lastSeq = (log: LogEntry[]) => log.reduce((n, e) => Math.max(n, e.seq), -1);
-const scriptPaths = (urls: string[]) => new Set(urls.map((u) => new URL(u).pathname));
+const scriptPaths = (urls: string[]) => new Set(urls.filter(Boolean).map((u) => new URL(u, 'http://127.0.0.1/').pathname));
+const oneLine = (text: string | null) => (text ?? '').replace(/s+/g, ' ');
 const clientFiles = (entries: LogEntry[], workers: string[]) => entries.filter((e) => e.js && e.client && e.holds.length === 0 && !scriptPaths(workers).has(e.path)).map((e) => e.path);
 const firstFetches = (entries: LogEntry[]) => entries.filter((e, i) => e.js && entries.findIndex((x) => x.js && x.path === e.path) === i);
 const sized = (entries: LogEntry[]): Sized => ({ files: entries.length, gzip: entries.reduce((n, e) => n + e.gzip, 0) });
@@ -223,7 +224,7 @@ for (const target of TARGETS.filter(hasPage)) {
         expect(existsSync(path), `${path} exists: run setup and build first`).toBe(true);
         const built = JSON.parse(readFileSync(path, 'utf8')) as { status: string; output: string | null };
         expect(built.status, 'the build still fails, so a tool upgrade has not fixed it yet').toBe('failed');
-        for (const line of target.fails!.build!) expect(built.output, line).toContain(line);
+        for (const line of target.fails!.build!) expect(oneLine(built.output), line).toContain(oneLine(line));
         writeMeasurement(target, app, browserName, { status: 'expected-failure', failure: { build: target.fails!.build }, workers: null, split: null, beforeAnalyze: null, prefetched: null, firstMp4: null, firstWebm: null });
       });
       continue;
