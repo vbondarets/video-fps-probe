@@ -289,11 +289,15 @@ The seven server entries, `video-fps-probe`, `video-fps-probe/header`, `video-fp
 |---|---|---|
 | Node 22.12 and newer, `import` or `require()` | the ESM build, one instance | `module-sync`, with `require(esm)` on by default |
 | Node with `--no-experimental-require-module`, `require()` | the CommonJS copy, a second instance next to the ESM one | `require` |
+| Node under Yarn Plug'n'Play (`yarn node`), `require()` | the CommonJS copy, a second instance next to the ESM one | the Plug'n'Play resolver of `require()` skips `module-sync` and `module`, so it takes `require` |
+| Bun 1.4, `import` | the ESM build | the conditions of an ES module import |
+| Bun 1.4, `require()` | the CommonJS copy, a second instance next to the ESM one | Bun's `require()` skips `module-sync` and `module`, so it takes `require` |
+| Deno 2.9, `import` or `require()` from npm specifiers | the ESM build, one instance | Deno loads ES modules from `require()` and matches a condition before `require` |
 | Jest 30 without vm modules, in the node environment | the CommonJS copy | Jest resolves `require()` with `require`, `default` and the `node` condition of the environment |
 | Jest 30 without vm modules, in the jsdom environment | the CommonJS copy | derived from Jest's conditions, `require`, `default` and the `browser` condition of the environment, which no server entry lists, and not run by the tests |
 | Jest 30 with `--experimental-vm-modules` on Node older than 24.9 | the CommonJS copy | Jest adds `module-sync` only where it can evaluate ES modules from `require()` |
 | Jest 30.5 with `--experimental-vm-modules` on Node 24.9 and newer | the ESM build | Jest adds `module-sync` when it can evaluate ES modules from `require()` |
-| Vite, webpack, Rspack and esbuild with their default conditions, `import` or `require()` | the ESM build | `module`, so no browser bundle holds the CommonJS copy. The tests build with Vite only. A configuration whose conditions leave out `module`, such as custom condition names, gets the CommonJS copy, which a browser build cannot run because it requires `url` |
+| Vite, webpack, Rspack and esbuild with their default conditions, `import` or `require()` | the ESM build | `module`, so no browser bundle holds the CommonJS copy, which the size matrix checks for the Vite builds of the consumer fixtures. A configuration whose conditions leave out `module`, such as custom condition names, gets the CommonJS copy, which a browser build cannot run because it requires `url` |
 | TypeScript `node16` or `nodenext`, a CommonJS file | the `.d.cts` declarations | `require` |
 | TypeScript, an ES module file or `bundler` | the `.d.ts` declarations | `types` |
 | TypeScript `node10` | the `.d.ts` declarations | `typesVersions` |
