@@ -1,13 +1,22 @@
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, openAsBlob, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import ts from 'typescript';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { analyze } from '../../src/analyze.ts';
+import { warningCodesOf } from '../../src/api/codes.ts';
+import { withAspect } from '../../src/aspect/index.ts';
+import { check } from '../../src/check/index.ts';
+import { withColor } from '../../src/color/index.ts';
+import { primaryTrack } from '../../src/core/result.ts';
+import type { FileResult } from '../../src/core/types.ts';
+import { analyzeHeader } from '../../src/header/index.ts';
 import * as presets from '../../src/presets/index.ts';
 import { ANALYZE_SNIPPET, checkSnippet, COLOR_SNIPPET, ERRORS_SNIPPET, headerSnippet, LIMIT_PRESETS, urlSnippet, type SnippetPair } from '../../demo/src/ui/snippets.ts';
-import { REPO_ROOT } from '../helpers/fixtures.ts';
+import { FILES_DIR, REPO_ROOT } from '../helpers/fixtures.ts';
 
 const PACKAGE = 'video-fps-probe';
 const DTS_SPECIFIER = /(['"])(\.{1,2}\/[^'"]+)\.ts\1/g;
@@ -106,5 +115,87 @@ describe('the code snippets the demo shows', () => {
     expect(server.length).toBeGreaterThan(0);
     expect(diagnose(dir, server.map(([id, pair]) => write(id, pair)), NODE)).toEqual([]);
     expect(diagnose(dir, root.map(([id, pair]) => write(id, pair)), { ...NODE, skipLibCheck: true })).toEqual([]);
+  });
+});
+
+type Summary = Record<string, unknown>;
+
+describe('the Node server snippets at run time', () => {
+  let dir: string;
+  const fixture = (name: string): string => join(FILES_DIR, name);
+  const full = async (name: string): Promise<FileResult> =>
+    withAspect(withColor(await analyze(await openAsBlob(fixture(name)), { name: fixture(name), codecConfig: true }), { keepCodecConfig: true }));
+
+  async function load<T>(id: string, code: string): Promise<T> {
+    const file = join(dir, `${id}.ts`);
+    writeFileSync(file, code);
+    return (await import(pathToFileURL(file).href)) as T;
+  }
+
+  beforeAll(() => {
+    dir = mkdtempSync(join(tmpdir(), 'demo-snippets-run-'));
+  });
+
+  afterAll(() => {
+    if (dir) rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('read color, HDR, Dolby Vision and aspect of Matroska files as the library does, and keep errors apart', async () => {
+    const { colorAndAspectOf } = await load<{ colorAndAspectOf(path: string): Promise<Summary> }>('color', COLOR_SNIPPET.node);
+    for (const name of ['hdr10_hevc10.mkv', 'dv_p81.mkv', 'sar_4x3.mkv', 'hdr10_hevc10.mp4']) {
+      const t = primaryTrack(await full(name));
+      expect(await colorAndAspectOf(fixture(name)), name).toEqual({
+        ok: true,
+        colorRead: true,
+        hdr: t?.color?.hdr ?? null,
+        dolbyVision: t?.color?.dolbyVision ?? null,
+        transfer: t?.color?.transfer ?? null,
+        aspectRead: true,
+        sampleAspectRatio: t?.sampleAspectRatio ?? null,
+        displayWidth: t?.displayWidth ?? null,
+        displayHeight: t?.displayHeight ?? null,
+      });
+    }
+    expect(await colorAndAspectOf(fixture('hdr10_hevc10.mkv'))).toMatchObject({ hdr: 'pq', transfer: 'smpte2084' });
+    expect((await colorAndAspectOf(fixture('dv_p81.mkv'))).dolbyVision).toMatchObject({ profile: 8 });
+    const broken = await full('corrupt_trunc_no_moov.mp4');
+    expect(broken.errorCode).not.toBeNull();
+    expect(await colorAndAspectOf(fixture('corrupt_trunc_no_moov.mp4'))).toEqual({ ok: false, code: broken.errorCode, message: broken.error });
+  });
+
+  it('give the frame rate of a Matroska file as the library does', async () => {
+    const { frameRateOf } = await load<{ frameRateOf(path: string): Promise<Summary> }>('analyze', ANALYZE_SNIPPET.node);
+    const t = primaryTrack(await full('h264_vfr_remux.mkv'));
+    expect(await frameRateOf(fixture('h264_vfr_remux.mkv'))).toEqual({
+      ok: true,
+      fps: t?.avgFps?.value ?? null,
+      frames: t?.presentedFrames ?? t?.frames ?? null,
+      variable: t?.isVfr ?? null,
+      medianFrameInterval: t?.medianFrameInterval ?? null,
+      enabled: t?.enabled ?? null,
+    });
+  });
+
+  it('read the header of an MP4 file and answer unsupported-container for Matroska', async () => {
+    const limits = LIMIT_PRESETS.find((p) => p.id === 'defaults')!.limits;
+    const { readHeader } = await load<{ readHeader(path: string): Promise<Summary> }>('header', headerSnippet({ limits, fragmentedDuration: 'index', color: true, aspect: true }).node);
+    const head = await analyzeHeader(await openAsBlob(fixture('hdr10_hevc10.mp4')), { limits, color: true, aspect: true });
+    expect(await readHeader(fixture('hdr10_hevc10.mp4'))).toEqual({ ok: true, reads: head.io.reads, bytesRequested: head.io.bytesRequested, layout: head.layout?.kind ?? null, hdr: 'pq' });
+    expect(await readHeader(fixture('hdr10_hevc10.mkv'))).toMatchObject({ ok: false, code: 'unsupported-container', kind: 'file' });
+  });
+
+  it('judge a Matroska file with a preset as check does', async () => {
+    const { checkUpload } = await load<{ checkUpload(path: string): Promise<unknown> }>('check', checkSnippet('veoExtend', { sizeBasis: 'display', hdr: 'reject' }).node);
+    const want = check(await full('hdr10_hevc10.mkv'), { ...presets.veoExtend.rules, sizeBasis: 'display', hdr: 'reject' });
+    expect(want.verdict).toBe('fail');
+    expect(await checkUpload(fixture('hdr10_hevc10.mkv'))).toEqual(want);
+  });
+
+  it('triage a result by its codes', async () => {
+    const { triage } = await load<{ triage(result: FileResult): Summary }>('errors', ERRORS_SNIPPET.node);
+    const junk = await full('mov_trailing_junk.mov');
+    expect(triage(junk)).toEqual({ status: 'ok', warnings: warningCodesOf(junk) });
+    expect(triage(await full('corrupt_trunc_no_moov.mp4'))).toMatchObject({ status: 'reject', cacheable: true });
+    expect(triage({ ...junk, engine: 'rvfc', error: 'tab not visible: keep it in the foreground', errorCode: 'engine-failed' })).toEqual({ status: 'reject', code: 'engine-failed', cacheable: false });
   });
 });
