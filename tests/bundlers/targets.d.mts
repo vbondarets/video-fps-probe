@@ -29,6 +29,7 @@ export interface BundlerTarget {
   port: number;
   shared: string[];
   configs: string[];
+  sources?: string[];
   snippets?: string[];
   consumers?: string[];
   build: BundlerStep[];
@@ -59,6 +60,7 @@ export const SERVER_FILE: string;
 export const PARSER_MARKERS: Record<Family, string>;
 export const CLIENT_MARKER: string;
 export const FORBIDDEN_IN_ZERO_CONFIG: RegExp;
+export const CONFIG_NAME: RegExp;
 export const TARGETS: BundlerTarget[];
 export const GROUPS: string[];
 export function targetsOf(only?: string): BundlerTarget[];

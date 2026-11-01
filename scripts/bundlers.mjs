@@ -7,7 +7,7 @@ import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isDeepStrictEqual, parseArgs } from 'node:util';
 import { gzipSync } from 'node:zlib';
-import { BUNDLERS_PORT, CLIENT_MARKER, DEV_OFFSET, FIRST_MP4_LIMIT, FORBIDDEN_IN_ZERO_CONFIG, GROUPS, PARSER_MARKERS, TARGETS, UPSTREAM_OFFSET, hasPage, targetsOf } from '../tests/bundlers/targets.mjs';
+import { BUNDLERS_PORT, CLIENT_MARKER, CONFIG_NAME, DEV_OFFSET, FIRST_MP4_LIMIT, FORBIDDEN_IN_ZERO_CONFIG, GROUPS, PARSER_MARKERS, TARGETS, UPSTREAM_OFFSET, hasPage, targetsOf } from '../tests/bundlers/targets.mjs';
 import { MIME, packTarball, staticFile } from './consumers.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -586,12 +586,31 @@ function lockfileFor(target) {
   return Object.keys(deps).length === 0 ? null : lockfile;
 }
 
-function configText(target, entry) {
-  const [file, keys] = entry.split('#');
-  const text = readFileSync(join(FIXTURES, target.name, file), 'utf8');
+function configText(text, entry) {
+  const keys = entry.split('#')[1];
   if (!keys) return text;
   const json = JSON.parse(text);
   return JSON.stringify(Object.fromEntries(keys.split(',').map((k) => [k, json[k]])));
+}
+
+export function fixtureFileProblems(target, files) {
+  const problems = [];
+  const configs = new Map(target.configs.map((entry) => [entry.split('#')[0], entry]));
+  const sources = new Set(target.sources ?? []);
+  const paths = new Set(files.map((f) => f.path));
+  for (const source of sources) if (CONFIG_NAME.test(source)) problems.push(`${target.name}: ${source} is listed as an app source, but tools read a file of that name as configuration`);
+  for (const listed of [...configs.keys(), ...sources]) if (!paths.has(listed)) problems.push(`${target.name}: tests/bundlers/targets.mjs lists ${listed}, which the fixture does not have`);
+  for (const { path, text } of files) {
+    if (path === 'package.json' || Object.values(LOCKFILES).includes(path) || sources.has(path)) continue;
+    const entry = configs.get(path);
+    if (!entry) {
+      problems.push(`${target.name}: ${path} is neither a config nor an app source of the target in tests/bundlers/targets.mjs`);
+      continue;
+    }
+    const hit = target.snippets ? null : FORBIDDEN_IN_ZERO_CONFIG.exec(configText(text, entry));
+    if (hit) problems.push(`${target.name}: the zero-config file ${entry} contains ${hit[0]}`);
+  }
+  return problems;
 }
 
 export function checkPins() {
@@ -641,13 +660,7 @@ export function checkPins() {
         if (FORBIDDEN_IN_ZERO_CONFIG.test(JSON.stringify(rest))) problems.push(`${target.name}: package.json of a zero-config target sets ${FORBIDDEN_IN_ZERO_CONFIG.exec(JSON.stringify(rest))[0]}`);
       }
     }
-    if (!target.snippets) {
-      for (const entry of target.configs) {
-        const text = configText(target, entry);
-        const hit = FORBIDDEN_IN_ZERO_CONFIG.exec(text);
-        if (hit) problems.push(`${target.name}: the zero-config file ${entry} contains ${hit[0]}`);
-      }
-    }
+    problems.push(...fixtureFileProblems(target, walk(dir).map((path) => ({ path, text: readFileSync(join(dir, path), 'utf8') }))));
   }
   for (const name of Object.keys(packages)) if (!used.has(name)) problems.push(`versions.json pins ${name}, which no fixture uses`);
   for (const [name, version] of Object.entries(runtimes)) if (!/^\d+\.\d+\.\d+$/.test(version)) problems.push(`versions.json pins ${name} to ${version}, not an exact version`);

@@ -6,6 +6,7 @@ export const SERVER_FILE = 'hdr10_hevc10.mp4';
 export const PARSER_MARKERS = { isobmff: 'duplicate track_ID values', matroska: 'Segment has an unknown size' };
 export const CLIENT_MARKER = 'the app may have been redeployed';
 export const FORBIDDEN_IN_ZERO_CONFIG = /video-fps-probe|worker|mp4box|mediabunny|optimizeDeps|conditionNames|copy|standalone|packageExports/i;
+export const CONFIG_NAME = /(?:^|\/)(?:[^/]*\.config\.[^/]+|\.[^/]*rc[^/]*|\.env[^/]*|browserslist|bunfig\.toml|angular\.json|[jt]sconfig[^/]*\.json|deno\.jsonc?|pnpm-workspace\.yaml|package\.json)$/i;
 
 const OWN = ['own'];
 const ALL = ['own', 'mp4box', 'mediabunny', 'rvfc'];
@@ -58,6 +59,7 @@ export const TARGETS = [
     pm: 'npm',
     shared: ['server-run-core.mjs'],
     configs: [],
+    sources: ['app/layout.js', 'app/page.js', 'app/api/server-run/route.js'],
     build: [{ bin: 'next', args: ['build', '--webpack'] }],
     start: { bin: 'next', args: ['start', '-H', '127.0.0.1', '-p', '{port}'] },
     out: '.next/static',
@@ -74,6 +76,7 @@ export const TARGETS = [
     pm: 'npm',
     shared: ['server-run-core.mjs'],
     configs: [],
+    sources: ['app/layout.js', 'app/page.js', 'app/api/server-run/route.js'],
     build: [{ bin: 'next', args: ['build'] }],
     start: { bin: 'next', args: ['start', '-H', '127.0.0.1', '-p', '{port}'] },
     out: '.next/static',
@@ -90,6 +93,7 @@ export const TARGETS = [
     pm: 'npm',
     shared: [],
     configs: ['angular.json', 'tsconfig.json', 'tsconfig.app.json'],
+    sources: ['src/app.ts', 'src/index.html', 'src/main.ts'],
     build: [{ bin: '@angular/cli', args: ['build'] }],
     out: 'dist/browser',
     apps: PAGE,
@@ -104,6 +108,7 @@ export const TARGETS = [
     pm: 'npm',
     shared: [],
     configs: ['angular.json', 'tsconfig.json', 'tsconfig.app.json'],
+    sources: ['src/app.ts', 'src/index.html', 'src/main.ts'],
     snippets: ['angular.json#projects.app.architect.build.options.assets', 'src/main.ts'],
     build: [{ bin: '@angular/cli', args: ['build'] }],
     out: 'dist/browser',
@@ -117,6 +122,7 @@ export const TARGETS = [
     pm: 'npm',
     shared: ['server-run-core.mjs'],
     configs: ['vite.config.js'],
+    sources: ['src/app.html', 'src/routes/+page.svelte', 'src/routes/api/server-run/+server.js'],
     build: [{ bin: 'vite', args: ['build'] }],
     start: { node: ['build'], env: { PORT: '{port}', HOST: '127.0.0.1' } },
     out: 'build/client',
@@ -133,6 +139,7 @@ export const TARGETS = [
     pm: 'npm',
     shared: ['server-run-core.mjs'],
     configs: ['nuxt.config.js'],
+    sources: ['app/app.vue', 'server/api/server-run.get.js'],
     build: [{ bin: 'nuxt', args: ['build'] }],
     start: { node: ['.output/server/index.mjs'], env: { PORT: '{port}', HOST: '127.0.0.1' } },
     out: '.output/public',
@@ -190,6 +197,7 @@ export const TARGETS = [
     pm: 'bun',
     shared: ['index.html', 'server-run-core.mjs', 'server-run.mjs', 'server-run.cjs'],
     configs: [],
+    sources: ['main.js'],
     snippets: ['main.js'],
     build: [{ runtime: 'bun', args: ['build', './index.html', '--splitting', '--minify', '--outdir', 'dist'] }],
     out: 'dist',

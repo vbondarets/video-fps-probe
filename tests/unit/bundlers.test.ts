@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { compareReports, lockfileChanges, peerWarnings } from '../../scripts/bundlers.mjs';
-import { FORBIDDEN_IN_ZERO_CONFIG, GROUPS, TARGETS, targetsOf } from '../bundlers/targets.mjs';
+import { compareReports, fixtureFileProblems, lockfileChanges, peerWarnings } from '../../scripts/bundlers.mjs';
+import { CONFIG_NAME, FORBIDDEN_IN_ZERO_CONFIG, GROUPS, TARGETS, targetsOf } from '../bundlers/targets.mjs';
 
 const npmLock = (extra: Record<string, unknown> = {}, rootDeps: Record<string, string> | null = null) =>
   JSON.stringify({
@@ -123,6 +123,20 @@ describe('the target table', () => {
 
   it('pairs every zero-config failure with a configured fixture of the same group', () => {
     for (const t of TARGETS.filter((t) => t.fails)) expect(TARGETS.some((c) => c.group === t.group && c.snippets && !c.fails), t.name).toBe(true);
+  });
+
+  it('checks every file of a fixture, not only the listed configs', () => {
+    const next = TARGETS.find((t) => t.name === 'next-webpack')!;
+    const files = ['package.json', 'package-lock.json', ...next.sources!].map((path) => ({ path, text: "import { lazyProbe } from 'video-fps-probe/lazy';" }));
+    expect(fixtureFileProblems(next, files)).toEqual([]);
+    const planted = [...files, { path: 'next.config.mjs', text: "export default { webpack: (c) => { c.resolve.conditionNames = ['import']; return c; } };" }];
+    expect(fixtureFileProblems(next, planted)).toEqual(['next-webpack: next.config.mjs is neither a config nor an app source of the target in tests/bundlers/targets.mjs']);
+    const svelte = TARGETS.find((t) => t.name === 'sveltekit')!;
+    const svelteFiles = ['package.json', 'vite.config.js', ...svelte.sources!].map((path) => ({ path, text: path === 'vite.config.js' ? "export default { optimizeDeps: { exclude: ['x'] } };" : '' }));
+    expect(fixtureFileProblems(svelte, svelteFiles)).toEqual(['sveltekit: the zero-config file vite.config.js contains optimizeDeps']);
+    expect(fixtureFileProblems({ ...next, sources: [...next.sources!, 'next.config.mjs'] }, planted)).toEqual(['next-webpack: next.config.mjs is listed as an app source, but tools read a file of that name as configuration']);
+    for (const name of ['svelte.config.js', '.parcelrc', 'bunfig.toml', 'tsconfig.app.json', 'jsconfig.json', '.env.production', 'app/next.config.ts']) expect(CONFIG_NAME.test(name), name).toBe(true);
+    expect(CONFIG_NAME.test('app/page.js')).toBe(false);
   });
 
   it('flags the tokens a zero-config file may not contain', () => {
