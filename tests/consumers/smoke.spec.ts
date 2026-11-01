@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, openAsBlob, readFileSync, writeFileSync } from '
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { isDeepStrictEqual } from 'node:util';
-import { expect, test, type BrowserContext, type Page } from '@playwright/test';
+import { expect, test, type BrowserContext, type Page } from '../helpers/clean-console.ts';
 import { CONSUMERS_PORT, FIXTURES, OWN_WORKERS, SPLIT_ROUTING, buildUrl, consumersDir, devUrl, fixtureDist, installedPackage } from '../../scripts/consumers.mjs';
 import type { HeaderResult } from '../../src/header/index.ts';
 import type { EngineDescriptor, ProbeResult } from '../../src/index.ts';
@@ -409,7 +409,9 @@ for (const fixture of FIXTURES.filter((f) => !f.pageOnly)) {
 }
 
 for (const name of SKEW_FIXTURES) {
-  test(`${name}: a missing Matroska worker fails only the WebM jobs, with reason load, and is retried`, async ({ page }) => {
+  test(`${name}: a missing Matroska worker fails only the WebM jobs, with reason load, and is retried`, async ({ page, allowNoise }) => {
+    allowNoise({ browsers: ['chromium', 'firefox', 'webkit'], request: /\/assets\/own-matroska\.worker-[\w-]+\.js\b/, reason: 'the test serves a 404 for the Matroska worker script, to check the load failure and the retry' });
+    allowNoise({ browsers: ['webkit'], console: /Failed to load resource: the server responded with a status of 404 .*\/assets\/own-matroska\.worker-[\w-]+\.js/, reason: 'WebKit logs the 404 that the test serves for the Matroska worker script' });
     const pageErrors: string[] = [];
     page.on('pageerror', (e) => pageErrors.push(`${e.name}: ${e.message}`));
     let missing = true;

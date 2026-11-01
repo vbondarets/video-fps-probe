@@ -1,7 +1,7 @@
 import { openAsBlob, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../helpers/clean-console.ts';
 import { CONSUMERS_PORT, buildUrl, consumersDir, devUrl, fixtureDist, installedPackage } from '../../scripts/consumers.mjs';
 import type { CheckReport, CheckRules } from '../../src/check/index.ts';
 import type { FileResult, ProbeResult } from '../../src/index.ts';

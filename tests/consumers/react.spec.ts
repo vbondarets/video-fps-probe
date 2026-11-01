@@ -1,7 +1,7 @@
 import { openAsBlob } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../helpers/clean-console.ts';
 import { CONSUMERS_PORT, buildUrl, consumersDir, devUrl, installedPackage } from '../../scripts/consumers.mjs';
 import type { FileResult, ProbeResult, VideoFpsSummary } from '../../src/index.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
