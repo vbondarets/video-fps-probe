@@ -40,7 +40,7 @@ const HEADER_PROBE = 32;
 const logSinks = new Set<string[]>();
 let logHooked = false;
 
-// mp4box prints parse errors with console.error and offers no switch to silence them.
+// mp4box prints parse errors to the console through Log.error and offers no switch to silence them.
 function hookLog(): void {
   if (logHooked) return;
   logHooked = true;
