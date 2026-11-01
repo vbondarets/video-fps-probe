@@ -18,6 +18,7 @@ interface Plant {
   noise: RegExp;
   ready?: true;
   everyWorker?: true;
+  firefox?: Pick<Plant, 'kind' | 'noise'>;
 }
 
 const startWorker = (url: string, type: 'module' | 'classic' = 'module') => `<script>const w = new Worker('${url}', { type: '${type}' }); w.onmessage = () => { document.title = 'ready'; };</script>`;
@@ -52,8 +53,8 @@ const PLANTS: Record<string, Plant> = {
   'page throw': { body: "<script>setTimeout(() => { throw new Error('planted throw'); });</script>", kind: 'page', noise: /^page error Error: planted throw$/ },
   'page rejection': { body: "<script>Promise.reject(new Error('planted rejection'));</script>", kind: 'page', noise: /^unhandled rejection in http:\/\/127\.0\.0\.1:\d+\/__guard\/index\.html: Error: planted rejection$/ },
   'page rejection without a string form': { body: '<script>Promise.reject(Object.create(null));</script>', kind: 'page', noise: /^unhandled rejection in http:\/\/127\.0\.0\.1:\d+\/__guard\/index\.html: a reason without a string form \(\[object Object\]\)$/ },
-  'worker throw': { body: startWorker(WORKER), files: { [WORKER]: "setTimeout(() => { throw new Error('planted worker throw'); });\n" }, kind: 'page', noise: /^page error Error: planted worker throw$/ },
-  'worker rejection': { body: startWorker(WORKER), files: { [WORKER]: "Promise.reject(new Error('planted worker rejection'));\n" }, kind: ['page', 'console'], noise: /^(?:page error|console error in worker .*\/__guard\/worker\.js: Unhandled Promise Rejection:) Error: planted worker rejection$/ },
+  'worker throw': { body: startWorker(WORKER), files: { [WORKER]: "setTimeout(() => { throw new Error('planted worker throw'); });\n" }, kind: 'page', noise: /^page error Error: planted worker throw$/, firefox: { kind: 'page', noise: /^page error \[JavaScript Error: "Error: planted worker throw" \{file: "http:\/\/127\.0\.0\.1:\d+\/__guard\/worker\.js" line: 1\}\]/ } },
+  'worker rejection': { body: startWorker(WORKER), files: { [WORKER]: "Promise.reject(new Error('planted worker rejection'));\n" }, kind: ['page', 'console'], noise: /^(?:page error|console error in worker .*\/__guard\/worker\.js: Unhandled Promise Rejection:) Error: planted worker rejection$/, firefox: { kind: 'console', noise: /^console error in page .*: \[JavaScript Error: "Error: planted worker rejection" \{file: "http:\/\/127\.0\.0\.1:\d+\/__guard\/worker\.js" line: 1\}\]/ } },
   '404 script': { body: '<script src="/__guard/missing.js"></script>', kind: 'request', noise: /^request 404 GET http:\/\/127\.0\.0\.1:\d+\/__guard\/missing\.js$/ },
   'failed script': { body: '<script src="/__guard/aborted.js"></script>', abort: '/__guard/aborted.js', kind: 'request', noise: /^request failed GET http:\/\/127\.0\.0\.1:\d+\/__guard\/aborted\.js: / },
   '404 fetch': { body: "<script>fetch('/__guard/missing.json').catch(() => undefined);</script>", kind: 'request', noise: /^request 404 GET http:\/\/127\.0\.0\.1:\d+\/__guard\/missing\.json$/ },
@@ -88,15 +89,16 @@ async function plantIn(page: Page, plant: Plant, collector: NoiseCollector): Pro
 }
 
 for (const [channel, plant] of Object.entries(PLANTS)) {
-  test(`the clean console guard reports a planted ${channel}`, async ({ browser }) => {
+  test(`the clean console guard reports a planted ${channel}`, async ({ browser, browserName }) => {
     const page = await browser.newPage();
     try {
       const collector = new NoiseCollector();
       if (plant.everyWorker) collector.everyWorkerIsPackage();
       await collector.attachContext(page.context());
       await open(page, plant);
-      const kinds: readonly NoiseKind[] = [plant.kind].flat();
-      const seen = () => collector.noise.filter((n) => kinds.includes(n.kind) && plant.noise.test(n.text)).map((n) => n.text);
+      const expected = (browserName === 'firefox' && plant.firefox) || plant;
+      const kinds: readonly NoiseKind[] = [expected.kind].flat();
+      const seen = () => collector.noise.filter((n) => kinds.includes(n.kind) && expected.noise.test(n.text)).map((n) => n.text);
       await expect(() => expect(seen(), JSON.stringify(collector.noise)).not.toEqual([])).toPass({ timeout: 10_000 });
       await collector.finish();
     } finally {
