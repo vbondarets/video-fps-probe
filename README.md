@@ -4,6 +4,8 @@ Frame rate, frame count, VFR detection and a rate profile for MP4, MOV, WebM and
 
 **[Live demo](https://vbondarets.github.io/video-fps-probe/)** · [API](docs/api.md) · [Bundlers](docs/bundlers.md) · [Benchmarks](docs/benchmarks.md) · [Architecture](docs/architecture.md) · [Changelog](CHANGELOG.md)
 
+The demo runs every capability on your own files or on its samples, each with a short explanation and code to copy for the browser and for a Node server: the [full analysis](https://vbondarets.github.io/video-fps-probe/) with color, HDR, Dolby Vision and aspect ratio, the [header-only analysis](https://vbondarets.github.io/video-fps-probe/#header) under limits, a file [from a URL](https://vbondarets.github.io/video-fps-probe/#url) through Range requests, [upload rules](https://vbondarets.github.io/video-fps-probe/#check) with the presets, and the [error codes](https://vbondarets.github.io/video-fps-probe/#errors).
+
 ## Install
 
 ```

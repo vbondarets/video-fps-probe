@@ -2,7 +2,7 @@
 
 **[vbondarets.github.io/video-fps-probe](https://vbondarets.github.io/video-fps-probe/)**: drop your own files or press "Try sample files". Everything runs in the page; nothing is uploaded.
 
-The demo is a React app that shows every value the package computes, compares the engines on the same file, and exports the results as JSON. It is not part of the npm package: the package's `files` list holds only `dist/` and the changelog, so the demo never changes what a host installs or ships.
+The demo is a React app that shows every value the package computes, lets a visitor try every entry of the package, compares the engines on the same file, and exports the results as JSON. It is not part of the npm package: the package's `files` list holds only `dist/` and the changelog, so the demo never changes what a host installs or ships.
 
 <p>
   <img src="../docs/screenshots/app-light.png" width="280" alt="Results for eight files, light theme">
@@ -15,6 +15,14 @@ The demo is a React app that shows every value the package computes, compares th
 
 ## What it shows
 
+Five tabs, each opened by its address (`#header`, `#url`, `#check`, `#errors`) and each with a short explanation and a **Code** box that holds a browser and a Node server version of the call, with a Copy button. The code follows the settings of the tab, and `tests/e2e/snippets.test.ts` compiles every variant against the published types (the declarations `tsc -p tsconfig.lib.json` emits, laid out as the package): the browser code with the DOM library, the Node code without it, and with `skipLibCheck` only where it imports the root entry, as [the API](../docs/api.md#in-thread-analyze) recommends.
+
+- **Files**: the full analysis described below.
+- **Header only**: `analyzeHeader` from `video-fps-probe/header` on every file of the list, in the page, with editable `maxBytes`, `maxReads`, `maxMs`, `maxTracks` and `maxTopLevelBoxes` (presets for the defaults, the tight server configuration of the API docs and a tiny one that ends in `byte-limit`), `fragmentedDuration`, and `color` and `aspect`. Each card shows the read plan (reads, bytes requested and read, time), the layout, the error code with its class, and the coded warnings. Every change reads the files again.
+- **From a URL**: `openRangeSource(httpRange(url))` from `video-fps-probe/url`, then `analyzeHeader` or the full analysis in the page, with the samples of the page as ready same-origin URLs. The card counts the HTTP requests, which equal `io.reads` in header mode. A note explains what another host needs: CORS for the page, `206` replies to `Range`, and `Content-Range` in `Access-Control-Expose-Headers`.
+- **Check rules**: `check()` with the six presets or custom JSON rules in an editor, with selects for `sizeBasis` and `hdr`, over every analyzed file. Each report shows the verdict, the violations with their expected and actual values, the `unknown` hints and the suggested frame rate. A checkbox judges the results without `withColor` and `withAspect`, to show the hints that ask for them.
+- **Error codes**: every `FileErrorCode` with its `errorClass` and meaning, the classes, and every `WarningCode`.
+
 Each file gets a card with:
 
 - **Average FPS**: presented frames over the presentation span, so it agrees with the Frames and Duration on the same card, next to the exact `avg_frame_rate` rational ffprobe would print when that can be reproduced. The two differ only when the stored durations do not tile the timeline (an edit list that trims a VFR file, a lost or overlapping fragment, a held first frame). The JSON export keeps every rate as an exact rational.
@@ -25,10 +33,13 @@ Each file gets a card with:
 - Frame count (presented frames, plus stored samples when an edit list hides some), duration, codec, dimensions, rotation and duplicate timestamps.
 - Bytes read, number of reads and analysis time. For Matroska also the scan depth (header, probe or exact) and a "Scan all frames" button.
 - A provenance mark on each value (header, exact, sampled, estimated, computed) and warnings in plain words.
+- With `codecConfig: true`, then `withColor` and `withAspect` in the page: the color primaries, transfer, matrix and range as ffprobe prints them, HDR (PQ or HLG), Dolby Vision, the bit depth, the profile and the codec string, the sample and display aspect ratio and the display size, then the median frame interval, whether the track is enabled, the layout of an MP4 or MOV file, the error code with its class and meaning, and the warning codes. The `codecConfig` bytes are dropped once they are read, so the JSON export holds plain values.
 - All video tracks of the file, primary track first.
 - A **Compare engines** panel that runs the same file through mp4box.js and mediabunny, labelled as tuned adapters because they are this package's adapters over each library ([benchmarks](../docs/benchmarks.md#accuracy-vs-ffprobe)), and, on request, a playback estimate with `requestVideoFrameCallback`.
 
-Many files can be dropped at once (two workers, cancel per file). The toolbar sets the Matroska scan mode and downloads or copies all results as JSON. The export carries the build (`app.build`, the hashed entry chunk of the page) and an `environment` block (browser, OS, CPU threads, screen, time zone) so results from different devices and deploys can be compared; the footer shows the same device line. Light and dark themes follow the system, and the layout works at phone width (360 px with the Compare panel open is an e2e check).
+Many files can be dropped at once (two workers, cancel per file). The toolbar sets the Matroska scan mode and downloads or copies everything as JSON: the full results, and once their tabs have run, the header-only results with their settings (`header`), the URL results with their request counts (`url`) and the check reports with their rules (`check`). The export carries the build (`app.build`, the hashed entry chunk of the page) and an `environment` block (browser, OS, CPU threads, screen, time zone) so results from different devices and deploys can be compared, and the footer shows the same device line. Light and dark themes follow the system, and the layout works at phone width (360 px with the Compare panel open, and every tab, are e2e checks).
+
+The ten sample files are copies of committed fixtures: six for the frame rate (CFR, VFR, fragmented, an edit list, WebM and a VFR Matroska remux), and `hdr10_hevc10.mp4` (PQ), `dv_p81_dvvc.mp4` (Dolby Vision profile 8.1), `sar_h264_4x3.mp4` (a 4:3 sample aspect ratio, 1440x1080 stored and 1920x1080 displayed) and `track_disabled.mp4` (a disabled track). `tests/e2e/capabilities.spec.ts` checks the values the demo shows for them against the committed ffprobe 8.1.1 references, and fails on any console warning or error, page error or unhandled rejection in every flow.
 
 ## Running it
 
@@ -49,6 +60,8 @@ All of them use `demo/vite.config.ts`, whose root is this folder. `npm run size 
 The demo imports the library by package name, as a host app would:
 
 - `ui/store.ts` holds `lazyProbeFrom(() => import('./probe.ts').then((m) => m.probe))` from `video-fps-probe/client/lazy`, so the page load carries only the stub.
+- `ui/store.ts` asks every analysis for `codecConfig: true` and applies `withColor` and `withAspect` from `video-fps-probe/color` and `video-fps-probe/aspect` in a lazy chunk (`ui/meta.ts`) that loads while the worker reads the file.
+- The tabs other than Files are lazy chunks: `ui/HeaderPanel.tsx` imports `video-fps-probe/header`, `ui/UrlPanel.tsx` `video-fps-probe/url` and, for the full analysis of a URL, `ownEngine` from `video-fps-probe/worker-runtime` in the page, and `ui/CheckPanel.tsx` `video-fps-probe/check` and `video-fps-probe/presets`.
 - `ui/probe.ts` calls `createProbeClient` from `video-fps-probe/client` with a custom worker, `engines: [rvfc()]`, `workers: 2` (drag and drop of many files) and `idleTimeoutMs: 0`.
 - `ui/probe.worker.ts` is that worker: `serveProbeWorker` from `video-fps-probe/worker-runtime` serving own, and mp4box and mediabunny through `import()` of `video-fps-probe/engines/*`. The build therefore has exactly one worker file.
 - The other modules import only types from `video-fps-probe`.
@@ -80,7 +93,7 @@ First-time setup (done once for this repository):
 
 The [demo](https://vbondarets.github.io/video-fps-probe/) runs fully in the page, so any device with a browser can test it; nothing is uploaded.
 
-1. Open the demo on macOS (Safari and Chrome), an iPhone (Safari) and an Android phone (Chrome). Press "Try sample files" once: six results without an error mean the page works on that device.
+1. Open the demo on macOS (Safari and Chrome), an iPhone (Safari) and an Android phone (Chrome). Press "Try sample files" once: ten results without an error mean the page works on that device.
 2. Pick these files, recorded fresh where possible:
    - an iPhone camera video (HEVC in MOV), also 60 fps and slow motion if available;
    - an iOS screen recording;
