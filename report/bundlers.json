@@ -427,8 +427,8 @@
         "emitted": [
           {
             "app": "app",
-            "files": 17,
-            "gzip": 93717
+            "files": 16,
+            "gzip": 120380
           }
         ]
       },
@@ -625,7 +625,10 @@
       "tool": "deno",
       "pm": "deno",
       "config": [],
-      "build": null,
+      "build": {
+        "status": "built",
+        "emitted": []
+      },
       "apps": [],
       "server": {
         "target": "deno",

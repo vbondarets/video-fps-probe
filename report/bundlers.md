@@ -15,7 +15,7 @@ Measured on production builds of the fixtures in `tests/bundlers/fixtures/`, ins
 | sveltekit | SvelteKit 3.1.1 | npm | none | verified | 32.32 KB | 24.92 KB | 27.22 KB | 122.86 KB in 26 files | 2 | yes |
 | nuxt | Nuxt 4.6.3 | npm | none | verified | 158.32 KB | 24.88 KB | 27.18 KB | 145.21 KB in 18 files | 2 | yes |
 | parcel | Parcel 2.16.4 | npm | none | fails without configuration: the build does not resolve the package exports | n/a | n/a | n/a | n/a | n/a | n/a |
-| parcel-configured | Parcel 2.16.4 | npm | `package.json` | verified with configuration | 0.98 KB | 25.69 KB | 25.58 KB | 93.72 KB in 17 files | 2 | yes |
+| parcel-configured | Parcel 2.16.4 | npm | `package.json` | verified with configuration | 0.98 KB | 25.69 KB | 25.58 KB | 120.38 KB in 16 files | 2 | yes |
 | bun-build | Bun 1.4.4 | bun | none | fails without configuration: the prebuilt worker is not emitted (404) | n/a | n/a | n/a | 47.77 KB in 19 files | n/a | n/a |
 | bun-build-configured | Bun 1.4.4 | bun | `main.js` | verified with configuration | 1.45 KB | 25.07 KB | 27.38 KB | 93.10 KB in 20 files | 2 | yes |
 | deno | Deno 2.9.6 | deno | none | verified | n/a | n/a | n/a | n/a | n/a | n/a |
