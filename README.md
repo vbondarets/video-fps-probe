@@ -176,11 +176,12 @@ Of the 168 committed fixtures, 156 are synthetic files made with ffmpeg and 12 a
 
 Chrome and Edge 94, Firefox 114, Safari and iOS 15.4: floors derived from the features used, not tested on those versions; CI runs Chromium, Firefox and WebKit. mp4box.js needs Safari 16.4; rVFC needs `requestVideoFrameCallback` (Chrome 83, Firefox 132, Safari 15.4), a visible foreground tab and a playable codec. [Details](docs/benchmarks.md#browser-support).
 
+The package writes nothing to the console. CI fails a browser test on a console warning or error of a page or a worker, a page error, an unhandled rejection or a failed script request, and a Node test on any output ([console](docs/api.md#console)).
+
 Known limitations: [changelog](CHANGELOG.md#known-limitations), [benchmarks](docs/benchmarks.md#limitations). Development: [demo/README.md](demo/README.md), [scripts](docs/benchmarks.md#reproducing-the-numbers).
 
 ## Roadmap
 
-- **0.4.2**: a CI guarantee of a clean console: the e2e and consumer smoke tests fail on any console warning or error, page error or unhandled rejection in Chromium, Firefox and WebKit, and a Node test checks that the library writes nothing to stdout or stderr.
 - **Later in 0.4.x**: HDR10 static metadata (`mdcv`, `clli`, MasteringMetadata) and the color of the AV1 sequence header, which the color entry of 0.4.0 does not read yet.
 - **0.5.0**: a Node entry (`fromPath`, DOM-free types, a `worker_threads` pool), NestJS validators, a CLI, bitrate, GOP and audio details, cadence detection, framework adapters for Vue, Svelte and Angular, and later MPEG-TS and HLS.
 
