@@ -280,6 +280,29 @@ test.describe('every 0.4.0 capability in the demo', () => {
     expect({ ...full!.result, io: null }).toEqual({ ...want, io: null });
   });
 
+  test('from a URL: every sample in both modes, after the samples were fetched, equals the Node analysis', async ({ page }) => {
+    test.slow();
+    await loadSamples(page);
+    const p = await openTab(page, 'From a URL', 'url');
+    const runs = p.locator('.list > *');
+    let n = 0;
+    for (const mode of ['header', 'full'] as const) {
+      await p.getByLabel('Analysis').selectOption(mode);
+      for (const name of SAMPLES) {
+        await p.getByLabel('Sample on this site').selectOption(name);
+        await p.getByRole('button', { name: 'Analyze URL' }).click();
+        await expect(runs).toHaveCount(++n);
+      }
+    }
+    await expect(p.locator('.list > p.err')).toHaveCount(0);
+    const url = await extra(page, 'url', (u) => u.results.length === n);
+    for (const { mode, result } of url.results) {
+      const blob = await openAsBlob(fixtureFile(result.name));
+      const want = mode === 'header' ? await analyzeHeader(blob, { name: result.name, color: true, aspect: true }) : await nodeAnalyze(result.name, 'auto');
+      expect({ ...result, io: null }, `${mode} ${result.name}`).toEqual({ ...want, io: null });
+    }
+  });
+
   test('from a URL on a browser without AbortSignal.any and AbortSignal.timeout, and a URL-only export', async ({ page }) => {
     await page.addInitScript(() => {
       delete (AbortSignal as { any?: unknown }).any;
