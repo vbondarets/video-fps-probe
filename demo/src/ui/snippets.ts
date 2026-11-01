@@ -43,16 +43,14 @@ function headerOptions(s: HeaderSettings, first: readonly string[]): string {
   return lines.map((l) => `    ${l}`).join('\n');
 }
 
-const HEADER_RETURN = `  if (result.errorCode) {
+const headerReturn = (s: HeaderSettings): string => `  if (result.errorCode) {
     return { ok: false, code: result.errorCode, kind: errorClass(result.errorCode), message: result.error };
-  }
-  const track = result.videoTracks.find((t) => t.trackId === result.primaryTrackId);
+  }${s.color ? '\n  const track = result.videoTracks.find((t) => t.trackId === result.primaryTrackId);' : ''}
   return {
     ok: true,
     reads: result.io.reads,
     bytesRequested: result.io.bytesRequested,
-    layout: result.layout?.kind ?? null,
-    hdr: track?.color?.hdr ?? null,
+    layout: result.layout?.kind ?? null,${s.color ? '\n    hdr: track?.color?.hdr ?? null,' : ''}
   };`;
 
 export function headerSnippet(s: HeaderSettings): SnippetPair {
@@ -63,7 +61,7 @@ export async function readHeader(file: File) {
   const result = await analyzeHeader(file, {
 ${headerOptions(s, [])}
   });
-${HEADER_RETURN}
+${headerReturn(s)}
 }
 `,
     node: `import { openAsBlob } from 'node:fs';
@@ -73,7 +71,7 @@ export async function readHeader(path: string) {
   const result = await analyzeHeader(await openAsBlob(path), {
 ${headerOptions(s, ['name: path,'])}
   });
-${HEADER_RETURN}
+${headerReturn(s)}
 }
 `,
   };
