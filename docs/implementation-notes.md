@@ -461,7 +461,7 @@ Each worker imports its parser statically and reaches neither the other parser n
 
 ### Planned for 0.4.0, and done
 
-The 0.4.1 bundler matrix, the 0.4.2 guarantee of a clean console and 0.5.0 are in the [README roadmap](../README.md#roadmap). One 0.4.0 item in detail:
+The rest of 0.4.x and 0.5.0 are in the [README roadmap](../README.md#roadmap). One 0.4.0 item in detail:
 
 - Expose a median frame interval and use it in `check()`. 0.3.0 judged the format duration of a WebM or Matroska track when it was within one frame interval of the measured span, the interval of `dominantFps`, else of `nominalFps` on a constant track, else of `avgFps` (section 3, track and format durations), so the Chromium recordings, which have no dominant rate, took their average interval of 27 ms rather than their median of 17 ms. 0.4.0 puts `medianFrameInterval` on the tracks of own, mp4box and mediabunny, and `check()` takes it after the dominant and the constant nominal rate, so those recordings now take 17 ms ([section 20](#20-the-check-rules-040-stage-6)).
 
