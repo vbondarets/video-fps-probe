@@ -5,5 +5,11 @@
   "rules": {
     "react/rules-of-hooks": "error",
     "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["src/**", "demo/src/**"],
+      "rules": { "no-console": "error" }
+    }
+  ]
 }
