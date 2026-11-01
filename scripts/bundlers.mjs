@@ -312,8 +312,10 @@ function installBaseline(dir, env, spec) {
 function prepareTarball(dir, tarball) {
   mkdirSync(dir, { recursive: true });
   const target = join(dir, TARBALL);
-  if (tarball) cpSync(resolve(tarball), target);
-  else {
+  const samePath = (a, b) => (WIN ? a.toLowerCase() === b.toLowerCase() : a === b);
+  if (tarball) {
+    if (!samePath(resolve(tarball), resolve(target))) cpSync(resolve(tarball), target);
+  } else {
     const filename = packTarball(dir);
     cpSync(join(dir, filename), target);
     rmSync(join(dir, filename));
