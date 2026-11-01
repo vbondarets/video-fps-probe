@@ -6,7 +6,7 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ### Added
 
-- A clean console in CI ([console](docs/api.md#console)). In Chromium, Firefox and WebKit the demo e2e, consumer and bundler smoke tests fail on a console warning or error of a page or a worker, any console output of the package, a page error, a crash, an unhandled rejection or a failed same-origin script request, unless the test names the noise it causes and why. In Node 24 and 22.12 every server entry, by `import`, by `require()` and from the CommonJS copy, must write nothing to stdout or stderr and emit no warning of its own (Node 22.12 prints its own `ExperimentalWarning` for `require()` of the ESM build, see [CommonJS](docs/api.md#commonjs)). Lint bans console calls in `src/`, and check-dist bans them in `dist/`.
+- A clean console in CI ([console](docs/api.md#console)). In Chromium, Firefox and WebKit the demo e2e, consumer and bundler smoke tests fail on a console warning or error of a page or a worker, any console output traced to the package, a page error, a crash, an unhandled rejection or a failed same-origin script request, unless the test names the noise it causes and why. In Node 24 and 22.12 every server entry, by `import`, by `require()` and from the CommonJS copy, must write nothing to stdout or stderr and emit no warning of its own (Node 22.12 prints its own `ExperimentalWarning` for `require()` of the ESM build, see [CommonJS](docs/api.md#commonjs)). Lint bans console calls in `src/`, and check-dist bans them in `dist/`.
 
 ### Fixed
 
