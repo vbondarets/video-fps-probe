@@ -6,7 +6,12 @@ import { Cell } from './cells.tsx';
 
 const LAYOUT: Record<ContainerLayout['kind'], string> = { faststart: 'faststart', 'moov-at-end': 'moov at the end', fragmented: 'fragmented' };
 const HDR: Record<'pq' | 'hlg', string> = { pq: 'PQ', hlg: 'HLG' };
+const PROFILE_TITLE = 'profile_idc for H.264 and HEVC, seq_profile for AV1, the VP9 profile: ffprobe prints a name such as Main 10 instead';
+const BITSTREAM_TITLE = 'only the coded frames hold this value, and the package reads the container, not the frames';
 
+function OrBitstream({ value }: { value: string | null }) {
+  return value !== null ? <>{value}</> : <span title={BITSTREAM_TITLE}>not in the container <small>bitstream only</small></span>;
+}
 
 function hdrText(c: ColorInfo): string {
   const base = c.hdr ? HDR[c.hdr] : null;
@@ -29,11 +34,11 @@ function ColorCells({ c }: { c: ColorInfo | null }) {
           profile {dv.profile}, level {dv.level}
         </Cell>
       )}
-      <Cell k="Bit depth" extra={c.profile !== null ? `profile ${c.profile}` : null}>
-        {c.bitDepth !== null ? `${c.bitDepth}-bit` : '-'}
+      <Cell k="Bit depth" title={c.profile !== null ? PROFILE_TITLE : undefined} extra={c.profile !== null ? `profile number ${c.profile}` : null}>
+        <OrBitstream value={c.bitDepth !== null ? `${c.bitDepth}-bit` : null} />
       </Cell>
       <Cell k="Codec string">
-        <span className="mono">{c.codecString ?? '-'}</span>
+        {c.codecString !== null ? <span className="mono">{c.codecString}</span> : <OrBitstream value={null} />}
       </Cell>
     </>
   );

@@ -167,7 +167,7 @@ test.describe('every 0.4.0 capability in the demo', () => {
     const hdr = card(page, 'hdr10_hevc10.mp4');
     await expect(cell(hdr, 'HDR')).toHaveText('PQ');
     await expect(cell(hdr, 'Color')).toHaveText(/^bt2020, smpte2084, bt2020nc range tv, from colr$/);
-    await expect(cell(hdr, 'Bit depth')).toHaveText('10-bit profile 2');
+    await expect(cell(hdr, 'Bit depth')).toHaveText('10-bit profile number 2');
     const dv = card(page, 'dv_p81_dvvc.mp4');
     await expect(cell(dv, 'HDR')).toHaveText('Dolby Vision, PQ');
     await expect(cell(dv, 'Dolby Vision')).toHaveText(/^profile 8, level 1 compatibility 1, limited metadata compression$/);
@@ -179,7 +179,10 @@ test.describe('every 0.4.0 capability in the demo', () => {
     await expect(cell(off, 'Enabled')).toHaveText('no players skip this track');
     await expect(cell(card(page, 'cfr_h264_29.97.mp4'), 'Median frame interval')).toHaveText('1001/30000 s 29.970 fps');
     await expect(cell(card(page, 'cfr_h264_29.97.mp4'), 'Layout')).toHaveText(/^moov at the end moov of /);
-    await expect(cell(card(page, 'cfr_vp9_59.94.webm'), 'HDR')).toHaveText('not signalled');
+    const webm = card(page, 'cfr_vp9_59.94.webm');
+    await expect(cell(webm, 'HDR')).toHaveText('not signalled');
+    await expect(cell(webm, 'Bit depth')).toHaveText('not in the container bitstream only');
+    await expect(cell(webm, 'Codec string')).toHaveText('not in the container bitstream only');
   });
 
   test('header only: editable limits, the read plan, the layout and a coded limit error', async ({ page }) => {
