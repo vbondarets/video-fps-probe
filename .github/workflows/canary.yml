@@ -88,3 +88,75 @@ jobs:
             .canary
             .playwright/consumers-results
           if-no-files-found: warn
+
+  bundlers:
+    name: Bundler matrix with the latest tools, the published package and the dev servers
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+    env:
+      HOME: /root
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Set up the latest Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: latest
+
+      - name: Set up the latest Deno 2
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: v2.x
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Place the bundlers directory outside the workspace
+        run: echo "BUNDLERS_DIR=$RUNNER_TEMP/bundlers" >> "$GITHUB_ENV"
+
+      - name: Install the latest version of every fixture dependency, without lockfiles, and the published package
+        run: node scripts/bundlers.mjs setup --latest --registry
+
+      - name: Build the fixtures
+        id: build
+        if: ${{ !cancelled() }}
+        run: node scripts/bundlers.mjs build
+
+      - name: Run the smoke tests on the builds (Chromium, Firefox, WebKit) and the server entries
+        id: builds
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: npx playwright test -c playwright.bundlers.config.ts --grep-invert @dev
+
+      - name: Run the smoke tests on the dev servers (Chromium, Firefox, WebKit)
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        env:
+          BUNDLERS_DEV: '1'
+        run: npx playwright test -c playwright.bundlers.config.ts --grep @dev --output .playwright/bundlers-dev-results
+
+      - name: Compare the measured matrix with report/bundlers.json
+        if: ${{ !cancelled() && steps.builds.outcome != 'skipped' }}
+        run: node scripts/bundlers.mjs report --check --out .canary/bundlers
+
+      - name: Upload the bundler reports, traces and server logs
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: canary-bundlers
+          path: |
+            .canary/bundlers
+            .playwright/bundlers-results
+            .playwright/bundlers-dev-results
+            ${{ runner.temp }}/bundlers/logs
+            ${{ runner.temp }}/bundlers/measure
+          if-no-files-found: warn
