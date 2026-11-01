@@ -19,6 +19,35 @@ const HDR_POLICIES: HdrPolicy[] = ['allow', 'warn', 'reject'];
 
 const pretty = (rules: unknown): string => JSON.stringify(rules, null, 2);
 
+function sameJson(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null || Array.isArray(a) !== Array.isArray(b)) return false;
+  const ka = Object.keys(a);
+  const kb = Object.keys(b);
+  return ka.length === kb.length && ka.every((k) => Object.hasOwn(b, k) && sameJson((a as Record<string, unknown>)[k], (b as Record<string, unknown>)[k]));
+}
+
+function choice<T extends string>(rules: Record<string, unknown> | null, key: 'sizeBasis' | 'hdr', allowed: readonly T[]): { value?: T; error?: string } {
+  const v = rules?.[key];
+  if (v === undefined) return {};
+  if (typeof v === 'string' && (allowed as readonly string[]).includes(v)) return { value: v as T };
+  return { error: `${key} must be ${allowed.join(', ').replace(/, (?=[^,]*$)/, ' or ')}, got ${JSON.stringify(v)}` };
+}
+
+const overridesOf = (rules: Record<string, unknown> | null) => ({ sizeBasis: choice(rules, 'sizeBasis', SIZE_BASES), hdr: choice(rules, 'hdr', HDR_POLICIES) });
+
+function presetRules(name: PresetName | '', { sizeBasis, hdr }: { sizeBasis?: SizeBasis; hdr?: HdrPolicy }): Record<string, unknown> {
+  return { ...(name ? presets[name].rules : DEFAULT_RULES), ...(sizeBasis && { sizeBasis }), ...(hdr && { hdr }) };
+}
+
+function stillPreset(name: PresetName | '', text: string): boolean {
+  if (!name) return false;
+  const parsed = parseRules(text);
+  if (!('rules' in parsed)) return false;
+  const { sizeBasis, hdr } = overridesOf(parsed.rules);
+  return sameJson(parsed.rules, presetRules(name, { sizeBasis: sizeBasis.value, hdr: hdr.value }));
+}
+
 function withoutMeta(r: FileResult): FileResult {
   const strip = (t: FileResult['videoTracks'][number]) => {
     const copy = { ...t };
@@ -91,8 +120,10 @@ export default function CheckPanel() {
   const [withMeta, setWithMeta] = useState(true);
   const parsed = useMemo(() => parseRules(text), [text]);
   const rules = 'rules' in parsed ? parsed.rules : null;
-  const sizeBasis = typeof rules?.sizeBasis === 'string' ? (rules.sizeBasis as SizeBasis) : undefined;
-  const hdr = typeof rules?.hdr === 'string' ? (rules.hdr as HdrPolicy) : undefined;
+  const overrides = overridesOf(rules);
+  const sizeBasis = overrides.sizeBasis.value;
+  const hdr = overrides.hdr.value;
+  const invalid = [overrides.sizeBasis.error, overrides.hdr.error].filter((e): e is string => e !== undefined);
 
   const reports = useMemo(
     () => (rules ? rows.flatMap((row) => (row.result ? [{ name: row.file.name, report: judge(withMeta ? row.result : withoutMeta(row.result), rules) }] : [])) : []),
@@ -105,8 +136,12 @@ export default function CheckPanel() {
 
   const choosePreset = (name: PresetName | '') => {
     setPreset(name);
-    const base = name ? presets[name].rules : DEFAULT_RULES;
-    setText(pretty({ ...base, ...(sizeBasis && { sizeBasis }), ...(hdr && { hdr }) }));
+    setText(pretty(presetRules(name, { sizeBasis, hdr })));
+  };
+
+  const edit = (next: string) => {
+    setText(next);
+    if (!stillPreset(preset, next)) setPreset('');
   };
 
   const setKey = (key: 'sizeBasis' | 'hdr', value: string) => {
@@ -114,7 +149,7 @@ export default function CheckPanel() {
     const next: Record<string, unknown> = { ...rules };
     if (value) next[key] = value;
     else delete next[key];
-    setText(pretty(next));
+    edit(pretty(next));
   };
 
   const note = preset ? presets[preset].note : null;
@@ -169,7 +204,7 @@ export default function CheckPanel() {
         </div>
         <label className="block">
           <span>Rules (JSON)</span>
-          <textarea rows={10} value={text} spellCheck={false} onChange={(e) => setText(e.target.value)} />
+          <textarea rows={10} value={text} spellCheck={false} onChange={(e) => edit(e.target.value)} />
         </label>
         {note && <p className="mut small">{note}</p>}
         {'error' in parsed && (
@@ -177,6 +212,11 @@ export default function CheckPanel() {
             {parsed.error}
           </p>
         )}
+        {invalid.map((e) => (
+          <p key={e} className="err" aria-live="polite">
+            {e}
+          </p>
+        ))}
       </form>
       {rows.every((r) => !r.result) && <p className="mut">Add files above, or press Try sample files: each analyzed file is judged here.</p>}
       <div className="list">
