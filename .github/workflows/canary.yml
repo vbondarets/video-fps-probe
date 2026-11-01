@@ -128,21 +128,20 @@ jobs:
       - name: Place the bundlers directory outside the workspace
         run: echo "BUNDLERS_DIR=$RUNNER_TEMP/bundlers" >> "$GITHUB_ENV"
 
-      - name: Install the latest version of every fixture dependency, without lockfiles, and the published package
+      - name: Install the latest version of every fixture dependency, without lockfiles, and the published package, every target even when one fails
         run: node scripts/bundlers.mjs setup --latest --registry
 
-      - name: Build the fixtures
-        id: build
+      - name: Build every fixture that was set up, even when one fails
         if: ${{ !cancelled() }}
         run: node scripts/bundlers.mjs build
 
       - name: Run the smoke tests on the builds (Chromium, Firefox, WebKit) and the server entries
         id: builds
-        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        if: ${{ !cancelled() }}
         run: npx playwright test -c playwright.bundlers.config.ts --grep-invert @dev
 
       - name: Run the smoke tests on the dev servers (Chromium, Firefox, WebKit)
-        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        if: ${{ !cancelled() }}
         env:
           BUNDLERS_DEV: '1'
         run: npx playwright test -c playwright.bundlers.config.ts --grep @dev --output .playwright/bundlers-dev-results
