@@ -280,6 +280,23 @@ test.describe('every 0.4.0 capability in the demo', () => {
     expect({ ...full!.result, io: null }).toEqual({ ...want, io: null });
   });
 
+  test('from a URL on a browser without AbortSignal.any and AbortSignal.timeout, and a URL-only export', async ({ page }) => {
+    await page.addInitScript(() => {
+      delete (AbortSignal as { any?: unknown }).any;
+      delete (AbortSignal as { timeout?: unknown }).timeout;
+    });
+    await openApp(page);
+    expect(await page.evaluate(() => 'any' in AbortSignal || 'timeout' in AbortSignal)).toBe(false);
+    const p = await openTab(page, 'From a URL', 'url');
+    await p.getByRole('button', { name: 'Analyze URL' }).click();
+    await expect(cell(sub(p, 'hdr10_hevc10.mp4'), 'HDR')).toHaveText('PQ');
+    await expect(p.getByRole('button', { name: 'Analyze URL' })).toBeEnabled();
+    await expect(p.locator('.list > p.err')).toHaveCount(0);
+    await extra(page, 'url', (u) => u.results.length === 1);
+    await page.getByRole('button', { name: 'Copy JSON' }).click();
+    await expect(page.locator('.export-note')).toContainText(/Copied the URL results to the clipboard\.|The browser blocked copying\./);
+  });
+
   test('check: presets, the rules editor with sizeBasis and hdr, verdicts, violations and unknown hints', async ({ page }) => {
     await loadSamples(page);
     const p = await openTab(page, 'Check rules', 'check');
