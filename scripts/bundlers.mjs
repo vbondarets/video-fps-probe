@@ -98,8 +98,11 @@ function storeDir() {
   return process.env.BUNDLERS_CACHE ? ['--store-dir', join(process.env.BUNDLERS_CACHE, 'pnpm-store')] : [];
 }
 
+const PM_PACKAGES = { pnpm: 'pnpm', yarn: '@yarnpkg/cli-dist' };
+const latestPins = {};
+
 function pinOf(name, latest) {
-  return latest ? 'latest' : versions().runtimes[name];
+  return latest ? (latestPins[name] ?? 'latest') : versions().runtimes[name];
 }
 
 function packageManager(pm, latest = false) {
@@ -296,7 +299,7 @@ function latestVersion(name, env, cwd) {
 
 export function latestManifest(root, target, lookup) {
   const path = join(root, 'package.json');
-  const resolved = target.pm === 'bun' || target.pm === 'deno' ? { [target.pm]: lookup(target.pm, 'runtime') } : {};
+  const resolved = target.pm === 'bun' || target.pm === 'deno' ? { [target.pm]: lookup(target.pm, 'runtime') } : PM_PACKAGES[target.pm] ? { [target.pm]: lookup(PM_PACKAGES[target.pm], 'package') } : {};
   if (!existsSync(path)) return { manifest: null, resolved };
   const manifest = readJson(path);
   for (const field of ['dependencies', 'devDependencies']) {
@@ -314,6 +317,7 @@ function writeLatestManifest(root, target, env) {
   if (manifest) writeJson(join(root, 'package.json'), manifest);
   const lockfile = LOCKFILES[target.pm];
   if (lockfile) rmSync(join(root, lockfile), { force: true });
+  if (PM_PACKAGES[target.pm] && resolved[target.pm]) latestPins[target.pm] = resolved[target.pm];
   return resolved;
 }
 

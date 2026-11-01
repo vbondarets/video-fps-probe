@@ -173,6 +173,9 @@ describe('the latest manifest of the weekly canary', () => {
       for (const [name, version] of Object.entries(deps)) expect(version, `${target.name} ${name}`).toBe(`package:${name}`);
       expect(manifest!.packageManager, target.name).toBeUndefined();
       if (target.pm === 'bun') expect(resolved.bun, target.name).toBe('runtime:bun');
+      if (target.pm === 'pnpm') expect(resolved.pnpm, target.name).toBe('package:pnpm');
+      if (target.pm === 'yarn') expect(resolved.yarn, target.name).toBe('package:@yarnpkg/cli-dist');
+      if (target.pm === 'npm') expect(Object.keys(resolved).sort(), target.name).toEqual(Object.keys(deps).sort());
     }
   });
 });
