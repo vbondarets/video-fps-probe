@@ -1,4 +1,4 @@
-import { execFileSync, execSync } from 'node:child_process';
+import { execSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
@@ -34,6 +34,7 @@ const WORKER_ASSET = /^(?:worker\/[^/]+\.worker\.js|standalone\/.+)$/;
 const DOM_GLOBALS = new Set(['window', 'document']);
 const GLOBAL_OBJECTS = new Set(['globalThis', 'self']);
 const TS_EXTENSION = /\.(?:[cm]?ts|tsx)$/;
+const OUTPUT_CALLS = /\bconsole\.|\bprocess\.(?:stdout|stderr|emitWarning)\b|\bdebugger\b/g;
 
 const posix = (p) => p.split('\\').join('/');
 const kb = (n) => `${(n / KB).toFixed(2)} KB`;
@@ -261,15 +262,23 @@ export function declarationClosureOf(dist, roots) {
   return seen;
 }
 
-function ssrImport(dist, files) {
+export function ssrImport(dist, files) {
   const urls = files.map((f) => pathToFileURL(join(dist, f)).href);
-  const script = `for (const url of ${JSON.stringify(urls)}) { try { await import(url); } catch (e) { console.log(url + ': ' + (e && e.message)); process.exitCode = 1; } }`;
+  const dir = mkdtempSync(join(tmpdir(), 'check-dist-ssr-'));
+  const report = join(dir, 'failures.json');
+  const script = `import { writeFileSync } from 'node:fs'; const failed = []; for (const url of ${JSON.stringify(urls)}) { try { await import(url); } catch (e) { failed.push(url + ': ' + (e && e.message)); } } writeFileSync(${JSON.stringify(report)}, JSON.stringify(failed));`;
   try {
-    execFileSync(process.execPath, ['--input-type=module', '-e', script], { cwd: REPO_ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-    return [];
-  } catch (e) {
-    const lines = `${e.stdout ?? ''}`.trim().split('\n').filter(Boolean);
-    return lines.length > 0 ? lines : [`${e.message}`];
+    const child = spawnSync(process.execPath, ['--input-type=module', '-e', script], { cwd: REPO_ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    const failed = existsSync(report) ? JSON.parse(readFileSync(report, 'utf8')) : [];
+    const out = [...failed];
+    for (const [name, text] of [['stdout', child.stdout], ['stderr', child.stderr]]) {
+      for (const line of `${text ?? ''}`.split(/\r?\n/).filter(Boolean)) out.push(`the import wrote to ${name}: ${line}`);
+    }
+    if (child.error) out.push(child.error.message);
+    else if (child.status !== 0 || !existsSync(report)) out.push(`the import exited with ${child.status ?? child.signal}${existsSync(report) ? '' : ' before it reported its failures'}`);
+    return out;
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
   }
 }
 
@@ -337,6 +346,10 @@ export function checkDist({ pack = true, ssr = true, repo = REPO_ROOT } = {}) {
     }
     if (/import\.meta\.env/.test(text)) fail(`${file}: import.meta.env`);
     if (/__fpsProbe/.test(text)) fail(`${file}: __fpsProbe`);
+  }
+  for (const file of files.filter((f) => /\.c?js$/.test(f))) {
+    const found = [...new Set((texts.get(file) ?? readFileSync(join(dist, file), 'utf8')).match(OUTPUT_CALLS) ?? [])];
+    if (found.length > 0) fail(`${file}: ${found.join(', ')}, and the package writes nothing to the console, stdout or stderr`);
   }
 
   const scans = new Map([...texts].filter(([f]) => f.endsWith('.js')).map(([f, text]) => [f, scanCode(text, f)]));
@@ -548,6 +561,27 @@ export function runSelfTest() {
     expectProblem('a .d.cts with a .js specifier fails', problemsOf({ 'cjs/a.d.cts': "export type { X } from './x.js';\n", 'cjs/x.d.cts': 'export type X = 1;\n' }), 'cjs/a.d.cts: specifier ./x.js does not name a .cjs file', true);
     expectProblem('a .d.cts with a missing target fails', problemsOf({ 'cjs/a.d.cts': "export type { X } from './y.cjs';\n" }), 'cjs/a.d.cts: import ./y.cjs does not resolve inside dist (no cjs/y.d.cts)', true);
     expectProblem('a .d.cts no require types reach fails', problemsOf({ 'cjs/a.d.cts': 'export type X = 1;\n' }), "cjs/a.d.cts: no require types reach it", true);
+
+    const writes = 'and the package writes nothing to the console, stdout or stderr';
+    expectProblem('a planted console.warn in a dist module fails', problemsOf({ 'core/x.js': "export const x = () => console.warn('x');\n" }), `core/x.js: console., ${writes}`, true);
+    expectProblem('process.stdout, process.stderr and process.emitWarning in the CommonJS copy fail', problemsOf({ 'cjs/a.cjs': "exports.a = () => { process.stdout.write('a'); process.stderr.write('b'); process.emitWarning('c'); };\n" }), `cjs/a.cjs: process.stdout, process.stderr, process.emitWarning, ${writes}`, true);
+    expectProblem('a debugger statement in a standalone worker fails', problemsOf({ 'standalone/own.worker.js': 'self.onmessage = () => { debugger; };\n' }), `standalone/own.worker.js: debugger, ${writes}`, true);
+    expectProblem('a module that names no console, process output or debugger passes', problemsOf({ 'core/x.js': "export const x = () => ['consoles', 'process.exit', 'debuggers'];\n" }), writes, false);
+
+    const ssr = mkdtempSync(join(tmpdir(), 'check-dist-ssr-test-'));
+    try {
+      writeFileSync(join(ssr, 'package.json'), `${JSON.stringify({ type: 'module' })}\n`);
+      writeFileSync(join(ssr, 'quiet.js'), 'export const q = 1;\n');
+      writeFileSync(join(ssr, 'noisy.js'), "process.stderr.write('planted noise\\n');\nconsole.log('planted log');\nexport const n = 1;\n");
+      writeFileSync(join(ssr, 'broken.js'), "throw new Error('planted failure');\n");
+      expectProblem('an SSR import of a quiet module passes', ssrImport(ssr, ['quiet.js']), '', false);
+      const noisy = ssrImport(ssr, ['quiet.js', 'noisy.js']);
+      expectProblem('an SSR import that writes to stderr fails', noisy, 'the import wrote to stderr: planted noise', true);
+      expectProblem('an SSR import that writes to stdout fails', noisy, 'the import wrote to stdout: planted log', true);
+      expectProblem('an SSR import that throws fails with its message', ssrImport(ssr, ['broken.js']), 'broken.js: planted failure', true);
+    } finally {
+      rmSync(ssr, { recursive: true, force: true });
+    }
 
     writeFileSync(join(repo, 'package.json'), `${JSON.stringify({ name: 'check-dist-self-test', exports: { '.': { types: './dist/index.d.ts', default: './dist/index.js' } } })}\n`);
     const typed = { 'index.js': "export { x } from './core/x.js';\n", 'index.d.ts': "export type { X } from './core/types.js';\n", 'core/x.js': 'export const x = 1;\n', 'core/types.d.ts': "export type X = import('./rational.js').R;\n", 'core/rational.d.ts': 'export type R = number;\n' };
