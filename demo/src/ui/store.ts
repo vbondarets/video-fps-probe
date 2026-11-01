@@ -3,6 +3,7 @@ import { isAbortError as isAbort, type AnalyzeProgress, type FileResult, type Ma
 import { lazyProbeFrom } from 'video-fps-probe/client/lazy';
 import { entryOf, redeployed } from './deploy.ts';
 import type { ExportAction, ExportOutcome } from './deviceInfo.ts';
+import { getExtras, type Extras } from './extras.ts';
 
 export type CompareEngine = 'mp4box' | 'mediabunny' | 'rvfc';
 
@@ -36,6 +37,7 @@ declare global {
     __fpsProbe?: {
       readonly results: FileResult[];
       readonly pending: number;
+      readonly extras: Extras;
       runEngine(index: number, engine: CompareEngine): Promise<FileResult>;
     };
   }
@@ -206,8 +208,30 @@ export function loadDevice(): Promise<DeviceModule> {
 }
 
 export function exportJson(action: ExportAction): Promise<ExportOutcome> {
-  const run = (d: DeviceModule) => d.exportResults(state.rows, { matroskaMode: state.mode }, action);
+  const run = (d: DeviceModule) => d.exportResults(state.rows, { matroskaMode: state.mode }, action, getExtras());
   return device ? run(device) : loadDevice().then(run);
+}
+
+export interface FileEntry {
+  readonly id: number;
+  readonly file: File;
+}
+
+let filesCache: { key: string; files: readonly FileEntry[] } = { key: '', files: [] };
+
+function filesOf(s: State): readonly FileEntry[] {
+  const key = s.rows.map((r) => r.id).join(',');
+  if (key !== filesCache.key) filesCache = { key, files: s.rows.map((r) => ({ id: r.id, file: r.file })) };
+  return filesCache.files;
+}
+
+const subscribe = (listener: () => void) => {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+};
+
+export function useFiles(): readonly FileEntry[] {
+  return useSyncExternalStore(subscribe, () => filesOf(state));
 }
 
 export function useStore(): State {
@@ -228,6 +252,9 @@ window.__fpsProbe = {
   },
   get pending() {
     return state.rows.filter((r) => r.busy).length;
+  },
+  get extras() {
+    return getExtras();
   },
   runEngine(index, engine) {
     const row = state.rows.filter((r) => r.result)[index];

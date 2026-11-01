@@ -460,6 +460,187 @@ footer .env {
   overflow-wrap: anywhere;
 }
 
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 1rem 0 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.tabs [role='tab'][aria-selected='true'] {
+  color: var(--acc-fg);
+  background: var(--acc);
+  border-color: var(--acc);
+}
+
+.panel {
+  padding-top: 0.75rem;
+}
+
+.intro {
+  margin: 0 0 0.6rem;
+}
+
+.note {
+  margin: 0 0 0.6rem;
+  padding: 0.5rem 0.7rem;
+  color: var(--mut);
+  border-left: 3px solid var(--warn);
+  background: var(--card);
+  border-radius: 0 6px 6px 0;
+}
+
+.intro code,
+.note code,
+.code-line code {
+  overflow-wrap: anywhere;
+}
+
+.snippets {
+  margin-bottom: 0.25rem;
+}
+
+details.code {
+  margin: 0 0 0.6rem;
+  padding: 0.45rem 0.7rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+details.code > summary {
+  font-weight: 600;
+}
+
+.code-block {
+  margin-top: 0.5rem;
+}
+
+.code-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.6rem;
+}
+
+.code-head h4 {
+  margin: 0;
+}
+
+.code-head button {
+  padding: 0.15rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+.code-block pre {
+  margin: 0.35rem 0 0;
+  padding: 0.6rem 0.7rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.settings {
+  margin: 0 0 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.settings p {
+  margin: 0.4rem 0 0;
+}
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: 0.6rem 0.75rem;
+}
+
+.fields label,
+.settings label.block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.fields label.wide {
+  grid-column: 1 / -1;
+}
+
+.fields label > span,
+.settings label.block > span {
+  font-size: 0.8rem;
+  color: var(--mut);
+}
+
+.settings input[type='text'],
+.settings input[type='url'],
+.settings textarea {
+  width: 100%;
+  min-width: 0;
+  font: inherit;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.35rem 0.5rem;
+}
+
+.settings textarea {
+  font: 0.85rem/1.4 ui-monospace, Consolas, monospace;
+}
+
+.settings label.block {
+  margin-top: 0.6rem;
+}
+
+.checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 1.2rem;
+  margin-top: 0.6rem;
+}
+
+.sub {
+  padding: 0.8rem 0.9rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.sub header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.2rem 0.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.sub header h3 {
+  flex: 1 1 14rem;
+}
+
+.plan {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+}
+
 .meta {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
@@ -480,7 +661,8 @@ footer .env {
 }
 
 .code-line code {
-  overflow-wrap: anywhere;
+  font-weight: 700;
+  color: var(--err);
 }
 
 .hdr {
@@ -488,8 +670,80 @@ footer .env {
   border-color: var(--warn);
 }
 
+.verdict.pass {
+  color: var(--ok);
+  border-color: var(--ok);
+}
+
+.verdict.warn,
+.sev.warn {
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+.verdict.fail,
+.sev.fail {
+  color: var(--err);
+  border-color: var(--err);
+}
+
+.verdict.unknown,
+.sev.unknown {
+  color: var(--acc);
+  border-color: var(--acc);
+}
+
+.violations {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.violations li {
+  margin: 0.3rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.violations li.unknown {
+  color: var(--acc);
+}
+
+table.codes td {
+  white-space: normal;
+  min-width: 12rem;
+}
+
+.classes {
+  margin: 0.3rem 0 0;
+}
+
+.classes div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.6rem;
+  margin: 0.25rem 0;
+}
+
+.classes dt {
+  min-width: 7rem;
+  font-weight: 700;
+}
+
+.classes dd {
+  margin: 0;
+  flex: 1 1 16rem;
+}
+
+.panel-body h3 {
+  margin: 1rem 0 0.25rem;
+}
+
 @media (max-width: 480px) {
   .meta {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tabs [role='tab'] {
+    flex: 1 1 auto;
   }
 }

@@ -75,7 +75,12 @@ export interface ExportDocument {
   environment: Environment;
   settings: ExportSettings;
   results: (FileResult & { compare?: Record<string, FileResult> })[];
+  header?: unknown;
+  url?: unknown;
+  check?: unknown;
 }
+
+export type ExportExtras = Readonly<Partial<Record<'header' | 'url' | 'check', unknown>>>;
 
 export type ExportAction = 'download' | 'copy';
 
@@ -218,7 +223,7 @@ export function buildMeta(name: 'build-time' | 'build-commit'): string | null {
   return document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`)?.content || null;
 }
 
-export function buildExport(rows: readonly ExportRow[], settings: ExportSettings, env: Environment): ExportDocument {
+export function buildExport(rows: readonly ExportRow[], settings: ExportSettings, env: Environment, extras: ExportExtras = {}): ExportDocument {
   const results = rows.flatMap((row) => {
     if (!row.result) return [];
     const compare: Record<string, FileResult> = {};
@@ -237,6 +242,9 @@ export function buildExport(rows: readonly ExportRow[], settings: ExportSettings
     environment: env,
     settings: { matroskaMode: settings.matroskaMode },
     results,
+    ...(extras.header !== undefined && { header: extras.header }),
+    ...(extras.url !== undefined && { url: extras.url }),
+    ...(extras.check !== undefined && { check: extras.check }),
   };
 }
 
@@ -272,8 +280,8 @@ async function copyText(text: string): Promise<boolean> {
   }
 }
 
-export function exportResults(rows: readonly ExportRow[], settings: ExportSettings, action: ExportAction): Promise<ExportOutcome> {
-  const doc = buildExport(rows, settings, collectEnvironment());
+export function exportResults(rows: readonly ExportRow[], settings: ExportSettings, action: ExportAction, extras: ExportExtras = {}): Promise<ExportOutcome> {
+  const doc = buildExport(rows, settings, collectEnvironment(), extras);
   const text = JSON.stringify(doc, null, 2);
   const n = doc.results.length;
   const what = `${n} result${n === 1 ? '' : 's'}`;
