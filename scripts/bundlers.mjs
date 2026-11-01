@@ -28,6 +28,7 @@ const DEAD_REGISTRY = 'http://127.0.0.1:9/';
 const TARBALL = 'video-fps-probe.tgz';
 const LOCKFILES = { npm: 'package-lock.json', pnpm: 'pnpm-lock.yaml', yarn: 'yarn.lock', bun: 'bun.lock' };
 const PACKAGE = 'video-fps-probe';
+const PACKAGE_KEY = /^"?video-fps-probe(?:@|"?:|"?$)/;
 const OFFLINE = process.env.BUNDLERS_OFFLINE === '1';
 const WIN = process.platform === 'win32';
 
@@ -232,7 +233,7 @@ export function lockfileChanges(pmName, before, after) {
   const changed = [];
   for (const path of new Set([...a.keys(), ...b.keys()])) {
     if ((a.get(path) ?? 0) === (b.get(path) ?? 0)) continue;
-    if (path.includes(PACKAGE)) continue;
+    if (path.split(' > ').some((segment) => PACKAGE_KEY.test(segment))) continue;
     changed.push(path);
   }
   return changed;

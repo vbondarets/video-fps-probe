@@ -73,6 +73,13 @@ describe('the lockfile check of bundlers setup', () => {
     expect(lockfileChanges('pnpm', PNPM_BEFORE, moved)).toEqual(["packages > vite@8.3.5 > resolution: {integrity: sha512-a}", "packages > vite@8.3.5 > resolution: {integrity: sha512-c}"]);
   });
 
+  it('names a moved entry in the yarn root workspace, whose key starts with the package name', () => {
+    const before = '"vite@npm:8.3.5":\n  version: 8.3.5\n\n"video-fps-probe-bundlers-yarn-pnp@workspace:.":\n  version: 0.0.0-use.local\n  dependencies:\n    vite: "npm:8.3.5"\n';
+    const after = `${before.replace('  dependencies:\n', '  dependencies:\n    video-fps-probe: "file:./video-fps-probe.tgz"\n')}\n"video-fps-probe@file:./video-fps-probe.tgz::locator=video-fps-probe-bundlers-yarn-pnp%40workspace%3A.":\n  version: 0.4.1\n  checksum: 10c0/abc\n`;
+    expect(lockfileChanges('yarn', before, after)).toEqual([]);
+    expect(lockfileChanges('yarn', before, after.replace('vite: "npm:8.3.5"', 'vite: "npm:8.3.4"'))).toEqual(['"video-fps-probe-bundlers-yarn-pnp@workspace:." > dependencies > vite: "npm:8.3.5"', '"video-fps-probe-bundlers-yarn-pnp@workspace:." > dependencies > vite: "npm:8.3.4"']);
+  });
+
   it('reads the text bun.lock with trailing commas', () => {
     const before = '{\n  "lockfileVersion": 1,\n  "workspaces": {\n    "": {\n      "dependencies": {\n        "vite": "8.3.5",\n      },\n    },\n  },\n  "packages": {\n    "vite": ["vite@8.3.5", "", {}, "sha512-a"],\n  }\n}\n';
     const after = before.replace('"vite": "8.3.5",', '"video-fps-probe": "./video-fps-probe.tgz",\n        "vite": "8.3.5",').replace('"packages": {', '"packages": {\n    "video-fps-probe": ["video-fps-probe@./video-fps-probe.tgz", {}, "sha512-b"],');
