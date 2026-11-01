@@ -311,7 +311,27 @@ test.describe('every 0.4.0 capability in the demo', () => {
     expect(shown).toMatchObject({ fps: { exact: 24 }, sizeBasis: 'display', hdr: 'reject' });
     for (const r of results) await expect(sub(p, r.name).locator('.verdict')).toHaveText(check(r, shown).verdict);
     await p.locator('details.code > summary').click();
-    await expect(p.locator('.code-block[data-snippet="browser"] code')).toContainText("check(result, { ...veoExtend.rules, sizeBasis: 'display', hdr: 'reject' })");
+    const browser = p.locator('.code-block[data-snippet="browser"] code');
+    await expect(browser).toContainText("check(result, { ...veoExtend.rules, sizeBasis: 'display', hdr: 'reject' })");
+
+    const edited: CheckRules = { ...shown, fps: { exact: 30 } };
+    await p.getByLabel('Rules (JSON)').fill(JSON.stringify(edited, null, 2));
+    await expect(p.getByLabel('Preset')).toHaveValue('');
+    await expect(browser).toContainText("check(result, { ...rules, sizeBasis: 'display', hdr: 'reject' })");
+    await expect(browser).not.toContainText('veoExtend');
+    for (const r of results) await expect(sub(p, r.name).locator('.verdict')).toHaveText(check(r, edited).verdict);
+
+    await p.getByLabel('Preset').selectOption('veoExtend');
+    await expect(browser).toContainText('veoExtend.rules');
+    await p.getByRole('combobox', { name: /^hdr/ }).selectOption('warn');
+    await expect(p.getByLabel('Preset')).toHaveValue('veoExtend');
+    await expect(browser).toContainText("check(result, { ...veoExtend.rules, sizeBasis: 'display', hdr: 'warn' })");
+    await p.getByLabel('Rules (JSON)').fill(JSON.stringify({ ...edited, sizeBasis: "fo'o" }));
+    await expect(p.getByLabel('Preset')).toHaveValue('');
+    await expect(p.locator('form .err')).toHaveText(`sizeBasis must be stored or display, got "fo'o"`);
+    await expect(p.getByRole('combobox', { name: /^sizeBasis/ })).toHaveValue('');
+    await expect(browser).not.toContainText("fo'o");
+    await expect(browser).toContainText("check(result, { ...rules, hdr: 'reject' })");
 
     await p.getByLabel('Rules (JSON)').fill('{"fps": ');
     await expect(p.locator('form .err')).toHaveText(/^Not valid JSON: /);
