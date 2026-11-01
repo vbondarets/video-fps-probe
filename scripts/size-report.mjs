@@ -9,7 +9,9 @@ import { brotliCompressSync, constants, gzipSync } from 'node:zlib';
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const KB = 1000;
 const DEMO_TABS =
-  'Re-set on 2026-11-01 when the demo gained a tab for every 0.4.0 entry (header only, a URL, check rules, error codes) and the color, aspect, timing and layout details on each card, which grew the main chunk by 1.76 KB and the CSS by 0.65 KB. The tabs, the detail cells, the code snippets and every library entry they import are lazy chunks outside these rows. The initial row went to its measurement plus 3 percent, rounded up to 0.5 KB, and each first analysis row moved by the same 2.5 KB, so the gap between it and the initial limit, which the edge cases of --self-test build on, stays as it was. The library rows of report/size-matrix.md did not move.';
+  'Re-set on 2026-11-01 when the demo gained a tab for every 0.4.0 entry (header only, a URL, check rules, error codes) and the color, aspect, timing and layout details on each card, which grew the main chunk by 1.76 KB and the CSS by 0.65 KB. The tabs, the detail cells, the code snippets and every library entry they import are lazy chunks, which these rows did not count until the re-set below. The initial row went to its measurement plus 3 percent, rounded up to 0.5 KB, and each first analysis row moved by the same 2.5 KB, so the gap between it and the initial limit, which the edge cases of --self-test build on, stays as it was. The library rows of report/size-matrix.md did not move.';
+const DEMO_COUNTED =
+  'Re-set again on 2026-11-01 when these rows began to count every chunk the page fetches in their flow, measured with Playwright request logging: the Files tab, open by default, loads its code at page load (FilesIntro and the snippets chunk it shows), and every first result loads the result details (Details with the error and warning texts, and meta with the color and aspect step it imports). That added 2.82 KB to the initial row and 12.81 KB to each first analysis row. Each limit went to its measurement plus 3 percent, rounded up to 0.5 KB. The result details have no budget of their own, so their growth shows in the first analysis rows, and the edge cases of --self-test add a synthetic 12 KB details chunk to fill the wider gap between these rows and the initial limit.';
 const DEMO_RESET =
   'Re-set on 2026-10-24 to the measurement plus 3 percent, rounded up to 0.5 KB, when the owner decided that the demo size does not matter as long as the package stays tiny: the size promise of the package is the consumer size matrix (report/size-matrix.md), whose budgets did not change. That left 2.51 to 3.16 KB of headroom across these rows when set (3.0 to 3.4 percent of the measurements; the Headroom column has the current figure), so a demo regression smaller than the headroom of its row passes this check unnoticed.';
 
@@ -76,34 +78,34 @@ export const BUDGETS = {
     why: 'Sparkline and segment table, fetched by the main chunk (React.lazy) when a result card has a rate profile. Measured 0.94 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB. Not required: when the chunk is merged into the main chunk, the main budget catches the growth.',
   },
   initial: {
-    label: 'initial (main + CSS + worker entry)',
-    limit: 85.5 * KB,
+    label: 'initial (main + CSS + worker entry + Files tab)',
+    limit: 88.5 * KB,
     required: true,
-    why: `The demo page, its styles and the worker entry, before any file is analysed. Nothing else loads without a user action: the device info chunk (footer line and JSON export) is fetched on idle after the first result, or by the first export, so it is in neither the initial row nor the first analysis rows. Measured 80.49 KB when set, and the previous limit was 85 KB. ${DEMO_RESET} ${DEMO_TABS} Measured 82,996 bytes then, against the previous limit of 83 KB.`,
+    why: `The demo page, its styles, the worker entry and the code of the Files tab, which is open by default, before any file is analysed. Nothing else loads without a user action: each other tab loads its chunks on its first open, and the device info chunk (footer line and JSON export) is fetched on idle after the first result, or by the first export, so it is in neither the initial row nor the first analysis rows. A page opened on another tab by its address loads that tab instead of the Files tab code. Measured 80.49 KB when set, and the previous limit was 85 KB. ${DEMO_RESET} ${DEMO_TABS} Measured 82,996 bytes then, against the previous limit of 83 KB. ${DEMO_COUNTED} Measured 85,855 bytes then, against the previous limit of 85.5 KB.`,
   },
   firstMp4: {
-    label: 'first MP4 analysis (initial + client + ISO BMFF + shared chunks)',
-    limit: 105.5 * KB,
+    label: 'first MP4 analysis (initial + client + ISO BMFF + shared chunks + result details)',
+    limit: 120 * KB,
     required: true,
-    why: `The demo page plus the first MP4 or MOV result. Measured 99,995 bytes when set, 5 bytes under the previous 100 KB limit. ${DEMO_RESET} Counts the lazy probe client and the shared statistics chunk too, so the component limits (85.5 + 3.5 + 5 + 13.5 = 107.5 KB) add up to more than this limit and it can trip while every component is within its own limit. ${DEMO_TABS} Measured 103,191 bytes then, against the previous limit of 103 KB.`,
+    why: `The demo page plus the first MP4 or MOV result. Measured 99,995 bytes when set, 5 bytes under the previous 100 KB limit. ${DEMO_RESET} Counts the lazy probe client, the shared statistics chunk and the result details too. ${DEMO_TABS} Measured 103,191 bytes then, against the previous limit of 103 KB. ${DEMO_COUNTED} Measured 116,054 bytes then, against the previous limit of 105.5 KB.`,
   },
   firstVfrMp4: {
-    label: 'first VFR MP4 analysis (initial + client + ISO BMFF + segments + shared chunks)',
-    limit: 107.5 * KB,
+    label: 'first VFR MP4 analysis (initial + client + ISO BMFF + segments + shared chunks + result details)',
+    limit: 121.5 * KB,
     required: false,
-    why: `The demo page plus the first MP4 or MOV result with unequal frame rates, which also fetches the rate profile chunk. Measured 101.84 KB when set, and the previous limit was 102.0 KB, set by the owner's rule of 2026-10-23 for the demo only (the measurement rounded up to 0.5 KB). ${DEMO_RESET} With the lazy probe client and the shared statistics chunk, the component limits (85.5 + 3.5 + 5 + 13.5 + 2 = 109.5 KB) add up to more than this limit, so it can trip while every component is within its own limit. Not required: without a segments chunk the code lives elsewhere and the first MP4 analysis covers it. ${DEMO_TABS} Measured 105,035 bytes then, against the previous limit of 105 KB.`,
+    why: `The demo page plus the first MP4 or MOV result with unequal frame rates, which also fetches the rate profile chunk. Measured 101.84 KB when set, and the previous limit was 102.0 KB, set by the owner's rule of 2026-10-23 for the demo only (the measurement rounded up to 0.5 KB). ${DEMO_RESET} Counts the lazy probe client, the shared statistics chunk and the result details too, but not the rate profile panel of the card. Not required: without a segments chunk the code lives elsewhere and the first MP4 analysis covers it. ${DEMO_TABS} Measured 105,035 bytes then, against the previous limit of 105 KB. ${DEMO_COUNTED} Measured 117,898 bytes then, against the previous limit of 107.5 KB.`,
   },
   firstMkvEstimate: {
-    label: 'first Matroska analysis without DefaultDuration (initial + client + Matroska + rfps + shared chunks)',
-    limit: 108 * KB,
+    label: 'first Matroska analysis without DefaultDuration (initial + client + Matroska + rfps + shared chunks + result details)',
+    limit: 122.5 * KB,
     required: false,
-    why: `The demo page plus the first MKV or WebM result of a file without DefaultDuration, such as a browser MediaRecorder recording, which also fetches the ffprobe frame rate estimate. Measured 102.06 KB when set, and the limit was the measurement plus 3 percent, rounded up to 0.5 KB, as for the other demo rows. Not required: without an rfps chunk the code lives in the Matroska chunk and the first Matroska analysis covers it. ${DEMO_TABS} Measured 106,007 bytes then, against the previous limit of 105.5 KB.`,
+    why: `The demo page plus the first MKV or WebM result of a file without DefaultDuration, such as a browser MediaRecorder recording, which also fetches the ffprobe frame rate estimate. Measured 102.06 KB when set, and the limit was the measurement plus 3 percent, rounded up to 0.5 KB, as for the other demo rows. Not required: without an rfps chunk the code lives in the Matroska chunk and the first Matroska analysis covers it. ${DEMO_TABS} Measured 106,007 bytes then, against the previous limit of 105.5 KB. ${DEMO_COUNTED} Measured 118,870 bytes then, against the previous limit of 108 KB.`,
   },
   firstMkv: {
-    label: 'first Matroska analysis (initial + client + Matroska + shared chunks)',
-    limit: 104.5 * KB,
+    label: 'first Matroska analysis (initial + client + Matroska + shared chunks + result details)',
+    limit: 119 * KB,
     required: true,
-    why: `The demo page plus the first MKV or WebM result. Measured 98.87 KB when set, and the previous limit was 100 KB. ${DEMO_RESET} Counts the lazy probe client and the shared statistics chunk too, so the component limits (85.5 + 3.5 + 5 + 12.5 = 106.5 KB) add up to more than this limit and it can trip while every component is within its own limit. ${DEMO_TABS} Measured 102,420 bytes then, against the previous limit of 102 KB.`,
+    why: `The demo page plus the first MKV or WebM result. Measured 98.87 KB when set, and the previous limit was 100 KB. ${DEMO_RESET} Counts the lazy probe client, the shared statistics chunk and the result details too. ${DEMO_TABS} Measured 102,420 bytes then, against the previous limit of 102 KB. ${DEMO_COUNTED} Measured 115,283 bytes then, against the previous limit of 104.5 KB.`,
   },
 };
 
@@ -298,6 +300,8 @@ const PARSER_KINDS = new Set(['isobmff', 'matroska', 'segments', 'rfps', 'parser
 const PATH_ENTRIES = ['isobmff', 'matroska', 'segments', 'rfps'];
 const CHAIN_KINDS = new Set(['isobmff', 'matroska', 'segments', 'rfps', 'mp4box', 'mediabunny']);
 const WORKER_BUDGETS = Object.entries(BUDGETS).filter(([, b]) => b.entry);
+const PAGE_START_TAB = /^FilesIntro[-.]/;
+const isPageStart = (file, kind) => kind === 'demo-tab' && PAGE_START_TAB.test(basename(file));
 
 export function workerBudgetOf(file) {
   const name = basename(file);
@@ -494,7 +498,10 @@ export function discover(distDir) {
     }
   }
   const entryDeps = new Map();
-  for (const f of js) if (PATH_ENTRIES.includes(kinds.get(f)) || kinds.get(f) === 'client') entryDeps.set(f, closureOf(f, fileSet, texts));
+  for (const f of js) {
+    const kind = kinds.get(f);
+    if (PATH_ENTRIES.includes(kind) || kind === 'client' || kind === 'demo-details' || isPageStart(f, kind)) entryDeps.set(f, closureOf(f, fileSet, texts));
+  }
   const chains = requestChains({ files, kinds, workers, texts });
   return { files, kinds, method, workerMethod, notes, main, entryDeps, workers: [...workers], chains };
 }
@@ -514,13 +521,18 @@ export function buildReport(distDir) {
     brotli: list.reduce((n, c) => n + c.brotli, 0),
   });
   const has = (kind) => chunks.some((c) => c.kind === kind);
-  const initialChunks = ofKind(['main', 'worker', 'shared', 'css']);
+  const withDeps = (list) => {
+    const out = new Set(list.map((c) => c.file));
+    for (const c of list) for (const dep of entryDeps.get(c.file) ?? []) out.add(dep);
+    return out;
+  };
+  const pageChunks = ofKind(['main', 'worker', 'shared', 'css']);
+  const startFiles = withDeps(chunks.filter((c) => isPageStart(c.file, c.kind)));
+  for (const c of pageChunks) startFiles.delete(c.file);
+  const initialChunks = [...pageChunks, ...[...startFiles].map((f) => byFile.get(f)).filter(Boolean)];
   const initial = totalOf(initialChunks);
   const afterChunks = (wanted) => {
-    const entries = ofKind(wanted);
-    const clients = ofKind(['client']);
-    const extra = new Set([...entries, ...clients].map((c) => c.file));
-    for (const p of [...entries, ...clients]) for (const dep of entryDeps.get(p.file) ?? []) extra.add(dep);
+    const extra = withDeps([...ofKind(wanted), ...ofKind(['client']), ...ofKind(['demo-details'])]);
     for (const c of initialChunks) extra.delete(c.file);
     const list = [...initialChunks, ...[...extra].map((f) => byFile.get(f)).filter(Boolean)];
     return { present: has('main') && wanted.every(has), total: totalOf(list) };
@@ -602,12 +614,12 @@ export function renderMarkdown(report, label) {
   for (const c of report.chunks) out.push(`| ${c.file} | ${c.kind} | ${kb(c.raw)} | ${kb(c.gzip)} | ${kb(c.brotli)} |`);
   const vfrBuilt = report.budgets.find((b) => b.key === 'firstVfrMp4')?.gzip != null;
   const rows = [
-    ['initial', 'main + CSS + worker entry', report.composites.initial],
-    ['first MP4 analysis', 'initial + client chunk + ISO BMFF chunk + shared chunks', report.composites.firstMp4],
-    ...(vfrBuilt ? [['first VFR MP4 analysis', 'initial + client chunk + ISO BMFF chunk + segments chunk + shared chunks', report.composites.firstVfrMp4]] : []),
-    ['first Matroska analysis', 'initial + client chunk + Matroska chunk + shared chunks', report.composites.firstMatroska],
+    ['initial', 'main + CSS + worker entry + Files tab chunks', report.composites.initial],
+    ['first MP4 analysis', 'initial + client chunk + ISO BMFF chunk + shared chunks + result detail chunks', report.composites.firstMp4],
+    ...(vfrBuilt ? [['first VFR MP4 analysis', 'initial + client chunk + ISO BMFF chunk + segments chunk + shared chunks + result detail chunks', report.composites.firstVfrMp4]] : []),
+    ['first Matroska analysis', 'initial + client chunk + Matroska chunk + shared chunks + result detail chunks', report.composites.firstMatroska],
     ...(report.budgets.find((b) => b.key === 'firstMkvEstimate')?.gzip != null
-      ? [['first Matroska analysis without DefaultDuration', 'initial + client chunk + Matroska chunk + rfps chunk + shared chunks', report.composites.firstMatroskaEstimate]]
+      ? [['first Matroska analysis without DefaultDuration', 'initial + client chunk + Matroska chunk + rfps chunk + shared chunks + result detail chunks', report.composites.firstMatroskaEstimate]]
       : []),
   ];
   for (const [name, what, t] of rows) out.push(`| **${name}** | ${what} | ${kb(t.raw)} | ${kb(t.gzip)} | ${kb(t.brotli)} |`);
@@ -655,6 +667,7 @@ function runSelfTest() {
     segments: 1_000,
     rateProfile: 700,
     css: 100,
+    details: 0,
     isobmffShared: 0,
     segmentsShared: 0,
     client: 0,
@@ -668,7 +681,12 @@ function runSelfTest() {
     if (parallel && sizes.segmentsShared > 0) groups['segments-G1.js'] = ['common-S1.js'];
     const client = sizes.client > 0 ? 'const l=()=>import("./probe-L1.js");' : '';
     const other = extraWorker ? 'const o=new Worker(new URL("assets/other.worker-O1.js",import.meta.url),{type:"module"});' : '';
-    write(dir, 'assets/index-M1.js', mainText(`${client}${other}${filler(sizes.main)}`));
+    const details = sizes.details > 0 ? 'const d=()=>import("./Details-E1.js");' : '';
+    write(dir, 'assets/index-M1.js', mainText(`${client}${other}${details}${filler(sizes.main)}`));
+    if (details) {
+      write(dir, 'assets/Details-E1.js', `import{a as e}from"./codes-O1.js";${filler(sizes.details - 1_000)}`);
+      write(dir, 'assets/codes-O1.js', filler(1_000));
+    }
     write(dir, 'assets/probe.worker-W1.js', workerText(filler(sizes.worker), groups));
     if (client) write(dir, 'assets/probe-L1.js', `import{a as e}from"./index-M1.js";${filler(sizes.client)}`);
     if (other) write(dir, 'assets/other.worker-O1.js', `self.onmessage=e=>{postMessage(1)};${filler(1_000)}`);
@@ -775,6 +793,7 @@ function runSelfTest() {
         isobmff: limit('isobmff') + 3_000,
         matroska: limit('matroska') + 3_000,
         isobmffShared: limit('parser-shared') + 1_000,
+        details: 15_000,
         css: 5_500,
       }),
     );
@@ -793,15 +812,16 @@ function runSelfTest() {
     );
     expectEq('fit: no failures', fit.failures.length, 0);
     for (const key of ['parser-shared', 'segments', 'rateProfile', 'firstVfrMp4']) expectEq(`fit: ${key}`, statusOf(fit, key), 'ok');
-    const edgeInitial = buildReport(build('edge-initial', { main: limit('main') - 800, worker: limit('worker') - 800, css: 7_500 }));
+    const edgeInitial = buildReport(build('edge-initial', { main: limit('main') - 800, worker: limit('worker') - 800, css: limit('initial') - limit('main') - limit('worker') + 2_600 }));
     expectEq('edge: initial over while main and worker are ok', statusOf(edgeInitial, 'initial'), 'over');
     expectEq('edge: main ok', statusOf(edgeInitial, 'main'), 'ok');
     expectEq('edge: worker ok', statusOf(edgeInitial, 'worker'), 'ok');
     const nearInitial = (main, worker) => ({ main, worker, css: limit('initial') - main - worker - 800 });
     const clientOver = (composite, lazy) => Math.min(limit('client') - 200, Math.max(0, limit(composite) - limit('initial') - lazy + 800));
-    const sharedLazy = limit('isobmff') - 500 + limit('parser-shared') - 500;
+    const DETAILS = 12_000;
+    const sharedLazy = limit('isobmff') - 500 + limit('parser-shared') - 500 + DETAILS;
     const edgeShared = buildReport(
-      build('edge-shared', { ...nearInitial(limit('main') - 500, limit('worker') - 500), isobmff: limit('isobmff') - 500, isobmffShared: limit('parser-shared') - 500, client: clientOver('firstMp4', sharedLazy) }),
+      build('edge-shared', { ...nearInitial(limit('main') - 500, limit('worker') - 500), isobmff: limit('isobmff') - 500, isobmffShared: limit('parser-shared') - 500, details: DETAILS, client: clientOver('firstMp4', sharedLazy) }),
     );
     expectEq('edge: parser shared chunk counts toward the first MP4 analysis', statusOf(edgeShared, 'firstMp4'), 'over');
     expectEq('edge: parser budget still ok', statusOf(edgeShared, 'isobmff'), 'ok');
@@ -814,7 +834,8 @@ function runSelfTest() {
         isobmff: limit('isobmff') - 500,
         segments: limit('segments') - 100,
         segmentsShared: limit('parser-shared') - 300,
-        client: clientOver('firstVfrMp4', limit('isobmff') - 500 + limit('segments') - 100 + limit('parser-shared') - 300),
+        details: DETAILS,
+        client: clientOver('firstVfrMp4', limit('isobmff') - 500 + limit('segments') - 100 + limit('parser-shared') - 300 + DETAILS),
       }),
     );
     expectEq('edge: segments shared chunk counts toward the first VFR MP4 analysis', statusOf(edgeVfr, 'firstVfrMp4'), 'over');
@@ -871,6 +892,25 @@ function runSelfTest() {
     write(poolDir, 'assets/pool-Q1.js', `import{a as e}from"./index-M1.js";${filler(500)}`);
     write(poolDir, 'assets/index-M1.js', mainText(`const q=()=>import("./pool-Q1.js");${filler(1_000)}`));
     expectEq('client: a pool chunk is a client chunk', buildReport(poolDir).chunks.find((c) => c.file === 'assets/pool-Q1.js')?.kind, 'client');
+    const pageDir = build('page-start', { details: 3_000 });
+    write(pageDir, 'assets/FilesIntro-T1.js', `import{a as e}from"./index-M1.js";import{s as n}from"./snippets-N1.js";${filler(300)}`);
+    write(pageDir, 'assets/HeaderPanel-H1.js', `import{a as e}from"./index-M1.js";import{s as n}from"./snippets-N1.js";${filler(2_000)}`);
+    write(pageDir, 'assets/snippets-N1.js', filler(2_000));
+    write(pageDir, 'assets/index-M1.js', mainText(`const d=()=>import("./Details-E1.js");const t=()=>import("./FilesIntro-T1.js");const u=()=>import("./HeaderPanel-H1.js");${filler(1_000)}`));
+    const page = buildReport(pageDir);
+    const inRow = (row, f) => page.composites[row].files.includes(`assets/${f}`);
+    expectEq('page start: the Files tab chunk is part of initial', inRow('initial', 'FilesIntro-T1.js'), true);
+    expectEq('page start: a static dependency of the Files tab chunk is part of initial', inRow('initial', 'snippets-N1.js'), true);
+    expectEq('page start: another tab is not part of initial', inRow('initial', 'HeaderPanel-H1.js'), false);
+    expectEq('page start: another tab is not part of the first MP4 analysis', inRow('firstMp4', 'HeaderPanel-H1.js'), false);
+    expectEq('page start: the result details are not part of initial', inRow('initial', 'Details-E1.js'), false);
+    expectEq('result details: part of the first MP4 analysis', inRow('firstMp4', 'Details-E1.js'), true);
+    expectEq('result details: a static dependency is part of the first MP4 analysis', inRow('firstMp4', 'codes-O1.js'), true);
+    expectEq('result details: part of the first Matroska analysis', inRow('firstMatroska', 'Details-E1.js'), true);
+    expectEq('result details: part of the first VFR MP4 analysis', inRow('firstVfrMp4', 'codes-O1.js'), true);
+    const pageGz = (files) => files.reduce((n, f) => n + page.chunks.find((c) => c.file === `assets/${f}`).gzip, 0);
+    expectEq('page start: initial is the page plus the Files tab chunks', page.composites.initial.gzip, pageGz(['index-M1.js', 'probe.worker-W1.js', 'index-C1.css', 'FilesIntro-T1.js', 'snippets-N1.js']));
+    expectEq('page start: no failures', page.failures.length, 0);
     const overClient = buildReport(build('client-over', { client: limit('client') + 1_000 }));
     expectEq('client over is a failure', statusOf(overClient, 'client'), 'over');
     const twoWorkers = buildReport(build('two-workers', {}, { extraWorker: true }));
