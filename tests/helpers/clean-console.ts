@@ -1,5 +1,5 @@
 import { test as base, type BrowserContext, type ConsoleMessage, type Page, type Request, type Response } from '@playwright/test';
-import { decodeMappings } from '../../scripts/size-matrix.mjs';
+import { decodeMappings } from '../../scripts/source-map.mjs';
 
 export { expect } from '@playwright/test';
 export type { Browser, BrowserContext, Locator, Page } from '@playwright/test';
