@@ -1,0 +1,10 @@
+{
+  "name": "video-fps-probe-bundlers-bun-install",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "mediabunny": "1.62.1",
+    "mp4box": "2.4.1",
+    "vite": "8.3.5"
+  }
+}
