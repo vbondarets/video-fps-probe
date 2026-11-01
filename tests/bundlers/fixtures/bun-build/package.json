@@ -1,0 +1,5 @@
+{
+  "name": "video-fps-probe-bundlers-bun-build",
+  "private": true,
+  "type": "module"
+}

@@ -1,0 +1,8 @@
+{
+  "imports": {
+    "video-fps-probe": "npm:video-fps-probe",
+    "video-fps-probe/": "npm:/video-fps-probe/"
+  },
+  "nodeModulesDir": "auto",
+  "lock": false
+}
