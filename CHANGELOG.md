@@ -4,6 +4,18 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## Unreleased
 
+### Added
+
+- A clean console in CI ([console](docs/api.md#console)). In Chromium, Firefox and WebKit the demo e2e, consumer and bundler smoke tests fail on a console warning or error of a page or a worker, a page error, a crash, an unhandled rejection or a failed same-origin script request, unless the test names the noise it causes and why. In Node 24 and 22.12 every server entry, by `import`, by `require()` and from the CommonJS copy, must write nothing to stdout or stderr and emit no warning. Lint bans console calls in `src/`, and check-dist bans them in `dist/`.
+
+### Fixed
+
+- The mediabunny engine no longer lets mediabunny print an error when a log argument has no string form, such as an object without a prototype. The argument shows as its type in the `mediabunny log:` warning, and the mediabunny engine chunk grows by 0.01 KB.
+
+### Changed
+
+- The docs name the log levels the mp4box and mediabunny engines set for the whole thread ([engines](docs/api.md#descriptors)), and the one `ExperimentalWarning` Node 22.12 prints for `require()` of the ESM build, which `--disable-warning=ExperimentalWarning` or a newer Node avoids ([CommonJS](docs/api.md#commonjs)).
+
 ## 0.4.1 - 2026-11-01
 
 ### Added
