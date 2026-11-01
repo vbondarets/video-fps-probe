@@ -13,14 +13,14 @@ const DEMO_TABS =
 const DEMO_COUNTED =
   'Re-set again on 2026-11-01 when these rows began to count every chunk the page fetches in their flow, measured with Playwright request logging: the Files tab, open by default, loads its code at page load (FilesIntro and the snippets chunk it shows), and every first result loads the result details (Details with the error and warning texts, and meta with the color and aspect step it imports). That added 2.82 KB to the initial row and 12.81 KB to each first analysis row. Each limit went to its measurement plus 3 percent, rounded up to 0.5 KB. The result details have no budget of their own, so their growth shows in the first analysis rows, and the edge cases of --self-test add a synthetic 12 KB details chunk to fill the wider gap between these rows and the initial limit.';
 const DEMO_RESET =
-  'Re-set on 2026-10-24 to the measurement plus 3 percent, rounded up to 0.5 KB, when the owner decided that the demo size does not matter as long as the package stays tiny: the size promise of the package is the consumer size matrix (report/size-matrix.md), whose budgets did not change. That left 2.51 to 3.16 KB of headroom across these rows when set (3.0 to 3.4 percent of the measurements; the Headroom column has the current figure), so a demo regression smaller than the headroom of its row passes this check unnoticed.';
+  'Re-set on 2026-10-24 to the measurement plus 3 percent, rounded up to 0.5 KB, when the owner decided that the demo size does not matter as long as the package stays tiny: the size promise of the package is the consumer size matrix (report/size-matrix.md), whose budgets did not change. That left 2.51 to 3.16 KB of headroom across these rows when set (3.0 to 3.4 percent of the measurements, and the Headroom column has the current figure), so a demo regression smaller than the headroom of its row passes this check unnoticed.';
 
 export const BUDGETS = {
   main: {
     label: 'main (React + UI)',
     limit: 77 * KB,
     required: true,
-    why: `Demo page only. React and ReactDOM are about 67.5 KB gzip of it. Measured 74.44 KB when set, 0.56 KB under the previous 75 KB limit. ${DEMO_RESET} The Vite build log prints a larger figure for the same chunk (its own gzip settings); the budget is checked against the level 9 numbers of this script only.`,
+    why: `Demo page only. React and ReactDOM are about 67.5 KB gzip of it. Measured 74.44 KB when set, 0.56 KB under the previous 75 KB limit. ${DEMO_RESET} The Vite build log prints a larger figure for the same chunk (its own gzip settings), but the budget is checked against the level 9 numbers of this script only.`,
   },
   worker: {
     label: 'worker entry (core + glue)',
@@ -81,7 +81,7 @@ export const BUDGETS = {
     label: 'initial (main + CSS + worker entry + Files tab)',
     limit: 88.5 * KB,
     required: true,
-    why: `The demo page, its styles, the worker entry and the code of the Files tab, which is open by default, before any file is analysed. Nothing else loads without a user action: each other tab loads its chunks on its first open, and the device info chunk (footer line and JSON export) is fetched on idle after the first result, or by the first export, so it is in neither the initial row nor the first analysis rows. A page opened on another tab by its address loads that tab instead of the Files tab code. Measured 80.49 KB when set, and the previous limit was 85 KB. ${DEMO_RESET} ${DEMO_TABS} Measured 82,996 bytes then, against the previous limit of 83 KB. ${DEMO_COUNTED} Measured 85,855 bytes then, against the previous limit of 85.5 KB.`,
+    why: `The demo page, its styles, the worker entry and the code of the Files tab, which is open by default, before any file is analysed. Nothing else loads without a user action: each other tab loads its chunks on its first open, and the device info chunk (footer line and JSON export) is fetched on idle after the first result, or by the first export, so it is in neither the initial row nor the first analysis rows. A page opened on another tab by its address loads that tab in addition to the Files tab code. The worker entry counts here although the browser fetches it with the first analysis, so this row errs on the high side. Measured 80.49 KB when set, and the previous limit was 85 KB. ${DEMO_RESET} ${DEMO_TABS} Measured 82,996 bytes then, against the previous limit of 83 KB. ${DEMO_COUNTED} Measured 85,855 bytes then, against the previous limit of 85.5 KB.`,
   },
   firstMp4: {
     label: 'first MP4 analysis (initial + client + ISO BMFF + shared chunks + result details)',

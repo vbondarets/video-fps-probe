@@ -10,13 +10,13 @@
       "key": "main",
       "label": "main (React + UI)",
       "limit": 77000,
-      "gzip": 76289,
-      "headroom": 711,
+      "gzip": 76281,
+      "headroom": 719,
       "status": "ok",
       "files": [
-        "assets/index-C3AQNM8V.js"
+        "assets/index-B9uEl--w.js"
       ],
-      "why": "Demo page only. React and ReactDOM are about 67.5 KB gzip of it. Measured 74.44 KB when set, 0.56 KB under the previous 75 KB limit. Re-set on 2026-10-24 to the measurement plus 3 percent, rounded up to 0.5 KB, when the owner decided that the demo size does not matter as long as the package stays tiny: the size promise of the package is the consumer size matrix (report/size-matrix.md), whose budgets did not change. That left 2.51 to 3.16 KB of headroom across these rows when set (3.0 to 3.4 percent of the measurements; the Headroom column has the current figure), so a demo regression smaller than the headroom of its row passes this check unnoticed. The Vite build log prints a larger figure for the same chunk (its own gzip settings); the budget is checked against the level 9 numbers of this script only."
+      "why": "Demo page only. React and ReactDOM are about 67.5 KB gzip of it. Measured 74.44 KB when set, 0.56 KB under the previous 75 KB limit. Re-set on 2026-10-24 to the measurement plus 3 percent, rounded up to 0.5 KB, when the owner decided that the demo size does not matter as long as the package stays tiny: the size promise of the package is the consumer size matrix (report/size-matrix.md), whose budgets did not change. That left 2.51 to 3.16 KB of headroom across these rows when set (3.0 to 3.4 percent of the measurements, and the Headroom column has the current figure), so a demo regression smaller than the headroom of its row passes this check unnoticed. The Vite build log prints a larger figure for the same chunk (its own gzip settings), but the budget is checked against the level 9 numbers of this script only."
     },
     {
       "key": "worker",
@@ -70,11 +70,11 @@
       "key": "client",
       "label": "lazy probe client",
       "limit": 3500,
-      "gzip": 3258,
-      "headroom": 242,
+      "gzip": 3256,
+      "headroom": 244,
       "status": "ok",
       "files": [
-        "assets/probe-HyQzQnwo.js"
+        "assets/probe-DODEFAZa.js"
       ],
       "why": "The probe client fetched by the main chunk on the first file, before the worker starts: the demo probe (probe-*) with createProbeClient, its engine routing, the worker pool and the rVFC descriptor. The fallback chain, compare and the in-thread runner are separate lazy chunks that the first analysis does not load. Counted in every first analysis row. Re-set when the demo moved from the module worker pool (1.04 KB) to the library probe client: measured 2.73 KB; limit is measured plus 10 percent, rounded up to 0.5 KB, which is also the consumer client chunk budget. Not required: without a client chunk the client is part of the main chunk."
     },
@@ -82,11 +82,11 @@
       "key": "rvfc",
       "label": "lazy rVFC fallback",
       "limit": 2500,
-      "gzip": 2196,
-      "headroom": 304,
+      "gzip": 2194,
+      "headroom": 306,
       "status": "ok",
       "files": [
-        "assets/rvfc-BL7MiKJL.js"
+        "assets/rvfc-BgbYyOAC.js"
       ],
       "why": "Loaded on demand from the main chunk. Measured 1.94 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB. Re-checked in 0.2.0, measured 2.20 KB with 0.30 KB of headroom left: the measurement plus 3 percent, rounded up to 0.5 KB, the rule of every demo row with less than 0.5 KB of headroom in 0.2.0, is the same 2.5 KB."
     },
@@ -118,11 +118,11 @@
       "key": "rateProfile",
       "label": "lazy rate profile panel (UI)",
       "limit": 1500,
-      "gzip": 940,
-      "headroom": 560,
+      "gzip": 938,
+      "headroom": 562,
       "status": "ok",
       "files": [
-        "assets/RateProfile-BpAU2aMU.js"
+        "assets/RateProfile-Cb5-XSfI.js"
       ],
       "why": "Sparkline and segment table, fetched by the main chunk (React.lazy) when a result card has a rate profile. Measured 0.94 KB when set; limit is measured plus 10 percent, rounded up to 0.5 KB. Not required: when the chunk is merged into the main chunk, the main budget catches the growth."
     },
@@ -130,105 +130,105 @@
       "key": "initial",
       "label": "initial (main + CSS + worker entry + Files tab)",
       "limit": 88500,
-      "gzip": 85855,
-      "headroom": 2645,
+      "gzip": 85844,
+      "headroom": 2656,
       "status": "ok",
       "files": [
-        "assets/index-C3AQNM8V.js",
+        "assets/index-B9uEl--w.js",
         "assets/index-CCGOZeqb.css",
         "assets/probe.worker-D8WkIWPu.js",
-        "assets/FilesIntro-C8gUfqEZ.js",
-        "assets/snippets-DumnjOkS.js"
+        "assets/FilesIntro-mNvcVOM4.js",
+        "assets/snippets-Dd0rQl61.js"
       ],
-      "why": "The demo page, its styles, the worker entry and the code of the Files tab, which is open by default, before any file is analysed. Nothing else loads without a user action: each other tab loads its chunks on its first open, and the device info chunk (footer line and JSON export) is fetched on idle after the first result, or by the first export, so it is in neither the initial row nor the first analysis rows. A page opened on another tab by its address loads that tab instead of the Files tab code. Measured 80.49 KB when set, and the previous limit was 85 KB. Re-set on 2026-10-24 to the measurement plus 3 percent, rounded up to 0.5 KB, when the owner decided that the demo size does not matter as long as the package stays tiny: the size promise of the package is the consumer size matrix (report/size-matrix.md), whose budgets did not change. That left 2.51 to 3.16 KB of headroom across these rows when set (3.0 to 3.4 percent of the measurements; the Headroom column has the current figure), so a demo regression smaller than the headroom of its row passes this check unnoticed. Re-set on 2026-11-01 when the demo gained a tab for every 0.4.0 entry (header only, a URL, check rules, error codes) and the color, aspect, timing and layout details on each card, which grew the main chunk by 1.76 KB and the CSS by 0.65 KB. The tabs, the detail cells, the code snippets and every library entry they import are lazy chunks, which these rows did not count until the re-set below. The initial row went to its measurement plus 3 percent, rounded up to 0.5 KB, and each first analysis row moved by the same 2.5 KB, so the gap between it and the initial limit, which the edge cases of --self-test build on, stays as it was. The library rows of report/size-matrix.md did not move. Measured 82,996 bytes then, against the previous limit of 83 KB. Re-set again on 2026-11-01 when these rows began to count every chunk the page fetches in their flow, measured with Playwright request logging: the Files tab, open by default, loads its code at page load (FilesIntro and the snippets chunk it shows), and every first result loads the result details (Details with the error and warning texts, and meta with the color and aspect step it imports). That added 2.82 KB to the initial row and 12.81 KB to each first analysis row. Each limit went to its measurement plus 3 percent, rounded up to 0.5 KB. The result details have no budget of their own, so their growth shows in the first analysis rows, and the edge cases of --self-test add a synthetic 12 KB details chunk to fill the wider gap between these rows and the initial limit. Measured 85,855 bytes then, against the previous limit of 85.5 KB."
+      "why": "The demo page, its styles, the worker entry and the code of the Files tab, which is open by default, before any file is analysed. Nothing else loads without a user action: each other tab loads its chunks on its first open, and the device info chunk (footer line and JSON export) is fetched on idle after the first result, or by the first export, so it is in neither the initial row nor the first analysis rows. A page opened on another tab by its address loads that tab in addition to the Files tab code. The worker entry counts here although the browser fetches it with the first analysis, so this row errs on the high side. Measured 80.49 KB when set, and the previous limit was 85 KB. Re-set on 2026-10-24 to the measurement plus 3 percent, rounded up to 0.5 KB, when the owner decided that the demo size does not matter as long as the package stays tiny: the size promise of the package is the consumer size matrix (report/size-matrix.md), whose budgets did not change. That left 2.51 to 3.16 KB of headroom across these rows when set (3.0 to 3.4 percent of the measurements, and the Headroom column has the current figure), so a demo regression smaller than the headroom of its row passes this check unnoticed. Re-set on 2026-11-01 when the demo gained a tab for every 0.4.0 entry (header only, a URL, check rules, error codes) and the color, aspect, timing and layout details on each card, which grew the main chunk by 1.76 KB and the CSS by 0.65 KB. The tabs, the detail cells, the code snippets and every library entry they import are lazy chunks, which these rows did not count until the re-set below. The initial row went to its measurement plus 3 percent, rounded up to 0.5 KB, and each first analysis row moved by the same 2.5 KB, so the gap between it and the initial limit, which the edge cases of --self-test build on, stays as it was. The library rows of report/size-matrix.md did not move. Measured 82,996 bytes then, against the previous limit of 83 KB. Re-set again on 2026-11-01 when these rows began to count every chunk the page fetches in their flow, measured with Playwright request logging: the Files tab, open by default, loads its code at page load (FilesIntro and the snippets chunk it shows), and every first result loads the result details (Details with the error and warning texts, and meta with the color and aspect step it imports). That added 2.82 KB to the initial row and 12.81 KB to each first analysis row. Each limit went to its measurement plus 3 percent, rounded up to 0.5 KB. The result details have no budget of their own, so their growth shows in the first analysis rows, and the edge cases of --self-test add a synthetic 12 KB details chunk to fill the wider gap between these rows and the initial limit. Measured 85,855 bytes then, against the previous limit of 85.5 KB."
     },
     {
       "key": "firstMp4",
       "label": "first MP4 analysis (initial + client + ISO BMFF + shared chunks + result details)",
       "limit": 120000,
-      "gzip": 116054,
-      "headroom": 3946,
+      "gzip": 116040,
+      "headroom": 3960,
       "status": "ok",
       "files": [
-        "assets/index-C3AQNM8V.js",
+        "assets/index-B9uEl--w.js",
         "assets/index-CCGOZeqb.css",
         "assets/probe.worker-D8WkIWPu.js",
-        "assets/FilesIntro-C8gUfqEZ.js",
-        "assets/snippets-DumnjOkS.js",
+        "assets/FilesIntro-mNvcVOM4.js",
+        "assets/snippets-Dd0rQl61.js",
         "assets/isobmff-t7r03qZL.js",
-        "assets/probe-HyQzQnwo.js",
-        "assets/Details-DVaZ2-jA.js",
+        "assets/probe-DODEFAZa.js",
+        "assets/Details-BLLu4UBK.js",
         "assets/meta-DH-u6tRM.js",
         "assets/stats-D7rtHUCj.js",
         "assets/codes-DU-T6sdX.js",
         "assets/color-CcJ22pzc.js"
       ],
-      "why": "The demo page plus the first MP4 or MOV result. Measured 99,995 bytes when set, 5 bytes under the previous 100 KB limit. Re-set on 2026-10-24 to the measurement plus 3 percent, rounded up to 0.5 KB, when the owner decided that the demo size does not matter as long as the package stays tiny: the size promise of the package is the consumer size matrix (report/size-matrix.md), whose budgets did not change. That left 2.51 to 3.16 KB of headroom across these rows when set (3.0 to 3.4 percent of the measurements; the Headroom column has the current figure), so a demo regression smaller than the headroom of its row passes this check unnoticed. Counts the lazy probe client, the shared statistics chunk and the result details too. Re-set on 2026-11-01 when the demo gained a tab for every 0.4.0 entry (header only, a URL, check rules, error codes) and the color, aspect, timing and layout details on each card, which grew the main chunk by 1.76 KB and the CSS by 0.65 KB. The tabs, the detail cells, the code snippets and every library entry they import are lazy chunks, which these rows did not count until the re-set below. The initial row went to its measurement plus 3 percent, rounded up to 0.5 KB, and each first analysis row moved by the same 2.5 KB, so the gap between it and the initial limit, which the edge cases of --self-test build on, stays as it was. The library rows of report/size-matrix.md did not move. Measured 103,191 bytes then, against the previous limit of 103 KB. Re-set again on 2026-11-01 when these rows began to count every chunk the page fetches in their flow, measured with Playwright request logging: the Files tab, open by default, loads its code at page load (FilesIntro and the snippets chunk it shows), and every first result loads the result details (Details with the error and warning texts, and meta with the color and aspect step it imports). That added 2.82 KB to the initial row and 12.81 KB to each first analysis row. Each limit went to its measurement plus 3 percent, rounded up to 0.5 KB. The result details have no budget of their own, so their growth shows in the first analysis rows, and the edge cases of --self-test add a synthetic 12 KB details chunk to fill the wider gap between these rows and the initial limit. Measured 116,054 bytes then, against the previous limit of 105.5 KB."
+      "why": "The demo page plus the first MP4 or MOV result. Measured 99,995 bytes when set, 5 bytes under the previous 100 KB limit. Re-set on 2026-10-24 to the measurement plus 3 percent, rounded up to 0.5 KB, when the owner decided that the demo size does not matter as long as the package stays tiny: the size promise of the package is the consumer size matrix (report/size-matrix.md), whose budgets did not change. That left 2.51 to 3.16 KB of headroom across these rows when set (3.0 to 3.4 percent of the measurements, and the Headroom column has the current figure), so a demo regression smaller than the headroom of its row passes this check unnoticed. Counts the lazy probe client, the shared statistics chunk and the result details too. Re-set on 2026-11-01 when the demo gained a tab for every 0.4.0 entry (header only, a URL, check rules, error codes) and the color, aspect, timing and layout details on each card, which grew the main chunk by 1.76 KB and the CSS by 0.65 KB. The tabs, the detail cells, the code snippets and every library entry they import are lazy chunks, which these rows did not count until the re-set below. The initial row went to its measurement plus 3 percent, rounded up to 0.5 KB, and each first analysis row moved by the same 2.5 KB, so the gap between it and the initial limit, which the edge cases of --self-test build on, stays as it was. The library rows of report/size-matrix.md did not move. Measured 103,191 bytes then, against the previous limit of 103 KB. Re-set again on 2026-11-01 when these rows began to count every chunk the page fetches in their flow, measured with Playwright request logging: the Files tab, open by default, loads its code at page load (FilesIntro and the snippets chunk it shows), and every first result loads the result details (Details with the error and warning texts, and meta with the color and aspect step it imports). That added 2.82 KB to the initial row and 12.81 KB to each first analysis row. Each limit went to its measurement plus 3 percent, rounded up to 0.5 KB. The result details have no budget of their own, so their growth shows in the first analysis rows, and the edge cases of --self-test add a synthetic 12 KB details chunk to fill the wider gap between these rows and the initial limit. Measured 116,054 bytes then, against the previous limit of 105.5 KB."
     },
     {
       "key": "firstVfrMp4",
       "label": "first VFR MP4 analysis (initial + client + ISO BMFF + segments + shared chunks + result details)",
       "limit": 121500,
-      "gzip": 117898,
-      "headroom": 3602,
+      "gzip": 117884,
+      "headroom": 3616,
       "status": "ok",
       "files": [
-        "assets/index-C3AQNM8V.js",
+        "assets/index-B9uEl--w.js",
         "assets/index-CCGOZeqb.css",
         "assets/probe.worker-D8WkIWPu.js",
-        "assets/FilesIntro-C8gUfqEZ.js",
-        "assets/snippets-DumnjOkS.js",
+        "assets/FilesIntro-mNvcVOM4.js",
+        "assets/snippets-Dd0rQl61.js",
         "assets/isobmff-t7r03qZL.js",
         "assets/segments-DsEqrXyL.js",
-        "assets/probe-HyQzQnwo.js",
-        "assets/Details-DVaZ2-jA.js",
+        "assets/probe-DODEFAZa.js",
+        "assets/Details-BLLu4UBK.js",
         "assets/meta-DH-u6tRM.js",
         "assets/stats-D7rtHUCj.js",
         "assets/codes-DU-T6sdX.js",
         "assets/color-CcJ22pzc.js"
       ],
-      "why": "The demo page plus the first MP4 or MOV result with unequal frame rates, which also fetches the rate profile chunk. Measured 101.84 KB when set, and the previous limit was 102.0 KB, set by the owner's rule of 2026-10-23 for the demo only (the measurement rounded up to 0.5 KB). Re-set on 2026-10-24 to the measurement plus 3 percent, rounded up to 0.5 KB, when the owner decided that the demo size does not matter as long as the package stays tiny: the size promise of the package is the consumer size matrix (report/size-matrix.md), whose budgets did not change. That left 2.51 to 3.16 KB of headroom across these rows when set (3.0 to 3.4 percent of the measurements; the Headroom column has the current figure), so a demo regression smaller than the headroom of its row passes this check unnoticed. Counts the lazy probe client, the shared statistics chunk and the result details too, but not the rate profile panel of the card. Not required: without a segments chunk the code lives elsewhere and the first MP4 analysis covers it. Re-set on 2026-11-01 when the demo gained a tab for every 0.4.0 entry (header only, a URL, check rules, error codes) and the color, aspect, timing and layout details on each card, which grew the main chunk by 1.76 KB and the CSS by 0.65 KB. The tabs, the detail cells, the code snippets and every library entry they import are lazy chunks, which these rows did not count until the re-set below. The initial row went to its measurement plus 3 percent, rounded up to 0.5 KB, and each first analysis row moved by the same 2.5 KB, so the gap between it and the initial limit, which the edge cases of --self-test build on, stays as it was. The library rows of report/size-matrix.md did not move. Measured 105,035 bytes then, against the previous limit of 105 KB. Re-set again on 2026-11-01 when these rows began to count every chunk the page fetches in their flow, measured with Playwright request logging: the Files tab, open by default, loads its code at page load (FilesIntro and the snippets chunk it shows), and every first result loads the result details (Details with the error and warning texts, and meta with the color and aspect step it imports). That added 2.82 KB to the initial row and 12.81 KB to each first analysis row. Each limit went to its measurement plus 3 percent, rounded up to 0.5 KB. The result details have no budget of their own, so their growth shows in the first analysis rows, and the edge cases of --self-test add a synthetic 12 KB details chunk to fill the wider gap between these rows and the initial limit. Measured 117,898 bytes then, against the previous limit of 107.5 KB."
+      "why": "The demo page plus the first MP4 or MOV result with unequal frame rates, which also fetches the rate profile chunk. Measured 101.84 KB when set, and the previous limit was 102.0 KB, set by the owner's rule of 2026-10-23 for the demo only (the measurement rounded up to 0.5 KB). Re-set on 2026-10-24 to the measurement plus 3 percent, rounded up to 0.5 KB, when the owner decided that the demo size does not matter as long as the package stays tiny: the size promise of the package is the consumer size matrix (report/size-matrix.md), whose budgets did not change. That left 2.51 to 3.16 KB of headroom across these rows when set (3.0 to 3.4 percent of the measurements, and the Headroom column has the current figure), so a demo regression smaller than the headroom of its row passes this check unnoticed. Counts the lazy probe client, the shared statistics chunk and the result details too, but not the rate profile panel of the card. Not required: without a segments chunk the code lives elsewhere and the first MP4 analysis covers it. Re-set on 2026-11-01 when the demo gained a tab for every 0.4.0 entry (header only, a URL, check rules, error codes) and the color, aspect, timing and layout details on each card, which grew the main chunk by 1.76 KB and the CSS by 0.65 KB. The tabs, the detail cells, the code snippets and every library entry they import are lazy chunks, which these rows did not count until the re-set below. The initial row went to its measurement plus 3 percent, rounded up to 0.5 KB, and each first analysis row moved by the same 2.5 KB, so the gap between it and the initial limit, which the edge cases of --self-test build on, stays as it was. The library rows of report/size-matrix.md did not move. Measured 105,035 bytes then, against the previous limit of 105 KB. Re-set again on 2026-11-01 when these rows began to count every chunk the page fetches in their flow, measured with Playwright request logging: the Files tab, open by default, loads its code at page load (FilesIntro and the snippets chunk it shows), and every first result loads the result details (Details with the error and warning texts, and meta with the color and aspect step it imports). That added 2.82 KB to the initial row and 12.81 KB to each first analysis row. Each limit went to its measurement plus 3 percent, rounded up to 0.5 KB. The result details have no budget of their own, so their growth shows in the first analysis rows, and the edge cases of --self-test add a synthetic 12 KB details chunk to fill the wider gap between these rows and the initial limit. Measured 117,898 bytes then, against the previous limit of 107.5 KB."
     },
     {
       "key": "firstMkv",
       "label": "first Matroska analysis (initial + client + Matroska + shared chunks + result details)",
       "limit": 119000,
-      "gzip": 115283,
-      "headroom": 3717,
+      "gzip": 115269,
+      "headroom": 3731,
       "status": "ok",
       "files": [
-        "assets/index-C3AQNM8V.js",
+        "assets/index-B9uEl--w.js",
         "assets/index-CCGOZeqb.css",
         "assets/probe.worker-D8WkIWPu.js",
-        "assets/FilesIntro-C8gUfqEZ.js",
-        "assets/snippets-DumnjOkS.js",
+        "assets/FilesIntro-mNvcVOM4.js",
+        "assets/snippets-Dd0rQl61.js",
         "assets/matroska-BWmt9eRf.js",
-        "assets/probe-HyQzQnwo.js",
-        "assets/Details-DVaZ2-jA.js",
+        "assets/probe-DODEFAZa.js",
+        "assets/Details-BLLu4UBK.js",
         "assets/meta-DH-u6tRM.js",
         "assets/stats-D7rtHUCj.js",
         "assets/codes-DU-T6sdX.js",
         "assets/color-CcJ22pzc.js"
       ],
-      "why": "The demo page plus the first MKV or WebM result. Measured 98.87 KB when set, and the previous limit was 100 KB. Re-set on 2026-10-24 to the measurement plus 3 percent, rounded up to 0.5 KB, when the owner decided that the demo size does not matter as long as the package stays tiny: the size promise of the package is the consumer size matrix (report/size-matrix.md), whose budgets did not change. That left 2.51 to 3.16 KB of headroom across these rows when set (3.0 to 3.4 percent of the measurements; the Headroom column has the current figure), so a demo regression smaller than the headroom of its row passes this check unnoticed. Counts the lazy probe client, the shared statistics chunk and the result details too. Re-set on 2026-11-01 when the demo gained a tab for every 0.4.0 entry (header only, a URL, check rules, error codes) and the color, aspect, timing and layout details on each card, which grew the main chunk by 1.76 KB and the CSS by 0.65 KB. The tabs, the detail cells, the code snippets and every library entry they import are lazy chunks, which these rows did not count until the re-set below. The initial row went to its measurement plus 3 percent, rounded up to 0.5 KB, and each first analysis row moved by the same 2.5 KB, so the gap between it and the initial limit, which the edge cases of --self-test build on, stays as it was. The library rows of report/size-matrix.md did not move. Measured 102,420 bytes then, against the previous limit of 102 KB. Re-set again on 2026-11-01 when these rows began to count every chunk the page fetches in their flow, measured with Playwright request logging: the Files tab, open by default, loads its code at page load (FilesIntro and the snippets chunk it shows), and every first result loads the result details (Details with the error and warning texts, and meta with the color and aspect step it imports). That added 2.82 KB to the initial row and 12.81 KB to each first analysis row. Each limit went to its measurement plus 3 percent, rounded up to 0.5 KB. The result details have no budget of their own, so their growth shows in the first analysis rows, and the edge cases of --self-test add a synthetic 12 KB details chunk to fill the wider gap between these rows and the initial limit. Measured 115,283 bytes then, against the previous limit of 104.5 KB."
+      "why": "The demo page plus the first MKV or WebM result. Measured 98.87 KB when set, and the previous limit was 100 KB. Re-set on 2026-10-24 to the measurement plus 3 percent, rounded up to 0.5 KB, when the owner decided that the demo size does not matter as long as the package stays tiny: the size promise of the package is the consumer size matrix (report/size-matrix.md), whose budgets did not change. That left 2.51 to 3.16 KB of headroom across these rows when set (3.0 to 3.4 percent of the measurements, and the Headroom column has the current figure), so a demo regression smaller than the headroom of its row passes this check unnoticed. Counts the lazy probe client, the shared statistics chunk and the result details too. Re-set on 2026-11-01 when the demo gained a tab for every 0.4.0 entry (header only, a URL, check rules, error codes) and the color, aspect, timing and layout details on each card, which grew the main chunk by 1.76 KB and the CSS by 0.65 KB. The tabs, the detail cells, the code snippets and every library entry they import are lazy chunks, which these rows did not count until the re-set below. The initial row went to its measurement plus 3 percent, rounded up to 0.5 KB, and each first analysis row moved by the same 2.5 KB, so the gap between it and the initial limit, which the edge cases of --self-test build on, stays as it was. The library rows of report/size-matrix.md did not move. Measured 102,420 bytes then, against the previous limit of 102 KB. Re-set again on 2026-11-01 when these rows began to count every chunk the page fetches in their flow, measured with Playwright request logging: the Files tab, open by default, loads its code at page load (FilesIntro and the snippets chunk it shows), and every first result loads the result details (Details with the error and warning texts, and meta with the color and aspect step it imports). That added 2.82 KB to the initial row and 12.81 KB to each first analysis row. Each limit went to its measurement plus 3 percent, rounded up to 0.5 KB. The result details have no budget of their own, so their growth shows in the first analysis rows, and the edge cases of --self-test add a synthetic 12 KB details chunk to fill the wider gap between these rows and the initial limit. Measured 115,283 bytes then, against the previous limit of 104.5 KB."
     },
     {
       "key": "firstMkvEstimate",
       "label": "first Matroska analysis without DefaultDuration (initial + client + Matroska + rfps + shared chunks + result details)",
       "limit": 122500,
-      "gzip": 118870,
-      "headroom": 3630,
+      "gzip": 118856,
+      "headroom": 3644,
       "status": "ok",
       "files": [
-        "assets/index-C3AQNM8V.js",
+        "assets/index-B9uEl--w.js",
         "assets/index-CCGOZeqb.css",
         "assets/probe.worker-D8WkIWPu.js",
-        "assets/FilesIntro-C8gUfqEZ.js",
-        "assets/snippets-DumnjOkS.js",
+        "assets/FilesIntro-mNvcVOM4.js",
+        "assets/snippets-Dd0rQl61.js",
         "assets/matroska-BWmt9eRf.js",
         "assets/rfps-DPb6M_p1.js",
-        "assets/probe-HyQzQnwo.js",
-        "assets/Details-DVaZ2-jA.js",
+        "assets/probe-DODEFAZa.js",
+        "assets/Details-BLLu4UBK.js",
         "assets/meta-DH-u6tRM.js",
         "assets/stats-D7rtHUCj.js",
         "assets/codes-DU-T6sdX.js",
@@ -240,166 +240,166 @@
   "composites": {
     "initial": {
       "files": [
-        "assets/index-C3AQNM8V.js",
+        "assets/index-B9uEl--w.js",
         "assets/index-CCGOZeqb.css",
         "assets/probe.worker-D8WkIWPu.js",
-        "assets/FilesIntro-C8gUfqEZ.js",
-        "assets/snippets-DumnjOkS.js"
+        "assets/FilesIntro-mNvcVOM4.js",
+        "assets/snippets-Dd0rQl61.js"
       ],
       "raw": 270785,
-      "gzip": 85855,
-      "brotli": 74561
+      "gzip": 85844,
+      "brotli": 74569
     },
     "firstMp4": {
       "files": [
-        "assets/index-C3AQNM8V.js",
+        "assets/index-B9uEl--w.js",
         "assets/index-CCGOZeqb.css",
         "assets/probe.worker-D8WkIWPu.js",
-        "assets/FilesIntro-C8gUfqEZ.js",
-        "assets/snippets-DumnjOkS.js",
+        "assets/FilesIntro-mNvcVOM4.js",
+        "assets/snippets-Dd0rQl61.js",
         "assets/isobmff-t7r03qZL.js",
-        "assets/probe-HyQzQnwo.js",
-        "assets/Details-DVaZ2-jA.js",
+        "assets/probe-DODEFAZa.js",
+        "assets/Details-BLLu4UBK.js",
         "assets/meta-DH-u6tRM.js",
         "assets/stats-D7rtHUCj.js",
         "assets/codes-DU-T6sdX.js",
         "assets/color-CcJ22pzc.js"
       ],
       "raw": 344278,
-      "gzip": 116054,
-      "brotli": 101936
+      "gzip": 116040,
+      "brotli": 101945
     },
     "firstVfrMp4": {
       "files": [
-        "assets/index-C3AQNM8V.js",
+        "assets/index-B9uEl--w.js",
         "assets/index-CCGOZeqb.css",
         "assets/probe.worker-D8WkIWPu.js",
-        "assets/FilesIntro-C8gUfqEZ.js",
-        "assets/snippets-DumnjOkS.js",
+        "assets/FilesIntro-mNvcVOM4.js",
+        "assets/snippets-Dd0rQl61.js",
         "assets/isobmff-t7r03qZL.js",
         "assets/segments-DsEqrXyL.js",
-        "assets/probe-HyQzQnwo.js",
-        "assets/Details-DVaZ2-jA.js",
+        "assets/probe-DODEFAZa.js",
+        "assets/Details-BLLu4UBK.js",
         "assets/meta-DH-u6tRM.js",
         "assets/stats-D7rtHUCj.js",
         "assets/codes-DU-T6sdX.js",
         "assets/color-CcJ22pzc.js"
       ],
       "raw": 347628,
-      "gzip": 117898,
-      "brotli": 103646
+      "gzip": 117884,
+      "brotli": 103655
     },
     "firstMatroska": {
       "files": [
-        "assets/index-C3AQNM8V.js",
+        "assets/index-B9uEl--w.js",
         "assets/index-CCGOZeqb.css",
         "assets/probe.worker-D8WkIWPu.js",
-        "assets/FilesIntro-C8gUfqEZ.js",
-        "assets/snippets-DumnjOkS.js",
+        "assets/FilesIntro-mNvcVOM4.js",
+        "assets/snippets-Dd0rQl61.js",
         "assets/matroska-BWmt9eRf.js",
-        "assets/probe-HyQzQnwo.js",
-        "assets/Details-DVaZ2-jA.js",
+        "assets/probe-DODEFAZa.js",
+        "assets/Details-BLLu4UBK.js",
         "assets/meta-DH-u6tRM.js",
         "assets/stats-D7rtHUCj.js",
         "assets/codes-DU-T6sdX.js",
         "assets/color-CcJ22pzc.js"
       ],
       "raw": 343370,
-      "gzip": 115283,
-      "brotli": 101309
+      "gzip": 115269,
+      "brotli": 101318
     },
     "firstMatroskaEstimate": {
       "files": [
-        "assets/index-C3AQNM8V.js",
+        "assets/index-B9uEl--w.js",
         "assets/index-CCGOZeqb.css",
         "assets/probe.worker-D8WkIWPu.js",
-        "assets/FilesIntro-C8gUfqEZ.js",
-        "assets/snippets-DumnjOkS.js",
+        "assets/FilesIntro-mNvcVOM4.js",
+        "assets/snippets-Dd0rQl61.js",
         "assets/matroska-BWmt9eRf.js",
         "assets/rfps-DPb6M_p1.js",
-        "assets/probe-HyQzQnwo.js",
-        "assets/Details-DVaZ2-jA.js",
+        "assets/probe-DODEFAZa.js",
+        "assets/Details-BLLu4UBK.js",
         "assets/meta-DH-u6tRM.js",
         "assets/stats-D7rtHUCj.js",
         "assets/codes-DU-T6sdX.js",
         "assets/color-CcJ22pzc.js"
       ],
       "raw": 350690,
-      "gzip": 118870,
-      "brotli": 104652
+      "gzip": 118856,
+      "brotli": 104661
     }
   },
   "chunks": [
     {
-      "file": "assets/CheckPanel-CLK0lLwN.js",
+      "file": "assets/CheckPanel-C8IS7eH9.js",
       "kind": "demo-tab",
-      "raw": 18902,
-      "gzip": 7684,
-      "brotli": 6921,
-      "hash": "edd40db21cf88a82"
+      "raw": 19057,
+      "gzip": 7732,
+      "brotli": 6982,
+      "hash": "19e05f0e59261d23"
     },
     {
-      "file": "assets/Compare-l6ANuiga.js",
+      "file": "assets/Compare-yCCvZTGN.js",
       "kind": "lazy",
       "raw": 2915,
-      "gzip": 1220,
-      "brotli": 1102,
+      "gzip": 1218,
+      "brotli": 1100,
       "hash": "7f50c2f986515205"
     },
     {
-      "file": "assets/Details-DVaZ2-jA.js",
+      "file": "assets/Details-BLLu4UBK.js",
       "kind": "demo-details",
       "raw": 3388,
-      "gzip": 1458,
-      "brotli": 1296,
+      "gzip": 1457,
+      "brotli": 1294,
       "hash": "0d0b803b50d266bb"
     },
     {
-      "file": "assets/ErrorsPanel-CUl2nWvU.js",
+      "file": "assets/ErrorsPanel-C7UaPTu0.js",
       "kind": "demo-tab",
       "raw": 2132,
-      "gzip": 663,
+      "gzip": 661,
       "brotli": 564,
       "hash": "a7a15b704a2ebd50"
     },
     {
-      "file": "assets/FilesIntro-C8gUfqEZ.js",
+      "file": "assets/FilesIntro-mNvcVOM4.js",
       "kind": "demo-tab",
       "raw": 357,
-      "gzip": 265,
-      "brotli": 218,
+      "gzip": 263,
+      "brotli": 207,
       "hash": "f203445a4fdd49b1"
     },
     {
-      "file": "assets/HeaderPanel-D86Jr2jU.js",
+      "file": "assets/HeaderPanel-CbkHqrXC.js",
       "kind": "demo-tab",
       "raw": 4889,
-      "gzip": 2068,
-      "brotli": 1819,
+      "gzip": 2065,
+      "brotli": 1813,
       "hash": "2b1d4df8810c3a57"
     },
     {
-      "file": "assets/RateProfile-BpAU2aMU.js",
+      "file": "assets/RateProfile-Cb5-XSfI.js",
       "kind": "rateProfile",
       "raw": 2166,
-      "gzip": 940,
-      "brotli": 852,
+      "gzip": 938,
+      "brotli": 849,
       "hash": "6efd6c4df7085506"
     },
     {
-      "file": "assets/SubCard-DduHQGV_.js",
+      "file": "assets/SubCard-CY_mtkwu.js",
       "kind": "other",
       "raw": 21219,
       "gzip": 8248,
-      "brotli": 7565,
+      "brotli": 7568,
       "hash": "7c65cc32c2340a59"
     },
     {
-      "file": "assets/UrlPanel-eYRrlVsI.js",
+      "file": "assets/UrlPanel-CUR1ViSR.js",
       "kind": "demo-tab",
       "raw": 13558,
-      "gzip": 5225,
-      "brotli": 4695,
+      "gzip": 5221,
+      "brotli": 4700,
       "hash": "1a7d19d16613f277"
     },
     {
@@ -435,11 +435,11 @@
       "hash": "59f62a9c050fe42e"
     },
     {
-      "file": "assets/compare-hTKVD93_.js",
+      "file": "assets/compare-DL9AZgxo.js",
       "kind": "client-compare",
       "raw": 2602,
-      "gzip": 1325,
-      "brotli": 1206,
+      "gzip": 1323,
+      "brotli": 1204,
       "hash": "e13cfada0638a085"
     },
     {
@@ -467,19 +467,19 @@
       "hash": "5271597453ca98ea"
     },
     {
-      "file": "assets/fallback-OlHRKQJS.js",
+      "file": "assets/fallback-yGlEIXQa.js",
       "kind": "client-fallback",
       "raw": 1011,
-      "gzip": 643,
-      "brotli": 571,
+      "gzip": 639,
+      "brotli": 564,
       "hash": "1cfd730d770259e3"
     },
     {
-      "file": "assets/index-C3AQNM8V.js",
+      "file": "assets/index-B9uEl--w.js",
       "kind": "main",
       "raw": 243408,
-      "gzip": 76289,
-      "brotli": 66027,
+      "gzip": 76281,
+      "brotli": 66042,
       "hash": "267aabf53051845b"
     },
     {
@@ -491,15 +491,15 @@
       "hash": "8071c94f5612dea5"
     },
     {
-      "file": "assets/inline-DZmlQxRx.js",
+      "file": "assets/inline-6_YBHhTA.js",
       "kind": "client-inline",
       "raw": 1121,
-      "gzip": 661,
-      "brotli": 575,
+      "gzip": 658,
+      "brotli": 573,
       "hash": "4aebd54e0f9c5bf6"
     },
     {
-      "file": "assets/isobmff-STXDlbcb.js",
+      "file": "assets/isobmff-Dx5qyjUv.js",
       "kind": "inline-own",
       "raw": 1411,
       "gzip": 797,
@@ -515,20 +515,20 @@
       "hash": "3ea518835f463cae"
     },
     {
-      "file": "assets/matroska-B5V5oxir.js",
-      "kind": "inline-own",
-      "raw": 31232,
-      "gzip": 12065,
-      "brotli": 10978,
-      "hash": "1c2c2ca8c3f24342"
-    },
-    {
       "file": "assets/matroska-BWmt9eRf.js",
       "kind": "matroska",
       "raw": 30848,
       "gzip": 11846,
       "brotli": 10759,
       "hash": "e252478b832987f2"
+    },
+    {
+      "file": "assets/matroska-Bm3PVlqm.js",
+      "kind": "inline-own",
+      "raw": 31232,
+      "gzip": 12065,
+      "brotli": 10962,
+      "hash": "1c2c2ca8c3f24342"
     },
     {
       "file": "assets/mediabunny-BeZS4w-e.js",
@@ -563,11 +563,11 @@
       "hash": "c152984d773c1baf"
     },
     {
-      "file": "assets/probe-HyQzQnwo.js",
+      "file": "assets/probe-DODEFAZa.js",
       "kind": "client",
       "raw": 7500,
-      "gzip": 3258,
-      "brotli": 3005,
+      "gzip": 3256,
+      "brotli": 3008,
       "hash": "13a55e0036efe242"
     },
     {
@@ -619,27 +619,27 @@
       "hash": "12ef2167a8b66bc0"
     },
     {
-      "file": "assets/route-D9TuNER4.js",
+      "file": "assets/route-BuHNSMJb.js",
       "kind": "other",
       "raw": 557,
-      "gzip": 376,
-      "brotli": 328,
+      "gzip": 378,
+      "brotli": 330,
       "hash": "c1bc424354e7c6cc"
     },
     {
-      "file": "assets/runtime-C8O55K4K.js",
+      "file": "assets/runtime-CueuOER9.js",
       "kind": "inline-own",
       "raw": 2382,
-      "gzip": 1128,
-      "brotli": 1038,
+      "gzip": 1130,
+      "brotli": 1039,
       "hash": "dd1a682e2021dc75"
     },
     {
-      "file": "assets/rvfc-BL7MiKJL.js",
+      "file": "assets/rvfc-BgbYyOAC.js",
       "kind": "rvfc",
       "raw": 4243,
-      "gzip": 2196,
-      "brotli": 1983,
+      "gzip": 2194,
+      "brotli": 1979,
       "hash": "6745d1c0b83b8003"
     },
     {
@@ -651,20 +651,20 @@
       "hash": "b1411f47d47bd1f1"
     },
     {
+      "file": "assets/segments-BF0t8UHY.js",
+      "kind": "inline-own",
+      "raw": 3346,
+      "gzip": 1844,
+      "brotli": 1707,
+      "hash": "2171e173d26602ee"
+    },
+    {
       "file": "assets/segments-DsEqrXyL.js",
       "kind": "segments",
       "raw": 3350,
       "gzip": 1844,
       "brotli": 1710,
       "hash": "e275d20e746bdc81"
-    },
-    {
-      "file": "assets/segments-YXvc6fda.js",
-      "kind": "inline-own",
-      "raw": 3346,
-      "gzip": 1843,
-      "brotli": 1709,
-      "hash": "2171e173d26602ee"
     },
     {
       "file": "assets/sniff-DecauIFI.js",
@@ -675,12 +675,20 @@
       "hash": "2e5d5f1c3683e2e4"
     },
     {
-      "file": "assets/snippets-DumnjOkS.js",
+      "file": "assets/snippets-Dd0rQl61.js",
       "kind": "other",
       "raw": 8499,
-      "gzip": 2553,
-      "brotli": 2285,
+      "gzip": 2552,
+      "brotli": 2289,
       "hash": "0aee90a6c051f669"
+    },
+    {
+      "file": "assets/stats-B3SepZAT.js",
+      "kind": "inline-own",
+      "raw": 9479,
+      "gzip": 3938,
+      "brotli": 3599,
+      "hash": "b07fecae38c518a2"
     },
     {
       "file": "assets/stats-D7rtHUCj.js",
@@ -689,14 +697,6 @@
       "gzip": 4329,
       "brotli": 3960,
       "hash": "cd27b914ae4ce751"
-    },
-    {
-      "file": "assets/stats-i1hNy50n.js",
-      "kind": "inline-own",
-      "raw": 9479,
-      "gzip": 3938,
-      "brotli": 3597,
-      "hash": "b07fecae38c518a2"
     }
   ]
 }
