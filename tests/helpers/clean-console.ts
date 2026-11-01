@@ -96,9 +96,15 @@ export class NoiseCollector {
   readonly #pending = new Set<Promise<void>>();
   readonly #binding = `__noiseRejection${++collectors}`;
   #frozen = false;
+  #everyWorker = false;
 
   add(kind: NoiseKind, text: string): void {
     if (!this.#frozen) this.noise.push({ kind, text });
+  }
+
+  everyWorkerIsPackage(): this {
+    this.#everyWorker = true;
+    return this;
   }
 
   async attachContext(context: BrowserContext): Promise<void> {
@@ -142,7 +148,7 @@ export class NoiseCollector {
   #onConsole(m: ConsoleMessage): void {
     const { url, lineNumber, columnNumber } = m.location();
     const text = (from = '') => `console ${m.type()} in ${where(m)}: ${m.text()}${url ? ` (${url}:${lineNumber}${from})` : ''}`;
-    if (LOUD_CONSOLE_TYPES.includes(m.type()) || PACKAGE_FILE.test(url) || PACKAGE_FILE.test(m.worker()?.url() ?? '')) {
+    if (LOUD_CONSOLE_TYPES.includes(m.type()) || PACKAGE_FILE.test(url) || this.#packageWorker(m)) {
       this.add('console', text());
       return;
     }
@@ -152,6 +158,11 @@ export class NoiseCollector {
     });
     this.#pending.add(pending);
     void pending.finally(() => this.#pending.delete(pending));
+  }
+
+  #packageWorker(m: ConsoleMessage): boolean {
+    const worker = m.worker();
+    return worker !== null && (this.#everyWorker || PACKAGE_FILE.test(worker.url()));
   }
 
   async #packageSourceAt(url: string, line: number, column: number): Promise<string | null> {

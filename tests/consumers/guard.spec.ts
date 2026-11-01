@@ -16,6 +16,7 @@ interface Plant {
   kind: NoiseKind | readonly NoiseKind[];
   noise: RegExp;
   ready?: true;
+  everyWorker?: true;
 }
 
 const startWorker = (url: string, type: 'module' | 'classic' = 'module') => `<script>const w = new Worker('${url}', { type: '${type}' }); w.onmessage = () => { document.title = 'ready'; };</script>`;
@@ -44,6 +45,7 @@ const PLANTS: Record<string, Plant> = {
   'worker console error': { body: startWorker(WORKER), files: { [WORKER]: `console.error('planted worker error');\n${READY}` }, kind: 'console', noise: /^console error in worker .*\/__guard\/worker\.js: planted worker error/, ready: true },
   'package worker console log': { body: startWorker('/__guard/assets/probe.worker-Ab12.js'), files: { '/__guard/assets/probe.worker-Ab12.js': `${PACKAGE_LOG}\n${READY}` }, kind: 'console', noise: /^console log in worker .*\/assets\/probe\.worker-Ab12\.js: planted package log/, ready: true },
   'console log of a chunk a package worker imports': { body: startWorker('/__guard/assets/own.worker-Ab12.js'), files: { '/__guard/assets/own.worker-Ab12.js': `import './isobmff-Cd34.js';\n${READY}`, '/__guard/assets/isobmff-Cd34.js': PACKAGE_LOG }, kind: 'console', noise: /^console log in worker .*\/assets\/own\.worker-Ab12\.js: planted package log \(.*\/assets\/isobmff-Cd34\.js:/, ready: true },
+  'console log of a numbered worker chunk where every worker is the package': { body: startWorker('/__guard/112.js'), files: { '/__guard/112.js': `${PACKAGE_LOG}\n${READY}` }, kind: 'console', noise: /^console log in worker .*\/__guard\/112\.js: planted package log/, ready: true, everyWorker: true },
   'console log of a package entry that Vite pre-bundles': { body: moduleScript('/node_modules/.vite/deps/video-fps-probe_header.js'), files: { '/node_modules/.vite/deps/video-fps-probe_header.js': PACKAGE_LOG }, kind: 'console', noise: /^console log in page .*: planted package log \(.*\/node_modules\/\.vite\/deps\/video-fps-probe_header\.js:/ },
   'console log that a chunk sourcemap maps to the package': { body: moduleScript('/__guard/assets/index-Ef56.js'), files: { '/__guard/assets/index-Ef56.js': `${APP_LOG}${PACKAGE_LOG}`, '/__guard/assets/index-Ef56.js.map': SOURCE_MAP }, kind: 'console', noise: /^console log in page .*: planted package log \(.*\/assets\/index-Ef56\.js:0 from http:\/\/127\.0\.0\.1:\d+\/node_modules\/video-fps-probe\/dist\/client\/index\.js\)$/ },
   'page throw': { body: "<script>setTimeout(() => { throw new Error('planted throw'); });</script>", kind: 'page', noise: /^page error Error: planted throw$/ },
@@ -89,6 +91,7 @@ for (const [channel, plant] of Object.entries(PLANTS)) {
     const page = await browser.newPage();
     try {
       const collector = new NoiseCollector();
+      if (plant.everyWorker) collector.everyWorkerIsPackage();
       await collector.attachContext(page.context());
       await open(page, plant);
       const kinds: readonly NoiseKind[] = [plant.kind].flat();
