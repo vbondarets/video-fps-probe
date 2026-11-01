@@ -1,0 +1,14 @@
+{
+  "name": "video-fps-probe-bundlers-parcel-configured",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "parcel": "2.16.4"
+  },
+  "@parcel/resolver-default": {
+    "packageExports": true
+  },
+  "@parcel/bundler-default": {
+    "maxParallelRequests": 1
+  }
+}

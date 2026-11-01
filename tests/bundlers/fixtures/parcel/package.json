@@ -1,0 +1,8 @@
+{
+  "name": "video-fps-probe-bundlers-parcel",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "parcel": "2.16.4"
+  }
+}

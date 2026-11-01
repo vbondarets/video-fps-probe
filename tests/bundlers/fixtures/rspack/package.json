@@ -1,0 +1,10 @@
+{
+  "name": "video-fps-probe-bundlers-rspack",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@rspack/cli": "2.3.0",
+    "@rspack/core": "2.3.0",
+    "@rspack/dev-server": "2.2.2"
+  }
+}
