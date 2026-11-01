@@ -245,7 +245,7 @@ export function triage(result: FileResult) {
   const code = errorCodeOf(result);
   if (code === null) return { status: 'ok', warnings: warningCodesOf(result) } as const;
   const kind = errorClass(code);
-  if (kind === 'file') return { status: 'reject', code, cacheable: true } as const;
+  if (kind === 'file') return { status: 'reject', code, cacheable: code !== 'engine-failed' || result.engine !== 'rvfc' } as const;
   if (kind === 'limit') return { status: 'retry with larger limits', code } as const;
   return { status: 'retry later', code } as const;
 }

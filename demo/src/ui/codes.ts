@@ -21,7 +21,7 @@ export const ERROR_TEXT: Readonly<Record<FileErrorCode, string>> = {
 };
 
 export const CLASS_TEXT: Readonly<Record<ErrorClass, string>> = {
-  file: 'About the file itself. The same bytes always give the same code, so a server can cache the answer.',
+  file: 'About the file itself. The same bytes and package version give the same code, so a server can cache the answer per file and version. The one exception is engine-failed from rvfc, which comes from the browser.',
   limit: 'A limit you set was reached. A larger limit may succeed.',
   io: 'Reading failed. A retry later may succeed.',
   environment: 'The page or the runtime failed, not the file. Reload or retry.',
