@@ -1001,8 +1001,8 @@ export function docVersionProblems(docs, v) {
   const pins = new Map([...new Set(TARGETS.map((t) => t.tool)), 'vite'].map((tool) => [tool === 'vite' ? 'Vite' : TOOL_NAMES[tool], v.runtimes[tool] ?? v.packages[tool]]));
   for (const [label, pin] of pins) {
     if (!docs.includes(`${label} ${pin}`)) problems.push(`docs/bundlers.md does not name ${label} ${pin}, the pin in tests/bundlers/versions.json`);
-    const named = new RegExp(`(since )?(?<![\\w.-])${label.replace('.', '\\.')} (\\d+\\.\\d+\\.\\d+)(?!\\.\\d)`, 'g');
-    for (const [, since, version] of docs.matchAll(named)) if (!since && version !== pin) problems.push(`docs/bundlers.md names ${label} ${version}, the pin in tests/bundlers/versions.json is ${pin}`);
+    const named = new RegExp(`(since )?(?<![\\w.-])(${label.replace('.', '\\.')}[ @]v?(\\d+\\.\\d+(?:\\.\\d+)?))(?!\\.?\\d)`, 'gi');
+    for (const [, since, text, version] of docs.matchAll(named)) if (!since && version !== pin) problems.push(`docs/bundlers.md names ${text}, the pin in tests/bundlers/versions.json is ${pin}`);
   }
   return problems;
 }

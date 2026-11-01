@@ -193,6 +193,12 @@ describe('the version check of docs/bundlers.md', () => {
     ]);
     expect(docVersionProblems(pinned.replace(`Nuxt ${v.packages.nuxt}`, 'Nuxt'), v)).toEqual([`docs/bundlers.md does not name Nuxt ${v.packages.nuxt}, the pin in tests/bundlers/versions.json`]);
     expect(docVersionProblems(`${pinned} html-webpack-plugin 5.6.8.`, v)).toEqual([]);
+    expect(docVersionProblems(`${pinned} Webpack 5.99.0 and \`npm i -D webpack@5.99.0\`. Next.js v16.3.0, then Next.js 16.4. Since Next.js 16.0.0 and Next.js ${v.packages.next}.`, v)).toEqual([
+      `docs/bundlers.md names Webpack 5.99.0, the pin in tests/bundlers/versions.json is ${v.packages.webpack}`,
+      `docs/bundlers.md names webpack@5.99.0, the pin in tests/bundlers/versions.json is ${v.packages.webpack}`,
+      `docs/bundlers.md names Next.js v16.3.0, the pin in tests/bundlers/versions.json is ${v.packages.next}`,
+      `docs/bundlers.md names Next.js 16.4, the pin in tests/bundlers/versions.json is ${v.packages.next}`,
+    ]);
   });
 });
 
