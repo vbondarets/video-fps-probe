@@ -69,7 +69,7 @@ export function toolEnv(dir, extra = {}) {
   };
   const cache = process.env.BUNDLERS_CACHE;
   if (cache) Object.assign(env, { npm_config_cache: join(cache, 'npm'), YARN_GLOBAL_FOLDER: join(cache, 'yarn'), BUN_INSTALL_CACHE_DIR: join(cache, 'bun') });
-  if (OFFLINE) Object.assign(env, { npm_config_registry: DEAD_REGISTRY, npm_config_prefer_offline: 'true', YARN_NPM_REGISTRY_SERVER: DEAD_REGISTRY, BUN_CONFIG_REGISTRY: DEAD_REGISTRY });
+  if (OFFLINE) Object.assign(env, { npm_config_offline: 'true', YARN_NPM_REGISTRY_SERVER: DEAD_REGISTRY });
   return env;
 }
 
@@ -280,7 +280,7 @@ function frozenInstall(target, root, env, log, latest) {
   if (target.pm === 'npm') return pm(target, [locked && !latest ? 'ci' : 'install', '--ignore-scripts', '--no-audit', '--no-fund', ...offline], { cwd: root, env, log });
   if (target.pm === 'pnpm') return pm(target, ['install', latest ? '--no-frozen-lockfile' : '--frozen-lockfile', '--ignore-scripts', ...storeDir(), ...(OFFLINE ? ['--offline'] : ['--prefer-offline'])], { cwd: root, env, log }, latest);
   if (target.pm === 'yarn') return pm(target, ['install', ...(latest ? [] : ['--immutable'])], { cwd: root, env: { ...env, ...(latest ? { YARN_ENABLE_IMMUTABLE_INSTALLS: '0' } : {}) }, log }, latest);
-  if (target.pm === 'bun') return locked ? pm(target, ['install', ...(latest ? [] : ['--frozen-lockfile']), '--ignore-scripts'], { cwd: root, env, log }) : { status: 0, output: '' };
+  if (target.pm === 'bun') return locked ? pm(target, ['install', ...(latest ? [] : ['--frozen-lockfile']), '--ignore-scripts', ...offline], { cwd: root, env, log }) : { status: 0, output: '' };
   return { status: 0, output: '' };
 }
 
@@ -289,7 +289,7 @@ function addPackage(target, root, env, log, spec, latest) {
   if (target.pm === 'npm') return pm(target, ['install', spec, '--ignore-scripts', '--no-audit', '--no-fund', ...offline], { cwd: root, env, log });
   if (target.pm === 'pnpm') return pm(target, ['add', spec, '--ignore-scripts', ...storeDir(), ...(OFFLINE ? ['--offline'] : ['--prefer-offline'])], { cwd: root, env, log }, latest);
   if (target.pm === 'yarn') return pm(target, ['add', spec.startsWith('./') ? `${PACKAGE}@file:${spec}` : spec], { cwd: root, env: { ...env, YARN_ENABLE_IMMUTABLE_INSTALLS: '0' }, log }, latest);
-  if (target.pm === 'bun') return pm(target, ['add', spec, '--ignore-scripts'], { cwd: root, env, log });
+  if (target.pm === 'bun') return pm(target, ['add', spec, '--ignore-scripts', ...offline], { cwd: root, env, log });
   return { status: 0, output: '' };
 }
 
@@ -912,8 +912,9 @@ Options:
   --measured <dir>   report reads the measurements from here (default: <dir>/measure)
   --out <dir>        report also writes the measured report there
 
-BUNDLERS_OFFLINE=1 points every registry setting at ${DEAD_REGISTRY} and adds --offline where the package
-manager has it, so setup succeeds from a warm cache and fails naming the first package it lacks.
+BUNDLERS_OFFLINE=1 runs npm, npm exec included, pnpm and Bun with --offline, since they key their cached package
+metadata by registry URL, and points the Yarn registry at ${DEAD_REGISTRY}, so setup
+succeeds from a warm cache and fails naming the first package it lacks.
 BUNDLERS_CACHE=<dir> keeps the npm cache, the pnpm store, the Yarn global folder and the Bun cache there.
 Every package manager runs with an empty npmrc as its user config.`;
 
