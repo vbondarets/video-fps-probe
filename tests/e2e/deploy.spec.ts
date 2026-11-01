@@ -40,6 +40,7 @@ test.describe('a tab opened before a redeploy', () => {
   test('shows one reload banner instead of an error per file when a new build replaced the probe client chunk, and works after the reload', async ({ page, allowNoise }) => {
     allowNoise({ browsers: ['chromium', 'firefox', 'webkit'], request: /\/assets\/probe-[\w-]+\.js\b/, reason: 'the test serves a 404 for the probe client chunk of the old build' });
     allowNoise({ browsers: ['chromium', 'webkit'], console: /Failed to load resource: the server responded with a status of 404 .*\/assets\/probe-[\w-]+\.js/, reason: 'Chromium and WebKit log the 404 of the probe client chunk' });
+    allowNoise({ browsers: ['firefox'], console: /Loading failed for the module with source “[^”]*\/assets\/probe-[\w-]+\.js”/, reason: 'Firefox warns that the probe client chunk, which the test answers with a 404, failed to load as a module' });
     await openApp(page);
     const requests = await redeploy(page, '**/assets/probe-*.js', true);
     await dropFour(page);
@@ -89,6 +90,7 @@ test.describe('a tab opened before a redeploy', () => {
   test('keeps the page and shows the reload banner when the rate profile or compare panel chunk is gone after a new build', async ({ page, allowNoise }) => {
     allowNoise({ browsers: ['chromium', 'firefox', 'webkit'], request: /\/assets\/(?:RateProfile|Compare)-[\w-]+\.js\b/, reason: 'the test serves a 404 for the rate profile and compare panel chunks of the old build' });
     allowNoise({ browsers: ['chromium', 'webkit'], console: /Failed to load resource: the server responded with a status of 404 .*\/assets\/(?:RateProfile|Compare)-[\w-]+\.js/, reason: 'Chromium and WebKit log the 404 of the panel chunks' });
+    allowNoise({ browsers: ['firefox'], console: /Loading failed for the module with source “[^”]*\/assets\/(?:RateProfile|Compare)-[\w-]+\.js”/, reason: 'Firefox warns that each panel chunk, which the test answers with a 404, failed to load as a module' });
     await openApp(page);
     await addFixtures(page, [MP4]);
     const requests = await redeploy(page, '**/assets/{RateProfile,Compare}-*.js', true);
@@ -148,6 +150,7 @@ test.describe('a tab opened before a redeploy', () => {
   test('names the import error on every file and shows no banner when the probe client chunk is missing but the page is unchanged', async ({ page, browserName, allowNoise }) => {
     allowNoise({ browsers: ['chromium', 'firefox', 'webkit'], request: /\/assets\/probe-[\w-]+\.js\b/, reason: 'the test serves a 404 for the probe client chunk' });
     allowNoise({ browsers: ['chromium', 'webkit'], console: /Failed to load resource: the server responded with a status of 404 .*\/assets\/probe-[\w-]+\.js/, reason: 'Chromium and WebKit log the 404 of the probe client chunk' });
+    allowNoise({ browsers: ['firefox'], console: /Loading failed for the module with source “[^”]*\/assets\/probe-[\w-]+\.js”/, reason: 'Firefox warns that the probe client chunk, which the test answers with a 404, failed to load as a module' });
     await openApp(page);
     const requests = await redeploy(page, '**/assets/probe-*.js', false);
     await dropFour(page);
