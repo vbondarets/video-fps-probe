@@ -1,73 +1,82 @@
-import { expect, test, type BrowserContext } from '@playwright/test';
-import { CONSUMERS_PORT } from '../../scripts/consumers.mjs';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import { expect, test, type Page } from '@playwright/test';
 import { NoiseCollector, NoiseGuard, test as guarded, watch, type BrowserName, type Noise, type NoiseKind } from '../helpers/clean-console.ts';
 
-type Channel = 'page console warning' | 'module worker console warning' | 'classic worker console warning' | 'page throw' | 'page rejection' | '404 script';
+const PAGE = '/__guard/index.html';
+const WORKER = '/__guard/worker.js';
+const READY = "postMessage('ready');";
 
-const ORIGIN = `http://127.0.0.1:${CONSUMERS_PORT}`;
+interface Plant {
+  body: string;
+  files?: Record<string, string>;
+  kind: NoiseKind;
+  noise: RegExp;
+  ready?: true;
+}
 
-const PAGES: Record<Channel, { body: string; kind: NoiseKind; noise: RegExp }> = {
+const startWorker = (url: string, type: 'module' | 'classic' = 'module') => `<script>const w = new Worker('${url}', { type: '${type}' }); w.onmessage = () => { document.title = 'ready'; };</script>`;
+
+const PLANTS: Record<string, Plant> = {
   'page console warning': { body: "<script>console.warn('planted page warning');</script>", kind: 'console', noise: /^console warning in page .*: planted page warning/ },
-  'module worker console warning': { body: "<script>const w = new Worker('/__guard/worker.js', { type: 'module' }); w.onmessage = () => { document.title = 'ready'; };</script>", kind: 'console', noise: /^console warning in worker .*\/__guard\/worker\.js: planted worker warning/ },
-  'classic worker console warning': { body: "<script>const w = new Worker('/__guard/worker.js'); w.onmessage = () => { document.title = 'ready'; };</script>", kind: 'console', noise: /^console warning in worker .*\/__guard\/worker\.js: planted worker warning/ },
+  'module worker console warning': { body: startWorker(WORKER), files: { [WORKER]: `console.warn('planted worker warning');\n${READY}` }, kind: 'console', noise: /^console warning in worker .*\/__guard\/worker\.js: planted worker warning/, ready: true },
+  'classic worker console warning': { body: startWorker(WORKER, 'classic'), files: { [WORKER]: `console.warn('planted worker warning');\n${READY}` }, kind: 'console', noise: /^console warning in worker .*\/__guard\/worker\.js: planted worker warning/, ready: true },
   'page throw': { body: "<script>setTimeout(() => { throw new Error('planted throw'); });</script>", kind: 'page', noise: /^page error Error: planted throw$/ },
   'page rejection': { body: "<script>Promise.reject(new Error('planted rejection'));</script>", kind: 'page', noise: /planted rejection/ },
   '404 script': { body: '<script src="/__guard/missing.js"></script>', kind: 'request', noise: /^request 404 GET http:\/\/127\.0\.0\.1:\d+\/__guard\/missing\.js$/ },
 };
 
-const WORKER = "console.warn('planted worker warning');\npostMessage('ready');\n";
-const READY: Partial<Record<Channel, true>> = { 'module worker console warning': true, 'classic worker console warning': true };
+const CONTENT_TYPES: Record<string, string> = { '.html': 'text/html', '.js': 'text/javascript', '.map': 'application/json' };
 
-async function serve(context: BrowserContext, channel: Channel): Promise<void> {
-  await context.route('**/__guard/**', (route) => {
-    const path = new URL(route.request().url()).pathname;
-    if (path === '/__guard/index.html') return route.fulfill({ status: 200, contentType: 'text/html', body: `<!doctype html><html><head><title>guard</title></head><body>${PAGES[channel].body}</body></html>` });
-    if (path === '/__guard/worker.js') return route.fulfill({ status: 200, contentType: 'text/javascript', body: WORKER });
-    return route.fulfill({ status: 404, contentType: 'text/plain', body: 'not found' });
+async function open(page: Page, plant: Pick<Plant, 'body' | 'files'>): Promise<void> {
+  const files: Record<string, string> = { [PAGE]: `<!doctype html><html><head><title>guard</title></head><body>${plant.body}</body></html>`, ...plant.files };
+  const server = createServer((req, res) => {
+    const path = new URL(req.url ?? '/', 'http://localhost').pathname;
+    const body = files[path];
+    if (body === undefined) return void res.writeHead(404, { 'Content-Type': 'text/plain' }).end('not found');
+    res.writeHead(200, { 'Content-Type': CONTENT_TYPES[/\.\w+$/.exec(path)?.[0] ?? ''] ?? 'text/plain', 'Cache-Control': 'no-store' }).end(body);
   });
+  await new Promise<void>((done, fail) => server.once('error', fail).listen(0, '127.0.0.1', () => done()));
+  page.context().once('close', () => {
+    server.closeAllConnections();
+    server.close();
+  });
+  await page.goto(`http://127.0.0.1:${(server.address() as AddressInfo).port}${PAGE}`);
 }
 
-async function plant(context: BrowserContext, channel: Channel): Promise<Noise[]> {
-  const collector = new NoiseCollector();
-  await collector.attachContext(context);
-  await serve(context, channel);
-  const page = await context.newPage();
-  await page.goto(`${ORIGIN}/__guard/index.html`);
-  if (READY[channel]) await expect(page).toHaveTitle('ready');
+async function plantIn(page: Page, plant: Plant, collector: NoiseCollector): Promise<Noise[]> {
+  await collector.attachContext(page.context());
+  await open(page, plant);
+  if (plant.ready) await expect(page).toHaveTitle('ready');
   await page.waitForTimeout(250);
   return collector.finish();
 }
 
-for (const channel of Object.keys(PAGES) as Channel[]) {
+for (const [channel, plant] of Object.entries(PLANTS)) {
   test(`the clean console guard reports a planted ${channel}`, async ({ browser }) => {
-    const context = await browser.newContext();
+    const page = await browser.newPage();
     try {
-      const noise = await plant(context, channel);
-      const { kind, noise: pattern } = PAGES[channel];
-      expect(noise.filter((n) => n.kind === kind && pattern.test(n.text)).map((n) => n.text), JSON.stringify(noise)).not.toEqual([]);
+      const noise = await plantIn(page, plant, new NoiseCollector());
+      expect(noise.filter((n) => n.kind === plant.kind && plant.noise.test(n.text)).map((n) => n.text), JSON.stringify(noise)).not.toEqual([]);
     } finally {
-      await context.close();
+      await page.context().close();
     }
   });
 }
 
 test('the clean console guard reports nothing for a quiet page, a quiet worker and a console.log outside the package', async ({ browser }) => {
-  const context = await browser.newContext();
+  const page = await browser.newPage();
   try {
-    await context.route('**/__guard/**', (route) => {
-      const path = new URL(route.request().url()).pathname;
-      if (path === '/__guard/worker.js') return route.fulfill({ status: 200, contentType: 'text/javascript', body: "console.log('a log line of the app');\npostMessage('ready');\n" });
-      return route.fulfill({ status: 200, contentType: 'text/html', body: "<!doctype html><title>guard</title><script>console.log('a log line of the app'); console.info('info'); new Worker('/__guard/worker.js', { type: 'module' }).onmessage = () => { document.title = 'ready'; };</script>" });
-    });
-    const collector = new NoiseCollector();
-    await collector.attachContext(context);
-    const page = await context.newPage();
-    await page.goto(`${ORIGIN}/__guard/index.html`);
-    await expect(page).toHaveTitle('ready');
-    await page.waitForTimeout(250);
-    expect(await collector.finish()).toEqual([]);
+    const plant: Plant = {
+      body: `<script>console.log('a log line of the app'); console.info('info');</script>${startWorker(WORKER)}`,
+      files: { [WORKER]: `console.log('a log line of the app');\n${READY}` },
+      kind: 'console',
+      noise: /./,
+      ready: true,
+    };
+    expect(await plantIn(page, plant, new NoiseCollector())).toEqual([]);
   } finally {
-    await context.close();
+    await page.context().close();
   }
 });
 
@@ -92,27 +101,16 @@ test('an allowance passes only the noise it names, in its browsers, and fails wh
   expect(() => new NoiseGuard(browser).allow({ browsers: [browser], console: /x/, reason: ' ' })).toThrow('allowNoise needs a reason');
 });
 
-async function serveGuardPage(context: BrowserContext, body: string): Promise<void> {
-  await context.route('**/__guard/**', (route) => {
-    const path = new URL(route.request().url()).pathname;
-    if (path === '/__guard/index.html') return route.fulfill({ status: 200, contentType: 'text/html', body: `<!doctype html><title>guard</title>${body}` });
-    if (path === '/__guard/worker.js') return route.fulfill({ status: 200, contentType: 'text/javascript', body: WORKER });
-    return route.fulfill({ status: 404, contentType: 'text/plain', body: 'not found' });
-  });
-}
-
-guarded('the guard fails a test whose page fixture runs a module worker that warns', async ({ page, context }) => {
+guarded('the guard fails a test whose page fixture runs a module worker that warns', async ({ page }) => {
   guarded.fail();
-  await serveGuardPage(context, PAGES['module worker console warning'].body);
-  await page.goto(`${ORIGIN}/__guard/index.html`);
+  await open(page, PLANTS['module worker console warning']!);
   await expect(page).toHaveTitle('ready');
 });
 
 guarded('the guard fails a test with an unhandled rejection on a page of context.newPage()', async ({ context }) => {
   guarded.fail();
-  await serveGuardPage(context, PAGES['page rejection'].body);
   const page = await context.newPage();
-  await page.goto(`${ORIGIN}/__guard/index.html`);
+  await open(page, PLANTS['page rejection']!);
   await page.waitForTimeout(250);
 });
 
@@ -120,21 +118,18 @@ guarded('the guard fails a test with a 404 script on a page of browser.newPage()
   guarded.fail();
   const page = await browser.newPage();
   await watch(page);
-  await serveGuardPage(page.context(), PAGES['404 script'].body);
-  await page.goto(`${ORIGIN}/__guard/index.html`);
+  await open(page, PLANTS['404 script']!);
   await page.waitForTimeout(250);
 });
 
-guarded('the guard fails a test whose allowance goes unused', async ({ page, context, allowNoise }) => {
+guarded('the guard fails a test whose allowance goes unused', async ({ page, allowNoise }) => {
   guarded.fail();
   allowNoise({ browsers: ['chromium', 'firefox', 'webkit'], console: /never logged/, reason: 'unused on purpose, so the test fails' });
-  await serveGuardPage(context, '');
-  await page.goto(`${ORIGIN}/__guard/index.html`);
+  await open(page, { body: '' });
   await expect(page).toHaveTitle('guard');
 });
 
-guarded('the guard passes a quiet page', async ({ page, context }) => {
-  await serveGuardPage(context, '');
-  await page.goto(`${ORIGIN}/__guard/index.html`);
+guarded('the guard passes a quiet page', async ({ page }) => {
+  await open(page, { body: '' });
   await expect(page).toHaveTitle('guard');
 });
