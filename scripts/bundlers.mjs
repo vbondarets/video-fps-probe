@@ -240,15 +240,29 @@ export function lockfileChanges(pmName, before, after) {
 
 const PEER_WARNING = {
   npm: /npm warn.*(peer|ERESOLVE).*video-fps-probe|video-fps-probe.*npm warn.*peer/i,
-  pnpm: /(missing|unmet|issues with) peer.*|video-fps-probe.*peer/i,
   yarn: /YN0002|YN0060|YN0086/,
-  bun: /incorrect peer dependency|peer dependency/i,
 };
+const PEERS = Object.keys(readJson(join(REPO_ROOT, 'package.json')).peerDependencies ?? {});
+
+function pnpmPeerIssues(lines) {
+  const issues = [];
+  for (const [i, line] of lines.entries()) {
+    const header = /^([\s│]*)[├└]─┬ video-fps-probe[ @]/.exec(line);
+    if (!header) continue;
+    for (const child of lines.slice(i + 1)) {
+      const lead = /^([\s│]*)[├└]─/.exec(child);
+      if (!lead || lead[1].length <= header[1].length) break;
+      if (/(missing|unmet) peer/i.test(child)) issues.push(child);
+    }
+  }
+  return issues;
+}
 
 export function peerWarnings(pmName, output) {
-  return output
-    .split('\n')
-    .filter((line) => PEER_WARNING[pmName]?.test(line) && (pmName !== 'pnpm' || line.includes(PACKAGE) || /missing peer/i.test(line)));
+  const lines = output.split(/\r?\n/);
+  if (pmName === 'pnpm') return pnpmPeerIssues(lines);
+  if (pmName === 'bun') return lines.filter((line) => /peer dependency/i.test(line) && (line.includes(PACKAGE) || PEERS.some((peer) => line.includes(`"${peer}@`))));
+  return lines.filter((line) => PEER_WARNING[pmName]?.test(line));
 }
 
 function latestVersion(name, env, cwd) {

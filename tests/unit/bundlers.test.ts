@@ -89,6 +89,17 @@ describe('the peer warning scan', () => {
   it('finds a pnpm missing peer and ignores unrelated output', () => {
     expect(peerWarnings('pnpm', ' WARN  Issues with peer dependencies found\n└─┬ video-fps-probe 0.4.1\n  └── ✕ missing peer mp4box@^2.4.1\nDone in 1s')).toEqual(["  └── ✕ missing peer mp4box@^2.4.1"]);
   });
+
+  it('reads the pnpm issue tree: an unmet peer under the package, not a missing peer of another package', () => {
+    const tree = ' WARN  Issues with peer dependencies found\r\n.\r\n├─┬ @vitejs/plugin-react 5.0.0\r\n│ └── ✕ missing peer react@^19.0.0\r\n└─┬ video-fps-probe 0.4.1\r\n  ├── ✕ unmet peer mp4box@^2.5.0: found 2.4.1\r\n  └─┬ some-child 1.0.0\r\n    └── ✕ missing peer x@1\r\nPeer dependencies that should be installed:\r\n  react@^19.0.0\r\n';
+    expect(peerWarnings('pnpm', tree)).toEqual(['  ├── ✕ unmet peer mp4box@^2.5.0: found 2.4.1', '    └── ✕ missing peer x@1']);
+    expect(peerWarnings('pnpm', ' WARN  Issues with peer dependencies found\n.\n└─┬ @vitejs/plugin-react 5.0.0\n  └── ✕ missing peer react@^19.0.0\n')).toEqual([]);
+    expect(peerWarnings('pnpm', '└─┬ video-fps-probe-bundlers-pnpm-strict 0.0.0\n  └── ✕ missing peer vite@8\n')).toEqual([]);
+  });
+
+  it('keeps the Bun peer warnings that name the package or one of its peers', () => {
+    expect(peerWarnings('bun', 'warn: incorrect peer dependency "mp4box@2.4.1"\nwarn: incorrect peer dependency "typescript@6.0.3"\n')).toEqual(['warn: incorrect peer dependency "mp4box@2.4.1"']);
+  });
 });
 
 describe('the report check', () => {
