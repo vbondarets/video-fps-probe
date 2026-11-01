@@ -19,6 +19,7 @@ interface UrlRun {
 }
 
 const DEFAULT_SAMPLE = 'hdr10_hevc10.mp4';
+const TIMEOUT_MS = 30_000;
 const MODE_LABEL: Record<UrlMode, string> = { header: 'header only (analyzeHeader)', full: 'full (analyze, in this thread)' };
 
 function nameOf(url: string): string {
@@ -56,13 +57,18 @@ export default function UrlPanel() {
     e.preventDefault();
     active.current?.abort();
     const controller = (active.current = new AbortController());
-    const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(30_000)]);
+    const { signal } = controller;
     const run: UrlRun = { id: nextRun++, url, mode, requests: 0, result: null, error: null };
     const counted: typeof fetch = (input, init) => {
       run.requests++;
       return fetch(input, init);
     };
     setBusy(true);
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, TIMEOUT_MS);
     try {
       const source = await openRangeSource(httpRange(url, { fetch: counted }), { signal });
       const name = nameOf(url);
@@ -72,9 +78,10 @@ export default function UrlPanel() {
         run.result = enrich(await ownEngine.run(source, name, { matroskaMode, codecConfig: true, signal }));
       }
     } catch (err) {
-      if (controller.signal.aborted && isAbortError(err)) return;
-      run.error = describe(err);
+      if (!timedOut && signal.aborted && isAbortError(err)) return;
+      run.error = timedOut ? `timeout: no answer within ${TIMEOUT_MS / 1000} s` : describe(err);
     } finally {
+      clearTimeout(timer);
       if (active.current === controller) {
         active.current = null;
         setBusy(false);
