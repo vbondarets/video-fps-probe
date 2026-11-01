@@ -1,4 +1,5 @@
 import { test as base, type BrowserContext, type ConsoleMessage, type Page, type Request, type Response, type TestInfo } from '@playwright/test';
+import { decodeMappings } from '../../scripts/size-matrix.mjs';
 
 export { expect } from '@playwright/test';
 export type { Browser, BrowserContext, Locator, Page } from '@playwright/test';
@@ -21,11 +22,13 @@ export interface NoiseAllowance {
 export type AllowNoise = (allowance: NoiseAllowance) => void;
 
 export const LOUD_CONSOLE_TYPES: readonly string[] = ['warning', 'error', 'assert'];
-export const PACKAGE_FILE = /\/node_modules\/(?:\.vite\/deps\/)?video-fps-probe\b|\/video-fps-probe\/dist\/|\/(?:own|own-isobmff|own-matroska|mp4box|mediabunny|probe)\.worker\b/;
+export const PACKAGE_FILE = /\/node_modules\/(?:\.vite\/deps\/)?(?:video-fps-probe|mp4box|mediabunny)(?:[/_.?]|$)|\/video-fps-probe\/dist\/|\/(?:own|own-isobmff|own-matroska|mp4box|mediabunny|probe)\.worker\b/;
+export const PACKAGE_SOURCE = /\/node_modules\/(?:video-fps-probe|mp4box|mediabunny)\/|\/video-fps-probe\/dist\//;
 export const WATCHED_REQUEST_TYPES: readonly string[] = ['script', 'fetch', 'xhr'];
 
 const REJECTIONS = '__rejections';
 const SCRIPT_PATH = /\.m?js$/;
+const MAP_TIMEOUT_MS = 10_000;
 
 function recordRejections(key: string): void {
   const store = ((window as unknown as Record<string, unknown>)[key] ??= []) as string[];
@@ -46,11 +49,44 @@ function originOf(url: string): string | null {
   }
 }
 
+interface SourceMap {
+  sources: string[];
+  lines: { column: number; source: number }[][];
+}
+
+async function loadSourceMap(script: string): Promise<SourceMap | null> {
+  try {
+    const url = new URL(script);
+    url.pathname += '.map';
+    url.search = '';
+    url.hash = '';
+    const response = await fetch(url, { signal: AbortSignal.timeout(MAP_TIMEOUT_MS) });
+    if (!response.ok) return null;
+    const map = (await response.json()) as { sources?: unknown; sourceRoot?: unknown; mappings?: unknown };
+    if (!Array.isArray(map.sources) || typeof map.mappings !== 'string') return null;
+    const root = new URL(typeof map.sourceRoot === 'string' ? map.sourceRoot : '', url);
+    return { sources: map.sources.map((s) => new URL(String(s), root).href), lines: decodeMappings(map.mappings) };
+  } catch {
+    return null;
+  }
+}
+
+function sourceAt(map: SourceMap, line: number, column: number): string | null {
+  let source = -1;
+  for (const segment of map.lines[line] ?? []) {
+    if (segment.column > column) break;
+    source = segment.source;
+  }
+  return map.sources[source] ?? null;
+}
+
 export class NoiseCollector {
   readonly noise: Noise[] = [];
   readonly #origins = new Set<string>();
   readonly #pages = new Set<Page>();
   readonly #contexts = new WeakSet<BrowserContext>();
+  readonly #maps = new Map<string, Promise<SourceMap | null>>();
+  readonly #pending = new Set<Promise<void>>();
   #frozen = false;
 
   add(kind: NoiseKind, text: string): void {
@@ -98,14 +134,32 @@ export class NoiseCollector {
 
   async finish(): Promise<Noise[]> {
     await this.collectRejections();
+    while (this.#pending.size > 0) await Promise.all(this.#pending);
     this.#frozen = true;
     return this.noise;
   }
 
   #onConsole(m: ConsoleMessage): void {
-    const { url, lineNumber } = m.location();
-    if (!LOUD_CONSOLE_TYPES.includes(m.type()) && !PACKAGE_FILE.test(url)) return;
-    this.add('console', `console ${m.type()} in ${where(m)}: ${m.text()}${url ? ` (${url}:${lineNumber})` : ''}`);
+    const { url, lineNumber, columnNumber } = m.location();
+    const text = (from = '') => `console ${m.type()} in ${where(m)}: ${m.text()}${url ? ` (${url}:${lineNumber}${from})` : ''}`;
+    if (LOUD_CONSOLE_TYPES.includes(m.type()) || PACKAGE_FILE.test(url) || PACKAGE_FILE.test(m.worker()?.url() ?? '')) {
+      this.add('console', text());
+      return;
+    }
+    if (!originOf(url) || !SCRIPT_PATH.test(new URL(url).pathname)) return;
+    const pending = this.#packageSourceAt(url, lineNumber, columnNumber).then((source) => {
+      if (source) this.add('console', text(` from ${source}`));
+    });
+    this.#pending.add(pending);
+    void pending.finally(() => this.#pending.delete(pending));
+  }
+
+  async #packageSourceAt(url: string, line: number, column: number): Promise<string | null> {
+    let map = this.#maps.get(url);
+    if (!map) this.#maps.set(url, (map = loadSourceMap(url)));
+    const loaded = await map;
+    const source = loaded ? sourceAt(loaded, line, column) : null;
+    return source && PACKAGE_SOURCE.test(source) ? source : null;
   }
 
   #onResponse(r: Response): void {

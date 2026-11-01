@@ -21,6 +21,8 @@ export function hashNormalizer(names: Iterable<string>): (text: string) => strin
 
 export function moduleId(source: string, root: string): string;
 
+export function decodeMappings(mappings: string): { column: number; source: number }[][];
+
 export const COMMONJS_ENTRIES: [entry: string, file: string][];
 
 export interface CommonJsSize {

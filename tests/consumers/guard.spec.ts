@@ -6,6 +6,8 @@ import { NoiseCollector, NoiseGuard, test as guarded, watch, type BrowserName, t
 const PAGE = '/__guard/index.html';
 const WORKER = '/__guard/worker.js';
 const READY = "postMessage('ready');";
+const APP_LOG = "console.log('a log line of the app');";
+const PACKAGE_LOG = "console.log('planted package log');";
 
 interface Plant {
   body: string;
@@ -16,11 +18,30 @@ interface Plant {
 }
 
 const startWorker = (url: string, type: 'module' | 'classic' = 'module') => `<script>const w = new Worker('${url}', { type: '${type}' }); w.onmessage = () => { document.title = 'ready'; };</script>`;
+const moduleScript = (url: string) => `<script type="module" src="${url}"></script>`;
+
+function vlq(value: number): string {
+  const digits = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  let rest = value < 0 ? (-value << 1) | 1 : value << 1;
+  let out = '';
+  do {
+    const digit = rest & 31;
+    rest >>>= 5;
+    out += digits[rest > 0 ? digit | 32 : digit];
+  } while (rest > 0);
+  return out;
+}
+
+const SOURCE_MAP = JSON.stringify({ version: 3, sources: ['../src/app.ts', '../../node_modules/video-fps-probe/dist/client/index.js'], names: [], mappings: `AAAA,${vlq(APP_LOG.length)}CAAA` });
 
 const PLANTS: Record<string, Plant> = {
   'page console warning': { body: "<script>console.warn('planted page warning');</script>", kind: 'console', noise: /^console warning in page .*: planted page warning/ },
   'module worker console warning': { body: startWorker(WORKER), files: { [WORKER]: `console.warn('planted worker warning');\n${READY}` }, kind: 'console', noise: /^console warning in worker .*\/__guard\/worker\.js: planted worker warning/, ready: true },
   'classic worker console warning': { body: startWorker(WORKER, 'classic'), files: { [WORKER]: `console.warn('planted worker warning');\n${READY}` }, kind: 'console', noise: /^console warning in worker .*\/__guard\/worker\.js: planted worker warning/, ready: true },
+  'package worker console log': { body: startWorker('/__guard/assets/probe.worker-Ab12.js'), files: { '/__guard/assets/probe.worker-Ab12.js': `${PACKAGE_LOG}\n${READY}` }, kind: 'console', noise: /^console log in worker .*\/assets\/probe\.worker-Ab12\.js: planted package log/, ready: true },
+  'console log of a chunk a package worker imports': { body: startWorker('/__guard/assets/own.worker-Ab12.js'), files: { '/__guard/assets/own.worker-Ab12.js': `import './isobmff-Cd34.js';\n${READY}`, '/__guard/assets/isobmff-Cd34.js': PACKAGE_LOG }, kind: 'console', noise: /^console log in worker .*\/assets\/own\.worker-Ab12\.js: planted package log \(.*\/assets\/isobmff-Cd34\.js:/, ready: true },
+  'console log of a package entry that Vite pre-bundles': { body: moduleScript('/node_modules/.vite/deps/video-fps-probe_header.js'), files: { '/node_modules/.vite/deps/video-fps-probe_header.js': PACKAGE_LOG }, kind: 'console', noise: /^console log in page .*: planted package log \(.*\/node_modules\/\.vite\/deps\/video-fps-probe_header\.js:/ },
+  'console log that a chunk sourcemap maps to the package': { body: moduleScript('/__guard/assets/index-Ef56.js'), files: { '/__guard/assets/index-Ef56.js': `${APP_LOG}${PACKAGE_LOG}`, '/__guard/assets/index-Ef56.js.map': SOURCE_MAP }, kind: 'console', noise: /^console log in page .*: planted package log \(.*\/assets\/index-Ef56\.js:0 from http:\/\/127\.0\.0\.1:\d+\/node_modules\/video-fps-probe\/dist\/client\/index\.js\)$/ },
   'page throw': { body: "<script>setTimeout(() => { throw new Error('planted throw'); });</script>", kind: 'page', noise: /^page error Error: planted throw$/ },
   'page rejection': { body: "<script>Promise.reject(new Error('planted rejection'));</script>", kind: 'page', noise: /planted rejection/ },
   '404 script': { body: '<script src="/__guard/missing.js"></script>', kind: 'request', noise: /^request 404 GET http:\/\/127\.0\.0\.1:\d+\/__guard\/missing\.js$/ },
@@ -68,8 +89,8 @@ test('the clean console guard reports nothing for a quiet page, a quiet worker a
   const page = await browser.newPage();
   try {
     const plant: Plant = {
-      body: `<script>console.log('a log line of the app'); console.info('info');</script>${startWorker(WORKER)}`,
-      files: { [WORKER]: `console.log('a log line of the app');\n${READY}` },
+      body: `<script>console.log('a log line of the app'); console.info('info');</script>${startWorker(WORKER)}${moduleScript('/__guard/assets/index-Ef56.js')}`,
+      files: { [WORKER]: `${APP_LOG}\n${READY}`, '/__guard/assets/index-Ef56.js': APP_LOG, '/__guard/assets/index-Ef56.js.map': SOURCE_MAP },
       kind: 'console',
       noise: /./,
       ready: true,
