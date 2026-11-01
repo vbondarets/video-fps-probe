@@ -853,7 +853,7 @@ export function compareReports(committed, measured) {
   for (const m of measured.targets) {
     const c = committed.targets.find((t) => t.name === m.name);
     for (const a of m.apps) {
-      if (a.status === 'pass' && a.firstMp4 && a.firstMp4.gzip > FIRST_MP4_LIMIT) problems.push(`${m.name} ${a.app}: the first MP4 loads ${kb(a.firstMp4.gzip)} of JavaScript, above the ${kb(FIRST_MP4_LIMIT)} limit`);
+      if (a.status === 'pass' && a.firstMp4 && a.firstMp4.gzip > FIRST_MP4_LIMIT) problems.push(`${m.name} ${a.app}: the first MP4 loads ${a.firstMp4.gzip.toLocaleString('en-US')} bytes of JavaScript, gzip, above the ${FIRST_MP4_LIMIT.toLocaleString('en-US')}-byte limit`);
     }
     if (!c) continue;
     if (c.status !== m.status) problems.push(`${m.name}: the status changed from ${c.status} to ${m.status}`);

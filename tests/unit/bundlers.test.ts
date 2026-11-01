@@ -121,7 +121,11 @@ describe('the report check', () => {
     expect(compareReports(report, report)).toEqual([]);
     const planted = structuredClone(report);
     planted.targets[0]!.apps[0]!.firstMp4 = { files: 3, gzip: 50_000 };
-    expect(compareReports(report, planted)).toEqual(['webpack app: the first MP4 loads 50.00 KB of JavaScript, above the 48.00 KB limit']);
+    expect(compareReports(report, planted)).toEqual(['webpack app: the first MP4 loads 50,000 bytes of JavaScript, gzip, above the 48,000-byte limit']);
+    planted.targets[0]!.apps[0]!.firstMp4 = { files: 3, gzip: 48_000 };
+    expect(compareReports(report, planted)).toEqual([]);
+    planted.targets[0]!.apps[0]!.firstMp4 = { files: 3, gzip: 48_001 };
+    expect(compareReports(report, planted)).toEqual(['webpack app: the first MP4 loads 48,001 bytes of JavaScript, gzip, above the 48,000-byte limit']);
   });
 
   it('fails a changed status, worker count, split or target set', () => {
