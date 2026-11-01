@@ -278,7 +278,7 @@ The package has no dependencies and its peers are optional, so every package man
 - Yarn 4.18.1 with Plug'n'Play: Vite reads the worker files from the zip cache, and no package needs `unplugged`,
 - Bun 1.4.4, `bun install`.
 
-Each install adds the tarball with the package manager's own add command, and CI fails when that changes a lockfile entry of another package or prints a peer warning for this one. Node runs the server entries through `pnpm exec node`, through `yarn node` and on the bun install. Under Yarn Plug'n'Play, `require()` takes the CommonJS copy, because its resolver skips `module-sync` and `module`.
+Each install adds the tarball with the package manager's own add command, and CI fails when that changes a lockfile entry of another package or leaves a peer of this one unmet, by a peer warning of the add, by `pnpm peers check` under pnpm or by `yarn explain peer-requirements` under Yarn. Node runs the server entries through `pnpm exec node`, through `yarn node` and on the bun install. Under Yarn Plug'n'Play, `require()` takes the CommonJS copy, because its resolver skips `module-sync` and `module`.
 
 ## Custom combined worker
 
