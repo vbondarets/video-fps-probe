@@ -145,6 +145,28 @@ describe('the peer warning scan', () => {
     expect(() => peerCheckIssues('pnpm', 'ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL', 1)).toThrow('pnpm peers check --json exited with 1 and printed no JSON report');
   });
 
+  it('keeps a non-zero pnpm exit that only lists peers of other packages, and skips notices printed before the report', () => {
+    const other = pnpmPeers({ react: unmet('@vitejs/plugin-react', '^19.0.0', '18.3.1') });
+    expect(peerCheckIssues('pnpm', other, 1)).toEqual([]);
+    expect(peerCheckIssues('pnpm', `${paint('33', 'WARN')} deprecated dependency\n${other}`, 1)).toEqual([]);
+  });
+
+  it('fails loudly when pnpm peers check prints no JSON report, a report of an unexpected shape, or fails without a peer issue', () => {
+    const run = (output: string, status: number | null) => () => peerCheckIssues('pnpm', output, status);
+    const noReport = 'pnpm peers check --json exited with';
+    expect(run('{}', 0)).toThrow(`${noReport} 0 and printed a JSON report of an unexpected shape:\n{}`);
+    expect(run('Done in 5ms', 0)).toThrow(`${noReport} 0 and printed no JSON report:\nDone in 5ms`);
+    expect(run('{ "." : { "bad": ', 0)).toThrow(`${noReport} 0 and printed no JSON report:\n{ "." : { "bad":`);
+    expect(run('', 1)).toThrow(`${noReport} 1 and printed no JSON report`);
+    expect(run('[]', 0)).toThrow(`${noReport} 0 and printed no JSON report:\n[]`);
+    expect(run('{"error":"boom"}', 1)).toThrow(`${noReport} 1 and printed a JSON report of an unexpected shape:\n{"error":"boom"}`);
+    expect(run(JSON.stringify({ '.': { bad: [], missing: {} } }), 0)).toThrow(`${noReport} 0 and printed a JSON report of an unexpected shape`);
+    expect(run(JSON.stringify({ '.': { bad: { mp4box: [{ wantedRange: '^2.4.1' }] }, missing: {} } }), 0)).toThrow(`${noReport} 0 and printed a JSON report of an unexpected shape`);
+    expect(run(JSON.stringify({ '.': { bad: {}, missing: { mp4box: [{ parents: [null] }] } } }), 0)).toThrow(`${noReport} 0 and printed a JSON report of an unexpected shape`);
+    expect(run(pnpmPeers({}), 1)).toThrow(`${noReport} 1 and reported no peer issue:\n${pnpmPeers({})}`);
+    expect(run(pnpmPeers({}), null)).toThrow(`${noReport} null and reported no peer issue`);
+  });
+
   it('reads yarn explain peer-requirements: a failed requirement of the package, and fails when the package is not listed', () => {
     expect(peerCheckIssues('yarn', YARN_EXPLAIN, 0)).toEqual([YARN_EXPLAIN.split('\n')[1]]);
     expect(peerCheckIssues('yarn', YARN_EXPLAIN.split('\n')[0]!, 0)).toEqual([]);

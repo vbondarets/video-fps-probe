@@ -261,19 +261,30 @@ export function peerWarnings(pmName, output) {
   return lines.filter((line) => PEER_WARNING[pmName]?.test(line));
 }
 
+const isRecord = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
+const isIssueMap = (peers) => isRecord(peers) && Object.values(peers).every((list) => [list].flat().every((issue) => isRecord(issue) && Array.isArray(issue.parents) && issue.parents.every(isRecord)));
+const isPeerReport = (report) => isRecord(report) && isIssueMap(report.bad) && isIssueMap(report.missing);
+const issueCount = (report) => Object.keys(report.bad).length + Object.keys(report.missing).length + (Array.isArray(report.conflicts) ? report.conflicts.length : 0);
+
 function pnpmPeerIssues(stdout, status) {
-  let projects;
+  const failure = (reason) => new Error(`pnpm ${PEER_CHECK.pnpm.join(' ')} exited with ${status} and ${reason}:\n${stdout.trim()}`);
+  const start = stdout.indexOf('{');
+  let projects = null;
   try {
-    projects = JSON.parse(stdout.slice(stdout.indexOf('{')));
+    if (start >= 0) projects = JSON.parse(stdout.slice(start));
   } catch {
-    throw new Error(`pnpm ${PEER_CHECK.pnpm.join(' ')} exited with ${status} and printed no JSON report`);
+    projects = null;
   }
+  if (projects === null) throw failure('printed no JSON report');
+  const reports = Object.entries(projects);
+  if (reports.length === 0 || !reports.every(([, report]) => isPeerReport(report))) throw failure('printed a JSON report of an unexpected shape');
+  if (status !== 0 && !reports.some(([, report]) => issueCount(report) > 0)) throw failure('reported no peer issue');
   const issues = [];
-  for (const [project, report] of Object.entries(projects)) {
-    for (const [kind, peers] of [['unmet', report?.bad], ['missing', report?.missing]]) {
-      for (const [peer, list] of Object.entries(peers ?? {})) {
+  for (const [project, report] of reports) {
+    for (const [kind, peers] of [['unmet', report.bad], ['missing', report.missing]]) {
+      for (const [peer, list] of Object.entries(peers)) {
         for (const issue of [list].flat()) {
-          if (!(issue?.parents ?? []).some((parent) => parent.name === PACKAGE)) continue;
+          if (!issue.parents.some((parent) => parent.name === PACKAGE)) continue;
           issues.push(`${kind} peer ${peer}@${issue.wantedRange} of ${PACKAGE} in ${project}${issue.foundVersion ? `: found ${issue.foundVersion}` : ''}`);
         }
       }
