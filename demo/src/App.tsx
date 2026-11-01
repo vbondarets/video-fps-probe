@@ -101,9 +101,19 @@ export default function App() {
       .then(addFiles, (e: unknown) => setNotice(`Could not load samples: ${e instanceof Error ? e.message : String(e)}`));
   };
 
-  const open = (next: Tab, focus = false) => {
+  const show = (next: Tab) => {
     setTab(next);
     setVisited((v) => (v.has(next) ? v : new Set([...v, next])));
+  };
+
+  useEffect(() => {
+    const follow = () => show(tabOfHash());
+    window.addEventListener('hashchange', follow);
+    return () => window.removeEventListener('hashchange', follow);
+  }, []);
+
+  const open = (next: Tab, focus = false) => {
+    show(next);
     history.replaceState(null, '', next === 'files' ? location.pathname + location.search : `#${next}`);
     if (focus) tabButtons.current.get(next)?.focus();
   };
