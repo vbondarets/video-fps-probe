@@ -4,6 +4,8 @@ Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versions follo
 
 ## Unreleased
 
+## 0.4.1 - 2026-11-01
+
 ### Added
 
 - A bundler matrix in CI ([bundlers](docs/bundlers.md#bundler-matrix)): webpack, Rspack, Next.js with webpack and with Turbopack, Angular, SvelteKit, Nuxt, Parcel and `bun build`, the Vite consumer fixtures installed with pnpm, Yarn Plug'n'Play and Bun, and the seven server entries in the Next.js, SvelteKit and Nuxt routes, in Bun and in Deno. In Chromium, Firefox and WebKit each app must give the Node results, load the probe client lazily, start one own worker per container family and show no error, console warning or failed request. Versions are exact and every fixture with dependencies has a lockfile. A weekly canary runs the latest tools.
