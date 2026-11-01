@@ -8,6 +8,8 @@ import { brotliCompressSync, constants, gzipSync } from 'node:zlib';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const KB = 1000;
+const DEMO_TABS =
+  'Re-set on 2026-11-01 when the demo gained a tab for every 0.4.0 entry (header only, a URL, check rules, error codes) and the color, aspect, timing and layout details on each card, which grew the main chunk by 1.76 KB and the CSS by 0.65 KB. The tabs, the detail cells, the code snippets and every library entry they import are lazy chunks outside these rows. The initial row went to its measurement plus 3 percent, rounded up to 0.5 KB, and each first analysis row moved by the same 2.5 KB, so the gap between it and the initial limit, which the edge cases of --self-test build on, stays as it was. The library rows of report/size-matrix.md did not move.';
 const DEMO_RESET =
   'Re-set on 2026-10-24 to the measurement plus 3 percent, rounded up to 0.5 KB, when the owner decided that the demo size does not matter as long as the package stays tiny: the size promise of the package is the consumer size matrix (report/size-matrix.md), whose budgets did not change. That left 2.51 to 3.16 KB of headroom across these rows when set (3.0 to 3.4 percent of the measurements; the Headroom column has the current figure), so a demo regression smaller than the headroom of its row passes this check unnoticed.';
 
@@ -75,33 +77,33 @@ export const BUDGETS = {
   },
   initial: {
     label: 'initial (main + CSS + worker entry)',
-    limit: 83 * KB,
+    limit: 85.5 * KB,
     required: true,
-    why: `The demo page, its styles and the worker entry, before any file is analysed. Nothing else loads without a user action: the device info chunk (footer line and JSON export) is fetched on idle after the first result, or by the first export, so it is in neither the initial row nor the first analysis rows. Measured 80.49 KB when set; the previous limit was 85 KB. ${DEMO_RESET}`,
+    why: `The demo page, its styles and the worker entry, before any file is analysed. Nothing else loads without a user action: the device info chunk (footer line and JSON export) is fetched on idle after the first result, or by the first export, so it is in neither the initial row nor the first analysis rows. Measured 80.49 KB when set, and the previous limit was 85 KB. ${DEMO_RESET} ${DEMO_TABS} Measured 82,996 bytes then, against the previous limit of 83 KB.`,
   },
   firstMp4: {
     label: 'first MP4 analysis (initial + client + ISO BMFF + shared chunks)',
-    limit: 103 * KB,
+    limit: 105.5 * KB,
     required: true,
-    why: `The demo page plus the first MP4 or MOV result. Measured 99,995 bytes when set, 5 bytes under the previous 100 KB limit. ${DEMO_RESET} Counts the lazy probe client and the shared statistics chunk too, so the component limits (83 + 3.5 + 5 + 13.5 = 105 KB) add up to more than this limit and it can trip while every component is within its own limit.`,
+    why: `The demo page plus the first MP4 or MOV result. Measured 99,995 bytes when set, 5 bytes under the previous 100 KB limit. ${DEMO_RESET} Counts the lazy probe client and the shared statistics chunk too, so the component limits (85.5 + 3.5 + 5 + 13.5 = 107.5 KB) add up to more than this limit and it can trip while every component is within its own limit. ${DEMO_TABS} Measured 103,191 bytes then, against the previous limit of 103 KB.`,
   },
   firstVfrMp4: {
     label: 'first VFR MP4 analysis (initial + client + ISO BMFF + segments + shared chunks)',
-    limit: 105 * KB,
+    limit: 107.5 * KB,
     required: false,
-    why: `The demo page plus the first MP4 or MOV result with unequal frame rates, which also fetches the rate profile chunk. Measured 101.84 KB when set; the previous limit was 102.0 KB, set by the owner's rule of 2026-10-23 for the demo only (the measurement rounded up to 0.5 KB). ${DEMO_RESET} With the lazy probe client and the shared statistics chunk, the component limits (83 + 3.5 + 5 + 13.5 + 2 = 107 KB) add up to more than this limit, so it can trip while every component is within its own limit. Not required: without a segments chunk the code lives elsewhere and the first MP4 analysis covers it.`,
+    why: `The demo page plus the first MP4 or MOV result with unequal frame rates, which also fetches the rate profile chunk. Measured 101.84 KB when set, and the previous limit was 102.0 KB, set by the owner's rule of 2026-10-23 for the demo only (the measurement rounded up to 0.5 KB). ${DEMO_RESET} With the lazy probe client and the shared statistics chunk, the component limits (85.5 + 3.5 + 5 + 13.5 + 2 = 109.5 KB) add up to more than this limit, so it can trip while every component is within its own limit. Not required: without a segments chunk the code lives elsewhere and the first MP4 analysis covers it. ${DEMO_TABS} Measured 105,035 bytes then, against the previous limit of 105 KB.`,
   },
   firstMkvEstimate: {
     label: 'first Matroska analysis without DefaultDuration (initial + client + Matroska + rfps + shared chunks)',
-    limit: 105.5 * KB,
+    limit: 108 * KB,
     required: false,
-    why: 'The demo page plus the first MKV or WebM result of a file without DefaultDuration, such as a browser MediaRecorder recording, which also fetches the ffprobe frame rate estimate. Measured 102.06 KB when set; limit is the measurement plus 3 percent, rounded up to 0.5 KB, as for the other demo rows. Not required: without an rfps chunk the code lives in the Matroska chunk and the first Matroska analysis covers it.',
+    why: `The demo page plus the first MKV or WebM result of a file without DefaultDuration, such as a browser MediaRecorder recording, which also fetches the ffprobe frame rate estimate. Measured 102.06 KB when set, and the limit was the measurement plus 3 percent, rounded up to 0.5 KB, as for the other demo rows. Not required: without an rfps chunk the code lives in the Matroska chunk and the first Matroska analysis covers it. ${DEMO_TABS} Measured 106,007 bytes then, against the previous limit of 105.5 KB.`,
   },
   firstMkv: {
     label: 'first Matroska analysis (initial + client + Matroska + shared chunks)',
-    limit: 102 * KB,
+    limit: 104.5 * KB,
     required: true,
-    why: `The demo page plus the first MKV or WebM result. Measured 98.87 KB when set; the previous limit was 100 KB. ${DEMO_RESET} Counts the lazy probe client and the shared statistics chunk too, so the component limits (83 + 3.5 + 5 + 12.5 = 104 KB) add up to more than this limit and it can trip while every component is within its own limit.`,
+    why: `The demo page plus the first MKV or WebM result. Measured 98.87 KB when set, and the previous limit was 100 KB. ${DEMO_RESET} Counts the lazy probe client and the shared statistics chunk too, so the component limits (85.5 + 3.5 + 5 + 12.5 = 106.5 KB) add up to more than this limit and it can trip while every component is within its own limit. ${DEMO_TABS} Measured 102,420 bytes then, against the previous limit of 102 KB.`,
   },
 };
 
@@ -286,6 +288,8 @@ const LAZY_BY_NAME = [
   ['rateProfile', /^rateprofile[-.]/i],
   ['deviceInfo', /^deviceinfo[-.]/i],
   ['samples', /^samples[-.]/i],
+  ['demo-tab', /^(?:HeaderPanel|UrlPanel|CheckPanel|ErrorsPanel|FilesIntro)[-.]/],
+  ['demo-details', /^(?:Details|meta)[-.]/],
 ];
 const ENGINE_KINDS = new Set(['mp4box', 'mediabunny', 'engine-shared']);
 const CLIENT_LAZY_KINDS = new Set(['client-compare', 'client-fallback', 'client-inline', 'rvfc', 'client-shared']);
@@ -771,7 +775,7 @@ function runSelfTest() {
         isobmff: limit('isobmff') + 3_000,
         matroska: limit('matroska') + 3_000,
         isobmffShared: limit('parser-shared') + 1_000,
-        css: 3_000,
+        css: 5_500,
       }),
     );
     for (const key of ['main', 'worker', 'isobmff', 'matroska', 'parser-shared', 'rvfc', 'segments', 'rateProfile', 'initial', 'firstMp4', 'firstVfrMp4', 'firstMkv']) expectEq(`over: ${key}`, statusOf(over, key), 'over');

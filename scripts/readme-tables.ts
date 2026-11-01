@@ -360,6 +360,9 @@ const CHUNK_WHEN: Record<string, string> = {
   deviceInfo: 'on idle after the first result, or the first export (footer device line, JSON export)',
   samples: 'click on Try sample files',
   lazy: 'first open of a Compare engines panel',
+  'demo-tab': 'first open of its tab, the Files tab at page load',
+  'demo-details': 'first result',
+  other: 'with the first lazy chunk that imports it',
   mp4box: 'Compare engines on an MP4 or MOV card',
   mediabunny: 'Compare engines',
   'engine-shared': 'with mp4box or mediabunny',
@@ -385,12 +388,15 @@ const CHUNK_NAME: Record<string, string> = {
   deviceInfo: 'device info and JSON export',
   samples: 'sample file loader',
   lazy: 'Compare panel',
+  'demo-tab': 'demo tab (UI and the calls it shows)',
+  'demo-details': 'result card details and the color and aspect step',
+  other: 'shared by lazy chunks of the page (tabs, details and the library entries they import)',
   mp4box: 'mp4box.js engine',
   mediabunny: 'mediabunny engine',
   'engine-shared': 'shared by mp4box and mediabunny',
 };
 
-const CHUNK_ORDER = ['main', 'css', 'client', 'client-fallback', 'client-compare', 'client-inline', 'client-shared', 'inline-own', 'worker', 'parser-shared', 'isobmff', 'matroska', 'rfps', 'segments', 'rateProfile', 'deviceInfo', 'samples', 'rvfc', 'lazy', 'mp4box', 'mediabunny', 'engine-shared'];
+const CHUNK_ORDER = ['main', 'css', 'client', 'client-fallback', 'client-compare', 'client-inline', 'client-shared', 'inline-own', 'worker', 'parser-shared', 'isobmff', 'matroska', 'rfps', 'segments', 'rateProfile', 'deviceInfo', 'samples', 'rvfc', 'lazy', 'demo-tab', 'demo-details', 'other', 'mp4box', 'mediabunny', 'engine-shared'];
 
 const COMPOSITE_BUDGET: Record<string, string> = { initial: 'initial', firstMp4: 'firstMp4', firstVfrMp4: 'firstVfrMp4', firstMatroska: 'firstMkv', firstMatroskaEstimate: 'firstMkvEstimate' };
 
