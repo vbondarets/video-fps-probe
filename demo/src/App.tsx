@@ -226,7 +226,8 @@ export default function App() {
 
       <section className="panel" role="tabpanel" id="panel-files" aria-labelledby="tab-files" hidden={tab !== 'files'}>
       <p className="intro">
-        The full analysis runs in a Web Worker and reads every frame timestamp from the container: average, nominal, minimum and maximum frame
+        The full analysis runs in a Web Worker and, for MP4, MOV and an exact Matroska scan, reads every frame timestamp from the container:
+        average, nominal, minimum and maximum frame
         rate, VFR, the rate profile, the median frame interval and whether the track is enabled. With <code>codecConfig: true</code>,{' '}
         <code>withColor</code> adds the color signalling, HDR (PQ or HLG) and Dolby Vision as ffprobe prints them, and <code>withAspect</code>{' '}
         the sample and display aspect ratio and the display size.

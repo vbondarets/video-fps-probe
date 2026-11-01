@@ -96,10 +96,13 @@ export default function UrlPanel() {
         <code>video-fps-probe/url</code> reads a file over HTTP with Range requests. <code>httpRange</code> wraps <code>fetch</code>,{' '}
         <code>openRangeSource</code> learns the size from the first ranged reply, and the analysis asks only for the bytes it needs, so a
         server can check a file in object storage without downloading it. The samples below are served by this page, so they work as they are.
+        The card counts the HTTP requests: the first one learns the size and serves the first read only when that read fits in its 64 KiB,
+        and the full analysis reads a small file whole, so it takes one more request.
       </p>
       <p className="note small">
         Another host works only when its server allows it. The browser lets this page read another site when that server sends{' '}
-        <code>Access-Control-Allow-Origin</code> for this page, answers a <code>Range</code> request with <code>206 Partial Content</code>, and
+        <code>Access-Control-Allow-Origin</code> for this page, answers a <code>Range</code> request with <code>206 Partial Content</code>{' '}
+        without compressing the reply, and
         lists <code>Content-Range</code> in <code>Access-Control-Expose-Headers</code> so that the size can be read. A server that ignores Range
         answers 200 with the whole file, which the source refuses with <code>unexpected-status</code>. On a Node server there is no CORS: pass a
         presigned URL.

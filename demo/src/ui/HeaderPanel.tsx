@@ -95,7 +95,8 @@ export default function HeaderPanel() {
       <p className="intro">
         <code>analyzeHeader</code> from <code>video-fps-probe/header</code> reads only the container header of an MP4 or MOV file, in this
         thread, under hard limits on the bytes, the reads, the time, the tracks and the top-level boxes. Its cost does not grow with the length
-        of the video, so a server can check every upload cheaply. A limit that is reached gives a coded error instead of a hang. WebM and
+        of the video, so a server can check every upload cheaply. A limit that is reached gives a coded error instead of a hang, or a coded
+        warning when the tracks were already read. WebM and
         Matroska answer <code>unsupported-container</code>: use the full analysis for them.
       </p>
       <Snippet title="Code: header-only analysis with these settings" pair={headerSnippet(shown)} />

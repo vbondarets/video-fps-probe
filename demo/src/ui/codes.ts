@@ -38,7 +38,7 @@ export const WARNING_TEXT: Readonly<Record<WarningCode, string>> = {
   'fragments-ignored': 'Fragments after a moov without an mvex were not read.',
   'structure-limit': 'Too many top-level boxes: the walk stopped there and kept what it had read.',
   'codec-config-unavailable': 'The codec configuration could not be captured, so color and aspect are missing.',
-  'metadata-unavailable': 'The color and aspect code did not load in time, so those fields are missing.',
+  'metadata-unavailable': 'The color and aspect code did not load, did not load in time or failed, so those fields are missing.',
 };
 
 export const MD_COMPRESSION = ['none', 'limited', 'reserved', 'extended'] as const;
