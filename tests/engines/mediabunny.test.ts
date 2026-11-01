@@ -1,5 +1,6 @@
 import { openAsBlob } from 'node:fs';
-import { afterAll, describe, expect, it } from 'vitest';
+import { Logging } from 'mediabunny';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 import { analyze } from '../../src/core/analyze.ts';
 import type { BlobLike } from '../../src/core/reader.ts';
 import { analyzeWithMediabunny, NATIVE_STATS_MAX_PACKETS } from '../../src/engines/mediabunny.ts';
@@ -196,6 +197,33 @@ describe('analyzeWithMediabunny on a file that cannot be read', () => {
   it('still rejects for an abort from the source', async () => {
     const abort = new DOMException('stop', 'AbortError');
     await expect(analyzeWithMediabunny(await failing('vfr_two_phase_5_200.webm', laterRead(abort)), 'abort.webm')).rejects.toBe(abort);
+  });
+});
+
+describe('analyzeWithMediabunny and the mediabunny log', () => {
+  it('records a log argument that has no string form as a warning, with no console call', async () => {
+    const blob = await openAsBlob(fixturePath('cfr_h264_30.mp4')!);
+    let planted = false;
+    const source: BlobLike = {
+      size: blob.size,
+      slice: (start, end) => {
+        if (!planted) {
+          planted = true;
+          (Logging as unknown as { _warn(...args: unknown[]): void })._warn('planted', Object.create(null), 7);
+        }
+        return blob.slice(start, end);
+      },
+    };
+    const spies = (['error', 'warn', 'log', 'info', 'debug', 'trace'] as const).map((method) => vi.spyOn(console, method).mockImplementation(() => undefined));
+    try {
+      const result = await analyzeWithMediabunny(source, 'planted.mp4');
+      expect(planted).toBe(true);
+      expect(result.error).toBeNull();
+      expect(result.warnings).toContain('mediabunny log: planted object 7');
+      for (const spy of spies) expect(spy).not.toHaveBeenCalled();
+    } finally {
+      for (const spy of spies) spy.mockRestore();
+    }
   });
 });
 

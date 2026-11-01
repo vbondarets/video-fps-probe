@@ -158,10 +158,20 @@ async function probe(counted: CountingBlob, result: MediabunnyResult, opts: Anal
   const unhandled: string[] = [];
   const logged: string[] = [];
   Logging.level = LogLevel.Silent;
-  const unlisten = [
-    Logging.on('warn', (args) => logged.push(args.map(String).join(' '))),
-    Logging.on('error', (args) => logged.push(args.map(String).join(' '))),
-  ];
+  const listen = (args: unknown[]) => {
+    logged.push(
+      args
+        .map((arg) => {
+          try {
+            return String(arg);
+          } catch {
+            return typeof arg;
+          }
+        })
+        .join(' '),
+    );
+  };
+  const unlisten = [Logging.on('warn', listen), Logging.on('error', listen)];
   const source = new CustomSource({
     getSize: () => counted.size,
     read: async (start, end) => {

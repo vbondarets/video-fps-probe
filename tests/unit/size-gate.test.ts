@@ -523,7 +523,7 @@ describe('size gate against the 0.3.0 baseline', () => {
     expect(r.status).toBe(1);
     const fails = failures(r.err);
     expect(fails.length).toBeGreaterThan(0);
-    for (const line of fails) expect(line).toMatch(/stage 2 allows 30 B( for engine)? \((engine chunks|files)\)$/);
+    for (const line of fails) expect(line).toMatch(/stage 2 allows 30 B( for engine( and mediabunny)?)? \((engine chunks|files)\)$/);
     const wider = configAt(2, NORMALIZED, (c) => {
       c.files.kinds.engine!.growth['2'] = 50;
       c.groups.find((g) => g.name === 'engine chunks')!.growth['2'] = 50;
