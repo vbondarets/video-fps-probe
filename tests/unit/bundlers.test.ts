@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { checkDocs, compareReports, docVersionProblems, fixtureFileProblems, latestManifest, lockfileChanges, peerWarnings, versions } from '../../scripts/bundlers.mjs';
+import { checkDocs, compareReports, docVersionProblems, fixtureFileProblems, latestManifest, lockfileChanges, peerCheckIssues, peerWarnings, versions } from '../../scripts/bundlers.mjs';
 import { CONFIG_NAME, FORBIDDEN_IN_ZERO_CONFIG, GROUPS, TARGETS, targetsOf } from '../bundlers/targets.mjs';
 
 const FIXTURES = join(import.meta.dirname, '..', 'bundlers', 'fixtures');
@@ -88,20 +88,41 @@ describe('the lockfile check of bundlers setup', () => {
   });
 });
 
+const PNPM_ADD = '✓ Lockfile passes supply-chain policies (verified 10s ago)\nPackages: +1\n[WARN] Issues with peer dependencies found. Run "pnpm peers check" to list them.\n\ndependencies:\n+ video-fps-probe 0.4.0\n\nDone in 224ms using pnpm v12.16.1\n';
+const pnpmPeers = (bad: Record<string, unknown>, missing: Record<string, unknown> = {}) => JSON.stringify({ '.': { bad, missing, conflicts: [], intersections: {} } }, null, 2);
+const unmet = (parent: string, wantedRange: string, foundVersion: string) => [{ parents: [{ name: parent, version: '0.4.0' }], optional: true, wantedRange, foundVersion, resolvedFrom: [] }];
+const YARN_EXPLAIN = [
+  'p0bc138 → ✓ peer-yarn@workspace:. doesn\'t provide @types/mediabunny to video-fps-probe@file:./video-fps-probe.tgz#./video-fps-probe.tgz::hash=4c4ca4&locator=peer-yarn%40workspace%3A. [50740]',
+  'p2155c6 → ✘ peer-yarn@workspace:. provides mediabunny@npm:1.61.0 to video-fps-probe@file:./video-fps-probe.tgz#./video-fps-probe.tgz::hash=4c4ca4&locator=peer-yarn%40workspace%3A. [50740]',
+  'p9a1b2c → ✘ peer-yarn@workspace:. doesn\'t provide react to @vitejs/plugin-react@npm:5.0.0 [1a2b3]',
+].join('\n');
+
 describe('the peer warning scan', () => {
-  it('finds the Yarn peer codes and ignores the PnP loader notice', () => {
-    expect(peerWarnings('yarn', '➤ YN0092: │ ESM support for PnP uses the experimental loader API\n➤ YN0002: │ app does not provide mp4box (p1), requested by video-fps-probe')).toEqual(['➤ YN0002: │ app does not provide mp4box (p1), requested by video-fps-probe']);
+  it('keeps the Yarn peer codes that name the package, not the PnP notice, the YN0086 summary or the fixture workspace', () => {
+    const output = [
+      '➤ YN0092: │ ESM support for PnP uses the experimental loader API and is therefore experimental',
+      '➤ YN0060: │ mp4box is listed by your project with version 2.3.0 (pc23d70), which doesn\'t satisfy what video-fps-probe requests (^2.4.1).',
+      '➤ YN0086: │ Some peer dependencies are incorrectly met by your project; run yarn explain peer-requirements <hash> for details, where <hash> is the six-letter p-prefixed code.',
+      '➤ YN0002: │ video-fps-probe-bundlers-yarn-pnp@workspace:. doesn\'t provide react (p4f4d37), requested by @vitejs/plugin-react.',
+    ].join('\n');
+    expect(peerWarnings('yarn', output)).toEqual(['➤ YN0060: │ mp4box is listed by your project with version 2.3.0 (pc23d70), which doesn\'t satisfy what video-fps-probe requests (^2.4.1).']);
   });
 
-  it('finds a pnpm missing peer and ignores unrelated output', () => {
-    expect(peerWarnings('pnpm', ' WARN  Issues with peer dependencies found\n└─┬ video-fps-probe 0.4.1\n  └── ✕ missing peer mp4box@^2.4.1\nDone in 1s')).toEqual(["  └── ✕ missing peer mp4box@^2.4.1"]);
+  it('leaves pnpm 12 to pnpm peers check, since its add prints only a summary line', () => {
+    expect(peerWarnings('pnpm', PNPM_ADD)).toEqual([]);
   });
 
-  it('reads the pnpm issue tree: an unmet peer under the package, not a missing peer of another package', () => {
-    const tree = ' WARN  Issues with peer dependencies found\r\n.\r\n├─┬ @vitejs/plugin-react 5.0.0\r\n│ └── ✕ missing peer react@^19.0.0\r\n└─┬ video-fps-probe 0.4.1\r\n  ├── ✕ unmet peer mp4box@^2.5.0: found 2.4.1\r\n  └─┬ some-child 1.0.0\r\n    └── ✕ missing peer x@1\r\nPeer dependencies that should be installed:\r\n  react@^19.0.0\r\n';
-    expect(peerWarnings('pnpm', tree)).toEqual(['  ├── ✕ unmet peer mp4box@^2.5.0: found 2.4.1', '    └── ✕ missing peer x@1']);
-    expect(peerWarnings('pnpm', ' WARN  Issues with peer dependencies found\n.\n└─┬ @vitejs/plugin-react 5.0.0\n  └── ✕ missing peer react@^19.0.0\n')).toEqual([]);
-    expect(peerWarnings('pnpm', '└─┬ video-fps-probe-bundlers-pnpm-strict 0.0.0\n  └── ✕ missing peer vite@8\n')).toEqual([]);
+  it('reads the JSON of pnpm peers check: an unmet or missing peer of the package, not of another package', () => {
+    expect(peerCheckIssues('pnpm', pnpmPeers({}), 0)).toEqual([]);
+    const report = pnpmPeers({ mp4box: unmet('video-fps-probe', '^2.4.1', '2.3.0'), react: unmet('@vitejs/plugin-react', '^19.0.0', '18.3.1') }, { mediabunny: [{ parents: [{ name: 'video-fps-probe', version: '0.4.0' }], optional: false, wantedRange: '^1.62.0' }] });
+    expect(peerCheckIssues('pnpm', report, 1)).toEqual(['unmet peer mp4box@^2.4.1 of video-fps-probe in .: found 2.3.0', 'missing peer mediabunny@^1.62.0 of video-fps-probe in .']);
+    expect(() => peerCheckIssues('pnpm', 'ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL', 1)).toThrow('pnpm peers check --json exited with 1 and printed no JSON report');
+  });
+
+  it('reads yarn explain peer-requirements: a failed requirement of the package, and fails when the package is not listed', () => {
+    expect(peerCheckIssues('yarn', YARN_EXPLAIN, 0)).toEqual([YARN_EXPLAIN.split('\n')[1]]);
+    expect(peerCheckIssues('yarn', YARN_EXPLAIN.split('\n')[0]!, 0)).toEqual([]);
+    expect(() => peerCheckIssues('yarn', YARN_EXPLAIN.split('\n')[2]!, 0)).toThrow('yarn explain peer-requirements exited with 0 and listed no peer requirement of video-fps-probe');
   });
 
   it('keeps the Bun peer warnings that name the package or one of its peers', () => {

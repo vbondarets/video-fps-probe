@@ -90,7 +90,7 @@ function run(command, args, { cwd, env, log, allowFailure = false }) {
   }
   process.stdout.write(output.length > 20000 ? `${output.slice(0, 4000)}\n...\n${output.slice(-12000)}` : output);
   if (r.status !== 0 && !allowFailure) throw new Error(`${line} exited with ${r.status ?? r.signal} in ${cwd}`);
-  return { status: r.status, output };
+  return { status: r.status, output, stdout: r.stdout ?? '' };
 }
 
 function storeDir() {
@@ -241,29 +241,51 @@ export function lockfileChanges(pmName, before, after) {
 
 const PEER_WARNING = {
   npm: /npm warn.*(peer|ERESOLVE).*video-fps-probe|video-fps-probe.*npm warn.*peer/i,
-  yarn: /YN0002|YN0060|YN0086/,
+  yarn: /YN0002|YN0060/,
 };
+const NAMES_PACKAGE = /(?<![\w-])video-fps-probe(?![\w-])/;
 const PEERS = Object.keys(readJson(join(REPO_ROOT, 'package.json')).peerDependencies ?? {});
+const PEER_CHECK = { pnpm: ['peers', 'check', '--json'], yarn: ['explain', 'peer-requirements'] };
 
-function pnpmPeerIssues(lines) {
+export function peerWarnings(pmName, output) {
+  const lines = output.split(/\r?\n/);
+  if (pmName === 'bun') return lines.filter((line) => /peer dependency/i.test(line) && (NAMES_PACKAGE.test(line) || PEERS.some((peer) => line.includes(`"${peer}@`))));
+  if (pmName === 'yarn') return lines.filter((line) => PEER_WARNING.yarn.test(line) && NAMES_PACKAGE.test(line));
+  return lines.filter((line) => PEER_WARNING[pmName]?.test(line));
+}
+
+function pnpmPeerIssues(stdout, status) {
+  let projects;
+  try {
+    projects = JSON.parse(stdout.slice(stdout.indexOf('{')));
+  } catch {
+    throw new Error(`pnpm ${PEER_CHECK.pnpm.join(' ')} exited with ${status} and printed no JSON report`);
+  }
   const issues = [];
-  for (const [i, line] of lines.entries()) {
-    const header = /^([\s│]*)[├└]─┬ video-fps-probe[ @]/.exec(line);
-    if (!header) continue;
-    for (const child of lines.slice(i + 1)) {
-      const lead = /^([\s│]*)[├└]─/.exec(child);
-      if (!lead || lead[1].length <= header[1].length) break;
-      if (/(missing|unmet) peer/i.test(child)) issues.push(child);
+  for (const [project, report] of Object.entries(projects)) {
+    for (const [kind, peers] of [['unmet', report?.bad], ['missing', report?.missing]]) {
+      for (const [peer, list] of Object.entries(peers ?? {})) {
+        for (const issue of [list].flat()) {
+          if (!(issue?.parents ?? []).some((parent) => parent.name === PACKAGE)) continue;
+          issues.push(`${kind} peer ${peer}@${issue.wantedRange} of ${PACKAGE} in ${project}${issue.foundVersion ? `: found ${issue.foundVersion}` : ''}`);
+        }
+      }
     }
   }
   return issues;
 }
 
-export function peerWarnings(pmName, output) {
-  const lines = output.split(/\r?\n/);
-  if (pmName === 'pnpm') return pnpmPeerIssues(lines);
-  if (pmName === 'bun') return lines.filter((line) => /peer dependency/i.test(line) && (line.includes(PACKAGE) || PEERS.some((peer) => line.includes(`"${peer}@`))));
-  return lines.filter((line) => PEER_WARNING[pmName]?.test(line));
+export function peerCheckIssues(pmName, stdout, status) {
+  if (pmName === 'pnpm') return pnpmPeerIssues(stdout, status);
+  const lines = stdout.split(/\r?\n/).filter((line) => line.includes(` to ${PACKAGE}@`));
+  if (status !== 0 || lines.length === 0) throw new Error(`yarn ${PEER_CHECK.yarn.join(' ')} exited with ${status} and listed no peer requirement of ${PACKAGE}`);
+  return lines.filter((line) => line.includes('✘'));
+}
+
+function peerCheck(target, root, env, log, latest) {
+  if (!PEER_CHECK[target.pm]) return [];
+  const r = pm(target, PEER_CHECK[target.pm], { cwd: root, env, log, allowFailure: true }, latest);
+  return peerCheckIssues(target.pm, r.stdout, r.status);
 }
 
 function latestVersion(name, env, cwd) {
@@ -388,9 +410,9 @@ function setupTarget(dir, target, { env, spec, latest, registry }) {
   const after = existsSync(join(root, lockfile)) ? readFileSync(join(root, lockfile), 'utf8') : null;
   const changes = before === null || after === null ? [] : lockfileChanges(target.pm, before, after);
   if (changes.length > 0) throw new Error(`${target.name}: adding ${spec} changed lockfile entries other than ${PACKAGE}: ${changes.slice(0, 20).join(', ')}`);
-  const warnings = target.peerWarnings ? peerWarnings(target.pm, added.output) : [];
+  const warnings = target.peerWarnings ? [...peerWarnings(target.pm, added.output), ...peerCheck(target, root, env, log, latest)] : [];
   writeJson(join(measureDir(dir, target), 'setup.json'), { target: target.name, latest: resolvedLatest, peerWarnings: warnings, lockfileChanges: changes });
-  if (warnings.length > 0) throw new Error(`${target.name}: adding ${spec} printed peer warnings:\n${warnings.join('\n')}`);
+  if (warnings.length > 0) throw new Error(`${target.name}: adding ${spec} left peers of ${PACKAGE} unmet:\n${warnings.join('\n')}`);
   console.log(`set up ${target.name} with ${target.pm} in ${((Date.now() - started) / 1000).toFixed(1)} s`);
 }
 
@@ -970,7 +992,8 @@ Commands:
                install of its toolchain (npm ci, pnpm install --frozen-lockfile, yarn install --immutable,
                bun install --frozen-lockfile), adds the package with the package manager's own add command
                and fails a target when that changed a lockfile entry other than ${PACKAGE}
-               or printed a peer warning for it
+               or left a peer of it unmet (a peer warning of the add, pnpm peers check,
+               yarn explain peer-requirements)
   build        builds each target and records the build outcome and the emitted JavaScript. setup and
                build go on past a target that fails and exit non-zero at the end, naming each one
   serve        serves every built target on its own port from ${BUNDLERS_PORT + 1}, static files or a proxy in

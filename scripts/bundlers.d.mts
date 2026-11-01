@@ -23,6 +23,7 @@ export function runtimeVersion(name: string): string | null;
 export function latestManifest(root: string, target: { pm: string }, lookup: (name: string, kind: 'runtime' | 'package') => string | null): { manifest: Record<string, unknown> | null; resolved: Record<string, string | null> };
 export function lockfileChanges(pm: string, before: string | null, after: string): string[];
 export function peerWarnings(pm: string, output: string): string[];
+export function peerCheckIssues(pm: 'pnpm' | 'yarn', stdout: string, status: number | null): string[];
 export function compareReports(committed: unknown, measured: unknown): string[];
 export function checkPins(): string[];
 export function fixtureFileProblems(target: { name: string; configs: string[]; sources?: string[]; snippets?: string[] }, files: Array<{ path: string; text: string }>): string[];
