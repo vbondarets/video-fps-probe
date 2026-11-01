@@ -79,14 +79,16 @@ ${HEADER_RETURN}
   };
 }
 
-const TRACK_SUMMARY = `  const track = result.videoTracks.find((t) => t.trackId === result.primaryTrackId);
+const TRACK_SUMMARY = `  if (result.errorCode) return { ok: false, code: result.errorCode, message: result.error } as const;
+  const track = result.videoTracks.find((t) => t.trackId === result.primaryTrackId);
   return {
+    ok: true,
     fps: track?.avgFps?.value ?? null,
     frames: track?.presentedFrames ?? track?.frames ?? null,
     variable: track?.isVfr ?? null,
     medianFrameInterval: track?.medianFrameInterval ?? null,
     enabled: track?.enabled ?? null,
-  };`;
+  } as const;`;
 
 export const ANALYZE_SNIPPET: SnippetPair = {
   browser: `import { createProbe } from 'video-fps-probe';
@@ -108,15 +110,20 @@ ${TRACK_SUMMARY}
 `,
 };
 
-const COLOR_SUMMARY = `  const track = result.videoTracks.find((t) => t.trackId === result.primaryTrackId);
+const COLOR_SUMMARY = `  if (result.errorCode) return { ok: false, code: result.errorCode, message: result.error } as const;
+  const track = result.videoTracks.find((t) => t.trackId === result.primaryTrackId);
+  const color = track?.color;
   return {
-    hdr: track?.color?.hdr ?? null,
-    dolbyVision: track?.color?.dolbyVision ?? null,
-    transfer: track?.color?.transfer ?? null,
+    ok: true,
+    colorRead: color !== undefined,
+    hdr: color?.hdr ?? null,
+    dolbyVision: color?.dolbyVision ?? null,
+    transfer: color?.transfer ?? null,
+    aspectRead: track?.sampleAspectRatio !== undefined,
     sampleAspectRatio: track?.sampleAspectRatio ?? null,
     displayWidth: track?.displayWidth ?? null,
     displayHeight: track?.displayHeight ?? null,
-  };`;
+  } as const;`;
 
 export const COLOR_SNIPPET: SnippetPair = {
   browser: `import { createProbe } from 'video-fps-probe';
@@ -132,10 +139,13 @@ ${COLOR_SUMMARY}
 }
 `,
   node: `import { openAsBlob } from 'node:fs';
-import { analyzeHeader } from 'video-fps-probe/header';
+import { analyze } from 'video-fps-probe';
+import { withAspect } from 'video-fps-probe/aspect';
+import { withColor } from 'video-fps-probe/color';
 
 export async function colorAndAspectOf(path: string) {
-  const result = await analyzeHeader(await openAsBlob(path), { name: path, color: true, aspect: true });
+  const raw = await analyze(await openAsBlob(path), { name: path, codecConfig: true });
+  const result = withAspect(withColor(raw, { keepCodecConfig: true }));
 ${COLOR_SUMMARY}
 }
 `,
