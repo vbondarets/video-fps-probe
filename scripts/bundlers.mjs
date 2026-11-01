@@ -353,7 +353,8 @@ export function setup(dir, targets, { tarball, latest = false, registry = false 
     if (changes.length > 0) throw new Error(`${target.name}: adding ${spec} changed lockfile entries other than ${PACKAGE}: ${changes.slice(0, 20).join(', ')}`);
     const warnings = target.peerWarnings ? peerWarnings(target.pm, added.output) : [];
     writeJson(join(measureDir(dir, target), 'setup.json'), { target: target.name, latest: resolvedLatest, peerWarnings: warnings, lockfileChanges: changes });
-    console.log(`set up ${target.name} with ${target.pm} in ${((Date.now() - started) / 1000).toFixed(1)} s${warnings.length ? `, ${warnings.length} peer warning(s)` : ''}`);
+    if (warnings.length > 0) throw new Error(`${target.name}: adding ${spec} printed peer warnings:\n${warnings.join('\n')}`);
+    console.log(`set up ${target.name} with ${target.pm} in ${((Date.now() - started) / 1000).toFixed(1)} s`);
   }
 }
 
