@@ -161,8 +161,7 @@ export class NoiseGuard {
 
 let current: NoiseGuard | null = null;
 
-export async function watch(page: Page): Promise<NoiseCollector> {
-  const collector = current?.collector ?? new NoiseCollector();
+export async function watch(page: Page, collector: NoiseCollector = current?.collector ?? new NoiseCollector()): Promise<NoiseCollector> {
   await collector.attachContext(page.context());
   return collector;
 }

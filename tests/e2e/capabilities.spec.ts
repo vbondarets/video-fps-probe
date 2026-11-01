@@ -1,7 +1,7 @@
 import { openAsBlob, readFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '../helpers/clean-console.ts';
 import { bytes, ms } from '../../demo/src/ui/format.ts';
 import { SAMPLES } from '../../demo/src/ui/samples.ts';
 import { headerSnippet, LIMIT_PRESETS } from '../../demo/src/ui/snippets.ts';

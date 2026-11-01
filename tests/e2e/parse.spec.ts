@@ -1,5 +1,5 @@
 import { existsSync, readdirSync } from 'node:fs';
-import { expect, test, type Page } from '@playwright/test';
+import { NoiseCollector, expect, test, watch, type Page } from '../helpers/clean-console.ts';
 import type { FileResult, MatroskaMode } from '../../src/core/types.ts';
 import { FILES_DIR } from '../helpers/fixtures.ts';
 import { addFixtures, chunk, committedFixtures, contract, fixtureFile, nodeAnalyze, openApp, probeResults, withoutTiming } from './support.ts';
@@ -24,10 +24,12 @@ for (const [mode, names] of PLAN) {
     let page: Page;
     let results = new Map<string, FileResult>();
     const pageErrors: string[] = [];
+    const noise = new NoiseCollector();
 
     test.beforeAll(async ({ browser }) => {
       test.setTimeout(240_000);
       page = await browser.newPage();
+      await watch(page, noise);
       page.on('pageerror', (e) => pageErrors.push(`${e.name}: ${e.message}`));
       await openApp(page, mode);
       for (const batch of chunk(names, BATCH)) await addFixtures(page, batch);
@@ -49,8 +51,9 @@ for (const [mode, names] of PLAN) {
       });
     }
 
-    test('no uncaught page errors', () => {
+    test('no uncaught page errors, console warning or error, unhandled rejection or failed request', async () => {
       expect(pageErrors).toEqual([]);
+      expect((await noise.finish()).map((n) => n.text)).toEqual([]);
     });
   });
 }

@@ -1,5 +1,5 @@
 import { writeFile } from 'node:fs/promises';
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../helpers/clean-console.ts';
 import { primaryTrack } from '../../src/core/result.ts';
 import { addFixtures, nodeAnalyze, openApp, probeResults, type ProbeWindow } from './support.ts';
 

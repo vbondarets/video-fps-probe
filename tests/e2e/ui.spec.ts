@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { openAsBlob } from 'node:fs';
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '../helpers/clean-console.ts';
 import { primaryTrack } from '../../src/core/result.ts';
 import type { FileResult } from '../../src/core/types.ts';
 import { analyzeWithMediabunny } from '../../src/engines/mediabunny.ts';

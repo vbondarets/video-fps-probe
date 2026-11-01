@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../helpers/clean-console.ts';
 import { addFixtures, fixtureFile, openApp, waitSettled, type ProbeWindow } from './support.ts';
 
 const MP4 = 'cfr_h264_30.mp4';
@@ -37,7 +37,9 @@ async function redeploy(page: Page, gone: string, newBuild: boolean): Promise<st
 }
 
 test.describe('a tab opened before a redeploy', () => {
-  test('shows one reload banner instead of an error per file when a new build replaced the probe client chunk, and works after the reload', async ({ page }) => {
+  test('shows one reload banner instead of an error per file when a new build replaced the probe client chunk, and works after the reload', async ({ page, allowNoise }) => {
+    allowNoise({ browsers: ['chromium', 'firefox', 'webkit'], request: /\/assets\/probe-[\w-]+\.js\b/, reason: 'the test serves a 404 for the probe client chunk of the old build' });
+    allowNoise({ browsers: ['chromium', 'webkit'], console: /Failed to load resource: the server responded with a status of 404 .*\/assets\/probe-[\w-]+\.js/, reason: 'Chromium and WebKit log the 404 of the probe client chunk' });
     await openApp(page);
     const requests = await redeploy(page, '**/assets/probe-*.js', true);
     await dropFour(page);
@@ -57,7 +59,9 @@ test.describe('a tab opened before a redeploy', () => {
     await expect(page.locator('article.card dl.grid')).toHaveCount(4);
   });
 
-  test('shows the reload banner when a new build replaced the worker script', async ({ page }) => {
+  test('shows the reload banner when a new build replaced the worker script', async ({ page, allowNoise }) => {
+    allowNoise({ browsers: ['chromium', 'firefox', 'webkit'], request: /\/assets\/probe\.worker-[\w-]+\.js\b/, reason: 'the test serves a 404 for the worker script of the old build' });
+    allowNoise({ browsers: ['webkit'], console: /Failed to load resource: the server responded with a status of 404 .*\/assets\/probe\.worker-[\w-]+\.js/, reason: 'WebKit logs the 404 of the worker script' });
     await openApp(page);
     const requests = await redeploy(page, '**/assets/probe.worker-*.js', true);
     await dropFour(page);
@@ -68,7 +72,9 @@ test.describe('a tab opened before a redeploy', () => {
     expect(requests.length).toBeLessThanOrEqual(2);
   });
 
-  test('shows the reload banner when a worker that already ran cannot load the parser of a new container after a new build', async ({ page }) => {
+  test('shows the reload banner when a worker that already ran cannot load the parser of a new container after a new build', async ({ page, allowNoise }) => {
+    allowNoise({ browsers: ['chromium', 'firefox', 'webkit'], request: /\/assets\/matroska-[\w-]+\.js\b/, reason: 'the test serves a 404 for the Matroska parser chunk of the old build' });
+    allowNoise({ browsers: ['webkit'], console: /Failed to load resource: the server responded with a status of 404 .*\/assets\/matroska-[\w-]+\.js/, reason: 'WebKit logs the 404 of the Matroska parser chunk that the worker imports' });
     await openApp(page);
     await addFixtures(page, [MP4]);
     const requests = await redeploy(page, '**/assets/matroska-*.js', true);
@@ -80,7 +86,9 @@ test.describe('a tab opened before a redeploy', () => {
     expect(requests.length).toBeGreaterThan(0);
   });
 
-  test('keeps the page and shows the reload banner when the rate profile or compare panel chunk is gone after a new build', async ({ page }) => {
+  test('keeps the page and shows the reload banner when the rate profile or compare panel chunk is gone after a new build', async ({ page, allowNoise }) => {
+    allowNoise({ browsers: ['chromium', 'firefox', 'webkit'], request: /\/assets\/(?:RateProfile|Compare)-[\w-]+\.js\b/, reason: 'the test serves a 404 for the rate profile and compare panel chunks of the old build' });
+    allowNoise({ browsers: ['chromium', 'webkit'], console: /Failed to load resource: the server responded with a status of 404 .*\/assets\/(?:RateProfile|Compare)-[\w-]+\.js/, reason: 'Chromium and WebKit log the 404 of the panel chunks' });
     await openApp(page);
     await addFixtures(page, [MP4]);
     const requests = await redeploy(page, '**/assets/{RateProfile,Compare}-*.js', true);
@@ -98,8 +106,10 @@ test.describe('a tab opened before a redeploy', () => {
     expect(requests.some((url) => /Compare-/.test(url))).toBe(true);
   });
 
-  test('loads a rate profile or compare panel chunk again on Retry after a network failure', async ({ page, browserName }) => {
+  test('loads a rate profile or compare panel chunk again on Retry after a network failure', async ({ page, browserName, allowNoise }) => {
     test.skip(browserName === 'firefox', 'Firefox keeps a failed module fetch in its module map (the HTML rule before whatwg/html#10327), so import() of the same chunk fails again without a request until the page reloads');
+    allowNoise({ browsers: ['chromium', 'webkit'], request: /\/assets\/(?:RateProfile|Compare)-[\w-]+\.js\b/, reason: 'the test aborts the requests of the panel chunks to check Retry' });
+    allowNoise({ browsers: ['chromium'], console: /Failed to load resource: net::ERR_FAILED .*\/assets\/(?:RateProfile|Compare)-[\w-]+\.js/, reason: 'Chromium logs the aborted requests of the panel chunks' });
     await openApp(page);
     const requests: string[] = [];
     let failing = true;
@@ -124,7 +134,9 @@ test.describe('a tab opened before a redeploy', () => {
     await expect(page.getByRole('alert')).toHaveCount(0);
   });
 
-  test('keeps the parser import error of a file when the page is unchanged', async ({ page }) => {
+  test('keeps the parser import error of a file when the page is unchanged', async ({ page, allowNoise }) => {
+    allowNoise({ browsers: ['chromium', 'firefox', 'webkit'], request: /\/assets\/matroska-[\w-]+\.js\b/, reason: 'the test serves a 404 for the Matroska parser chunk' });
+    allowNoise({ browsers: ['webkit'], console: /Failed to load resource: the server responded with a status of 404 .*\/assets\/matroska-[\w-]+\.js/, reason: 'WebKit logs the 404 of the Matroska parser chunk that the worker imports' });
     await openApp(page);
     await addFixtures(page, [MP4]);
     await redeploy(page, '**/assets/matroska-*.js', false);
@@ -133,7 +145,9 @@ test.describe('a tab opened before a redeploy', () => {
     await expect(page.getByRole('alert')).toHaveCount(0);
   });
 
-  test('names the import error on every file and shows no banner when the probe client chunk is missing but the page is unchanged', async ({ page, browserName }) => {
+  test('names the import error on every file and shows no banner when the probe client chunk is missing but the page is unchanged', async ({ page, browserName, allowNoise }) => {
+    allowNoise({ browsers: ['chromium', 'firefox', 'webkit'], request: /\/assets\/probe-[\w-]+\.js\b/, reason: 'the test serves a 404 for the probe client chunk' });
+    allowNoise({ browsers: ['chromium', 'webkit'], console: /Failed to load resource: the server responded with a status of 404 .*\/assets\/probe-[\w-]+\.js/, reason: 'Chromium and WebKit log the 404 of the probe client chunk' });
     await openApp(page);
     const requests = await redeploy(page, '**/assets/probe-*.js', false);
     await dropFour(page);
@@ -155,7 +169,9 @@ test.describe('a tab opened before a redeploy', () => {
     await expect(page.locator('article.card dl.grid')).toHaveCount(4);
   });
 
-  test('names a worker script that failed to load, fetches it at most once per pool slot, and retries on the next drop', async ({ page }) => {
+  test('names a worker script that failed to load, fetches it at most once per pool slot, and retries on the next drop', async ({ page, allowNoise }) => {
+    allowNoise({ browsers: ['chromium', 'firefox', 'webkit'], request: /\/assets\/probe\.worker-[\w-]+\.js\b/, reason: 'the test serves a 404 for the worker script' });
+    allowNoise({ browsers: ['webkit'], console: /Failed to load resource: the server responded with a status of 404 .*\/assets\/probe\.worker-[\w-]+\.js/, reason: 'WebKit logs the 404 of the worker script' });
     await openApp(page);
     const requests = await redeploy(page, '**/assets/probe.worker-*.js', false);
     await dropFour(page);
