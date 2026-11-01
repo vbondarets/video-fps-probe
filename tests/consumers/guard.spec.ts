@@ -1,6 +1,6 @@
 import { expect, test, type BrowserContext } from '@playwright/test';
 import { CONSUMERS_PORT } from '../../scripts/consumers.mjs';
-import { NoiseCollector, NoiseGuard, type BrowserName, type Noise, type NoiseKind } from '../helpers/clean-console.ts';
+import { NoiseCollector, NoiseGuard, test as guarded, watch, type BrowserName, type Noise, type NoiseKind } from '../helpers/clean-console.ts';
 
 type Channel = 'page console warning' | 'module worker console warning' | 'classic worker console warning' | 'page throw' | 'page rejection' | '404 script';
 
@@ -90,4 +90,51 @@ test('an allowance passes only the noise it names, in its browsers, and fails wh
   expect(await run([failed], { browsers: [browser], request: /Failed to load resource/, reason: 'wrong kind' })).toEqual([failed.text, `unused request allowance in ${browser}: /Failed to load resource/ (wrong kind)`]);
   expect(await run([thrown], { browsers: [browser], console: /x/, request: /x/, reason: 'page errors are never allowed' })).toEqual([thrown.text, `unused console allowance in ${browser}: /x/ (page errors are never allowed)`, `unused request allowance in ${browser}: /x/ (page errors are never allowed)`]);
   expect(() => new NoiseGuard(browser).allow({ browsers: [browser], console: /x/, reason: ' ' })).toThrow('allowNoise needs a reason');
+});
+
+async function serveGuardPage(context: BrowserContext, body: string): Promise<void> {
+  await context.route('**/__guard/**', (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path === '/__guard/index.html') return route.fulfill({ status: 200, contentType: 'text/html', body: `<!doctype html><title>guard</title>${body}` });
+    if (path === '/__guard/worker.js') return route.fulfill({ status: 200, contentType: 'text/javascript', body: WORKER });
+    return route.fulfill({ status: 404, contentType: 'text/plain', body: 'not found' });
+  });
+}
+
+guarded('the guard fails a test whose page fixture runs a module worker that warns', async ({ page, context }) => {
+  guarded.fail();
+  await serveGuardPage(context, PAGES['module worker console warning'].body);
+  await page.goto(`${ORIGIN}/__guard/index.html`);
+  await expect(page).toHaveTitle('ready');
+});
+
+guarded('the guard fails a test with an unhandled rejection on a page of context.newPage()', async ({ context }) => {
+  guarded.fail();
+  await serveGuardPage(context, PAGES['page rejection'].body);
+  const page = await context.newPage();
+  await page.goto(`${ORIGIN}/__guard/index.html`);
+  await page.waitForTimeout(250);
+});
+
+guarded('the guard fails a test with a 404 script on a page of browser.newPage() that watch covers', async ({ browser }) => {
+  guarded.fail();
+  const page = await browser.newPage();
+  await watch(page);
+  await serveGuardPage(page.context(), PAGES['404 script'].body);
+  await page.goto(`${ORIGIN}/__guard/index.html`);
+  await page.waitForTimeout(250);
+});
+
+guarded('the guard fails a test whose allowance goes unused', async ({ page, context, allowNoise }) => {
+  guarded.fail();
+  allowNoise({ browsers: ['chromium', 'firefox', 'webkit'], console: /never logged/, reason: 'unused on purpose, so the test fails' });
+  await serveGuardPage(context, '');
+  await page.goto(`${ORIGIN}/__guard/index.html`);
+  await expect(page).toHaveTitle('guard');
+});
+
+guarded('the guard passes a quiet page', async ({ page, context }) => {
+  await serveGuardPage(context, '');
+  await page.goto(`${ORIGIN}/__guard/index.html`);
+  await expect(page).toHaveTitle('guard');
 });
