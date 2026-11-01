@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compareReports, fixtureFileProblems, lockfileChanges, peerWarnings } from '../../scripts/bundlers.mjs';
+import { checkDocs, compareReports, docVersionProblems, fixtureFileProblems, lockfileChanges, peerWarnings, versions } from '../../scripts/bundlers.mjs';
 import { CONFIG_NAME, FORBIDDEN_IN_ZERO_CONFIG, GROUPS, TARGETS, targetsOf } from '../bundlers/targets.mjs';
 
 const npmLock = (extra: Record<string, unknown> = {}, rootDeps: Record<string, string> | null = null) =>
@@ -110,6 +110,25 @@ describe('the report check', () => {
     changed.targets[0]!.apps[0]!.split = false;
     expect(compareReports(report, changed)).toEqual(['webpack app: workers changed from 2 to 3', 'webpack app: split changed from true to false', 'parcel: the status changed from build fails to verified']);
     expect(compareReports(report, { targets: report.targets.slice(0, 1) })[0]).toBe('the target set changed: committed webpack, parcel, measured webpack');
+  });
+});
+
+describe('the version check of docs/bundlers.md', () => {
+  const v = versions();
+  const pinned = `webpack ${v.packages.webpack}, Rspack ${v.packages['@rspack/core']}, Next.js ${v.packages.next}, Angular ${v.packages['@angular/build']}, SvelteKit ${v.packages['@sveltejs/kit']}, Nuxt ${v.packages.nuxt}, Parcel ${v.packages.parcel}, Bun ${v.runtimes.bun}, Deno ${v.runtimes.deno}, pnpm ${v.runtimes.pnpm}, Yarn ${v.runtimes.yarn} and Vite ${v.packages.vite}.`;
+
+  it('passes the pins and a version named after since', () => {
+    expect(docVersionProblems(`${pinned} It works since Vite 8.0.0.`, v)).toEqual([]);
+    expect(checkDocs()).toEqual([]);
+  });
+
+  it('fails a stale tool version anywhere in the text and a pin the text never names', () => {
+    expect(docVersionProblems(`${pinned} verified in CI: webpack 5.999.0. Parcel 2.99.0 fails.`, v)).toEqual([
+      `docs/bundlers.md names webpack 5.999.0, the pin in tests/bundlers/versions.json is ${v.packages.webpack}`,
+      `docs/bundlers.md names Parcel 2.99.0, the pin in tests/bundlers/versions.json is ${v.packages.parcel}`,
+    ]);
+    expect(docVersionProblems(pinned.replace(`Nuxt ${v.packages.nuxt}`, 'Nuxt'), v)).toEqual([`docs/bundlers.md does not name Nuxt ${v.packages.nuxt}, the pin in tests/bundlers/versions.json`]);
+    expect(docVersionProblems(`${pinned} html-webpack-plugin 5.6.8.`, v)).toEqual([]);
   });
 });
 

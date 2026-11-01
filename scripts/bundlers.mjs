@@ -901,7 +901,19 @@ export function checkDocs() {
     if (snippetSource(spec) !== body) problems.push(`the snippet of ${spec} in docs/bundlers.md differs from tests/bundlers/fixtures/${spec.split('#')[0]}`);
   }
   for (const target of TARGETS) for (const s of target.snippets ?? []) if (!seen.has(`${target.name}/${s}`)) problems.push(`docs/bundlers.md has no snippet of ${target.name}/${s} (<!-- snippet: ${target.name}/${s} --> before a code block)`);
-  for (const [name, version] of Object.entries(v.runtimes)) if (!docs.includes(`${name === 'yarn' ? 'Yarn' : name === 'bun' ? 'Bun' : name === 'deno' ? 'Deno' : name} ${version}`)) problems.push(`docs/bundlers.md does not name ${name} ${version}`);
+  problems.push(...docVersionProblems(docs, v));
+  if (existsSync(REPORT_MD) ? readFileSync(REPORT_MD, 'utf8') !== renderMarkdown(committed) : true) problems.push('report/bundlers.md differs from report/bundlers.json: run node scripts/bundlers.mjs report --write');
+  return problems;
+}
+
+export function docVersionProblems(docs, v) {
+  const problems = [];
+  const pins = new Map([...new Set(TARGETS.map((t) => t.tool)), 'vite'].map((tool) => [tool === 'vite' ? 'Vite' : TOOL_NAMES[tool], v.runtimes[tool] ?? v.packages[tool]]));
+  for (const [label, pin] of pins) {
+    if (!docs.includes(`${label} ${pin}`)) problems.push(`docs/bundlers.md does not name ${label} ${pin}, the pin in tests/bundlers/versions.json`);
+    const named = new RegExp(`(since )?(?<![\\w.-])${label.replace('.', '\\.')} (\\d+\\.\\d+\\.\\d+)(?!\\.\\d)`, 'g');
+    for (const [, since, version] of docs.matchAll(named)) if (!since && version !== pin) problems.push(`docs/bundlers.md names ${label} ${version}, the pin in tests/bundlers/versions.json is ${pin}`);
+  }
   return problems;
 }
 
@@ -919,7 +931,8 @@ Commands:
                measurements, --check (the default) compares the measurements with the committed report,
                --self-test plants failures in the committed report
   check-pins   checks exact versions, lockfiles and the zero-config rule of the fixtures
-  check-docs   checks the versions, the generated table and every snippet of docs/bundlers.md
+  check-docs   checks every tool version, the generated table and every snippet of docs/bundlers.md,
+               and that report/bundlers.md is the rendering of report/bundlers.json
 
 Options:
   --dir <dir>        the bundlers directory (default: BUNDLERS_DIR, else the system temp directory)
@@ -969,7 +982,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   else if (cmd === 'report' && values['self-test']) fail(selfTest(), 'the report check catches a planted 50 KB first MP4, a changed status, a changed worker count and a dropped target');
   else if (cmd === 'report') fail(report(resolve(values.measured ?? join(dir, 'measure')), { write: values.write, out: values.out ? resolve(values.out) : null }), values.write ? 'report written' : 'the measured matrix matches report/bundlers.json');
   else if (cmd === 'check-pins') fail(checkPins(), `${TARGETS.length} targets pin exact versions, every lockfile is present and no zero-config file configures the package`);
-  else if (cmd === 'check-docs') fail(checkDocs(), 'docs/bundlers.md matches versions.json, report/bundlers.json and every fixture snippet');
+  else if (cmd === 'check-docs') fail(checkDocs(), 'docs/bundlers.md matches versions.json, report/bundlers.json and every fixture snippet, and report/bundlers.md matches report/bundlers.json');
   else {
     console.error(USAGE);
     process.exitCode = 2;
