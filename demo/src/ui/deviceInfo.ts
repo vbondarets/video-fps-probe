@@ -280,11 +280,20 @@ async function copyText(text: string): Promise<boolean> {
   }
 }
 
+const SECTION_NAMES = { header: 'the header-only results', url: 'the URL results', check: 'the check reports' } as const;
+
+function exportedWhat(doc: ExportDocument): string {
+  const n = doc.results.length;
+  const sections = (Object.keys(SECTION_NAMES) as (keyof typeof SECTION_NAMES)[]).filter((k) => doc[k] !== undefined).map((k) => SECTION_NAMES[k]);
+  if (sections.length === 0) return `${n} result${n === 1 ? '' : 's'}`;
+  const parts = [...(n > 0 ? [`${n} file result${n === 1 ? '' : 's'}`] : []), ...sections];
+  return parts.length === 1 ? parts[0]! : `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}`;
+}
+
 export function exportResults(rows: readonly ExportRow[], settings: ExportSettings, action: ExportAction, extras: ExportExtras = {}): Promise<ExportOutcome> {
   const doc = buildExport(rows, settings, collectEnvironment(), extras);
   const text = JSON.stringify(doc, null, 2);
-  const n = doc.results.length;
-  const what = `${n} result${n === 1 ? '' : 's'}`;
+  const what = exportedWhat(doc);
   if (action === 'download') {
     saveText(text);
     return Promise.resolve({ ok: true, message: `Saved ${what} as ${EXPORT_FILE_NAME}.`, text: null });
