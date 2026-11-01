@@ -333,6 +333,7 @@ export function setup(dir, targets, { tarball, latest = false, registry = false 
   for (const runtime of new Set(targets.map((t) => t.pm).filter((p) => p === 'bun' || p === 'deno'))) checkRuntime(runtime, latest);
   for (const target of targets) {
     const started = Date.now();
+    rmSync(measureDir(dir, target), { recursive: true, force: true });
     const { root } = copyFixture(dir, target);
     const log = join(dir, 'logs', `${target.name}-setup.log`);
     rmSync(log, { force: true });
