@@ -183,6 +183,7 @@ test.describe('every 0.4.0 capability in the demo', () => {
     await expect(cell(webm, 'HDR')).toHaveText('not signalled');
     await expect(cell(webm, 'Bit depth')).toHaveText('not in the container bitstream only');
     await expect(cell(webm, 'Codec string')).toHaveText('not in the container bitstream only');
+    await expect(cell(webm, 'Median frame interval')).toHaveText('17/1000 s on 1 ms timestamps');
   });
 
   test('header only: editable limits, the read plan, the layout and a coded limit error', async ({ page }) => {

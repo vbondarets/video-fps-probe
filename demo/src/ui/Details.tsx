@@ -81,7 +81,7 @@ export default function Details({ r, t }: { r: FileResult; t: VideoTrackResult |
         {t && t.color !== undefined && <ColorCells c={t.color} />}
         {t && t.sampleAspectRatio !== undefined && <AspectCells t={t} />}
         {median !== undefined && (
-          <Cell k="Median frame interval" extra={median ? `${(1 / median.value).toFixed(3)} fps` : null}>
+          <Cell k="Median frame interval" extra={median ? (t?.timestampsQuantized ? 'on 1 ms timestamps' : `${(1 / median.value).toFixed(3)} fps`) : null}>
             {median ? `${median.num}/${median.den} s` : '-'}
           </Cell>
         )}
