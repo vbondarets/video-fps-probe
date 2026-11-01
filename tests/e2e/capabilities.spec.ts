@@ -28,13 +28,13 @@ interface ExportedJson {
   check?: { rules: CheckRules; withColorAndAspect: boolean; reports: { name: string; report: { verdict: string } }[] };
 }
 
-function strictWatch(page: Page): string[] {
+async function strictWatch(page: Page): Promise<string[]> {
   const problems: string[] = [];
   page.on('console', (m) => {
     if (m.type() === 'error' || m.type() === 'warning') problems.push(`console ${m.type()}: ${m.text()}`);
   });
   page.on('pageerror', (e) => problems.push(`pageerror: ${e.name}: ${e.message}`));
-  void page.addInitScript(() => {
+  await page.addInitScript(() => {
     window.addEventListener('unhandledrejection', (e) => console.error(`unhandledrejection: ${String(e.reason)}`));
   });
   return problems;
@@ -121,7 +121,7 @@ test.describe('every 0.4.0 capability in the demo', () => {
   let problems: string[];
 
   test.beforeEach(async ({ page }) => {
-    problems = strictWatch(page);
+    problems = await strictWatch(page);
     await openApp(page);
   });
 
