@@ -211,7 +211,7 @@ export const TARGETS = [
     tool: 'deno',
     pm: 'deno',
     shared: ['server-run-core.mjs', 'server-run.mjs', 'server-run.cjs'],
-    configs: ['deno.json#nodeModulesDir,lock'],
+    configs: ['deno.json#-imports'],
     build: [],
     runners: RUNNERS,
     ...ONE_INSTANCE,

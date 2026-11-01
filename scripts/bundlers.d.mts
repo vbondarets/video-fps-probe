@@ -27,5 +27,7 @@ export function peerCheckIssues(pm: 'pnpm' | 'yarn', stdout: string, status: num
 export function compareReports(committed: unknown, measured: unknown): string[];
 export function checkPins(): string[];
 export function fixtureFileProblems(target: { name: string; configs: string[]; sources?: string[]; snippets?: string[] }, files: Array<{ path: string; text: string }>): string[];
+export function zeroConfigSourceProblems(target: { name: string }, path: string, text: string): string[];
+export function zeroConfigManifestProblems(target: { name: string }, manifest: Record<string, unknown>): string[];
 export function checkDocs(): string[];
 export function docVersionProblems(docs: string, versions: { runtimes: Record<string, string>; packages: Record<string, string> }): string[];

@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { isDeepStrictEqual, parseArgs } from 'node:util';
 import { gzipSync } from 'node:zlib';
 import { BUNDLERS_PORT, CLIENT_MARKER, CONFIG_NAME, DEV_OFFSET, FIRST_MP4_LIMIT, FORBIDDEN_IN_ZERO_CONFIG, GROUPS, PARSER_MARKERS, TARGETS, UPSTREAM_OFFSET, hasPage, targetsOf } from '../tests/bundlers/targets.mjs';
+import { SERVER_ENTRIES } from '../tests/bundlers/shared/server-run-core.mjs';
 import { MIME, packTarball, staticFile } from './consumers.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -655,10 +656,29 @@ function lockfileFor(target) {
 }
 
 function configText(text, entry) {
-  const keys = entry.split('#')[1];
-  if (!keys) return text;
-  const json = JSON.parse(text);
-  return JSON.stringify(Object.fromEntries(keys.split(',').map((k) => [k, json[k]])));
+  const skipped = entry.split('#')[1]?.replace(/^-/, '').split(',');
+  if (!skipped) return text;
+  return JSON.stringify(Object.fromEntries(Object.entries(JSON.parse(text)).filter(([k]) => !skipped.includes(k))));
+}
+
+const ZERO_CONFIG_SPECIFIERS = new Set([PACKAGE, `${PACKAGE}/lazy`, ...Object.values(SERVER_ENTRIES)]);
+const ZERO_CONFIG_KEYS = new Set(['name', 'private', 'type', 'dependencies', 'devDependencies', 'packageManager']);
+const SPECIFIER = /(["'`])(video-fps-probe(?:\/[^"'`\s]*)?)\1/g;
+const FORBIDDEN_IN_ZERO_CONFIG_SOURCE = /standalone|worker|conditionNames|packageExports|node_modules/i;
+
+export function zeroConfigSourceProblems(target, path, text) {
+  const problems = [...text.matchAll(SPECIFIER)].map((m) => m[2]).filter((s) => !ZERO_CONFIG_SPECIFIERS.has(s)).map((s) => `${target.name}: the zero-config source ${path} names ${s}, which is not ${PACKAGE}, ${PACKAGE}/lazy or a server entry`);
+  const hit = FORBIDDEN_IN_ZERO_CONFIG_SOURCE.exec(text.replace(SPECIFIER, ''));
+  if (hit) problems.push(`${target.name}: the zero-config source ${path} contains ${hit[0]}`);
+  return problems;
+}
+
+export function zeroConfigManifestProblems(target, manifest) {
+  const extra = Object.keys(manifest).filter((k) => !ZERO_CONFIG_KEYS.has(k));
+  if (extra.length) return [`${target.name}: package.json of a zero-config target sets ${extra.join(', ')}, only ${[...ZERO_CONFIG_KEYS].join(', ')} are allowed`];
+  const { name: _n, dependencies: _d, devDependencies: _dd, ...rest } = manifest;
+  const hit = FORBIDDEN_IN_ZERO_CONFIG.exec(JSON.stringify(rest));
+  return hit ? [`${target.name}: package.json of a zero-config target sets ${hit[0]}`] : [];
 }
 
 export function fixtureFileProblems(target, files) {
@@ -669,7 +689,11 @@ export function fixtureFileProblems(target, files) {
   for (const source of sources) if (CONFIG_NAME.test(source)) problems.push(`${target.name}: ${source} is listed as an app source, but tools read a file of that name as configuration`);
   for (const listed of [...configs.keys(), ...sources]) if (!paths.has(listed)) problems.push(`${target.name}: tests/bundlers/targets.mjs lists ${listed}, which the fixture does not have`);
   for (const { path, text } of files) {
-    if (path === 'package.json' || Object.values(LOCKFILES).includes(path) || sources.has(path)) continue;
+    if (path === 'package.json' || Object.values(LOCKFILES).includes(path)) continue;
+    if (sources.has(path)) {
+      if (!target.snippets) problems.push(...zeroConfigSourceProblems(target, path, text));
+      continue;
+    }
     const entry = configs.get(path);
     if (!entry) {
       problems.push(`${target.name}: ${path} is neither a config nor an app source of the target in tests/bundlers/targets.mjs`);
@@ -723,12 +747,10 @@ export function checkPins() {
         if (Object.keys(lock.packages ?? {}).some((k) => k.endsWith(`node_modules/${PACKAGE}`))) problems.push(`${target.name}: package-lock.json holds ${PACKAGE}, setup adds it`);
       }
       for (const other of Object.values(LOCKFILES)) if (other !== lockfile && existsSync(join(dir, other))) problems.push(`${target.name}: ${other} does not belong to a ${target.pm} target`);
-      if (!target.snippets) {
-        const { name: _n, dependencies: _d, devDependencies: _dd, ...rest } = manifest;
-        if (FORBIDDEN_IN_ZERO_CONFIG.test(JSON.stringify(rest))) problems.push(`${target.name}: package.json of a zero-config target sets ${FORBIDDEN_IN_ZERO_CONFIG.exec(JSON.stringify(rest))[0]}`);
-      }
+      if (!target.snippets) problems.push(...zeroConfigManifestProblems(target, manifest));
     }
     problems.push(...fixtureFileProblems(target, walk(dir).map((path) => ({ path, text: readFileSync(join(dir, path), 'utf8') }))));
+    if (!target.snippets) for (const file of target.shared) problems.push(...zeroConfigSourceProblems(target, `tests/bundlers/shared/${file}`, readFileSync(join(SHARED, file), 'utf8')));
   }
   for (const name of Object.keys(packages)) if (!used.has(name)) problems.push(`versions.json pins ${name}, which no fixture uses`);
   for (const [name, version] of Object.entries(runtimes)) if (!/^\d+\.\d+\.\d+$/.test(version)) problems.push(`versions.json pins ${name} to ${version}, not an exact version`);

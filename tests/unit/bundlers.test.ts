@@ -1,6 +1,7 @@
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { checkDocs, compareReports, docVersionProblems, fixtureFileProblems, latestManifest, lockfileChanges, peerCheckIssues, peerWarnings, versions } from '../../scripts/bundlers.mjs';
+import { checkDocs, compareReports, docVersionProblems, fixtureFileProblems, latestManifest, lockfileChanges, peerCheckIssues, peerWarnings, versions, zeroConfigManifestProblems, zeroConfigSourceProblems } from '../../scripts/bundlers.mjs';
 import { CONFIG_NAME, FORBIDDEN_IN_ZERO_CONFIG, GROUPS, TARGETS, targetsOf } from '../bundlers/targets.mjs';
 
 const FIXTURES = join(import.meta.dirname, '..', 'bundlers', 'fixtures');
@@ -216,9 +217,28 @@ describe('the target table', () => {
     const svelte = TARGETS.find((t) => t.name === 'sveltekit')!;
     const svelteFiles = ['package.json', 'vite.config.js', ...svelte.sources!].map((path) => ({ path, text: path === 'vite.config.js' ? "export default { optimizeDeps: { exclude: ['x'] } };" : '' }));
     expect(fixtureFileProblems(svelte, svelteFiles)).toEqual(['sveltekit: the zero-config file vite.config.js contains optimizeDeps']);
-    expect(fixtureFileProblems({ ...next, sources: [...next.sources!, 'next.config.mjs'] }, planted)).toEqual(['next-webpack: next.config.mjs is listed as an app source, but tools read a file of that name as configuration']);
+    expect(fixtureFileProblems({ ...next, sources: [...next.sources!, 'next.config.mjs'] }, planted)).toEqual(['next-webpack: next.config.mjs is listed as an app source, but tools read a file of that name as configuration', 'next-webpack: the zero-config source next.config.mjs contains conditionNames']);
     for (const name of ['svelte.config.js', '.parcelrc', 'bunfig.toml', 'tsconfig.app.json', 'jsconfig.json', '.env.production', 'app/next.config.ts']) expect(CONFIG_NAME.test(name), name).toBe(true);
     expect(CONFIG_NAME.test('app/page.js')).toBe(false);
+  });
+
+  it('scans every key of deno.json but imports, the sources and the shared files, and the package.json keys of a zero-config target', () => {
+    const deno = TARGETS.find((t) => t.name === 'deno')!;
+    const denoJson = (extra: Record<string, unknown>) => [{ path: 'deno.json', text: JSON.stringify({ imports: { 'video-fps-probe': 'npm:video-fps-probe', 'video-fps-probe/': 'npm:/video-fps-probe/' }, nodeModulesDir: 'auto', lock: false, ...extra }) }];
+    expect(fixtureFileProblems(deno, denoJson({}))).toEqual([]);
+    expect(fixtureFileProblems(deno, denoJson({ compilerOptions: { lib: ['deno.worker'] }, scopes: { './': { 'video-fps-probe/lazy': 'npm:video-fps-probe/standalone/own.worker.js' } } }))).toEqual(['deno: the zero-config file deno.json#-imports contains worker']);
+    const next = TARGETS.find((t) => t.name === 'next-webpack')!;
+    const page = (text: string) => ['package.json', ...next.sources!].map((path) => ({ path, text: path === 'app/page.js' ? text : '' }));
+    expect(fixtureFileProblems(next, page("import { lazyProbe } from 'video-fps-probe/lazy';\nimport * as header from 'video-fps-probe/header';\nexport const metadata = { title: 'video-fps-probe bundler fixture' };"))).toEqual([]);
+    expect(fixtureFileProblems(next, page("import { lazyProbe } from 'video-fps-probe/standalone/own.worker.js';"))).toEqual(['next-webpack: the zero-config source app/page.js names video-fps-probe/standalone/own.worker.js, which is not video-fps-probe, video-fps-probe/lazy or a server entry']);
+    expect(fixtureFileProblems(next, page("new Worker(new URL('../node_modules/video-fps-probe/dist/x.js', import.meta.url));"))).toEqual(['next-webpack: the zero-config source app/page.js contains Worker']);
+    const configured = TARGETS.find((t) => t.name === 'angular-configured')!;
+    expect(fixtureFileProblems(configured, ['package.json', 'angular.json', 'tsconfig.json', 'tsconfig.app.json', ...configured.sources!].map((path) => ({ path, text: "import 'video-fps-probe/client/lazy';" })))).toEqual([]);
+    const strict = TARGETS.find((t) => t.name === 'pnpm-strict')!;
+    const manifest = JSON.parse(readFileSync(join(FIXTURES, 'pnpm-strict', 'package.json'), 'utf8')) as Record<string, unknown>;
+    expect(zeroConfigManifestProblems(strict, manifest)).toEqual([]);
+    expect(zeroConfigManifestProblems(strict, { ...manifest, pnpm: { nodeLinker: 'hoisted', publicHoistPattern: ['*'] } })).toEqual(['pnpm-strict: package.json of a zero-config target sets pnpm, only name, private, type, dependencies, devDependencies, packageManager are allowed']);
+    expect(zeroConfigSourceProblems(strict, 'tests/bundlers/shared/server-run-core.mjs', readFileSync(join(FIXTURES, '..', 'shared', 'server-run-core.mjs'), 'utf8'))).toEqual([]);
   });
 
   it('flags the tokens a zero-config file may not contain', () => {
