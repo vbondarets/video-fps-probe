@@ -256,18 +256,24 @@ function latestVersion(name, env, cwd) {
   return JSON.parse(r.output.trim().split('\n').filter((l) => l.startsWith('"') || /^\d/.test(l)).at(-1) ?? 'null');
 }
 
-function writeLatestManifest(root, target, env) {
-  const manifestPath = join(root, 'package.json');
-  const manifest = readJson(manifestPath);
-  const resolved = {};
+export function latestManifest(root, target, lookup) {
+  const path = join(root, 'package.json');
+  const resolved = target.pm === 'bun' || target.pm === 'deno' ? { [target.pm]: lookup(target.pm, 'runtime') } : {};
+  if (!existsSync(path)) return { manifest: null, resolved };
+  const manifest = readJson(path);
   for (const field of ['dependencies', 'devDependencies']) {
     for (const name of Object.keys(manifest[field] ?? {})) {
-      resolved[name] = latestVersion(name, env, root);
+      resolved[name] = lookup(name, 'package');
       manifest[field][name] = resolved[name];
     }
   }
   delete manifest.packageManager;
-  writeJson(manifestPath, manifest);
+  return { manifest, resolved };
+}
+
+function writeLatestManifest(root, target, env) {
+  const { manifest, resolved } = latestManifest(root, target, (name, kind) => (kind === 'runtime' ? runtimeVersion(name) : latestVersion(name, env, root)));
+  if (manifest) writeJson(join(root, 'package.json'), manifest);
   const lockfile = LOCKFILES[target.pm];
   if (lockfile) rmSync(join(root, lockfile), { force: true });
   return resolved;

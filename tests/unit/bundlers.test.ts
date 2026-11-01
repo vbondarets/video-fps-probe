@@ -1,6 +1,9 @@
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { checkDocs, compareReports, docVersionProblems, fixtureFileProblems, lockfileChanges, peerWarnings, versions } from '../../scripts/bundlers.mjs';
+import { checkDocs, compareReports, docVersionProblems, fixtureFileProblems, latestManifest, lockfileChanges, peerWarnings, versions } from '../../scripts/bundlers.mjs';
 import { CONFIG_NAME, FORBIDDEN_IN_ZERO_CONFIG, GROUPS, TARGETS, targetsOf } from '../bundlers/targets.mjs';
+
+const FIXTURES = join(import.meta.dirname, '..', 'bundlers', 'fixtures');
 
 const npmLock = (extra: Record<string, unknown> = {}, rootDeps: Record<string, string> | null = null) =>
   JSON.stringify({
@@ -110,6 +113,23 @@ describe('the report check', () => {
     changed.targets[0]!.apps[0]!.split = false;
     expect(compareReports(report, changed)).toEqual(['webpack app: workers changed from 2 to 3', 'webpack app: split changed from true to false', 'parcel: the status changed from build fails to verified']);
     expect(compareReports(report, { targets: report.targets.slice(0, 1) })[0]).toBe('the target set changed: committed webpack, parcel, measured webpack');
+  });
+});
+
+describe('the latest manifest of the weekly canary', () => {
+  it('covers every fixture folder, the deno one without a package.json included', () => {
+    for (const target of TARGETS) {
+      const { manifest, resolved } = latestManifest(join(FIXTURES, target.name), target, (name, kind) => `${kind}:${name}`);
+      if (target.pm === 'deno') {
+        expect(manifest, target.name).toBeNull();
+        expect(resolved, target.name).toEqual({ deno: 'runtime:deno' });
+        continue;
+      }
+      const deps = { ...(manifest!.dependencies as Record<string, string>), ...(manifest!.devDependencies as Record<string, string>) };
+      for (const [name, version] of Object.entries(deps)) expect(version, `${target.name} ${name}`).toBe(`package:${name}`);
+      expect(manifest!.packageManager, target.name).toBeUndefined();
+      if (target.pm === 'bun') expect(resolved.bun, target.name).toBe('runtime:bun');
+    }
   });
 });
 

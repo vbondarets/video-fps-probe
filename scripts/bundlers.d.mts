@@ -20,6 +20,7 @@ export function measureDir(dir: string, target: { name: string }): string;
 export function tarballInfo(dir: string): { file: string | null; version: string; source: string };
 export function toolEnv(dir: string, extra?: Record<string, string>): NodeJS.ProcessEnv;
 export function runtimeVersion(name: string): string | null;
+export function latestManifest(root: string, target: { pm: string }, lookup: (name: string, kind: 'runtime' | 'package') => string | null): { manifest: Record<string, unknown> | null; resolved: Record<string, string | null> };
 export function lockfileChanges(pm: string, before: string | null, after: string): string[];
 export function peerWarnings(pm: string, output: string): string[];
 export function compareReports(committed: unknown, measured: unknown): string[];
